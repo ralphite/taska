@@ -91,6 +91,7 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
         with p.lock:
             p.voice.split_once()  # B682, once: each voice note's words in one record, out of the texts
         p.blocks_to_asks()  # T646, once: the agents' earlier blocks are asks
+        p.rules_to_doc()  # I693, once: the rule items are the rules document
         p.voice.resume()  # before the organizer: an input waiting for its words is held for them again
         organizers.start(p)
 

@@ -105,10 +105,12 @@ def command(head: str, cont: str) -> Union[Command, List[Command]]:
         return {"op": "ack", "ids": ids}
     if low == "new":
         return _new(rest, cont)
+    if low == "rules":
+        return _rules(rest, cont)
     if _DOC_WORD.fullmatch(word):
         return _doc_command(word, rest, cont)
     if not _ITEM_WORD.fullmatch(word):
-        raise Refused(f"unknown command '{word}' (start with new, ack or an item code like B03)")
+        raise Refused(f"unknown command '{word}' (start with new, ack, rules or an item code like B03)")
     verb, _, rest2 = rest.partition(" ")
     verb_l = verb.lower()
     if verb_l == "doc":
@@ -156,6 +158,29 @@ def _new(rest: str, cont: str) -> Command:
         if k in opts:
             out[k] = opts[k]
     return out
+
+
+def _rules(rest: str, cont: str) -> Command:
+    """The project's rules (I693): `rules propose <why>` (an agent's change; the user approves it) or `rules edit
+    <why>` (the organizer, from the user's words), the changes by section indented under it; `rules reply P12 <text>`
+    on a proposal's thread."""
+    verb, _, why = rest.partition(" ")
+    v = verb.lower()
+    if v in ("propose", "edit"):
+        m = _END_OPTION.search(why)
+        src = None
+        if m and m[1].lower() == "src":
+            src, why = m[2], why[:m.start()]
+        out: Command = {"op": "rpropose" if v == "propose" else "redit", "why": why.strip(), "body": cont}
+        if src:
+            out["src"] = src
+        return out
+    if v == "reply":
+        m = re.match(r"[Pp]?(\d+)\s+(.*)", why.strip(), re.S)
+        if not m:
+            raise Refused("use: rules reply P12 <text>")
+        return {"op": "rreply", "p": m.group(1), "text": (m.group(2) + ("\n" + cont if cont else "")).strip()}
+    raise Refused("use: rules propose <why> (the changes by section indented under it), or rules reply P12 <text>")
 
 
 def _doc_command(word: str, rest: str, cont: str) -> Command:

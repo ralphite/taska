@@ -11,7 +11,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
-from ..domain import events as ev, rules
+from ..agent_text import render
+from ..domain import events as ev, rules, sections, versions
 from ..domain.model import Input, Item, Message
 from ..domain.state import ProjectState, ident
 from ..domain.text import first_line, seconds
@@ -108,34 +109,39 @@ class AgentActivity:
         return [i.id for i in rules.by_number(for_agent) if seconds(i.t) >= int(since)]
 
     def rule_news(self, state: ProjectState, name: object, ses: str = "") -> List[str]:
-        """Rules someone else added, changed or ended since this session last heard from Taska, told once. Its
-        first call only sets the mark (it reads /rules)."""
+        """The rules changed by someone else since this session last heard from Taska, told once (I693): the version,
+        who, why, and the changed sections as a diff; and what became of its own proposals. Its first call only sets
+        the mark (it reads /rules)."""
         name, ses = agent_name(name), session_name(ses)
         key = f"{name}\x00{ses}"
         mark = self.rule_marks.get(key)
         self.rule_marks[key] = len(state.events)
-        if mark is None:
+        d = state.rules
+        if mark is None or not d:
             return []
-        changed: Dict[int, ev.Event] = {}
-        for e in state.events[mark:]:
-            if e.by == name and (e.ses or "") == ses:
-                continue  # its own change: it knows
-            n = getattr(e, "n", None)
-            it = state.items.get(n) if isinstance(e, (ev.ItemAdded, ev.FieldsSet)) and isinstance(n, int) else None
-            if not it:
-                continue
-            if (isinstance(e, ev.ItemAdded) and it.type == "rule") or (
-                    isinstance(e, ev.FieldsSet) and (it.type == "rule" or "type" in e.f)
-                    and set(e.f) & {"title", "body", "status", "type", "archived"}):
-                changed[it.n] = e
         out: List[str] = []
-        for n in changed:
-            it = state.items[n]
-            code = state.code(n)
-            if rules.is_rule_in_force(it):
-                out.append(f"rule changed, apply it from now on: {code} {it.title} (GET /{code})")
-            elif it.status != "proposed":
-                out.append(f"rule ended, it no longer applies: {code} {it.title}")
+        ws = versions.writes(state, d)
+        new = [e for e in ws if e.seq > mark]
+        if new and not all(e.by == name and (e.ses or "") == ses for e in new):
+            before = next((e.md for e in reversed(ws) if e.seq <= mark), "")
+            changed = sections.diff(before, d.md)
+            if changed:
+                vs = versions.versions(state, d)
+                whys = [e.why for e in reversed(new) if e.why]
+                out.append(f"the rules changed to v{vs[-1].v} by {render.who_wrote(new[-1].by)}"
+                           + (f": {'; '.join(whys)}" if whys else "") + ". Apply them from now on; what changed:")
+                out += ["  " + x for x in changed]
+        for e in state.events[mark:]:
+            p = next((x for x in d.proposals if x.id == getattr(e, "p", None)), None)
+            if isinstance(e, ev.DocDecided) and p and p.by == name:
+                word = {"approved": "approved: it is in the rules now", "declined": "declined by the user",
+                        "stale": f"sent back ({e.note}): write it again on the rules as they are now and propose it again"}
+                out.append(f"your rules proposal P{p.id} ({p.why}) was {word.get(e.to, e.to)}")
+            if isinstance(e, ev.CommentAdded) and e.d == d.d and e.by == "you" and e.key[:1] == "p":
+                q = next((x for x in d.proposals if f"p{x.id}" == e.key), None)
+                if q and q.by == name:
+                    out.append(f"the user wrote on your rules proposal P{q.id}: {first_line(e.text, 200)} "
+                               f"(answer: rules reply P{q.id} <text>)")
         return out
 
     # -- holds ------------------------------------------------------------------

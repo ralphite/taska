@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, List, Optional, Protocol, Sequence, Set,
 
 from ..agent_text.render import Reading
 from ..commands.run import Command, run_all
-from ..domain import events as ev
+from ..domain import events as ev, rules_move
 from ..domain.model import Input
 from ..domain.rules import Held
 from ..domain.state import ProjectState
@@ -122,6 +122,16 @@ class Project:
             ids = [x.id for it in self.state.items.values() for x in it.thread if x.kind == "block"]
             if ids:
                 self.emit(ev.BlocksAsked(ids=ids, by="taska"))
+
+    def rules_to_doc(self) -> int:
+        """Once (I693): the rule items become the rules document's first version, a rule waiting for the user a
+        proposal on it, and the rule items go (domain.rules_move). -> how many rule items went."""
+        with self.lock:
+            changes = rules_move.plan(self.state, now_iso())
+            for e in changes:
+                self.emit(e)
+            moved = changes[-1] if changes else None
+            return len(moved.ns) if isinstance(moved, ev.RulesMoved) else 0
 
     def bring_back_laters(self, today: str) -> int:
         """Items Later until `today` (YYYY-MM-DD, local) or before go back to Now by themselves (D115 #21). -> how many."""

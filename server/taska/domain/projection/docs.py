@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Optional
 
 from .. import events as ev
-from ..model import Comment, Doc
+from ..model import Comment, Doc, Proposal
 from ..state import ProjectState
 from .core import reduces
 
@@ -13,10 +13,7 @@ from .core import reduces
 @reduces(ev.DocWritten)
 def _doc(state: ProjectState, e: ev.Event) -> None:
     assert isinstance(e, ev.DocWritten)
-    d = state.docs.get(e.d)
-    if not d:
-        state.max_doc = max(state.max_doc, e.d)
-        d = state.docs[e.d] = Doc(d=e.d, n=e.n, t0=e.t)
+    d = _made(state, e.d, e.n, e.t, e.kind)
     d.title, d.md, d.t1, d.by = e.title or d.title, e.md, e.t, e.by
     if e.fmt or d.fmt:
         d.fmt = e.fmt or "md"  # each write says which; none is Markdown
@@ -24,6 +21,59 @@ def _doc(state: ProjectState, e: ev.Event) -> None:
     it = state.items.get(d.n)
     if it:
         it.t1 = e.t
+
+
+def _made(state: ProjectState, dn: int, n: int, t: str, kind: Optional[str]) -> Doc:
+    d = state.docs.get(dn)
+    if not d:
+        state.max_doc = max(state.max_doc, dn)
+        d = state.docs[dn] = Doc(d=dn, n=n, t0=t, kind=kind)
+        if kind == "rules":
+            d.title, state.rules_d = "Rules", dn
+    return d
+
+
+@reduces(ev.DocProposed)
+def _proposed(state: ProjectState, e: ev.Event) -> None:
+    assert isinstance(e, ev.DocProposed)
+    d = _made(state, e.d, 0, e.t, "rules")  # the first proposal makes the (empty) rules document
+    d.proposals.append(Proposal(id=e.seq, by=e.by, t=e.t, why=e.why, base=e.base, edits=list(e.edits), ses=e.ses,
+                                src=e.src))
+
+
+@reduces(ev.DocDecided)
+def _decided(state: ProjectState, e: ev.Event) -> None:
+    assert isinstance(e, ev.DocDecided)
+    d = state.docs.get(e.d)
+    p = next((x for x in d.proposals if x.id == e.p), None) if d else None
+    if p:
+        p.state, p.decided, p.note = e.to, e.t, e.note
+
+
+@reduces(ev.RulesMoved)
+def _rules_moved(state: ProjectState, e: ev.Event) -> None:
+    """The rule items go with everything on them: their talk, their documents; what pointed at them lets go."""
+    assert isinstance(e, ev.RulesMoved)
+    gone = set(e.ns)
+    for n in gone:
+        state.items.pop(n, None)
+        state.claims.pop(n, None)
+    for dn in [d.d for d in state.docs.values() if d.n in gone]:
+        del state.docs[dn]
+    for it in state.items.values():
+        if it.parent in gone:
+            it.parent = None
+        if it.merged_into in gone:
+            it.merged_into = None
+    for inp in state.inputs.values():
+        inp.touched = [n for n in inp.touched if n not in gone]
+        if inp.scope in gone:
+            inp.scope = None
+    state.deleted_groups = [g for g in state.deleted_groups if not gone & set(g.ns)]
+    state.addressed_items -= gone
+    for acts in state.first_acts.values():
+        for n in gone & set(acts):
+            del acts[n]
 
 
 @reduces(ev.DocDeleted)

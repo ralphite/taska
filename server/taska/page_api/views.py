@@ -10,10 +10,11 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List, Optional
 
-from ..domain import rules
+from ..domain import rules, sections, versions
 from ..domain.history import DeletionPlan, Filing, deletions, filings, undoable
 from ..domain.model import Comment, Doc, FileRef, Input, Item, Message, Voice
 from ..domain.state import ProjectState
+from ..domain.vocab import Refused
 from ..services.agents import AgentActivity
 
 View = Dict[str, Any]
@@ -110,9 +111,33 @@ def comment_view(c: Comment) -> View:
     return out
 
 
-def doc_view(d: Doc) -> View:
+def rules_view(st: ProjectState, d: Doc) -> View:
+    """The rules document's own facts (I693): its versions (who, when, every why, the text each left) and its
+    proposals (what each would make of the text now, its thread)."""
+    vs = versions.versions(st, d)
+    props: List[View] = []
+    for p in d.proposals:
+        row: View = {"id": p.id, "by": p.by, "t": p.t, "why": p.why, "state": p.state, "on": versions.version_of_write(st, d, p.base),
+                     "comments": [comment_view(c) for c in rules.proposal_comments(d, p.id)]}
+        for k in ("ses", "src", "decided", "note"):
+            if getattr(p, k):
+                row[k] = getattr(p, k)
+        if p.state == "wait":
+            try:
+                row["md"] = sections.apply(d.md, p.edits)
+            except Refused as ex:  # it no longer applies: it goes back to its agent at the next write
+                row["md"], row["note"] = d.md, str(ex)
+        props.append(row)
+    return {"kind": "rules", "proposals": props,
+            "versions": [{"v": x.v, "by": x.by, "t0": x.t0, "t": x.t, "md": x.md, "whys": x.whys, "srcs": x.srcs,
+                          "seq": x.seqs[-1], **({"restored": x.restored} if x.restored else {}),
+                          **({"p": x.p} if x.p else {}), **({"ses": x.ses} if x.ses else {})} for x in vs]}
+
+
+def doc_view(d: Doc, st: Optional[ProjectState] = None) -> View:
     blocks, detached = rules.doc_view(d)
-    return {"d": d.d, "n": d.n, "title": d.title, "md": d.md, "t0": d.t0, "t1": d.t1, "by": d.by, "versions": d.versions,
+    more = rules_view(st, d) if st is not None and d.is_rules else {}
+    return {**more, "d": d.d, "n": d.n, "title": d.title, "md": d.md, "t0": d.t0, "t1": d.t1, "by": d.by, "versions": d.versions,
             "fmt": d.fmt or "md",
             "blocks": [{"key": b.key, "kind": b.kind, "text": b.text, "comments": [comment_view(c) for c in b.comments]}
                        for b in blocks],
@@ -161,7 +186,7 @@ def entities(st: ProjectState, agents: AgentActivity) -> Dict[str, List[View]]:
     return {
         "items": [item_view(st, agents, it) for it in st.items.values() if not it.deleted],
         "inputs": [input_view(i, filed.get(i.id), plans.get(i.id)) for i in st.inputs.values() if not i.deleted],
-        "docs": [doc_view(d) for d in st.docs.values()
+        "docs": [doc_view(d, st) for d in st.docs.values()
                  if not d.deleted and not (st.items[d.n].deleted if d.n in st.items else None)],
         "voices": [voice_view(v) for v in st.voices.values()],
     }

@@ -332,11 +332,61 @@ class Comment:
 
 
 @dataclass
+class SectionEdit:
+    """One change to the rules document by its sections (I693): replace, add (after a section, else at the end) or
+    delete a section named by its heading, or the whole text."""
+
+    op: str
+    section: str = ""
+    md: str = ""
+    after: str = ""
+
+    def to_row(self) -> Row:
+        out: Row = {"op": self.op}
+        for k in ("section", "md", "after"):
+            if getattr(self, k):
+                out[k] = getattr(self, k)
+        return out
+
+    @classmethod
+    def from_row(cls, r: Any) -> SectionEdit:
+        return cls(op=str(r.get("op", "")), section=str(r.get("section") or ""), md=str(r.get("md") or ""),
+                   after=str(r.get("after") or ""))
+
+
+@dataclass
+class Proposal:
+    """An agent's proposed change to the rules (I693), written on the text as it was at `base` (its write's number in
+    the log): waiting for the user, approved, declined, or sent back because a section it changes changed since."""
+
+    id: int  # its event's number in the log
+    by: str
+    t: str
+    why: str
+    base: int
+    edits: List[SectionEdit] = field(default_factory=list)
+    ses: Optional[str] = None
+    src: Optional[str] = None
+    state: str = "wait"  # wait, approved, declined, stale
+    decided: Optional[str] = None  # when
+    note: str = ""  # sent back: the sections that changed
+
+    def to_row(self) -> Row:
+        out: Row = {"id": self.id, "by": self.by, "t": self.t, "why": self.why, "base": self.base,
+                    "edits": [e.to_row() for e in self.edits], "state": self.state}
+        for k in ("ses", "src", "decided", "note"):
+            if getattr(self, k):
+                out[k] = getattr(self, k)
+        return out
+
+
+@dataclass
 class Doc:
-    """A document on an item: Markdown (the default) or a web page (fmt "html"), with its comments."""
+    """A document on an item: Markdown (the default) or a web page (fmt "html"), with its comments. The project's rules
+    are one document of the project itself (kind "rules", no item: n 0), with its proposals (I693)."""
 
     d: int
-    n: int  # the item it belongs to
+    n: int  # the item it belongs to (0: the project's)
     t0: str
     title: str = ""
     md: str = ""
@@ -348,6 +398,12 @@ class Doc:
     deleted: Optional[str] = None
     resolved: Dict[str, str] = field(default_factory=dict)  # "<key>#<thread>" -> when
     gone: Dict[int, Comment] = field(default_factory=dict)  # deleted comments, for a restore
+    kind: Optional[str] = None  # "rules": the project's rules
+    proposals: List[Proposal] = field(default_factory=list)
+
+    @property
+    def is_rules(self) -> bool:
+        return self.kind == "rules"
 
     @property
     def is_page(self) -> bool:
@@ -367,4 +423,8 @@ class Doc:
             out["resolved"] = dict(self.resolved)
         if self.gone:
             out["gone"] = {str(k): c.to_row() for k, c in self.gone.items()}
+        if self.kind:
+            out["kind"] = self.kind
+        if self.proposals:
+            out["proposals"] = [p.to_row() for p in self.proposals]
         return out

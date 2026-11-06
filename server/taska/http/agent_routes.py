@@ -63,9 +63,8 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
             p.agents.saw(by, 1 if sub == "/next" and q.get("wait") else 0, req.session())
     if sub == "/agent":
         with p.lock:
-            n = len(rules.rules_in_force(p.state))
-        in_force = f"{n} project rule{'s' if n != 1 else ''}, read GET /rules" if n else "no project rules yet"
-        return text(200, AGENT.format(base=base, grammar=GRAMMAR, rules=in_force))
+            head = render.rules_head(p.state)
+        return text(200, AGENT.format(base=base, grammar=GRAMMAR, rules=head))
     if sub == "/next":
         return _next(req, p, by)
     if sub == "/rules":
@@ -116,10 +115,10 @@ def _next(req: Request, p: Project, by: str) -> Response:
             p.agents.read_next(by)
             if given is not None:
                 p.agents.read_item(given, by, p.state)
-            news = p.agents.rule_news(p.state, by, session)  # a rule changed since it last heard: said first
+            news = p.agents.rule_news(p.state, by, session)  # the rules changed since it last heard: said first
         if news:
             lines = out.split("\n")
-            at = next((i + 1 for i, x in enumerate(lines) if "project rule" in x), 1)
+            at = next((i + 1 for i, x in enumerate(lines) if "Project rules" in x), 1)
             out = "\n".join(lines[:at] + news + lines[at:])
     return text(200, out)
 

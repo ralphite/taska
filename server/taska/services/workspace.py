@@ -16,7 +16,7 @@ import shutil
 import threading
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from ..domain import finding, rules
+from ..domain import finding, rules, versions
 from ..domain.text import project_title, slug_of
 from ..domain.state import ProjectState
 from ..domain.vocab import CLOSED, PROJECT_NAME, SLUG_CHARS, Refused
@@ -34,14 +34,15 @@ def short_slug() -> str:
 
 
 def tally(st: ProjectState) -> Dict[str, int]:
-    """A project's counts, as its page counts them: what needs you (archived is not on the page's list, so not here);
-    what Items holds, open and finished (done or dropped), rules an agent proposed or that wait on you included; its
-    inputs and documents (F667: the sidebar's card)."""
+    """A project's counts, as its page counts them: what needs you (archived is not on the page's list, so not here;
+    a proposed change to the rules waiting counts, I693); what Items holds, open and finished (done or dropped); its
+    inputs and documents (the rules are not one of them; F667: the sidebar's card)."""
     needs = {i.n for i in st.live_items() if i.status not in CLOSED and not i.archived and rules.needs_you(st, i)}
-    listed = [i for i in st.live_items() if not i.archived and (i.type != "rule" or i.status == "proposed" or i.n in needs)]
+    listed = [i for i in st.live_items() if not i.archived]
     closed = sum(1 for i in listed if i.status in CLOSED)
-    docs = sum(1 for d in st.docs.values() if not d.deleted and not (d.n in st.items and st.items[d.n].deleted))
-    return {"open": len(listed) - closed, "needs": len(needs), "closed": closed,
+    docs = sum(1 for d in st.docs.values() if not d.deleted and not d.is_rules
+               and not (d.n in st.items and st.items[d.n].deleted))
+    return {"open": len(listed) - closed, "needs": len(needs) + len(versions.waiting(st.rules)), "closed": closed,
             "inputs": sum(1 for r in st.inputs.values() if not r.deleted), "docs": docs}
 
 
@@ -242,6 +243,9 @@ class Workspace:
                     if kind:
                         out.append({"project": name, "ptitle": p.title, "n": i.n, "code": st.code(i.n), "title": i.title,
                                     "kind": kind, "pri": i.pri, "t": i.t1 or ""})
+                for x in versions.waiting(st.rules):  # a proposed change to the rules (I693)
+                    out.append({"project": name, "ptitle": p.title, "n": 0, "code": "Rules", "title": x.why,
+                                "kind": "rules", "pri": "P1", "t": x.t, "p": x.id})
         return sorted(out, key=lambda x: x["t"], reverse=True)
 
     def search(self, q: str, skip: str = "") -> List[Dict[str, Any]]:

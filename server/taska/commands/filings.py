@@ -8,6 +8,7 @@ from ..domain.history import filings, redo_blocked, undoable
 from ..domain.vocab import Refused
 from .base import Args, Outcome, Run, handles
 from .items import set_fields
+from .rules import undo_filing as undo_rules
 
 
 @handles("filing-undo")
@@ -20,6 +21,7 @@ def undo_filing(r: Run, a: Args) -> Outcome:
     if f and not f.can:  # only the organizer's own work, as it left it
         raise Refused(f"{f.why}: undo that by hand")
     r.emit(ev.FilingUndone(src=rid, by="you"))
+    undo_rules(r, rid)  # its change to the rules too (I693)
     return Outcome(f"ok {rid} filing undone", "")
 
 

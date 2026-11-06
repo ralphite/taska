@@ -5,7 +5,7 @@ script (/connect, with {name}, {base}, {host})."""
 GRAMMAR = (
     "WRITE (plain text, one command per line; indented lines continue the previous command's text):\n"
     '  new bug P1 now parent=B03 src=r12 Export ignores the active filter\n'
-    '                            type (feature|bug|idea|task|rule), priority (P0-P3), now|later, parent= and src= are\n'
+    '                            type (feature|bug|idea|task), priority (P0-P3), now|later, parent= and src= are\n'
     '                            each optional and go before the title as plain words, no brackets\n'
     '    <optional body, indented>\n'
     "  B03 P1 later doing        set priority / when / status / type, any mix (status: open|doing|done|drop; drop = won't do)\n"
@@ -31,6 +31,10 @@ GRAMMAR = (
     '  D1 html [new title]       replace D1 with the indented HTML\n'
     '  D1 reply ¶3 <text>        answer the comments on paragraph 3 of D1 (¶3.2: its second thread, as /D1 names it)\n'
     '  B03 archive|unarchive     hide a done/dropped item from the default lists (reopening unarchives)\n'
+    '  rules propose <why>       propose a change to the project rules (the user approves or declines it); indented\n'
+    '                            under it, each change: replace ## <section> / add ## <section> [after ## <section>]\n'
+    '                            / delete ## <section>, its new text indented under that line (whole: all of it)\n'
+    '  rules reply P12 <text>    answer the user on your proposal P12\n'
     '  ack r12 r13               mark inputs handled without changing items\n'
     '  $ means the item created earlier in the same request. Refs: B03, b3, 3 are the same item.'
 )
@@ -46,9 +50,9 @@ AGENT = (
     '                            flag: ? you asked (waits on the user) / < the user replied\n'
     '                            filters: ?q=word&type=bug&pri=P0&when=now&status=all|open|doing|done|dropped&wait=1&reply=1&archived=1|all&limit=60\n'
     '  curl -s BASE/B03          full card: fields, body, thread, files (image/audio paths are readable from disk)\n'
-    '  curl -s BASE/rules        project rules: standing instructions; follow those that apply to what you do\n'
-    '                            (a rule added or changed while you work is named once in your next /next or /do reply:\n'
-    '                            read it and follow it from then on)\n'
+    '  curl -s BASE/rules        project rules: one document of standing instructions; follow the parts that apply\n'
+    '                            (when they change while you work, your next /next or /do reply says so once, with\n'
+    '                            what changed: follow it from then on)\n'
     "  curl -s BASE/D1           a document: numbered paragraphs (¶) with the user's comments under each\n"
     '  curl -s BASE/log?n=30     recent changes\n'
     '  optional on any call: &session=<the title your app shows for this session> (or the header X-Taska-Session), so\n'

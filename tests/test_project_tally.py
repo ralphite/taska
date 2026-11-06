@@ -1,5 +1,6 @@
 """F667: each project's counts in the projects' list (the sidebar's card), as its page counts them: open and finished
-on Items, what needs you, its inputs and documents; archived, deleted and settled rules left out."""
+on Items, what needs you, its inputs and documents; archived and deleted left out; the rules document is not one of
+the documents, and a proposed change to it waits on you (I693)."""
 
 from __future__ import annotations
 
@@ -37,8 +38,10 @@ LOG: Any = [
     add(4, "Never mind", status="dropped"),
     add(5, "Put away", status="done"),
     add(6, "Gone"),
-    add(7, "Exports write what the list shows", type_="rule"),
-    add(8, "Agents ask before deleting", status="proposed", type_="rule"),
+    {"k": "doc", "d": 3, "n": 0, "kind": "rules", "title": "Rules", "md": "## Exports\n\nWrite what the list shows.",
+     "by": "you", "t": T % 9},
+    {"k": "dprop", "d": 3, "base": 7, "why": "Ask before deleting", "by": "codex", "t": T % 10,
+     "edits": [{"op": "add", "section": "Deleting", "md": "Agents ask first."}]},
     said("r1", "Keep the filter.", 20),
     said("r2", "Never mind that.", 21),
     {"k": "del", "src": "r2", "ns": [], "kept": [], "by": "you", "t": T % 22},
@@ -52,10 +55,10 @@ LOG: Any = [
 class Tally(unittest.TestCase):
     def test_counts_as_the_page_counts(self) -> None:
         got = tally(replay(LOG, lambda seq, why: None))
-        # open: 1, 2 and the proposed rule (8); closed: 3, 4 (5 is archived, 6 deleted, 7 a settled rule)
-        self.assertEqual(got["open"], 3)
+        # open: 1, 2; closed: 3, 4 (5 is archived, 6 deleted)
+        self.assertEqual(got["open"], 2)
         self.assertEqual(got["closed"], 2)
-        self.assertEqual(got["needs"], 1)  # the proposed rule waits on you
+        self.assertEqual(got["needs"], 1)  # the proposed change to the rules waits on you
         self.assertEqual(got["inputs"], 1)  # r2 was deleted
         self.assertEqual(got["docs"], 1)  # doc 2 went with its deleted item
 

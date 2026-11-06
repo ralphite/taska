@@ -1,5 +1,5 @@
-"""An old rule merged into another can be taken back out and retired (10-30): it keeps its words and history, shows
-again as its own item, and the one it went into says it was taken out."""
+"""An item merged into another can be taken back out and closed (10-30): it keeps its words and history, shows again
+as its own item, and the one it went into says it was taken out."""
 
 from __future__ import annotations
 
@@ -58,12 +58,11 @@ class TakeOutOfAMerge(unittest.TestCase):
             return json.loads(e.read())
 
     def card(self, code: str) -> str:
-        """A rule's card by its number: "R1" alone would name input r1."""
-        return urllib.request.urlopen(self.p + f"/{code.lstrip('R')}?ui=1", timeout=10).read().decode()
+        return urllib.request.urlopen(self.p + f"/{code}?ui=1", timeout=10).read().decode()
 
     def test_taken_out_and_retired(self) -> None:
-        old = self.do("new rule P1 now Long replies go in a document\n").split()[1]
-        new = self.do("new rule P0 now How we talk\n").split()[1]
+        old = self.do("new task P1 now Long replies go in a document\n").split()[1]
+        new = self.do("new task P0 now How we talk\n").split()[1]
         self.do(f"{old} merge {new}\n")
         self.assertIn(f"merged into {new}", self.card(old))
         self.page({"op": "unmerge", "ref": old}, {"op": "set", "ref": old, "f": {"status": "dropped"}})

@@ -58,6 +58,7 @@ class ProjectState:
     max_n: int = 0
     max_input: int = 0
     max_doc: int = 0
+    rules_d: int = 0  # the project's rules document (I693), once it has one
     page_ids: Dict[str, str] = field(default_factory=dict)  # the page's id for an input it sent -> the input
     undone_changes: Set[int] = field(default_factory=set)  # your changes that were put back
     filing_off: Set[int] = field(default_factory=set)  # organizer changes taken back by an undo
@@ -71,11 +72,16 @@ class ProjectState:
     def code(self, n: Optional[int]) -> str:
         """An item's code: its type's letter and its number, padded to the width of the largest number."""
         it = self.items.get(n) if n is not None else None
-        return (LETTER[it.type] if it else "?") + str(n).zfill(len(str(self.max_n)))
+        return (LETTER.get(it.type, "?") if it else "?") + str(n).zfill(len(str(self.max_n)))
 
     def bare_code(self, n: Optional[int]) -> Optional[str]:
         it = self.items.get(n) if n is not None else None
-        return f"{LETTER[it.type]}{it.n}" if it else None
+        return f"{LETTER.get(it.type, '?')}{it.n}" if it else None
+
+    @property
+    def rules(self) -> Optional[Doc]:
+        """The project's rules document (I693), None until someone first writes or proposes."""
+        return self.docs.get(self.rules_d) if self.rules_d else None
 
     def docs_of(self, n: int) -> List[Doc]:
         """The documents of an item that are not deleted."""

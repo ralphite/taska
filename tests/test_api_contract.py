@@ -108,12 +108,14 @@ class ApiContractTest(unittest.TestCase):
                          "B1 doc Export plan\n  # Export plan\n\n  Keep the selected rows.\n"
                          "D1 reply \u00b61 Checked the plan.\n"
                          "new task P2 later parent=B1 Keep the name\n"
-                         "new rule Keep all attachments\n")
+                         "rules propose Keep all attachments\n  add ## Attachments\n    Keep all attachments.\n")
         self.assertNotIn("err ", answer)
         self.assertIn("ok D1 new on B1", answer)
         self.page({"op": "input", "text": "Use CSV.", "scope": "B1", "id": "answer-1"})
-        self.page({"op": "set", "ref": "T2", "f": {"status": "open"}},
-                  {"op": "set", "ref": "R3", "f": {"status": "open"}})
+        self.page({"op": "set", "ref": "T2", "f": {"status": "open"}})
+        rules = self.get(self.project + "/api/view")["docs"]
+        proposal = next(d for d in rules if d.get("kind") == "rules")["proposals"][0]
+        self.page({"op": "rdecide", "p": proposal["id"], "ok": True})
         self.assertIn("status=review", self.do("T2 done Done.\nB1 done Done.\n"))
         self.page({"op": "set", "ref": "T2", "f": {"status": "done"}},
                   {"op": "set", "ref": "B1", "f": {"status": "done"}},
@@ -134,7 +136,7 @@ class ApiContractTest(unittest.TestCase):
         self.stop()
         counts, warnings = inspect(self.data / "contract-check/taska.db")
         self.assertEqual(warnings, [])
-        self.assertEqual((counts["items"], counts["docs"], counts["inputs"]), (3, 1, 1))
+        self.assertEqual((counts["items"], counts["docs"], counts["inputs"]), (2, 2, 1))
         self.start()
         after = self.get(self.project + "/api/view?cursor=" + view["cursor"])
         self.assertTrue(after["full"], "a cursor from before a restart must get the full state")

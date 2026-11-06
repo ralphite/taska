@@ -7,11 +7,12 @@ from typing import Dict, List, Tuple
 
 from ..domain import events as ev
 from ..domain.markdown import block_key, blocks as md_blocks
-from ..domain.rules import doc_at, doc_view, item_at
+from ..domain.rules import doc_at, doc_view, is_proposal_key, item_at
 from ..domain.vocab import DOC_KEY, MAX_TEXT, PEOPLE, Refused
 from .base import Args, Outcome, Run, handles
 from .inputs import sent_files, voice_words
 
+RULES_HOW = "the rules change with `rules propose <why>` (by sections; the user approves), not as a document"
 _PAGE_TITLE = re.compile(r"<title>(.*?)</title>|<h1[^>]*>(.*?)</h1>", re.S | re.I)
 
 
@@ -33,6 +34,8 @@ def write_doc(r: Run, a: Args) -> Outcome:
     fmt = "html" if html else None
     if a.get("d"):
         d = doc_at(s, a.get("d"))
+        if d.is_rules:
+            raise Refused(RULES_HOW)
         r.emit(ev.DocWritten(d=d.d, n=d.n, title=title, md=md, by=r.by, fmt=fmt))
         return Outcome(f"ok D{d.d} updated{r.gone_note(s.items.get(d.n))}", f"Updated D{d.d}")
     it = item_at(s, a.get("ref", ""), r.ctx)
@@ -45,6 +48,8 @@ def write_doc(r: Run, a: Args) -> Outcome:
 def tick(r: Run, a: Args) -> Outcome:
     """Choices ticked on the page go into the document as it is now."""
     d = doc_at(r.state, a.get("d"))
+    if d.is_rules:
+        raise Refused(RULES_HOW)
     md, at = str(d.md), 0
     spans: List[Tuple[int, int, str]] = []
     seen: Dict[str, int] = {}
@@ -97,9 +102,14 @@ def comment(r: Run, a: Args) -> Outcome:
         key = block_key(text)
     else:
         key = str(a.get("key", ""))
+        if d.is_rules and is_proposal_key(key):  # the thread on a proposed change (I693)
+            p = next((x for x in d.proposals if f"p{x.id}" == key), None)
+            if not p:
+                raise Refused("no such proposal")
+            a = a.with_(quote=a.text("quote") or p.why)
         found = next((t for _, t in paras if block_key(t) == key or (d.is_page and key.startswith("h:"))), None)
         old = next((c for c in d.comments if c.key == key), None)
-        if found is None and not old:
+        if found is None and not old and not (d.is_rules and is_proposal_key(key)):
             raise Refused("that paragraph is not in the document")
         text = found if found is not None else (old.quote if old else "")
     body, files = str(a.get("text", "")).strip()[:MAX_TEXT], sent_files(r, a)  # a voice comment: its note, by name
@@ -131,6 +141,8 @@ def comment(r: Run, a: Args) -> Outcome:
 @handles("ddel")
 def delete_doc(r: Run, a: Args) -> Outcome:
     d = doc_at(r.state, a.get("d"))
+    if d.is_rules:
+        raise Refused("the rules are not deleted; restore an earlier version instead")
     on = a.on()
     r.emit(ev.DocDeleted(d=d.d, on=on, by=r.by))
     return Outcome(f"ok D{d.d} {'deleted' if on else 'restored'}", f"{'Deleted' if on else 'Restored'} D{d.d}")
@@ -140,6 +152,8 @@ def delete_doc(r: Run, a: Args) -> Outcome:
 def move_doc(r: Run, a: Args) -> Outcome:
     s = r.state
     d, it = doc_at(s, a.get("d")), item_at(s, a.get("to"), r.ctx)
+    if d.is_rules:
+        raise Refused("the rules belong to the project, not to an item")
     r.emit(ev.DocMoved(d=d.d, to=it.n, by=r.by))
     return Outcome(f"ok D{d.d} now on {s.code(it.n)}", f"Moved D{d.d} to {s.code(it.n)}")
 

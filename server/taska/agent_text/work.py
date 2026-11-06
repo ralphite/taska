@@ -14,7 +14,7 @@ from ..domain import rules
 from ..domain.model import Item, Message
 from ..domain.state import ident
 from ..domain.vocab import CLOSED, WORK_TYPES
-from .render import Reading, card, doc_text, input_card
+from .render import Reading, card, doc_text, input_card, proposal_text, proposals_for, rules_head
 
 Holder = Callable[[Item], Optional[Tuple[str, float]]]
 Calls = Callable[[], List[Tuple[Item, Message, bool]]]
@@ -48,10 +48,8 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         return Work(f"Project {project_name} was deleted: there is no work here. The user can restore it in Taska "
                     "(Settings › Projects).\n", False)
     out = ["Keep working without stopping. After each item, write back, then GET /next again."]
-    in_force = rules.rules_in_force(st)
-    if in_force:
-        n = len(in_force)
-        out.append(f"{n} project rule{'s' if n != 1 else ''}: read GET /rules once per session and follow those that apply.")
+    if st.rules and st.rules.md.strip():
+        out.append(rules_head(st) + " and follow the parts that apply.")
     live = rules.by_priority(i for i in st.live_items() if i.status not in CLOSED and not i.archived)
     talking = {n for r in st.inputs.values() if rd.held(r) for n in [r.scope, *r.touched] if n}
     for label, rows in (
@@ -66,11 +64,14 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
     if inbox:
         cards = "".join(input_card(rd, i) + "\n" for i in rules.by_number(inbox))
         return Work(f"{head}\nfirst handle the inbox ({len(inbox)}):\n{cards}", True)
-    docs = [d for d in st.docs.values() if rules.doc_unanswered(d) and not d.deleted and st.items.get(d.n)
-            and not st.items[d.n].merged_into and not st.items[d.n].deleted]
+    docs = [d for d in st.docs.values() if rules.doc_unanswered(d) and not d.deleted and (d.is_rules or (
+            st.items.get(d.n) and not st.items[d.n].merged_into and not st.items[d.n].deleted))]
     if docs:
         d = min(docs, key=lambda d: d.t1)
         return Work(f"{head}\nanswer the user's comments on D{d.d} (GET /D{d.d}):\n" + doc_text(rd, d), True)
+    mine = proposals_for(st, asker.who) if asker.who else []
+    if mine:  # the user wrote on its proposed change to the rules, or it was sent back to write again (I693)
+        return Work(f"{head}\n" + proposal_text(st, mine[0]), True)
     live = [i for i in live if i.n not in talking]  # their latest words are not in yet: they come next
     replied = [i for i in live if rules.replied(i)]
     back = sorted((i for i in replied if rules.in_progress(i)), key=lambda i: i.t1)

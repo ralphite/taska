@@ -36,7 +36,8 @@ def add(n: int, title: str, body: str = "", type_: str = "feature", parent: Any 
 LOG = [
     add(1, "Export keeps the filter you set", "The export writes every row"),
     add(2, "Saving drops the last word"),
-    add(3, "Exports write what the list shows", type_="rule"),
+    {"k": "doc", "d": 3, "n": 0, "kind": "rules", "title": "Rules", "by": "you", "t": T % 3,
+     "md": "## Exports write what the list shows\n\nThe filter you set stays."},
     {"k": "in", "id": "r1", "by": "you", "text": "The export should keep the filter I set.", "scope": None, "files": [],
      "t": T % 20},
     {"k": "doc", "d": 1, "n": 1, "title": "Plan: the export keeps the filter", "md": "Read the filter first.", "by": "x",
@@ -54,6 +55,7 @@ class ByTheWords(unittest.TestCase):
         found = finding.by_words(st, "where the export loses my filter")
         self.assertEqual([(f.kind, f.key) for f in found][:2], [("items", "i1"), ("docs", "d1")])
         self.assertEqual({f.kind for f in found}, {"items", "rules", "inputs", "docs"})
+        self.assertIn(("rules", "s0"), [(f.kind, f.key) for f in found])  # a section of the rules (I693)
         self.assertNotIn("i2", [f.key for f in found])
         self.assertEqual(finding.by_words(st, "the where my"), [])
 

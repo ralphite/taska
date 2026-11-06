@@ -24,6 +24,8 @@ def field_value(state: ProjectState, name: str, v: Any, ctx: Optional[RefContext
     """A field's value as sent, checked and in its stored form."""
     if name == "type":
         v = str(v).lower()
+        if v == "rule":  # the rules are one document (I693, r1118)
+            raise Refused("rules are one document now: propose a change with `rules propose <why>` (GET /rules)")
         if v not in LETTER:
             raise Refused(f"type must be one of {'/'.join(LETTER)}")
     elif name == "pri":
@@ -258,7 +260,7 @@ def merge(r: Run, a: Args) -> Outcome:
 
 @handles("unmerge")
 def unmerge(r: Run, a: Args) -> Outcome:
-    """A merged item back on its own (the page's way to retire old rules that were merged, keeping them)."""
+    """A merged item back on its own."""
     s = r.state
     it = item_at(s, a.get("ref", ""), r.ctx, follow=False)
     code = s.code(it.n)

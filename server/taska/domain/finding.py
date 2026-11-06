@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from .model import Doc, Input, Item
+from .sections import sections, text_of
 from .text import page_text
 from .state import ProjectState
 from .voices import said, voices_of, words_of
@@ -32,7 +33,8 @@ LONG = 300  # characters: words found in a longer text count for less
 
 @dataclass(frozen=True)
 class Found:
-    """One thing found: its kind (items, rules, inputs, docs), its key in the project ("i3", "r8", "d1"), the item
+    """One thing found: its kind (items, rules, inputs, docs), its key in the project ("i3", "s2" a section of the
+    rules, "r8", "d1"), the item
     it opens (an input's: the item it became; None: none) and how close it is (higher: closer)."""
 
     kind: str
@@ -99,6 +101,16 @@ def _docs(st: ProjectState) -> List[Doc]:
     return [d for d in st.docs.values() if not d.deleted and d.n in st.items and st.items[d.n].live]
 
 
+def rule_sections(st: ProjectState) -> List[Tuple[int, str, str]]:
+    """The rules document's top sections (I693): (its place, its title, its text)."""
+    d = st.rules
+    if not d:
+        return []
+    ss = sections(d.md)
+    top = min((x.level for x in ss), default=2)
+    return [(k, x.title, text_of(d.md, x)) for k, x in enumerate(ss) if x.level == top]
+
+
 def by_words(st: ProjectState, q: str) -> List[Found]:
     """What `q`'s words find, closest first (the newer first when as close), at most TOP."""
     ws = terms(q)
@@ -112,11 +124,15 @@ def by_words(st: ProjectState, q: str) -> List[Found]:
         rest = " ".join([code, i.body, i.next or "", *talk]).lower()
         s = _score(ws, i.title.lower(), rest)
         if s:
-            out.append((s, i.t1 or i.t0 or "", Found("rules" if i.type == "rule" else "items", "i%d" % i.n, i.n, s)))
+            out.append((s, i.t1 or i.t0 or "", Found("items", "i%d" % i.n, i.n, s)))
     for r in _inputs(st):
         s = _score(ws, "", said(st, r.text, r.files).lower())
         if s:
             out.append((s, r.t, Found("inputs", r.id, _input_n(st, r), s)))
+    for k, title, text in rule_sections(st):
+        s = _score(ws, title.lower(), text.lower())
+        if s:
+            out.append((s, st.rules.t1 if st.rules else "", Found("rules", "s%d" % k, None, s)))
     for d in _docs(st):
         # a web page by the words it shows, not its markup ("div" or "margin" found every page); and its comments' words
         s = _score(ws, d.title.lower(), ((page_text(d.md) if d.is_page else d.md) + " " + _comments(st, d)).lower())
@@ -127,13 +143,14 @@ def by_words(st: ProjectState, q: str) -> List[Found]:
 
 
 def short_list(st: ProjectState, most_inputs: int = 150) -> List[Tuple[Found, str]]:
-    """Every thing of the project as one short line, for a model to find things by meaning: items and rules (code,
-    title, the start of the body), the latest inputs, documents (their title and item)."""
+    """Every thing of the project as one short line, for a model to find things by meaning: items (code, title, the
+    start of the body), the rules' sections, the latest inputs, documents (their title and item)."""
     out: List[Tuple[Found, str]] = []
     for i in sorted(_items(st), key=lambda x: x.n):
         body = " ".join(i.body.split())[:80]
-        kind = "rules" if i.type == "rule" else "items"
-        out.append((Found(kind, "i%d" % i.n, i.n), f"{st.code(i.n)} {i.title}" + (f" — {body}" if body else "")))
+        out.append((Found("items", "i%d" % i.n, i.n), f"{st.code(i.n)} {i.title}" + (f" — {body}" if body else "")))
+    for k, title, text in rule_sections(st):
+        out.append((Found("rules", "s%d" % k, None), f"Rules, section {title}: " + " ".join(text.split())[:80]))
     for r in sorted(_inputs(st), key=lambda x: x.number, reverse=True)[:most_inputs]:
         out.append((Found("inputs", r.id, _input_n(st, r)), "#%d said: %s" % (r.number, " ".join(said(st, r.text, r.files).split())[:100])))
     for d in sorted(_docs(st), key=lambda x: x.d):

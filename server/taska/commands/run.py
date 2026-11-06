@@ -9,7 +9,7 @@ from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 
 from ..domain.rules import RefContext, item_at
 from ..domain.vocab import MAX_OPS, Refused
-from . import docs, filings, inputs, items, project  # noqa: F401  (they register their handlers)
+from . import docs, filings, inputs, items, project, rules  # noqa: F401  (they register their handlers)
 from .base import HANDLERS, Args, Changes, Outcome, Run
 
 Command = Union[Mapping[str, Any], Refused]  # a command, or why its line could not be read

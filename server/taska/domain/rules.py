@@ -130,15 +130,6 @@ def descendants(state: ProjectState, n: int) -> List[Item]:
     return out
 
 
-def rules_in_force(state: ProjectState) -> List[Item]:
-    return [i for i in by_priority(state.live_items())
-            if i.type == "rule" and i.status not in CLOSED + ("proposed",) and not i.archived]
-
-
-def is_rule_in_force(it: Item) -> bool:
-    return it.type == "rule" and it.status not in CLOSED + ("proposed",) and not it.archived and it.merged_into is None
-
-
 # ----------------------------------------------------------------------------- references
 
 
@@ -223,9 +214,18 @@ def doc_view(d: Doc) -> Tuple[List[DocBlock], List[Detached]]:
         out.append(DocBlock(key=key, kind=kind, text=text, comments=[c for c in d.comments if c.key == key] if first else []))
     detached: Dict[str, Detached] = {}
     for c in d.comments:
-        if c.key not in keys and c.key != DOC_KEY:
+        if c.key not in keys and c.key != DOC_KEY and not is_proposal_key(c.key):
             detached.setdefault(c.key, Detached(key=c.key, quote=c.quote)).comments.append(c)
     return out, list(detached.values())
+
+
+def is_proposal_key(key: str) -> bool:
+    """The thread on a proposed change to the rules (I693) is keyed "p<its number>"; a paragraph's key is hex."""
+    return key[:1] == "p" and key[1:].isdigit()
+
+
+def proposal_comments(d: Doc, pid: int) -> List[Comment]:
+    return [c for c in d.comments if c.key == f"p{pid}"]
 
 
 def doc_whole(d: Doc) -> List[Comment]:
@@ -237,7 +237,8 @@ def doc_unanswered(d: Doc) -> int:
     """Threads whose last word is the user's and that are not resolved: an agent should answer them."""
     last: Dict[str, str] = {}
     for c in d.comments:
-        last[f"{c.key}#{c.th}"] = c.by
+        if not is_proposal_key(c.key):  # a proposal's thread is its agent's (I693)
+            last[f"{c.key}#{c.th}"] = c.by
     return sum(1 for k, by in last.items() if by == "you" and k not in d.resolved)
 
 
@@ -248,7 +249,7 @@ def touches(state: ProjectState, e: ev.Event) -> List[int]:
     """The items an event changes or adds to: a change, a message, a reply, a subitem, a document, a comment."""
     out = list(e.items_touched())
     if isinstance(e, (ev.CommentAdded, ev.CommentEdited, ev.CommentDeleted, ev.CommentRestored, ev.ThreadResolved,
-                      ev.DocDeleted, ev.DocMoved, ev.CommentMoved)) and e.d in state.docs:
+                      ev.DocDeleted, ev.DocMoved, ev.CommentMoved)) and e.d in state.docs and state.docs[e.d].n:
         out.append(state.docs[e.d].n)
     return out
 

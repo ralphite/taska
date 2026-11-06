@@ -7,7 +7,8 @@ from __future__ import annotations
 
 import re
 
-LETTER = {"feature": "F", "bug": "B", "idea": "I", "task": "T", "rule": "R"}
+# the project's rules are one document, not items (I693, r1118): "rule" is no type, R no code
+LETTER = {"feature": "F", "bug": "B", "idea": "I", "task": "T"}
 TYPE_OF = {letter: kind for kind, letter in LETTER.items()}
 PRIORITIES = ("P0", "P1", "P2", "P3")
 # a new item's priority when nobody says one: P1, the user's rule (r10, r1072); tests/test_default_priority.py holds it

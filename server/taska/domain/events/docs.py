@@ -5,13 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import ClassVar, Dict, List, Optional
 
-from ..model import FileRef, Row, files_row
+from ..model import FileRef, Row, SectionEdit, files_row
 from .base import Event, Reader, common, files_of, need, opt
 
 
 @dataclass
 class DocWritten(Event):
-    """A document made, or its text replaced."""
+    """A document made, or its text replaced. The rules (kind "rules", I693) say why, the input it came from, and
+    whether it approves a proposal (p), restores a version (restored) or takes back a write (undo: its number)."""
 
     KIND: ClassVar[str] = "doc"
     d: int = 0
@@ -19,10 +20,17 @@ class DocWritten(Event):
     title: str = ""
     md: str = ""
     fmt: Optional[str] = None
+    kind: Optional[str] = None
+    why: str = ""
+    p: Optional[int] = None
+    restored: Optional[int] = None
+    undo: Optional[int] = None
 
     def body(self) -> Row:
         row: Row = {"d": self.d, "n": self.n, "title": self.title, "md": self.md, "by": self.by}
         opt(row, "fmt", self.fmt, bool(self.fmt))
+        for k in ("kind", "why", "p", "restored", "undo", "src"):
+            opt(row, k, getattr(self, k), bool(getattr(self, k)))
         return row
 
     def items_touched(self) -> List[int]:
@@ -128,11 +136,64 @@ class CommentRestored(Event):
         return {"d": self.d, "id": self.id, "by": self.by}
 
 
+@dataclass
+class DocProposed(Event):
+    """An agent's change to the rules, by sections, waiting for the user (I693); base: the write it was made on."""
+
+    KIND: ClassVar[str] = "dprop"
+    d: int = 0
+    base: int = 0
+    edits: List[SectionEdit] = field(default_factory=list)
+    why: str = ""
+
+    def body(self) -> Row:
+        row: Row = {"d": self.d, "base": self.base, "edits": [e.to_row() for e in self.edits], "why": self.why,
+                    "by": self.by}
+        opt(row, "src", self.src, bool(self.src))
+        return row
+
+
+@dataclass
+class DocDecided(Event):
+    """A proposal approved, declined (by the user) or sent back to its agent (by taska: a section it changes changed
+    since it was written; note says which)."""
+
+    KIND: ClassVar[str] = "ddecide"
+    d: int = 0
+    p: int = 0
+    to: str = "declined"  # approved, declined, stale
+    note: str = ""
+
+    def body(self) -> Row:
+        row: Row = {"d": self.d, "p": self.p, "to": self.to, "by": self.by}
+        opt(row, "note", self.note, bool(self.note))
+        return row
+
+
+@dataclass
+class RulesMoved(Event):
+    """Once per project (I693): the rule items are gone, with their talk and documents; the rules in force are the
+    rules document's first version (written just before)."""
+
+    KIND: ClassVar[str] = "rulesmoved"
+    ns: List[int] = field(default_factory=list)
+
+    def body(self) -> Row:
+        return {"ns": list(self.ns), "by": self.by}
+
+
 DOC_EVENTS = ("dc", "dcedit", "dcdel", "dcundel", "dcres", "ddel", "dmove", "dcmove")
 
 READERS: Dict[str, Reader] = {
     "doc": lambda r: DocWritten(d=need(r, "d"), n=need(r, "n"), title=r.get("title") or "", md=need(r, "md"),
-                                fmt=r.get("fmt"), **common(r)),
+                                fmt=r.get("fmt"), kind=r.get("kind"), why=r.get("why") or "", p=r.get("p"),
+                                restored=r.get("restored"), undo=r.get("undo"), src=r.get("src"), **common(r)),
+    "dprop": lambda r: DocProposed(d=need(r, "d"), base=int(r.get("base") or 0), why=r.get("why") or "",
+                                   edits=[SectionEdit.from_row(x) for x in need(r, "edits")], src=r.get("src"),
+                                   **common(r)),
+    "ddecide": lambda r: DocDecided(d=need(r, "d"), p=need(r, "p"), to=need(r, "to"), note=r.get("note") or "",
+                                    **common(r)),
+    "rulesmoved": lambda r: RulesMoved(ns=list(need(r, "ns")), **common(r)),
     "ddel": lambda r: DocDeleted(d=need(r, "d"), on=bool(r.get("on", True)), **common(r)),
     "dmove": lambda r: DocMoved(d=need(r, "d"), to=need(r, "to"), **common(r)),
     "dcmove": lambda r: CommentMoved(d=need(r, "d"), id=need(r, "id"), key=need(r, "key"), quote=r.get("quote", ""),

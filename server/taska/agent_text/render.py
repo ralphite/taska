@@ -10,8 +10,8 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Mapping, Sequence
 
 from ..domain import events as ev
-from ..domain import rules
-from ..domain.model import Comment, Doc, FileRef, Input, Item, Message
+from ..domain import rules, sections, versions
+from ..domain.model import Comment, Doc, FileRef, Input, Item, Message, Proposal
 from ..domain.rules import Held
 from ..domain.state import ProjectState
 from ..domain.text import clean_title, first_line, hm
@@ -87,8 +87,6 @@ def listing(st: ProjectState, q: Mapping[str, Sequence[str]]) -> str:
             continue
         if status not in ("active", "all") and it.status != status:
             continue
-        if (one("type") or "") != "rule" and it.type == "rule":
-            continue  # rules have their own view: GET /rules
         if one("type") and it.type != one("type").lower():
             continue
         if one("pri") and it.pri != one("pri").upper():
@@ -231,14 +229,70 @@ def inbox(rd: Reading) -> str:
     return head + "".join(input_card(rd, i) + "\n" for i in rows)
 
 
+def who_wrote(by: str) -> str:
+    """Who wrote a version of the rules, as agents read it."""
+    return {"you": "the user", "org": "the organizer (the user's words)", "taska": "taska"}.get(by, by)
+
+
+def rules_head(st: ProjectState) -> str:
+    """The rules' version in one line, for /agent and /next (I693)."""
+    d = st.rules
+    v = versions.versions(st, d) if d else []
+    return f"Project rules v{v[-1].v}: read GET /rules once per session" if v else "No project rules yet"
+
+
 def rules_text(st: ProjectState) -> str:
-    rows = rules.rules_in_force(st)
-    if rows:
-        out = [f"{len(rows)} project rule{'s' if len(rows) != 1 else ''} in force. Follow the ones that apply to what you are doing."]
+    """GET /rules: the rules document as it is now, headed by its version, who and when; the proposals waiting."""
+    d = st.rules
+    vs = versions.versions(st, d) if d else []
+    how = ("To change them, propose: `rules propose <why>` with the sections it changes indented under it (replace, "
+           "add or delete ## <section>; whole only for the whole text); the user approves or declines.")
+    if not vs:
+        out = ["No project rules yet.", how]
     else:
-        out = ["No project rules yet."]
-    for it in rows:
-        out.append(f"{st.code(it.n)} {it.title}" + ("\n" + textwrap.indent(it.body, "  ") if it.body else ""))
+        x = vs[-1]
+        out = [f"Project rules, version {x.v}, {who_wrote(x.by)}, {hm(x.t)}. Follow the parts that apply to what you are "
+               "doing.", how, "", d.md.strip("\n") if d else ""]
+    for p in versions.waiting(d):
+        out.append(f"\nwaiting for the user: P{p.id} by {p.by}: {p.why}")
+    return "\n".join(out) + "\n"
+
+
+def _overlap(a: Proposal, b: Proposal) -> bool:
+    """Two proposals about the same sections (a whole text is about all of them)."""
+    x, y = sections.touched(a.edits), sections.touched(b.edits)
+    return x is None or y is None or bool({sections.name_of(t) for t in x} & {sections.name_of(t) for t in y})
+
+
+def proposals_for(st: ProjectState, who: str) -> List[Proposal]:
+    """This agent's proposed changes to the rules that wait on it: the user wrote on one, or one was sent back and it
+    has not answered or proposed again since."""
+    d = st.rules
+    if not d:
+        return []
+    out: List[Proposal] = []
+    for p in d.proposals:
+        if p.by != who:
+            continue
+        talk = rules.proposal_comments(d, p.id)
+        if talk and talk[-1].by == "you":
+            out.append(p)
+        elif p.state == "stale" and not any(x.by == who and x.id > p.id and _overlap(x, p) for x in d.proposals) \
+                and not any(c.by == who and c.t >= (p.decided or "") for c in talk):
+            out.append(p)
+    return out
+
+
+def proposal_text(st: ProjectState, p: Proposal) -> str:
+    """One proposal for its agent: what it said, what became of it, the talk on it."""
+    d = st.rules
+    assert d is not None
+    state = {"wait": "waits for the user", "approved": "approved", "declined": "declined",
+             "stale": f"sent back: {p.note}; write it again on the rules as they are now (GET /rules) and propose it again"}
+    out = [f"your rules proposal P{p.id} ({p.why}) {state.get(p.state, p.state)}. Answer the user with "
+           f"`rules reply P{p.id} <text>`; to change it, `rules propose <why>` again."]
+    for c in rules.proposal_comments(d, p.id):
+        out.append(f"   > {c.by} {hm(c.t)}: {for_agents(st, c.text, c.files)}")
     return "\n".join(out) + "\n"
 
 
@@ -249,6 +303,9 @@ def doc_text(rd: Reading, d: Doc) -> str:
     out = [f"D{d.d} on {st.code(d.n)}{'' if titled else ': ' + d.title}  (updated {hm(d.t1)} by {d.by}; reply with: "
            f"D{d.d} reply ¶N <text>, ¶0 for the whole document, ¶N.K for thread K of ¶N)"]
     texts = [b.text for b in blocks]
+    if d.is_rules:  # the project's rules (I693): answered here; changed only by proposing
+        out[0] = (f"D{d.d}: the project's rules  (updated {hm(d.t1)} by {who_wrote(d.by)}; reply with: D{d.d} reply ¶N "
+                  "<text>, ¶0 for the whole document; to change the rules: rules propose <why>)")
     if d.is_page:  # a web page: its HTML, then each part commented on
         out[0] = (f"D{d.d} on {st.code(d.n)}: {d.title}  (a web page; updated {hm(d.t1)} by {d.by}; replace it with: "
                   f"D{d.d} html; reply with: D{d.d} reply ¶N <text>, ¶0 for the whole page)")
