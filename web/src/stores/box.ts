@@ -26,7 +26,7 @@ export interface DraftFile extends OutFile {
   around?: [string, string]
   /** words that may be misheard */
   doubts?: Doubt[]
-  /** fuller words may follow */
+  /** its first words: the final ones follow (T687) */
   more?: boolean
   /** why its words did not come */
   trError?: string

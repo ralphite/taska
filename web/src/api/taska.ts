@@ -66,7 +66,7 @@ export class TaskaApi {
   }
 
   /** A voice note's words: at once when they are kept (GET), or waiting for them (POST; again: a failed one tried
-   * once more; more: the fuller words that may follow). */
+   * once more; more: the final words after its first words came early). */
   words(slug: string, f: string, wait = false, o: { scope?: string | null; again?: boolean; more?: boolean } = {}): Promise<WordsAnswer> {
     const q = new URLSearchParams({ f })
     if (o.scope) q.set('scope', o.scope)

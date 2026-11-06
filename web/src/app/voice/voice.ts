@@ -306,7 +306,7 @@ export class Voice {
     return null
   }
 
-  /** The strong model ran out of time on this note: its fuller words may come within a few minutes. */
+  /** The note's first words came early (T687): its final words follow. */
   private async hearMore(slug: string, fk: string, fid: string): Promise<void> {
     for (let n = 0, t0 = Date.now(); Date.now() - t0 < 5 * 60000 && this.draftOf(fk)?.f.more; n++) {
       let d: Awaited<ReturnType<TaskaApi['words']>>
@@ -325,7 +325,7 @@ export class Voice {
     this.patch(fk, { more: false })
   }
 
-  /** The fuller words take the place of the first ones in the draft (or go after it). */
+  /** The final words take the place of the first ones in the draft (or go after it). */
   private fuller(slug: string, key: DraftKey, f: DraftFile, words: string): void {
     const was = f.trAdded || f.tr
     const v = this.d.box.text(slug, key)
