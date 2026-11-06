@@ -7,7 +7,8 @@ import { when } from './time'
 import type { LogRow, UndoEntry } from './types'
 import { DID, STATUS_WORD, WHEN_WORD, inputCode, whoName } from './words'
 
-export type LogPart = string | { n: number; code: string } | { id: string; code: string }
+/** words, a code that opens its item or input, or (`faint`) an item's title after its code */
+export type LogPart = string | { n: number; code: string } | { id: string; code: string } | { faint: string }
 
 export interface LogSentence {
   key: string
@@ -83,13 +84,22 @@ function linked(m: World, text: string): LogPart[] {
   return out.filter((p) => p !== '')
 }
 
+/** A change to an item's status, when, priority or archive names the item by its code only: its title follows, faint,
+ * so what Undo would undo is plain (as a row just acted on says it, D115 r1079 #2). */
+function titled(m: World, what: string, parts: LogPart[]): LogPart[] {
+  const first = parts[0]
+  if (!first || typeof first === 'string' || !('n' in first) || !new RegExp(`^[A-Z]\\d+ (?:status|when|pri|archived) `).test(what)) return parts
+  const it = m.byN.get(first.n)
+  return it ? [first, { faint: ' ' + it.title }, ...parts.slice(1)] : parts
+}
+
 export function logSentence(m: World, e: LogRow): LogSentence {
   return {
     key: '#' + e.seq,
     // your own changes need no name (single user)
     who: e.who === 'you' ? '' : whoName(e.who),
     session: e.ses || '',
-    parts: linked(m, said(m, e.what)),
+    parts: titled(m, e.what, linked(m, said(m, e.what))),
     time: when(e.t, m.at),
   }
 }

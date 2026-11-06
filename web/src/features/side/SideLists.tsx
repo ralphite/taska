@@ -60,7 +60,7 @@ export function DocsList({ docs, open, onOpen }: { docs: DocRow[]; open: number 
         <div key={d.d} onClick={() => onOpen(d.d)} {...current(open === d.d)} className={`${ROW} cursor-pointer ${PICKED}`}>
           <Icon n={d.web ? 'web' : 'doc'} c="mt-0.5 size-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[15px] leading-snug font-medium">{d.title}</p>
+            <p className="line-clamp-2 text-[15px] leading-snug font-medium break-words lg:line-clamp-1">{d.title}</p>
             <p className="mt-1 truncate text-xs font-medium text-zinc-500 dark:text-zinc-400">
               <span className="font-mono">D{d.d}</span>
               {d.on ? ` · ${d.on}` : ''}

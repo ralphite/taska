@@ -31,6 +31,10 @@ export function LogLine({ s, withTime = false, on }: { s: LogSentence; withTime?
       {parts.map((p, i) =>
         typeof p === 'string' ? (
           p
+        ) : 'faint' in p ? (
+          <span key={i} className={MUTED}>
+            {p.faint}
+          </span>
         ) : 'n' in p ? (
           <button key={i} onClick={() => on.item(p.n)} className="font-semibold text-blue-600 hover:underline dark:text-blue-400">
             {p.code}
