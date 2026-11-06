@@ -57,6 +57,14 @@ class OrganizerRetry(unittest.TestCase):
         self.assertTrue(inp().org.ok)
         self.assertNotIn("r1", self.o.later)
 
+    def test_an_empty_answer_is_asked_again_not_filed(self):
+        """An empty answer (MALFORMED_RESPONSE) is not "no changes needed": the input waits and is asked again."""
+        self.organize(lambda *a, **k: "")
+        inp = self.p.state.inputs["r1"]
+        self.assertIsNone(inp.org)
+        self.assertFalse(inp.acked)
+        self.assertIn("r1", self.o.later)
+
     def test_a_refused_key_fails_at_once(self):
         self.organize(Refused("Gemini HTTP 403: API key not valid"))
         self.assertFalse(self.p.state.inputs["r1"].org.ok)

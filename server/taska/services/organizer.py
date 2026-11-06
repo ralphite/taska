@@ -104,6 +104,8 @@ class Organizer(threading.Thread):
                         with open(path, "rb") as fh:
                             parts.append({"inline_data": {"mime_type": mime.split(";")[0], "data": base64.b64encode(fh.read()).decode()}})
             plan = gemini.ask("organizer", INSTRUCTIONS, parts, think=int(os.environ.get("TASKA_THINK", "512")))
+            if not plan.strip():  # an empty answer (MALFORMED_RESPONSE and the like) is not "no changes needed"
+                err = "Gemini gave an empty answer"
         except Exception as ex:
             plan, err = "", str(ex)
         with p.lock:
@@ -142,7 +144,7 @@ class Organizer(threading.Thread):
 
 
 _TRANSIENT = re.compile(r"(?i)\b(429|5\d\d)\b|rate.?limit|quota|exhausted|overload|unavailable|high demand|"
-                        r"unreachable|timed? ?out|timeout|deadline|connection|reset|network|temporar")
+                        r"unreachable|timed? ?out|timeout|deadline|connection|reset|network|temporar|empty answer")
 
 
 def transient(msg: str) -> bool:
