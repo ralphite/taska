@@ -20,6 +20,9 @@ import { doc } from './docFixtures'
 import { PROJECT } from './listFixtures'
 import { acts } from './acts'
 import { withNewProject } from './newProjectFixtures'
+import { usePop } from './liveParts'
+import { goneProjectMenuSheet, projectMenuSheet } from '../ui/ProjectSheets'
+import { PROJECT_TONES } from '../ui/tones'
 
 const now = Date.parse(T)
 const QUIET = { from: '22:00', to: '08:00' }
@@ -104,6 +107,7 @@ const setActs = acts('Settings', ['saveRename', 'remove', 'restore', 'purge', 'o
 function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: boolean; h: SettingsHere }) {
   const [sec, setSec] = useState(start)
   const [p, setP] = useState({ pErr: h.projects?.pErr ?? '', renaming: h.projects?.renaming ?? null, pMenu: h.projects?.menu ?? null })
+  const menu = usePop<string>(false)
   const [naming, setNaming] = useState(h.projects?.pNew ? { value: h.projects.pNewText, error: h.projects.newErr ?? '' } : null)
   const [asked, setAsked] = useState<Record<string, number>>(() => ({ ...Object.fromEntries((h.projects?.purging ?? []).map((n) => [`purge ${n}`, 1])), ...(h.newKeyAsking ? { 'new-key': 1 } : {}) }))
   const [notices, setNotices] = useState<NonNullable<SettingsHere['notifications']>>(h.notifications ?? { state: 'On', quiet: false })
@@ -129,7 +133,8 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
     remove: (slug) => (setActs.remove(slug), setP({ ...p, pMenu: null })),
     restore: setActs.restore,
     purge: (slug) => ask(`purge ${slug}`, () => setActs.purge(slug)),
-    menu: (k) => setP({ ...p, pMenu: p.pMenu === k ? null : k, renaming: null }),
+    // the phone's ⋯: the project's menu as a sheet (r1095); the desktop's row shows its actions
+    menu: (k) => (desk ? setP({ ...p, pMenu: p.pMenu === k ? null : k, renaming: null }) : menu.open(k)),
     open: setActs.open,
   }
   // the page's nav: a section opens; the phone's back goes to the index, the desktop's leaves Settings
@@ -180,6 +185,16 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
         body={bodies[sec ?? 'projects']()}
         onBack={back}
       />
+      {menu.draw((k) => {
+        const done = (run: () => void) => () => (menu.close(), run())
+        if (k.startsWith('gone:')) {
+          const name = k.slice(5)
+          const asking = !!asked['purge ' + name]
+          return goneProjectMenuSheet({ title: GONE.find((d) => d.name === name)?.title ?? name, asking }, () => (pOn.purge(name), asking && menu.close()))
+        }
+        const r = rows?.find((x) => x.name === k)
+        return projectMenuSheet({ here: k === 'shop', slug: k, title: r?.title ?? k, tone: PROJECT_TONES[1], open: r?.open ?? '', settingsKeys: '' }, { open: done(() => pOn.open(k)), settings: done(() => setSec('projects')), rename: done(() => pOn.rename(k)), remove: done(() => pOn.remove(k)) })
+      })}
     </div>
   )
   // New project: a popover under its button on the desktop, a sheet on the phone (D115 #7)

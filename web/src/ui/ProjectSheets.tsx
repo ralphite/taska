@@ -88,7 +88,7 @@ export interface ProjectMenuEvents {
 /** A project's menu: opened from its own name above it, it does not say that name again. */
 export function projectMenuSheet({ here, slug, title, tone, open, settingsKeys }: { here: boolean; slug: string; title: string; tone: string; open: number | string; settingsKeys: string }, on: ProjectMenuEvents): SheetParts {
   const row = (key: string, icon: IconName, label: string, run: () => void, k = '') => (
-    <button key={key} onClick={run} className="flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800">
+    <button key={key} onClick={run} className="flex h-12 w-full items-center gap-3 rounded-lg px-2.5 text-left text-[15px] hover:bg-zinc-100 lg:h-9 lg:text-sm dark:hover:bg-zinc-800">
       <Icon n={icon} c="size-[18px] text-zinc-500 dark:text-zinc-400" />
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {k ? <kbd className={`hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold ring-1 ring-zinc-300 lg:grid dark:ring-zinc-600 ${MUTED}`}>{k}</kbd> : null}
@@ -114,9 +114,25 @@ export function projectMenuSheet({ here, slug, title, tone, open, settingsKeys }
         {row('settings', 'gear', 'Project settings', on.settings, here ? settingsKeys : '')}
         {row('rename', 'pencil', 'Rename…', on.rename)}
         <div className={MENU_SEP} />
-        <button key="remove" onClick={on.remove} className={`flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-red-50 dark:hover:bg-red-400/10 ${DANGER}`}>
+        <button key="remove" onClick={on.remove} className={`flex h-12 w-full items-center gap-3 rounded-lg px-2.5 text-left text-[15px] hover:bg-red-50 lg:h-9 lg:text-sm dark:hover:bg-red-400/10 ${DANGER}`}>
           <Icon n="trash" c="size-[18px]" />
           <span className="min-w-0 flex-1 truncate">Delete</span>
+        </button>
+      </div>
+    ),
+  }
+}
+
+/** A deleted project's menu (the phone's Settings › Projects): Delete forever, asked again. */
+export function goneProjectMenuSheet({ title, asking }: { title: string; asking: boolean }, onPurge: () => void): SheetParts {
+  return {
+    menu: true,
+    head: <span className="block truncate text-sm font-semibold text-zinc-500 dark:text-zinc-400">{title}</span>,
+    body: (
+      <div className="-mx-1 flex flex-col">
+        <button onClick={onPurge} className={`flex h-12 w-full items-center gap-3 rounded-lg px-2.5 text-left text-[15px] hover:bg-red-50 dark:hover:bg-red-400/10 ${DANGER}`}>
+          <Icon n="trash" c="size-[18px]" />
+          <span className="min-w-0 flex-1 truncate">{asking ? "Tap again: it can't be undone" : 'Delete forever'}</span>
         </button>
       </div>
     ),

@@ -13,8 +13,6 @@ import type { GoneRow } from '../../model/goneRows'
 import { NameField, type ProjectsEvents, type ProjectsFacts } from './Sections'
 import { PH_GROUP, PhLabel, Ruled } from './SettingsParts'
 
-const PILL = 'flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-zinc-100 px-3.5 text-sm font-medium dark:bg-zinc-800'
-
 export function PhoneProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }) {
   const [rename, setRename] = useState('')
   if (!f.live) return <Skeleton shape="tile" cls="px-2 py-3" />
@@ -22,8 +20,7 @@ export function PhoneProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEve
     <button
       onClick={() => on.menu(key)}
       aria-label={`More for ${title}`}
-      aria-expanded={f.menu === key}
-      className={`grid size-11 shrink-0 place-items-center rounded-full aria-expanded:bg-zinc-100 aria-expanded:text-zinc-700 dark:aria-expanded:bg-zinc-800 dark:aria-expanded:text-zinc-200 ${MUTED}`}
+      className={`grid size-11 shrink-0 place-items-center rounded-full data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-800 ${MUTED}`}
     >
       <Icon n="more" c="size-5" />
     </button>
@@ -84,18 +81,6 @@ export function PhoneProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEve
                 </a>
                 {more(p.name, p.title)}
               </div>
-              {f.menu === p.name ? (
-                <div className="flex gap-2 pr-3.5 pb-3 pl-[3.75rem]">
-                  <button onClick={() => (setRename(p.title), on.rename(p.name))} className={PILL}>
-                    <Icon n="pencil" c="size-4" />
-                    Rename
-                  </button>
-                  <button onClick={() => on.remove(p.name)} className={`${PILL} text-red-600 dark:text-red-400`}>
-                    <Icon n="trash" c="size-4" />
-                    Delete
-                  </button>
-                </div>
-              ) : null}
             </div>
           ),
         )}
@@ -122,14 +107,6 @@ export function PhoneProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEve
                   </button>
                   {more('gone:' + d.name, d.title)}
                 </div>
-                {f.menu === 'gone:' + d.name ? (
-                  <div className="flex pr-3.5 pb-3 pl-[3.75rem]">
-                    <button onClick={() => on.purge(d.name)} className={`${PILL} text-red-600 dark:text-red-400`}>
-                      <Icon n="trash" c="size-4" />
-                      {f.purging.has(d.name) ? "Tap again: it can't be undone" : 'Delete forever'}
-                    </button>
-                  </div>
-                ) : null}
               </div>
             ))}
           </div>

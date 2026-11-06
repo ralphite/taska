@@ -12,7 +12,7 @@ import { NewProjectForm } from '../../ui/NewProjectForm'
 import { useSideProjects } from '../../app/projectLists'
 import { notSavedSheet } from './NotSaved'
 import { notSavedRows } from './notSavedRows'
-import { projectMenuSheet } from '../../ui/ProjectSheets'
+import { goneProjectMenuSheet, projectMenuSheet } from '../../ui/ProjectSheets'
 
 /** New project (D115 #7): its name and its tile as it will be; made, it opens. */
 export function NewProjectSheet() {
@@ -43,6 +43,18 @@ export function NewProjectSheet() {
 }
 
 export function ProjectMenuSheet({ req }: { req: Extract<SheetRequest, { kind: 'project-menu' }> }) {
+  return req.gone != null ? <GoneProjectMenu slug={req.slug} title={req.gone} /> : <LiveProjectMenu req={req} />
+}
+
+function GoneProjectMenu({ slug, title }: { slug: string; title: string }) {
+  const app = useServices('settings', 'sheets')
+  const stores = useStores('sheet')
+  const asking = useStoreValue(stores.sheet, (s) => !!s.asked['purge ' + slug])
+  // the first tap asks again (the menu stays); the second deletes it for good and the menu goes
+  return <SheetLayout {...goneProjectMenuSheet({ title, asking }, () => (void app.settings.purge(slug), asking && app.sheets.close()))} />
+}
+
+function LiveProjectMenu({ req }: { req: Extract<SheetRequest, { kind: 'project-menu' }> }) {
   const app = useServices('nav', 'settings', 'sheets')
   const stores = useStores('data')
   const route = useProjectRoute()

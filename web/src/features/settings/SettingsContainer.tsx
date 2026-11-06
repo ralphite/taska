@@ -66,7 +66,12 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
     remove: (slug) => void s.remove(slug, route.slug),
     restore: (slug) => void s.restore(slug),
     purge: (slug) => void s.purge(slug),
-    menu: (k) => s.menu(k),
+    // the phone's ⋯ opens a menu as its others do (r1095); the desktop's shows its actions in the row
+    menu: (k) => {
+      if (desk) return s.menu(k)
+      const gone = k.startsWith('gone:') ? k.slice(5) : null
+      app.sheets.open(gone != null ? { kind: 'project-menu', slug: gone, gone: projectsFacts.gone.find((d) => d.name === gone)?.title ?? gone } : { kind: 'project-menu', slug: k }, { focus: false })
+    },
     open: (slug) => app.nav.to(`/p/${encodeURIComponent(slug)}/`),
   }
 

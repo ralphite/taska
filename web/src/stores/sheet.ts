@@ -40,8 +40,8 @@ export type SheetRequest =
   | { kind: 'view-menu'; i: number }
   /** Taska wants its key */
   | { kind: 'sign-in' }
-  /** a project's menu (the sidebar's) */
-  | { kind: 'project-menu'; slug: string }
+  /** a project's menu (the sidebar's; on the phone, Settings › Projects' ⋯); `gone`: a deleted one's, by its name */
+  | { kind: 'project-menu'; slug: string; gone?: string }
   /** a new project named, opened once made (D115 #7) */
   | { kind: 'new-project' }
   /** what was not saved */
