@@ -2,8 +2,9 @@
 once with its recording; the words come into the note's one record (state.voices, B682) as they are worked out, and
 agents and the organizer get the input then.
 
-What transcription found (its words, what may be misheard, its times) is also kept next to the audio
-(<file>.tr.json), so a restart or a page asking again does not hear it again; the record is what everyone reads.
+What transcription found (its words, what may be misheard, its times, and every step that ran with its model, its
+words or error and its time: T697 r(D121)) is also kept next to the audio (<file>.tr.json), so a restart or a page
+asking again does not hear it again; the record is what everyone reads.
 Callers hold the project lock unless a method says otherwise.
 """
 
@@ -53,7 +54,7 @@ class VoiceProject(Protocol):
     def stored_rows(self) -> List[Dict[str, Any]]: ...
 
 
-Transcriber = Callable[[bytes, str, Optional[int], Optional[str], Callable[[Optional[str]], None], Callable[[str], None]], Transcript]
+Transcriber = Callable[[bytes, str, Optional[int], Optional[str], Callable[[str], None]], Transcript]
 
 
 def _now_iso() -> str:
@@ -62,8 +63,6 @@ def _now_iso() -> str:
 
 
 class VoiceJobs:
-    LATE = 180.0  # the strong model may go on this long past its cap; fuller words then follow
-
     def __init__(self, project: VoiceProject, transcriber: Optional[Transcriber] = None):
         self._p = project
         self._transcriber = transcriber
@@ -93,10 +92,8 @@ class VoiceJobs:
             pass
 
     def saved_job(self, fid: str) -> Optional[Job]:
-        """A note worked out before, as a finished job (fuller words still to come were lost with a restart)."""
+        """A note worked out before, as a finished job."""
         res = self.kept(fid)
-        if res:
-            res = {k: v for k, v in res.items() if k != "more"}
         return Job(t0=time.time(), done=True, tr=str(res.get("tr", "")), res=res) if res else None
 
     def job(self, fid: str) -> Optional[Job]:
@@ -146,8 +143,7 @@ class VoiceJobs:
         try:
             if self._transcriber is None:
                 raise RuntimeError("voice notes are not transcribed here")
-            res = self._transcriber(data, mime, scope, self._p.file_path(fid), lambda words: self._more(fid, job, words),
-                                    lambda words: self._first(fid, job, words)) or {}
+            res = self._transcriber(data, mime, scope, self._p.file_path(fid), lambda words: self._first(fid, job, words)) or {}
             self.keep(fid, res)
         except Exception as ex:  # a failed transcription is said on the page; Taska goes on
             err = str(ex) or "transcription failed"
@@ -170,21 +166,6 @@ class VoiceJobs:
                 return
             job.early = words
             self.record(fid, "wait", early=words)
-
-    def _more(self, fid: str, job: Job, words: Optional[str]) -> None:
-        """The strong model's words after its cap: fuller ones replace those given."""
-        with self._p.lock:
-            self._p.news.wait_for(lambda: job.done, timeout=self.LATE)
-            res = {k: v for k, v in job.res.items() if k != "more"}
-            if words:
-                res.update(tr=words, tr_by="pro", alt="", doubts=[], pro_error="",
-                           times=dict(res.get("times") or {}, late=round(time.time() - job.t0, 1)))
-                job.tr = words
-            job.res = res
-            if words:
-                self.record(fid, "done", tidied=words, said=words, late=self._late(fid))
-            self._p.news.bump()
-        self.keep(fid, res)
 
     # -- the note's one record (B682) ---------------------------------------------------
 
@@ -281,14 +262,16 @@ def _files_everywhere(st: Any) -> List[Tuple[str, Any, List[FileRef]]]:
 
 
 def answer(fid: str, job: Optional[Job], voice: Optional[Voice] = None) -> Dict[str, Any]:
-    """What a page gets for a voice note: its words once they are in, whose they are, what may be misheard. Words
-    you changed are the note's words (its record), with nothing left to check."""
+    """What a page gets for a voice note: its words once they are in, whose they are, what may be misheard, and every
+    step that worked them out (T697 r(D121)). Words you changed are the note's words (its record), with nothing left
+    to check."""
     res = job.res if job else {}
     if job and not job.done and job.early:  # the first words, better ones to follow (T687)
         return {"f": fid, "done": True, "tr": job.early, "tr_error": "", "tr_by": "asr", "more": True}
+    steps = {"steps": res["steps"]} if res.get("steps") else {}
     if voice and voice.fixed:
-        return {"f": fid, "done": True, "tr": voice.tidied, "tr_error": "", "doubts": [], "heard": voice.said}
+        return {"f": fid, "done": True, "tr": voice.tidied, "tr_error": "", "doubts": [], "heard": voice.said, **steps}
     return {"f": fid, "done": not job or job.done, "tr": job.tr if job else "",
             "tr_error": (job.err if job else "no such voice note") or "",
-            **{k: res[k] for k in ("tr_by", "doubts", "gated", "main_error", "asr_error", "pro_error", "times", "more", "heard")
+            **{k: res[k] for k in ("tr_by", "doubts", "gated", "main_error", "asr_error", "times", "heard", "steps")
                if k in res}}

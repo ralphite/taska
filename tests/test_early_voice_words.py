@@ -25,7 +25,7 @@ class EarlyVoiceWords(unittest.TestCase):
         self.p = Project(self.tmp.name, "demo")
         self.heard, self.go = threading.Event(), threading.Event()
 
-        def transcriber(data, mime, scope, path, later, first):
+        def transcriber(data, mime, scope, path, first):
             first(FIRST)
             self.heard.set()
             self.go.wait(10)

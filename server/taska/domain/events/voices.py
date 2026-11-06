@@ -13,8 +13,8 @@ from .base import Event, Reader, common, need, opt
 @dataclass
 class VoiceHeard(Event):
     """A step of working out a voice note's words: begun (wait), its first words meanwhile (wait with `early`), its
-    words (done; fuller ones later are another done), nobody heard (none), or failed. `late`: an agent or the
-    organizer had the input it came with before these words: they get it again. `src`: that input, when there is one."""
+    words (done), nobody heard (none), or failed. `late`: an agent or the organizer had the input it came with before
+    these words: they get it again. `src`: that input, when there is one."""
 
     KIND: ClassVar[str] = "voice"
     f: str = ""

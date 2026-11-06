@@ -158,9 +158,9 @@ def _words(req: Request, p: Project) -> Response:
     more = bool(req.query.get("more"))
     with p.lock:
         job = p.voice.jobs.get(fid)
-        if job:  # more=1: waits for the fuller words of a note whose strong model ran out of time, or the final words
-            j = job  # of one whose first words came early (T687)
-            p.news.wait_for(lambda: (j.done and not (more and j.res.get("more"))) or (not more and not j.done and bool(j.early)), timeout=45)
+        if job:  # its words, or its first words while it is worked out (T687); more=1: the final words of one whose
+            j = job  # first words came early
+            p.news.wait_for(lambda: j.done or (not more and bool(j.early)), timeout=45)
         voice = p.state.voices.get(fid)
     return as_json(voice_answer(fid, job, voice))
 

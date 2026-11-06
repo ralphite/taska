@@ -35,11 +35,6 @@ Chinese in Simplified characters, never Traditional.
 Technical terms stay in English, as spoken: code names, commands, file names, product names.
 Numbers, priorities and item codes the short way: 3, P1, B73.
 My own words, as I said them: no summary, no translation."""
-# T2S_SYSTEM: "You turn Traditional characters into Simplified ones. Change only the character forms, never a word,
-# punctuation, English or spaces." T2S_HINT: "The same text, Traditional characters made Simplified, nothing else changed".
-T2S_SYSTEM = ("\u4f60\u628a\u7e41\u4f53\u5b57\u8f6c\u6362\u6210\u7b80\u4f53\u5b57\u3002"
-              "\u53ea\u6539\u5b57\u5f62\uff0c\u4e0d\u6539\u4efb\u4f55\u8bcd\u8bed\u3001\u6807\u70b9\u3001\u82f1\u6587\u6216\u7a7a\u683c\u3002")
-T2S_HINT = "\u540c\u4e00\u6bb5\u6587\u5b57\uff0c\u7e41\u4f53\u5b57\u6362\u6210\u7b80\u4f53\u5b57\uff0c\u5176\u4f59\u4e00\u5b57\u4e0d\u6539"
 # Everyday English words: no help as spelling hints, and they push the project's own names down the list.
 VOICE_COMMON = frozenset("""a about above after again all also always an and another any are as ask at away back be
 because been before being best better between both but by can cannot could did do does doing done down each easy else
@@ -245,33 +240,12 @@ TIDY_SYSTEM = ("Below is a voice note as transcribed (Mandarin Chinese mixed wit
                "written text: drop filler words (\u55ef, \u554a, \u5443, \u5c31\u662f, \u8fd9\u4e2a used as fillers), stutters, "
                "repetitions and false starts (keep only what the speaker settled on), join broken sentences, fix word order "
                "and punctuation. Keep every meaning and detail; add nothing; do not summarize or translate; keep the speaker's "
-               "own words where you can; keep English words, names, links, numbers and item codes exactly as they are.")
+               "own words where you can; keep English words, names, links, numbers and item codes exactly as they are. "
+               "Write Chinese in Simplified characters (\u7b80\u4f53\u5b57) only, never Traditional (\u7e41\u9ad4\u5b57).")
 def tidy_ok(heard: str, out: str) -> bool:
     """Tidied words count only when they keep the words: about as long as what was heard, and every link still in."""
     links = re.findall(r"https?://[^\s\uff0c\u3002\u3001\uff09)]+", heard)
     return bool(out) and 0.5 * len(heard) <= len(out) <= 1.15 * len(heard) and all(u in out for u in links)
-
-
-def traditional(text: Optional[str]) -> List[str]:
-    """The Traditional characters in text: CJK ones that GB2312 (Simplified) cannot encode but Big5 can."""
-    out = []
-    for ch in text or "":
-        if "\u4e00" <= ch <= "\u9fff":
-            try:
-                ch.encode("gb2312")
-            except UnicodeEncodeError:
-                try:
-                    ch.encode("big5")
-                    out.append(ch)
-                except UnicodeEncodeError:
-                    pass
-    return out
-
-
-def fuller(tr: str, ptr: str) -> bool:
-    """The strong model's late words hold clearly more than those given: those hold under 90% of its words."""
-    a, b = len(voice_tokens(tr)), len(voice_tokens(ptr))
-    return b > a and a < 0.9 * b
 
 
 def echoed(tr: str, titles: List[str]) -> bool:
