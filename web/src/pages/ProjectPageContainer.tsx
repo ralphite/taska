@@ -238,7 +238,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
         <section data-part="items" className="flex min-h-0 flex-1 flex-col" hidden={!under || route.tab === 'inputs' || rulesTab}>
           <ItemListContainer route={route} />
         </section>
-        {rulesTab ? <RulesContainer route={route} place="" hidden={!under} /> : null}
+        {rulesTab ? <RulesContainer route={route} place="" hidden={!under} footRoom={footH} /> : null}
         <InputsContainer route={route} hidden={!under || route.tab !== 'inputs'} />
         {searching ? <SearchContainer route={route} hidden={!searchShown} /> : null}
         <div

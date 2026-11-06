@@ -16,10 +16,12 @@ export interface RulesFrame {
   desk: boolean
   place: string
   hidden?: boolean
+  /** the phone: the box's height, which a proposal's page stays above (its Comment is written there) */
+  footRoom?: number
 }
 
 /** A page of the rules: on the desktop the pane (Back to Rules first in its bar); on the phone over the whole screen. */
-function Screen({ f, head, acts, foot, split = false, onBack, children }: { f: RulesFrame; head: ReactNode; acts?: ReactNode; foot?: ReactNode; split?: boolean; onBack(): void; children: ReactNode }) {
+function Screen({ f, head, acts, foot, split = false, box = false, onBack, children }: { f: RulesFrame; head: ReactNode; acts?: ReactNode; foot?: ReactNode; split?: boolean; box?: boolean; onBack(): void; children: ReactNode }) {
   if (f.desk)
     return (
       <PaneFrame place={f.place} hidden={f.hidden} desk split={split} lead={<DocPaneNav to="Rules" onBack={onBack} />} head={head} acts={acts} onBack={onBack}>
@@ -27,9 +29,13 @@ function Screen({ f, head, acts, foot, split = false, onBack, children }: { f: R
       </PaneFrame>
     )
   return (
-    <Sheet open={!f.hidden} look={PHONE_DOC_LOOK} desk={false} onClose={onBack}>
-      <SheetLayout head={head} body={children} foot={foot} />
-    </Sheet>
+    <>
+      {/* the tab's room under the sheet: the box stays at the foot of the screen */}
+      <div hidden={f.hidden} className="min-h-0 flex-1" />
+      <Sheet open={!f.hidden} look={PHONE_DOC_LOOK} desk={false} footRoom={box ? f.footRoom : 0} onClose={onBack}>
+        <SheetLayout head={head} body={children} foot={foot} />
+      </Sheet>
+    </>
   )
 }
 
@@ -166,7 +172,7 @@ export function RulesVersion({ f, sub, v, chunks, marks, now, current, rows, wor
 /** A proposal opened: its card (Comment, Not now, Approve; decided, in place), what it changes against now marked. */
 export function RulesProposal({ f, p, chunks, world, onBack }: { f: RulesFrame; p: ProposalShown; chunks: readonly Chunk[]; world: InlineWorld; onBack(): void }) {
   return (
-    <Screen f={f} head={<RulesHead sub={`Proposal on v${p.f.p.on}`} />} onBack={onBack}>
+    <Screen f={f} head={<RulesHead sub={`Proposal on v${p.f.p.on}`} />} box onBack={onBack}>
       <div className={`mb-6 ${RULES_COLUMN}`}>
         <ProposalCard f={p.f} open desk={f.desk} on={p.on} />
       </div>

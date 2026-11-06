@@ -61,7 +61,7 @@ def versions(state: ProjectState, d: Doc) -> List[Version]:
             x = Version(v=len(out) + 1, by=e.by, t0=e.t, t=e.t, md=e.md, seqs=[e.seq], restored=e.restored, p=e.p,
                         ses=e.ses)
             out.append(x)
-        if e.why:
+        if e.why and e.why not in x.whys:  # the same words twice are one why
             x.whys.insert(0, e.why)
         if e.src and e.src not in x.srcs:
             x.srcs.append(e.src)

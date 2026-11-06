@@ -128,7 +128,8 @@ class AgentActivity:
             if changed:
                 vs = versions.versions(state, d)
                 whys = [e.why for e in reversed(new) if e.why]
-                out.append(f"the rules changed to v{vs[-1].v} by {render.who_wrote(new[-1].by)}"
+                who = " and ".join(dict.fromkeys(render.who_wrote(e.by) for e in new))
+                out.append(f"the rules changed to v{vs[-1].v} by {who}"
                            + (f": {'; '.join(whys)}" if whys else "") + ". Apply them from now on; what changed:")
                 out += ["  " + x for x in changed]
         for e in state.events[mark:]:

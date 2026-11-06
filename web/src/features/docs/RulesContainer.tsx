@@ -17,7 +17,7 @@ import { DocEdit } from './DocEdit'
 import { DocView } from './DocView'
 import { RulesEditing, RulesHistory, RulesProposal, RulesReading, RulesVersion, type ProposalShown, type RulesFrame } from './RulesScreens'
 
-export function RulesContainer({ route, place, hidden }: { route: ProjectRoute; place: string; hidden?: boolean }) {
+export function RulesContainer({ route, place, hidden, footRoom = 0 }: { route: ProjectRoute; place: string; hidden?: boolean; footRoom?: number }) {
   const app = useServices('rules', 'docs')
   const stores = useStores('docView')
   const desk = useLayout() === 'desk'
@@ -33,7 +33,7 @@ export function RulesContainer({ route, place, hidden }: { route: ProjectRoute; 
     if (dn != null) stores.docView.getState().show(dn)
   }, [stores, dn])
   if (!m) return null
-  const f: RulesFrame = { desk, place, hidden }
+  const f: RulesFrame = { desk, place, hidden, footRoom }
   const now = m.at
   const go = (v: RulesView, push = true) => app.rules.go(v, push)
   const back = () => go(view.kind === 'version' && !desk ? { kind: 'history' } : { kind: 'read' }, false)
