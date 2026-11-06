@@ -184,7 +184,17 @@ export function createRouteStore(history: History): RouteStore {
     read: () => {
       const mine = ownBack > 0
       if (mine) ownBack--
+      const was = get()
       set({ ...now(), fromBrowser: !mine })
+      // a sheet closed (its button, or Back) after its filters changed the list: the list stays as set, not as it was
+      // under the sheet (the phone's Filters, "Show N items")
+      const here = get()
+      const wasAt = placeOf(was.url)
+      const hereAt = placeOf(here.url)
+      if (was.layers.includes('sheet') && !here.layers.includes('sheet') && wasAt[0] === hereAt[0] && wasAt[1] !== hereAt[1]) {
+        history.replace(was.url, history.state())
+        set({ ...now(), fromBrowser: !mine })
+      }
       const run = after
       after = null
       run?.()

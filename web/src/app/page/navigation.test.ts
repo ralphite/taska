@@ -61,3 +61,18 @@ describe('going to an input (r1092, T689 #2)', () => {
     expect(lit).toEqual([['r4', true]])
   })
 })
+
+describe("the phone's Filters sheet", () => {
+  // QA of T689 #2 found it: "Show 2 items" closed the sheet and the list went back to all 19
+  test('a filter set while the sheet is open stays once it closes, by its button or by Back', () => {
+    for (const close of ['button', 'back'] as const) {
+      const { route, nav } = page('/p/shop/', false)
+      route.getState().openLayer('sheet')
+      nav.setList({ type: 'bug' })
+      if (close === 'button') route.getState().shutLayer('sheet')
+      else route.getState().backBy(1)
+      route.getState().read() // the browser says the history moved
+      expect([close, route.getState().url, route.getState().layers]).toEqual([close, '/p/shop/?type=bug', []])
+    }
+  })
+})
