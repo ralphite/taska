@@ -195,24 +195,26 @@ export function Sidebar(props: SidebarProps) {
           </span>
           <span className="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span>
         </a>
-        {!phone ? (
+        <div className="ml-auto flex items-center gap-0.5">
+          {!phone ? (
+            <button
+              onClick={on.search}
+              title={`Search · ${keys.search}`}
+              aria-label="Search"
+              className="hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 hover:text-zinc-800 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            >
+              <Icon n="search" c="size-[18px]" />
+            </button>
+          ) : null}
           <button
-            onClick={on.search}
-            title={`Search · ${keys.search}`}
-            aria-label="Search"
+            onClick={on.hide}
+            title={`Hide sidebar · ${keys.sidebar}`}
+            aria-label="Hide sidebar"
             className="hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 hover:text-zinc-800 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
           >
-            <Icon n="search" c="size-[18px]" />
+            <Icon n="panel" c="size-[18px]" />
           </button>
-        ) : null}
-        <button
-          onClick={on.hide}
-          title={`Hide sidebar · ${keys.sidebar}`}
-          aria-label="Hide sidebar"
-          className="ml-auto hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800"
-        >
-          <Icon n="panel" c="size-[18px]" />
-        </button>
+        </div>
       </div>
       <div className="group/ni relative mx-2.5 mb-3 hidden shrink-0 lg:block">
         <button
