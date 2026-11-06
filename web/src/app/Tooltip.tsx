@@ -2,11 +2,13 @@
 // label): after half a second under a fine pointer, at once when you move from one to the next, beside the sidebar's
 // buttons, under the heads' buttons, above the rest. A key at the end of the words ("Done · D") shows as a key cap. A
 // code in some words (data-ref) shows a card about what it names instead; a voice note's play button (data-heard) shows
-// its original words: word for word, and tidied (what agents get) when they differ (B640). It shows and hides at
-// once, where it belongs: no fade, no movement (B665).
+// its original words: word for word, and tidied (what agents get) when they differ (B640), then the steps that worked
+// them out (T697). It shows and hides at once, where it belongs: no fade, no movement (B665).
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { RefCard } from '../model/refCard'
+import type { VoiceStep } from '../model/types'
+import { VoiceSteps } from '../ui/Files'
 
 const TARGET = '[data-ref], [data-heard], [data-tip], [title], button[aria-label], a[aria-label]'
 
@@ -15,8 +17,8 @@ interface Shown {
   text: string
   key: string
   card: RefCard | null
-  /** a voice note's words: as said, and tidied */
-  said: { heard: string; tidied: string } | null
+  /** a voice note's words: as said, and tidied, and the steps that worked them out once they are in */
+  said: { heard: string; tidied: string; steps?: VoiceStep[] } | null
 }
 
 /** The tip's words: the element's title becomes its data-tip, so the browser's own tooltip never starts. An element
@@ -37,33 +39,46 @@ function split(text: string): { text: string; key: string } {
   return { text: parts.join(' · '), key }
 }
 
-/** A voice note's words: word for word, then tidied (what the organizer and agents get), as its sheet shows them on
- * the phone (F568). */
-function SaidWords({ heard, tidied }: { heard: string; tidied: string }) {
+/** A voice note's words: word for word, then tidied (what the organizer and agents get), then its steps, as its sheet
+ * shows them on the phone (F568, T697). */
+function SaidWords({ heard, tidied, steps = [] }: { heard: string; tidied: string; steps?: VoiceStep[] }) {
   const part = (label: string, text: string) => (
     <div>
       <div className="text-[11px] font-medium opacity-70">{label}</div>
       <p className="mt-0.5 break-words whitespace-pre-wrap">{text}</p>
     </div>
   )
-  if (heard && tidied && heard !== tidied)
-    return (
-      <span className="flex flex-col gap-3">
-        {part('Word for word', heard)}
-        {part('Tidied · what agents get', tidied)}
-      </span>
-    )
-  return <span>{part('Not tidied: words as said', heard || tidied || 'No words heard')}</span>
+  return (
+    <span className="flex flex-col gap-3">
+      {heard && tidied && heard !== tidied ? (
+        <>
+          {part('Word for word', heard)}
+          {part('Tidied · what agents get', tidied)}
+        </>
+      ) : (
+        part('Not tidied: words as said', heard || tidied || 'No words heard')
+      )}
+      {steps.length ? (
+        <div className="border-t border-current/20 pt-2.5">
+          <div className="mb-1 text-[11px] font-medium opacity-70">Steps</div>
+          <VoiceSteps steps={steps} tip />
+        </div>
+      ) : null}
+    </span>
+  )
 }
 
-/** `card`: what a code names, as its card (read when it shows). */
-export function Tooltip({ card }: { card(ref: string): RefCard | null }) {
+/** `card`: what a code names, as its card (read when it shows); `steps`: the steps that worked out a voice note's
+ * words, by its file (asked when its tip shows). */
+export function Tooltip({ card, steps }: { card(ref: string): RefCard | null; steps?(f: string): Promise<VoiceStep[]> }) {
   const [shown, setShown] = useState<Shown | null>(null)
   const tip = useRef<HTMLDivElement>(null)
   const arrow = useRef<HTMLSpanElement>(null)
   const told = useRef(card)
+  const stepsOf = useRef(steps)
   useEffect(() => {
     told.current = card
+    stepsOf.current = steps
   })
   useEffect(() => {
     const fine = matchMedia('(hover: hover) and (pointer: fine)')
@@ -79,6 +94,9 @@ export function Tooltip({ card }: { card(ref: string): RefCard | null }) {
       current = el
       el.setAttribute('aria-describedby', 'tip')
       setShown({ el, ...split(words), card: c, said })
+      const f = el.dataset.voice
+      if (said && f && stepsOf.current)
+        void stepsOf.current(f).then((got) => got.length && setShown((s) => (s?.el === el && s.said ? { ...s, said: { ...s.said, steps: got } } : s)))
     }
     const hide = () => {
       clearTimeout(timer)

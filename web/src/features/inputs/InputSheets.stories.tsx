@@ -3,10 +3,11 @@
 // stories/OtherMenus.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
-import { input, T } from '../../stories/fixtures'
+import { input, steps, T } from '../../stories/fixtures'
 import { opened } from '../../stories/menuFixtures'
 import { talkEnv } from '../../stories/itemFixtures'
 import { modelOf } from '../../stories/fixtures'
+import type { VoiceStep } from '../../model/types'
 import { asSaidSheet, historySheet } from './InputSheets'
 
 export default { title: 'Components/Around the page/Menus and sheets/Sheets/An input: its words and history' } satisfies Meta
@@ -22,10 +23,16 @@ const r = input({
   ],
 })
 
-/** Before its words were tidied: as the speech model heard them. Only the phone has this sheet (the desktop shows the
- * words under the pointer, B640). */
-const sheetAt = (heard: string, tr: string, height = 360) => () => <Frames height={height} desk={false} phoneWidth={393}>{() => opened(asSaidSheet(heard, tr), false)}</Frames>
-export const AsSaid: Story = { name: 'Original words: word for word and tidied', render: sheetAt('Keep the filter, um, in the export, and, uh, the sort. The sort too.', 'Keep the filter and the sort in the export.', 440) }
+/** Before its words were tidied: as the models heard them, then every step that worked them out (T697: its model,
+ * its time, its words; a check on those chosen). Only the phone has this sheet (the desktop shows the same under the
+ * pointer, B640: Floating › Tip › On a voice note). */
+const sheetAt = (heard: string, tr: string, height = 360, s: VoiceStep[] = []) => () => <Frames height={height} desk={false} phoneWidth={393}>{() => opened(asSaidSheet(heard, tr, s), false)}</Frames>
+const HEARD = 'Keep the filter, um, in the export, and, uh, the sort. The sort too.'
+const TIDIED = 'Keep the filter and the sort in the export.'
+const ASR = 'keep the filter um in the export and uh the salt the salt too'
+export const AsSaid: Story = { name: 'Original words: word for word, tidied and each step', render: sheetAt(HEARD, TIDIED, 760, steps(HEARD, TIDIED, ASR)) }
+/** the strong model ran out of time: its error is kept, and the speech model's words were chosen */
+export const AsSaidStepFailed: Story = { name: 'Original words: a step that failed', render: sheetAt(ASR, TIDIED, 760, steps(HEARD, TIDIED, ASR, true)) }
 export const AsSaidNothingTidied: Story = { name: 'Original words: nothing tidied', render: sheetAt('', 'Keep the filter in the export.') }
 /** Each version, the latest first, with when and how it changed. */
 export const InputHistory: Story = { name: 'What you said: history', render: () => <Frames height={520} deskWidth={900} phoneWidth={393}>{(layout) => opened(historySheet(r, Date.parse(T), talkEnv(modelOf([], [r]), false).world), layout === 'desk')}</Frames> }

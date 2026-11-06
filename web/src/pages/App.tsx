@@ -56,7 +56,7 @@ export function App() {
           <SheetContainer />
           {route.page === 'project' ? <SelectionBarContainer route={route} /> : null}
           <ViewerContainer />
-          <Tooltip card={(ref) => (route.page === 'project' ? cardOf(app, route.slug, ref) : null)} />
+          <Tooltip card={(ref) => (route.page === 'project' ? cardOf(app, route.slug, ref) : null)} steps={(f) => (route.page === 'project' ? app.media.steps(route.slug, f) : Promise.resolve([]))} />
         </div>
       </PanesProvider>
     </LayoutProvider>

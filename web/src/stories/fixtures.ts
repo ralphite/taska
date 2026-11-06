@@ -4,7 +4,7 @@ import { fn } from 'storybook/test'
 import { Diagrams } from '../app/page/diagrams'
 import type { RowEvents, RowFacts, RowLook } from '../features/list/ListRows'
 import { commentWithVoices, inputWithVoices, itemWithVoices, project, type ProjectModel } from '../model/project'
-import type { Comment, Doc, Input, Item, Message, ProjectFacts, Voice } from '../model/types'
+import type { Comment, Doc, Input, Item, Message, ProjectFacts, Voice, VoiceStep } from '../model/types'
 
 export const T = '2026-10-23T14:30:00-07:00'
 
@@ -41,6 +41,17 @@ export function message(f: Partial<Message> & { id: number }): Message {
 
 /** A voice note's words as Taska keeps them: its one record (B682). A story gives a note words only this way. */
 export const record = (f: string, tidied: string, said = tidied, state: Voice['state'] = tidied ? 'done' : 'none'): Voice => ({ f, state, said, tidied })
+
+/** The steps that worked out a note's words, as the server keeps them (T697): the strong and the speech model at
+ * once, the strong one's words chosen, then tidied; `failed`: the strong model ran out of time, the speech model's
+ * words were chosen. */
+export const steps = (said: string, tidied: string, asr: string, failed = false): VoiceStep[] => [
+  failed
+    ? { step: 'pro', model: 'gemini-3.1-pro-preview', error: 'the strong model timed out after 10 s', secs: 10 }
+    : { step: 'pro', model: 'gemini-3.1-pro-preview', text: said, secs: 3.8, chosen: true },
+  { step: 'asr', model: 'gemini-3.5-transcribe', text: asr, secs: 2.1, ...(failed ? { chosen: true } : {}) },
+  { step: 'tidy', model: 'gemini-3.5-flash', text: tidied, secs: 1.7, chosen: true },
+]
 
 /** A note whose words are still being worked out (`early`: its first words meanwhile). */
 export const waiting = (f: string, early = ''): Voice => ({ f, state: 'wait', said: '', tidied: '', ...(early ? { early } : {}) })

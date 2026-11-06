@@ -103,5 +103,5 @@ export function InputRescopeSheet({ req }: Req<'input-rescope'>) {
 }
 
 export function AsSaidSheet({ req }: Req<'as-said'>) {
-  return <SheetLayout {...asSaidSheet(req.heard, req.tr)} />
+  return <SheetLayout {...asSaidSheet(req.heard, req.tr, req.steps)} />
 }

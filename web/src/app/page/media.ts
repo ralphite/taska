@@ -2,7 +2,7 @@
 // the viewer, one at a time with the others of the same message, fit to the screen or at 100%; Back closes it. A
 // voice note's original words open in their sheet.
 
-import type { Voice } from '../../model/types'
+import type { Voice, VoiceStep } from '../../model/types'
 import type { TaskaApi } from '../../api/taska'
 import type { MediaStore } from '../../stores/media'
 import type { RouteStore } from '../../stores/route'
@@ -23,6 +23,7 @@ export interface MediaDeps {
 export class Media {
   private readonly d: MediaDeps
   private el: HTMLAudioElement | null = null
+  private readonly stepsOf = new Map<string, Promise<VoiceStep[]>>()
   constructor(d: MediaDeps) {
     this.d = d
   }
@@ -83,11 +84,32 @@ export class Media {
   }
 
   /** A voice note's words in their sheet on the phone, word for word and tidied (F568; the desktop shows them under
-   * the pointer, B640): the note's record; asked for only when it has no words yet. Never worked out again. */
+   * the pointer, B640): the note's record, at once; then the steps that worked them out (T697), and its words from
+   * there when the record has none yet. Never worked out again. */
   words(slug: string, f: string): void {
-    const show = (w: { heard?: string; tr?: string }) => this.d.sheets.open({ kind: 'as-said', heard: w.heard || '', tr: w.tr || '' })
     const kept = this.d.kept(slug, f)
-    if (kept?.tidied) return show({ heard: kept.said, tr: kept.tidied })
-    void this.d.api.words(slug, f).then(show, () => show({}))
+    const show = (heard: string, tr: string, steps?: VoiceStep[]) => this.d.sheets.open({ kind: 'as-said', f, heard, tr, steps })
+    if (kept?.tidied) show(kept.said, kept.tidied)
+    void this.d.api.words(slug, f).then(
+      (w) => {
+        if (kept?.tidied && this.d.sheets.shown('as-said')?.f !== f) return // closed meanwhile
+        show(kept?.tidied ? kept.said : w.heard || '', kept?.tidied || w.tr || '', w.steps)
+      },
+      () => (kept?.tidied ? undefined : show('', '')),
+    )
+  }
+
+  /** The steps that worked out a voice note's words (T697), for the desktop's tip; asked once per note. */
+  steps(slug: string, f: string): Promise<VoiceStep[]> {
+    const key = slug + '/' + f
+    let got = this.stepsOf.get(key)
+    if (!got) {
+      got = this.d.api.words(slug, f).then(
+        (w) => w.steps || [],
+        () => (this.stepsOf.delete(key), []),
+      )
+      this.stepsOf.set(key, got)
+    }
+    return got
   }
 }

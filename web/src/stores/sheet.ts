@@ -3,6 +3,7 @@
 // that kind's own fields); its place, how it shows. And the asks that a second click within 3 seconds confirms ("Delete F12?"), never a browser dialog.
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
+import type { VoiceStep } from '../model/types'
 
 export type Arm = 's' | 'p' | 't'
 
@@ -27,8 +28,8 @@ export type SheetRequest =
   /** who works on the project, how to connect one more, what they read */
   | { kind: 'agents' }
   /** how a connected agent gets work without spending tokens (F613) */
-  /** a voice note's words as said */
-  | { kind: 'as-said'; heard: string; tr: string }
+  /** a voice note's words as said, and the steps that worked them out (T697) */
+  | { kind: 'as-said'; f: string; heard: string; tr: string; steps?: VoiceStep[] }
   | { kind: 'filters' }
   | { kind: 'keys' }
   | { kind: 'switch-project' }

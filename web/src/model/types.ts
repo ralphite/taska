@@ -187,6 +187,20 @@ export interface WordsAnswer {
   doubts?: Doubt[]
   more?: boolean
   heard?: string
+  /** every step that worked out its words (T697) */
+  steps?: VoiceStep[]
+}
+
+/** One step of working out a voice note's words (T697): which one (pro: the strong model, asr: the speech model,
+ * pro_loud / asr_loud: theirs once more, louder, pieces: piece by piece, tidy), its model, its words or its error,
+ * how long it took (s), and whether its words were chosen. */
+export interface VoiceStep {
+  step: string
+  model: string
+  text?: string
+  error?: string
+  secs?: number
+  chosen?: boolean
 }
 
 /** A voice spelling: words heard wrong and the right ones, or a word to hear (no `wrong`). */

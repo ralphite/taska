@@ -4,8 +4,9 @@
 
 import type { ReactNode } from 'react'
 import { when } from '../../model/time'
-import type { FileRef, Input } from '../../model/types'
+import type { FileRef, Input, VoiceStep } from '../../model/types'
 import { inputCode } from '../../model/words'
+import { VoiceSteps } from '../../ui/Files'
 import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import type { SheetParts } from '../../ui/Sheet'
@@ -103,8 +104,9 @@ export function historySheet(r: Input, now: number, world: InlineWorld): SheetPa
   }
 }
 
-/** A voice note's words: word for word, then tidied (what the organizer and agents get), F568. */
-export function asSaidSheet(heard: string, tr: string): SheetParts {
+/** A voice note's words: word for word, then tidied (what the organizer and agents get), F568; then every step that
+ * worked them out (T697). */
+export function asSaidSheet(heard: string, tr: string, steps: VoiceStep[] = []): SheetParts {
   const both = !!heard && !!tr && heard !== tr
   const part = (label: string, text: string) => (
     <section className="mb-5">
@@ -115,15 +117,25 @@ export function asSaidSheet(heard: string, tr: string): SheetParts {
   return {
     menu: true,
     title: 'Original words',
-    body: both ? (
+    body: (
       <>
-        {part('Word for word', heard)}
-        {part('Tidied · what agents get', tr)}
-      </>
-    ) : (
-      <>
-        <p className="text-[15px] break-words whitespace-pre-wrap">{heard || tr || 'No words heard'}</p>
-        {heard || tr ? <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">Not tidied: words as said</p> : null}
+        {both ? (
+          <>
+            {part('Word for word', heard)}
+            {part('Tidied · what agents get', tr)}
+          </>
+        ) : (
+          <div className="mb-5">
+            <p className="text-[15px] break-words whitespace-pre-wrap">{heard || tr || 'No words heard'}</p>
+            {heard || tr ? <p className={`mt-3 text-sm ${MUTED}`}>Not tidied: words as said</p> : null}
+          </div>
+        )}
+        {steps.length ? (
+          <section className="border-t border-zinc-100 pt-4 text-sm dark:border-zinc-800">
+            <h3 className="mb-2 text-sm font-semibold">Steps</h3>
+            <VoiceSteps steps={steps} />
+          </section>
+        ) : null}
       </>
     ),
   }

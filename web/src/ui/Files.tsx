@@ -2,7 +2,7 @@
 // other file a link with its name. Props only.
 
 import type { ReactNode } from 'react'
-import type { FileRef } from '../model/types'
+import type { FileRef, VoiceStep } from '../model/types'
 import { Pic } from './bits'
 import { Icon } from './Icon'
 import { HIT, MUTED } from './tones'
@@ -17,6 +17,35 @@ export const voiceLength = (f: FileRef) => {
   return m ? (60 * +m[1] + +m[2]) * 1000 : null
 }
 
+
+const STEP_NAME: Record<string, string> = {
+  pro: 'Strong model',
+  asr: 'Speech model',
+  pro_loud: 'Strong model, louder',
+  asr_loud: 'Speech model, louder',
+  pieces: 'Piece by piece',
+  tidy: 'Tidied',
+}
+
+/** Every step that worked out a voice note's words (T697): its name and model, its time, its words or its error; a
+ * check on the words chosen. The same in the phone's sheet and the desktop's tip (`tip`: on the tip's dark ground). */
+export function VoiceSteps({ steps, tip = false }: { steps: VoiceStep[]; tip?: boolean }) {
+  return (
+    <ol className="flex flex-col gap-3">
+      {steps.map((s, i) => (
+        <li key={i} className="min-w-0">
+          <div className="flex items-center gap-1.5 text-[12px] leading-5">
+            {s.chosen ? <Icon n="check" c={`size-3.5 ${tip ? 'text-emerald-400 dark:text-emerald-600' : 'text-emerald-600 dark:text-emerald-400'}`} sw="2.5" /> : null}
+            <span className="shrink-0 font-semibold">{STEP_NAME[s.step] || s.step}</span>
+            <span className="min-w-0 truncate opacity-70">{s.model}</span>
+            {s.secs !== undefined ? <span className="ml-auto shrink-0 tabular-nums opacity-70">{s.secs} s</span> : null}
+          </div>
+          <p className={`mt-0.5 break-words whitespace-pre-wrap ${s.error ? 'italic opacity-70' : ''}`}>{s.error || s.text || 'No words'}</p>
+        </li>
+      ))}
+    </ol>
+  )
+}
 
 export interface PlayState {
   playing: boolean
@@ -36,9 +65,10 @@ function VoiceTime({ total, play, quiet = MUTED }: { total: number | null; play:
 }
 
 /** On the desktop, pointing at a voice note's play button shows its original words in the page's tooltip (they are
- * here already: nothing to click, B640). Its word-for-word words and the tidied ones go to the tooltip as data; the
- * tip goes under the note, clear of the words written above it (above only when there is no room below). */
-const saidTip = (f: FileRef, tidy: boolean) => (tidy && f.voice ? { 'data-heard': f.voice.said, 'data-tidied': f.voice.tidied, 'data-tip-side': 'bottom' } : {})
+ * here already: nothing to click, B640). Its word-for-word words and the tidied ones go to the tooltip as data, and
+ * its file, for the steps that worked them out (T697); the tip goes under the note, clear of the words written above
+ * it (above only when there is no room below). */
+const saidTip = (f: FileRef, tidy: boolean) => (tidy && f.voice ? { 'data-heard': f.voice.said, 'data-tidied': f.voice.tidied, 'data-voice': f.f, 'data-tip-side': 'bottom' } : {})
 
 export function VoiceChip({ f, src, play, tidy, onPlay, onWords }: { f: FileRef; src: string; play: PlayState; tidy: boolean; onPlay(src: string): void; onWords(f: string): void }) {
   const total = voiceLength(f)
