@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
-import { useProjectModel } from '../../app/hooks'
+import { useItemWorld, useProjectModel } from '../../app/hooks'
 import { activityRows, logTarget } from '../../model/activity'
 import { codeOf, type ProjectModel } from '../../model/project'
 import { listedDocs } from '../../model/docs'
@@ -92,6 +92,7 @@ export function DeletedPickContainer({ slug }: { slug: string }) {
   const m = useProjectModel(slug)
   const picked = useStoreValue(stores.ui, (s) => s.sideSel)
   const restore = useRestore(slug, m)
+  const world = useItemWorld(m, slug)
   const x = m && picked ? goneRows(m).find((g) => g.key === picked) : undefined
-  return x ? <DeletedView x={x} onRestore={() => restore(x.key)} /> : null
+  return x ? <DeletedView x={x} world={world} onRestore={() => restore(x.key)} /> : null
 }

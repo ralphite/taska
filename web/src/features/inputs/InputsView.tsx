@@ -9,7 +9,7 @@ import { useLitRow } from './litRow'
 import type { FileRef } from '../../model/types'
 import { Empty } from '../../ui/bits'
 import { INPUT_LIST, InputRow, OutgoingRow as OutgoingLine, RecordingRow } from '../../ui/InputRow'
-import { Rich } from '../../ui/Markdown'
+import { inputWords } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
 import { useMarks } from '../../ui/marks'
 import { useRowSwipe, type RowSwipe } from '../../ui/rowSwipe'
@@ -73,7 +73,7 @@ export function InputCard({ x, words, world, files, on }: { x: InputFacts; words
       words={words}
       lit={!!x.lit}
       rowRef={litRef}
-      text={(cut) => <Rich text={cut ? r.text.replace(/\n{2,}/g, '\n') : r.text} world={world} onRef={on.ref} onPicture={on.picture} />}
+      text={(cut) => inputWords(world, on)(r.text, cut)}
       files={r.files.length ? files(r.files) : null}
       swipe={x.became.k === 'moved' ? null : { open: to?.code ?? null, move: !!x.movable, on: { move: on.moveInput, remove: on.remove } }}
       on={{ ...on, menu: (id) => on.menu(id) }}

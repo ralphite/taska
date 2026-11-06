@@ -431,9 +431,12 @@ function Pending({ list, env, on }: { list: Outgoing[]; env: TalkEnv; on: TalkLi
       {list.map((q) => (
         <div key={q.q} className="flex flex-col items-end gap-1">
           {q.voices?.length ? (
-            <VoiceBubble cls={`${YOU_BUBBLE} break-words whitespace-pre-wrap`} files={q.voices} url={env.url} play={env.play} tidy={env.tidy} top={q.text || null} busy on={on} />
+            <VoiceBubble cls={YOU_BUBBLE} files={q.voices} url={env.url} play={env.play} tidy={env.tidy} top={q.text ? <Rich text={q.text} world={env.world} onRef={on.ref} onPicture={on.picture} /> : null} busy on={on} />
           ) : q.text ? (
-            <div className={`${YOU_BUBBLE} break-words whitespace-pre-wrap ${q.bad ? 'opacity-70' : ''}`}>{q.text}</div>
+            // on its way, its words as they will read once sent (Markdown, r1099)
+            <div className={`${YOU_BUBBLE} ${q.bad ? 'opacity-70' : ''}`}>
+              <Rich text={q.text} world={env.world} onRef={on.ref} onPicture={on.picture} />
+            </div>
           ) : null}
           {q.previews?.length ? (
             <div className={`flex max-w-full flex-wrap justify-end gap-2 ${q.bad ? 'opacity-70' : ''}`}>

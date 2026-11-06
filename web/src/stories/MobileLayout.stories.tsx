@@ -30,6 +30,7 @@ import { button, marked, row, type Tour } from './tour/tour'
 import { doc } from './docFixtures'
 import { T, input, message, modelOf } from './fixtures'
 import { itemFacts, noItemEvents, talkEnv, talkFacts } from './itemFixtures'
+import { inputWords } from '../ui/Markdown'
 import { PROJECT, listOf } from './listFixtures'
 
 export default { title: 'Prototype/New mobile layout', parameters: { layout: 'padded' } } satisfies Meta
@@ -317,7 +318,7 @@ function Phone({ mic }: { mic: boolean }) {
             <Scope item={false} onItem={() => go('comments')} onAll={() => {}} />
           </div>
         ) : null}
-        <SaidLately more={false} outgoing={[]} rows={said} files={() => null} on={noSaid} />
+        <SaidLately more={false} outgoing={[]} rows={said} files={() => null} words={inputWords(talkEnv(M, false).world)} on={noSaid} />
       </div>
     )
   } else if (place === 'projects') {

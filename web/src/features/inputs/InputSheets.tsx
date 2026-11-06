@@ -10,6 +10,8 @@ import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import type { SheetParts } from '../../ui/Sheet'
 import { DANGER, MENU_ROW, MENU_SEP, MUTED } from '../../ui/tones'
+import { Rich } from '../../ui/Markdown'
+import type { InlineWorld } from '../../ui/markdown/inline'
 
 export interface InputMenuEvents {
   send(): void
@@ -79,7 +81,8 @@ export function inputMenuSheet({ r, send, tidy, undo, move, history, scope, aski
 }
 
 /** An input's versions: as it is now, then each before it, the oldest last. */
-export function historySheet(r: Input, now: number): SheetParts {
+/** `world`: what its words' codes and pictures are (they read as Markdown, as text everywhere does, r1099) */
+export function historySheet(r: Input, now: number, world: InlineWorld): SheetParts {
   const h = r.history || []
   const versions = [{ text: r.text, t: r.updated || r.t, label: 'Current' }, ...h.map((x, i) => ({ ...x, t: i ? h[i - 1].t : r.t, label: i ? `Version ${i + 1}` : 'Original' })).reverse()]
   return {
@@ -92,7 +95,7 @@ export function historySheet(r: Input, now: number): SheetParts {
               {v.label}
               <span className={`ml-2 font-normal ${MUTED}`}>{when(v.t, now)}</span>
             </h3>
-            <p className="text-[15px] break-words whitespace-pre-wrap">{v.text}</p>
+            <Rich text={v.text} world={world} cls="text-[15px]" />
           </section>
         ))}
       </>

@@ -2,7 +2,7 @@
 // another item, and a voice note's words as said.
 
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
-import { useCloseSheetWhen, useProjectModel, useProjectRoute } from '../../app/hooks'
+import { useCloseSheetWhen, useItemWorld, useProjectModel, useProjectRoute } from '../../app/hooks'
 import { codeOf } from '../../model/project'
 import { inputCode } from '../../model/words'
 import type { SheetRequest } from '../../stores/sheet'
@@ -66,8 +66,9 @@ export function InputMenuSheet({ req }: Req<'input-menu'>) {
 }
 
 export function InputHistorySheet({ req }: Req<'input-history'>) {
-  const { m, r } = useSubject(req.id)
-  return m && r ? <SheetLayout {...historySheet(r, m.at)} /> : null
+  const { slug, m, r } = useSubject(req.id)
+  const world = useItemWorld(m, slug)
+  return m && r ? <SheetLayout {...historySheet(r, m.at, world)} /> : null
 }
 
 export function InputMoveSheet({ req }: Req<'input-move'>) {

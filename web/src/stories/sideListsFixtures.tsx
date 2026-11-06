@@ -8,6 +8,7 @@ import { LOG, shopWithHistory } from './settingsFixtures'
 import { goneRows } from '../model/goneRows'
 import { ActivityList, DeletedList, DeletedView, SideFrame, type ActivityRow, type Side } from '../features/side/SideLists'
 import type { GoneRow } from '../model/goneRows'
+import { talkEnv } from './itemFixtures'
 import { acts } from './acts'
 
 type Story = StoryObj
@@ -55,7 +56,7 @@ export const activity = (o: { rows?: ActivityRow[] | null; end?: boolean; picked
 function LiveDeleted({ list, picked: start }: { list: GoneRow[]; picked: string | null }) {
   const [picked, setPicked] = useState(start)
   const x = list.find((g) => g.key === picked)
-  return <Columns side="deleted" count={list.length} list={<DeletedList rows={list} picked={picked} on={{ show: setPicked, restore: sideActs.restore }} />} pane={x ? <DeletedView x={x} onRestore={() => sideActs.restore(x.key)} /> : null} />
+  return <Columns side="deleted" count={list.length} list={<DeletedList rows={list} picked={picked} on={{ show: setPicked, restore: sideActs.restore }} />} pane={x ? <DeletedView x={x} world={talkEnv(m, true).world} onRestore={() => sideActs.restore(x.key)} /> : null} />
 }
 export const deleted = (picked: string | null, list: GoneRow[] = gone): Story => ({
   render: () => <Frames phone={false} deskWidth={1100} height={560}>{() => <LiveDeleted list={list} picked={picked} />}</Frames>,

@@ -6,10 +6,11 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
 import { draftTarget, NEW_DRAFT } from '../../model/draftTarget'
 import { clock } from '../../model/time'
-import { useAway, useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
+import { useAway, useFiles, useItemWorld, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import type { DraftKey } from '../../model/draftTarget'
 import { fixRange, voiceStretches } from '../../model/doubts'
-import { codeOf } from '../../model/project'
+import { codeOf, findRef } from '../../model/project'
+import { inputWords } from '../../ui/Markdown'
 import { saidOutgoing, saidRows } from '../../model/saidLately'
 import { showsOnItsWay } from '../../model/outgoing'
 import { RecMeter } from '../../app/RecMeter'
@@ -35,7 +36,7 @@ export function useSaidView() {
 export type SaidView = ReturnType<typeof useSaidView>
 
 export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: ProjectRoute; boxKey: DraftKey; view: SaidView; draft: ReactNode }) {
-  const app = useServices('box', 'fields', 'inputActions', 'inputs', 'nav', 'sheets', 'voice')
+  const app = useServices('box', 'docs', 'fields', 'inputActions', 'inputs', 'nav', 'sheets', 'voice')
   const stores = useStores('box', 'recording', 'data', 'drafts', 'outbox')
   // a voice note being recorded into a new input here: its row comes first, with how long so far (B627)
   const recording = useStoreValue(stores.recording, (st) => (st.rec && st.rec.slug === route.slug && !st.rec.about && st.rec.key === NEW_DRAFT ? clock(st.rec.ms) : null))
@@ -61,6 +62,13 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
   const { upTo, opened } = view
   const said = useMemo(() => (m ? saidRows(m, { words: NO_WORDS, upTo, opened, drafts, mode, title: (s) => projects?.find((p) => p.name === s)?.title || s, adding: new Set(onItsWay.split(' ')) }) : null), [m, upTo, opened, drafts, mode, projects, onItsWay])
   const media = useFiles(route.slug)
+  const world = useItemWorld(m, route.slug)
+  // a code in its words opens what it names, as the Inputs tab's do
+  const openRef = (c: string) => {
+    const to = m ? findRef(m, c) : null
+    if (to?.kind === 'item' && m) app.nav.openItem(codeOf(m, to.n))
+    else if (to?.kind === 'doc') app.docs.open(to.d)
+  }
   if (!m || !said) return null
   const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent && showsOnItsWay(o))
   const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
@@ -74,6 +82,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
         more={said.all.length > said.rows.length}
         draft={draft}
         files={(f) => <FileChips files={f} url={url} play={media.play} tidy={media.tidy} on={media.on} />}
+        words={inputWords(world, { ref: openRef, picture: (f, all) => media.on.view(f, all) })}
         on={{
           goto: (n) => app.nav.openItem(codeOf(m, n)),
           more: view.toggle,

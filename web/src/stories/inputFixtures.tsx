@@ -15,6 +15,7 @@ import { RecBar } from '../ui/PlaceVoice'
 import { PROJECT_TONES } from '../ui/tones'
 import { PICTURE, T, input, item, modelOf } from './fixtures'
 import { talkEnv } from './itemFixtures'
+import { inputWords } from '../ui/Markdown'
 import type { ProjectModel } from '../model/project'
 import { act, acts } from './acts'
 import { useMedia, usePop } from './liveParts'
@@ -177,7 +178,9 @@ export function useInputs(m: ProjectModel, desk: boolean, s: Pick<Said, 'opened'
   }
   /** what is on its way, less what was cancelled */
   const going = (list: readonly Outgoing[] = []) => list.filter((o) => !cancelled.has(o.q))
-  return { opened, adding, chips, inputOn, saidOn, node, going }
+  // an input's words as the page draws them everywhere (Markdown, r1099)
+  const words = inputWords(talkEnv(m, desk).world, { picture: (f, all) => media.on.view(f, all) })
+  return { opened, adding, chips, inputOn, saidOn, node, going, words }
 }
 
 function rowsOf(s: Said, opened: ReadonlySet<string>) {
@@ -224,7 +227,7 @@ function LiveSaidRow({ r, s }: { r: Input; s: Said }) {
   const x = saidRows(m, { words: [], upTo: 1, opened: live.opened, drafts, mode: null, title }).rows[0]
   return (
     <div className="px-6 py-3">
-      <SaidRow x={x} files={r.files.length ? live.chips(r.files) : null} on={live.saidOn} />
+      <SaidRow x={x} files={r.files.length ? live.chips(r.files) : null} words={live.words} on={live.saidOn} />
       {live.node}
     </div>
   )
@@ -240,6 +243,7 @@ function LiveSaid({ s }: { s: Said }) {
   return (
     <div className="mx-auto mt-8 max-w-[42rem]">
       <SaidLately
+        words={live.words}
         rows={said.rows}
         outgoing={saidOutgoing(live.going(s.outbox), [], s.away ?? 0)}
         more={said.all.length > said.rows.length}

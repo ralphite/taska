@@ -278,3 +278,9 @@ export function Rich({ text, world, cls = '', choosing = null, done = null, onRe
     </RichFrame>
   )
 }
+
+/** An input's words as every list of inputs draws them, as text everywhere is (Markdown, r1099); `cut`: closed up,
+ * its blank lines gone. */
+export const inputWords =
+  (world: InlineWorld, on: { ref?(code: string): void; picture?(fid: string, all: string[]): void } = {}) =>
+  (text: string, cut: boolean) => <Rich text={cut ? text.replace(/\n{2,}/g, '\n') : text} world={world} onRef={on.ref} onPicture={on.picture} />

@@ -5,6 +5,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { input, T } from '../../stories/fixtures'
 import { opened } from '../../stories/menuFixtures'
+import { talkEnv } from '../../stories/itemFixtures'
+import { modelOf } from '../../stories/fixtures'
 import { asSaidSheet, historySheet } from './InputSheets'
 
 export default { title: 'Components/Around the page/Menus and sheets/Sheets/An input: its words and history' } satisfies Meta
@@ -26,6 +28,6 @@ const sheetAt = (heard: string, tr: string, height = 360) => () => <Frames heigh
 export const AsSaid: Story = { name: 'Original words: word for word and tidied', render: sheetAt('Keep the filter, um, in the export, and, uh, the sort. The sort too.', 'Keep the filter and the sort in the export.', 440) }
 export const AsSaidNothingTidied: Story = { name: 'Original words: nothing tidied', render: sheetAt('', 'Keep the filter in the export.') }
 /** Each version, the latest first, with when and how it changed. */
-export const InputHistory: Story = { name: 'What you said: history', render: () => <Frames height={520} deskWidth={900} phoneWidth={393}>{(layout) => opened(historySheet(r, Date.parse(T)), layout === 'desk')}</Frames> }
+export const InputHistory: Story = { name: 'What you said: history', render: () => <Frames height={520} deskWidth={900} phoneWidth={393}>{(layout) => opened(historySheet(r, Date.parse(T), talkEnv(modelOf([], [r]), false).world), layout === 'desk')}</Frames> }
 // ---- more states (T639)
 export const AsSaidNoWords: Story = { name: 'Original words: no words heard', render: sheetAt('', '') }

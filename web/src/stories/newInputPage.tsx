@@ -136,7 +136,7 @@ function DeskList() {
   const said = saidRows(M, { words: [], upTo: 30, opened: live.opened, drafts: DRAFTS, mode: null, title })
   return (
     <section aria-label="Latest inputs" className="mx-auto mt-8 block max-w-[42rem]">
-      <SaidLately adding={live.adding ? { id: live.adding.id, meter: <RecBar time={live.adding.clock} levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> } : null} rows={said.rows} outgoing={saidOutgoing(live.going(OUTBOX), [], 0)} more draft={draftCard} files={live.chips} on={live.saidOn} />
+      <SaidLately adding={live.adding ? { id: live.adding.id, meter: <RecBar time={live.adding.clock} levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> } : null} rows={said.rows} outgoing={saidOutgoing(live.going(OUTBOX), [], 0)} more draft={draftCard} files={live.chips} words={live.words} on={live.saidOn} />
       {live.node}
     </section>
   )

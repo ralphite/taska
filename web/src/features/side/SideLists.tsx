@@ -9,6 +9,8 @@ import { MUTED, PRIMARY } from '../../ui/tones'
 import { Empty, Skeleton } from '../../ui/bits'
 import { LogLine, LogMore, type LogEvents } from '../../ui/Log'
 import type { GoneRow } from '../../model/goneRows'
+import { Rich } from '../../ui/Markdown'
+import type { InlineWorld } from '../../ui/markdown/inline'
 
 export type Side = 'docs' | 'log' | 'deleted'
 const TITLE: Record<Side, string> = { docs: 'Documents', log: 'Activity', deleted: 'Deleted' }
@@ -158,7 +160,7 @@ export function DeletedList({ rows, picked, on }: { rows: GoneRow[]; picked: str
 }
 
 /** A deleted thing you clicked, beside the list: what it was, when it went, and Restore. */
-export function DeletedView({ x, onRestore }: { x: GoneRow; onRestore(): void }) {
+export function DeletedView({ x, world, onRestore }: { x: GoneRow; world: InlineWorld; onRestore(): void }) {
   return (
     <div className="mx-auto w-full max-w-[46rem] px-8 pt-8">
       <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
@@ -170,7 +172,8 @@ export function DeletedView({ x, onRestore }: { x: GoneRow; onRestore(): void })
           {x.title}
         </h1>
       ) : (
-        <p className="mt-2 text-[15px] leading-relaxed break-words whitespace-pre-line">{x.text}</p>
+        // its words as text reads everywhere (Markdown, r1099)
+        <Rich text={x.text} world={world} cls="mt-2 text-[15px]" />
       )}
       {x.kind === 'input' && x.with ? <p className="mt-3 text-[13px] text-zinc-500 dark:text-zinc-400">With {x.with}</p> : null}
       <button onClick={onRestore} className={`mt-6 ${PRIMARY}`}>

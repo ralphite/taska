@@ -35,51 +35,17 @@ export interface SaidEvents {
   loadMore(): void
 }
 
-/** Words with their web addresses as links (mono, blue), as the row draws them. */
-function Linked({ text }: { text: string }) {
-  return (
-    <>
-      {text.split(/(https?:\/\/[^\s]+)/).map((part, i) =>
-        i % 2 ? (
-          <a key={i} href={part} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} className="font-mono text-xs break-all text-blue-600 hover:underline dark:text-blue-400">
-            {part}
-          </a>
-        ) : (
-          part
-        ),
-      )}
-    </>
-  )
-}
-
-/** Its words: closed up when cut short; opened, its paragraphs a third of a line apart. */
-function Said({ text, cut }: { text: string; cut: boolean }) {
-  if (cut)
-    return (
-      <p className="break-words whitespace-pre-line">
-        <Linked text={text.replace(/\n{2,}/g, '\n')} />
-      </p>
-    )
-  return (
-    <>
-      {text.split(/\n{2,}/).map((para, i) => (
-        <p key={i} className={`break-words whitespace-pre-line ${i ? 'mt-2' : ''}`}>
-          <Linked text={para} />
-        </p>
-      ))}
-    </>
-  )
-}
-
 /** One input as the list draws it. */
-export function SaidRow({ x, files, rec = null, on }: {
+export function SaidRow({ x, files, words, rec = null, on }: {
   x: SaidInput
   files: ReactNode
+  /** its words as the page shows text everywhere (Markdown, r1099); `cut`: closed up */
+  words(text: string, cut: boolean): ReactNode
   /** more being said into it: its time and level */
   rec?: ReactNode | null
   on: SaidEvents
 }) {
-  return <InputRow x={x} words={[]} rec={rec} text={(cut) => <Said text={x.r.text} cut={cut} />} files={files} on={on} />
+  return <InputRow x={x} words={[]} rec={rec} text={(cut) => words(x.r.text, cut)} files={files} on={on} />
 }
 
 /** What can be done about one on its way besides its × (cancel): Retry when Taska said no, Edit when not sent. */
@@ -88,13 +54,15 @@ const outgoingActs = (q: SaidOutgoing, on: SaidEvents): OutgoingAct[] => [
   ...(q.failed ? [{ label: 'Edit', run: on.outboxEdit }] : []),
 ]
 
-export function SaidLately({ rows, outgoing, more, draft, files, recording = null, adding = null, on }: {
+export function SaidLately({ rows, outgoing, more, draft, files, words, recording = null, adding = null, on }: {
   rows: SaidInput[]
   outgoing: SaidOutgoing[]
   /** more rows to load as you scroll */
   more: boolean
   draft?: ReactNode
   files(f: FileRef[], gid: string): ReactNode
+  /** an input's words as the page shows text everywhere (Markdown, r1099); `cut`: closed up */
+  words(text: string, cut: boolean): ReactNode
   /** a voice note being recorded into a new input: how long so far (it shows first, B627) */
   recording?: string | null
   /** more being said into one of them (its Voice): which, and its time and level */
@@ -124,7 +92,7 @@ export function SaidLately({ rows, outgoing, more, draft, files, recording = nul
       {rows.length ? (
         <div className={INPUT_LIST}>
           {rows.map((x) => (
-            <SaidRow key={x.r.id} x={x} files={x.r.files.length ? files(x.r.files, 'cl' + x.r.id) : null} rec={adding?.id === x.r.id ? adding.meter : null} on={on} />
+            <SaidRow key={x.r.id} x={x} files={x.r.files.length ? files(x.r.files, 'cl' + x.r.id) : null} words={words} rec={adding?.id === x.r.id ? adding.meter : null} on={on} />
           ))}
         </div>
       ) : null}
