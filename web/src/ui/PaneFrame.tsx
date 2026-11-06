@@ -58,7 +58,7 @@ export function PaneFrame({
           <Icon n="left" c="size-6" sw="2" />
         </button>
         {lead ? <div className="hidden shrink-0 lg:flex">{lead}</div> : null}
-        <div data-pane-head className="flex min-w-0 flex-1 flex-col items-center leading-tight lg:flex-row lg:items-center lg:gap-2 lg:overflow-hidden lg:pl-2">{head}</div>
+        <div data-pane-head className="flex min-w-0 flex-1 items-center justify-center gap-1.5 overflow-hidden leading-tight lg:justify-start lg:gap-2 lg:pl-2">{head}</div>
         <div className="hidden shrink-0 items-center gap-0.5 lg:flex">{desk ? acts : null}</div>
         <button
           hidden={!menu}

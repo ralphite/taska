@@ -490,8 +490,8 @@ export function ItemHead({ it, code, titled = false }: { it: Item; code: string;
         <StateIcon {...shownStatus(it)} cls="size-[18px]" />
       </span>
       <span className={`shrink-0 font-mono text-sm font-bold ${TYPE_TEXT[it.type]}`}>{code}</span>
-      {/* under the code, cut short to the space between Back and ⋯ (the phone's bar is a column) */}
-      {titled ? <span className="block max-w-full truncate text-[13px] font-medium text-zinc-600 dark:text-zinc-300">{it.title}</span> : null}
+      {/* after the code on one line, cut short to the space between Back and ⋯ (B696) */}
+      {titled ? <span className="min-w-0 truncate text-[13px] font-medium text-zinc-600 dark:text-zinc-300">{it.title}</span> : null}
     </>
   )
 }

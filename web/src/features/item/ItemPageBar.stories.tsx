@@ -34,6 +34,12 @@ export const PhonePressed: Story = {
     </Frames>
   ),
 }
+/** Scrolled on the phone: the title has gone up out of sight, so the bar says it after the code, on the code's one
+ * line, cut short between Back and ⋯ (B696). */
+export const ScrolledTitle: Story = {
+  name: 'Scrolled: the title beside the code, one line (phone)',
+  render: () => <Frames desk={false} phoneWidth={393} height={300}>{() => pageOf(it({ title: 'The export keeps the filter I set, also when it runs from the phone' }), false, { others: [PARENT], titled: true })}</Frames>,
+}
 export const BackToAnItem: Story = { name: 'Back to an item', render: () => <Frames phoneWidth={393} deskWidth={720} height={260}>{() => <BackTo label="F012" onBack={act('Pane: back to F012')} />}</Frames> }
 /** New input opened from an item: its bar says New input and, at its end, the way back to that item */
 export const NewInputFromAnItem: Story = { name: 'New input, opened from an item: Back to F012', render: () => <Frames phone={false} deskWidth={720}>{() => frame({ head: newInputHead, nav: <BackTo label="F012" onBack={act('Pane: back to F012')} /> }, true)}</Frames> }

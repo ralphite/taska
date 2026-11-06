@@ -48,6 +48,8 @@ export interface PageOpts {
   env?: Partial<TalkEnv>
   /** the pane's back (a prototype's way back) */
   onBack?(): void
+  /** the item's title has scrolled out of sight: the bar says it (the phone) */
+  titled?: boolean
   /** the desktop's two columns with a document on the left instead of the item (`bare`: a web page, no margins) */
   left?: ReactNode
   bare?: boolean
@@ -192,7 +194,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
         split
         menu
         duo={o.duo}
-        head={<ItemHead it={it} code={facts.code(it.n)} />}
+        head={<ItemHead it={it} code={facts.code(it.n)} titled={o.titled} />}
         acts={<ItemActs it={it} on={on} />}
         nav={<ItemNav full={full} on={{ prev: paneActs.prev, next: paneActs.next, full: () => setFull(!full) }} />}
         onBack={o.onBack ?? paneActs.back}
