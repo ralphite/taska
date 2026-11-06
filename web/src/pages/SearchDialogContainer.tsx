@@ -15,6 +15,7 @@ import type { SheetRequest } from '../stores/sheet'
 import { toneOf } from '../ui/tones'
 import { FoundPreview, SearchDialog, type DialogEvents } from './SearchDialog'
 import { isFound, itemOf, searchDialogView, type DialogPlace, type FoundLine } from './searchDialogView'
+import { docWords } from '../model/docs'
 
 const ACTIONS = [...listedActions(true), ...listedActions(false)]
 
@@ -25,7 +26,7 @@ function Preview({ l, place, now }: { l: FoundLine; place: DialogPlace; now: num
   if ((x.kind === 'items' || x.kind === 'rules') && it && m?.byN.get(it.n) === it) return <ItemPageContainer it={it} m={m} slug={x.project} tab="items" desk preview />
   if (x.kind === 'docs') {
     const d = m?.docs.find((y) => y.d === x.d)
-    return <FoundPreview l={l} text={(d?.md ?? '').slice(0, 1500)} meta={foundMeta(x, now)} />
+    return <FoundPreview l={l} text={d ? docWords(d).slice(0, 1500) : ''} meta={foundMeta(x, now)} />
   }
   if (x.kind === 'inputs') return <FoundPreview l={l} text="" meta={foundMeta(x, now)} />
   return <FoundPreview l={l} text={(it?.body ?? '').slice(0, 1500)} meta={it ? [statusWord(it), it.type === 'rule' ? '' : it.pri].filter(Boolean).join(' · ') : ''} />

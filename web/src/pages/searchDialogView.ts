@@ -22,7 +22,7 @@ export interface FoundLine {
   key: string
   found: Found
   /** what its mark is: an item's state, a document, an input */
-  mark: { kind: 'item'; s: string; label: string; type: ItemType } | { kind: 'doc' } | { kind: 'input' }
+  mark: { kind: 'item'; s: string; label: string; type: ItemType } | { kind: 'doc'; web: boolean } | { kind: 'input' }
   code: string
   title: string
   /** where it is: its project, and the item it is under or on */
@@ -105,7 +105,8 @@ export function lineOf(x: Found, p: DialogPlace): FoundLine {
     return { ...base, mark: { kind: 'item', ...shownStatus(it), type: it.type }, code, title: it.title, path: [base.projectTitle, under].filter(Boolean).join(' / ') }
   }
   const on = x.kind === 'docs' ? x.on : x.became
-  return { ...base, mark: { kind: x.kind === 'docs' ? 'doc' : 'input' }, code: x.code ?? '', title: x.title ?? '', path: [base.projectTitle, on].filter(Boolean).join(' / ') }
+  const web = x.kind === 'docs' && m?.docs.find((d) => d.d === x.d)?.fmt === 'html'
+  return { ...base, mark: x.kind === 'docs' ? { kind: 'doc', web } : { kind: 'input' }, code: x.code ?? '', title: x.title ?? '', path: [base.projectTitle, on].filter(Boolean).join(' / ') }
 }
 
 /** A visit as a row: from the project's data when it is here (its words now), else as it was opened. */

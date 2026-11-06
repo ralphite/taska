@@ -70,7 +70,8 @@ function foundRanges(root: HTMLElement, words: readonly string[]): Range[] {
 
 function Mark({ l }: { l: FoundLine }) {
   if (l.mark.kind === 'item') return <StateIcon s={l.mark.s} label={l.mark.label} cls="size-4 shrink-0" />
-  return <Icon n={l.mark.kind === 'doc' ? 'doc' : 'newinput'} c="size-4 shrink-0 text-zinc-400 dark:text-zinc-500" />
+  // a web page as Documents marks it
+  return <Icon n={l.mark.kind === 'doc' ? (l.mark.web ? 'web' : 'doc') : 'newinput'} c="size-4 shrink-0 text-zinc-400 dark:text-zinc-500" />
 }
 
 function FoundRow({ l, i, sel, marks, recent, on }: { l: FoundLine; i: number; sel: boolean; marks: readonly string[]; recent: boolean; on: DialogEvents }) {

@@ -6,6 +6,19 @@ import { userWord } from './items'
 import { codeOf, liveN, type ProjectModel } from './project'
 import type { Block, Comment, Doc, Item } from './types'
 
+const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' }
+
+/** A document's words as a reader sees them: Markdown as it is; a web page without its markup, styles and scripts. */
+export function docWords(d: Pick<Doc, 'md' | 'fmt'>): string {
+  if (d.fmt !== 'html') return d.md
+  return d.md
+    .replace(/<(script|style|template|head)\b[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&(#\d+|[a-z]+);/gi, (all, e: string) => (e[0] === '#' ? String.fromCharCode(Number(e.slice(1))) : (ENTITIES[e.toLowerCase()] ?? all)))
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export const threadKey = (c: { key: string; th?: number }) => (c.th ? `${c.key}#${c.th}` : c.key)
 
 export function splitThread(tk: string): { key: string; th?: number } {

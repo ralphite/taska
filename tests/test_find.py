@@ -57,6 +57,14 @@ class ByTheWords(unittest.TestCase):
         self.assertNotIn("i2", [f.key for f in found])
         self.assertEqual(finding.by_words(st, "the where my"), [])
 
+    def test_a_web_page_by_the_words_it_shows(self) -> None:
+        """A web page's markup is not its words: "margin" found every page (round 8 of the review)."""
+        page = {"k": "doc", "d": 2, "n": 2, "title": "Coupon box", "fmt": "html", "by": "x", "t": T % 22,
+                "md": "<html><head><style>.box{margin:0}</style></head><body><p>The coupon box hides behind the keyboard</p></body></html>"}
+        st = replay(LOG + [page], lambda seq, why: None)
+        self.assertIn("d2", [f.key for f in finding.by_words(st, "keyboard coupon")])
+        self.assertNotIn("d2", [f.key for f in finding.by_words(st, "margin style")])
+
 
 # what the fake embedder knows: a line's vector counts these words in it, so lines about the same things are close
 CONCEPTS = ("export", "filter", "sort", "sav", "word", "drop", "pause", "missing", "contact")

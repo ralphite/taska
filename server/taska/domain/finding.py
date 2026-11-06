@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from .model import Doc, Input, Item
+from .text import page_text
 from .state import ProjectState
 
 # words that say nothing about what to find
@@ -109,7 +110,8 @@ def by_words(st: ProjectState, q: str) -> List[Found]:
         if s:
             out.append((s, r.t, Found("inputs", r.id, _input_n(st, r), s)))
     for d in _docs(st):
-        s = _score(ws, d.title.lower(), d.md.lower())
+        # a web page by the words it shows, not its markup ("div" or "margin" found every page)
+        s = _score(ws, d.title.lower(), (page_text(d.md) if d.is_page else d.md).lower())
         if s:
             out.append((s, d.t1 or d.t0, Found("docs", "d%d" % d.d, d.n, s)))
     out.sort(key=lambda x: (x[0], x[1]), reverse=True)

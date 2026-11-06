@@ -21,7 +21,7 @@ import { noMatches } from '../model/words'
 /** A row of what it found: an item or a rule is the list's own row; an input or a document, a row like it. */
 export type FoundRowView =
   | { kind: 'item'; key: string; found: Found; it: Item; facts: RowFacts; look: RowLook; on: RowEvents }
-  | { kind: 'other'; key: string; found: Found; icon: 'doc' | 'newinput'; code: string; title: string; meta: string }
+  | { kind: 'other'; key: string; found: Found; icon: 'doc' | 'web' | 'newinput'; code: string; title: string; meta: string }
 
 export interface FoundGroupView {
   project: string

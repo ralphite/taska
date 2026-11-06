@@ -69,7 +69,7 @@ export function searchView(s: SearchNow, p: SearchPlace): SearchView {
       const facts = mine && p.m ? rowFacts(p.m, mine, w) : otherFacts({ ...x, item: x.item ?? (there && p.model(x.project) ? { ...there, code: codeOf(p.model(x.project) as ProjectModel, there.n) } : undefined) }, marks)
       return [{ kind: 'item', key: x.project + '/' + x.key, found: x, it, facts, look: rowLook(it, w), on: p.on(x) }]
     }
-    return [{ kind: 'other', key: x.project + '/' + x.key, found: x, icon: x.kind === 'docs' ? 'doc' : 'newinput', code: x.code ?? '', title: x.title ?? '', meta: foundMeta(x, p.now) }]
+    return [{ kind: 'other', key: x.project + '/' + x.key, found: x, icon: x.kind === 'docs' ? (p.model(x.project)?.docs.find((d) => d.d === x.d)?.fmt === 'html' ? 'web' : 'doc') : 'newinput', code: x.code ?? '', title: x.title ?? '', meta: foundMeta(x, p.now) }]
   }
   const toCheck = s.heard.length ? openDoubts(s.words, s.heard).length : 0
   // nothing asked yet: Recent, by project in the order you visited them, as the desktop's search opens with it

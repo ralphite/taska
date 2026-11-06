@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 import unicodedata
 from datetime import datetime
+from html.parser import HTMLParser
+from typing import Any, List
 
 from .vocab import TITLE_MAX, Refused
 
@@ -100,3 +102,33 @@ def slug_of(title: str) -> str:
     """The address a new project gets from its name: Home Budget -> home-budget; "" when the name has no a-z or 0-9."""
     t = unicodedata.normalize("NFKD", title).encode("ascii", "ignore").decode().lower()
     return re.sub(r"[^a-z0-9]+", "-", t).strip("-")[:40].strip("-")
+
+
+class _Visible(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.out: List[str] = []
+        self.skip = 0
+
+    def handle_starttag(self, tag: str, attrs: Any) -> None:
+        if tag in ("script", "style", "template", "head"):
+            self.skip += 1
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in ("script", "style", "template", "head") and self.skip:
+            self.skip -= 1
+
+    def handle_data(self, data: str) -> None:
+        if not self.skip and data.strip():
+            self.out.append(data.strip())
+
+
+def page_text(html: str) -> str:
+    """A web page's words as it shows them: no markup, styles or scripts (what search matches in it)."""
+    p = _Visible()
+    try:
+        p.feed(html)
+        p.close()
+    except Exception:  # a page that does not parse: its words are what was read so far
+        pass
+    return " ".join(p.out)
