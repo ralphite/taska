@@ -12,17 +12,32 @@ export interface FileRef {
   name: string
   mime?: string
   size?: number
-  tr?: string
-  /** its words as said, word for word, when they differ from tr (F568) */
-  heard?: string
-  wait?: boolean
+  /** a voice note's words: its one record (B682), put here by the page's model from the project's voices (never
+   * sent or kept with the file) */
+  voice?: Voice
+}
+
+/** A voice note's words (B682): the one record every place that shows the note reads. `said`: word for word;
+ * `tidied`: what everyone reads (yours once you changed them: `fixed`, when); `early`: the first words while it is
+ * worked out (state wait); none: nobody was heard; failed: `err` says why. */
+export interface Voice {
+  f: string
+  state: 'wait' | 'done' | 'none' | 'failed'
+  said: string
+  tidied: string
+  early?: string
+  err?: string
+  fixed?: string
 }
 
 export interface Message {
   id: number
   by: string
   kind: Kind
+  /** what was said: the words typed, then the words of the voice notes of the input it is (the page's model) */
   text: string
+  /** the words typed alone, as Taska keeps them */
+  typed?: string
   t: string
   src: string | null
   files: FileRef[]
@@ -84,7 +99,10 @@ export interface Input {
   id: string
   t: string
   by: string
+  /** what was said: the words typed, then each voice note's words (the page's model puts them together) */
   text: string
+  /** the words typed alone, as Taska keeps them */
+  typed?: string
   scope: number | null
   files: FileRef[]
   acked: boolean
@@ -97,7 +115,6 @@ export interface Input {
   history?: { text: string; t: string; mode: string }[]
   updated?: string
   moved?: { to: string; as: string }
-  trWait?: boolean
   filing?: { can: boolean; what: string; why: string }
   deletion?: { go: number[]; keep: [number, string][] }
 }
@@ -107,7 +124,10 @@ export interface Comment {
   key: string
   th: number
   quote: string
+  /** what was said: the words typed, then each voice note's words (the page's model puts them together) */
   text: string
+  /** the words typed alone, as Taska keeps them */
+  typed?: string
   by: string
   t: string
   files: FileRef[]
@@ -258,7 +278,9 @@ export interface ViewAnswer {
   items: Item[]
   inputs: Input[]
   docs: Doc[]
-  removed?: { items: number[]; inputs: string[]; docs: number[] }
+  /** every voice note's words (B682) */
+  voices?: Voice[]
+  removed?: { items: number[]; inputs: string[]; docs: number[]; voices?: string[] }
   project: ProjectFacts
   server: ServerFacts
 }

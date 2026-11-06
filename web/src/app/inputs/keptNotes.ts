@@ -123,7 +123,7 @@ export class KeptNotes {
     const live = new Map<string, Rec>()
     for (const [key, fs] of Object.entries(box.files)) for (const f of fs) if (f.rid && !f.failed) live.set(f.rid, this.rec(box.slug, key, f, null))
     for (const o of this.d.outbox.getState().list)
-      for (const f of o.files) if (f.rid && !f.failed && !o.unsent) live.set(f.rid, this.rec(o.slug, o.scope || 'new', f, { id: o.q, text: o.text, ...(o.kind === 'cancelled' ? { kind: o.kind } : {}) }))
+      for (const f of o.files) if (f.rid && !f.failed && !o.unsent) live.set(f.rid, this.rec(o.slug, o.scope || 'new', f, { id: o.q, text: o.text, ...(o.words ? { words: o.words } : {}), ...(o.kind === 'cancelled' ? { kind: o.kind } : {}) }))
     for (const [rid, r] of live) {
       const sig = JSON.stringify(r)
       if (this.known.get(rid)?.sig === sig) continue
@@ -200,7 +200,7 @@ export class KeptNotes {
     const going = new Set(out.flatMap((o) => o.files.map((x) => x.f)).filter(Boolean))
     const goingQ = new Set(out.map((o) => o.q))
     const sent = new Set(m?.inputs.flatMap((r) => r.files.map((x) => x.f)))
-    const resend = new Map<string, { slug: string; text: string; scope: string | null; t: number; files: DraftFile[]; kind?: 'cancelled' }>()
+    const resend = new Map<string, { slug: string; text: string; scope: string | null; t: number; files: DraftFile[]; kind?: 'cancelled'; words?: Record<string, string> }>()
     const back: { key: DraftKey; f: DraftFile }[] = []
     for (const r of (await this.d.vault.all()).sort((a, b) => a.t - b.t)) {
       if ((only && r.id !== only) || (r.project !== slug && !r.job) || (sentOnly && !r.job) || here.has(r.id)) continue
@@ -248,7 +248,7 @@ export class KeptNotes {
       this.blobs.set(r.id, blob)
       if (r.job) {
         // sent, but Taska did not have it yet: it goes on to the project it was sent in, under the same id
-        const j = resend.get(r.job.id) || { slug: r.project, text: r.job.text, scope: r.scope, t: r.t, files: [], ...(r.job.kind ? { kind: r.job.kind } : {}) }
+        const j = resend.get(r.job.id) || { slug: r.project, text: r.job.text, words: r.job.words, scope: r.scope, t: r.t, files: [], ...(r.job.kind ? { kind: r.job.kind } : {}) }
         j.files.push(f)
         resend.set(r.job.id, j)
         continue
@@ -258,7 +258,7 @@ export class KeptNotes {
       back.push({ key, f })
     }
     for (const [q, j] of resend) {
-      this.d.inputs.push({ q, slug: j.slug, text: j.text, scope: j.scope, files: j.files, t: j.t, back: true, ...(j.kind ? { kind: j.kind, quiet: true } : {}) })
+      this.d.inputs.push({ q, slug: j.slug, text: j.text, ...(j.words ? { words: j.words } : {}), scope: j.scope, files: j.files, t: j.t, back: true, ...(j.kind ? { kind: j.kind, quiet: true } : {}) })
       for (const f of j.files) if (!f.f) this.d.resume(j.slug, scopeDraft(j.scope), f, this.blobs.get(f.rid as string) as Blob, j.scope)
     }
     for (const { key, f } of back) {

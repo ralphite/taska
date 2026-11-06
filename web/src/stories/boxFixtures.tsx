@@ -12,7 +12,7 @@ import { blockKeys } from '../model/docs'
 import type { Outgoing } from '../model/outgoing'
 import { composing, parseRoute } from '../model/route'
 import type { Input } from '../model/types'
-import { input, item, modelOf } from './fixtures'
+import { input, item, modelOf, record, shown } from './fixtures'
 import { comment, doc } from './itemFixtures'
 import { acts } from './acts'
 import { useMedia } from './liveParts'
@@ -28,7 +28,7 @@ export const PLAN = doc({
   ],
 })
 export const WEB = doc({ d: 2, n: 12, fmt: 'html', title: 'Orders dashboard', blocks: [{ key: 'p1', kind: 'html', text: 'Avg. order value', comments: [] }] })
-export const VOICE_INPUT = input({ id: 'r7', text: 'Keep the filter, and the sort.', files: [{ f: 'f7-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm', tr: 'Keep the filter, and the sort.', heard: 'Keep the filter, and, uh, the sort.' }] })
+export const VOICE_INPUT = shown(input({ id: 'r7', text: '', files: [{ f: 'f7-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm' }] }), record('f7-voice_0-07.webm', 'Keep the filter, and the sort.', 'Keep the filter, and, uh, the sort.'))
 export const TICKED = { [blockKeys(PLAN)[2]]: '- [x] CSV\n- [ ] Excel' }
 export const VOICE: DraftFile = { key: 'v', f: 'f5-voice_0-09.webm', name: 'voice_0-09.webm', mime: 'audio/webm', ms: 9000 }
 export const REC = { time: '0:04', levels: [0.2, 0.5, 0.8, 0.4, 0.6, 0.3, 0.7, 0.5], from: 'main' as const }

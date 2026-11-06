@@ -3,6 +3,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { at, mine, out, r4, shot, voice } from '../../stories/fromYouFixtures'
 import { message } from '../../stories/fixtures'
+import { record, waiting } from '../../stories/fixtures'
 
 export default { title: 'Components/Conversation/Message/From you/Voice notes' } satisfies Meta
 type Story = StoryObj
@@ -14,15 +15,18 @@ const LONG = `http://127.0.0.1:7340/p/demo/D2 ${LONG_SAID}`
 const LONG_HEARD =
   'OK so this document, D2, sync it to its, its three subpages. And, um, keep every filter and the sort when the page is opened again, like when I come back to it later. And at the top of the export say which ones were kept, so whoever reads it, you know, knows what they are looking at.'
 /** a voice note of this length; its words when it has them (none: still being written out, or nothing heard) */
-const note = (len: string, tr?: string, heard?: string) => ({ f: `f2-voice_${len}.webm`, name: `voice_${len}.webm`, mime: 'audio/webm', ...(tr === undefined ? {} : { tr }), ...(heard ? { heard } : {}) })
+const note = (len: string, tr?: string, heard?: string) => {
+  const f = `f2-voice_${len}.webm`
+  return { f, name: `voice_${len}.webm`, mime: 'audio/webm', voice: tr === undefined ? waiting(f) : record(f, tr, heard ?? tr) }
+}
 const BUG = 'Exporting with a filter set still writes every order, not only the ones the list shows.'
 const STEPS = 'To make it happen: filter by Paid, open an order, go back to the list, then press Export.'
 export const WithAVoiceNote: Story = { ...at([mine()], { inputs: [r4({ files: [voice] })] }), name: 'With a voice note' }
 export const NothingHeard: Story = { ...at([mine({ text: '' })], { inputs: [r4({ text: '', files: [note('0-03', '')] })] }), name: 'Nothing heard: the bubble is the voice note' }
-export const VoiceNoteBeingTranscribed: Story = { ...at([mine({ text: '' })], { inputs: [r4({ text: '', files: [note('0-12')], trWait: true })] }), name: 'Its voice note being written out' }
+export const VoiceNoteBeingTranscribed: Story = { ...at([mine({ text: '' })], { inputs: [r4({ text: '', files: [note('0-12')] })] }), name: 'Its voice note being written out' }
 // B626: the voice note's words came in after it was sent; nothing was changed, so it is not marked edited
 export const WordsAndAVoiceNoteItsWordsInLater: Story = {
-  ...at([mine({ text: LINK_AND_WORDS })], { inputs: [r4({ text: LINK_AND_WORDS, files: [{ ...voice, tr: 'Sync it to its three subpages.', heard: 'Sync it to its, um, three subpages.' }] })] }),
+  ...at([mine({ text: LINK_AND_WORDS })], { inputs: [r4({ text: LINK_AND_WORDS, files: [{ ...voice, voice: record(voice.f, 'Sync it to its three subpages.', 'Sync it to its, um, three subpages.') }] })] }),
   name: 'Words and a voice note, its words in after sending: not edited',
 }
 export const VoiceNotePlaying: Story = { ...at([mine()], { inputs: [r4({ files: [voice] })], env: { play: () => ({ playing: true, t: 4000 }) } }), name: 'Its voice note playing' }

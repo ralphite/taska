@@ -2,6 +2,7 @@
 // the viewer, one at a time with the others of the same message, fit to the screen or at 100%; Back closes it. A
 // voice note's original words open in their sheet.
 
+import type { Voice } from '../../model/types'
 import type { TaskaApi } from '../../api/taska'
 import type { MediaStore } from '../../stores/media'
 import type { RouteStore } from '../../stores/route'
@@ -15,8 +16,8 @@ export interface MediaDeps {
   sheets: Sheets
   toasts: Toasts
   desk(): boolean
-  /** a voice note's words kept with its input, if its input is in the project */
-  kept(slug: string, f: string): { tr?: string; heard?: string } | null
+  /** a voice note's words: its record in the project (B682) */
+  kept(slug: string, f: string): Voice | null
 }
 
 export class Media {
@@ -82,11 +83,11 @@ export class Media {
   }
 
   /** A voice note's words in their sheet on the phone, word for word and tidied (F568; the desktop shows them under
-   * the pointer, B640): the ones kept with its input; asked for only when they are not in yet. Never worked out again. */
+   * the pointer, B640): the note's record; asked for only when it has no words yet. Never worked out again. */
   words(slug: string, f: string): void {
     const show = (w: { heard?: string; tr?: string }) => this.d.sheets.open({ kind: 'as-said', heard: w.heard || '', tr: w.tr || '' })
     const kept = this.d.kept(slug, f)
-    if (kept?.tr) return show(kept)
+    if (kept?.tidied) return show({ heard: kept.said, tr: kept.tidied })
     void this.d.api.words(slug, f).then(show, () => show({}))
   }
 }

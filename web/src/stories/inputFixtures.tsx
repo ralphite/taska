@@ -10,7 +10,7 @@ import { saidOutgoing, saidRows } from '../model/saidLately'
 import type { FileRef, Input, Item, OrgNote } from '../model/types'
 import { FileChips } from '../ui/Files'
 import { RecBar } from '../ui/PlaceVoice'
-import { PICTURE, T, input, item, modelOf } from './fixtures'
+import { PICTURE, T, input, item, modelOf, record, shown, waiting } from './fixtures'
 import { talkEnv } from './itemFixtures'
 import { inputWords } from '../ui/Markdown'
 import type { ProjectModel } from '../model/project'
@@ -25,8 +25,8 @@ const org = (msg: string, f: Partial<OrgNote> = {}): OrgNote => ({ ok: true, msg
 export const SHOT: FileRef = { f: 'f3-export.png', name: 'export.png', mime: 'image/png' }
 /** a voice note before its words are in (still being written out) */
 export const VOICE: FileRef = { f: 'f4-voice_0-12.webm', name: 'voice_0-12.webm', mime: 'audio/webm' }
-/** a voice note with its words, as Taska has it once they are written out; the input's text holds them too */
-export const said = (tr: string, heard?: string): FileRef => ({ ...VOICE, tr, ...(heard ? { heard } : {}) })
+/** a voice note with its words: its record (B682), as the page's model puts it with the note */
+export const said = (tr: string, heard?: string): FileRef => ({ ...VOICE, voice: record(VOICE.f, tr, heard ?? tr) })
 
 /** The items what you said made or changed. */
 export const ITEMS: Item[] = [
@@ -38,8 +38,8 @@ export const ITEMS: Item[] = [
 /** One input in each state it can be in. */
 export const ONE = {
   waiting: input({ id: 'r23', t: at(2), text: 'The export button does nothing on the orders page.', files: [SHOT] }),
-  voice: input({ id: 'r22', t: at(6), acked: true, touched: [12], text: 'Keep the filter, and the sort as well.', files: [said('Keep the filter, and the sort as well.', 'Keep the filter, and, um, the sort as well.')], org: org('Noted on F012') }),
-  transcribing: input({ id: 'r21', t: at(1), text: '', files: [VOICE], trWait: true }),
+  voice: shown(input({ id: 'r22', t: at(6), acked: true, touched: [12], text: '', files: [said('Keep the filter, and the sort as well.', 'Keep the filter, and, um, the sort as well.')], org: org('Noted on F012') })),
+  transcribing: shown(input({ id: 'r21', t: at(1), text: '', files: [VOICE] }), waiting(VOICE.f)),
   organizing: input({ id: 'r20', t: at(1), text: 'The coupon box hides behind the keyboard.' }),
   made: input({ id: 'r19', t: at(20), acked: true, touched: [14], text: 'The coupon box hides behind the keyboard on the phone.', org: org('Created B014') }),
   added: input({ id: 'r18', t: at(25), acked: true, touched: [12], text: 'It should keep the sort too, not only the filter.', org: org('Noted on F012') }),
@@ -61,7 +61,7 @@ export const ONE = {
   moved: input({ id: 'r11', t: at(60), acked: true, text: 'The app icon looks blurry on the home screen.', moved: { to: 'mobile-app', as: 'r4' } }),
   answer: input({ id: 'r10', t: at(65), acked: true, kind: 'answer', scope: 7, text: 'CSV and Excel.' }),
   /** a recording cancelled with Esc, kept with its words: no one's work until it is sent (B627) */
-  cancelled: input({ id: 'r24', t: at(3), kind: 'cancelled', text: 'Maybe the export should keep the columns too.', files: [said('Maybe the export should keep the columns too.', 'Maybe the export should, hmm, keep the columns too.')] }),
+  cancelled: shown(input({ id: 'r24', t: at(3), kind: 'cancelled', text: '', files: [said('Maybe the export should keep the columns too.', 'Maybe the export should, hmm, keep the columns too.')] })),
   long: input({ id: 'r9', t: at(60 * 24), acked: true, touched: [7], org: org('Created T007'), text: [
       'Work out which formats the export should offer.',
       'Finance opens the file in Excel every Monday, so Excel matters most.',

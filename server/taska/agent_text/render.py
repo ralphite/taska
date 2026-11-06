@@ -11,11 +11,12 @@ from typing import Any, Callable, Dict, List, Mapping, Sequence
 
 from ..domain import events as ev
 from ..domain import rules
-from ..domain.model import Doc, Input, Item
+from ..domain.model import Comment, Doc, FileRef, Input, Item, Message
 from ..domain.rules import Held
 from ..domain.state import ProjectState
 from ..domain.text import clean_title, first_line, hm
 from ..domain.vocab import CLOSED
+from ..domain.voices import for_agents, is_voice, one_line
 
 FileRefText = Callable[[str], str]
 
@@ -30,6 +31,26 @@ class Reading:
     organizer_on: bool
     file_ref: FileRefText  # for this caller
     file_path: FileRefText  # always the path on this machine
+
+
+def _others(rd: Reading, files: Sequence[FileRef], path: bool = False) -> List[str]:
+    """The files that are not voice notes (a voice note is read as its words)."""
+    name = rd.file_path if path else rd.file_ref
+    return [name(f.f) for f in files if not is_voice(f)]
+
+
+def _own_files(st: ProjectState, x: Message) -> List[FileRef]:
+    """A message of yours carries the voice notes of the input it is: its words are read with it."""
+    inp = st.inputs.get(x.src or "") if x.by == "you" else None
+    if not inp or x.change or not (x.id == inp.seq or x.text.startswith(f"{inp.id} updated:")):
+        return list(x.files)
+    return list(x.files) + [f for f in inp.files if is_voice(f)]
+
+
+def _comment(rd: Reading, c: Comment) -> str:
+    """A comment as agents read it: its words, each voice note's words on a line of its own, its other files."""
+    words = for_agents(rd.state, c.text, c.files).replace("\n", "\n     ")
+    return words + "".join(f" [{p}]" for p in _others(rd, c.files, path=True))
 
 
 def when(it: Item) -> str:
@@ -142,7 +163,9 @@ def card(rd: Reading, it: Item) -> str:
             tag = x.by + (f" · {x.ses}" if x.ses else "") + ("" if x.kind == "say" else " " + x.kind) \
                 + (" → " + ", ".join(x.to) if x.to else "")
             edited = f" (edited {hm(x.edited)})" if x.edited else ""
-            out.append(f"#{x.id} {hm(x.t)} {tag}{edited}: {x.text}" + "".join(f" [{rd.file_ref(f.f)}]" for f in x.files))
+            files = _own_files(st, x)
+            out.append(f"#{x.id} {hm(x.t)} {tag}{edited}: {for_agents(st, x.text, files)}"
+                       + "".join(f" [{p}]" for p in _others(rd, files)))
     out.extend(_reference(rd, it))
     return "\n".join(out) + "\n"
 
@@ -160,15 +183,16 @@ def _reference(rd: Reading, it: Item) -> List[str]:
     out = ["reference: the user's own words (the inputs it came from):"]
     for inp in srcs:
         where = f" on {st.code(inp.scope)}" if inp.scope and inp.scope != it.n else ""
-        words = " ".join((inp.text or "").split())
+        said = for_agents(st, inp.text, inp.files)
+        words = " ".join(said.split())
         if inp.id in talk:
             out.append(f"{inp.id} {hm(inp.t)}{where}: in the thread above (#{talk[inp.id]})")
         elif words and words in body_words:
             out.append(f"{inp.id} {hm(inp.t)}{where}: in the body above")
         else:
             out.append(f"{inp.id} {hm(inp.t)}{where}:")
-            out.extend("  " + ln for ln in (inp.text or "(no words)").splitlines())
-            fs = [rd.file_ref(f.f) for f in inp.files]
+            out.extend("  " + ln for ln in (said or "(no words)").splitlines())
+            fs = _others(rd, inp.files)
             if fs:
                 out.append("  files: " + " ".join(fs))
     return out
@@ -186,10 +210,12 @@ def input_card(rd: Reading, inp: Input) -> str:
         + (" [deleted by the user]" if inp.deleted else "") \
         + (" [cancelled: not sent, not to handle]" if inp.kind == "cancelled" else "")
     out = [head]
-    if inp.text:
-        out.append(textwrap.indent(inp.text, "  "))
-    if inp.files:
-        out.append("  files: " + " ".join(rd.file_ref(f.f) for f in inp.files))
+    said = for_agents(st, inp.text, inp.files, as_said=True)
+    if said:
+        out.append(textwrap.indent(said, "  "))
+    others = _others(rd, inp.files)
+    if others:
+        out.append("  files: " + " ".join(others))
     if inp.org:
         out.append(f"  organizer: {inp.org.msg}")
     if inp.history:
@@ -237,19 +263,19 @@ def doc_text(rd: Reading, d: Doc) -> str:
         out.append("¶0 comments on the whole document:")
         names = mark(0, whole)
         for c in whole:
-            out.append(f"   > {names.get(c.th, '')}{c.by} {hm(c.t)}: {c.text}" + "".join(f" [{rd.file_path(f.f)}]" for f in c.files))
+            out.append(f"   > {names.get(c.th, '')}{c.by} {hm(c.t)}: {_comment(rd, c)}")
     for i, (b, text) in enumerate(zip(blocks, texts), 1):
         out.append(f"¶{i} " + text.replace("\n", "\n   "))
         names = mark(i, b.comments) if not d.is_page else {}
         for c in b.comments:
             part = "" if " ".join(c.quote.split()) == " ".join(text.split()) else f"on \"{first_line(c.quote, 120)}\": "
-            out.append(f"   > {names.get(c.th, '')}{c.by} {hm(c.t)}: {part}{c.text}" + "".join(f" [{rd.file_path(f.f)}]" for f in c.files))
+            out.append(f"   > {names.get(c.th, '')}{c.by} {hm(c.t)}: {part}{_comment(rd, c)}")
     if detached:
         out.append("comments whose paragraph was rewritten or removed:")
         for t in detached:
             out.append(f"   on \"{first_line(t.quote, 80)}\"")
             for c in t.comments:
-                out.append(f"   > {c.by} {hm(c.t)}: {c.text}")
+                out.append(f"   > {c.by} {hm(c.t)}: {_comment(rd, c)}")
     return "\n".join(out) + "\n"
 
 
@@ -295,7 +321,7 @@ def _said(st: ProjectState, e: ev.Event) -> "tuple[str, str]":
     who = e.by
     c = st.code
     if isinstance(e, ev.InputAdded):
-        return who, f"in {e.id}" + (f" →{c(e.scope)}" if e.scope else "") + f" {first_line(e.text)!r}"
+        return who, f"in {e.id}" + (f" →{c(e.scope)}" if e.scope else "") + f" {first_line(one_line(st, e.text, e.files))!r}"
     if isinstance(e, ev.ItemAdded):
         return who, (f"new {c(e.n)} {e.type} {e.pri} {e.when} {first_line(e.clean)!r}" + (f" ←{e.src}" if e.src else ""))
     if isinstance(e, ev.FieldsSet):
@@ -317,11 +343,21 @@ def _said(st: ProjectState, e: ev.Event) -> "tuple[str, str]":
     if isinstance(e, ev.DocWritten):
         return who, f"doc D{e.d} on {c(e.n)} {first_line(e.title)!r}"
     if isinstance(e, ev.CommentAdded):
-        return who, f"D{e.d} comment {first_line(e.text)!r}"
+        return who, f"D{e.d} comment {first_line(one_line(st, e.text, e.files))!r}"
     if isinstance(e, ev.ThreadResolved):
         return who, f"{'resolved' if e.on else 'reopened'} a thread on D{e.d}"
     if isinstance(e, ev.CommentEdited):
         return who, f"edited a comment on D{e.d}: {first_line(e.text)!r}"
+    if isinstance(e, ev.VoiceHeard):
+        v = st.voices.get(e.f)
+        words = (e.tidied or e.early) if not (v and v.fixed) else v.tidied
+        state = {"wait": "first words" if e.early else "being transcribed", "done": "words", "none": "no words heard",
+                 "failed": "transcription failed"}.get(e.state, e.state)
+        return who, f"voice {e.f}{' of ' + e.src if e.src else ''}: {state}" + (f" {first_line(words)!r}" if words else "")
+    if isinstance(e, ev.VoiceFixed):
+        return who, f"corrected the words of voice {e.f}{' of ' + e.src if e.src else ''}: {first_line(e.tidied)!r}"
+    if isinstance(e, ev.VoicesSplit):
+        return who, f"kept each voice note's words in one place ({len(e.voices)} voice notes)"
     if isinstance(e, ev.CommentDeleted):
         return who, f"deleted a comment on D{e.d}"
     if isinstance(e, ev.CommentRestored):

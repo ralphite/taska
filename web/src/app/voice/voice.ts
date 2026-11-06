@@ -358,6 +358,6 @@ export class Voice {
     const before = text.slice(0, at)
     const after = text.slice(at)
     this.d.box.write(slug, key, before + (before.trim() && !before.endsWith('\n') ? '\n' : '') + tr + (after.trim() && !after.startsWith('\n') ? '\n' : '') + after)
-    this.d.boxStore.getState().updateFile(fk, { trAdded: tr })
+    this.d.boxStore.getState().updateFile(fk, { trAdded: tr, around: [before, after] })
   }
 }

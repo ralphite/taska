@@ -14,7 +14,8 @@ import { answerOf, latestMessage } from '../../model/talk'
 import type { Item } from '../../model/types'
 import { inTab, tabOf } from '../../model/visible'
 import type { Tab } from '../../model/words'
-import { outgoingLine, outgoingState, showsOnItsWay } from '../../model/outgoing'
+import { outgoingLine, outgoingState, outgoingText, showsOnItsWay } from '../../model/outgoing'
+import { withVoice } from '../../model/voices'
 import { isAudio } from '../../ui/Files'
 import { ItemPage, type ItemEvents, type ItemFacts } from './ItemPage'
 import type { Outgoing, TalkFacts } from './Talk'
@@ -69,8 +70,8 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     .map((o) => {
       const previews = o.files.flatMap((f) => (f.preview ? [f.preview] : []))
       // its voice notes in the bubble (T668), so no "Voice note" words for them
-      const voices = o.kind === 'cancelled' ? [] : o.files.filter(isAudio)
-      return { q: o.q, text: o.text || (previews.length || voices.length ? '' : outgoingLine(o)), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net, previews, voices }
+      const voices = o.kind === 'cancelled' ? [] : o.files.filter(isAudio).map((f) => (f.f ? withVoice(f, m.voices) : f))
+      return { q: o.q, text: outgoingText(o, m.voices) || (previews.length || voices.length ? '' : outgoingLine(o)), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net, previews, voices }
     })
 
   const media = useFiles(slug)

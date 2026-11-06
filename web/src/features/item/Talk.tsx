@@ -16,6 +16,7 @@ import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
 import { BUSY, DC_BTN, DC_LINK, MUTED } from '../../ui/tones'
 import { FileRows, VoiceBubble, isAudio } from '../../ui/Files'
+import { transcribing, voiceLacks } from '../../model/voices'
 import { MsgText } from './MsgText'
 import { Answered, type CardEvents } from './NeedsCard'
 import type { TalkEnv } from './talkEnv'
@@ -144,7 +145,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
             play={env.play}
             tidy={env.tidy}
             top={y.text ? <MsgText x={y} env={env} on={on} /> : null}
-            hearing={!!src?.trWait}
+            hearing={transcribing(src?.files)}
             words={!!src?.moved}
             attrs={voiceMark(src)}
             on={on}
@@ -197,7 +198,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
                 </a>
               </>
             ) : null}
-            {src?.trWait && !voices.length ? (
+            {transcribing(src?.files) && !voices.length ? (
               <>
                 {' · '}
                 <span className="animate-pulse text-blue-600 dark:text-blue-400">transcribing…</span>
@@ -358,10 +359,11 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
     ) : null
     // your voice notes inside your bubble, under its words (T668)
     const voices = you ? (c.files || []).filter(isAudio) : []
-    // a comment by voice reads as its words once they are written out (r1080); an agent's says "Voice note" until then
-    const heard = (c.files || []).filter(isAudio).map((f) => f.tr || '').filter(Boolean).join('\n')
-    const said = c.text.trim() || heard
-    const words = said ? <Rich text={said} world={env.world} onRef={on.ref} onPicture={on.picture} /> : c.files?.some(isAudio) && !you ? 'Voice note' : null
+    // what was said: its typed words and its voice notes' words (their records, B682); a note with none yet says why
+    const said = c.text.trim()
+    const note = (c.files || []).find(isAudio)
+    const hearing = !said && transcribing(c.files)
+    const words = said ? <Rich text={said} world={env.world} onRef={on.ref} onPicture={on.picture} /> : note && !(you && hearing) ? <span className={you ? 'text-white/70' : MUTED}>{voiceLacks(note.voice)}</span> : null
     // its pictures and files as a message's: thumbnails to open (yours under the bubble, an agent's in its card)
     const pics = (c.files || []).filter((f) => !isAudio(f))
     const strip = (cls: string) => (pics.length ? <FileRows files={pics} url={env.url} play={env.play} tidy={env.tidy} on={on} cls={cls} /> : null)
@@ -385,6 +387,7 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
                 ) : null
               }
               busy={c.id <= 0}
+              hearing={hearing}
               on={on}
             />
           ) : quote || words ? (

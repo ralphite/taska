@@ -5,6 +5,7 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { FileRef } from '../model/types'
 import type { OutFile, Outgoing } from '../model/outgoing'
+import { wordsByFile } from '../model/voices'
 import type { KeyValueStore } from './storage'
 
 export interface OutboxState {
@@ -26,6 +27,8 @@ interface Kept {
   t?: number
   kind?: 'answer' | 'cancelled'
   files?: FileRef[]
+  /** each voice note's words as you left them in the box (B682) */
+  words?: Record<string, string>
 }
 
 const keepable = (o: Outgoing) => o.files.every((f) => f.f && !f.uploading)
@@ -41,6 +44,7 @@ export function createOutboxStore(kv: KeyValueStore): OutboxStore {
           t: o.t,
           ...(o.kind ? { kind: o.kind } : {}),
           files: o.files.map(({ f, name, mime, size }) => ({ f, name, mime, size })),
+          ...(o.words ? { words: wordsByFile(o.words, o.files) } : {}),
         }
     kv.setJson(KEY + slug, Object.keys(all).length ? all : null)
   }
@@ -90,6 +94,7 @@ export function keptOutgoing(kv: KeyValueStore): Outgoing[] {
         scope: k.scope || null,
         t: k.t || Date.now(),
         ...(k.kind ? { kind: k.kind } : {}),
+        ...(k.words ? { words: k.words } : {}),
         files: (k.files || []).map((f) => ({ ...f })),
         state: 'waiting',
         tries: 0,

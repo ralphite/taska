@@ -38,7 +38,7 @@ function VoiceTime({ total, play, quiet = MUTED }: { total: number | null; play:
 /** On the desktop, pointing at a voice note's play button shows its original words in the page's tooltip (they are
  * here already: nothing to click, B640). Its word-for-word words and the tidied ones go to the tooltip as data; the
  * tip goes under the note, clear of the words written above it (above only when there is no room below). */
-const saidTip = (f: FileRef, tidy: boolean) => (tidy ? { 'data-heard': f.heard ?? '', 'data-tidied': f.tr ?? '', 'data-tip-side': 'bottom' } : {})
+const saidTip = (f: FileRef, tidy: boolean) => (tidy && f.voice ? { 'data-heard': f.voice.said, 'data-tidied': f.voice.tidied, 'data-tip-side': 'bottom' } : {})
 
 export function VoiceChip({ f, src, play, tidy, onPlay, onWords }: { f: FileRef; src: string; play: PlayState; tidy: boolean; onPlay(src: string): void; onWords(f: string): void }) {
   const total = voiceLength(f)

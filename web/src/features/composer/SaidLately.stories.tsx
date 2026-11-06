@@ -4,6 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames, States } from '../../stories/Frames'
 import { out } from '../../stories/boxFixtures'
 import { DAY, ONE, said, saidOf } from '../../stories/inputFixtures'
+import { shown } from '../../stories/fixtures'
 
 export default { title: 'Components/Inputs/New input page/Latest inputs/The list' } satisfies Meta
 type Story = StoryObj
@@ -57,7 +58,7 @@ export const SaidVoice: Story = {
           items={[
             ['recording (the pointer elsewhere): ✕, the time and level, ✓', saidOf({ inputs: [ONE.made], adding: { id: ONE.made.id, clock: '0:07' } })],
             ['stopped: transcribing', saidOf({ inputs: [ONE.made], addingUp: [ONE.made.id] })],
-            ['its words added at the end, with the voice note', saidOf({ inputs: [{ ...ONE.made, text: `${ONE.made.text}\n\nAnd on the tablet too.`, files: [said('And on the tablet too.', 'And, uh, on the tablet too.')] }] })],
+            ['its words added at the end, with the voice note', saidOf({ inputs: [shown({ ...ONE.made, files: [said('And on the tablet too.', 'And, uh, on the tablet too.')] })] })],
           ]}
         />
       )}

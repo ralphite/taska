@@ -18,7 +18,7 @@ from typing import Any, Callable, Dict, List, Optional, Protocol, Sequence, Set,
 from ..agent_text.render import Reading
 from ..commands.run import Command, run_all
 from ..domain import events as ev
-from ..domain.model import FileRef, Input
+from ..domain.model import Input
 from ..domain.rules import Held
 from ..domain.state import ProjectState
 from ..domain.vocab import Refused
@@ -140,9 +140,6 @@ class Project:
 
     def file_exists(self, fid: str) -> bool:
         return self.files.exists(fid)
-
-    def with_words(self, text: str, files: List[FileRef]) -> Tuple[str, List[FileRef]]:
-        return self.voice.with_words(text, files)
 
     def is_moving(self, rid: str) -> bool:
         return bool(self.shared and self.shared.input_moving(self.slug, rid))

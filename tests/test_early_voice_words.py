@@ -1,6 +1,7 @@
 """T687 (Yadong's choice, #9729): a voice note's first words show as soon as the speech model has them (about 2 s); the
 main model's and tidied words take their place when they are in. Until then the input waits for them, so nobody
-organizes or reads it twice, and the change is not an edit of yours. Change only on Yadong's explicit word."""
+organizes or reads it twice, and the change is not an edit of yours. Change only on Yadong's explicit word.
+B682: the words are the voice note's own record; the input keeps only what was typed."""
 
 import os
 import sys
@@ -10,8 +11,6 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
-from taska.domain import events as ev  # noqa: E402
-from taska.domain.model import FileRef  # noqa: E402
 from taska.services.project import Project  # noqa: E402
 from taska.services.voice_jobs import answer  # noqa: E402
 
@@ -33,9 +32,14 @@ class EarlyVoiceWords(unittest.TestCase):
             return {"tr": FINAL, "heard": FIRST, "tr_by": "main"}
 
         self.p.voice.set_transcriber(transcriber)
+        self.assertEqual(self.p.files.save("voice 0-08.webm", "audio/webm", b"audio").f, FID)
 
     def tearDown(self):
         self.go.set()
+        job = self.p.voice.jobs.get(FID)
+        if job:
+            with self.p.lock:
+                self.p.news.wait_for(lambda: job.done, timeout=5)
         self.p.close()
         self.tmp.cleanup()
 
@@ -49,8 +53,11 @@ class EarlyVoiceWords(unittest.TestCase):
         with self.p.lock:
             self.p.news.wait_for(lambda: job.done, timeout=5)
 
-    def send(self, tr=None):
-        self.p.emit(ev.InputAdded(by="you", id="r1", text=tr or "", files=[FileRef(f=FID, name="voice 0-08.webm", mime="audio/webm", tr=tr, wait=None if tr else True)]))
+    def send(self, words=None):
+        """As the page sends it: what was typed (nothing here), the note, and its words as they were in the box."""
+        lines, _ = self.p.run([(0, {"op": "input", "text": "", "q": "q1", "files": [{"f": FID, "name": "voice 0-08.webm", "mime": "audio/webm"}],
+                                    **({"words": {FID: words}} if words else {})})], "you")
+        self.assertTrue(lines[0].startswith("ok"), lines)
 
     def test_the_page_gets_the_first_words_then_the_final_ones(self):
         self.start()
@@ -67,21 +74,19 @@ class EarlyVoiceWords(unittest.TestCase):
         self.send()
         self.start()
         inp = self.p.state.inputs["r1"]
-        self.assertEqual(inp.text, FIRST)
+        self.assertEqual((inp.text, self.p.state.voices[FID].words), ("", FIRST))
         self.assertTrue(self.p.voice.held(inp))  # the organizer and agents wait for the final words
         self.finish()
         inp = self.p.state.inputs["r1"]
-        self.assertEqual(inp.text, FINAL)
-        self.assertEqual([f.tr for f in inp.files], [FINAL])
+        self.assertEqual((inp.text, self.p.state.voices[FID].words), ("", FINAL))
         self.assertFalse(inp.history)  # not an edit: nobody had read it
 
     def test_sent_with_the_first_words_they_give_way_to_the_final_ones(self):
         self.start()
-        self.send(FIRST)  # the page put the first words in the box and sent them
+        self.send(FIRST)  # the page put the first words in the box and sent them: not a correction of yours
+        self.assertIsNone(self.p.state.voices[FID].fixed)
         self.finish()
-        inp = self.p.state.inputs["r1"]
-        self.assertEqual(inp.text, FINAL)
-        self.assertEqual([f.tr for f in inp.files], [FINAL])
+        self.assertEqual((self.p.state.inputs["r1"].text, self.p.state.voices[FID].words), ("", FINAL))
 
 
 if __name__ == "__main__":

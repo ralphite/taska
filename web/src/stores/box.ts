@@ -19,8 +19,11 @@ export interface DraftFile extends OutFile {
   transcribing?: boolean
   /** where in the draft's words it was recorded (its words go there) */
   at?: number
-  /** its words as put in the draft (they are looked for there, to swap a misheard word) */
+  /** its words as put in the draft (they are looked for there, to swap a misheard word, and taken out when it is
+   * sent: they go to the note, B682) */
   trAdded?: string
+  /** the draft's words before and after where its words were put (to find them again however you changed them) */
+  around?: [string, string]
   /** words that may be misheard */
   doubts?: Doubt[]
   /** fuller words may follow */

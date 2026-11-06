@@ -21,6 +21,7 @@ from ..domain import events as ev, rules
 from ..domain.model import Input
 from ..domain.text import hm
 from ..domain.vocab import CLOSED, TEXT_VERBS, Refused
+from ..domain.voices import for_agents, words_of
 from ..infra import gemini
 from .project import Project
 
@@ -40,7 +41,7 @@ def context(p: Project, inp: Input) -> str:
                    "Do not repeat completed external actions. The coding agent must see the update: include pass.")
         out.append("Previous input text:\n" + inp.history[-1].text)
         out.append("Linked items:\n" + "\n".join(render.card(rd, st.items[n]) for n in inp.touched if n in st.items))
-    out.append(f"New input {inp.id} at {hm(inp.t)}{scope}:\n{inp.text or '(no text)'}")
+    out.append(f"New input {inp.id} at {hm(inp.t)}{scope}:\n{for_agents(st, inp.text, inp.files, as_said=True) or '(no text)'}")
     return "\n\n".join(out)
 
 
@@ -93,13 +94,14 @@ class Organizer(threading.Thread):
             version = inp.v
             parts: List[Dict[str, Any]] = [{"text": context(p, inp)}]
             files = list(inp.files)
+            heard = {f.f: words_of(p.state, f.f) for f in files}  # a voice note without words goes as its audio
             scope, had_history = inp.scope, bool(inp.history)
         err: Optional[str] = None
         try:
             for f in files:
                 path = p.file_path(f.f)
                 mime = f.mime or ""
-                if mime.startswith("image/") or (mime.startswith("audio/") and not f.tr):
+                if mime.startswith("image/") or (mime.startswith("audio/") and not heard[f.f]):
                     if os.path.getsize(path) < 12 * 1024 * 1024:
                         with open(path, "rb") as fh:
                             parts.append({"inline_data": {"mime_type": mime.split(";")[0], "data": base64.b64encode(fh.read()).decode()}})

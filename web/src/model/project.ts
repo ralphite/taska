@@ -3,15 +3,18 @@
 // place.
 
 import { closed } from './items'
-import type { Comment, Doc, FileRef, Input, Item, ProjectFacts, ServerFacts, ViewAnswer } from './types'
+import type { Comment, Doc, FileRef, Input, Item, Message, ProjectFacts, ServerFacts, ViewAnswer, Voice } from './types'
 import { LETTER } from './words'
 import { draftKey, draftTarget } from './draftTarget'
+import { isVoice, saidText, withVoice } from './voices'
 
 export interface ServerCopy {
   cursor: string
   items: ReadonlyMap<number, Item>
   inputs: ReadonlyMap<string, Input>
   docs: ReadonlyMap<number, Doc>
+  /** every voice note's words, by its file (B682) */
+  voices: ReadonlyMap<string, Voice>
   facts: ProjectFacts
   server: ServerFacts
   /** when this answer came (ms) */
@@ -28,14 +31,72 @@ export function merge(prev: ServerCopy | null, a: ViewAnswer, at: number): Serve
   const items = new Map(full ? [] : prev.items)
   const inputs = new Map(full ? [] : prev.inputs)
   const docs = new Map(full ? [] : prev.docs)
+  const changed = full || !!a.voices?.length || !!a.removed?.voices?.length
+  const voices = changed ? new Map(full ? [] : prev.voices) : prev.voices
   for (const n of a.removed?.items || []) items.delete(n)
   for (const id of a.removed?.inputs || []) inputs.delete(id)
   for (const d of a.removed?.docs || []) docs.delete(d)
+  for (const f of a.removed?.voices || []) (voices as Map<string, Voice>).delete(f)
   for (const it of a.items || []) items.set(it.n, settled(it))
   for (const r of a.inputs || []) inputs.set(r.id, r)
   for (const d of a.docs || []) docs.set(d.d, d)
-  return { cursor: a.cursor, items, inputs, docs, facts: a.project ?? prev?.facts, server: a.server ?? prev?.server, at }
+  for (const v of a.voices || []) (voices as Map<string, Voice>).set(v.f, v)
+  return { cursor: a.cursor, items, inputs, docs, voices, facts: a.project ?? prev?.facts, server: a.server ?? prev?.server, at }
 }
+
+// -- what was said, with each voice note's words (B682) ---------------------------------------------------------
+
+type Voices = ReadonlyMap<string, Voice>
+const joined = new WeakMap<object, { voices: Voices; out: unknown }>()
+/** Each thing with its voice notes' words, worked out once per thing and voices (a WeakMap memo of a pure function). */
+function once<T extends object>(x: T, voices: Voices, make: () => T): T {
+  const hit = joined.get(x)
+  if (hit && hit.voices === voices) return hit.out as T
+  const out = make()
+  joined.set(x, { voices, out })
+  return out
+}
+
+const filesWith = (files: FileRef[] | undefined, voices: Voices) => (files?.some(isVoice) ? files.map((f) => withVoice(f, voices)) : files || [])
+
+/** An input as the page shows it: its files with their notes' words; `text` what was said (typed, then the words). */
+export const inputWithVoices = (r: Input, voices: Voices): Input =>
+  !r.files?.some(isVoice)
+    ? r
+    : once(r, voices, () => {
+        const files = filesWith(r.files, voices)
+        const typed = r.typed ?? r.text // put together before: what was typed stays what it was
+        return { ...r, files, typed, text: saidText(typed, files) }
+      })
+
+export const commentWithVoices = (c: Comment, voices: Voices): Comment =>
+  !c.files?.some(isVoice)
+    ? c
+    : once(c, voices, () => {
+        const files = filesWith(c.files, voices)
+        const typed = c.typed ?? c.text
+        return { ...c, files, typed, text: saidText(typed, files) }
+      })
+
+const docWithVoices = (d: Doc, voices: Voices): Doc =>
+  once(d, voices, () => {
+    const cs = (list: Comment[]) => list.map((c) => commentWithVoices(c, voices))
+    return { ...d, blocks: d.blocks.map((b) => ({ ...b, comments: cs(b.comments) })), whole: cs(d.whole || []), detached: d.detached.map((t) => ({ ...t, comments: cs(t.comments) })) }
+  })
+
+/** Your message is the input it came from: what it says has that input's voice notes' words after its own. */
+const messageWithVoices = (x: Message, inputs: ReadonlyMap<string, Input>, voices: Voices): Message => {
+  const r = x.by === 'you' && x.src && !x.change ? inputs.get(x.src) : undefined
+  const own = r && r.files?.some(isVoice) && (x.id === r.seq || x.text.startsWith(`${r.id} updated:`))
+  if (!own && !x.files?.some(isVoice)) return x
+  const files = filesWith(x.files, voices)
+  const typed = x.typed ?? x.text
+  return { ...x, files, typed, text: own ? saidText(typed, filesWith(r.files, voices)) : typed }
+}
+
+export const itemWithVoices = (it: Item, inputs: ReadonlyMap<string, Input>, voices: Voices): Item =>
+  once(it, voices, () => ({ ...it, thread: it.thread.map((x) => messageWithVoices(x, inputs, voices)) }))
+
 
 /** A change to an item shown before the server has it; `add`: an item shown before the server makes it (its number
  * a stand-in's, from STAND up: its code reads "…" until Taska gives it one). */
@@ -68,6 +129,8 @@ export interface ProjectModel {
   inputs: Input[]
   byId: ReadonlyMap<string, Input>
   docs: Doc[]
+  /** every voice note's words, by its file (B682) */
+  voices: ReadonlyMap<string, Voice>
   facts: ProjectFacts
   width: number
   /** the time its times are told against ("2m ago", quiet agents): when the server last answered or you last
@@ -114,7 +177,11 @@ function patchedDoc(doc: Doc, p: DocPatch): Doc {
 }
 
 export function project(copy: ServerCopy, patches: readonly ItemPatch[] = [], at = copy.at, inputPatches: readonly InputPatch[] = [], docPatches: readonly DocPatch[] = []): ProjectModel {
-  const byN = new Map(copy.items)
+  const voices = copy.voices ?? new Map<string, Voice>()
+  const joinedInputs = new Map<string, Input>()
+  for (const [id, r] of copy.inputs) joinedInputs.set(id, inputWithVoices(r, voices))
+  const byN = new Map<number, Item>()
+  for (const [n, it] of copy.items) byN.set(n, itemWithVoices(it, copy.inputs, voices))
   for (const p of patches) {
     const it = byN.get(p.n)
     if (p.gone) byN.delete(p.n)
@@ -129,9 +196,9 @@ export function project(copy: ServerCopy, patches: readonly ItemPatch[] = [], at
       if (list) list.push(it)
       else kids.set(it.parent, [it])
     }
-  let byId: ReadonlyMap<string, Input> = copy.inputs
+  let byId: ReadonlyMap<string, Input> = joinedInputs
   if (inputPatches.length) {
-    const m = new Map(copy.inputs)
+    const m = new Map(joinedInputs)
     for (const p of inputPatches) {
       const r = m.get(p.id)
       if (p.gone) m.delete(p.id)
@@ -146,11 +213,18 @@ export function project(copy: ServerCopy, patches: readonly ItemPatch[] = [], at
     kids,
     inputs,
     byId,
-    docs: docPatches.length ? docsPatched(copy.docs, docPatches) : [...copy.docs.values()],
+    docs: docPatches.length ? docsPatched(joinedDocs(copy.docs, voices), docPatches) : [...joinedDocs(copy.docs, voices).values()],
+    voices,
     facts: copy.facts,
     width: copy.facts.width,
     at,
   }
+}
+
+function joinedDocs(docs: ReadonlyMap<number, Doc>, voices: Voices): ReadonlyMap<number, Doc> {
+  const m = new Map<number, Doc>()
+  for (const [d, doc] of docs) m.set(d, docWithVoices(doc, voices))
+  return m
 }
 
 function docsPatched(docs: ReadonlyMap<number, Doc>, patches: readonly DocPatch[]): Doc[] {

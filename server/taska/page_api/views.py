@@ -12,7 +12,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from ..domain import rules
 from ..domain.history import DeletionPlan, Filing, deletions, filings, undoable
-from ..domain.model import Comment, Doc, FileRef, Input, Item, Message
+from ..domain.model import Comment, Doc, FileRef, Input, Item, Message, Voice
 from ..domain.state import ProjectState
 from ..services.agents import AgentActivity
 
@@ -20,11 +20,24 @@ View = Dict[str, Any]
 
 
 def file_view(f: FileRef) -> View:
+    """A file by its name; a voice note's words are its record's (voice_view), read by its file."""
     out: View = {"f": f.f, "name": f.name}
-    for k in ("mime", "size", "tr", "heard", "wait"):
+    for k in ("mime", "size"):
         v = getattr(f, k)
         if v is not None:
             out[k] = v
+    return out
+
+
+def voice_view(v: Voice) -> View:
+    """A voice note's words (B682): the one record every place that shows the note reads."""
+    out: View = {"f": v.f, "state": v.state, "said": v.said, "tidied": v.tidied}
+    if v.early:
+        out["early"] = v.early
+    if v.err:
+        out["err"] = v.err
+    if v.fixed:
+        out["fixed"] = v.fixed
     return out
 
 
@@ -144,7 +157,7 @@ def home_short(path: str) -> str:
 
 
 def entities(st: ProjectState, agents: AgentActivity, held: Callable[[Input], bool]) -> Dict[str, List[View]]:
-    """Every item, input and document the page shows."""
+    """Every item, input and document the page shows, and the words of every voice note."""
     plans = deletions(st)
     filed = filings(st)
     return {
@@ -152,6 +165,7 @@ def entities(st: ProjectState, agents: AgentActivity, held: Callable[[Input], bo
         "inputs": [input_view(i, held(i), filed.get(i.id), plans.get(i.id)) for i in st.inputs.values() if not i.deleted],
         "docs": [doc_view(d) for d in st.docs.values()
                  if not d.deleted and not (st.items[d.n].deleted if d.n in st.items else None)],
+        "voices": [voice_view(v) for v in st.voices.values()],
     }
 
 

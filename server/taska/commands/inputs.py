@@ -4,13 +4,14 @@ restoring one, moving one to another item, taking a file off one, sending a canc
 from __future__ import annotations
 
 import os
-from typing import List
+from typing import Iterable, List, Optional
 
 from ..domain import events as ev
 from ..domain.history import deletions
 from ..domain.model import FileRef
 from ..domain.rules import item_at
 from ..domain.vocab import MAX_TEXT, PEOPLE, Refused
+from ..domain.voices import words_of
 from .base import Args, Outcome, Run, handles
 
 
@@ -22,8 +23,28 @@ def sent_files(r: Run, a: Args) -> List[FileRef]:
         if not r.project.file_exists(fid):
             raise Refused(f"unknown file {fid}")
         files.append(FileRef(f=fid, name=str(f.get("name", "")) if "name" in f else "", mime=f.get("mime"),
-                             size=f.get("size"), tr=f.get("tr")))
+                             size=f.get("size")))
     return files
+
+
+def voice_words(r: Run, a: Args, notes: Iterable[str], src: Optional[str] = None) -> List[ev.VoiceFixed]:
+    """The words of voice notes as you left them (in the box before sending, editing what you said: `words`, {file:
+    words}) -> the changes that make them a note's words, in its one record, wherever it shows (B682), for the
+    notes whose words you changed. Words the page was given for a note (its first, its final ones) change nothing."""
+    given = a.get("words") or {}
+    if not isinstance(given, dict):
+        raise Refused("words: expected {file: words}")
+    mine = set(notes)
+    out: List[ev.VoiceFixed] = []
+    for fid, words in given.items():
+        words = str(words or "").strip()[:MAX_TEXT]
+        if fid not in mine or not words:
+            continue
+        v = r.state.voices.get(fid)
+        if v and words in {x.strip() for x in (v.tidied, v.early, v.said) if x}:
+            continue
+        out.append(ev.VoiceFixed(f=fid, tidied=words, src=src, by=r.by))
+    return out
 
 
 @handles("input")
@@ -32,8 +53,7 @@ def new_input(r: Run, a: Args) -> Outcome:
     q = a.text("q")[:64]
     if q in s.page_ids:  # the page sent it again because the answer got lost: it is in already
         return Outcome(f"ok {s.page_ids[q]}", "Received")
-    text, files = r.project.with_words(a.text("text").strip(), sent_files(r, a))
-    text = text[:MAX_TEXT]
+    text, files = a.text("text").strip()[:MAX_TEXT], sent_files(r, a)
     if not text and not files:
         raise Refused("empty input")
     scope = item_at(s, a.get("scope")).n if a.get("scope") else None  # a merged item's replies go where it went
@@ -44,6 +64,8 @@ def new_input(r: Run, a: Args) -> Outcome:
         raise Refused("only a new input can be kept as cancelled")
     r.emit(ev.InputAdded(id=rid, by=r.by, text=text, scope=scope, files=files, q=q,
                          kind="answer" if answer else "cancelled" if cancelled else None))
+    for fix in voice_words(r, a, (f.f for f in files), rid):
+        r.emit(fix)
     if cancelled:
         return Outcome(f"ok {rid} kept as cancelled", "Kept in Inputs")
     # words on an item that waits for review, not Accept, take it back to open (Yadong r961: open is the agent's turn;
@@ -76,16 +98,23 @@ def send(r: Run, a: Args) -> Outcome:
 
 @handles("correct")
 def correct(r: Run, a: Args) -> Outcome:
-    """The wrong words in an input, fixed there and remembered for every project."""
+    """The wrong words in an input, fixed there and remembered for every project: in what was typed, or in one of
+    its voice notes' words (then the note's words are yours, wherever it shows)."""
     rid = a.text("id")
     inp = r.state.inputs.get(rid)
     if not inp:
         raise Refused(f"unknown input {rid}")
     wrong, right = " ".join(a.text("wrong").split()), " ".join(a.text("right").split())
-    if not wrong or wrong not in inp.text:
+    note = next((f.f for f in inp.files if wrong and wrong in words_of(r.state, f.f)), None)
+    if not wrong or (wrong not in inp.text and not note):
         raise Refused(f"{rid} does not say that")
     r.project.remember_spelling(wrong, right)
     r.project.note_voice_fix(wrong, right, inp, r.by)
+    if wrong not in inp.text and note:
+        if inp.moved or r.project.is_moving(rid):
+            raise Refused("this input has moved; edit it in the destination project")
+        r.emit(ev.VoiceFixed(f=note, tidied=words_of(r.state, note).replace(wrong, right), src=rid, by=r.by))
+        return Outcome(f"ok {rid} updated", "Updated")
     return amend(r, Args({"op": "amend", "id": rid, "mode": "edit", "v": a.get("v"), "text": inp.text.replace(wrong, right)}))
 
 
@@ -106,15 +135,19 @@ def amend(r: Run, a: Args) -> Outcome:
     # an append goes after whatever is there by then (words transcribed meanwhile are no reason to refuse it)
     if mode == "edit" and a.get("v") != inp.v:
         raise Refused("this input changed in another window; reopen it before saving")
-    text, files = r.project.with_words(a.text("text").strip(), sent_files(r, a))
-    if not text and not files:
+    text, files = a.text("text").strip(), sent_files(r, a)
+    fixes = voice_words(r, a, [f.f for f in inp.files + files], rid)
+    fixed = bool(fixes)
+    if not text and not files and not fixed and not (mode == "edit" and inp.files):
         raise Refused("enter some text")
     if mode == "append":
         text = (inp.text + ("\n\n" + text if text else "")).strip()
     if len(text) > MAX_TEXT:
         raise Refused(f"input is too long (maximum {MAX_TEXT} characters)")
+    for fix in fixes:
+        r.emit(fix)
     if text == inp.text and not files:
-        return Outcome(f"ok {rid} unchanged", "Unchanged")
+        return Outcome(f"ok {rid} {'updated' if fixed else 'unchanged'}", "Updated" if fixed else "Unchanged")
     r.emit(ev.InputAmended(src=rid, mode=str(mode), text=text, by=r.by, files=files))
     return Outcome(f"ok {rid} updated", "Updated")
 

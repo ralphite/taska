@@ -5,6 +5,7 @@ import { Frames } from '../../stories/Frames'
 import { T, item } from '../../stories/fixtures'
 import { comment, doc } from '../../stories/itemFixtures'
 import { talkOf } from '../../stories/itemPage'
+import { record, shownComment } from '../../stories/fixtures'
 
 export default { title: 'Components/Conversation/Message/Document comment' } satisfies Meta
 type Story = StoryObj
@@ -30,16 +31,16 @@ export const AnAgentsAnswer: Story = {
 export const OnTheWholeDocument: Story = { ...at([comment({ id: 9, key: 'doc', t: later(1), quote: '', text: 'Looks good as a whole.' })], 'doc'), name: 'On the whole document' }
 export const AboutATable: Story = { ...at([comment({ id: 9, key: 't1', t: later(1), quote: '', text: 'Who signs it off?' })], 't1', TABLE), name: 'About a table' }
 export const VoiceCommentNoWordsHeard: Story = {
-  ...at([comment({ id: 9, t: later(1), quote: 'keeps the filter', text: '', files: [{ f: 'f5-voice_0-03.webm', name: 'voice_0-03.webm', mime: 'audio/webm' }] })]),
+  ...at([shownComment(comment({ id: 9, t: later(1), quote: 'keeps the filter', text: '', files: [{ f: 'f5-voice_0-03.webm', name: 'voice_0-03.webm', mime: 'audio/webm' }] }), record('f5-voice_0-03.webm', ''))]),
   name: 'Voice comment, no words heard',
 }
 // T668: the voice note's pill in the bubble, under the words it was written out to (r1080)
 export const VoiceCommentItsWordsWrittenOut: Story = {
-  ...at([comment({ id: 9, t: later(1), quote: 'keeps the filter', text: '', files: [{ f: 'f5-voice_0-05.webm', name: 'voice_0-05.webm', mime: 'audio/webm', tr: 'And the sort too?', heard: 'And, um, the sort too?' }] })]),
+  ...at([shownComment(comment({ id: 9, t: later(1), quote: 'keeps the filter', text: '', files: [{ f: 'f5-voice_0-05.webm', name: 'voice_0-05.webm', mime: 'audio/webm' }] }), record('f5-voice_0-05.webm', 'And the sort too?', 'And, um, the sort too?'))]),
   name: 'Voice comment, its words written out',
 }
 export const VoiceCommentBeingSent: Story = {
-  ...at([comment({ id: -1, t: later(1), quote: 'keeps the filter', text: 'And the sort too?', files: [{ f: 'f5-voice_0-05.webm', name: 'voice_0-05.webm', mime: 'audio/webm', tr: 'And the sort too?' }] })]),
+  ...at([shownComment(comment({ id: -1, t: later(1), quote: 'keeps the filter', text: '', files: [{ f: 'f5-voice_0-05.webm', name: 'voice_0-05.webm', mime: 'audio/webm' }] }), record('f5-voice_0-05.webm', 'And the sort too?'))]),
   name: 'Voice comment, being sent',
 }
 // ---- more states (B636)

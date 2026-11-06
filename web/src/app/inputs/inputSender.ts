@@ -7,6 +7,7 @@ import type { TaskaApi } from '../../api/taska'
 import type { ViewAnswer } from '../../model/types'
 import type { OutboxStore } from '../../stores/outbox'
 import type { Outgoing } from '../../model/outgoing'
+import { wordsByFile } from '../../model/voices'
 
 export interface SenderEvents {
   cursor(slug: string): string | null
@@ -58,8 +59,8 @@ export class InputSender {
         if (!o || o.state === 'failed') break
         if (o.files.some((f) => f.uploading)) break // its files are on their way: it goes once they are up
         const files = o.files.filter((f) => f.f && !f.failed)
-        let text = o.text
-        for (const f of files) if (f.tr && !text.includes(f.tr)) text = (text ? text + '\n' : '') + f.tr // words that came after you sent
+        const text = o.text // what was typed; a voice note's words are its own (B682), those you left in the box with it
+        const words = wordsByFile(o.words, files)
         if (!text && !files.length) {
           this.store.getState().remove(o.q)
           continue
@@ -72,7 +73,8 @@ export class InputSender {
             scope: o.scope,
             q: o.q,
             ...(o.kind ? { kind: o.kind } : {}),
-            files: files.map(({ f, name, mime, size, tr }) => ({ f, name, mime, size, ...(tr ? { tr } : {}) })),
+            files: files.map(({ f, name, mime, size }) => ({ f, name, mime, size })),
+            ...(Object.keys(words).length ? { words } : {}),
           }
           const a = await this.api.commands(o.slug, 'in-' + o.q, [command], this.on.cursor(o.slug))
           const rid = (a.results[0] || '').split(' ')[1] || ''

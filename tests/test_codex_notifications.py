@@ -92,7 +92,7 @@ class Notifications(unittest.TestCase):
         self.n.bind(TARGET)
         rid = "r" + str(self.p.store.count + 1)
         self.p.emit(ev.InputAdded(by="you", id=rid, text="kept, not sent", kind="cancelled"))
-        self.p.emit(ev.WordsIn(src=rid, f="f1", tr="its words", by="you"))
+        self.p.emit(ev.VoiceHeard(src=rid, f="f1", state="done", tidied="its words", by="taska"))
         self.assertEqual(self.n.sends, set())
         self.p.emit(ev.InputSent(src=rid, by="you"))
         self.settle()

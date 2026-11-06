@@ -11,6 +11,7 @@ import { plainQuote } from './markdown'
 import { codeOf, liveN, type ProjectModel } from './project'
 import type { Route } from './route'
 import type { Input } from './types'
+import { transcribing } from './voices'
 import { vcCount } from './voiceComments'
 import { inputCode, plural } from './words'
 import { outgoingLine, type Outgoing } from './outgoing'
@@ -195,7 +196,7 @@ export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; scope: 
   const move = a.others && !r.scope
   let line: FeedbackLine
   if (r.moved) line = { kind: 'moved', code: inputCode(r.id), to: r.moved.to, as: r.moved.as ? inputCode(r.moved.as) : '', href: `/p/${encodeURIComponent(r.moved.to)}/` }
-  else if (r.trWait) line = { kind: 'transcribing' }
+  else if (transcribing(r.files)) line = { kind: 'transcribing' }
   else if (org.busy.includes(r.id) || (!r.acked && org.on && !r.org)) line = { kind: 'organizing' }
   else if (r.org && !r.org.ok) line = { kind: 'org-failed', msg: failWhy(r.org.msg), raw: r.org.msg, retry: true }
   else if (r.org?.undone) line = { kind: 'undone', code: inputCode(r.id) }

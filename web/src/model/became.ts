@@ -9,6 +9,7 @@ import { when } from './time'
 import { shownStatus } from './items'
 import { codeOf, inputDraft, type ProjectModel } from './project'
 import type { Input, ItemType } from './types'
+import { transcribing } from './voices'
 import { inputCode } from './words'
 
 export interface ItemRef {
@@ -121,7 +122,7 @@ export function becameOf(r: Input, m: ProjectModel, title: (slug: string) => str
   const organizer = m.facts.organizer
   if (r.moved) return movedOf(r.moved, title)
   if (canSend(r)) return { k: 'cancelled' }
-  if (r.trWait) return { k: 'transcribing' }
+  if (transcribing(r.files)) return { k: 'transcribing' }
   // one word for every input the organizer has not finished: whether it is on it now, next in line or asking Gemini
   // again after a busy answer, it is being organized; no "Queued" to fall back to (B684: it jumped back and forth)
   if (organizing(r, organizer)) return { k: 'organizing' }

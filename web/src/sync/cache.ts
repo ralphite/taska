@@ -13,6 +13,7 @@ interface Stored {
   items: ServerCopy['items'] extends ReadonlyMap<number, infer I> ? I[] : never
   inputs: ServerCopy['inputs'] extends ReadonlyMap<string, infer I> ? I[] : never
   docs: ServerCopy['docs'] extends ReadonlyMap<number, infer D> ? D[] : never
+  voices?: ServerCopy['voices'] extends ReadonlyMap<string, infer V> ? V[] : never
   facts: ServerCopy['facts']
   server: ServerCopy['server']
 }
@@ -47,10 +48,11 @@ export class BrowserCopyCache implements CopyCache {
       const s = await Promise.race([read, new Promise<null>((ok) => setTimeout(() => ok(null), 300))])
       if (!s) return null
       return {
-        cursor: s.cursor,
+        cursor: s.voices ? s.cursor : '', // kept before the voice notes' words came apart (B682): all of it again
         items: new Map(s.items.map((x) => [x.n, x])),
         inputs: new Map(s.inputs.map((x) => [x.id, x])),
         docs: new Map(s.docs.map((x) => [x.d, x])),
+        voices: new Map((s.voices || []).map((x) => [x.f, x])),
         facts: s.facts,
         server: s.server,
         at: Date.now(),
@@ -71,6 +73,7 @@ export class BrowserCopyCache implements CopyCache {
           items: [...copy.items.values()],
           inputs: [...copy.inputs.values()],
           docs: [...copy.docs.values()],
+          voices: [...copy.voices.values()],
           facts: copy.facts,
           server: copy.server,
         }

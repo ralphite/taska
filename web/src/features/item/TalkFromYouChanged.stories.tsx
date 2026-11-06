@@ -4,6 +4,7 @@ import { T, at, later, mine, r4, voice } from '../../stories/fromYouFixtures'
 import { item } from '../../stories/fixtures'
 import { talkOf } from '../../stories/itemPage'
 import { one as tip } from '../../stories/tipFixtures'
+import { record } from '../../stories/fixtures'
 
 export default { title: 'Components/Conversation/Message/From you/Changed afterwards' } satisfies Meta
 type Story = StoryObj
@@ -25,7 +26,7 @@ export const ItsInputMovedToAnotherProject: Story = { ...at([mine()], { inputs: 
 /** The desktop: the pointer on its voice note shows the words it heard (the page's own tip). */
 export const MovedPointerOnItsVoiceNote: Story = {
   ...tip(
-    () => talkOf(item({ n: 12, thread: [mine()] }), true, { inputs: [r4({ files: [{ ...voice, heard: 'the export should keep the filter i set', tr: 'The export should keep the filter I set.' }], moved: { to: 'mobile-app', as: 'r4' } })] }),
+    () => talkOf(item({ n: 12, thread: [mine()] }), true, { inputs: [r4({ files: [{ ...voice, voice: record(voice.f, 'The export should keep the filter I set.', 'the export should keep the filter i set') }], moved: { to: 'mobile-app', as: 'r4' } })] }),
     'button[aria-label^="Play"]',
     { width: 720, height: 320 },
   ),

@@ -15,6 +15,7 @@ from typing import Dict, List, Optional, Tuple
 from .model import Doc, Input, Item
 from .text import page_text
 from .state import ProjectState
+from .voices import said, voices_of, words_of
 
 # words that say nothing about what to find
 STOP = frozenset("""
@@ -86,7 +87,12 @@ def _items(st: ProjectState) -> List[Item]:
 
 
 def _inputs(st: ProjectState) -> List[Input]:
-    return [r for r in st.inputs.values() if not r.deleted and not r.moved and r.text.strip()]
+    return [r for r in st.inputs.values() if not r.deleted and not r.moved and said(st, r.text, r.files)]
+
+
+def _comments(st: ProjectState, d: Doc) -> str:
+    """What was said in a document's comments (a voice comment's words too)."""
+    return " ".join(said(st, c.text, c.files) for c in d.comments)
 
 
 def _docs(st: ProjectState) -> List[Doc]:
@@ -101,17 +107,19 @@ def by_words(st: ProjectState, q: str) -> List[Found]:
     out: List[Tuple[float, str, Found]] = []
     for i in _items(st):
         code = st.code(i.n).lower()
-        rest = " ".join([code, i.body, i.next or "", *(m.text or "" for m in i.thread)]).lower()
+        talk = [m.text or "" for m in i.thread] + [words_of(st, f.f) for r in i.srcs if r in st.inputs
+                                                   for f in voices_of(st.inputs[r].files)]
+        rest = " ".join([code, i.body, i.next or "", *talk]).lower()
         s = _score(ws, i.title.lower(), rest)
         if s:
             out.append((s, i.t1 or i.t0 or "", Found("rules" if i.type == "rule" else "items", "i%d" % i.n, i.n, s)))
     for r in _inputs(st):
-        s = _score(ws, "", r.text.lower())
+        s = _score(ws, "", said(st, r.text, r.files).lower())
         if s:
             out.append((s, r.t, Found("inputs", r.id, _input_n(st, r), s)))
     for d in _docs(st):
-        # a web page by the words it shows, not its markup ("div" or "margin" found every page)
-        s = _score(ws, d.title.lower(), (page_text(d.md) if d.is_page else d.md).lower())
+        # a web page by the words it shows, not its markup ("div" or "margin" found every page); and its comments' words
+        s = _score(ws, d.title.lower(), ((page_text(d.md) if d.is_page else d.md) + " " + _comments(st, d)).lower())
         if s:
             out.append((s, d.t1 or d.t0, Found("docs", "d%d" % d.d, d.n, s)))
     out.sort(key=lambda x: (x[0], x[1]), reverse=True)
@@ -127,7 +135,7 @@ def short_list(st: ProjectState, most_inputs: int = 150) -> List[Tuple[Found, st
         kind = "rules" if i.type == "rule" else "items"
         out.append((Found(kind, "i%d" % i.n, i.n), f"{st.code(i.n)} {i.title}" + (f" — {body}" if body else "")))
     for r in sorted(_inputs(st), key=lambda x: x.number, reverse=True)[:most_inputs]:
-        out.append((Found("inputs", r.id, _input_n(st, r)), "#%d said: %s" % (r.number, " ".join(r.text.split())[:100])))
+        out.append((Found("inputs", r.id, _input_n(st, r)), "#%d said: %s" % (r.number, " ".join(said(st, r.text, r.files).split())[:100])))
     for d in sorted(_docs(st), key=lambda x: x.d):
         out.append((Found("docs", "d%d" % d.d, d.n), f"D{d.d} document on {st.code(d.n)}: {d.title}"))
     return out

@@ -3,8 +3,8 @@
 import { fn } from 'storybook/test'
 import { Diagrams } from '../app/page/diagrams'
 import type { RowEvents, RowFacts, RowLook } from '../features/list/ListRows'
-import { project, type ProjectModel } from '../model/project'
-import type { Doc, Input, Item, Message, ProjectFacts } from '../model/types'
+import { commentWithVoices, inputWithVoices, itemWithVoices, project, type ProjectModel } from '../model/project'
+import type { Comment, Doc, Input, Item, Message, ProjectFacts, Voice } from '../model/types'
 
 export const T = '2026-10-23T14:30:00-07:00'
 
@@ -38,6 +38,22 @@ export function item(f: Partial<Item> & { n: number }): Item {
 export function message(f: Partial<Message> & { id: number }): Message {
   return { by: 'claude-code', kind: 'progress', text: 'Reproduced it: the export reads the list before the filter.', t: T, src: null, files: [], ...f }
 }
+
+/** A voice note's words as Taska keeps them: its one record (B682). A story gives a note words only this way. */
+export const record = (f: string, tidied: string, said = tidied, state: Voice['state'] = tidied ? 'done' : 'none'): Voice => ({ f, state, said, tidied })
+
+/** A note whose words are still being worked out (`early`: its first words meanwhile). */
+export const waiting = (f: string, early = ''): Voice => ({ f, state: 'wait', said: '', tidied: '', ...(early ? { early } : {}) })
+
+/** What was said as the page's model shows it: its voice notes with their records' words, after what was typed. */
+export const shown = (r: Input, ...voices: Voice[]): Input => inputWithVoices(r, new Map(voices.map((v) => [v.f, v])))
+
+/** A comment as the page's model shows it, its voice notes' words from their records. */
+export const shownComment = (c: Comment, ...voices: Voice[]): Comment => commentWithVoices(c, new Map(voices.map((v) => [v.f, v])))
+
+/** An item as the page's model shows it: your messages with the words of their inputs' voice notes. */
+export const shownItem = (it: Item, inputs: readonly Input[], ...voices: Voice[]): Item =>
+  itemWithVoices(it, new Map(inputs.map((r) => [r.id, r])), new Map(voices.map((v) => [v.f, v])))
 
 export function input(f: Partial<Input> & { id: string }): Input {
   return { t: T, by: 'you', text: 'The export should keep the filter I set.', scope: null, files: [], acked: false, touched: [], org: null, seq: 1, v: 0, ...f }
@@ -89,13 +105,15 @@ export function projectFacts(f: Partial<ProjectFacts> = {}): ProjectFacts {
   }
 }
 
-/** A project's model made of these items and inputs, as the page would have it. */
-export function modelOf(items: Item[], inputs: Input[] = [], f: Partial<ProjectFacts> = {}, docs: Doc[] = []): ProjectModel {
+/** A project's model made of these items and inputs, as the page would have it; a voice note's words come only from
+ * its record (`voices`), as on the page (B682). */
+export function modelOf(items: Item[], inputs: Input[] = [], f: Partial<ProjectFacts> = {}, docs: Doc[] = [], voices: Voice[] = []): ProjectModel {
   return project({
     cursor: '',
     items: new Map(items.map((it) => [it.n, it])),
     inputs: new Map(inputs.map((r) => [r.id, r])),
     docs: new Map(docs.map((d) => [d.d, d])),
+    voices: new Map(voices.map((v) => [v.f, v])),
     facts: projectFacts(f),
     server: { page: '', update: false },
     at: Date.parse(T),

@@ -86,9 +86,10 @@ def get(ctx: "AppContext", req: Request, p: Project, sub: str) -> Optional[Respo
         fid = os.path.basename(req.arg("f"))
         with p.lock:
             job = p.voice.job(fid) if fid else None
+            voice = p.state.voices.get(fid)
         if not job:
             return as_json({"ok": False, "f": fid, "error": f"no words for {fid} yet"}, 404)
-        return as_json(voice_answer(fid, job))
+        return as_json(voice_answer(fid, job, voice))
     return None
 
 
@@ -160,7 +161,8 @@ def _words(req: Request, p: Project) -> Response:
         if job:  # more=1: waits for the fuller words of a note whose strong model ran out of time, or the final words
             j = job  # of one whose first words came early (T687)
             p.news.wait_for(lambda: (j.done and not (more and j.res.get("more"))) or (not more and not j.done and bool(j.early)), timeout=45)
-    return as_json(voice_answer(fid, job))
+        voice = p.state.voices.get(fid)
+    return as_json(voice_answer(fid, job, voice))
 
 
 def _page_log(ctx: "AppContext", req: Request, p: Project) -> None:

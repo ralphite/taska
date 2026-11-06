@@ -6,6 +6,7 @@ import { allComments, resolved, sameText, splitThread, threadsOf, type DocTarget
 import { draftKey, type DraftKey } from '../../model/draftTarget'
 import type { DocPatch } from '../../model/project'
 import type { Comment } from '../../model/types'
+import { draftNotes, shownNotes, splitVoices, wordsByFile } from '../../model/voices'
 import type { BoxStore } from '../../stores/box'
 import type { ChangesStore } from '../../stores/changes'
 import type { DocViewStore } from '../../stores/docView'
@@ -90,8 +91,10 @@ export class DocComments {
     for (let i = 0; live().some((f) => f.uploading || f.transcribing) && i < 240; i++) await new Promise((ok) => setTimeout(ok, 500))
     const held = files.length ? this.d.boxStore.getState().takeFiles(hold) : []
     const sent = held.filter((f) => f.f && !f.failed)
-    let text = typed
-    for (const f of sent) if (f.tr && !text.includes(f.tr)) text = (text ? text + '\n' : '') + f.tr
+    // what was typed is the comment's words; each voice note's words, as you left them, go to the note (B682)
+    const said = splitVoices(typed, draftNotes(held))
+    const text = said.text
+    const words = wordsByFile(said.words, sent)
     this.d.changes.getState().remove(showing.id)
     if (!text && !sent.length) {
       this.d.box.putBack(slug, key, typed, held)
@@ -101,7 +104,7 @@ export class DocComments {
     const ok = await this.d.runner.send({
       id: newId(),
       slug,
-      commands: [{ op: 'dc', d: dn, key: t.key, text, files: sent.map(({ f, name, mime, size, tr }) => ({ f, name, mime, size, ...(tr ? { tr } : {}) })), ...(t.reply ? {} : { quote }), ...(t.th ? { th: t.th } : {}) } as never],
+      commands: [{ op: 'dc', d: dn, key: t.key, text, files: sent.map(({ f, name, mime, size }) => ({ f, name, mime, size })), words, ...(t.reply ? {} : { quote }), ...(t.th ? { th: t.th } : {}) } as never],
       patches: [],
       docPatches: [{ d: dn, comment: stand }],
       said: `commenting on D${dn}`,
@@ -128,19 +131,24 @@ export class DocComments {
   /** Save the edit: it changes at once and is saved behind you; not saved, your words come back to edit. */
   async saveComment(slug: string, dn: number, id: number, key: DraftKey): Promise<boolean> {
     const c = this.commentOf(slug, dn, id)
-    const { text, files } = this.d.box.take(slug, key)
+    const { text: shown, files } = this.d.box.take(slug, key)
     const sent = files.filter((f) => f.f && !f.failed)
-    if (!text && !sent.length && !c?.files.length) {
-      this.d.box.putBack(slug, key, text, files)
+    // the box began with what was said (typed, then its voice notes' words): what was typed goes as its words, each
+    // note's words as you left them go to the note (B682)
+    const said = splitVoices(shown, [...shownNotes(c?.files), ...draftNotes(sent)], c?.typed ?? c?.text)
+    const text = said.text
+    const words = { ...wordsByFile(said.words, sent), ...Object.fromEntries(Object.entries(said.words).filter(([k]) => !sent.some((f) => f.key === k))) }
+    if (!shown && !sent.length && !c?.files.length) {
+      this.d.box.putBack(slug, key, shown, files)
       this.d.toasts.show('Write something, or delete the comment instead')
       return false
     }
     this.d.boxStore.getState().setMode(null)
-    const patch: DocPatch[] = c && text ? [{ d: dn, commentGone: id }, { d: dn, comment: { ...c, text } }] : []
+    const patch: DocPatch[] = c && shown ? [{ d: dn, commentGone: id }, { d: dn, comment: { ...c, text: shown } }] : []
     const ok = await this.d.runner.send({
       id: newId(),
       slug,
-      commands: [{ op: 'dcedit', d: dn, id, text, ...(sent.length ? { files: sent.map(({ f, name, mime, size, tr }) => ({ f, name, mime, size, ...(tr ? { tr } : {}) })) } : {}) } as never],
+      commands: [{ op: 'dcedit', d: dn, id, text, words, ...(sent.length ? { files: sent.map(({ f, name, mime, size }) => ({ f, name, mime, size })) } : {}) } as never],
       patches: [],
       docPatches: patch,
       said: `editing a comment on D${dn}`,
@@ -148,7 +156,7 @@ export class DocComments {
     })
     if (!ok) {
       this.d.boxStore.getState().setMode({ kind: 'comment', d: dn, id, was: c?.text || '' })
-      this.d.box.putBack(slug, key, text, files)
+      this.d.box.putBack(slug, key, shown, files)
     }
     return ok
   }

@@ -24,13 +24,17 @@ import { talkEnv } from './itemFixtures'
 import { sideOn } from './sideFixtures'
 import { LiveWords } from './doubtsFixtures'
 import { useInputs } from './inputFixtures'
+import { record, waiting } from './fixtures'
 
 // ---------------------------------------------------------------- the data
 
 const at = (min: number) => new Date(Date.parse(T) - min * 60_000).toISOString()
 const org = (msg: string, f: Partial<OrgNote> = {}): OrgNote => ({ ok: true, msg, t: '', keep: false, changed: true, undone: false, ...f })
-/** a voice note and, once written out, its words (the input's text holds them too) */
-const voice = (n: number, len: string, tr?: string): FileRef => ({ f: `f${n}-voice_${len}.webm`, name: `voice_${len}.webm`, mime: 'audio/webm', ...(tr === undefined ? {} : { tr }) })
+/** a voice note and its words: its record (B682); none yet: still being written out */
+const voice = (n: number, len: string, tr?: string): FileRef => {
+  const f = `f${n}-voice_${len}.webm`
+  return { f, name: `voice_${len}.webm`, mime: 'audio/webm', voice: tr === undefined ? waiting(f) : record(f, tr) }
+}
 
 const ITEMS = [
   item({ n: 479, status: 'doing', title: '搜索默认语音输入进行语义匹配' }),
@@ -50,13 +54,13 @@ const MANAGER =
 
 /** Newest first: today's, yesterday's, and the day before's. */
 const INPUTS: Input[] = [
-  input({ id: 'r1031', t: at(1), text: '', files: [voice(31, '0-12')], trWait: true }),
+  input({ id: 'r1031', t: at(1), text: '', files: [voice(31, '0-12')] }),
   input({ id: 'r1030', t: at(2), text: 'The export button does nothing on the orders page, see the screenshot.', files: [{ f: 'f90-orders-error.png', name: 'orders-error.png', mime: 'image/png', size: 145_408 }] }),
-  input({ id: 'r1029', t: at(4), acked: true, touched: [479], text: '加上，我现在做桌面版本的设计。', files: [voice(29, '0-05', '加上，我现在做桌面版本的设计。')], org: org('Noted on F479') }),
-  input({ id: 'r1028', t: at(12), text: '把 T642 的结果按优先级排好，先给我看 P0 的。', files: [voice(28, '0-09', '把 T642 的结果按优先级排好，先给我看 P0 的。')], org: org('Some commands failed: err: 503 Service Unavailable', { ok: false, changed: false }) }),
-  input({ id: 'r1027', t: at(40), acked: true, touched: [659], text: 'Input item 现在的设计还是很有问题。我们现在分成两栏，像右边的这个状态，放在右边我觉得不合适，应该放在下面。不是左右，而是上下。', files: [voice(27, '0-28', 'Input item 现在的设计还是很有问题。我们现在分成两栏，像右边的这个状态，放在右边我觉得不合适，应该放在下面。不是左右，而是上下。')], org: org('Created F659') }),
-  input({ id: 'r1026', t: at(55), acked: true, touched: [657], text: LONG, files: [voice(26, '1-00', LONG)], org: org('Created F657') }),
-  input({ id: 'r1025', t: at(70), kind: 'cancelled', text: 'Maybe the inputs list should say each day once.', files: [voice(25, '0-04', 'Maybe the inputs list should say each day once.')] }),
+  input({ id: 'r1029', t: at(4), acked: true, touched: [479], text: '', files: [voice(29, '0-05', '加上，我现在做桌面版本的设计。')], org: org('Noted on F479') }),
+  input({ id: 'r1028', t: at(12), text: '', files: [voice(28, '0-09', '把 T642 的结果按优先级排好，先给我看 P0 的。')], org: org('Some commands failed: err: 503 Service Unavailable', { ok: false, changed: false }) }),
+  input({ id: 'r1027', t: at(40), acked: true, touched: [659], text: '', files: [voice(27, '0-28', 'Input item 现在的设计还是很有问题。我们现在分成两栏，像右边的这个状态，放在右边我觉得不合适，应该放在下面。不是左右，而是上下。')], org: org('Created F659') }),
+  input({ id: 'r1026', t: at(55), acked: true, touched: [657], text: '', files: [voice(26, '1-00', LONG)], org: org('Created F657') }),
+  input({ id: 'r1025', t: at(70), kind: 'cancelled', text: '', files: [voice(25, '0-04', 'Maybe the inputs list should say each day once.')] }),
   input({
     id: 'r1024',
     t: at(903),
@@ -65,7 +69,7 @@ const INPUTS: Input[] = [
     scope: 642,
     text: 'Answered in D115:\n✓ 照建议改 (1. 事项页上半部分默认太矮，子事项被切掉)\n✓ 照建议改 (2. 手机上视图标签行两头的圆形箭头盖住标签)\n✓ 照建议改 (3. 手机输入框写多行时，文字被夹在按钮中间的窄条里)\n✗ 不改 (4. 侧栏项目颜色太接近)',
   }),
-  input({ id: 'r1023', t: at(907), acked: true, touched: [656], text: MANAGER, files: [voice(23, '0-28', MANAGER)], org: org('Noted on B656') }),
+  input({ id: 'r1023', t: at(907), acked: true, touched: [656], text: '', files: [voice(23, '0-28', MANAGER)], org: org('Noted on B656') }),
   input({
     id: 'r1022',
     t: at(913),
@@ -78,7 +82,7 @@ const INPUTS: Input[] = [
   input({ id: 'r1021', t: at(916), acked: true, text: '周末买菜：牛奶、鸡蛋、番茄。', moved: { to: 'home', as: 'r88' } }),
   input({ id: 'r1020', t: at(920), acked: true, kind: 'answer', scope: 447, text: '✓ 继续做 manager，在下面说要什么' }),
   input({ id: 'r1019', t: at(925), text: 'Look at why the build takes so long on the release branch.', org: org('Left for agent', { keep: true, changed: false }) }),
-  input({ id: 'r1018', t: at(930), text: '把 coupon 那个 bug 关掉。', files: [voice(18, '0-03', '把 coupon 那个 bug 关掉。')], org: org('Created B660', { undone: true }) }),
+  input({ id: 'r1018', t: at(930), text: '', files: [voice(18, '0-03', '把 coupon 那个 bug 关掉。')], org: org('Created B660', { undone: true }) }),
   input({ id: 'r1017', t: at(60 * 47), acked: true, text: 'Restart the nightly checks after the deploy.' }),
   input({
     id: 'r1016',

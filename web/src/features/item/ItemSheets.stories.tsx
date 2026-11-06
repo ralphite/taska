@@ -9,6 +9,7 @@ import { AT_BUTTON, act, acts, opened } from '../../stories/menuFixtures'
 import { laterDay, laterDays } from '../../model/time'
 import { Thumbs } from '../../ui/Files'
 import { agentCardSheet, laterSheet, sourcesSheet } from './ItemSheets'
+import { record, shown } from '../../stories/fixtures'
 
 export default { title: 'Components/Around the page/Menus and sheets/Sheets/An item: what it came from, what agents see' } satisfies Meta
 type Story = StoryObj
@@ -18,7 +19,7 @@ const fileOn = acts('A file', ['play', 'words', 'view'])
 const at = (min: number) => new Date(Date.parse(T) - min * 60_000).toISOString()
 const inputs = [
   input({ id: 'r12', t: at(90), acked: true, touched: [12], text: 'The export should keep the filter I set.', files: [{ f: 'f3-shot.png', name: 'shot.png', mime: 'image/png' }] }),
-  input({ id: 'r15', t: at(30), acked: true, touched: [12], text: 'And the sort, please.', files: [{ f: 'f4-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm', tr: 'And the sort, please.', heard: 'And the, um, the sort, please.' }] }),
+  shown(input({ id: 'r15', t: at(30), acked: true, touched: [12], text: '', files: [{ f: 'f4-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm' }] }), record('f4-voice_0-07.webm', 'And the sort, please.', 'And the, um, the sort, please.')),
 ]
 const m = modelOf([item({ n: 12, srcs: ['r12', 'r15'] })], inputs)
 
@@ -55,7 +56,7 @@ export const WhatAgentsSeeLoading: Story = {
 // ---- more states (T639): what the organizer made of each input, and an input that is only a voice note
 const filed = [
   input({ id: 'r12', t: at(90), acked: true, touched: [12], text: 'The export should keep the filter I set.', org: { ok: true, msg: 'Created F012', t: '', keep: false, changed: true, undone: false } }),
-  input({ id: 'r15', t: at(30), acked: true, touched: [12], text: 'And the sort, please.', files: [{ f: 'f4-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm', tr: 'And the sort, please.', heard: 'And the, um, the sort, please.' }], org: { ok: true, msg: 'Noted on F012', t: '', keep: false, changed: true, undone: false } }),
+  shown(input({ id: 'r15', t: at(30), acked: true, touched: [12], text: '', files: [{ f: 'f4-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm' }], org: { ok: true, msg: 'Noted on F012', t: '', keep: false, changed: true, undone: false } }), record('f4-voice_0-07.webm', 'And the sort, please.', 'And the, um, the sort, please.')),
 ]
 const mf = modelOf([item({ n: 12, srcs: ['r12', 'r15'] })], filed)
 export const SourcesFiled: Story = {

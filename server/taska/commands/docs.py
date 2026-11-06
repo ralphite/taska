@@ -10,7 +10,7 @@ from ..domain.markdown import block_key, blocks as md_blocks
 from ..domain.rules import doc_at, doc_view, item_at
 from ..domain.vocab import DOC_KEY, MAX_TEXT, PEOPLE, Refused
 from .base import Args, Outcome, Run, handles
-from .inputs import sent_files
+from .inputs import sent_files, voice_words
 
 _PAGE_TITLE = re.compile(r"<title>(.*?)</title>|<h1[^>]*>(.*?)</h1>", re.S | re.I)
 
@@ -102,9 +102,8 @@ def comment(r: Run, a: Args) -> Outcome:
         if found is None and not old:
             raise Refused("that paragraph is not in the document")
         text = found if found is not None else (old.quote if old else "")
-    words, files = r.project.with_words(str(a.get("text", "")).strip(), sent_files(r, a))  # a voice comment keeps its recording
-    body = words[:MAX_TEXT]
-    files = [f.with_wait(None) for f in files]  # words still to come stay with the recording: the page waits for them
+    body, files = str(a.get("text", "")).strip()[:MAX_TEXT], sent_files(r, a)  # a voice comment: its note, by name
+    fixes = voice_words(r, a, [f.f for f in files])
     if not body and not files:
         raise Refused("empty comment")
     quote = " ".join(a.text("quote").split()) or text  # what the user selected, else the paragraph
@@ -124,6 +123,8 @@ def comment(r: Run, a: Args) -> Outcome:
         if th is not None:
             quote = next(c.quote for c in mine if c.th == th)
     r.emit(ev.CommentAdded(d=d.d, key=key, quote=quote[:500], text=body, by=r.by, files=files, th=th))
+    for fix in fixes:
+        r.emit(fix)
     return Outcome(f"ok D{d.d} comment{r.gone_note(s.items.get(d.n))}", f"Commented on D{d.d}")
 
 
@@ -202,11 +203,14 @@ def change_comment(r: Run, a: Args) -> Outcome:
     if r.by not in PEOPLE or (a.name == "dcedit" and c.by not in PEOPLE):
         raise Refused("only the user deletes comments, and edits only their own")
     if a.name == "dcedit":
-        text, files = r.project.with_words(a.text("text").strip(), sent_files(r, a))  # files added while editing go too
-        text = text[:MAX_TEXT]
+        text, files = a.text("text").strip()[:MAX_TEXT], sent_files(r, a)  # files added while editing go too
         if not text and not c.files and not files:
             raise Refused("empty comment: delete it instead")
-        r.emit(ev.CommentEdited(d=d.d, id=cid, text=text, by=r.by, files=files))
+        fixes = voice_words(r, a, [f.f for f in c.files + files])
+        if text != c.text or files:
+            r.emit(ev.CommentEdited(d=d.d, id=cid, text=text, by=r.by, files=files))
+        for fix in fixes:
+            r.emit(fix)
         return Outcome(f"ok D{d.d} comment {cid} edited", f"Edited a comment on D{d.d}")
     if a.name == "dcdel":
         r.emit(ev.CommentDeleted(d=d.d, id=cid, by=r.by))

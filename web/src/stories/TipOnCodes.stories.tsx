@@ -6,6 +6,7 @@ import { input, item, message, modelOf } from './fixtures'
 import { talkOf } from './itemPage'
 import { PROJECT } from './listFixtures'
 import { one } from './tipFixtures'
+import { record, shown } from './fixtures'
 
 export default { title: 'Components/Around the page/Floating/Tip/On codes and voice notes' } satisfies Meta
 type Story = StoryObj
@@ -27,7 +28,7 @@ export const OnVoiceNote: Story = {
     () =>
       talkOf(item({ n: 12, thread: [message({ id: 1, by: 'you', kind: 'say', text: 'Move Settings out into its own dialog; the instructions show as Markdown, in Chinese.', src: 'r4' })] }), true, {
         others: PROJECT.filter((it) => it.n !== 12),
-        inputs: [input({ id: 'r4', text: 'Move Settings out into its own dialog; the instructions show as Markdown, in Chinese.', files: [{ f: 'f2-voice_0-26.webm', name: 'voice_0-26.webm', mime: 'audio/webm', tr: 'Move Settings out into its own dialog; the instructions show as Markdown, in Chinese.', heard: 'So this, we move this Settings dialog, it should be, Settings should be its own dialog, the one that opens from the agent status at the top right, and put it there. And the instructions should be the Markdown drawn, not raw, and in Chinese.' }] })],
+        inputs: [shown(input({ id: 'r4', text: '', files: [{ f: 'f2-voice_0-26.webm', name: 'voice_0-26.webm', mime: 'audio/webm' }] }), record('f2-voice_0-26.webm', 'Move Settings out into its own dialog; the instructions show as Markdown, in Chinese.', 'So this, we move this Settings dialog, it should be, Settings should be its own dialog, the one that opens from the agent status at the top right, and put it there. And the instructions should be the Markdown drawn, not raw, and in Chinese.'))],
       }),
     '[data-heard]',
     { height: 520 },

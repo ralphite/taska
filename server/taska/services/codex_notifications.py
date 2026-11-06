@@ -52,9 +52,14 @@ class CodexNotifications:
     def eligible(self, event: ev.Event) -> bool:
         if isinstance(event, ev.InputAdded) and event.kind == "cancelled":
             return False  # a cancelled recording is kept, not sent (B627); sending it later is the update
-        inp = self.project.state.inputs.get(event.src or "") if isinstance(event, ev.WordsIn) else None
+        if isinstance(event, ev.VoiceHeard) and event.state == "wait":
+            return False  # the first words: the input waits for its words (T687), they say it then
+        voice = isinstance(event, (ev.VoiceHeard, ev.VoiceFixed))
+        inp = self.project.state.inputs.get(event.src or "") if voice else None
         if inp is not None and inp.kind == "cancelled":
             return False
+        if voice and inp is None:
+            return False  # a note not sent yet, or a comment's: nothing for the agent's inbox
         if event.by == "you":
             return True
         return inp is not None and inp.by == "you"

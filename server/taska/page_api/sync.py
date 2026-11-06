@@ -11,7 +11,7 @@ import threading
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-KINDS = (("items", "n"), ("inputs", "id"), ("docs", "d"))
+KINDS = (("items", "n"), ("inputs", "id"), ("docs", "d"), ("voices", "f"))
 Entities = Dict[str, List[Dict[str, Any]]]
 
 

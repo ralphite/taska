@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Protocol, Tuple
 
 from ..domain.events import Event
-from ..domain.model import FileRef, Input, Item
+from ..domain.model import Input, Item
 from ..domain.rules import RefContext
 from ..domain.state import ProjectState
 from ..domain.vocab import PEOPLE
@@ -70,10 +70,6 @@ class Changes(Protocol):
         ...
 
     def file_exists(self, fid: str) -> bool: ...
-
-    def with_words(self, text: str, files: List[FileRef]) -> Tuple[str, List[FileRef]]:
-        """Words of voice notes that came in after the page let go of them: the text and the files get them."""
-        ...
 
     def is_moving(self, rid: str) -> bool:
         """An input being moved to another project right now."""

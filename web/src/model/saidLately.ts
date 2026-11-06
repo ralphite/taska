@@ -4,7 +4,7 @@
 import type { BoxMode } from './boxFoot'
 import { inputLine, type InputLine } from './became'
 import { newestFirst } from './inputs'
-import { outgoingLine, outgoingState, outgoingWaits, type Outgoing } from './outgoing'
+import { outgoingLine, outgoingState, outgoingText, outgoingWaits, type Outgoing } from './outgoing'
 import type { ProjectModel } from './project'
 import type { Input } from './types'
 
@@ -35,4 +35,4 @@ export function saidRows(m: ProjectModel, a: { upTo: number; lit?: string | null
 
 /** What is on its way, oldest last. */
 export const saidOutgoing = (mine: readonly Outgoing[], away: number): SaidOutgoing[] =>
-  [...mine].reverse().map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), failed: o.state === 'failed', net: !!o.net, waiting: outgoingWaits(o, away) }))
+  [...mine].reverse().map((o) => ({ q: o.q, text: outgoingText(o) || outgoingLine(o), state: outgoingState(o, away), failed: o.state === 'failed', net: !!o.net, waiting: outgoingWaits(o, away) }))

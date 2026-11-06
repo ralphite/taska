@@ -9,6 +9,7 @@ import { allComments } from '../../model/docs'
 import { codeOf, liveN, type ProjectModel } from '../../model/project'
 import type { Comment } from '../../model/types'
 import { vcCount, vcSegments } from '../../model/voiceComments'
+import { draftNotes, splitVoices, wordsByFile } from '../../model/voices'
 import type { BoxStore, DraftFile } from '../../stores/box'
 import type { ChangesStore } from '../../stores/changes'
 import type { DocViewStore } from '../../stores/docView'
@@ -148,8 +149,15 @@ export class DocVoice {
     }
     // their voice notes' words go with them
     for (let i = 0; live().some((f) => f.uploading || f.transcribing) && i < 240; i++) await wait(500)
-    const ups = (fs: DraftFile[]) => fs.map((f) => live().find((x) => x.key === f.key) || f).filter((f) => f.f && !f.failed).map(({ f, name, mime, size, tr }) => ({ f, name, mime, size, ...(tr ? { tr } : {}) }))
-    const ops = posts.map(({ s, fs }) => ({ op: 'dc', d: dn, key: s.key, quote: s.quote, text: s.text, files: ups(fs) })).filter((o) => o.text || o.files.length)
+    const now = (fs: DraftFile[]) => fs.map((f) => live().find((x) => x.key === f.key) || f)
+    const ups = (fs: DraftFile[]) => now(fs).filter((f) => f.f && !f.failed)
+    // each comment's typed words; its voice notes' words, as you left them under the quote, go to the notes (B682)
+    const ops = posts
+      .map(({ s, fs }) => {
+        const said = splitVoices(s.text, draftNotes(now(fs)))
+        return { op: 'dc', d: dn, key: s.key, quote: s.quote, text: said.text, files: ups(fs).map(({ f, name, mime, size }) => ({ f, name, mime, size })), words: wordsByFile(said.words, ups(fs)) }
+      })
+      .filter((o) => o.text || o.files.length)
     if (!ops.length) return back()
     this.d.changes.getState().remove(showing.id)
     const ok = await this.d.runner.send({ id: newId(), slug, commands: ops as never, patches: [], docPatches, said: `commenting on D${dn}`, t: Date.now() })

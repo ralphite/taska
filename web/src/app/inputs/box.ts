@@ -8,6 +8,8 @@ import { Refused } from '../../api/http'
 import type { TaskaApi } from '../../api/taska'
 import type { ProjectModel } from '../../model/project'
 import { inputCode } from '../../model/words'
+import { draftNotes, shownNotes, splitVoices, wordsByFile } from '../../model/voices'
+import { outgoingText } from '../../model/outgoing'
 import { docDraft, draftKey, keyOf, NEW_DRAFT, PREFS_DRAFT, scopeDraft, type DraftKey } from '../../model/draftTarget'
 import type { BoxStore, DraftFile } from '../../stores/box'
 import type { BoxMode } from '../../model/boxFoot'
@@ -189,7 +191,9 @@ export class Box {
     }
     this.write(slug, key, '')
     st.takeFiles(key)
-    this.d.inputs.push({ slug, text, scope, files: files.map(({ key: k, ...f }) => ({ ...f, key: k })) })
+    // what was typed goes as the input's words; each voice note's words, as you left them, go to the note (B682)
+    const said = splitVoices(text, draftNotes(files))
+    this.d.inputs.push({ slug, text: said.text, words: said.words, scope, files: files.map(({ key: k, ...f }) => ({ ...f, key: k })) })
     this.markSent(slug, key)
     if (scope) this.d.replied?.(slug, scope)
     return true
@@ -235,20 +239,26 @@ export class Box {
     const r = m?.byId.get(mode.id)
     const now = r ? (mode.mode === 'edit' ? text : r.text.endsWith(text) ? r.text : [r.text, text].filter(Boolean).join('\n\n')) : text
     this.d.toasts.show(mode.mode === 'edit' ? `${inputCode(mode.id)} updated` : `Added to ${inputCode(mode.id)}`)
-    const files = drafts.filter((f) => f.f && !f.failed).map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size, ...(f.tr ? { tr: f.tr } : {}) }))
-    const said = mode.mode === 'edit' ? `editing ${inputCode(mode.id)}` : `adding to ${inputCode(mode.id)}`
+    const up = drafts.filter((f) => f.f && !f.failed)
+    const files = up.map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size }))
+    // an edit begins with what was said (typed, then its voice notes' words): what was typed goes as its words, the
+    // notes' words as you left them go to the notes (B682)
+    const said = splitVoices(text, [...(mode.mode === 'edit' ? shownNotes(r?.files) : []), ...draftNotes(up)], mode.mode === 'edit' ? (r?.typed ?? r?.text) : undefined)
+    const words = { ...wordsByFile(said.words, up), ...Object.fromEntries(Object.entries(said.words).filter(([k]) => !up.some((f) => f.key === k))) }
+    text = said.text
+    const what = mode.mode === 'edit' ? `editing ${inputCode(mode.id)}` : `adding to ${inputCode(mode.id)}`
     void (async () => {
       const ok = await this.d.runner.send({
         id: newId(),
         slug,
-        commands: [{ op: 'amend', id: mode.id, mode: mode.mode, v: mode.v, text, files }],
+        commands: [{ op: 'amend', id: mode.id, mode: mode.mode, v: mode.v, text, files, ...(Object.keys(words).length ? { words } : {}) }],
         patches: [],
-        inputPatches: text ? [{ id: mode.id, f: { text: now } }] : [],
-        said,
+        inputPatches: now ? [{ id: mode.id, f: { text: now } }] : [],
+        said: what,
         t: Date.now(),
         ownRefusal: true,
       })
-      if (!ok) await this.editedElsewhere(slug, mode, key, text, files, drafts, said)
+      if (!ok) await this.editedElsewhere(slug, mode, key, text, files, drafts, what, words)
     })()
     return true
   }
@@ -258,13 +268,13 @@ export class Box {
    * says now. An edit made while it changed elsewhere is saved over the newest version; the other version stays in
    * the input's history (only words added after yours are merged in). Refused with nothing changed: tried once
    * more; only if that fails too do your words come back in the box, with the reason. */
-  private async editedElsewhere(slug: string, mode: Extract<BoxMode, { kind: 'amend' }>, key: DraftKey, text: string, files: unknown[], drafts: DraftFile[], said: string): Promise<void> {
+  private async editedElsewhere(slug: string, mode: Extract<BoxMode, { kind: 'amend' }>, key: DraftKey, text: string, files: unknown[], drafts: DraftFile[], said: string, words: Record<string, string>): Promise<void> {
     await this.d.refresh?.(slug)
     const r = this.d.model?.(slug)?.byId.get(mode.id)
     if (!r) return
     const code = inputCode(mode.id)
     const v = r.v || 0
-    const again = (t: string) => this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: mode.mode, v, text: t, files }], patches: [], inputPatches: t ? [{ id: mode.id, f: { text: mode.mode === 'edit' ? t : [r.text, t].filter(Boolean).join('\n\n') } }] : [], said, t: Date.now() })
+    const again = (t: string) => this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: mode.mode, v, text: t, files, ...(Object.keys(words).length ? { words } : {}) }], patches: [], inputPatches: t ? [{ id: mode.id, f: { text: mode.mode === 'edit' ? t : [r.text, t].filter(Boolean).join('\n\n') } }] : [], said, t: Date.now() })
     if (v !== mode.v) {
       if (mode.mode === 'append') {
         if (await again(text)) return
@@ -292,7 +302,7 @@ export class Box {
       return false
     }
     this.d.outbox.getState().remove(o.q)
-    this.write(slug, key, o.text)
+    this.write(slug, key, outgoingText(o)) // what was typed with each voice note's words, as you left them
     if (o.files.length) this.d.store.getState().putFiles(key, o.files.map((f) => ({ ...f, key: f.key || f.f })))
     return true
   }
@@ -346,6 +356,8 @@ export class Box {
     if (!right) return false
     const r = m?.byId.get(mode.id)
     const before = r?.text
+    // to put it back: what was typed, and each voice note's words, as they were (B682)
+    const was = r ? { text: r.typed ?? r.text, words: Object.fromEntries(shownNotes(r.files).map((n) => [n.f, n.words])) } : null
     this.write(slug, key, '')
     this.d.store.getState().setMode(null)
     if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
@@ -370,7 +382,7 @@ export class Box {
         const had = await hadAsked
         // the words come back, and the spelling is forgotten (or the one before comes back)
         const now = this.d.model?.(slug)?.byId.get(mode.id)
-        if (now && before != null && now.text !== before) await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: 'edit', v: now.v || 0, text: before } as never], patches: [], inputPatches: [{ id: mode.id, f: { text: before } }], said: `putting back ${inputCode(mode.id)}`, t: Date.now() })
+        if (now && was && before != null && now.text !== before) await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: 'edit', v: now.v || 0, text: was.text, words: was.words } as never], patches: [], inputPatches: [{ id: mode.id, f: { text: before } }], said: `putting back ${inputCode(mode.id)}`, t: Date.now() })
         await this.d.api.setCorrection(had?.wrong ? { wrong: mode.wrong, right: had.right, undo: true } : { wrong: mode.wrong }).catch(() => {})
         this.d.toasts.show(`Put back \u201c${mode.wrong}\u201d in ${inputCode(mode.id)}${had ? '' : ', and forgot the spelling'}`)
       })

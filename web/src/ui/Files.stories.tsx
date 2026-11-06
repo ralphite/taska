@@ -5,6 +5,7 @@ import { Frames, States } from '../stories/Frames'
 import { PICTURE } from '../stories/fixtures'
 import type { FileRef } from '../model/types'
 import { FileRows, Thumbs, VoiceChip, type PlayState } from './Files'
+import { record } from '../stories/fixtures'
 
 const meta: Meta = { title: 'Components/Conversation/Message parts/Voice notes, pictures, files' }
 export default meta
@@ -14,10 +15,13 @@ const voice: FileRef = {
   f: 'f3-voice_1-05.webm',
   name: 'voice_1-05.webm',
   mime: 'audio/webm',
-  tr: 'The export ignores the filter on the orders page: with Paid and Last 30 days set it still writes every order. It should write only the rows the list shows, in the same order.',
-  heard: 'So on the orders page, the export, it ignores the filter. Like I set Paid and Last 30 days and it still writes, um, every order. It should write only the rows the list shows, and in the same order, the same order as the list.',
+  voice: record(
+    'f3-voice_1-05.webm',
+    'The export ignores the filter on the orders page: with Paid and Last 30 days set it still writes every order. It should write only the rows the list shows, in the same order.',
+    'So on the orders page, the export, it ignores the filter. Like I set Paid and Last 30 days and it still writes, um, every order. It should write only the rows the list shows, and in the same order, the same order as the list.',
+  ),
 }
-const unnamed: FileRef = { f: 'f4-note.webm', name: 'note.webm', mime: 'audio/webm', tr: 'And the sort too.' }
+const unnamed: FileRef = { f: 'f4-note.webm', name: 'note.webm', mime: 'audio/webm', voice: record('f4-note.webm', 'And the sort too.') }
 const picture: FileRef = { f: 'f5-shot.png', name: 'shot.png', mime: 'image/png' }
 const pdf: FileRef = { f: 'f6-report.pdf', name: 'Orders export, Paid, last 30 days, sorted by total.pdf', mime: 'application/pdf' }
 /** a voice note that plays and pauses from where it is (the page's player) */
