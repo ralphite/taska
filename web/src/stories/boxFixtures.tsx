@@ -5,7 +5,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Composer, Feedback, type ComposerProps } from '../features/composer/Composer'
 import { DraftFiles, type DraftFile } from '../features/composer/DraftFiles'
-import { BOX_WORDS_LOOK, Doubts, DraftWords, type DoubtsView } from '../features/composer/Doubts'
+import { BOX_WORDS_LOOK, Doubts, DraftWords, doubtsViewOf } from '../features/composer/Doubts'
 import { openDoubts, pickSide, spotsIn, type HeardFile } from '../model/doubts'
 import { boxRole, feedbackLine, shownBox, type BoxMode } from '../model/boxFoot'
 import { blockKeys } from '../model/docs'
@@ -114,21 +114,9 @@ function LiveBox({ h, desk, extra }: { h: Here; desk: boolean; extra: Partial<Co
     if (r.changed) setText(r.text)
     setFiles(files.map((x) => (x.key === fk ? { ...x, doubts: r.doubts, trAdded: r.trAdded } : x)))
   }
-  const viewWords = !desk && pickable && showing && !rec
-  const doubtsView: DoubtsView | null = !h.heard
-    ? null
-    : compose
-      ? altOpen
-        ? { kind: 'card', toCheck: altOpen }
-        : null
-      : !desk
-        ? pickable
-          ? { kind: 'phone', toCheck: altOpen, showing: viewWords }
-          : null
-        : open.length
-          ? { kind: 'list', lines: open }
-          : null
-  const doubts = doubtsView ? <Doubts view={doubtsView} on={{ use: (fk, k) => pickWord(fk, k, 'alt'), show: () => setShowing(true) }} /> : h.doubts
+  const viewWords = !compose && pickable && showing && !rec
+  const doubtsView = h.heard ? doubtsViewOf({ compose, pickable, altOpen, showing: viewWords }) : null
+  const doubts = doubtsView ? <Doubts view={doubtsView} on={{ show: () => setShowing(true) }} /> : h.doubts
   const words = viewWords ? <DraftWords text={text} spots={spots} className={BOX_WORDS_LOOK} on={{ pick: pickWord, escape: () => {}, plain: () => setShowing(false) }} /> : undefined
   const recShown = rec ? (rec.t0 == null ? { ...REC, from: rec.from } : { ...REC, from: rec.from, time: clock(Math.max(0, now - rec.t0)) }) : null
   return (

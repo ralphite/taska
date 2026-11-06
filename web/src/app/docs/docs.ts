@@ -128,9 +128,11 @@ export class Docs {
     this.d.fields.focus('box')
   }
 
+  /** A comment on the whole document (its bar's Comment, r1095; its comments' chip): the box writes to it, as the
+   * phone's does with nothing picked (with nothing picked the desktop's box replies on the item). */
   whole(): void {
     const v = this.d.view.getState()
-    v.pick({ sel: new Set(), quote: null, reply: null })
+    v.pick({ sel: new Set(), quote: { key: 'doc', text: '' }, reply: null })
     v.setTyping(true)
     this.d.fields.focus('box')
   }

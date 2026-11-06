@@ -2,7 +2,7 @@
 // was heard), the other model's words used instead (Undo puts them back), and words corrected by hand inside them,
 // which Taska remembers for every voice note after (Undo forgets it again).
 
-import { fixIn, pickSide, unpicked, type HeardFile } from '../../model/doubts'
+import { fixIn, pickSide, type HeardFile } from '../../model/doubts'
 import { Refused, untilAnswered } from '../../api/http'
 import type { TaskaApi } from '../../api/taska'
 import type { BoxStore } from '../../stores/box'
@@ -39,18 +39,7 @@ export class VoiceWords {
     return r.changed
   }
 
-  /** The other model's words, with Undo. */
-  use(slug: string, key: DraftKey, fk: string, k: number): void {
-    const x = this.file(key, fk)?.doubts?.[k]
-    if (!x || !this.pick(slug, key, fk, k, 'alt')) return
-    this.d.toasts.show(`Changed to “${(x.show || [])[1] || x.alt}”`, () => {
-      this.pick(slug, key, fk, k, 'was')
-      const f = this.file(key, fk)
-      if (f) this.d.store.getState().updateFile(fk, { doubts: unpicked(f, k) })
-    })
-  }
-
-  /** The phone: the words with the versions show in the box, or it is back to typing. */
+  /** The words with the versions show in the box (every box but the New input page's, r1095), or it is back to typing. */
   show(on: boolean): void {
     this.d.store.getState().setShowWords(on)
     if (!on) this.d.fields.focus('box')

@@ -130,7 +130,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
     sayCheck: stopSaying(docActs.sayCheck),
     saySend: stopSaying(docActs.saySend),
     type: () => setV({ ...v, typing: true }),
-    whole: () => setV({ ...v, sel: new Set(), quote: null, reply: null, typing: true }),
+    whole: () => setV({ ...v, sel: new Set(), quote: { key: 'doc', text: '' }, reply: null, typing: true }),
     circle: () => setV({ ...v, circle: !v.circle, ...(!v.circle ? { quote: null } : {}) }),
     tick: (tk, i) => {
       const b = d.blocks[blockKeys(d).indexOf(tk)]
@@ -188,7 +188,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
         place=""
         desk
         head={<DocPaneHead d={d} editing={false} />}
-        acts={<DocPaneActs web={web} inspect={inspect} deleting={!!asked[deleting]} on={{ inspect: () => setInspect(!inspect), copy: paneActs.copy, edit: paneActs.edit, move: paneActs.move, remove: on.deleteDoc }} />}
+        acts={<DocPaneActs web={web} inspect={inspect} whole={v.quote?.key === 'doc'} deleting={!!asked[deleting]} on={{ inspect: () => setInspect(!inspect), whole: () => (v.quote?.key === 'doc' ? setV({ ...v, quote: null }) : on.whole()), copy: paneActs.copy, edit: paneActs.edit, move: paneActs.move, remove: on.deleteDoc }} />}
         lead={<DocPaneNav to={facts.itemCode} onBack={paneActs.back} />}
         onBack={paneActs.back}
       >

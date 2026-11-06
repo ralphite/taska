@@ -139,7 +139,7 @@ export function SearchBox({ v, on }: { v: SearchView; on: SearchEvents }) {
   )
   return (
     <div className={`flex flex-col rounded-4xl border bg-white shadow-sm dark:bg-zinc-900 dark:shadow-none ${v.typed ? 'border-zinc-400 dark:border-zinc-600' : 'border-zinc-200 dark:border-zinc-800'}`}>
-      {v.doubts && !busy ? <Doubts view={{ kind: 'phone', toCheck: v.doubts.toCheck, showing: true }} on={{ use() {}, show() {} }} /> : null}
+      {v.doubts && !busy ? <Doubts view={{ kind: 'box', toCheck: v.doubts.toCheck, showing: true }} on={{ show() {} }} /> : null}
       {before}
       <div className="flex items-end gap-2 p-1.5">
         {left}

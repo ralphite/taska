@@ -79,15 +79,6 @@ export function pickSide(text: string, f: HeardFile, k: number, side: 'was' | 'a
   return { text, trAdded: done && vAt >= 0 ? text.slice(vAt, vAt + vLen) : f.trAdded, doubts, changed: done > 0 }
 }
 
-/** A doubt back to undecided. */
-export const unpicked = (f: HeardFile, k: number): Doubt[] =>
-  (f.doubts || []).map((d, i) => {
-    if (i !== k) return d
-    const rest = { ...d }
-    delete rest.pick
-    return rest
-  })
-
 /** Words selected inside a voice note's own words, without the spaces around them; too long or none: why. */
 export function fixRange(text: string, s: number, e: number): { s: number; e: number; wrong: string } | { error: string } | null {
   while (s < e && /\s/.test(text[s])) s++

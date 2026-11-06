@@ -174,7 +174,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
           split
           duo
           head={<DocPaneHead d={o.doc} editing={false} />}
-          acts={<DocPaneActs web={o.doc.fmt === 'html'} inspect={false} deleting={false} on={docPaneActs} />}
+          acts={<DocPaneActs web={o.doc.fmt === 'html'} inspect={false} whole={false} deleting={false} on={docPaneActs} />}
           lead={<DocPaneNav to={facts.code(it.n)} onBack={docBack} />}
           onBack={docBack}
         >
@@ -210,5 +210,5 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
   )
 }
 const paneActs = acts('Pane', ['prev', 'next', 'back'] as const)
-const docPaneActs = acts('Document pane', ['inspect', 'copy', 'edit', 'move', 'remove'] as const)
+const docPaneActs = acts('Document pane', ['inspect', 'whole', 'copy', 'edit', 'move', 'remove'] as const)
 const docBack = act('Document pane: back to its item')

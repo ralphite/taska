@@ -1,11 +1,8 @@
 // Words that may be misheard: marked, on the New input page, the other version picked, a word one model was unsure of, in several places, on the phone, being corrected.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState } from 'react'
-import { openDoubts, pickSide } from '../../model/doubts'
 import { Frames } from '../../stories/Frames'
 import { HEARD, HEARD_TEXT, PICKED, PICKED_TEXT } from '../../stories/doubtFixtures'
 import { DraftCard, DRAFT_WORDS } from './DraftCard'
-import { Doubts } from './Doubts'
 import { VOICE, boxAt } from '../../stories/boxFixtures'
 import { AGAIN, AGAIN_HEARD, LiveWords, Picking } from '../../stories/doubtsFixtures'
 
@@ -45,21 +42,11 @@ export const MaybeMisheardTheOtherVersionPicked: Story = { name: 'The other vers
 /** A word one model was unsure of: underlined in the words. */
 export const AWordOneModelWasUnsureOf: Story = { name: 'A word one model was unsure of', render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <Picking fix={false} heard={UNSURE} />}</Frames> }
 
-/** the list under the box on its own: Use instead takes the other version (the model's pickSide), and the line goes (none left: the list goes) */
-function LiveList() {
-  const [state, setState] = useState({ text: AGAIN, files: AGAIN_HEARD })
-  const use = (fk: string, k: number) => {
-    const f = state.files.find((x) => x.key === fk)
-    if (!f) return
-    const r = pickSide(state.text, f, k, 'alt')
-    setState({ text: r.text, files: state.files.map((x) => (x.key === fk ? { ...x, doubts: r.doubts, trAdded: r.trAdded } : x)) })
-  }
-  const lines = openDoubts(state.text, state.files)
-  return lines.length ? <Doubts view={{ kind: 'list', lines }} on={{ use, show: () => {} }} /> : null
-}
+/** The desktop's reply box (r1095: as the phone's and the New input page's): how many to check, and the words with the
+ * two versions side by side in the box, to pick from. */
 export const MisheardInSeveralPlaces: Story = {
   name: 'Misheard in several places',
-  render: () => <Frames phone={false} deskWidth={640}>{() => <LiveList />}</Frames>,
+  render: () => <Frames phone={false} deskWidth={640}>{() => boxAt({ at: 'F012', text: AGAIN, files: AGAIN_HEARD.map((h) => ({ ...VOICE, ...h, tr: AGAIN })), heard: { showing: true } }, true)}</Frames>,
 }
 export const MisheardWordsAllPickedPhone: Story = {
   name: 'Misheard words all picked (phone)',

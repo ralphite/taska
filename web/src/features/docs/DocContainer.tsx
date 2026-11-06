@@ -184,7 +184,7 @@ export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: 
       split={!!beside}
       duo={!!beside}
       head={<DocPaneHead d={d} editing={false} />}
-      acts={<DocPaneActs web={web} inspect={v.inspect} deleting={!!asked['doc-delete ' + dn]} on={{ inspect: () => stores.docView.getState().setInspect(!v.inspect), copy: on.copyDoc, edit: on.editDoc, move: on.moveDoc, remove: on.deleteDoc }} />}
+      acts={<DocPaneActs web={web} inspect={v.inspect} whole={v.quote?.key === 'doc'} deleting={!!asked['doc-delete ' + dn]} on={{ inspect: () => stores.docView.getState().setInspect(!v.inspect), whole: () => (v.quote?.key === 'doc' ? stores.docView.getState().pick({ quote: null }) : app.docs.whole()), copy: on.copyDoc, edit: on.editDoc, move: on.moveDoc, remove: on.deleteDoc }} />}
       lead={<DocPaneNav to={side ? SIDE_NAME[side] : codeOf(m, liveN(m, d.n))} onBack={() => app.docs.close()} />}
       onBack={() => app.docs.close()}
     >

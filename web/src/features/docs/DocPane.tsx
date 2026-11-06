@@ -42,19 +42,20 @@ export function DocPaneHead({ d, editing }: { d: Pick<Doc, 'd' | 'title' | 'fmt'
 
 /** Delete asking again, the other buttons step aside (Delete stays where it was, at the end): a narrow bar keeps the
  * document's name in sight while you decide. */
-export function DocPaneActs({ web, inspect, deleting, on }: { web: boolean; inspect: boolean; deleting: boolean; on: { inspect(): void; copy(): void; edit(): void; move(from: HTMLElement): void; remove(): void } }) {
+/** `whole`: the box comments on the whole document (a Markdown one's Comment, r1095); a web page's Comment picks its
+ * parts instead. */
+export function DocPaneActs({ web, inspect, whole, deleting, on }: { web: boolean; inspect: boolean; whole: boolean; deleting: boolean; on: { inspect(): void; whole(): void; copy(): void; edit(): void; move(from: HTMLElement): void; remove(): void } }) {
   if (deleting) return <PaneBtn icon="trash" label="Delete?" ask danger onClick={on.remove} />
+  const on_ = web ? inspect : whole
   return (
     <>
-      {web ? (
-        <PaneBtn pressed={inspect} icon="comment" label="Comment" onClick={on.inspect}>
-          {inspect ? (
-            <span className={WIDE}>
-              <Kbd k="Esc" />
-            </span>
-          ) : null}
-        </PaneBtn>
-      ) : null}
+      <PaneBtn pressed={on_} icon="comment" label="Comment" onClick={web ? on.inspect : on.whole}>
+        {on_ ? (
+          <span className={WIDE}>
+            <Kbd k="Esc" />
+          </span>
+        ) : null}
+      </PaneBtn>
       <PaneBtn icon="copy" label="Copy" onClick={on.copy} />
       <PaneBtn icon="pencil" label="Edit" onClick={on.edit} />
       <PaneBtn icon="arrow" label="Move" onClick={(e) => on.move(e.currentTarget)} />

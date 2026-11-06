@@ -40,6 +40,12 @@ describe('what the box writes to', () => {
     expect([r.aim?.target.key, r.line?.detail, r.line?.right]).toEqual(['doc', '· or tap a part', { kind: 'to-item', code }])
   })
 
+  // r1095: the desktop's document bar has Comment, for a comment on the whole document
+  test("the desktop's document, its Comment pressed: a comment on the whole of it, with an x that lets go", () => {
+    const r = boxRole(m, at({ kind: 'doc', d: 12 }), true, 'taska', null, { ...nothing, quote: { key: 'doc', text: '' } }, noTicks)
+    expect([r.aim?.target.key, r.line?.label, r.line?.detail, r.line?.right, r.send]).toEqual(['doc', 'Comment on D12', '', { kind: 'x', label: 'Cancel · Esc', act: 'unpick' }, 'Comment'])
+  })
+
   test('the preferences, an edit of what you said: their line, Save, and Stop', () => {
     const prefs = boxRole(m, at({ kind: 'tab' }), true, 'taska', { kind: 'prefs', was: '' }, nothing, noTicks)
     expect([prefs.line?.label, prefs.line?.right, prefs.send]).toEqual(['Edit transcription preferences', { kind: 'x', label: 'Stop editing', act: 'stop' }, 'Save'])

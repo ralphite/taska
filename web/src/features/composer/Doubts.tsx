@@ -1,10 +1,8 @@
-// Words of a voice note that may be misheard. Under the box: what they are and "Use instead" (the desktop), how many
-// to check (the phone, the New input page). In the words themselves: the two versions side by side to pick from, and
+// Words of a voice note that may be misheard. Under the box: how many to check (every box, r1095). In the words themselves: the two versions side by side to pick from, and
 // on the New input page's draft card, the voice note's own words can be selected and corrected right there. Props only.
 
 import { useLayoutEffect, useRef, type KeyboardEvent, type ReactNode } from 'react'
 import { unmarked, type Spot } from '../../model/doubts'
-import type { Doubt } from '../../model/types'
 import { plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { LINK_BTN } from '../../ui/tones'
@@ -12,24 +10,27 @@ import { LINK_BTN } from '../../ui/tones'
 const Alert = () => <Icon n="alert" c="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" sw="2" />
 
 export type DoubtsView =
-  /** the desktop: each one, with the other model's words to use instead */
-  | { kind: 'list'; lines: { fk: string; k: number; x: Doubt }[] }
   /** the New input page: they are marked in the draft card under the box */
   | { kind: 'card'; toCheck: number }
-  /** the phone: how many, and the words with the two versions in the box */
-  | { kind: 'phone'; toCheck: number; showing: boolean }
+  /** any other box, the phone's and the desktop's alike (r1095): how many, and the words with the two versions in the
+   * box */
+  | { kind: 'box'; toCheck: number; showing: boolean }
 
-export function Doubts({ view, on }: { view: DoubtsView; on: { use(fk: string, k: number): void; show(): void } }) {
-  let body: ReactNode
-  if (view.kind === 'card')
-    body = (
+/** Which way the box shows words that may be misheard: the desktop's New input page in its draft card, every other box
+ * how many and its words to pick from (`showing`: its words are shown in the box now). */
+export function doubtsViewOf(a: { compose: boolean; pickable: boolean; altOpen: number; showing: boolean }): DoubtsView | null {
+  if (a.compose) return a.altOpen ? { kind: 'card', toCheck: a.altOpen } : null
+  return a.pickable ? { kind: 'box', toCheck: a.altOpen, showing: a.showing } : null
+}
+
+export function Doubts({ view, on }: { view: DoubtsView; on: { show(): void } }) {
+  const body: ReactNode =
+    view.kind === 'card' ? (
       <p className="flex min-h-8 items-center gap-1.5">
         <Alert />
         <span className="min-w-0">{plural(view.toCheck, 'word')} may be misheard · pick below</span>
       </p>
-    )
-  else if (view.kind === 'phone')
-    body = (
+    ) : (
       <p className="flex min-h-8 items-start gap-1.5 py-1">
         <Alert />
         <span className="min-w-0">
@@ -45,26 +46,6 @@ export function Doubts({ view, on }: { view: DoubtsView; on: { use(fk: string, k
         </span>
       </p>
     )
-  else
-    body = view.lines.map(({ fk, k, x }) => {
-      const [said, heard] = x.show || [x.was, x.alt]
-      return (
-        <p key={`${fk}-${k}`} className="flex min-h-8 items-center gap-1.5">
-          <Alert />
-          <span className="min-w-0">
-            Maybe misheard: {'“'}
-            {unmarked(said)}
-            {'”'}
-            {x.alt ? ` — other model: “${heard}”${x.also?.length ? ` (${x.also.length + 1} places)` : ''} ·` : ' — unsure'}
-          </span>
-          {x.alt ? (
-            <button onClick={() => on.use(fk, k)} className={`${LINK_BTN} -my-1 -ml-1.5 shrink-0`}>
-              Use instead
-            </button>
-          ) : null}
-        </p>
-      )
-    })
   return <div className="flex flex-col px-4 pt-1 text-[13px] leading-snug text-zinc-600 dark:text-zinc-300">{body}</div>
 }
 

@@ -8,7 +8,7 @@ import type { ProjectRoute } from '../../app/hooks'
 import { shownBox } from '../../model/boxFoot'
 import { clock } from '../../model/time'
 import { Composer } from './Composer'
-import { BOX_WORDS_LOOK, Doubts, DraftWords, type DoubtsView } from './Doubts'
+import { BOX_WORDS_LOOK, Doubts, DraftWords, doubtsViewOf } from './Doubts'
 import { DraftFiles } from './DraftFiles'
 import { useBoxHere } from '../../app/inputs/boxHere'
 import { useHeard } from './heard'
@@ -46,10 +46,10 @@ export function BoxContainer({ route, composePage, boxRef, bare = false }: { rou
   const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
   // words of a voice note that may be misheard: under the box; on the phone in the box itself, to pick from
   const pickWord = (fk: string, k: number, side: 'was' | 'alt') => void app.voiceWords.pick(route.slug, key, fk, k, side)
-  const viewWords = !desk && heard.pickable && showWords && !rec
-  const doubtsView: DoubtsView | null =
-    desk && composePage ? (heard.altOpen ? { kind: 'card', toCheck: heard.altOpen } : null) : !desk ? (heard.pickable ? { kind: 'phone', toCheck: heard.altOpen, showing: viewWords } : null) : heard.open.length ? { kind: 'list', lines: heard.open } : null
-  const doubts = doubtsView ? <Doubts view={doubtsView} on={{ use: (fk, k) => app.voiceWords.use(route.slug, key, fk, k), show: () => app.voiceWords.show(true) }} /> : null
+  const compose = desk && composePage
+  const viewWords = !compose && heard.pickable && showWords && !rec
+  const doubtsView = doubtsViewOf({ compose, pickable: heard.pickable, altOpen: heard.altOpen, showing: viewWords })
+  const doubts = doubtsView ? <Doubts view={doubtsView} on={{ show: () => app.voiceWords.show(true) }} /> : null
   const phoneWords = viewWords ? (
     <DraftWords
       text={text}
