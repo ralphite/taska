@@ -33,7 +33,6 @@ export interface ItemEvents extends TalkLineEvents {
   duoSize(px: number, done: boolean): void
   goto(n: number): void
   doc(d: number): void
-  earlier(): void
   subNew(): void
   subAdd(title: string): void
   subCancel(): void
@@ -60,8 +59,6 @@ export interface ItemFacts {
   docWaiting?: Record<number, string>
   /** your decision on it is open to choose again */
   remodify: boolean
-  /** the whole talk shows (Show earlier) */
-  allTalk: boolean
   editing: boolean
   /** what you typed in its editor before and did not save */
   editDraft?: { title: string; body: string; next: string } | null
@@ -453,23 +450,18 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
 /** The item's talk: its messages and documents' comments in time, and the card that waits on you where its message
  * is (heading the talk when it has none of its own, after it when nothing was said). */
 export function ItemTalk({ it, f, env, facts, on }: { it: Item; f: ItemFacts; env: TalkEnv; facts: TalkFacts; on: ItemEvents }) {
-  const plan = talkPlan(it, { all: f.allTalk, going: facts.going?.text ?? null })
-  const notes = docNotes(f.docs, env, on, plan.hidden ? plan.thread[plan.hidden]?.t : '')
+  const plan = talkPlan(it, { going: facts.going?.text ?? null })
+  const notes = docNotes(f.docs, env, on)
   const top = plan.first && (plan.thread.length > 0 || notes.length > 0)
   const card = <NeedsCard it={it} env={env} on={on} remodify={f.remodify} going={facts.going?.text ?? null} />
   return (
     <>
       {plan.thread.length || notes.length ? (
         <div className="flex flex-col gap-6 border-t border-zinc-100 pt-6 lg:border-0 lg:pt-0 dark:border-zinc-800/70">
-          {plan.hidden ? (
-            <button onClick={on.earlier} className="-my-1 h-11 self-center rounded-lg px-3 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">
-              Show {plan.hidden} earlier
-            </button>
-          ) : null}
           {top ? card : null}
           <Talk
             it={it}
-            list={plan.thread.slice(plan.hidden)}
+            list={plan.thread}
             notes={notes}
             card={plan.inline && plan.cardId != null ? { id: plan.cardId, node: card } : undefined}
             env={env}

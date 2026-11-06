@@ -13,7 +13,6 @@ export interface Choice {
 
 export interface ItemViewState {
   slug: string
-  talkAll: ReadonlySet<number>
   opened: ReadonlySet<number>
   peeking: ReadonlySet<number>
   remodify: number | null
@@ -25,7 +24,6 @@ export interface ItemViewState {
   kept: { n: number; labels: string[] } | null
   /** a project shown: what was kept for it comes back */
   show(slug: string): void
-  showAll(n: number): void
   toggleOpened(id: number): void
   peek(id: number): void
   setRemodify(n: number | null): void
@@ -52,7 +50,6 @@ export function createItemViewStore(kv: KeyValueStore): ItemViewStore {
   }
   return createStore<ItemViewState>()((set, get) => ({
     slug: '',
-    talkAll: new Set(),
     opened: new Set(),
     peeking: new Set(),
     remodify: null,
@@ -63,9 +60,8 @@ export function createItemViewStore(kv: KeyValueStore): ItemViewStore {
     kept: null,
     show: (slug) => {
       if (get().slug === slug) return
-      set({ slug, talkAll: new Set(), opened: new Set(), peeking: new Set(), remodify: null, reask: null, editing: null, subFor: null, choice: null, kept: kept(slug) })
+      set({ slug, opened: new Set(), peeking: new Set(), remodify: null, reask: null, editing: null, subFor: null, choice: null, kept: kept(slug) })
     },
-    showAll: (n) => set((s) => ({ talkAll: new Set([...s.talkAll, n]) })),
     toggleOpened: (id) =>
       set((s) => {
         const opened = new Set(s.opened)

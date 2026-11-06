@@ -74,9 +74,9 @@ describe('the talk', () => {
     expect(v.get(2)).toEqual({ old: false, text: 'and the sort', label: 'added details' })
   })
 
-  test('the talk folds what came before its last eight messages, never the card', () => {
+  // F692 (r1113): the talk shows whole, no "Show earlier"; change only on Yadong's explicit word
+  test('the whole talk shows, from its first message', () => {
     const long = item({ n: 1, thread: Array.from({ length: 12 }, (_, i) => message({ id: i + 1 })) })
-    expect(talkPlan(long, { all: false }).hidden).toBe(4)
-    expect(talkPlan(long, { all: true }).hidden).toBe(0)
+    expect(talkPlan(long).thread.map((x) => x.id)).toEqual(Array.from({ length: 12 }, (_, i) => i + 1))
   })
 })

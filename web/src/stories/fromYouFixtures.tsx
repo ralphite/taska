@@ -37,6 +37,16 @@ export const LONG = [
   'On the phone, Export does nothing at all; it should work there too.',
   'If the list is empty, say so instead of writing an empty file.',
   'Please check the sort as well; it went back to newest first last time.',
+  'Steps to see it again:',
+  '1. Open the orders page.',
+  '2. Pick Paid in the status filter.',
+  '3. Pick Last 30 days in the date filter.',
+  '4. Sort by total, largest first.',
+  '5. Press Export and open the file.',
+  'What I saw: every order since March, newest first, the columns as in the database.',
+  'It worked last week, before the new filters came in.',
+  'The same happens with Refunded instead of Paid.',
+  'Screenshots of the list and the file are in the thread above.',
 ].join('\n')
 /** what you sent, still on its way */
 /** What you sent, on its way, in each state the page's outgoingState gives; only one Taska refused is bad (Retry, Edit),

@@ -21,7 +21,17 @@ export const LONG = [
   '- Exported with three filters (Paid, Refunded, Last 30 days) and compared each file with the list.',
   '- Sorted by total, largest first, and the CSV kept that order.',
   '- Opened the files in Excel and Numbers; the dates and the totals read correctly.',
+  '- Exported an empty list: the page says "Nothing to export" and writes no file.',
+  '- Exported 4,000 orders: the file was ready in 1.8 s, the page stayed responsive.',
+  '- Renamed a column in Settings: the next export used the new name.',
+  '- Exported twice in a row: the second file got "(2)" at the end, nothing was overwritten.',
+  'Tests added:',
+  '- export keeps the filter and the sort (unit);',
+  '- export columns follow the list (unit);',
+  '- export of an empty list writes nothing (unit);',
+  '- orders page: filter, sort, export, open the file (end to end).',
   'Not done yet: Export on the phone still does nothing; that is B014.',
+  'One question for later: should Refunded orders show their refund date too?',
   'Ready for you to try on the orders page.',
 ].join('\n')
 export const at = (thread: Message[], o: PageOpts = {}, f: Partial<Item> = {}): Story => ({

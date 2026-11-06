@@ -59,15 +59,6 @@ export const LongBackAndForth: Story = { ...whole(
   900,
 ), name: 'Long back and forth' }
 // ---- more states (B636)
-export const LongBackAndForthAllShown: Story = {
-  ...whole(
-    BACK_AND_FORTH,
-    {},
-    { f: { allTalk: true } },
-    900,
-  ),
-  name: 'Long back and forth, all shown',
-}
 export const CardOnTopProposedThenYourWords: Story = {
   ...whole([you(1, 2, 'Can it also keep the sort?')], { status: 'proposed', by: 'claude-code', body: 'The export writes the rows the list shows.' }),
   name: 'Card on top: proposed, then your words',

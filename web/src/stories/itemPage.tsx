@@ -90,7 +90,6 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
   const [picked, setPicked] = useState<ReadonlySet<number>>(e0.choosing?.picked ?? new Set())
   const [opened, setOpened] = useState<ReadonlySet<number>>(e0.opened)
   const [peeking, setPeeking] = useState<ReadonlySet<number>>(t0.peeking)
-  const [allTalk, setAllTalk] = useState(start.allTalk)
   const [editing, setEditing] = useState(start.editing)
   const [addingSub, setAddingSub] = useState(start.addingSub)
   const [full, setFull] = useState(!!o.full)
@@ -101,7 +100,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
   // the page's one tooltip (a voice note's words, icon buttons' names), over the whole window as the page has it; the
   // phone has none
   const tip = desk && createPortal(<Tooltip card={(ref) => refCard(m, ref)} />, document.body)
-  const facts = { ...start, remodify, allTalk, editing, addingSub }
+  const facts = { ...start, remodify, editing, addingSub }
   const env = { ...e0, play: o.env?.play && !media.touched ? o.env.play : media.play, opened, choosing: e0.choosing && { picked, pick: (i: number, multi: boolean) => setPicked(multi ? toggle(picked, i) : new Set([i])) } }
   const tf = { ...t0, reask, peeking }
   const openMenu = (arm: ItemMenuFacts['arm'], from: Element | null) => menu.open({ arm, asking: false }, from, desk ? { narrow: !!arm } : {})
@@ -114,7 +113,6 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
     reask: (k, id) => (setReask(id), noItemEvents.reask(k, id)),
     cancelReask: () => setReask(null),
     more: (id) => setOpened(toggle(opened, id)),
-    earlier: () => setAllTalk(true),
     peek: (id) => setPeeking(toggle(peeking, id)),
     subNew: () => setAddingSub(true),
     subCancel: () => setAddingSub(false),

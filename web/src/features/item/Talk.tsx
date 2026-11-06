@@ -329,15 +329,15 @@ function partStart(d: Doc, key: string): string {
   return `“${words.length > 120 ? words.slice(0, 120) + '…' : words}”`
 }
 
-/** The comments on the item's documents, as messages, in time (from `from` on). */
-export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents, from = ''): Note[] {
+/** The comments on the item's documents, as messages, in time. */
+export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents): Note[] {
   const all = docs
     .flatMap((d) => [
       ...d.blocks.flatMap((b) => b.comments.map((c) => ({ c, d, key: b.key, changed: false }))),
       ...(d.whole || []).map((c) => ({ c, d, key: 'doc', changed: false })),
       ...d.detached.flatMap((t) => t.comments.map((c) => ({ c, d, key: t.key, changed: true }))),
     ])
-    .filter(({ c }) => c.t && (!from || c.t >= from))
+    .filter(({ c }) => c.t)
     .sort((a, b) => a.c.t.localeCompare(b.c.t))
   return all.map(({ c, d, key, changed }: { c: Comment; d: Doc; key: string; changed: boolean }) => {
     const you = c.by === 'you'

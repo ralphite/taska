@@ -104,7 +104,6 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     docs: docsOf(m, n),
     docWaiting: Object.fromEntries(docsOf(m, n).map((d) => [d.d, ticksNotSent(ticks, d)])),
     remodify: view.remodify === n,
-    allTalk: view.talkAll.has(n),
     editing: view.editing === n,
     editDraft: kept.edits[n] ?? null,
     subDraft: kept.subs[n],
@@ -152,7 +151,6 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     sources: () => app.sheets.open({ kind: 'item-sources', n }),
     goto,
     doc: (d: number) => app.docs.open(d),
-    earlier: () => iv().showAll(n),
     more: (id) => iv().toggleOpened(id),
     ref: (c) => {
       const to = findRef(m, c)

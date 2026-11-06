@@ -127,7 +127,7 @@ export function readMark(it: Item): { id: number; names: string[]; t: number } |
 }
 
 /** Where the card that waits on you goes in the talk, and how much of the talk shows. */
-export function talkPlan(it: Item, opts: { all: boolean; going?: string | null }) {
+export function talkPlan(it: Item, opts: { going?: string | null } = {}) {
   const shown = heldMessage(it)
   const decided = decidedCard(it)?.dec.msg ?? null
   const cardId = it.wait?.id ?? (answeredLast(it, opts.going) ? null : shown?.id) ?? decided ?? null
@@ -135,7 +135,6 @@ export function talkPlan(it: Item, opts: { all: boolean; going?: string | null }
   // a card with no message of its own heads the talk once you said something (all of it came after the card)
   const first = cardId == null && !lastAgentMessage(it) && (it.talked || thread.length > 0)
   const at = thread.findIndex((x) => x.id === cardId)
-  // the card is never folded away with the earlier messages, or it would come after what came later
-  const hidden = opts.all || first ? 0 : Math.max(0, Math.min(thread.length - 8, at < 0 ? thread.length : at))
-  return { cardId, thread, first, inline: at >= 0, hidden }
+  // the whole talk shows, from its first message (F692: no "Show earlier")
+  return { cardId, thread, first, inline: at >= 0 }
 }
