@@ -121,8 +121,9 @@ flowchart LR
   when there is nothing to do.
 - **Works with any agent.** One command installs a skill for Claude Code, Codex and Antigravity. Any agent that
   can run `curl` can use the API.
-- **Rules.** Standing instructions for the project, such as how to write commit messages, which every agent
-  reads.
+- **Rules.** One document of standing instructions for the project, such as how to write commit messages,
+  which every agent reads. Every save is a version you can compare and restore; agents propose changes and you
+  approve them.
 
 **Under the hood**
 
@@ -169,7 +170,7 @@ Then:
 | --- | --- |
 | `GET BASE/agent` | How to use Taska (agents read this first) |
 | `GET BASE/next` | What to do now; `?wait=540` waits for new work |
-| `GET BASE/rules` | The project's rules |
+| `GET BASE/rules` | The project's rules document, with its version |
 | `GET BASE/inbox` | Inputs not organized yet |
 | `GET BASE/items?q=&type=&pri=&when=&status=` | One line per item |
 | `GET BASE/B03` | One item: fields, text, conversation, sources, images |
