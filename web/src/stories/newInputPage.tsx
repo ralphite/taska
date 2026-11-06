@@ -133,10 +133,10 @@ const draftCard = (
  * voice note (the box recording is a story of its own). */
 function DeskList() {
   const live = useInputs(M, true, { adding: { id: 'r1023', clock: '0:11' } })
-  const said = saidRows(M, { words: [], upTo: 30, opened: live.opened, drafts: DRAFTS, mode: null, title })
+  const said = saidRows(M, { upTo: 30, opened: live.opened, drafts: DRAFTS, mode: null, title })
   return (
     <section aria-label="Latest inputs" className="mx-auto mt-8 block max-w-[42rem]">
-      <SaidLately adding={live.adding ? { id: live.adding.id, meter: <RecBar time={live.adding.clock} levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> } : null} rows={said.rows} outgoing={saidOutgoing(live.going(OUTBOX), [], 0)} more draft={draftCard} files={live.chips} words={live.words} on={live.saidOn} />
+      <SaidLately adding={live.adding ? { id: live.adding.id, meter: <RecBar time={live.adding.clock} levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> } : null} rows={said.rows} outgoing={saidOutgoing(live.going(OUTBOX), 0)} more draft={draftCard} files={live.chips} words={live.words} on={live.saidOn} />
       {live.node}
     </section>
   )
@@ -171,12 +171,12 @@ export function DeskPage() {
 /** The phone at 393: its Inputs tab, the box at its foot. */
 export function PhonePage() {
   const live = useInputs(M, false, {})
-  const { rows, total } = inputRows(M, { words: [], title, opened: live.opened, drafts: DRAFTS, writing: null, lit: null, litStill: false, upTo: 40 })
+  const { rows, total } = inputRows(M, { title, opened: live.opened, drafts: DRAFTS, writing: null, lit: null, litStill: false, upTo: 40 })
   return (
     <Frame layout="phone" width={PHONE.width}>
       <div className="flex h-full flex-col bg-zinc-50 dark:bg-zinc-950">
         <div data-phone-list className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(live.going(OUTBOX), 'taska', 0)} words={[]} world={talkEnv(M, false).world} hints={null} files={live.chips} recording="0:07" on={live.inputOn} />
+          <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(live.going(OUTBOX), 'taska', 0)} world={talkEnv(M, false).world} files={live.chips} recording="0:07" on={live.inputOn} />
         </div>
         {live.node}
         <div className="shrink-0 border-t border-zinc-200 dark:border-zinc-800">{boxAt({ at: '' }, false, { placeholder: 'Write to taska…' })}</div>

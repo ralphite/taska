@@ -9,7 +9,6 @@ import { ArchiveAllLine, HeldRow, HiddenKidsLine, ItemRow, NeedsMoreLine, NeedsR
 import type { ViewChip, ZoneKind } from './rows'
 import { ViewBar, type OwnViewChip } from './ViewBar'
 import { useRowSwipe, type RowSwipe } from '../../ui/rowSwipe'
-import { noMatches } from '../../model/words'
 
 export type DrawnRow =
   | { kind: 'item'; key: string; it: Item; depth: number; band: string; foldable: boolean; folded: boolean; facts: RowFacts; look: RowLook }
@@ -50,8 +49,6 @@ export interface ItemListProps {
   viewsLead?: ReactNode
   /** the desktop's views row opened onto all its lines (⌄, ⌃; F670) */
   viewsMore?: { open: boolean; toggle(): void }
-  /** under the rows: search hints */
-  bottom?: ReactNode
   on: ListEvents
   /** room for the box over the list's end on the phone */
   /** each item row's element, for its height */
@@ -73,7 +70,7 @@ export interface ItemListProps {
 const NO_SWIPE: RowSwipe = { right: () => null, blocked: () => true }
 
 export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemList(props, ref) {
-  const { loading, views, ownViews, rows, empty, top, viewsLead, viewsMore, bottom, on, rowRef, dragging = null, desk = false, swipe, openN = null, itemShown = false, listKey = '' } = props
+  const { loading, views, ownViews, rows, empty, top, viewsLead, viewsMore, on, rowRef, dragging = null, desk = false, swipe, openN = null, itemShown = false, listKey = '' } = props
   const own = useRef<HTMLDivElement | null>(null)
   const wasOpen = useRef<{ n: number | null; list: string; loading: boolean } | null>(null)
   /** the page opened at an item: its row comes into view the first time it shows, in whichever list it is */
@@ -168,7 +165,6 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
             }
           })}
           {!rows.length ? empty : null}
-          {bottom}
         </>
       )}
     </div>
@@ -205,15 +201,12 @@ function FirstRun({ steps }: { steps: FirstSteps }) {
   )
 }
 
-export function EmptyList({ why, q = '', status, organizerOn, onReset, onConnect, hints, firstRun = null }: {
+export function EmptyList({ why, status, organizerOn, onReset, onConnect, firstRun = null }: {
   why: string
-  /** the search's words (none: only filters left nothing) */
-  q?: string
   status: string
   organizerOn: boolean
   onReset(): void
   onConnect(): void
-  hints?: ReactNode
   /** an empty project's first steps, until all are done */
   firstRun?: FirstSteps | null
 }) {
@@ -236,10 +229,9 @@ export function EmptyList({ why, q = '', status, organizerOn, onReset, onConnect
   if (why === 'no-match' || why === 'no-match-rules')
     return (
       <Empty>
-        {q.trim() ? noMatches(q) : why === 'no-match-rules' ? 'No matching rules' : 'No matching items'}
-        <span className="mt-3 flex flex-col">{hints}</span>
+        {why === 'no-match-rules' ? 'No matching rules' : 'No matching items'}
         <button onClick={onReset} className="mt-3 h-11 text-blue-600 hover:underline dark:text-blue-400">
-          Clear search and filters
+          Clear filters
         </button>
       </Empty>
     )

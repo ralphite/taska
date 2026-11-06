@@ -3,6 +3,7 @@
 // (Restore), and so does a project that never was. Props only.
 
 import type { MouseEvent, Ref } from 'react'
+import { hitPath } from '../../model/find'
 import type { SearchHit } from '../../model/types'
 import { hitWhere, inputCode, noMatches, plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
@@ -55,8 +56,6 @@ const NOTE = 'mb-3 rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-800 dark:b
 /** A notice about the link you came by (a deleted project, none of that name): one bar, its × at its end. */
 const NOTICE = 'mb-3 flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-2 text-sm text-amber-950 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-100 dark:ring-amber-400/25'
 const NOTICE_X = 'relative grid size-9 shrink-0 place-items-center rounded-lg after:absolute after:-inset-1 text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-400/15'
-
-const hitUrl = (x: SearchHit, q: string) => `/p/${encodeURIComponent(x.project)}/${x.kind === 'input' ? 'inputs?q=' + encodeURIComponent(q.trim()) : encodeURIComponent(x.code)}`
 
 function AgentCell({ agent }: { agent: HomeRow['agent'] }) {
   return (
@@ -142,7 +141,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
             hits.slice(0, 12).map((x) => (
               <a
                 key={x.project + x.code}
-                href={hitUrl(x, q)}
+                href={hitPath(x)}
                 onClick={follow}
                 className="flex items-center gap-2.5 border-b border-zinc-100 px-4 py-2.5 text-sm last:border-b-0 hover:bg-zinc-50 dark:border-zinc-700/60 dark:hover:bg-zinc-700/40"
               >

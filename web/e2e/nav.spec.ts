@@ -1,5 +1,5 @@
 // Going to a project from the sidebar opens the project itself, never a place inside it (B324, B463).
-// guards: src/features/sidebar/ src/features/home/ src/features/composer/FootContainer.tsx src/features/composer/SaidLatelyContainer.tsx src/pages/ src/ui/SearchHints.tsx src/app/page/ src/app/project/ src/app/projectLists.ts src/model/route.ts src/sync/
+// guards: src/features/sidebar/ src/features/home/ src/features/composer/FootContainer.tsx src/features/composer/SaidLatelyContainer.tsx src/pages/ src/app/page/ src/app/project/ src/app/projectLists.ts src/model/route.ts src/sync/
 import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
 import { foot, pane, sideFoot } from './ui'
@@ -183,29 +183,6 @@ test('D82 #6: Activity that cannot load says so on the desktop too, not Loading 
   await page.route(/\/api\/activity\b/, (r) => r.abort())
   await open(page, p, 'log')
   await expect(page.getByText(/^Couldn't load the change log/).first()).toContainText("Couldn't load the change log")
-})
-
-test('D82 #7, R4-5 #7: a search says what the other projects gave: searching, nothing there; out of reach it retries until they answer', async ({
-  page,
-  request,
-}) => {
-  const p = await project(request, LOOP)
-  let answer: 'hold' | 'fail' | 'go' = 'hold'
-  await page.route('**/api/search**', async (r) => {
-    while (answer === 'hold') await new Promise((ok) => setTimeout(ok, 100))
-    return answer === 'fail' ? r.abort() : r.continue()
-  })
-  test.skip(!isDesk(page), 'the phone has its own search page (F479): search.spec.ts')
-  // the list's words come from a link (the search's link to an input not filed yet)
-  await open(page, p, '?q=zqxj-one')
-  await expect(page.getByText('Searching other projects\u2026', { exact: true }).filter({ visible: true }).first()).toBeVisible()
-  answer = 'go'
-  await expect(page.getByText('Not in other projects', { exact: true }).filter({ visible: true }).first()).toHaveText('Not in other projects')
-  answer = 'fail'
-  await page.goto(p.url + '?q=zqxj-two')
-  await expect(page.getByText('Taska is out of reach, retrying\u2026', { exact: true }).filter({ visible: true }).first()).toBeVisible()
-  answer = 'go'
-  await expect(page.getByText('Not in other projects', { exact: true }).filter({ visible: true }).first()).toBeVisible({ timeout: 15000 })
 })
 
 test('D82 #9: switching to another project, its name shows at once (not its address) and the desktop sidebar keeps Documents, Activity and Deleted while its data comes', async ({

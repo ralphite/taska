@@ -1,15 +1,17 @@
-// Going places in a project: a tab, an item, a document, the New input page, the lists beside the items, the list's
-// search and filters. Changing tab, opening the New input page or an item on the phone are steps Back can undo;
-// picking items in the desktop's list, search and filters only rewrite the address.
+// Going places in a project: a tab, an item, a document, an input, the New input page, the lists beside the items, the
+// list's filters. Changing tab, opening the New input page or an item on the phone are steps Back can undo; picking
+// items in the desktop's list and filters only rewrite the address.
 
-import { LIST_KEYS, NO_FILTERS, composing, parseRoute, projectPath, type ListQuery, type Place } from '../../model/route'
+import { inputOf, LIST_KEYS, NO_FILTERS, composing, parseRoute, projectPath, type ListQuery, type Place } from '../../model/route'
 import { TAB_WORD, type Tab } from '../../model/words'
 import type { RouteStore } from '../../stores/route'
 
 export class Navigation {
   private readonly route: RouteStore
   private readonly desk: () => boolean
-  /** each tab's own search and filters while this page lives, by project and tab */
+  /** an input gone to lit where it is listed (`still`: the list not moved to it); it stays lit until it is shown */
+  private readonly light: (id: string, still: boolean) => void
+  /** each tab's own filters while this page lives, by project and tab */
   private readonly views = new Map<string, ListQuery>()
   /** Settings: the steps taken in it (Back leaves by as many), and the place it was opened from */
   private settingsSteps = 0
@@ -19,9 +21,10 @@ export class Navigation {
   private toList = false
   /** the project the page last came into (its address was made the page's own then) */
   private entered = ''
-  constructor(route: RouteStore, desk: () => boolean) {
+  constructor(route: RouteStore, desk: () => boolean, light: (id: string, still: boolean) => void) {
     this.route = route
     this.desk = desk
+    this.light = light
     route.subscribe((st) => {
       const r = st.route
       if (r.page !== 'project' || this.inSettings(r.place)) return
@@ -93,19 +96,20 @@ export class Navigation {
     return true
   }
 
-  /** The phone's search: open, or closed by Cancel (the search ends: its words go). */
+  /** The phone's search: open, or closed by Cancel. */
   search(on: boolean): void {
     if (this.desk()) return
     if (on) this.route.getState().openLayer('search')
-    else this.route.getState().shutLayer('search', () => this.setList({ q: '' }))
+    else this.route.getState().shutLayer('search')
   }
 
-  /** To an input where it is listed (the phone's Inputs, the desktop's New input page), lit up for a moment. */
-  goInput(id: string, lit: (id: string | null) => void): void {
+  /** To an input of this project where it is listed (the phone's Inputs, the desktop's New input page), lit until it
+   * is shown and a moment more; `still`: lit where the list is, not moved to it. Another project's input: go to its
+   * address (model/route inputPath). */
+  goInput(id: string, still = false): void {
     if (this.desk()) this.newInput()
     else this.tab('inputs')
-    lit(id)
-    setTimeout(() => lit(null), 1600)
+    this.light(id, still)
   }
 
   /** The phone's drawer of projects. */
@@ -124,6 +128,14 @@ export class Navigation {
     // item leaves the list's own address, as it always has)
     const coming = this.entered !== r.slug
     this.entered = r.slug
+    // an input's address (a search found it): it is lit where this layout lists it, and the address is that list's;
+    // on the phone the Inputs tab shows in place of the search page (Back comes back to the search)
+    const input = inputOf(this.route.getState().url)
+    if (input) {
+      this.light(input, false)
+      const [tab, place]: [Tab, Place] = this.desk() ? ['items', { kind: 'new' }] : ['inputs', { kind: 'tab' }]
+      return this.route.getState().go(projectPath(r.slug, tab, place, NO_FILTERS), false, this.desk() ? undefined : [])
+    }
     if (this.desk()) {
       if (coming && r.place.kind === 'tab' && r.tab === 'items') this.go('items', { kind: 'new' }, r.list, false)
       if (r.place.kind === 'tab' && r.tab === 'inputs') this.go('items', { kind: 'new' }, r.list, false)
@@ -132,8 +144,8 @@ export class Navigation {
     } else if (r.place.kind === 'new') this.go('items', { kind: 'tab' }, r.list, false)
   }
 
-  /** Each tab keeps its own search and filters; words in the search go along. Archive is a view of Items: the same
-   * filters but its status. On the desktop what you said is under New input. */
+  /** Each tab keeps its own filters. Archive is a view of Items: the same filters but its status. On the desktop what
+   * you said is under New input. */
   tab(t: Tab): void {
     const r = this.here()
     if (!r) return
@@ -145,7 +157,6 @@ export class Navigation {
       const views = (x: string) => x === 'items' || x === 'archive'
       list = { ...NO_FILTERS }
       for (const k of LIST_KEYS) list[k] = views(t) && views(r.tab) && k !== 'status' ? r.list[k] : v[k]
-      if (r.list.q.trim()) list.q = r.list.q
     }
     const place: Place = this.desk() && t !== 'inputs' ? { kind: 'new' } : { kind: 'tab' }
     const away = t !== r.tab || (this.desk() && (r.place.kind === 'settings' || r.place.kind === 'new'))
@@ -160,8 +171,8 @@ export class Navigation {
     this.go(r.tab, r.place, list, false)
   }
 
-  /** One of your views: its filters on Items (from Archive too), the search kept. */
-  showFilters(f: Omit<ListQuery, 'q'>): void {
+  /** One of your views: its filters on Items (from Archive too). */
+  showFilters(f: ListQuery): void {
     const r = this.here()
     if (!r) return
     const list = { ...r.list, ...f }
@@ -246,12 +257,6 @@ export class Navigation {
     const to = order.step(open, dir)
     if (to === 'first' || to === 'last') say(to === 'first' ? 'Already first item' : 'Already last item')
     else if (to != null) this.openItem(code(to))
-  }
-
-  /** From the search: the list's first item. */
-  first(order: { step(open: number | null, dir: 1 | -1): number | 'first' | 'last' | null }, code: (n: number) => string): void {
-    const to = order.step(null, 1)
-    if (typeof to === 'number') this.openItem(code(to))
   }
 
   /** Another address of the page (a project, the home page, a section of Settings). */

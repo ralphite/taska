@@ -11,9 +11,7 @@ import { queueHead, type DropHow } from '../model/items'
 import { NO_FILTERS, type ListKey, type ListQuery } from '../model/route'
 import { firstSteps } from '../model/project'
 import type { Item, SavedView } from '../model/types'
-import { filtersSet, otherTabs, searchWords } from '../model/visible'
-import { SearchHints, type CrossFacts } from '../ui/SearchHints'
-import { PROJECT_TONES } from '../ui/tones'
+import { filtersSet } from '../model/visible'
 import type { Tab } from '../model/words'
 import { T, item, message, noRowEvents, modelOf } from './fixtures'
 import { act, acts } from './acts'
@@ -64,8 +62,6 @@ export interface Holding {
   viewsOpen?: boolean
   /** a row being dragged (`out`: off every row) */
   dragging?: { out: boolean }
-  /** what a search finds in other projects (the hints under the list and in its empty line) */
-  cross?: CrossFacts
   /** the row being dragged and where it would go, as the page works it out */
   drag?: { n: number; at?: { n?: number; how: DropHow } }
   on?: Partial<ListEvents>
@@ -75,7 +71,7 @@ export interface Holding {
 
 /** The list as the page draws it, holding what the page holds for it (the route's tab and filters, stores.ui's folded
  * parents, shown subitems, picked rows): its views, Show more, a parent's fold, Cmd- and Shift-click to pick and Clear
- * search and filters work here (T662); what needs the rest of the page (opening an item, changing one) shows in the
+ * filters work here (T662); what needs the rest of the page (opening an item, changing one) shows in the
  * Actions panel. */
 export const listOf = (items: Item[], tab: Tab, q: Partial<ListQuery>, desk: boolean, h: Holding = {}) => <LiveList items={items} tab={tab} q={q} desk={desk} h={h} />
 
@@ -103,8 +99,7 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
     const was = listBody(modelOf(h.held.before), tab, query, st)
     rows = heldRows(was.kind === 'rows' ? was.rows : [], m, tab, query, new Map(Object.entries(h.held.said).map(([n, s]) => [Number(n), s])))
   }
-  const words = searchWords(query.q)
-  const drawn = drawRows(m, rows, { slug: 'demo', openN: h.open ?? null, selected, words, desk, drafts: new Set(), head: queueHead(m.items), seen: { since: T }, drag: { n: h.drag?.n ?? null, at: h.drag?.at ?? null }, heldHeight: () => 64 })
+  const drawn = drawRows(m, rows, { slug: 'demo', openN: h.open ?? null, selected, words: [], desk, drafts: new Set(), head: queueHead(m.items), seen: { since: T }, drag: { n: h.drag?.n ?? null, at: h.drag?.at ?? null }, heldHeight: () => 64 })
   const { views, ownViews } = listViews(m, tab, query, body, { list: h.saved ?? [], edit: -1 })
   const why = body.kind === 'empty' ? body.why : body.kind === 'rows' ? body.empty : undefined
   // the page's nav.view and nav.showFilters: Archive is its own tab, a view of items goes back to Items
@@ -140,7 +135,7 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
   const filterOn: FilterEvents = {
     set: (k, v) => setWhere({ tab, query: { ...query, [k]: v } }),
     unset: (k) => setWhere({ tab, query: { ...query, [k]: NO_FILTERS[k] } }),
-    reset: () => setWhere({ tab, query: { ...query, q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' } }),
+    reset: () => setWhere({ tab, query: { ...query, type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' } }),
     saveView: act('Filters: save as a view'),
   }
   const filters = desk ? (
@@ -148,9 +143,6 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
   ) : (
     <FilterStrip set={set} hidden={false} onUnset={(k) => filterOn.unset(k as ListKey)} onReset={filterOn.reset} />
   )
-  // a search says where else its words are, as the page does: under the rows, or in the empty line
-  const hints = (shown: number) =>
-    words.length ? <SearchHints other={otherTabs(m, words, tab, shown)} cross={h.cross ?? { list: [], failed: false, q: query.q }} tone={() => PROJECT_TONES[1]} onShow={(t) => setWhere({ tab: t, query })} onGo={act('Search hints: go')} /> : null
   return (
     <div className="flex h-full flex-col">
       <ItemList
@@ -168,17 +160,14 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
           why ? (
             <EmptyList
               why={why}
-              q={words.join(' ')}
               status={query.status}
               organizerOn={m.facts.organizer.on}
-              onReset={() => setWhere({ tab, query: { ...query, q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' } })}
+              onReset={() => setWhere({ tab, query: { ...query, type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' } })}
               onConnect={act('List: connect an agent → Agents › Who works here')}
-              hints={hints(0)}
               firstRun={{ ...firstSteps(m), ...h.firstRun, on: firstActs }}
             />
           ) : null
         }
-        bottom={words.length && drawn.length ? <div className="flex flex-col py-4">{hints(drawn.length)}</div> : null}
         on={on}
       />
     </div>

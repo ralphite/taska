@@ -25,7 +25,8 @@ export interface UiState {
   sideHidden: boolean
   /** the desktop's item pane in two columns: the item (or its document) on the left, its talk on the right */
   duo: boolean
-  /** an input gone to (from an item's source, the activity log): lit up for a moment where it is listed */
+  /** an input gone to (a search found it, an item's source, the activity log): lit where it is listed until it is
+   * shown, then for a moment */
   lit: string | null
   /** lit where it is, the list not moved to it (the phone's way from the Sources sheet, as it always has been) */
   litStill: boolean

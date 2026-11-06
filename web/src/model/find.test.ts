@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { foundGroups, foundKinds, foundMeta, foundPath, heardWords, saidMore, type FindAnswer, type Found } from './find'
+import { foundGroups, foundKinds, foundMeta, foundPath, hitPath, heardWords, saidMore, type FindAnswer, type Found } from './find'
 
 const f = (project: string, kind: Found['kind'], key: string, more: Partial<Found> = {}): Found => ({ project, kind, key, n: 1, ...more })
 const A: FindAnswer = {
@@ -41,5 +41,11 @@ describe('the phone search', () => {
     expect(foundMeta(f('shop', 'docs', 'd1', { on: 'F001' }), now)).toBe('On F001')
     expect(foundPath(said)).toBe('/p/shop/B018')
     expect(foundPath(f('shop', 'docs', 'd1', { d: 1 }))).toBe('/p/shop/D1')
+  })
+
+  it('opens an input not yet filed as itself, where it is listed, with no words in the address (r1092, T689 #2)', () => {
+    expect(foundPath(f('shop', 'inputs', 'r8', { title: 'The export should keep the filter', became: null }))).toBe('/p/shop/inputs#r8')
+    expect(hitPath({ project: 'shop', kind: 'input', code: 'r8' })).toBe('/p/shop/inputs#r8')
+    expect(hitPath({ project: 'shop', kind: 'item', code: 'B018' })).toBe('/p/shop/B018')
   })
 })

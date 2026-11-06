@@ -43,6 +43,19 @@ export function useCloseSheetWhen(gone: boolean): void {
   }, [app, gone])
 }
 
+/** An input gone to stays lit until its row is drawn (its project's inputs may still be on their way), then for a
+ * moment more; `shown`: the lit input `id` is among the rows. */
+export function useLitFades(id: string | null, shown: boolean): void {
+  const stores = useStores('ui')
+  useEffect(() => {
+    if (!id || !shown) return
+    // not stopped when the list goes: a light left on would come back with it
+    setTimeout(() => {
+      if (stores.ui.getState().lit === id) stores.ui.getState().setLit(null)
+    }, 1600)
+  }, [stores, id, shown])
+}
+
 /** The files of what was said, with the page: a voice note's chip plays it and shows where it is, a picture opens
  * the viewer, the original words their sheet. */
 export function useFiles(slug: string): { play(src: string): PlayState; /** a voice note's words were tidied: its original words can be had */ tidy: boolean; on: { play(src: string): void; words(f: string): void; view(f: string, all: string[]): void } } {

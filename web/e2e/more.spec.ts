@@ -17,15 +17,6 @@ test('the phone: an item is a page of its own, and Back returns to the list', as
   await expect(pane(page)).toHaveCount(0)
 })
 
-test("a link with words narrows the list to them (the search's link to an input not filed yet)", async ({ page, request }) => {
-  test.skip(!isDesk(page), 'the phone has its own search page (F479): search.spec.ts')
-  const p = await project(request, LOOP)
-  await open(page, p, '?q=docs')
-  await expect(page.locator('#list article[data-n]')).toHaveCount(1)
-  await open(page, p, '?q=zzzz-nothing')
-  await expect(page.locator('#list')).toContainText('No matches for “zzzz-nothing”')
-})
-
 test('a subitem is added under its item', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p, 'T4')

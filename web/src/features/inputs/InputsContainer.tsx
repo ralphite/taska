@@ -5,11 +5,9 @@ import { useMemo, useState } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
 import { NEW_DRAFT } from '../../model/draftTarget'
 import { clock } from '../../model/time'
-import { useAway, useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
+import { useAway, useFiles, useLitFades, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { codeOf, findRef, type ProjectModel } from '../../model/project'
-import { searchWords } from '../../model/visible'
 import { useItemWorld } from '../../app/hooks'
-import { useSearchHints } from '../../app/searchHints'
 import { FileChips } from '../../ui/Files'
 import { useBoxHere } from '../../app/inputs/boxHere'
 import { InputsView, type InputFacts } from './InputsView'
@@ -31,9 +29,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
   const outbox = useStoreValue(stores.outbox, (s) => s.list)
   const opened = useStoreValue(stores.ui, (s) => s.openedInputs)
   const projects = useStoreValue(stores.data, (s) => s.projects)
-  const words = useMemo(() => searchWords(route.list.q), [route.list.q])
   const world = useItemWorld(m, route.slug)
-  const hints = useSearchHints(route, m, words)
   const draftWords = useStoreValue(stores.drafts, (s) => s.bySlug[route.slug])
   const mode = useStoreValue(stores.box, (s) => s.mode)
   const writing = useMemo(() => (mode?.kind === 'amend' ? { id: mode.id, mode: mode.mode } : null), [mode])
@@ -47,13 +43,14 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
   const { rows, total }: { rows: InputFacts[]; total: number } = useMemo(() => {
     if (!m || hidden) return { rows: [], total: 0 }
     const title = (slug: string) => projects?.find((p) => p.name === slug)?.title || slug
-    const got = inputRows(m, { words, title, opened, drafts: draftWords || stores.drafts.getState().of(route.slug), writing, lit, litStill, upTo })
+    const got = inputRows(m, { title, opened, drafts: draftWords || stores.drafts.getState().of(route.slug), writing, lit, litStill, upTo })
     // Move, as its menu has it: another project to go to, and the organizer not on it
     return { ...got, rows: got.rows.map((x) => ({ ...x, movable: others > 0 && !organizing(x.r, m.facts.organizer) })) }
-  }, [m, hidden, words, projects, opened, draftWords, stores, route.slug, writing, lit, litStill, upTo, others])
+  }, [m, hidden, projects, opened, draftWords, stores, route.slug, writing, lit, litStill, upTo, others])
   // an input gone to further down is drawn with those above it, and stays drawn once it is no longer lit (React's
   // adjust-state-while-rendering pattern)
   if (rows.length > upTo) setUpTo(rows.length)
+  useLitFades(lit, rows.some((x) => x.lit))
   const outgoing = outgoingRows(outbox, route.slug, away)
   return (
     <InputsView
@@ -62,9 +59,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
       rows={rows}
       more={total > rows.length}
       outgoing={outgoing}
-      words={words}
       world={world}
-      hints={hints(total)}
       files={(f) => <FileChips files={f} url={world.url} play={media.play} tidy={media.tidy} on={media.on} />}
       on={{
         goto: (n) => m && app.nav.openItem(codeOf(m, n), 'items'),
@@ -78,7 +73,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
           const to = m ? findRef(m, c) : null
           if (to?.kind === 'item') app.nav.openItem(codeOf(m as ProjectModel, to.n), 'items')
           else if (to?.kind === 'doc') app.docs.open(to.d)
-          else if (to?.kind === 'input') app.nav.goInput(to.id, (x) => stores.ui.getState().setLit(x))
+          else if (to?.kind === 'input') app.nav.goInput(to.id)
         },
         picture: (f, all) => media.on.view(f, all),
         outboxRetry: () => void app.inputs.flush(),

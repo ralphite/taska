@@ -8,16 +8,13 @@ import { SaidLately, SaidRow, type SaidEvents } from '../features/composer/SaidL
 import type { Outgoing } from '../model/outgoing'
 import { saidOutgoing, saidRows } from '../model/saidLately'
 import type { FileRef, Input, Item, OrgNote } from '../model/types'
-import { otherTabs, searchWords } from '../model/visible'
-import { SearchHints } from '../ui/SearchHints'
 import { FileChips } from '../ui/Files'
 import { RecBar } from '../ui/PlaceVoice'
-import { PROJECT_TONES } from '../ui/tones'
 import { PICTURE, T, input, item, modelOf } from './fixtures'
 import { talkEnv } from './itemFixtures'
 import { inputWords } from '../ui/Markdown'
 import type { ProjectModel } from '../model/project'
-import { act, acts } from './acts'
+import { acts } from './acts'
 import { useMedia, usePop } from './liveParts'
 import { useState } from 'react'
 import { inputMenuSheet } from '../features/inputs/InputSheets'
@@ -87,7 +84,6 @@ export interface Said {
    * input it is on now */
   organizer?: boolean
   busy?: string
-  q?: string
   outbox?: Outgoing[]
   /** how long Taska has not answered */
   away?: number
@@ -185,21 +181,19 @@ export function useInputs(m: ProjectModel, desk: boolean, s: Pick<Said, 'opened'
 
 function rowsOf(s: Said, opened: ReadonlySet<string>) {
   const m = project(s)
-  const words = searchWords(s.q ?? '')
   const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
-  const { rows, total } = inputRows(m, { words, title, opened, drafts, writing: null, lit: s.lit ?? null, litStill: !!s.litStill, upTo: 40 })
-  return { m, words, rows: rows.map((x) => ({ ...x, movable: true })), total }
+  const { rows, total } = inputRows(m, { title, opened, drafts, writing: null, lit: s.lit ?? null, litStill: !!s.litStill, upTo: 40 })
+  return { m, rows: rows.map((x) => ({ ...x, movable: true })), total }
 }
 
 /** The phone's Inputs tab as the page draws it. */
 export const inputsOf = (s: Said = {}) => <LiveInputs s={s} />
 function LiveInputs({ s }: { s: Said }) {
   const live = useInputs(project(s), false, s)
-  const { m, words, rows, total } = rowsOf(s, live.opened)
-  const hints = words.length ? <SearchHints other={otherTabs(m, words, 'inputs', total)} cross={{ list: [], failed: false, q: words.join(' ') }} tone={() => PROJECT_TONES[1]} onShow={act('Search hints: show')} onGo={act('Search hints: go')} /> : null
+  const { m, rows, total } = rowsOf(s, live.opened)
   return (
     <div className="flex h-full flex-col">
-      <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(live.going(s.outbox), 'demo', s.away ?? 0)} words={words} world={talkEnv(m, false).world} hints={hints} files={live.chips} recording={s.recording ?? null} on={live.inputOn} />
+      <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(live.going(s.outbox), 'demo', s.away ?? 0)} world={talkEnv(m, false).world} files={live.chips} recording={s.recording ?? null} on={live.inputOn} />
       {live.node}
     </div>
   )
@@ -212,7 +206,7 @@ function LiveCard({ r, s }: { r: Input; s: Said }) {
   const { m, rows } = rowsOf({ ...s, inputs: [r] }, live.opened)
   return (
     <>
-      <InputCard x={rows[0]} words={[]} world={talkEnv(m, false).world} files={live.chips} on={live.inputOn} />
+      <InputCard x={rows[0]} world={talkEnv(m, false).world} files={live.chips} on={live.inputOn} />
       {live.node}
     </>
   )
@@ -224,10 +218,10 @@ function LiveSaidRow({ r, s }: { r: Input; s: Said }) {
   const m = project({ ...s, inputs: [r] })
   const live = useInputs(m, true, s)
   const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
-  const x = saidRows(m, { words: [], upTo: 1, opened: live.opened, drafts, mode: null, title }).rows[0]
+  const x = saidRows(m, { upTo: 1, opened: live.opened, drafts, mode: null, title }).rows[0]
   return (
     <div className="px-6 py-3">
-      <SaidRow x={x} files={r.files.length ? live.chips(r.files) : null} words={live.words} on={live.saidOn} />
+      <SaidRow x={x} files={r.files.length ? live.chips(r.files) : null} words={live.words} lit={s.lit === r.id} on={live.saidOn} />
       {live.node}
     </div>
   )
@@ -239,13 +233,14 @@ function LiveSaid({ s }: { s: Said }) {
   const m = project(s)
   const live = useInputs(m, true, s)
   const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
-  const said = saidRows(m, { words: [], upTo: 30, opened: live.opened, drafts, mode: null, title, adding: new Set(s.addingUp) })
+  const said = saidRows(m, { upTo: 30, lit: s.lit, opened: live.opened, drafts, mode: null, title, adding: new Set(s.addingUp) })
   return (
     <div className="mx-auto mt-8 max-w-[42rem]">
       <SaidLately
         words={live.words}
         rows={said.rows}
-        outgoing={saidOutgoing(live.going(s.outbox), [], s.away ?? 0)}
+        outgoing={saidOutgoing(live.going(s.outbox), s.away ?? 0)}
+        lit={s.lit}
         more={said.all.length > said.rows.length}
         files={live.chips}
         recording={s.recording ?? null}

@@ -121,7 +121,6 @@ const sourcesOf = (m: ProjectModel, srcs: readonly string[]) => srcs.map((id) =>
 
 export function SourcesSheet({ req }: Req<'item-sources'>) {
   const app = useServices('nav', 'sheets')
-  const stores = useStores('ui')
   const { slug, m, it, code } = useSubject(req.n)
   const world = useItemWorld(m, slug)
   const media = useFiles(slug)
@@ -139,7 +138,7 @@ export function SourcesSheet({ req }: Req<'item-sources'>) {
         },
         // the phone's Inputs lights it where its list is (the sheet's closing takes the list back to its top), as it
         // always has
-        (id) => app.sheets.close(() => app.nav.goInput(id, (x) => stores.ui.getState().setLit(x, !desk))),
+        (id) => app.sheets.close(() => app.nav.goInput(id, !desk)),
       )}
     />
   )

@@ -14,13 +14,9 @@ const one = (s: Said): Story => ({ render: () => <Frames desk={false} phoneWidth
 
 /** Everything you said, by day, with where each stands and what became of it. */
 export const InputsTab: Story = { ...one({}), name: 'All inputs' }
-/** A search: the words lit where they are, and how many the other tabs have. */
-export const InputsTabSearch: Story = { ...one({ q: 'coupon' }), name: 'Search' }
 /** Just sent, Taska not answering yet: on its way, first. */
 export const InputsTabWithOneOnItsWay: Story = { ...one({ outbox: [out({ text: 'Also the sort, please.' })] }), name: 'One on its way' }
 export const InputsTabEmpty: Story = { ...one({ inputs: [] }), name: 'Empty' }
-// ---- more states (B636)
-export const SearchNothingFound: Story = { ...one({ q: 'zebra' }), name: 'Search, nothing found' }
 // ---- more states (T639)
 /** the first input of a project still on its way: only its row, no "No inputs yet." */
 export const EmptyOneOnItsWay: Story = { name: 'Empty, one on its way', render: () => <Frames desk={false} phoneWidth={393} height={360}>{() => inputsOf({ inputs: [], outbox: [out({ q: 'a', text: 'Make the export button bigger' })] })}</Frames> }

@@ -300,7 +300,6 @@ function stepBack(w: BackWorld, h: Here): void {
     if (typingIn(active)) return (active as HTMLElement).blur()
     if (w.route.getState().full) return w.nav.full(false)
     if (r.place.kind === 'new' && w.nav.composeBack()) return
-    if (r.list.q) return w.nav.setList({ q: '' })
     if (r.place.kind === 'item' && r.tab !== 'inputs') return w.nav.closeItem()
     return
   }

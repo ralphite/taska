@@ -1,6 +1,6 @@
-// The search in the other projects: the words asked, what came back (null while it is asked), whether Taska refused
-// it or is out of reach (asked again), and the last answer whatever its words (shown while the next is asked, as on
-// the home page).
+// The search across the projects (the home page's): the words asked, what came back (null while it is asked),
+// whether Taska refused it or is out of reach (asked again), and the last answer whatever its words (shown while the
+// next is asked).
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { SearchHit } from '../model/types'

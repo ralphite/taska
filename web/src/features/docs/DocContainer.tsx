@@ -69,7 +69,7 @@ function useDoc(slug: string, dn: number) {
       if (!to || !m) return
       if (to.kind === 'item') app.nav.openItem(codeOf(m, to.n))
       else if (to.kind === 'doc') docs.open(to.d)
-      else app.nav.goInput(to.id, (x) => stores.ui.getState().setLit(x))
+      else app.nav.goInput(to.id)
     },
     picture: (f, all) => media.on.view(f, all),
     ...media.on,

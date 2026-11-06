@@ -1,4 +1,4 @@
-// Searching the other projects for the list's search words: a while after you stop typing, once per words; out of
+// Searching every project for the home page's search words: a while after you stop typing, once per words; out of
 // reach, asked again until Taska answers or the words change (T424).
 
 import { Abandoned, untilAnswered } from '../../api/http'

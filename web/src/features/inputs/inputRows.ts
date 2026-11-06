@@ -5,13 +5,11 @@
 import { inputLine, type InputLineWith } from '../../model/became'
 import { newestFirst } from '../../model/inputs'
 import type { ProjectModel } from '../../model/project'
-import { inputMatch } from '../../model/visible'
 import { outgoingLine, outgoingState, outgoingWaits, showsOnItsWay, type Outgoing } from '../../model/outgoing'
 import type { InputFacts, OutgoingRow } from './InputsView'
 
 /** What the rows are drawn with besides the project. */
 export interface InputRowsWith extends InputLineWith {
-  words: string[]
   lit: string | null
   litStill: boolean
   /** how many to draw, newest first (more come as the list scrolls to its end, B645); the one gone to is always
@@ -19,9 +17,9 @@ export interface InputRowsWith extends InputLineWith {
   upTo: number
 }
 
-/** The rows drawn, and how many inputs match in all. */
+/** The rows drawn, and how many inputs there are in all. */
 export function inputRows(m: ProjectModel, a: InputRowsWith): { rows: InputFacts[]; total: number } {
-  const all = newestFirst(m.inputs).filter((r) => inputMatch(r, a.words))
+  const all = newestFirst(m.inputs)
   const list = all.slice(0, Math.max(a.upTo, all.findIndex((r) => r.id === a.lit) + 1 + 10))
   const rows = list.map((r): InputFacts => ({ ...inputLine(m, r, a), lit: a.lit === r.id ? (a.litStill ? 'still' : 'shown') : undefined }))
   return { rows, total: all.length }

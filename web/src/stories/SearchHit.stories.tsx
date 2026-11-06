@@ -1,14 +1,13 @@
 // Searched words marked (T591: Icons and marks > Search hit): the page's own Hit in a title and in the words of a
 // message, every word of the search, wherever it is.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { searchWords } from '../model/visible'
 import { Hit } from '../ui/bits'
 import { Frames } from './Frames'
 
 export default { title: 'Components/Settings, help and parts/Icons and marks/Search hit' } satisfies Meta
 type Story = StoryObj
 
-const words = searchWords('export filter')
+const words = ['export', 'filter']
 export const Marked: Story = {
   name: 'Searched words marked',
   render: () => (

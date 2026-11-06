@@ -70,7 +70,7 @@ function LiveHead({ desk, h }: { desk: boolean; h: HeadHere }) {
   const filterOn: FilterEvents = {
     set: (k, v) => setList({ ...list, [k]: v }),
     unset: (k) => setList({ ...list, [k]: NO_FILTERS[k] }),
-    reset: () => setList({ ...list, q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' }),
+    reset: () => setList({ ...list, type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' }),
     saveView: on.saveView,
   }
   if (desk)

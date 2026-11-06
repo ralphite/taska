@@ -6,7 +6,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
 import { draftTarget, NEW_DRAFT } from '../../model/draftTarget'
 import { clock } from '../../model/time'
-import { useAway, useFiles, useItemWorld, useProjectModel, type ProjectRoute } from '../../app/hooks'
+import { useAway, useFiles, useItemWorld, useLitFades, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import type { DraftKey } from '../../model/draftTarget'
 import { fixRange, voiceStretches } from '../../model/doubts'
 import { codeOf, findRef } from '../../model/project'
@@ -23,7 +23,6 @@ import { useHeard } from './heard'
 
 const STEP = 30
 const EMPTY: Record<string, string> = {}
-const NO_WORDS: string[] = []
 
 /** What the list shows: how many rows, which are opened in full, More and Less (kept while the page shows other
  * places). */
@@ -37,7 +36,7 @@ export type SaidView = ReturnType<typeof useSaidView>
 
 export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: ProjectRoute; boxKey: DraftKey; view: SaidView; draft: ReactNode }) {
   const app = useServices('box', 'docs', 'fields', 'inputActions', 'inputs', 'nav', 'sheets', 'voice')
-  const stores = useStores('box', 'recording', 'data', 'drafts', 'outbox')
+  const stores = useStores('box', 'recording', 'data', 'drafts', 'outbox', 'ui')
   // a voice note being recorded into a new input here: its row comes first, with how long so far (B627)
   const recording = useStoreValue(stores.recording, (st) => (st.rec && st.rec.slug === route.slug && !st.rec.about && st.rec.key === NEW_DRAFT ? clock(st.rec.ms) : null))
   // more being said into one of them, on its line (its Voice): which
@@ -59,8 +58,10 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
   const drafts = useStoreValue(stores.drafts, (s) => s.bySlug[route.slug]) || EMPTY
   const mode = useStoreValue(stores.box, (s) => s.mode)
   const projects = useStoreValue(stores.data, (s) => s.projects)
+  const lit = useStoreValue(stores.ui, (s) => s.lit)
   const { upTo, opened } = view
-  const said = useMemo(() => (m ? saidRows(m, { words: NO_WORDS, upTo, opened, drafts, mode, title: (s) => projects?.find((p) => p.name === s)?.title || s, adding: new Set(onItsWay.split(' ')) }) : null), [m, upTo, opened, drafts, mode, projects, onItsWay])
+  const said = useMemo(() => (m ? saidRows(m, { upTo, lit, opened, drafts, mode, title: (s) => projects?.find((p) => p.name === s)?.title || s, adding: new Set(onItsWay.split(' ')) }) : null), [m, upTo, lit, opened, drafts, mode, projects, onItsWay])
+  useLitFades(lit, !!lit && !!said?.rows.some((x) => x.r.id === lit))
   const media = useFiles(route.slug)
   const world = useItemWorld(m, route.slug)
   // a code in its words opens what it names, as the Inputs tab's do
@@ -78,7 +79,8 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
         recording={recording}
         adding={adding ? { id: adding, meter: <RecMeter n={PLACE_LEVELS.desk} /> } : null}
         rows={said.rows}
-        outgoing={saidOutgoing(mine, NO_WORDS, away)}
+        outgoing={saidOutgoing(mine, away)}
+        lit={lit}
         more={said.all.length > said.rows.length}
         draft={draft}
         files={(f) => <FileChips files={f} url={url} play={media.play} tidy={media.tidy} on={media.on} />}

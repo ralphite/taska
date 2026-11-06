@@ -41,7 +41,7 @@ export function SideListContainer({ slug, side }: { slug: string; side: Side }) 
   const gone = useMemo(() => (m ? goneRows(m) : []), [m])
 
   const openItem = (n: number) => m && app.nav.openItem(codeOf(m, n))
-  const openInput = (id?: string) => (id ? app.nav.goInput(id, (x) => stores.ui.getState().setLit(x)) : app.nav.newInput())
+  const openInput = (id?: string) => (id ? app.nav.goInput(id) : app.nav.newInput())
   const count = side === 'docs' ? docs.length : side === 'deleted' ? gone.length : 0 // the log loads as you scroll
   return (
     <SideFrame side={side} count={count}>

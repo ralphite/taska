@@ -18,6 +18,12 @@ export const SaidLatelyList: Story = {
   ),
 }
 
+/** An input gone to (a search found it, an item's source): brought into view and lit, as the phone's Inputs tab does. */
+export const SaidGoneTo: Story = {
+  name: 'One gone to: in view and lit',
+  render: () => <Frames phone={false} deskWidth={1024}>{() => <div className="p-6">{saidOf({ inputs: DAY, lit: ONE.made.id })}</div>}</Frames>,
+}
+
 const line = () => saidOf({ inputs: [ONE.made] })
 
 /** A row under the pointer (a shade darker; Voice, Comment and ⋯ fade in at the end of its first line) and from the keys, side by

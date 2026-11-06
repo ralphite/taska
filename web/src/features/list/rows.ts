@@ -5,7 +5,7 @@ import { closed, latestFirst, needsOrder, needsYou, workOrder } from '../../mode
 import type { ProjectModel } from '../../model/project'
 import type { ListQuery } from '../../model/route'
 import type { Item } from '../../model/types'
-import { filtered, searchWords, visible } from '../../model/visible'
+import { filtered, visible } from '../../model/visible'
 import { NEEDS_SHOWN, type Tab } from '../../model/words'
 
 export type ZoneKind = 'needs' | 'rules' | 'retired'
@@ -128,7 +128,7 @@ export function listBody(m: ProjectModel | null, tab: Tab, list: ListQuery, st: 
     if ((list.status === 'done' || list.status === 'dropped') && ordered.some((it) => !it.archived && closed(it.status)))
       out.push({ kind: 'archive-all', n: ordered.filter((it) => !it.archived && closed(it.status)).length })
     if (!ordered.length) {
-      const why = searchWords(list.q).length || list.type !== 'all' || list.pri !== 'all' ? 'no-match' : 'nothing'
+      const why = list.type !== 'all' || list.pri !== 'all' ? 'no-match' : 'nothing'
       return { kind: 'rows', views: true, rows: out, shown: 0, empty: why }
     }
     out.push(...tree(group, st, { hidden, needs: true }))
@@ -177,14 +177,14 @@ export interface ViewChip {
   needs: boolean
 }
 
-/** The views' row: each view with what it would show now (the search and filters set count too). */
+/** The views' row: each view with what it would show now (the filters set count too). */
 export function viewChips(m: ProjectModel, tab: Tab, list: ListQuery): ViewChip[] {
   return VIEWS.map(([value, label]) => {
     if (value === 'archive') {
       const n = visible(m.items, 'archive', tab === 'archive' ? list : { ...list, status: 'all' }).length
       return { value, label, count: n, on: tab === 'archive', needs: false }
     }
-    const asItems = tab !== 'items' ? { q: list.q, type: 'all', when: 'all', status: value, pri: 'all', sort: 'all' } : { ...list, status: value }
+    const asItems = tab !== 'items' ? { type: 'all', when: 'all', status: value, pri: 'all', sort: 'all' } : { ...list, status: value }
     const n = visible(m.items, 'items', asItems).length
     return { value, label, count: n, on: tab === 'items' && list.status === value, needs: value === 'wait' && n > 0 }
   })

@@ -157,7 +157,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
       const to = findRef(m, c)
       if (to?.kind === 'item') goto(to.n)
       else if (to?.kind === 'doc') app.docs.open(to.d)
-      else if (to?.kind === 'input') app.nav.goInput(to.id, (x) => stores.ui.getState().setLit(x))
+      else if (to?.kind === 'input') app.nav.goInput(to.id)
     },
     picture: (f, all) => media.on.view(f, all),
     ...media.on,
@@ -189,7 +189,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     editTyped: (fields) => app.itemEdits.typed(it, fields),
     inputMore: (id, from) => (desk ? app.sheets.openFrom(from, { kind: 'input-menu', id }, { focus: false }) : app.sheets.open({ kind: 'input-menu', id }, { focus: false })),
     inputHistory: (id) => app.sheets.open({ kind: 'input-history', id }),
-    goInput: (id) => app.nav.goInput(id, (x) => stores.ui.getState().setLit(x)),
+    goInput: (id) => app.nav.goInput(id),
     moved: (href) => app.nav.to(href),
     msgMenu: (id, from) => (desk ? app.sheets.openFrom(from, { kind: 'message-menu', n, id }, { focus: false }) : app.sheets.open({ kind: 'message-menu', n, id }, { focus: false })),
     peek: (id) => iv().peek(id),

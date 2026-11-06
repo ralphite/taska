@@ -5,15 +5,13 @@
 
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { InputLine } from '../../model/became'
-import { useLitRow } from './litRow'
+import { useLitRow } from '../../ui/litRow'
 import type { FileRef } from '../../model/types'
 import { Empty } from '../../ui/bits'
 import { INPUT_LIST, InputRow, OutgoingRow as OutgoingLine, RecordingRow } from '../../ui/InputRow'
 import { inputWords } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
-import { useMarks } from '../../ui/marks'
 import { useRowSwipe, type RowSwipe } from '../../ui/rowSwipe'
-import { noMatches } from '../../model/words'
 
 export interface InputFacts extends InputLine {
   /** gone to: lit up for a moment, brought into view ('shown') or where the list is ('still') */
@@ -63,14 +61,13 @@ export interface InputEvents {
 
 /** One input: the line every list of inputs draws, its words drawn as Markdown (references and pictures in them work),
  * brought into view and lit when gone to. */
-export function InputCard({ x, words, world, files, on }: { x: InputFacts; words: readonly string[]; world: InlineWorld; files(f: FileRef[]): ReactNode; on: InputEvents }) {
+export function InputCard({ x, world, files, on }: { x: InputFacts; world: InlineWorld; files(f: FileRef[]): ReactNode; on: InputEvents }) {
   const litRef = useLitRow<HTMLElement>(x.lit === 'shown')
   const r = x.r
   const to = x.became.k === 'filed' ? (x.became.items[0]?.item ?? null) : x.became.k === 'answer' ? x.became.item : null
   return (
     <InputRow
       x={x}
-      words={words}
       lit={!!x.lit}
       rowRef={litRef}
       text={(cut) => inputWords(world, on)(r.text, cut)}
@@ -103,7 +100,7 @@ export function OutboxRows({ list, on }: { list: OutgoingRow[]; on: Pick<InputEv
   )
 }
 
-export function InputsView({ hidden, rows, more, outgoing, words, world, files, hints, recording = null, on }: {
+export function InputsView({ hidden, rows, more, outgoing, world, files, recording = null, on }: {
   hidden: boolean
   rows: InputFacts[]
   /** older inputs not drawn yet: they come when the list nears its end */
@@ -111,15 +108,11 @@ export function InputsView({ hidden, rows, more, outgoing, words, world, files, 
   outgoing: OutgoingRow[]
   /** a voice note being recorded into a new input: how long so far (it shows first, B627) */
   recording?: string | null
-  words: readonly string[]
   world: InlineWorld
   files(f: FileRef[]): ReactNode
-  /** under a search: the other tabs' and projects' matches */
-  hints: ReactNode
   on: InputEvents
 }) {
   const ref = useRef<HTMLElement | null>(null)
-  useMarks(ref, words)
   useRowSwipe(ref, !hidden, on.swipe, rows)
   const end = useRef<HTMLDivElement | null>(null)
   const told = useRef(on.end)
@@ -141,27 +134,23 @@ export function InputsView({ hidden, rows, more, outgoing, words, world, files, 
       data-vc-area
       className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)]"
     >
-      {hidden || !recording || words.length ? null : <RecordingRow clock={recording} />}
+      {hidden || !recording ? null : <RecordingRow clock={recording} />}
       {hidden ? null : (
         <div className="mb-6 space-y-2 px-4 pt-4 empty:hidden">
-          {outgoing.length && !words.length ? <OutboxRows list={outgoing} on={on} /> : null}
+          {outgoing.length ? <OutboxRows list={outgoing} on={on} /> : null}
         </div>
       )}
       {hidden ? null : rows.length ? (
         <>
           <div className={INPUT_LIST}>
             {rows.map((x) => (
-              <InputCard key={x.r.id} x={x} words={words} world={world} files={files} on={on} />
+              <InputCard key={x.r.id} x={x} world={world} files={files} on={on} />
             ))}
           </div>
           {more ? <div ref={end} aria-hidden className="h-24" /> : null}
-          {words.length ? <div className="flex flex-col py-4">{hints}</div> : null}
         </>
       ) : outgoing.length || recording ? null : (
-        <Empty>
-          {words.length ? noMatches(words.join(' ')) : 'No inputs'}
-          {words.length ? <span className="mt-3 flex flex-col">{hints}</span> : null}
-        </Empty>
+        <Empty>No inputs</Empty>
       )}
     </section>
   )

@@ -11,7 +11,6 @@
 import type { ReactNode, Ref } from 'react'
 import { BECAME_WORD as W, type Became, type InputLine, type ItemRef } from '../model/became'
 import { voiceMark } from '../model/inputs'
-import { Hit } from './bits'
 import { Icon, Spinner, StateIcon } from './Icon'
 import { PLACE_BUTTON, PlaceVoice } from './PlaceVoice'
 import { TYPE_TEXT } from './tones'
@@ -194,7 +193,7 @@ export function BecameLine({ b, id, on }: { b: Became; id: string; on: Pick<Inpu
 function Words({ x, text, on }: { x: InputLine; text(cut: boolean): ReactNode; on: Pick<InputRowEvents, 'more'> }) {
   const cut = x.long && !x.opened
   return (
-    <div data-hit-html {...voiceMark(x.r)} className="text-[15px] leading-[1.6] text-zinc-900 dark:text-zinc-100">
+    <div {...voiceMark(x.r)} className="text-[15px] leading-[1.6] text-zinc-900 dark:text-zinc-100">
       <div onClick={cut ? () => on.more(x.r.id) : undefined} className={cut ? 'line-clamp-4 cursor-pointer' : ''}>
         {text(cut)}
       </div>
@@ -232,10 +231,8 @@ function RowButtons({ x, rec, on }: { x: InputLine; rec: ReactNode | null; on: I
   )
 }
 
-export function InputRow({ x, words, text, files, lit = false, rec = null, rowRef, swipe = null, on }: {
+export function InputRow({ x, text, files, lit = false, rec = null, rowRef, swipe = null, on }: {
   x: InputLine
-  /** the searched words, marked in its number */
-  words: readonly string[]
   text(cut: boolean): ReactNode
   /** its voice notes, pictures and files */
   files: ReactNode
@@ -254,9 +251,7 @@ export function InputRow({ x, words, text, files, lit = false, rec = null, rowRe
     <article ref={rowRef} className={`${ROW} ${lit ? LIT : ''}`}>
       <header className={`mb-1.5 flex items-center justify-between gap-2 ${x.draft || rec ? 'h-6' : 'h-5'}`}>
         <div className="flex min-w-0 items-center gap-1.5 font-mono text-[11px] whitespace-nowrap text-zinc-400 dark:text-zinc-500">
-          <span className="font-medium text-zinc-600 dark:text-zinc-400">
-            <Hit text={x.code} words={words} />
-          </span>
+          <span className="font-medium text-zinc-600 dark:text-zinc-400">{x.code}</span>
           <span>
             {x.day} {x.time}
           </span>

@@ -2,8 +2,9 @@
 // by project (the one you are in first, then the others in the sidebar's order), closest first in each, a kind chip
 // showing only that kind. Pure.
 
+import { inputPath } from './route'
 import { when } from './time'
-import type { Item } from './types'
+import type { Item, SearchHit } from './types'
 
 export type FindPhase =
   /** nothing to search yet: the box waits for you to speak or type */
@@ -89,14 +90,17 @@ export function foundMeta(x: Found, now: number): string {
   return [when(x.t, now), x.became ? `became ${x.became}` : ''].filter(Boolean).join(' · ')
 }
 
-/** The address a result opens: an item its page, a document its own, an input the item it became (none: the inputs
- * with its words). */
+/** The address a result opens: an item its page, a document its own, an input the item it became (none: the input
+ * itself, where it is listed). */
 export function foundPath(x: Found): string {
   const base = `/p/${encodeURIComponent(x.project)}/`
   if (x.kind === 'docs' && x.d != null) return base + `D${x.d}`
-  if (x.kind === 'inputs') return x.became ? base + encodeURIComponent(x.became) : base + 'inputs?q=' + encodeURIComponent((x.title || '').slice(0, 60))
+  if (x.kind === 'inputs') return x.became ? base + encodeURIComponent(x.became) : inputPath(x.project, x.key)
   return base + encodeURIComponent(x.item?.code || String(x.n))
 }
+
+/** The address a hit of Home's search opens: an item its page, an input itself where it is listed. */
+export const hitPath = (x: Pick<SearchHit, 'project' | 'kind' | 'code'>): string => (x.kind === 'input' ? inputPath(x.project, x.code) : `/p/${encodeURIComponent(x.project)}/${encodeURIComponent(x.code)}`)
 
 /** More words said after the ones in the box: put at their end, joined as a sentence goes on ("…, only on the
  * phone"; in Chinese with "，"). -> the words, and what was added (to light). */

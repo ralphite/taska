@@ -1,13 +1,12 @@
-// Which items a list shows: by tab, by the preset view (on Items the status is a view, not a filter), by the filters
-// and the search, in the list's order. Pure: from the project and the list's settings.
+// Which items a list shows: by tab, by the preset view (on Items the status is a view, not a filter) and by the
+// filters, in the list's order. Pure: from the project and the list's settings.
 
 import { closed, needsYou } from './items'
-import type { ProjectModel } from './project'
 import type { ListKey, ListQuery } from './route'
-import type { Input, Item } from './types'
-import { ARCHIVE_FILTER_WORD, LETTER, RULE_STATUS_WORD, SORT_WORDS, STATUS_FILTER_WORD, STATUS_WORD, TABS, WHEN_WORD, type Tab } from './words'
+import type { Item } from './types'
+import { ARCHIVE_FILTER_WORD, LETTER, RULE_STATUS_WORD, SORT_WORDS, STATUS_FILTER_WORD, STATUS_WORD, WHEN_WORD, type Tab } from './words'
 
-/** An item's words, for the search: its code, title, text, next and talk. */
+/** An item's words, for picking one by them: its code, title, text, next and talk. */
 const HAY = new WeakMap<Item, string>()
 export function hay(it: Item): string {
   let h = HAY.get(it)
@@ -18,14 +17,12 @@ export function hay(it: Item): string {
   return h
 }
 
-export const searchWords = (q: string) => q.trim().toLowerCase().split(/\s+/).filter(Boolean)
-
 /** On Items with the usual order the status is the preset view the list shows, not a filter laid over it. */
 export const statusIsView = (tab: Tab, list: ListQuery) => tab === 'items' && list.sort === 'all'
 
-/** Anything narrows the list: search words or a filter. */
+/** Anything narrows the list: a filter. */
 export const filtered = (tab: Tab, list: ListQuery) =>
-  !!(list.q.trim() || list.type !== 'all' || list.when !== 'all' || (list.status !== 'all' && !statusIsView(tab, list)) || list.pri !== 'all')
+  !!(list.type !== 'all' || list.when !== 'all' || (list.status !== 'all' && !statusIsView(tab, list)) || list.pri !== 'all')
 
 /** Items shows the work, and rules that wait on you (an agent proposed one, or asks about it). */
 export const inTab = (it: Item, t: Tab | string) =>
@@ -59,7 +56,6 @@ function tabOk(it: Item, tab: Tab): boolean {
 }
 
 export function visible(items: readonly Item[], tab: Tab, list: ListQuery): Item[] {
-  const words = searchWords(list.q)
   const order =
     list.sort === 'new'
       ? (a: Item, b: Item) => b.n - a.n
@@ -74,13 +70,10 @@ export function visible(items: readonly Item[], tab: Tab, list: ListQuery): Item
         (list.type === 'all' || tab === 'rules' || it.type === list.type) &&
         (list.when === 'all' || it.when === list.when) &&
         (list.pri === 'all' || it.pri === list.pri) &&
-        statusOk(it, tab, list) &&
-        words.every((w) => hay(it).includes(w)),
+        statusOk(it, tab, list),
     )
     .sort(order)
 }
-
-export const inputMatch = (r: Input, words: readonly string[]) => words.every((w) => (r.id + ' ' + r.text).toLowerCase().includes(w))
 
 /** Not finished, on Items. */
 export const openCount = (items: readonly Item[]) => items.filter((it) => !it.mergedInto && inTab(it, 'items') && !closed(it.status)).length
@@ -102,11 +95,3 @@ export function filtersSet(tab: Tab, list: ListQuery): [ListKey, string][] {
 
 /** Whether the list shows exactly one of your views (its type, when, status, priority and sort). */
 export const showsView = (list: Record<string, string>, v: Record<'type' | 'when' | 'status' | 'pri' | 'sort', string>) => (['type', 'when', 'status', 'pri', 'sort'] as const).every((k) => list[k] === v[k])
-
-/** How many the search matches in each other tab that has some, while the tab it is on shows fewer than five. */
-export const otherTabs = (m: ProjectModel, words: readonly string[], tab: Tab, shown: number): [Tab, number][] =>
-  shown >= 5
-    ? []
-    : TABS.filter((t) => t !== tab)
-        .map((t): [Tab, number] => [t, t === 'inputs' ? m.inputs.filter((r) => inputMatch(r, words)).length : m.items.filter((it) => !it.mergedInto && inTab(it, t) && words.every((w) => hay(it).includes(w))).length])
-        .filter(([, k]) => k)

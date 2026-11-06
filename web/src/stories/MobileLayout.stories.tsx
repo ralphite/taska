@@ -326,7 +326,7 @@ function Phone({ mic }: { mic: boolean }) {
     body = <Sidebar phone keys={SIDE_KEYS} projects={PROJECTS} composing={false} links={LINKS} place="h-full bg-zinc-100" on={{ newInput() {}, newVoice() {}, newProject() {}, hide() {}, settings() {}, help() {}, keys() {}, go: (_, e) => (e.preventDefault(), go('items')), undo() {}, order() {}, dragProject: () => false, dropProject() {}, projectMenu() {}, search() {} }} />
   } else {
     top = <Top back={false} code="Shop" sub={found ? 'Searched for “export filter”' : ''} onBack={() => {}} />
-    body = found ? listOf(ITEMS, 'items', { q: 'export filter' }, false, { on: { open: (n) => n === 1 && go('detail') } }) : <Listening onDone={() => setFound(true)} onCancel={() => go('items')} />
+    body = found ? listOf(ITEMS.filter((it) => /export|filter/i.test(it.title)), 'items', {}, false, { on: { open: (n) => n === 1 && go('detail') } }) : <Listening onDone={() => setFound(true)} onCancel={() => go('items')} />
   }
   // without the voice button the box is always there, as it is now
   const boxShown = mic ? rec || !!text : place !== 'projects'

@@ -10,13 +10,15 @@ import { forward } from '../../model/actions'
 import { codeOf, draftCodes, firstSteps, liveN, type ProjectModel } from '../../model/project'
 import { NEW_DRAFT } from '../../model/draftTarget'
 import { holdKey } from '../../model/route'
-import { filtersSet, searchWords, visible } from '../../model/visible'
-import { useSearchHints } from '../../app/searchHints'
+import { filtersSet, visible } from '../../model/visible'
 import { EmptyList, ItemList, type DrawnRow, type ListEvents } from './ItemList'
 import { SelBar } from './SelBar'
 import { FiltersButton } from './Filters'
 import { drawRows, listViews } from './drawRows'
 import { heldRows, listBody, type Row } from './rows'
+
+/** the list marks no words: searching is the search page's and dialog's (r1092, T689 #2) */
+const NO_WORDS: string[] = []
 
 export function ItemListContainer({ route }: { route: ProjectRoute }) {
   const app = useServices('fields', 'itemDrag', 'items', 'listHold', 'listOrder', 'media', 'nav', 'rows', 'seen', 'selection', 'sheets', 'views', 'voice')
@@ -40,7 +42,6 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   const docN = route.place.kind === 'doc' ? (m?.docs.find((x) => x.d === (route.place as { d: number }).d)?.n ?? null) : null
   const openN = route.place.kind === 'item' ? Number(/\d+/.exec(route.place.ref)?.[0]) : docN != null && m ? liveN(m, docN) : null
   const listKey = JSON.stringify([route.slug, route.tab, route.list])
-  const words = useMemo(() => searchWords(route.list.q), [route.list.q])
 
   const body = useMemo(
     () => listBody(m, route.tab, route.list, { folded: ui.folded, subMore: ui.subMore, needsAll: ui.needsAll, open: openN, desk }),
@@ -70,7 +71,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   const seen = app.seen.of(route.slug)
   const drag = useStoreValue(stores.drag, (s) => s)
   const drawn: DrawnRow[] = m
-    ? drawRows(m, rows, { slug: route.slug, openN, selected: ui.selected, words, desk, drafts, head, seen, drag, heldHeight: (n) => ui.held.get(n)?.height || 0 })
+    ? drawRows(m, rows, { slug: route.slug, openN, selected: ui.selected, words: NO_WORDS, desk, drafts, head, seen, drag, heldHeight: (n) => ui.held.get(n)?.height || 0 })
     : []
 
   // Previous and Next walk the items as the list shows them
@@ -127,18 +128,13 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     renameStop: () => stores.views.getState().setEdit(-1),
   }
 
-  const hints = useSearchHints(route, m, words)
-  const shownRows = drawn.filter((r) => r.kind === 'item' || r.kind === 'needs' || r.kind === 'held').length
-
   const empty =
     body.kind === 'empty' || (body.kind === 'rows' && body.empty) ? (
       <EmptyList
-        hints={hints(0)}
-        q={words.join(' ')}
         why={body.kind === 'empty' ? body.why : (body.empty as string)}
         status={route.list.status}
         organizerOn={!!m?.facts.organizer.on}
-        onReset={() => app.nav.setList({ q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' })}
+        onReset={() => app.nav.setList({ type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' })}
         onConnect={() => app.sheets.open({ kind: 'agents' }, { tall: true, wide: true })}
         firstRun={
           m
@@ -182,7 +178,6 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
         ownViews={ownViews}
         rows={drawn}
         empty={body.kind === 'empty' ? empty : body.kind === 'rows' && body.empty ? empty : null}
-        bottom={words.length && drawn.length ? <div className="flex flex-col py-4">{hints(shownRows)}</div> : null}
         on={on}
         rowRef={app.rows.ref}
       />

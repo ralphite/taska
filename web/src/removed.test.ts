@@ -13,6 +13,7 @@ const REMOVED: { why: string; gone: RegExp }[] = [
   { why: 'r655, r745: the phone list head has no search field; Search opens the search page', gone: /Search items/ },
   { why: 'r1084: an input has no Queued state', gone: /['"`]Queued['"`]|Waiting to be organized/ },
   { why: 'r1080: no "Speak or write about it" beside a place\'s two buttons', gone: /Speak or write about it/ },
+  { why: 'r1092, T689 #2: no text filter in the lists; search is the search page/dialog', gone: /SearchHints|searchHints|\bsearchWords\b|\binputMatch\b|inputs\?q=|list\.q\b|Clear search and filters|Searching other projects/ },
   { why: 'r437: no "New input instead" / "Add to … instead" on the New input page', gone: /New input instead|Add to \S+ instead/ },
 ]
 

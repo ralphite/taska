@@ -21,7 +21,7 @@ export interface DrawWith {
   /** the item open in the pane (or the one whose document is open) */
   openN: number | null
   selected: ReadonlySet<number>
-  /** the searched words */
+  /** the searched words (the search page's results; the list has none) */
   words: string[]
   desk: boolean
   /** the codes of the items that have a draft */
@@ -35,8 +35,8 @@ export interface DrawWith {
 }
 
 /** The line a search word was found in, when it is not in the code or title. */
-export function hitLine(it: Item, code: string, words: string[], shown = ''): string | null {
-  const title = (code + ' ' + it.title + ' ' + shown).toLowerCase()
+export function hitLine(it: Item, code: string, words: string[]): string | null {
+  const title = (code + ' ' + it.title).toLowerCase()
   const w = words.find((x) => !title.includes(x))
   if (!w) return null
   const text = [it.body, it.next, ...it.thread.map((x) => x.text)].find((t) => (t || '').toLowerCase().includes(w)) || ''
@@ -91,9 +91,7 @@ export function drawRows(m: ProjectModel, rows: Row[], w: DrawWith): DrawnRow[] 
       case 'item':
         return { kind: 'item', key: 'i' + r.it.n, it: r.it, depth: r.depth, band: r.band, foldable: r.foldable, folded: r.folded, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w) }
       case 'needs': {
-        const ex = excerpt(r.it)
-        const f = rowFacts(m, r.it, w)
-        return { kind: 'needs', key: 'i' + r.it.n, it: r.it, depth: r.depth, facts: { ...f, hitLine: w.words.length ? hitLine(r.it, f.code, w.words, ex) : null }, look: rowLook(r.it, w), excerpt: ex }
+        return { kind: 'needs', key: 'i' + r.it.n, it: r.it, depth: r.depth, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), excerpt: excerpt(r.it) }
       }
       case 'held':
         return { kind: 'held', key: 'i' + r.it.n, it: r.it, code: codeOf(m, r.it.n), said: r.said, height: w.heldHeight(r.it.n) - 1 }

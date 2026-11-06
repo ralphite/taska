@@ -307,12 +307,9 @@ export function NeedsRow({ it, depth, facts, look, excerpt, on, rowRef }: { it: 
         </span>
         <div className="min-w-0 flex-1">
           <p className="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1">
-            <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}`}>
-              <Hit text={facts.code} words={look.words} />
-            </span>
-            <Hit text={it.title} words={look.words} />
+            <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}`}>{facts.code}</span>
+            {it.title}
           </p>
-          <HitLine text={facts.hitLine} words={look.words} />
           <div className="mt-1 flex min-w-0 items-center gap-2 text-xs font-medium">
             {it.type === 'rule' ? null : <span className={`shrink-0 ${PRI_TEXT[it.pri]}`}>{it.pri}</span>}
             {facts.draft ? <DraftMark /> : null}
@@ -330,9 +327,7 @@ export function NeedsRow({ it, depth, facts, look, excerpt, on, rowRef }: { it: 
                 ↳ {facts.parentCode}
               </button>
             ) : null}
-            <span className="min-w-0 truncate font-normal text-zinc-500 dark:text-zinc-400">
-              <Hit text={excerpt} words={look.words} />
-            </span>
+            <span className="min-w-0 truncate font-normal text-zinc-500 dark:text-zinc-400">{excerpt}</span>
           </div>
         </div>
         <RowActs it={it} needs on={on} />

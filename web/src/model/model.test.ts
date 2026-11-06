@@ -5,7 +5,7 @@ import { describe, expect, it as test } from 'vitest'
 import { input, item, message, modelOf, projectFacts } from '../stories/fixtures'
 import { needsYou, queueHead, queueOrder } from './items'
 import { merge, patched, project } from './project'
-import { NO_FILTERS, parseRoute, projectPath } from './route'
+import { inputOf, inputPath, NO_FILTERS, parseRoute, projectPath } from './route'
 import type { ViewAnswer } from './types'
 import { visible } from './visible'
 import { becameOf } from './became'
@@ -39,13 +39,21 @@ describe("the copy of the server's data", () => {
 
 describe('the address', () => {
   test("places and the list's settings read back the way they were written", () => {
-    const list = { ...NO_FILTERS, q: 'export', status: 'wait' }
+    const list = { ...NO_FILTERS, type: 'bug', status: 'wait' }
     for (const place of [{ kind: 'tab' }, { kind: 'item', ref: 'F12' }, { kind: 'doc', d: 3 }, { kind: 'new' }] as const) {
       const path = projectPath('taska', 'items', place, list)
       const [p, s] = path.split('?')
       const r = parseRoute(p, s ? '?' + s : '')
       expect(r).toMatchObject({ page: 'project', slug: 'taska', place, list })
     }
+  })
+
+  test("an input's address names it, and no words ride along (r1092, T689 #2)", () => {
+    expect(inputPath('my shop', 'r8')).toBe('/p/my%20shop/inputs#r8')
+    expect(inputOf('/p/my%20shop/inputs#r8')).toBe('r8')
+    expect(inputOf('/p/shop/inputs')).toBeNull()
+    expect(inputOf('/p/shop/#r8')).toBeNull()
+    expect(parseRoute('/p/shop/inputs', '?q=export')).toMatchObject({ list: NO_FILTERS })
   })
 
   test('an old link with the item after # opens it', () => {
@@ -91,10 +99,6 @@ describe('which items a list shows', () => {
     expect(ns('items', { status: 'open' })).toEqual([1, 5])
     expect(ns('archive', {})).toEqual([4])
     expect(ns('rules', {})).toEqual([3])
-  })
-
-  test('the search finds words in the title and in the talk', () => {
-    expect(ns('items', { q: 'export', status: 'every' })).toEqual([1, 5])
   })
 })
 

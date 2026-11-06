@@ -12,7 +12,7 @@ import type { App } from '../../app/createApp'
 export const filterEvents = (app: Pick<App, 'nav' | 'views'>): FilterEvents => ({
   set: (k, v) => app.nav.setList({ [k]: v }),
   unset: (k) => app.nav.setList({ [k]: 'all' }),
-  reset: () => app.nav.setList({ q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' }),
+  reset: () => app.nav.setList({ type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' }),
   saveView: (name) => app.views.add(name),
 })
 

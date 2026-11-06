@@ -210,7 +210,7 @@ export function createApp(env: AppEnv): App {
   const route = createRouteStore(env.history)
   const unlisten = env.history.listen(() => route.getState().read()) // Back and Forward
   const toasts = new Toasts(feedback)
-  const nav = new Navigation(route, env.desk)
+  const nav = new Navigation(route, env.desk, (id, still) => ui.getState().setLit(id, still))
   const listHold = new ListHold(ui, env.desk)
   const seen = new Seen(env.kv)
   const rows = new RowSizes()
