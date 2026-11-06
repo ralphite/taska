@@ -10,8 +10,6 @@ export interface Held {
   /** the field and value it was changed to: once the item moves on (an agent took it further) the row shows it as it is */
   f?: string
   v?: unknown
-  /** the row's height when it began holding, so its quiet line keeps it */
-  height: number
 }
 
 export interface UiState {
@@ -102,8 +100,7 @@ export function createUiStore(kv: KeyValueStore): UiStore {
     hold: (n, h, forList) =>
       set((s) => {
         const held = new Map(s.heldFor === forList ? s.held : [])
-        if (!held.has(n)) held.set(n, h)
-        else held.set(n, { ...h, height: (held.get(n) as Held).height })
+        held.set(n, h)
         return { held, heldFor: forList }
       }),
     release: () => set((s) => (s.held.size ? { held: new Map(), heldFor: '' } : s)),

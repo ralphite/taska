@@ -30,8 +30,6 @@ export interface DrawWith {
   head: number | undefined
   seen: SeenMap
   drag: { n: number | null; at: { n?: number; how: DropHow } | null }
-  /** a row held still after you acted on it: the height it had */
-  heldHeight(n: number): number
 }
 
 /** The line a search word was found in, when it is not in the code or title. */
@@ -89,12 +87,10 @@ export function drawRows(m: ProjectModel, rows: Row[], w: DrawWith): DrawnRow[] 
   return rows.map((r, i): DrawnRow => {
     switch (r.kind) {
       case 'item':
-        return { kind: 'item', key: 'i' + r.it.n, it: r.it, depth: r.depth, band: r.band, foldable: r.foldable, folded: r.folded, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w) }
+        return { kind: 'item', key: 'i' + r.it.n, it: r.it, depth: r.depth, band: r.band, foldable: r.foldable, folded: r.folded, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), said: r.said }
       case 'needs': {
-        return { kind: 'needs', key: 'i' + r.it.n, it: r.it, depth: r.depth, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), excerpt: excerpt(r.it) }
+        return { kind: 'needs', key: 'i' + r.it.n, it: r.it, depth: r.depth, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), excerpt: excerpt(r.it), said: r.said, act: r.act }
       }
-      case 'held':
-        return { kind: 'held', key: 'i' + r.it.n, it: r.it, code: codeOf(m, r.it.n), said: r.said, height: w.heldHeight(r.it.n) - 1 }
       case 'zone':
         return { kind: 'zone', key: 'z' + r.zone + i, zone: r.zone, label: r.label, n: r.n }
       case 'hidden-kids':

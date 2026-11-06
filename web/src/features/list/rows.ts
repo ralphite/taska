@@ -1,7 +1,7 @@
 // What the item list shows, as a list of rows to draw: worked out from the project, the list's settings and the
 // list's own state (folded parents, held rows). Pure, so it is tested alone and the list component only draws.
 
-import { closed, latestFirst, needsOrder, needsYou, workOrder } from '../../model/items'
+import { closed, latestFirst, needsOrder, needsYou, rowAction, workOrder, type NeedAction } from '../../model/items'
 import type { ProjectModel } from '../../model/project'
 import type { ListQuery } from '../../model/route'
 import type { Item } from '../../model/types'
@@ -12,9 +12,9 @@ export type ZoneKind = 'needs' | 'rules' | 'retired'
 
 export type Row =
   | { kind: 'zone'; zone: ZoneKind; label: string; n: number }
-  | { kind: 'item'; it: Item; depth: number; foldable: boolean; folded: boolean; band: string }
-  | { kind: 'needs'; it: Item; depth: number }
-  | { kind: 'held'; it: Item; said: string }
+  /** `said`: what you just did to it, while the list holds still (it is no longer in the list, or no longer waits on you) */
+  | { kind: 'item'; it: Item; depth: number; foldable: boolean; folded: boolean; band: string; said?: string }
+  | { kind: 'needs'; it: Item; depth: number; said?: string; act?: NeedAction }
   | { kind: 'hidden-kids'; parent: number; depth: number; open: boolean; later: number }
   | { kind: 'needs-more'; open: boolean; rest: number }
   | { kind: 'archive-all'; n: number }
@@ -94,19 +94,20 @@ function needsBand(needs: Item[], st: ListState): Row[] {
   return out
 }
 
-/** While a row you acted on holds still, the list keeps the rows it had, each showing its item as it is now; a row
- * whose item no longer belongs in the list is one quiet line saying what you did, and a Needs-you row no longer
- * waiting on you is an ordinary row, where it was. */
+/** While a row you acted on holds still, the list keeps the rows it had, each showing its item as it is now. A row you
+ * acted on that no longer belongs in the list, or no longer waits on you, stays the row it was, its title struck and
+ * its button saying what you did: same place, same height, nothing jumps (B699). A Needs-you row someone else
+ * answered meanwhile is an ordinary row, where it was. */
 export function heldRows(frozen: readonly Row[], m: ProjectModel, tab: Tab, list: ListQuery, held: ReadonlyMap<number, string>): Row[] {
   const shownNow = new Set(visible(m.items, tab, list).map((it) => it.n))
   // a row made a subitem meanwhile: its new parent folds at once
-  const parents = new Set(frozen.flatMap((r) => (r.kind === 'item' || r.kind === 'needs' || r.kind === 'held' ? [m.byN.get(r.it.n)?.parent] : [])))
+  const parents = new Set(frozen.flatMap((r) => (r.kind === 'item' || r.kind === 'needs' ? [m.byN.get(r.it.n)?.parent] : [])))
   return frozen.map((r) => {
-    if (r.kind !== 'item' && r.kind !== 'needs' && r.kind !== 'held') return r
+    if (r.kind !== 'item' && r.kind !== 'needs') return r
     const it = m.byN.get(r.it.n) || r.it
     const said = held.get(it.n)
-    if (said != null && !shownNow.has(it.n)) return { kind: 'held', it, said }
-    if (r.kind === 'held') return { kind: 'item', it, depth: 0, foldable: false, folded: false, band: '' }
+    if (said != null && r.kind === 'needs' && (!shownNow.has(it.n) || !needsYou(it))) return { ...r, it, said, act: r.act ?? rowAction(r.it)[0] } // its button as it was
+    if (said != null && !shownNow.has(it.n)) return { ...r, it, said }
     if (r.kind === 'needs' && !needsYou(it)) return { kind: 'item', it, depth: r.depth, foldable: false, folded: false, band: '' }
     return r.kind === 'item' && !r.foldable && parents.has(it.n) ? { ...r, it, foldable: true } : { ...r, it }
   })

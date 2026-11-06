@@ -99,13 +99,13 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
     const was = listBody(modelOf(h.held.before), tab, query, st)
     rows = heldRows(was.kind === 'rows' ? was.rows : [], m, tab, query, new Map(Object.entries(h.held.said).map(([n, s]) => [Number(n), s])))
   }
-  const drawn = drawRows(m, rows, { slug: 'demo', openN: h.open ?? null, selected, words: [], desk, drafts: new Set(), head: queueHead(m.items), seen: { since: T }, drag: { n: h.drag?.n ?? null, at: h.drag?.at ?? null }, heldHeight: () => 64 })
+  const drawn = drawRows(m, rows, { slug: 'demo', openN: h.open ?? null, selected, words: [], desk, drafts: new Set(), head: queueHead(m.items), seen: { since: T }, drag: { n: h.drag?.n ?? null, at: h.drag?.at ?? null } })
   const { views, ownViews } = listViews(m, tab, query, body, { list: h.saved ?? [], edit: -1 })
   const why = body.kind === 'empty' ? body.why : body.kind === 'rows' ? body.empty : undefined
   // the page's nav.view and nav.showFilters: Archive is its own tab, a view of items goes back to Items
   const show = (f: Partial<ListQuery>, resetOthers: boolean) =>
     setWhere(tab === 'items' ? { tab, query: { ...query, ...f } } : { tab: 'items', query: { ...query, ...(resetOthers ? { type: 'all', when: 'all', pri: 'all', sort: 'all' } : {}), ...f } })
-  const order = drawn.flatMap((r) => (r.kind === 'item' || r.kind === 'needs' || r.kind === 'held' ? [r.it.n] : []))
+  const order = drawn.flatMap((r) => (r.kind === 'item' || r.kind === 'needs' ? [r.it.n] : []))
   // the page's selection.pick: Cmd-click picks or lets go of one, Shift-click the rows between
   const pick = (n: number, range: boolean) => {
     const a = order.indexOf(from.current ?? -1)

@@ -21,7 +21,7 @@ import { heldRows, listBody, type Row } from './rows'
 const NO_WORDS: string[] = []
 
 export function ItemListContainer({ route }: { route: ProjectRoute }) {
-  const app = useServices('fields', 'itemDrag', 'items', 'listHold', 'listOrder', 'media', 'nav', 'rows', 'seen', 'selection', 'sheets', 'views', 'voice')
+  const app = useServices('fields', 'itemDrag', 'items', 'listHold', 'listOrder', 'media', 'nav', 'seen', 'selection', 'sheets', 'views', 'voice')
   const stores = useStores('box', 'drafts', 'drag', 'route', 'ui', 'views')
   const layout = useLayout()
   const m = useProjectModel(route.slug)
@@ -71,11 +71,11 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   const seen = app.seen.of(route.slug)
   const drag = useStoreValue(stores.drag, (s) => s)
   const drawn: DrawnRow[] = m
-    ? drawRows(m, rows, { slug: route.slug, openN, selected: ui.selected, words: NO_WORDS, desk, drafts, head, seen, drag, heldHeight: (n) => ui.held.get(n)?.height || 0 })
+    ? drawRows(m, rows, { slug: route.slug, openN, selected: ui.selected, words: NO_WORDS, desk, drafts, head, seen, drag })
     : []
 
   // Previous and Next walk the items as the list shows them
-  const order = drawn.flatMap((r) => (r.kind === 'item' || r.kind === 'needs' || r.kind === 'held' ? [r.it.n] : []))
+  const order = drawn.flatMap((r) => (r.kind === 'item' || r.kind === 'needs' ? [r.it.n] : []))
   const orderKey = order.join(',')
   useLayoutEffect(() => app.listOrder.set(orderKey ? orderKey.split(',').map(Number) : [], openN), [app, orderKey, openN])
   useLayoutEffect(() => {
@@ -179,7 +179,6 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
         rows={drawn}
         empty={body.kind === 'empty' ? empty : body.kind === 'rows' && body.empty ? empty : null}
         on={on}
-        rowRef={app.rows.ref}
       />
     </div>
   )

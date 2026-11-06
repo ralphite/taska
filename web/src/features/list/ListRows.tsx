@@ -2,9 +2,9 @@
 // amber bar, what the agent said, its one action on the thumb side), a row you just acted on (one quiet line), and the
 // group heads. Props only: the list container works out what each row says.
 
-import type { ReactNode, Ref } from 'react'
+import type { ReactNode } from 'react'
 import { deskSlots, forward, backward, ACT_KEY, type Slot } from '../../model/actions'
-import { closed, rowAction, shownStatus, statusWord } from '../../model/items'
+import { closed, rowAction, shownStatus, statusWord, type NeedAction } from '../../model/items'
 import type { Item } from '../../model/types'
 import type { ZoneKind } from './rows'
 import { plural, whoName } from '../../model/words'
@@ -182,9 +182,9 @@ function SwipeLayers({ it, openKids, on, children }: { it: Item; openKids: numbe
   )
 }
 
-function Shell({ it, look, facts, on, rowRef, children }: { it: Item; look: RowLook; facts: RowFacts; on: RowEvents; rowRef?: Ref<HTMLElement>; children: ReactNode }) {
+function Shell({ it, look, facts, on, children }: { it: Item; look: RowLook; facts: RowFacts; on: RowEvents; children: ReactNode }) {
   return (
-    <article ref={rowRef} data-n={it.n} {...dragMarks(look)} className={ARTICLE}>
+    <article data-n={it.n} {...dragMarks(look)} className={ARTICLE}>
       {it.type === 'rule' && look.desk ? (
         children
       ) : (
@@ -205,10 +205,10 @@ export function ItemRow(props: {
   facts: RowFacts
   look: RowLook
   on: RowEvents
-  /** the row's element, for its height */
-  rowRef?: Ref<HTMLElement>
+  /** what you just did to it, while the list holds still: the row stays, its title struck (B699) */
+  said?: string
 }) {
-  const { it, depth, band, foldable, folded, facts, look, on, rowRef } = props
+  const { it, depth, band, foldable, folded, facts, look, on, said } = props
   const isClosed = closed(it.status)
   const meta: ReactNode[] = [
     it.type === 'rule' ? null : (
@@ -226,6 +226,8 @@ export function ItemRow(props: {
       </span>
     ) : it.status === 'doing' ? (
       <span key="s">In progress</span>
+    ) : said ? (
+      <span key="s">{said}</span>
     ) : isClosed && band !== 'retired' ? (
       <span key="s">{statusWord(it)}</span>
     ) : null,
@@ -249,16 +251,16 @@ export function ItemRow(props: {
     it.status === 'doing' && facts.worker ? <WorkerMark key="w" worker={facts.worker} /> : null,
   ].filter(Boolean)
   return (
-    <Shell it={it} look={look} facts={facts} on={on} rowRef={rowRef}>
+    <Shell it={it} look={look} facts={facts} on={on}>
       <div
         {...marks(look)}
         onClick={(e) => on.open(it.n, e)}
-        className={`group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 ${pad(depth)} ${isClosed && !it.archived ? 'opacity-55' : ''} ${ROW_TINT}`}
+        className={`group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 ${pad(depth)} ${(isClosed && !it.archived) || said ? 'opacity-55' : ''} ${ROW_TINT}`}
       >
         {facts.unread ? <span className="absolute top-4.5 left-1 size-2 rounded-full bg-blue-600 dark:bg-blue-400" title="New from an agent" /> : null}
         <StateIcon {...shownStatus(it)} />
         <div className="min-w-0 flex-1">
-          <CodeTitle it={it} code={facts.code} look={look} struck={isClosed && !it.archived} />
+          <CodeTitle it={it} code={facts.code} look={look} struck={(isClosed && !it.archived) || !!said} />
           <HitLine text={facts.hitLine} words={look.words} />
           {meta.length ? (
             <div className="mt-1 flex items-center gap-x-2.5 overflow-hidden text-xs font-medium whitespace-nowrap text-zinc-500 dark:text-zinc-400">
@@ -293,10 +295,14 @@ export function ItemRow(props: {
   )
 }
 
-export function NeedsRow({ it, depth, facts, look, excerpt, on, rowRef }: { it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; on: RowEvents; rowRef?: Ref<HTMLElement> }) {
-  const [v, label] = rowAction(it)
+/** `said`: what you just did, while the list holds still: the same row, its title struck, its button disabled saying it
+ * in the past tense (B699, as a decided card, r1003). */
+export function NeedsRow({ it, depth, facts, look, excerpt, said, act, on }: { it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; act?: NeedAction; on: RowEvents }) {
+  const [now, word] = rowAction(it)
+  const v = act ?? now
+  const label = said ?? word
   return (
-    <Shell it={it} look={look} facts={facts} on={on} rowRef={rowRef}>
+    <Shell it={it} look={look} facts={facts} on={on}>
       <div
         {...marks(look)}
         onClick={(e) => on.open(it.n, e)}
@@ -308,7 +314,7 @@ export function NeedsRow({ it, depth, facts, look, excerpt, on, rowRef }: { it: 
         <div className="min-w-0 flex-1">
           <p className="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1">
             <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}`}>{facts.code}</span>
-            {it.title}
+            <span className={said ? 'text-zinc-500 line-through decoration-zinc-400 dark:text-zinc-400' : ''}>{it.title}</span>
           </p>
           <div className="mt-1 flex min-w-0 items-center gap-2 text-xs font-medium">
             {it.type === 'rule' ? null : <span className={`shrink-0 ${PRI_TEXT[it.pri]}`}>{it.pri}</span>}
@@ -333,13 +339,14 @@ export function NeedsRow({ it, depth, facts, look, excerpt, on, rowRef }: { it: 
         <RowActs it={it} needs on={on} />
         <button
           data-need={v}
-          title={`${label} · A`}
+          title={said ? undefined : `${label} · A`}
           aria-label={label}
+          disabled={!!said}
           onClick={(e) => (e.stopPropagation(), on.need(it.n, v))}
-          className="group/pill -my-1 grid h-11 shrink-0 place-items-center outline-none"
+          className="group/pill -my-1 grid h-11 shrink-0 place-items-center outline-none disabled:cursor-not-allowed"
         >
           <span
-            className={`${ACTION_PILL(v)} @max-[22rem]/list:w-8 @max-[22rem]/list:px-0 group-hover/pill:brightness-95 group-focus-visible/pill:outline-2 group-focus-visible/pill:outline-offset-2 group-focus-visible/pill:outline-blue-500 dark:group-hover/pill:brightness-125 dark:group-focus-visible/pill:outline-blue-400`}
+            className={`${ACTION_PILL(v)} @max-[22rem]/list:w-8 @max-[22rem]/list:min-w-0 @max-[22rem]/list:px-0 group-disabled/pill:opacity-60 group-enabled/pill:group-hover/pill:brightness-95 group-focus-visible/pill:outline-2 group-focus-visible/pill:outline-offset-2 group-focus-visible/pill:outline-blue-500 dark:group-hover/pill:brightness-125 dark:group-focus-visible/pill:outline-blue-400`}
           >
             <Icon n={NEED[v].icon} c="size-3.5" sw="2.25" />
             {/* a narrow list keeps the icon only, its name in the tip (B678) */}
@@ -348,26 +355,6 @@ export function NeedsRow({ it, depth, facts, look, excerpt, on, rowRef }: { it: 
         </button>
       </div>
     </Shell>
-  )
-}
-
-/** A row you just acted on, while the list holds still: one quiet line saying what you did, then which it was. */
-export function HeldRow({ it, code, said, height, on }: { it: Item; code: string; said: string; height: number; on: RowEvents }) {
-  return (
-    <article data-n={it.n} className={ARTICLE}>
-      <div
-        onClick={(e) => on.open(it.n, e)}
-        style={height > 0 ? { minHeight: height } : undefined}
-        className="flex cursor-pointer items-center gap-3 py-2 pr-3 pl-4 text-sm text-zinc-500 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-900/70"
-      >
-        <StateIcon {...shownStatus(it)} />
-        <span className="min-w-0 flex-1 truncate">
-          <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}`}>{code}</span>
-          <span className="font-medium text-zinc-700 dark:text-zinc-200">{said}</span>
-          {/* which it was, quieter after what you did: several done in a row are still told apart */} · {it.title}
-        </span>
-      </div>
-    </article>
   )
 }
 

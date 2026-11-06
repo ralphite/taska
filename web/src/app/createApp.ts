@@ -79,7 +79,6 @@ import { createActivityStore, type ActivityStore } from '../stores/activity'
 import { Fields } from './page/fields'
 import { ListOrder } from './items/listOrder'
 import { Moves } from './items/moves'
-import { RowSizes } from '../features/list/rowSizes'
 import { Sheets } from './page/sheets'
 import { Seen } from '../stores/seen'
 import { Toasts } from './page/toasts'
@@ -140,8 +139,6 @@ export interface App {
   nav: Navigation
   listHold: ListHold
   seen: Seen
-  /** the list's rows give their elements here, for their heights */
-  rows: RowSizes
   /** the list's items in the order it shows them, for Previous and Next */
   listOrder: ListOrder
   /** the list's search, in the other projects */
@@ -213,7 +210,6 @@ export function createApp(env: AppEnv): App {
   const nav = new Navigation(route, env.desk, (id, still) => ui.getState().setLit(id, still))
   const listHold = new ListHold(ui, env.desk)
   const seen = new Seen(env.kv)
-  const rows = new RowSizes()
   const listOrder = new ListOrder()
   const itemView = createItemViewStore(env.kv)
   const keptEdits = createKeptEditsStore(env.kv)
@@ -278,7 +274,6 @@ export function createApp(env: AppEnv): App {
     listKey: () => holdKey(route.getState().route, env.desk()),
     openItem: () => openItemN(route.getState().route),
     desk: env.desk,
-    rowHeight: (n) => rows.height(n),
     undoSeq: (n, f) => here()?.facts.undo.find((u) => u.n === n && f in u.f)?.seq ?? null,
     noteWith: () => false,
   })
@@ -409,7 +404,6 @@ export function createApp(env: AppEnv): App {
     nav,
     listHold,
     seen,
-    rows,
     listOrder,
     crossSearch: new CrossSearch(api, search),
     finder,

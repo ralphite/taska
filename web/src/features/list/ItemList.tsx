@@ -2,18 +2,18 @@
 // Later, finished work), or a word on why it is empty. Props only; ItemListContainer gives it the rows.
 
 import { forwardRef, type ReactNode, useLayoutEffect, useRef } from 'react'
+import type { NeedAction } from '../../model/items'
 import type { Item } from '../../model/types'
 import { Icon, type IconName } from '../../ui/Icon'
 import { Empty, Skeleton } from '../../ui/bits'
-import { ArchiveAllLine, HeldRow, HiddenKidsLine, ItemRow, NeedsMoreLine, NeedsRow, Zone, type RowEvents, type RowFacts, type RowLook } from './ListRows'
+import { ArchiveAllLine, HiddenKidsLine, ItemRow, NeedsMoreLine, NeedsRow, Zone, type RowEvents, type RowFacts, type RowLook } from './ListRows'
 import type { ViewChip, ZoneKind } from './rows'
 import { ViewBar, type OwnViewChip } from './ViewBar'
 import { useRowSwipe, type RowSwipe } from '../../ui/rowSwipe'
 
 export type DrawnRow =
-  | { kind: 'item'; key: string; it: Item; depth: number; band: string; foldable: boolean; folded: boolean; facts: RowFacts; look: RowLook }
-  | { kind: 'needs'; key: string; it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string }
-  | { kind: 'held'; key: string; it: Item; code: string; said: string; height: number }
+  | { kind: 'item'; key: string; it: Item; depth: number; band: string; foldable: boolean; folded: boolean; facts: RowFacts; look: RowLook; said?: string }
+  | { kind: 'needs'; key: string; it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; act?: NeedAction }
   | { kind: 'zone'; key: string; zone: ZoneKind; label: string; n: number }
   | { kind: 'hidden-kids'; key: string; parent: number; depth: number; open: boolean; later: number }
   | { kind: 'needs-more'; key: string; open: boolean; rest: number }
@@ -51,8 +51,6 @@ export interface ItemListProps {
   viewsMore?: { open: boolean; toggle(): void }
   on: ListEvents
   /** room for the box over the list's end on the phone */
-  /** each item row's element, for its height */
-  rowRef?(n: number): (el: HTMLElement | null) => void
   /** an item is being dragged (its rows are marked through their look): off every row it stands on its own */
   dragging?: { out: boolean } | null
   desk?: boolean
@@ -70,7 +68,7 @@ export interface ItemListProps {
 const NO_SWIPE: RowSwipe = { right: () => null, blocked: () => true }
 
 export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemList(props, ref) {
-  const { loading, views, ownViews, rows, empty, top, viewsLead, viewsMore, on, rowRef, dragging = null, desk = false, swipe, openN = null, itemShown = false, listKey = '' } = props
+  const { loading, views, ownViews, rows, empty, top, viewsLead, viewsMore, on, dragging = null, desk = false, swipe, openN = null, itemShown = false, listKey = '' } = props
   const own = useRef<HTMLDivElement | null>(null)
   const wasOpen = useRef<{ n: number | null; list: string; loading: boolean } | null>(null)
   /** the page opened at an item: its row comes into view the first time it shows, in whichever list it is */
@@ -149,11 +147,9 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
           {rows.map((r) => {
             switch (r.kind) {
               case 'item':
-                return <ItemRow key={r.key} it={r.it} depth={r.depth} band={r.band} foldable={r.foldable} folded={r.folded} facts={r.facts} look={r.look} on={on} rowRef={rowRef?.(r.it.n)} />
+                return <ItemRow key={r.key} it={r.it} depth={r.depth} band={r.band} foldable={r.foldable} folded={r.folded} facts={r.facts} look={r.look} said={r.said} on={on} />
               case 'needs':
-                return <NeedsRow key={r.key} it={r.it} depth={r.depth} facts={r.facts} look={r.look} excerpt={r.excerpt} on={on} rowRef={rowRef?.(r.it.n)} />
-              case 'held':
-                return <HeldRow key={r.key} it={r.it} code={r.code} said={r.said} height={r.height} on={on} />
+                return <NeedsRow key={r.key} it={r.it} depth={r.depth} facts={r.facts} look={r.look} excerpt={r.excerpt} said={r.said} act={r.act} on={on} />
               case 'zone':
                 return <Zone key={r.key} kind={r.zone} label={r.label} n={r.n} />
               case 'hidden-kids':

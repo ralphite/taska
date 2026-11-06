@@ -1,25 +1,20 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames, Hold, States } from '../../stories/Frames'
 import { act } from '../../stories/menuFixtures'
-import { item, noRowEvents } from '../../stories/fixtures'
-import { ArchiveAllLine, HeldRow, HiddenKidsLine, NeedsMoreLine, Zone } from './ListRows'
+import { ArchiveAllLine, HiddenKidsLine, NeedsMoreLine, Zone } from './ListRows'
 
 const meta: Meta = { title: 'Components/Item list/Lines between rows' }
 export default meta
 type Story = StoryObj
 
-const on = noRowEvents
-
-/** The quiet line a row becomes while the list holds still, and the list's other lines. */
+/** The list's lines between its rows. */
 export const Lines: Story = {
-  name: 'Held rows, group heads, hidden subitems, show more, archive them',
+  name: 'Group heads, hidden subitems, show more, archive them',
   render: () => (
     <Frames phoneWidth={393} deskWidth={460}>
       {() => (
         <States
           items={[
-            ['held: approved', <HeldRow it={item({ n: 12, status: 'open' })} code="F012" said="Approved" height={64} on={on} />],
-            ["held: marked won't do", <HeldRow it={item({ n: 12, status: 'dropped' })} code="F012" said="Won't do" height={64} on={on} />],
             ['zone: needs you', <Zone kind="needs" label="Needs you" n={3} />],
             ['zone: rules', <Zone kind="rules" label="Active" n={12} />],
             ['zone: retired', <Zone kind="retired" label="Retired" n={2} />],

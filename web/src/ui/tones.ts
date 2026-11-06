@@ -111,9 +111,10 @@ export const NEED = {
   },
 } as const
 export type NeedKind = keyof typeof NEED
-/** One width for every row's pill, so the row's other buttons sit at the same place on every row. */
+/** One width for every row's pill, so the row's other buttons sit at the same place on every row (a word said after
+ * you acted, "Sent back", may make it a little wider, on one line, B699). */
 export const ACTION_PILL = (v: NeedKind) =>
-  `inline-flex h-8 w-24 items-center justify-center gap-1 rounded-full pr-3 pl-2.5 text-[13px] font-semibold ring-1 ring-inset ${NEED[v].pill}`
+  `inline-flex h-8 min-w-24 items-center whitespace-nowrap justify-center gap-1 rounded-full pr-3 pl-2.5 text-[13px] font-semibold ring-1 ring-inset ${NEED[v].pill}`
 
 /** Every project has its own colour, from its name; the next free one when two would share. */
 export const PROJECT_TONES = [

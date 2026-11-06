@@ -28,8 +28,6 @@ export interface ItemActionsDeps {
   listKey(): string
   openItem(): number | null
   desk(): boolean
-  /** the height of a row as drawn now */
-  rowHeight(n: number): number
   /** the server's record of your change, to put back (the change log knows it was undone) */
   undoSeq(n: number, field: string): number | null
   /** words written in the box for this item go with the decision; true when they did */
@@ -105,7 +103,7 @@ export class ItemActions {
     if (n !== this.d.openItem() || this.d.desk()) {
       // a decision is said as on its card: Approved, Accepted, Declined, Sent back (D115 #8)
       const said = dec.decided ? decidedWord(dec.decided) : heldWord(f, v, words)
-      this.d.ui.getState().hold(n, { said, f, v, height: this.d.rowHeight(n) }, this.d.listKey())
+      this.d.ui.getState().hold(n, { said, f, v }, this.d.listKey())
       this.d.held()
     }
     const left = f === 'status' && v === 'done' ? (m.kids.get(n) || []).filter((k) => !closed(k.status)).length : 0
@@ -145,7 +143,7 @@ export class ItemActions {
       return this.d.runner.send({ id: newId(), slug, commands: [{ op: 'set', ref, f: was }], patches: [{ n, f: was }], said: `putting ${ref} back`, t: Date.now() }, () => job.saved)
     })
     if (n !== this.d.openItem() || this.d.desk()) {
-      this.d.ui.getState().hold(n, { said: day ? `Later · ${laterDay(day, m.at)}` : 'Moved to Later', f: 'when', v: 'later', height: this.d.rowHeight(n) }, this.d.listKey())
+      this.d.ui.getState().hold(n, { said: day ? `Later · ${laterDay(day, m.at)}` : 'Moved to Later', f: 'when', v: 'later' }, this.d.listKey())
       this.d.held()
     }
     this.d.toasts.show(`${ref} ${words}`, undo)
