@@ -50,14 +50,17 @@ class Hearing:
 #   silence and turn later phrases 10 to 30 dB quieter. On two such notes both models kept only the first few words,
 #   whatever the format, loudness or silence was changed to; only the strong model heard the rest. Such a note (exact
 #   digital silence inside the speech, which none of 59 notes from a computer had) is heard by it too.
-VOICE_MODEL = os.environ.get("TASKA_VOICE_MODEL", "gemini-3.8-flash")
+# T687 (Yadong's choice, #9841, measured on 40 of his notes): the speech model's words show at once (~2 s); the strong
+# model hears the note too and its words win when back within PRO_CAP (10 s; median 3.8 s, the best judged); tidying,
+# Simplified characters and pieces use gemini-3.5-flash (tidying: median 1.7 s against 45 s, judged 4.04 against 4.29).
+VOICE_MODEL = os.environ.get("TASKA_VOICE_MODEL", "gemini-3.5-flash")
 ASR_MODEL = os.environ.get("TASKA_ASR_MODEL", "gemini-3.5-transcribe")
 PRO_MODEL = os.environ.get("TASKA_PRO_MODEL", "gemini-3.1-pro-preview")
 # How long one voice note may take, in seconds: the strong model once took 250 s on a phone note. Each model gets its
 # own cap; what one did not finish in time is left out, and the whole note never takes much longer than VOICE_BUDGET.
 VOICE_BUDGET = float(os.environ.get("TASKA_VOICE_BUDGET", 60))
 VOICE_CAP = float(os.environ.get("TASKA_VOICE_CAP", 50))  # the main and the speech model
-PRO_CAP = float(os.environ.get("TASKA_PRO_CAP", 45))  # the strong model
+PRO_CAP = float(os.environ.get("TASKA_PRO_CAP", 10))  # the strong model: past this the speech model's words stay
 PRO_LATE = float(os.environ.get("TASKA_PRO_LATE", 180))  # past its cap it may go on this long; fuller words then follow
 
 
@@ -226,19 +229,19 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
             first(early)
         return words
 
-    calls = [lambda: capped(lambda: voice_main(audio, prompt), VOICE_CAP, "the main model", times, "main"),
+    # the strong model is the main one (T687): it gets PRO_CAP, then the speech model's words go on without it
+    calls = [lambda: capped(lambda: voice_main(audio, prompt, PRO_MODEL), PRO_CAP, "the strong model", times, "main"),
              lambda: told(capped(lambda: voice_asr(audio, vocab), VOICE_CAP, "the speech model", times, "asr"))]
-    slow = {}  # the strong model's run, when it ran out of time
-    if gated:  # the strong model is slow at times: it gets PRO_CAP, then the others' words go on without it
-        calls.append(lambda: capped(lambda: voice_main(audio, prompt, PRO_MODEL), PRO_CAP, "the strong model", times, "pro", slow))
-    (tr, err), (alt, alt_err), *pro = together(*calls)
+    slow: Dict[str, Any] = {}  # nothing goes on past PRO_CAP now (no later, fuller words)
+    pro: List[Any] = []
+    (tr, err), (alt, alt_err) = together(*calls)
     out = {"tr": "", "tr_by": "asr", "times": times, **({"gated": True} if gated else {})}
     if alt_err is None and not alt:  # B494: heard nobody: said too quietly? once more, made loud enough to hear
         louder = tools.louder(data, mime)
         if louder:
             loud = {"inline_data": {"mime_type": "audio/webm", "data": base64.b64encode(louder).decode()}}
             (tr, err), (alt, alt_err) = together(
-                lambda: capped(lambda: voice_main(loud, prompt), VOICE_CAP, "the main model, louder", times, "main_loud"),
+                lambda: capped(lambda: voice_main(loud, prompt, PRO_MODEL), PRO_CAP, "the strong model, louder", times, "main_loud"),
                 lambda: capped(lambda: voice_asr(loud, vocab), VOICE_CAP, "the speech model, louder", times, "asr_loud"))
             pro = []  # the strong model heard the quiet note: its words are not the louder note's
             if alt:
@@ -251,18 +254,11 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
         times["total"] = round(time.time() - t0, 1)
         return out
     if err is None and tr and not echoed(tr, titles) and alt_err is None and voice_short(tr, alt):
-        left = VOICE_BUDGET - (time.time() - t0)
-        try:  # it stopped early: asked once more (not when the strong model heard it too, nor past the budget), then the speech model's words
-            again = "" if (pro and pro[0][0]) or left < 10 else capped(lambda: voice_main(audio, prompt), left, "the main model, asked again", times, "again")
-        except Exception:
-            again = ""
-        if again and not voice_short(again, alt):
-            tr = again
-        else:
-            out["main_error"] = f"the main transcript stopped early ({len(voice_tokens(tr))} of {len(voice_tokens(alt))} words)"
-            tr = ""
+        # it stopped early: the speech model's words, at once (T687: not asked again past PRO_CAP)
+        out["main_error"] = f"the strong model's transcript stopped early ({len(voice_tokens(tr))} of {len(voice_tokens(alt))} words)"
+        tr = ""
     if err is None and tr and not echoed(tr, titles):
-        out["tr_by"] = "main"
+        out["tr_by"] = "pro"
     elif alt_err is None:  # the main one refused, failed, stopped early, heard nothing or wrote only item titles: the speech model's words
         tr, alt = alt, ""
     elif err is None:  # nothing heard but item titles, and no second opinion
