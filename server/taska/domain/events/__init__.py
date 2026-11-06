@@ -2,7 +2,7 @@
 
 The rows are the durable storage format. `decode` reads a row and `Event.to_row` writes one; nothing else touches
 the JSON. Stored history remains intact when it is read.
-One module per area (items, inputs, documents), each with the readers of its kinds.
+One module per area (items, inputs, documents, voice notes' words), each with the readers of its kinds.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Dict
 
 from ..model import Row
-from . import docs, inputs, items
+from . import docs, inputs, items, voices
 from .base import Event, Reader, Unknown, Unreadable, common
 from .docs import DOC_EVENTS, CommentAdded, CommentDeleted, CommentEdited, CommentMoved, CommentRestored, DocDeleted, \
     DocMoved, DocWritten, ThreadResolved
@@ -18,8 +18,9 @@ from .inputs import FilingRedone, FilingUndone, InputAdded, InputAmended, InputD
     InputRestored, InputSent, InputsAcked, Organized, WordsIn, WordsKept
 from .items import BlocksAsked, FieldsSet, FileTakenOff, ItemAdded, ItemMerged, ItemUnmerged, ItemsArchived, ItemsDeleted, ItemsRestored, LaterEnded, \
     MessageHidden, MessagePosted, ProjectRenamed
+from .voices import VoiceFixed, VoiceHeard, VoicesSplit
 
-READERS: Dict[str, Reader] = {**inputs.READERS, **items.READERS, **docs.READERS}
+READERS: Dict[str, Reader] = {**inputs.READERS, **items.READERS, **docs.READERS, **voices.READERS}
 
 
 def decode(row: Row) -> Event:
@@ -40,5 +41,5 @@ __all__ = [
     "InputAdded", "InputsAcked", "InputAmended", "WordsIn", "WordsKept", "FilingUndone", "FilingRedone", "InputDeleted",
     "InputRestored", "InputMoved", "Organized", "InputRescoped", "InputSent",
     "DocWritten", "DocDeleted", "DocMoved", "CommentMoved", "ThreadResolved", "CommentAdded", "CommentEdited",
-    "CommentDeleted", "CommentRestored",
+    "CommentDeleted", "CommentRestored", "VoiceHeard", "VoiceFixed", "VoicesSplit",
 ]

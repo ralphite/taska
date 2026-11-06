@@ -12,6 +12,7 @@ from ..model import Input, InputDeletion, InputVersion, Moved
 from ..state import ProjectState, Taken, TakenMessage, TakenSource
 from .core import reduces
 from .steps import by_id, changed_words, link, org_note, post, show_edit
+from .voices import heard
 
 
 @reduces(ev.InputAdded)
@@ -55,6 +56,7 @@ def _amend(state: ProjectState, e: ev.Event) -> None:
 @reduces(ev.WordsIn)
 def _words(state: ProjectState, e: ev.Event) -> None:
     assert isinstance(e, ev.WordsIn)
+    heard(state, e.f, e, "done", e.heard or "", e.tr)
     inp = state.inputs.get(str(e.src))
     if not inp:
         return
@@ -79,6 +81,10 @@ def _words(state: ProjectState, e: ev.Event) -> None:
 def _kept(state: ProjectState, e: ev.Event) -> None:
     """Words as said, kept with their inputs (F568); nothing else changes."""
     assert isinstance(e, ev.WordsKept)
+    for notes in e.notes.values():
+        for f, words in notes.items():
+            if f in state.voices:
+                state.voices[f].said = words
     for rid, notes in e.notes.items():
         inp = state.inputs.get(rid)
         if inp:

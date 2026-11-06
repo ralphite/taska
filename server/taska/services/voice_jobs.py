@@ -17,6 +17,7 @@ from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 from ..domain import events as ev
 from ..domain.model import FileRef, Input
 from ..domain.vocab import VOICE_HOLD
+from ..domain.voice_split import SplitReport, copies_in, plan
 from .news import News
 
 Transcript = Dict[str, Any]
@@ -46,6 +47,8 @@ class VoiceProject(Protocol):
     def emit(self, event: ev.Event) -> None: ...
 
     def file_path(self, fid: str) -> str: ...
+
+    def stored_rows(self) -> List[Dict[str, Any]]: ...
 
 
 Transcriber = Callable[[bytes, str, Optional[int], Optional[str], Callable[[Optional[str]], None], Callable[[str], None]], Transcript]
@@ -148,8 +151,11 @@ class VoiceJobs:
             job = saved or Job(t0=time.time())
             self.jobs[fid] = job
             if saved:
+                if fid not in self._p.state.voices:
+                    self.record_job(fid, job)
                 self.words_in(fid, job)
                 return
+            self.record(fid, "wait")
         hold = self.hold_timer(job)
         threading.Thread(target=self._work, args=(fid, data, mime, scope, job, hold), daemon=True).start()
 
@@ -167,12 +173,14 @@ class VoiceJobs:
         hold.cancel()
         with self._p.lock:
             job.done, job.tr, job.err, job.res = True, str(res.get("tr", "")), err, res
+            self.record_job(fid, job)
             self.words_in(fid, job)
             forwards = list(self.forwards.get(fid, ()))
         for jobs, other in forwards:  # its input went to another project meanwhile: the copy there gets the words
             if not err:
                 jobs.keep(other, res)
             with jobs._p.lock:
+                jobs.record_job(other, job)
                 jobs.words_in(other, job)
 
     def _first(self, fid: str, job: Job, words: str) -> None:
@@ -182,6 +190,7 @@ class VoiceJobs:
             if job.done:
                 return
             job.early = words
+            self.record(fid, "wait", early=words)
             inp = self._input_with(fid)
             if inp and not any(f.f == fid and f.tr for f in inp.files):
                 self._p.emit(ev.WordsIn(src=inp.id, f=fid, tr=words, by="you", late=self._late(inp)))
@@ -199,12 +208,32 @@ class VoiceJobs:
                            times=dict(res.get("times") or {}, late=round(time.time() - job.t0, 1)))
                 job.tr = words
             job.res = res
+            if words:
+                self.record(fid, "done", tidied=words, said=words)
             if words and was:
                 self.words_more(fid, was, words)
             elif words:
                 self.words_in(fid, job)
             self._p.news.bump()
         self.keep(fid, res)
+
+    # -- the note's one record (B682) ---------------------------------------------------
+
+    def record(self, fid: str, state: str, said: str = "", tidied: str = "", early: str = "", err: str = "",
+               late: bool = False) -> None:
+        """A step of working out a note's words, into its record (one change)."""
+        inp = self._input_with(fid)
+        self._p.emit(ev.VoiceHeard(f=fid, state=state, said=said, tidied=tidied, early=early, err=err[:300],
+                                   late=late, src=inp.id if inp else None, by="taska"))
+
+    def record_job(self, fid: str, job: Job, late: bool = False) -> None:
+        """A finished job's words into the note's record: its words, nobody heard, or why it failed."""
+        if job.err:
+            self.record(fid, "failed", err=job.err, late=late)
+        elif job.tr:
+            self.record(fid, "done", said=str(job.res.get("heard") or job.tr), tidied=job.tr, late=late)
+        else:
+            self.record(fid, "none", late=late)
 
     def hold_timer(self, job: Job) -> threading.Timer:
         """When an input's hold for its words runs out, whoever waits for work hears it."""
@@ -241,6 +270,22 @@ class VoiceJobs:
         if inp:
             self._p.emit(ev.WordsIn(src=inp.id, f=fid, tr=tr, was=was, by="you", late=self._late(inp), heard=self.said(fid, tr)))
 
+    def split_once(self) -> Optional[SplitReport]:
+        """Once per project (B682): every voice note gets its one record of words, from what was kept of them before
+        (the log, the file next to its audio, the copies on its input or comment); the texts that held its words keep
+        only what was typed. One change; None when it was done before."""
+        st = self._p.state
+        if st.voices_split:
+            return None
+        kept: Dict[str, Transcript] = {}
+        for f in {f.f for _, _, files in _files_everywhere(st) for f in files}:
+            got = self.kept(f)
+            if got:
+                kept[f] = got
+        event, report = plan(st, kept, copies_in(self._p.stored_rows()), _now_iso())
+        self._p.emit(event)
+        return report
+
     def keep_heard(self) -> None:
         """Once (F568): the words as said of notes worked out before, which were kept only next to the audio, go into
         the inputs, one change for the whole project. Notes whose words as said are the tidied ones have none."""
@@ -275,6 +320,12 @@ class VoiceJobs:
 
     def busy(self) -> int:
         return sum(1 for j in list(self.jobs.values()) if not j.done)
+
+
+def _files_everywhere(st: Any) -> List[Tuple[str, Any, List[FileRef]]]:
+    out: List[Tuple[str, Any, List[FileRef]]] = [("input", i, i.files) for i in st.inputs.values()]
+    out += [("comment", c, c.files) for d in st.docs.values() for c in d.comments + list(d.gone.values())]
+    return out
 
 
 def answer(fid: str, job: Optional[Job]) -> Dict[str, Any]:

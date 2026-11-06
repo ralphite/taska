@@ -5,7 +5,7 @@ allowed (the command handlers did); it only says what the change does. The store
 the behaviour of the stored format, kept exactly.
 """
 
-from . import docs, filing, inputs, items  # noqa: F401  (each registers its reducers)
+from . import docs, filing, inputs, items, voices  # noqa: F401  (each registers its reducers)
 from .core import apply, replay
 from .docs import thread_of
 

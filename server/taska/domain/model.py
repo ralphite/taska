@@ -61,6 +61,52 @@ def files_row(files: List[FileRef]) -> List[Row]:
     return [f.to_row() for f in files]
 
 
+VOICE_STATES = ("wait", "done", "none", "failed")
+
+
+@dataclass
+class Voice:
+    """A voice note's words: the one record of them (B682). Every place that shows or reads a voice note (an input, a
+    message, a comment, a draft) names it by its file and reads its words here; every step of working them out, and a
+    correction of yours, changes only this.
+
+    state: wait (being worked out; `early`: the speech model's first words meanwhile), done, none (nobody was heard),
+    failed. `said`: word for word; `tidied`: what everyone reads (what agents get). `fixed`: when you last changed the
+    tidied words (then they are yours: later words from a model do not replace them); `was`: the words heard before
+    you changed them."""
+
+    f: str
+    state: str = "wait"
+    said: str = ""
+    tidied: str = ""
+    early: str = ""
+    err: str = ""
+    fixed: Optional[str] = None
+    was: Optional[str] = None
+    t: str = ""
+
+    @property
+    def words(self) -> str:
+        """What it says now: its tidied words, the first words while they are worked out."""
+        return self.tidied or (self.early if self.state == "wait" else "")
+
+    def to_row(self) -> Row:
+        out: Row = {"f": self.f, "state": self.state, "said": self.said, "tidied": self.tidied}
+        for k in ("early", "err", "fixed", "was"):
+            v = getattr(self, k)
+            if v:
+                out[k] = v
+        out["t"] = self.t
+        return out
+
+    @classmethod
+    def from_row(cls, d: Row) -> "Voice":
+        state = str(d.get("state") or "done")
+        return cls(f=str(d.get("f", "")), state=state if state in VOICE_STATES else "done", said=str(d.get("said") or ""),
+                   tidied=str(d.get("tidied") or ""), early=str(d.get("early") or ""), err=str(d.get("err") or ""),
+                   fixed=d.get("fixed") or None, was=d.get("was") or None, t=str(d.get("t") or ""))
+
+
 @dataclass
 class Message:
     """One message in an item's talk: the user's (by "you"), the organizer's ("org") or an agent's."""

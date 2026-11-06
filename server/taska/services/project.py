@@ -13,7 +13,7 @@ import sys
 import threading
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, List, Optional, Protocol, Sequence, Set, Tuple
+from typing import Any, Callable, Dict, List, Optional, Protocol, Sequence, Set, Tuple
 
 from ..agent_text.render import Reading
 from ..commands.run import Command, run_all
@@ -96,6 +96,10 @@ class Project:
 
     def file_path(self, fid: str) -> str:
         return self.files.path(fid)
+
+    def stored_rows(self) -> List[Dict[str, Any]]:
+        """Every stored change as its row (what a one-time change of the data reads)."""
+        return [row for _, row, _ in self.store.db.rows() if row is not None]
 
     # -- changing ---------------------------------------------------------------------
 

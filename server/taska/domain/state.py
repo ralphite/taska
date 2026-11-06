@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, NamedTuple, Optional, Set, Union
 
 from .events import Event
-from .model import Doc, Input, Item, Message
+from .model import Doc, Input, Item, Message, Voice
 from .vocab import LETTER
 
 
@@ -51,6 +51,8 @@ class ProjectState:
     items: Dict[int, Item] = field(default_factory=dict)
     inputs: Dict[str, Input] = field(default_factory=dict)
     docs: Dict[int, Doc] = field(default_factory=dict)
+    voices: Dict[str, Voice] = field(default_factory=dict)  # every voice note's words, by its file (B682)
+    voices_split: bool = False  # the words of voice notes were taken out of the texts once (B682)
     events: List[Event] = field(default_factory=list)  # the whole log, in order
     title: Optional[str] = None  # what people call the project (its address never changes)
     max_n: int = 0
