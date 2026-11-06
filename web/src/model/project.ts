@@ -294,7 +294,7 @@ export function draftCodes(m: ProjectModel, words: Readonly<Record<string, strin
     if (!String(words[k] || '').trim() && !files[k]?.length) continue
     const t = draftTarget(k)
     const doc = t.kind === 'doc' ? m.docs.find((x) => x.d === t.d) : undefined
-    if (doc) out.add(codeOf(m, liveN(m, doc.n)))
+    if (doc && doc.kind !== 'rules') out.add(codeOf(m, liveN(m, doc.n)))
     else if (t.kind === 'reply') out.add(t.code)
   }
   return out

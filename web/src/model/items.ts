@@ -3,7 +3,7 @@
 // keystroke: a change you make shows at once, before the server has it.
 
 import type { Item, Message, Status } from './types'
-import { PLACE_WORD, RULE_STATUS_WORD, STATUS_WORD } from './words'
+import { PLACE_WORD, STATUS_WORD } from './words'
 
 export const closed = (s: Status | string) => s === 'done' || s === 'dropped'
 
@@ -18,12 +18,10 @@ export const needsYou = (it: Item) =>
 
 const asksYou = (it: Item) => needsYou(it) && !!it.wait
 
-/** The statuses an item can be set to, in the menu's order (a rule is proposed only while it is): [status, word][] */
-export const statusChoices = (it: Item): [string, string][] =>
-  it.type === 'rule' ? (Object.entries(RULE_STATUS_WORD) as [string, string][]).filter(([v]) => v !== 'proposed' || it.status === 'proposed') : (Object.entries(STATUS_WORD) as [string, string][])
+/** The statuses an item can be set to, in the menu's order: [status, word][] */
+export const statusChoices = (_it: Item): [string, string][] => Object.entries(STATUS_WORD) as [string, string][]
 
-export const statusWord = (it: Item) =>
-  (it.type === 'rule' ? RULE_STATUS_WORD[it.status] : STATUS_WORD[it.status]) || STATUS_WORD[it.status]
+export const statusWord = (it: Item) => STATUS_WORD[it.status]
 
 /** An item's status as the page shows it: "Needs you" while an agent's question waits on you. */
 export const shownStatus = (it: Item): { s: string; label: string } =>
@@ -72,10 +70,10 @@ export const rowAction = (it: Item): [NeedAction, string] =>
 
 /** Done is for open work only: a proposal is approved first, finished work accepted. */
 export const canDone = (it: Item) =>
-  it.type !== 'rule' && !closed(it.status) && it.status !== 'proposed' && it.status !== 'review'
+  !closed(it.status) && it.status !== 'proposed' && it.status !== 'review'
 
-/** In the agents' queue: not waiting on you, not finished, not archived, not a rule. */
-export const inQueue = (it: Item) => !it.mergedInto && !it.archived && it.type !== 'rule' && !needsYou(it) && !closed(it.status)
+/** In the agents' queue: not waiting on you, not finished, not archived. */
+export const inQueue = (it: Item) => !it.mergedInto && !it.archived && !needsYou(it) && !closed(it.status)
 
 /** The order agents take the work: now before later, in progress first; then the user's own order (rank) before
  * priority: what they never placed goes in by priority, just before the first ranked item of a lower priority. */
@@ -124,7 +122,7 @@ export function dropOn(byN: ReadonlyMap<number, Item>, n: number, t: number | nu
   if (!it) return null
   if (t == null) return it.parent ? { how: 'out' } : null
   const to = byN.get(t)
-  if (!to || t === n || to.type === 'rule' || closed(to.status)) return null
+  if (!to || t === n || closed(to.status)) return null
   for (let p = to.parent; p; p = byN.get(p)?.parent ?? null) if (p === n) return null // not under one of its own subitems
   const line = queuedNow(it) && queuedNow(to)
   return { n: t, how: line && y < 0.3 ? 'before' : line && y > 0.7 ? 'after' : 'into' }

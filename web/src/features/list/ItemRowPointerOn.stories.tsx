@@ -11,5 +11,3 @@ export const PointerOnItWaitsForReview: Story = { ...one({ it: { status: 'review
 export const PointerOnItDone: Story = { ...one({ it: { status: 'done' } }), ...hover, name: 'Done: Archive, Reopen' }
 export const PointerOnItArchived: Story = { ...one({ it: { status: 'done', archived: true } }), ...hover, name: 'Archived: Unarchive' }
 export const PointerOnItLater: Story = { ...one({ it: { when: 'later' } }), ...hover, name: "For later: Done, Won't do, Back to now" }
-export const PointerOnARule: Story = { ...one({ it: { type: 'rule', title: 'Commit messages are in English' }, f: { code: 'R012' } }), ...hover, name: 'An active rule: Retire' }
-export const PointerOnARetiredRule: Story = { ...one({ it: { type: 'rule', status: 'dropped', title: 'Screenshots go in the chat' }, f: { code: 'R009' } }), ...hover, name: 'A retired rule: Archive, Reactivate' }

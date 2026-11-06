@@ -15,7 +15,6 @@ const F1: Item = {
     message({ id: 3, text: 'Reproduced it: the export reads the list before the filter.', t: '2026-10-23T14:20:00-07:00' }),
   ],
 }
-const R17 = item({ n: 17, type: 'rule', title: 'Exports write what the list shows' })
 const B18 = item({
   n: 18,
   type: 'bug',
@@ -24,7 +23,7 @@ const B18 = item({
   body: 'On the phone the export writes every row again, whatever the filter.',
   thread: [message({ id: 5, by: 'you', kind: 'say', text: 'On my phone the export gives me every row again.', t: '2026-11-02T09:12:00-08:00' })],
 })
-export const ITEMS: Item[] = [F1, ...PROJECT.slice(1), R17, B18]
+export const ITEMS: Item[] = [F1, ...PROJECT.slice(1), B18]
 export const D1 = doc({ d: 1, n: 1, title: 'Plan: the export keeps the filter' })
 const INPUTS = [
   input({ id: 'r12', text: 'On my phone the export gives me every row again.', acked: true, touched: [18] }),
@@ -36,7 +35,9 @@ export const HOME = modelOf([H21], [], { title: 'Home' })
 /** The projects in the sidebar's order. */
 export const ORDER = ['shop', 'home']
 
-const it = (n: number, kind: 'items' | 'rules' = 'items'): Found => ({ project: 'shop', kind, key: 'i' + n, n })
+const it = (n: number): Found => ({ project: 'shop', kind: 'items', key: 'i' + n, n })
+/** a section of the rules (I693) */
+const RULES0: Found = { project: 'shop', kind: 'rules', key: 's0', n: null, code: 'Rules', title: 'Exports write what the list shows' }
 const SAID8: Found = { project: 'shop', kind: 'inputs', key: 'r8', n: 1, code: '#8', title: 'The export should keep the filter I set.', t: '2026-10-23T14:10:00-07:00', became: 'F001' }
 const SAID12: Found = { project: 'shop', kind: 'inputs', key: 'r12', n: 18, code: '#12', title: 'On my phone the export gives me every row again.', t: '2026-11-02T09:12:00-08:00', became: 'B018' }
 const DOC1: Found = { project: 'shop', kind: 'docs', key: 'd1', n: 1, code: 'D1', d: 1, title: D1.title, on: 'F001' }
@@ -45,11 +46,11 @@ const HOME21: Found = { project: 'home', kind: 'items', key: 'i21', n: 21, item:
 const HOME4: Found = { project: 'home', kind: 'inputs', key: 'r4', n: 21, code: '#4', title: 'When I export contacts the order is gone', t: '2026-10-20T19:02:00-07:00', became: 'F021' }
 
 const answer = (q: string, marks: string[], found: Found[]): FindAnswer => ({ q, by: 'meaning', marks, found, titles: { shop: 'Shop', home: 'Home' } })
-export const MISHEARD = answer('where the expert loses my filter', ['filter'], [it(1), SAID8, DOC1, it(3), it(14), it(17, 'rules'), HOME21, HOME4])
-export const RIGHT = answer('where the export loses my filter', ['export', 'filter'], [it(1), SAID8, DOC1, it(3), it(14), it(6), it(17, 'rules'), HOME21, HOME4])
+export const MISHEARD = answer('where the expert loses my filter', ['filter'], [it(1), SAID8, DOC1, it(3), it(14), RULES0, HOME21, HOME4])
+export const RIGHT = answer('where the export loses my filter', ['export', 'filter'], [it(1), SAID8, DOC1, it(3), it(14), it(6), RULES0, HOME21, HOME4])
 /** What you say more, the second time. */
 export const ADDED = ', only on the phone'
-export const MORE = answer(RIGHT.q + ADDED, ['export', 'filter', 'phone'], [it(18), SAID12, it(1), it(9), it(17, 'rules')])
+export const MORE = answer(RIGHT.q + ADDED, ['export', 'filter', 'phone'], [it(18), SAID12, it(1), it(9), RULES0])
 /** What it finds for the words in the box (anything else typed: nothing). */
 export function searchOf(words: string): FindAnswer | null {
   const w = words.toLowerCase()

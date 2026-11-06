@@ -55,6 +55,8 @@ export type SheetRequest =
   /** a document's editor (the phone's, and a new one's): an existing one, or a new one on item n */
   | { kind: 'doc-edit'; d: number }
   | { kind: 'doc-edit'; n: number }
+  /** restoring a version of the rules asks once (I693) */
+  | { kind: 'rules-restore'; v: number }
 
 export type SheetKind = SheetRequest['kind']
 

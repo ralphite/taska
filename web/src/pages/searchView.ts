@@ -60,7 +60,7 @@ export function searchView(s: SearchNow, p: SearchPlace): SearchView {
   const marks = a?.marks ?? []
   const w: DrawWith = { slug: p.here, openN: null, selected: new Set(), words: marks, desk: false, drafts: p.drafts, head: undefined, seen: p.seen, drag: { n: null, at: null } }
   const row = (x: Found): FoundRowView[] => {
-    if (x.kind === 'items' || x.kind === 'rules') {
+    if (x.kind === 'items') {
       const mine = x.project === p.here && p.m && x.n != null ? p.m.byN.get(x.n) : undefined
       // another project's: what the search sent, or (a page visited there) its model's
       const there = !mine && x.n != null ? p.model(x.project)?.byN.get(x.n) : undefined
@@ -69,7 +69,7 @@ export function searchView(s: SearchNow, p: SearchPlace): SearchView {
       const facts = mine && p.m ? rowFacts(p.m, mine, w) : otherFacts({ ...x, item: x.item ?? (there && p.model(x.project) ? { ...there, code: codeOf(p.model(x.project) as ProjectModel, there.n) } : undefined) }, marks)
       return [{ kind: 'item', key: x.project + '/' + x.key, found: x, it, facts, look: rowLook(it, w), on: p.on(x) }]
     }
-    return [{ kind: 'other', key: x.project + '/' + x.key, found: x, icon: x.kind === 'docs' ? (p.model(x.project)?.docs.find((d) => d.d === x.d)?.fmt === 'html' ? 'web' : 'doc') : 'newinput', code: x.code ?? '', title: x.title ?? '', meta: foundMeta(x, p.now) }]
+    return [{ kind: 'other', key: x.project + '/' + x.key, found: x, icon: x.kind === 'rules' ? 'book' : x.kind === 'docs' ? (p.model(x.project)?.docs.find((d) => d.d === x.d)?.fmt === 'html' ? 'web' : 'doc') : 'newinput', code: x.code ?? '', title: x.title ?? '', meta: foundMeta(x, p.now) }]
   }
   const toCheck = s.heard.length ? openDoubts(s.words, s.heard).length : 0
   // nothing asked yet: Recent, by project in the order you visited them, as the desktop's search opens with it

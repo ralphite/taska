@@ -9,7 +9,6 @@ export const TYPE_TEXT: Record<ItemType, string> = {
   bug: 'text-red-700 dark:text-red-300',
   idea: 'text-violet-700 dark:text-violet-300',
   task: 'text-teal-700 dark:text-teal-300',
-  rule: 'text-zinc-700 dark:text-zinc-300',
 }
 
 export const PRI_TEXT: Record<Pri, string> = {

@@ -4,7 +4,7 @@
 import { closed, needsYou } from './items'
 import type { ListKey, ListQuery } from './route'
 import type { Item } from './types'
-import { ARCHIVE_FILTER_WORD, LETTER, RULE_STATUS_WORD, SORT_WORDS, STATUS_FILTER_WORD, STATUS_WORD, WHEN_WORD, type Tab } from './words'
+import { ARCHIVE_FILTER_WORD, LETTER, SORT_WORDS, STATUS_FILTER_WORD, STATUS_WORD, WHEN_WORD, type Tab } from './words'
 
 /** An item's words, for picking one by them: its code, title, text, next and talk. */
 const HAY = new WeakMap<Item, string>()
@@ -24,19 +24,13 @@ export const statusIsView = (tab: Tab, list: ListQuery) => tab === 'items' && li
 export const filtered = (tab: Tab, list: ListQuery) =>
   !!(list.type !== 'all' || list.when !== 'all' || (list.status !== 'all' && !statusIsView(tab, list)) || list.pri !== 'all')
 
-/** Items shows the work, and rules that wait on you (an agent proposed one, or asks about it). */
-export const inTab = (it: Item, t: Tab | string) =>
-  t === 'rules'
-    ? it.type === 'rule' && !it.archived
-    : t === 'archive'
-      ? it.archived
-      : !it.archived && (it.type !== 'rule' || it.status === 'proposed' || needsYou(it))
+/** Items shows the work; Archive what was put away (the Rules tab is the rules document, I693: no items). */
+export const inTab = (it: Item, t: Tab | string) => (t === 'rules' ? false : t === 'archive' ? it.archived : !it.archived)
 
-export const tabOf = (it: Item): Tab => (it.archived ? 'archive' : it.type === 'rule' ? 'rules' : 'items')
+export const tabOf = (it: Item): Tab => (it.archived ? 'archive' : 'items')
 
 function statusOk(it: Item, tab: Tab, list: ListQuery): boolean {
   const s = list.status
-  if (tab === 'rules') return s === 'all' || it.status === s
   if (tab === 'archive')
     return it.archived && (s === 'all' || s === 'archived' || (s === 'active' ? !closed(it.status) : it.status === s))
   if (s === 'archived') return it.archived
@@ -50,9 +44,8 @@ function statusOk(it: Item, tab: Tab, list: ListQuery): boolean {
   return it.status === s
 }
 
-function tabOk(it: Item, tab: Tab): boolean {
-  if (tab === 'rules') return it.type === 'rule' && !it.archived
-  return tab === 'archive' || it.type !== 'rule' || (it.status === 'proposed' && !it.archived) || needsYou(it)
+function tabOk(_it: Item, tab: Tab): boolean {
+  return tab !== 'rules'
 }
 
 export function visible(items: readonly Item[], tab: Tab, list: ListQuery): Item[] {
@@ -67,7 +60,7 @@ export function visible(items: readonly Item[], tab: Tab, list: ListQuery): Item
       (it) =>
         !it.mergedInto &&
         tabOk(it, tab) &&
-        (list.type === 'all' || tab === 'rules' || it.type === list.type) &&
+        (list.type === 'all' || it.type === list.type) &&
         (list.when === 'all' || it.when === list.when) &&
         (list.pri === 'all' || it.pri === list.pri) &&
         statusOk(it, tab, list),
@@ -84,10 +77,10 @@ export const tabNumber = (n: number) => (n >= 1000 ? Math.floor(n / 1000) + 'k' 
 /** The filters set on a list, each with its word (a type, when, a status that is not the view, priority, sort). */
 export function filtersSet(tab: Tab, list: ListQuery): [ListKey, string][] {
   const out: [ListKey, string][] = []
-  if (list.type !== 'all' && tab !== 'rules') out.push(['type', list.type[0].toUpperCase() + list.type.slice(1)])
+  if (list.type !== 'all') out.push(['type', list.type[0].toUpperCase() + list.type.slice(1)])
   if (list.when !== 'all') out.push(['when', WHEN_WORD[list.when as 'now'] ?? list.when])
   if (list.status !== 'all' && !statusIsView(tab, list))
-    out.push(['status', tab === 'rules' ? RULE_STATUS_WORD[list.status as 'open'] || STATUS_WORD[list.status as 'open'] : STATUS_FILTER_WORD[list.status] || ARCHIVE_FILTER_WORD[list.status] || STATUS_WORD[list.status as 'open']])
+    out.push(['status', STATUS_FILTER_WORD[list.status] || ARCHIVE_FILTER_WORD[list.status] || STATUS_WORD[list.status as 'open']])
   if (list.pri !== 'all') out.push(['pri', list.pri])
   if (list.sort !== 'all') out.push(['sort', SORT_WORDS.find(([v]) => v === list.sort)?.[1] ?? list.sort])
   return out

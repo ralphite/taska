@@ -8,6 +8,7 @@ import { gripVars } from '../stores/grips'
 import { useLayout, useServices, useStores, useStoreValue } from '../app/context'
 import { useAway, useProjectModel, type ProjectRoute } from '../app/hooks'
 import { needsYou } from '../model/items'
+import { needsCount } from '../model/rules'
 import { filtersSet } from '../model/visible'
 import { composing } from '../model/route'
 import { toneOf } from '../ui/tones'
@@ -26,6 +27,7 @@ import { SearchContainer } from './SearchContainer'
 import { DeskFilters, FilterStrip } from '../features/list/Filters'
 import { filterEvents } from '../features/list/FiltersContainer'
 import { DetailContainer } from './DetailContainer'
+import { RulesContainer } from '../features/docs/RulesContainer'
 import { ListHead, PhoneTabs, ProjectBar } from './Header'
 import { agentInfo, deskTabs, phoneTabs, tabCounts } from './headFacts'
 
@@ -49,7 +51,7 @@ export function ProjectPageContainer({ route }: { route: ProjectRoute }) {
   useEffect(() => app.nav.normalize(), [app, route, layout])
   const m = useProjectModel(route.slug)
   useEffect(() => {
-    const waiting = m ? m.items.filter(needsYou).length : 0
+    const waiting = m ? needsCount(m, needsYou) : 0
     const sec = settingsTitle(route.place, layout === 'desk')
     document.title = (waiting ? `(${waiting}) ` : '') + (sec ? sec + ' · ' : '') + (m ? `${m.facts.title} · Taska` : 'Taska')
   }, [m, route.place, layout])
@@ -71,8 +73,10 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const settings = route.place.kind === 'settings' || help
   const full = useStoreValue(stores.route, (s) => s.full) && route.place.kind === 'item' && !settings
   const shownSide = useStoreValue(stores.route, (s) => s.side)
+  // the Rules tab is the rules document over both columns (I693)
+  const rulesTab = route.tab === 'rules' && (route.place.kind === 'tab' || route.place.kind === 'rules')
   // a document edited in the pane has no box under it
-  const docEditing = useStoreValue(stores.docView, (s) => s.editing && s.newFor == null) && route.place.kind === 'doc'
+  const docEditing = useStoreValue(stores.docView, (s) => s.editing && s.newFor == null) && (route.place.kind === 'doc' || rulesTab)
   const side = !!shownSide && !settings
   const grips = useStoreValue(stores.grips, (s) => s.px)
   const duo = useStoreValue(stores.ui, (s) => s.duo)
@@ -103,7 +107,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
         />
         {/* two columns under the bar, each laid out by itself: nothing the pane shows moves the list, or the other way
             round (B663) */}
-        <div data-part="list-column" hidden={settings || full} className="col-start-1 row-start-2 flex min-h-0 min-w-0 flex-col">
+        <div data-part="list-column" hidden={settings || full || rulesTab} className="col-start-1 row-start-2 flex min-h-0 min-w-0 flex-col">
           <DeskFilters
             tab={route.tab}
             list={route.list}
@@ -119,7 +123,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
         </div>
         {/* the pane over the box; on the New input page the pane is only its bar and the box's page fills the rest. An
             item full width (O) takes the list's column too */}
-        <div data-part="pane-column" hidden={settings} className={`row-start-2 flex min-h-0 min-w-0 flex-col ${full ? 'col-span-2 col-start-1' : 'col-start-2'}`}>
+        <div data-part="pane-column" hidden={settings} className={`row-start-2 flex min-h-0 min-w-0 flex-col ${full || rulesTab ? 'col-span-2 col-start-1' : 'col-start-2'}`}>
           <DetailContainer route={route} place="group-data-[compose]/app:flex-none" hidden={settings} full={full} />
           <FootContainer
             route={route}
@@ -131,7 +135,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
         </div>
         {help ? <HelpContainer route={route} place="col-span-2 col-start-1 row-span-2 row-start-1" /> : null}
         {settings && !help ? <SettingsContainer route={route} place="col-span-2 col-start-1 row-span-2 row-start-1" prefsBox={<BoxContainer route={route} composePage={false} bare />} /> : null}
-        {settings || full ? null : (
+        {settings || full || rulesTab ? null : (
           // the line between the list and the pane, from under the project's bar to the bottom: one line, drawn here only
           // (B573), dragged sideways like the other lines
           <Grip
@@ -189,6 +193,9 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
   const boxMode = useStoreValue(stores.box, (s) => !!s.mode)
   const docEdit = useStoreValue(stores.docView, (s) => s.editing || s.typing)
   const docNoBox = route.place.kind === 'doc' && !boxMode && !docEdit
+  // the Rules tab reads the rules document in place of the list (I693); its editor has no box under it
+  const rulesTab = route.tab === 'rules' && (route.place.kind === 'tab' || route.place.kind === 'rules')
+  const rulesEditing = useStoreValue(stores.docView, (s) => s.editing && s.newFor == null) && rulesTab
   // while the item's page is swiped back, what it was opened from shows underneath it: the list, or the search page
   // (F479), which stays while a result is open, as you left it
   const beneath = (!open && !settings) || !!floating
@@ -226,11 +233,12 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
             search: () => app.finder.open(),
           }}
         />
-        <PhoneTabs tabs={tabs} filtersSet={phoneSet.length > 0} showFilter={route.tab !== 'inputs'} hidden={!under} on={{ tab: (t) => app.nav.tab(t), filters: () => app.sheets.open({ kind: 'filters' }, { focus: false }) }} />
-        <FilterStrip set={phoneSet} hidden={!under || route.tab === 'inputs' || !phoneSet.length} onUnset={(k) => app.nav.setList({ [k]: 'all' })} onReset={() => filterEvents(app).reset()} />
-        <section data-part="items" className="flex min-h-0 flex-1 flex-col" hidden={!under || route.tab === 'inputs'}>
+        <PhoneTabs tabs={tabs} filtersSet={phoneSet.length > 0} showFilter={route.tab !== 'inputs' && route.tab !== 'rules'} hidden={!under} on={{ tab: (t) => app.nav.tab(t), filters: () => app.sheets.open({ kind: 'filters' }, { focus: false }) }} />
+        <FilterStrip set={phoneSet} hidden={!under || route.tab === 'inputs' || rulesTab || !phoneSet.length} onUnset={(k) => app.nav.setList({ [k]: 'all' })} onReset={() => filterEvents(app).reset()} />
+        <section data-part="items" className="flex min-h-0 flex-1 flex-col" hidden={!under || route.tab === 'inputs' || rulesTab}>
           <ItemListContainer route={route} />
         </section>
+        {rulesTab ? <RulesContainer route={route} place="" hidden={!under} /> : null}
         <InputsContainer route={route} hidden={!under || route.tab !== 'inputs'} />
         {searching ? <SearchContainer route={route} hidden={!searchShown} /> : null}
         <div
@@ -243,7 +251,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
         </div>
         {help ? <HelpContainer route={route} place="" /> : null}
         {settings && !help ? <SettingsContainer route={route} place="" prefsBox={null} /> : null}
-        <FootContainer route={route} composePage={false} place="" hidden={(settings && !prefsEditing) || docNoBox || (searching && !open)} onHeight={setFootH} />
+        <FootContainer route={route} composePage={false} place="" hidden={(settings && !prefsEditing) || docNoBox || rulesEditing || (searching && !open)} onHeight={setFootH} />
       </div>
     </>
   )

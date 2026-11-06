@@ -1,5 +1,5 @@
 // The page's addresses, read and written: / is every project; /p/<project>/ is its Items; /inputs /archive /rules a
-// tab; /B03 an item; /D4 a document; /new the New input page; /docs /log /deleted the lists beside the items (on the
+// tab (/rules is the rules document; /rules/history, /rules/v5, /rules/v5/now, /rules/p12 its versions and proposals); /B03 an item; /D4 a document; /new the New input page; /docs /log /deleted the lists beside the items (on the
 // desktop); /settings and its sections (/projects /phone ...); /help and its topics (/help/connect ...); /inputs#r8 an
 // input, gone to where it is listed. The list's filters ride along as ?type= &when= &status= &pri= &sort=. Addresses
 // are part of the product: links and bookmarks depend on them.
@@ -30,6 +30,8 @@ export type Place =
   | { kind: 'settings'; section: string | null }
   /** Help: its index (`topic` null), or one topic */
   | { kind: 'help'; topic: string | null }
+  /** the rules' history, a version, a proposal (model/rules: readRulesView) */
+  | { kind: 'rules'; at: string }
 
 export type Route =
   | { page: 'home'; query: URLSearchParams }
@@ -42,7 +44,7 @@ export const routeSlug = (r: Route): string => (r.page === 'project' ? r.slug : 
 /** What rows you acted on hold still for: the list (its project, tab and filters) and, on the desktop, what
  * the pane shows (going on to another item lets them go). */
 /** The desktop's New input page: nothing open, New input itself or a tab other than Inputs (the phone has none). */
-export const composing = (r: Extract<Route, { page: 'project' }>): boolean => r.place.kind === 'new' || (r.place.kind === 'tab' && r.tab !== 'inputs')
+export const composing = (r: Extract<Route, { page: 'project' }>): boolean => r.place.kind === 'new' || (r.place.kind === 'tab' && r.tab !== 'inputs' && r.tab !== 'rules')
 
 export function holdKey(r: Route, desk: boolean): string {
   return r.page === 'project' ? JSON.stringify([r.slug, r.tab, r.list, desk ? r.place : null]) : ''
@@ -79,6 +81,10 @@ export function parseRoute(pathname: string, search: string, hash = ''): Route {
   else if (seg === 'help' || seg.startsWith('help/')) place = { kind: 'help', topic: seg.slice(5) || null }
   else if (Object.hasOwn(SETTINGS_PATHS, seg)) place = { kind: 'settings', section: seg }
   else if (seg === 'inputs' || seg === 'archive' || seg === 'rules') tab = seg
+  else if (seg.startsWith('rules/')) {
+    tab = 'rules'
+    place = { kind: 'rules', at: seg.slice(6) }
+  }
   return { page: 'project', slug, tab, place, list }
 }
 
@@ -108,6 +114,8 @@ export function projectPath(slug: string, tab: Tab, place: Place, list: ListQuer
       return base + 'help' + (place.topic ? '/' + encodeURIComponent(place.topic) : '')
     case 'side':
       return base + place.side
+    case 'rules':
+      return base + 'rules/' + place.at
     case 'doc':
       return base + `D${place.d}` + listSearch(list)
     case 'item':

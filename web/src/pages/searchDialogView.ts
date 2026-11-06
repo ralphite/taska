@@ -22,7 +22,7 @@ export interface FoundLine {
   key: string
   found: Found
   /** what its mark is: an item's state, a document, an input */
-  mark: { kind: 'item'; s: string; label: string; type: ItemType } | { kind: 'doc'; web: boolean } | { kind: 'input' }
+  mark: { kind: 'item'; s: string; label: string; type: ItemType } | { kind: 'doc'; web: boolean } | { kind: 'input' } | { kind: 'rules' }
   code: string
   title: string
   /** where it is: its project, and the item it is under or on */
@@ -99,7 +99,8 @@ export function lineOf(x: Found, p: DialogPlace): FoundLine {
   const m = p.model(x.project)
   const base = { key: x.project + '/' + x.key, found: x, project: x.project, projectTitle: p.title(x.project), tone: p.tone(x.project) }
   const it = itemOf(x, p)
-  if ((x.kind === 'items' || x.kind === 'rules') && it) {
+  if (x.kind === 'rules') return { ...base, mark: { kind: 'rules' }, code: 'Rules', title: x.title ?? '', path: base.projectTitle }
+  if (x.kind === 'items' && it) {
     const code = x.item?.code ?? (m ? codeOf(m, it.n) : String(it.n))
     const under = it.parent && m ? codeOf(m, it.parent) : (x.parentCode ?? '')
     return { ...base, mark: { kind: 'item', ...shownStatus(it), type: it.type }, code, title: it.title, path: [base.projectTitle, under].filter(Boolean).join(' / ') }
@@ -119,7 +120,7 @@ export function visitFound(v: Visit, model: (slug: string) => ProjectModel | nul
   }
   const it = m?.byN.get(v.n)
   const item = it ?? ({ n: v.n, title: v.title, type: v.type ?? 'feature', status: v.status ?? 'open' } as Item)
-  return { project: v.project, kind: item.type === 'rule' ? 'rules' : 'items', key: 'i' + v.n, n: v.n, item: it ? undefined : { ...item, code: v.code } }
+  return { project: v.project, kind: 'items', key: 'i' + v.n, n: v.n, item: it ? undefined : { ...item, code: v.code } }
 }
 
 /** The actions whose words start as the words do (three at most). */
@@ -138,7 +139,7 @@ export function searchDialogView(s: DialogNow, p: DialogPlace): SearchDialogView
   const typed = !!s.words.trim()
   const status = (x: Found) => {
     const it = itemOf(x, p)
-    return (x.kind === 'items' || x.kind === 'rules') && !!it && closed(it.status) === (s.status === 'finished')
+    return x.kind === 'items' && !!it && closed(it.status) === (s.status === 'finished')
   }
   const narrowed = a ? a.found.filter((x) => (s.project === null || x.project === s.project) && (s.status === null || status(x))) : []
   const results = typed && a ? narrowed.filter((x) => s.kind === 'all' || x.kind === s.kind).map((x) => lineOf(x, p)) : []

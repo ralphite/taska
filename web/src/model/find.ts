@@ -30,11 +30,11 @@ export const FIND_KINDS: readonly (readonly [FindKind, string])[] = [
   ['docs', 'Documents'],
 ]
 
-/** One thing found, in its project: an item or a rule (as the list has it), an input, a document. */
+/** One thing found, in its project: an item (as the list has it), an input, a document, a section of the rules. */
 export interface Found {
   project: string
   kind: FindKind
-  /** its key in the project: i3, r8, d1 */
+  /** its key in the project: i3, r8, d1, s2 (a section of the rules) */
   key: string
   /** the item it is or opens (a document's, what an input became); null: none */
   n: number | null
@@ -87,6 +87,7 @@ export const foundKinds = (a: FindAnswer): [FindKind, string, number][] =>
 /** The line under an input or a document: "Oct 23 09:12 · became F001", "09:12", "On F001". */
 export function foundMeta(x: Found, now: number): string {
   if (x.kind === 'docs') return x.on ? `On ${x.on}` : ''
+  if (x.kind === 'rules') return 'A section of the rules'
   return [when(x.t, now), x.became ? `became ${x.became}` : ''].filter(Boolean).join(' · ')
 }
 
@@ -95,6 +96,7 @@ export function foundMeta(x: Found, now: number): string {
 export function foundPath(x: Found): string {
   const base = `/p/${encodeURIComponent(x.project)}/`
   if (x.kind === 'docs' && x.d != null) return base + `D${x.d}`
+  if (x.kind === 'rules') return base + 'rules'
   if (x.kind === 'inputs') return x.became ? base + encodeURIComponent(x.became) : inputPath(x.project, x.key)
   return base + encodeURIComponent(x.item?.code || String(x.n))
 }

@@ -3,21 +3,20 @@
 
 import { forwardRef, type ReactNode, useLayoutEffect, useRef } from 'react'
 import type { NeedAction } from '../../model/items'
-import type { Item } from '../../model/types'
+import type { Item, RuleProposal } from '../../model/types'
 import { Icon, type IconName } from '../../ui/Icon'
 import { Empty, Skeleton } from '../../ui/bits'
-import { ArchiveAllLine, HiddenKidsLine, ItemRow, NeedsMoreLine, NeedsRow, Zone, type RowEvents, type RowFacts, type RowLook } from './ListRows'
-import type { ViewChip, ZoneKind } from './rows'
+import { ArchiveAllLine, HiddenKidsLine, ItemRow, NeedsRow, ProposalRow, type RowEvents, type RowFacts, type RowLook } from './ListRows'
+import type { ViewChip } from './rows'
 import { ViewBar, type OwnViewChip } from './ViewBar'
 import { useRowSwipe, type RowSwipe } from '../../ui/rowSwipe'
 
 export type DrawnRow =
   | { kind: 'item'; key: string; it: Item; depth: number; band: string; foldable: boolean; folded: boolean; facts: RowFacts; look: RowLook; said?: string }
   | { kind: 'needs'; key: string; it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; act?: NeedAction }
-  | { kind: 'zone'; key: string; zone: ZoneKind; label: string; n: number }
   | { kind: 'hidden-kids'; key: string; parent: number; depth: number; open: boolean; later: number }
-  | { kind: 'needs-more'; key: string; open: boolean; rest: number }
   | { kind: 'archive-all'; key: string; n: number }
+  | { kind: 'proposal'; key: string; p: RuleProposal; who: string }
 
 export interface ListEvents extends RowEvents {
   view(value: string): void
@@ -32,8 +31,9 @@ export interface ListEvents extends RowEvents {
   rename(i: number, name: string): void
   renameStop(): void
   subMore(parent: number): void
-  needsMore(): void
   archiveAll(): void
+  /** an agent's proposed change to the rules: opened (I693) */
+  proposal(p: number): void
 }
 
 export interface ItemListProps {
@@ -150,14 +150,12 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
                 return <ItemRow key={r.key} it={r.it} depth={r.depth} band={r.band} foldable={r.foldable} folded={r.folded} facts={r.facts} look={r.look} said={r.said} on={on} />
               case 'needs':
                 return <NeedsRow key={r.key} it={r.it} depth={r.depth} facts={r.facts} look={r.look} excerpt={r.excerpt} said={r.said} act={r.act} on={on} />
-              case 'zone':
-                return <Zone key={r.key} kind={r.zone} label={r.label} n={r.n} />
               case 'hidden-kids':
                 return <HiddenKidsLine key={r.key} parent={r.parent} depth={r.depth} open={r.open} later={r.later} onToggle={() => on.subMore(r.parent)} />
-              case 'needs-more':
-                return <NeedsMoreLine key={r.key} open={r.open} rest={r.rest} onToggle={on.needsMore} />
               case 'archive-all':
                 return <ArchiveAllLine key={r.key} n={r.n} onArchive={on.archiveAll} />
+              case 'proposal':
+                return <ProposalRow key={r.key} p={r.p} who={r.who} onOpen={() => on.proposal(r.p.id)} />
             }
           })}
           {!rows.length ? empty : null}
@@ -220,12 +218,11 @@ export function EmptyList({ why, status, organizerOn, onReset, onConnect, firstR
       </Empty>
     )
   if (why === 'none') return <Empty>No items</Empty>
-  if (why === 'no-rules') return <Empty>No rules</Empty>
   if (why === 'nothing-archived') return <Empty>Nothing archived</Empty>
-  if (why === 'no-match' || why === 'no-match-rules')
+  if (why === 'no-match')
     return (
       <Empty>
-        {why === 'no-match-rules' ? 'No matching rules' : 'No matching items'}
+        No matching items
         <button onClick={onReset} className="mt-3 h-11 text-blue-600 hover:underline dark:text-blue-400">
           Clear filters
         </button>

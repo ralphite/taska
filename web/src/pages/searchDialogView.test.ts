@@ -18,7 +18,7 @@ const now = (p: Partial<DialogNow>): DialogNow => ({ phase: 'found', words: 'exp
 describe("the desktop search's dialog", () => {
   it('lists what it found best first, each with its project as a path', () => {
     const v = searchDialogView(now({}), place)
-    expect(v.results.map((l) => l.code)).toEqual(['F001', '#8', 'D1', 'F003', 'T014', 'F006', 'R017', 'F021', '#4'])
+    expect(v.results.map((l) => l.code)).toEqual(['F001', '#8', 'D1', 'F003', 'T014', 'F006', 'Rules', 'F021', '#4'])
     expect(v.results.find((l) => l.code === 'T014')?.path).toBe('Shop / F001')
     expect(v.results.find((l) => l.code === 'F021')?.path).toBe('Home')
   })
@@ -27,7 +27,7 @@ describe("the desktop search's dialog", () => {
     expect(searchDialogView(now({ project: 'home' }), place).results.map((l) => l.code)).toEqual(['F021', '#4'])
     const open = searchDialogView(now({ status: 'open' }), place)
     expect(open.results.every((l) => l.mark.kind === 'item')).toBe(true)
-    expect(searchDialogView(now({ kind: 'rules' }), place).results.map((l) => l.code)).toEqual(['R017'])
+    expect(searchDialogView(now({ kind: 'rules' }), place).results.map((l) => l.code)).toEqual(['Rules']) // a section of the rules document (I693)
     expect(searchDialogView(now({ project: 'home' }), place).kinds?.find((k) => k.value === 'all')?.count).toBe(2)
   })
 

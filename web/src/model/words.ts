@@ -2,7 +2,7 @@
 
 import type { ItemType, SearchHit, Status, When } from './types'
 
-export const LETTER: Record<ItemType, string> = { feature: 'F', bug: 'B', idea: 'I', task: 'T', rule: 'R' }
+export const LETTER: Record<ItemType, string> = { feature: 'F', bug: 'B', idea: 'I', task: 'T' }
 export const WORK_TYPES: ItemType[] = ['feature', 'bug', 'idea', 'task']
 
 export const STATUS_WORD: Record<Status, string> = {
@@ -18,8 +18,6 @@ export const STATUS_WORD: Record<Status, string> = {
  * nothing). Lowercase, as the rest of that line. */
 export const hitWhere = (x: Pick<SearchHit, 'kind' | 'archived' | 'status'>) =>
   x.kind === 'input' ? ' · what you said' : x.archived ? ' · archived' : x.status === 'done' || x.status === 'dropped' ? ` · ${STATUS_WORD[x.status].toLowerCase()}` : ''
-/** A rule's statuses read differently: in force or retired. */
-export const RULE_STATUS_WORD: Partial<Record<Status, string>> = { proposed: 'Proposed', open: 'Active', dropped: 'Retired' }
 export const WHEN_WORD: Record<When, string> = { now: 'Now', later: 'Later' }
 
 /** A message's kind, where it says something (progress, most messages, has no tag). */
@@ -68,7 +66,6 @@ export const DID: Record<string, string> = {
 }
 
 /** How many of what needs you show before "Show N more" (on the desktop). */
-export const NEEDS_SHOWN = 5
 
 export function whoName(by: string): string {
   return AGENT_NAME[by] || (by === 'org' ? 'Organizer' : (by || '').charAt(0).toUpperCase() + (by || '').slice(1))

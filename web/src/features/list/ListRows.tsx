@@ -5,8 +5,7 @@
 import type { ReactNode } from 'react'
 import { deskSlots, forward, backward, ACT_KEY, type Slot } from '../../model/actions'
 import { closed, rowAction, shownStatus, statusWord, type NeedAction } from '../../model/items'
-import type { Item } from '../../model/types'
-import type { ZoneKind } from './rows'
+import type { Item, RuleProposal } from '../../model/types'
 import { plural, whoName } from '../../model/words'
 import { Avatar, Count, DraftMark, Hit, Pic, Soft } from '../../ui/bits'
 import { Icon, StateIcon } from '../../ui/Icon'
@@ -185,13 +184,9 @@ function SwipeLayers({ it, openKids, on, children }: { it: Item; openKids: numbe
 function Shell({ it, look, facts, on, children }: { it: Item; look: RowLook; facts: RowFacts; on: RowEvents; children: ReactNode }) {
   return (
     <article data-n={it.n} {...dragMarks(look)} className={ARTICLE}>
-      {it.type === 'rule' && look.desk ? (
-        children
-      ) : (
-        <SwipeLayers it={it} openKids={facts.openKids} on={on}>
-          {children}
-        </SwipeLayers>
-      )}
+      <SwipeLayers it={it} openKids={facts.openKids} on={on}>
+        {children}
+      </SwipeLayers>
     </article>
   )
 }
@@ -211,7 +206,7 @@ export function ItemRow(props: {
   const { it, depth, band, foldable, folded, facts, look, on, said } = props
   const isClosed = closed(it.status)
   const meta: ReactNode[] = [
-    it.type === 'rule' ? null : (
+    (
       <span key="p" className={PRI_TEXT[it.pri]}>
         {it.pri}
       </span>
@@ -317,7 +312,7 @@ export function NeedsRow({ it, depth, facts, look, excerpt, said, act, on }: { i
             <span className={said ? 'text-zinc-500 line-through decoration-zinc-400 dark:text-zinc-400' : ''}>{it.title}</span>
           </p>
           <div className="mt-1 flex min-w-0 items-center gap-2 text-xs font-medium">
-            {it.type === 'rule' ? null : <span className={`shrink-0 ${PRI_TEXT[it.pri]}`}>{it.pri}</span>}
+            {<span className={`shrink-0 ${PRI_TEXT[it.pri]}`}>{it.pri}</span>}
             {facts.draft ? <DraftMark /> : null}
             {it.when === 'later' ? (
               <span className="shrink-0">
@@ -358,27 +353,30 @@ export function NeedsRow({ it, depth, facts, look, excerpt, said, act, on }: { i
   )
 }
 
-/** A group head: Needs you (its rows' mark, smaller), the rules' groups (active, retired). */
-export function Zone({ kind, label, n }: { kind: ZoneKind; label: string; n: number }) {
-  const needs = kind === 'needs'
-  const mark = needs ? (
-    <StateIcon s="wait" cls="size-4" />
-  ) : kind === 'rules' ? (
-    <span className="mx-1 size-2 shrink-0 rounded-full bg-zinc-400 dark:bg-zinc-500" />
-  ) : (
-    <StateIcon s="dropped" label={label} cls="size-4" />
-  )
+/** An agent's proposed change to the rules, waiting on you (I693): first in Needs you, as an item's proposal is; it
+ * opens the proposal, where its changes are seen before Approve. */
+export function ProposalRow({ p, who, onOpen }: { p: RuleProposal; who: string; onOpen(): void }) {
   return (
-    <div data-zone={kind} className="flex h-9 items-center gap-2 border-y border-zinc-200 bg-zinc-100 pr-1 pl-4 dark:border-zinc-700/70 dark:bg-zinc-800">
-      {mark}
-      <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{label}</h2>
-      <span
-        data-count
-        className={`grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-bold tabular-nums ${needs ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950' : 'bg-zinc-200/80 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'}`}
-      >
-        {n}
-      </span>
-    </div>
+    <article data-proposal={p.id} className={ARTICLE}>
+      <div onClick={onOpen} className={`group relative flex cursor-pointer items-center gap-2.5 py-2.5 pr-3 pl-4 ${ROW_TINT}`}>
+        <span className="self-start">
+          <StateIcon s="proposed" label="Proposed" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1">
+            <span className="mr-1.5 text-[13px] font-bold text-zinc-700 dark:text-zinc-300">Rules</span>
+            {p.why}
+          </p>
+          <div className="mt-1 truncate text-xs text-zinc-500 dark:text-zinc-400">{who} proposes a change</div>
+        </div>
+        <button title="View changes" aria-label="View changes" onClick={(e) => (e.stopPropagation(), onOpen())} className="group/pill -my-1 grid h-11 shrink-0 place-items-center outline-none">
+          <span className={`${ACTION_PILL('approve')} group-hover/pill:brightness-95 dark:group-hover/pill:brightness-125`}>
+            <Icon n="book" c="size-3.5" sw="2.25" />
+            <span className="@max-[22rem]/list:hidden">View</span>
+          </span>
+        </button>
+      </div>
+    </article>
   )
 }
 
@@ -393,18 +391,6 @@ export function HiddenKidsLine({ parent, depth, open, later, onToggle }: { paren
     >
       <Icon n={open ? 'down' : 'right'} c="size-4" sw="2.25" />
       {open ? 'Show fewer' : `${later} more in Later`}
-    </button>
-  )
-}
-
-export function NeedsMoreLine({ open, rest, onToggle }: { open: boolean; rest: number; onToggle(): void }) {
-  return (
-    <button
-      onClick={onToggle}
-      className="flex h-10 w-full items-center gap-1.5 border-b border-zinc-100 pl-4 text-[13px] font-semibold text-amber-800 hover:bg-amber-50 dark:border-zinc-800/70 dark:text-amber-300 dark:hover:bg-amber-400/10"
-    >
-      <Icon n={open ? 'down' : 'right'} c="size-4" sw="2.25" />
-      {open ? 'Show fewer' : `Show ${rest} more`}
     </button>
   )
 }

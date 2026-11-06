@@ -103,16 +103,16 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
     ? [tile('unarchive', 'unarchive', 'Unarchive', () => on.archive(false))]
     : closed(it.status)
       ? [tile('archive', 'archive', 'Archive', () => on.archive(true))]
-      : [it.type === 'rule' ? null : tile('later', 'clock', it.when === 'now' ? 'Later' : 'Back to now', on.later), tile('archive', 'archive', 'Archive', () => on.archive(true))]
+      : [tile('later', 'clock', it.when === 'now' ? 'Later' : 'Back to now', on.later), tile('archive', 'archive', 'Archive', () => on.archive(true))]
   const lab = (t: string) => <div className="px-1 pb-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">{t}</div>
   const type = (
     <div>
       {lab('Type')}
-      <SegCtl opts={typeOpts(true)} on={it.type} pick={(v) => on.set('type', v)} />
+      <SegCtl opts={typeOpts(false)} on={it.type} pick={(v) => on.set('type', v)} />
     </div>
   )
   const pri =
-    it.type === 'rule' ? null : (
+    (
       <div>
         {lab('Priority')}
         <SegCtl opts={priOpts(false)} on={it.pri} pick={(v) => on.set('pri', v as Pri)} />
@@ -142,7 +142,7 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
           {tile('edit', 'pencil', 'Edit', on.edit)}
           {tile('copy', 'copy', 'Copy for agent', on.copy)}
           {tile('agent', 'bot', 'What agents see', on.agent)}
-          {it.type === 'rule' ? null : (
+          {(
             <>
               {tile('doc', 'docplus', 'New doc', on.newDoc)}
               {tile('sub', 'listplus', 'Add subitem', on.addSub)}
@@ -184,7 +184,7 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
     const cur = String(it[f])
     const opts: [string, ReactNode, string][] =
       arm === 't'
-        ? typeOpts(true).map(([v, l]) => [v, l, v[0].toUpperCase()])
+        ? typeOpts(false).map(([v, l]) => [v, l, v[0].toUpperCase()])
         : arm === 'p'
           ? priOpts(false).map(([v, l]) => [v, l, v.slice(1)])
           : statusChoices(it).map(([v, t], i) => [
@@ -222,7 +222,7 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
     ? [row('unarchive', 'unarchive', 'Unarchive', keys.archive, () => on.archive(false))]
     : closed(it.status)
       ? [row('archive', 'archive', 'Archive', keys.archive, () => on.archive(true))]
-      : [it.type === 'rule' ? null : row('later', 'clock', it.when === 'now' ? 'Later' : 'Back to now', keys.later, on.later), row('archive', 'archive', 'Archive', keys.archive, () => on.archive(true))]
+      : [row('later', 'clock', it.when === 'now' ? 'Later' : 'Back to now', keys.later, on.later), row('archive', 'archive', 'Archive', keys.archive, () => on.archive(true))]
   return {
     menu: true,
     body: (
@@ -233,10 +233,10 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
           {row('agent', 'bot', 'What agents see', '', on.agent)}
           <div className={MENU_SEP} />
           {row('status', <StateIcon s={it.status} cls="size-[18px]" />, 'Status…', keys.status, () => on.field('s'), statusChoices(it).find(([s]) => s === it.status)?.[1] ?? '')}
-          {it.type === 'rule' ? null : row('pri', 'up', 'Priority…', keys.pri, () => on.field('p'), it.pri)}
+          {row('pri', 'up', 'Priority…', keys.pri, () => on.field('p'), it.pri)}
           {row('type', 'items', 'Type…', keys.type, () => on.field('t'), it.type[0].toUpperCase() + it.type.slice(1))}
           <div className={MENU_SEP} />
-          {it.type === 'rule' ? null : (
+          {(
             <>
               {row('doc', 'docplus', 'New doc', keys.newDoc, on.newDoc)}
               {row('sub', 'listplus', 'Add subitem', keys.addSub, on.addSub)}

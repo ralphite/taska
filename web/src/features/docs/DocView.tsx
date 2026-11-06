@@ -224,7 +224,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
               ) : null}
             </>
           ) : null}
-          <span hidden={web} className="min-w-0 flex-1 basis-full truncate lg:basis-auto">
+          <span hidden={web || d.kind === 'rules'} className="min-w-0 flex-1 basis-full truncate lg:basis-auto">
             on{' '}
             <button onClick={on.goItem} className="text-blue-600 hover:underline dark:text-blue-400">
               {facts.itemCode}

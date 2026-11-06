@@ -15,6 +15,7 @@ import { transcribing } from './voices'
 import { vcCount } from './voiceComments'
 import { inputCode, plural } from './words'
 import { outgoingLine, type Outgoing } from './outgoing'
+import { docName, placeDoc } from './rules'
 
 /** a button at the line's right */
 export type BoxRight =
@@ -75,7 +76,8 @@ const stop = (label: string): BoxRight => ({ kind: 'x', label, act: 'stop' })
 export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boolean, title: string, mode: BoxMode, pick: Parameters<typeof docTarget>[1], ticks: TickState): BoxRole {
   // the item open, or the one whose document is open (nothing picked in it, the box replies on the item)
   const place = route.place
-  const docOf = place.kind === 'doc' ? m?.docs.find((x) => x.d === place.d) : undefined
+  const dn = placeDoc(route, m)
+  const docOf = dn != null ? m?.docs.find((x) => x.d === dn) : undefined
   const open = place.kind === 'item' ? m?.byN.get(Number(/\d+/.exec(place.ref)?.[0])) : docOf && m ? m.byN.get(liveN(m, docOf.n)) : undefined
   const none = { aim: null as DocAim }
   if (mode?.kind === 'prefs') {
@@ -101,7 +103,7 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
   if (docOf && dt) {
     const line: BoxLine = {
       icon: dt.reply ? 'reply' : 'comment',
-      label: `${dt.reply ? 'Reply in' : 'Comment on'} D${docOf.d}`,
+      label: `${dt.reply ? 'Reply in' : 'Comment on'} ${docOf.kind === 'rules' && /^p\d+$/.test(dt.key) ? 'the proposal' : docName(docOf)}`,
       detail: (dt.many || 0) > 1 ? `· ${dt.many} paragraphs` : dt.quote ? `“${plainQuote(dt.quote).slice(0, 120)}”` : '',
       right: { kind: 'x', label: 'Cancel · Esc', act: 'unpick' },
     }
@@ -116,7 +118,7 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
       ? { ...none, scope: reply, doc: docOf.d, line, placeholder: `Reply to ${reply}…`, send: 'Send' }
       : { aim: { d: docOf.d, target: { key: 'doc', quote: '' } }, scope: null, doc: docOf.d, line, placeholder: `Comment on D${docOf.d}…`, send: 'Comment' }
   }
-  if (docOf && !desk && !mode) {
+  if (docOf && !desk && !mode && docOf.kind !== 'rules') {
     // the phone, nothing picked: a comment on the whole document (Reply to its item instead)
     const host = m ? liveN(m, docOf.n) : null
     const line: BoxLine = { icon: 'comment', label: `Comment on D${docOf.d}`, detail: '· or tap a part', ...(host != null && m?.byN.has(host) ? { right: { kind: 'to-item', code: codeOf(m, host) } } : {}) }

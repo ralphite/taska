@@ -4,7 +4,7 @@
 
 import { useState, type ReactNode } from 'react'
 import type { ListKey, ListQuery } from '../../model/route'
-import { ARCHIVE_FILTER_WORD, RULE_STATUS_WORD, SORT_WORDS, STATUS_FILTER_WORD, type Tab } from '../../model/words'
+import { ARCHIVE_FILTER_WORD, SORT_WORDS, STATUS_FILTER_WORD, type Tab } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import type { SheetParts } from '../../ui/Sheet'
 import { DISABLED, FIELD, HIT, PRIMARY } from '../../ui/tones'
@@ -20,15 +20,13 @@ export interface FilterEvents {
 export function FilterControls({ tab, list, small = false, on }: { tab: Tab; list: ListQuery; small?: boolean; on: FilterEvents }) {
   const [name, setName] = useState('')
   const lab = (t: string) => <div className={`px-1 ${small ? 'pb-1 text-[11px]' : 'pb-2 text-xs'} font-semibold text-zinc-500 dark:text-zinc-400`}>{t}</div>
-  const statuses: [string, string][] = [['all', 'All'], ...(Object.entries(tab === 'rules' ? RULE_STATUS_WORD : tab === 'archive' ? ARCHIVE_FILTER_WORD : STATUS_FILTER_WORD) as [string, string][])]
+  const statuses: [string, string][] = [['all', 'All'], ...(Object.entries(tab === 'archive' ? ARCHIVE_FILTER_WORD : STATUS_FILTER_WORD) as [string, string][])]
   return (
     <>
-      {tab === 'rules' ? null : (
-        <div>
-          {lab('Type')}
-          <SegCtl opts={typeOpts(true, true)} on={list.type} small={small} pick={(v) => on.set('type', v)} />
-        </div>
-      )}
+      <div>
+        {lab('Type')}
+        <SegCtl opts={typeOpts(true)} on={list.type} small={small} pick={(v) => on.set('type', v)} />
+      </div>
       {tab === 'archive' ? (
         <div>
           {lab('When')}
@@ -61,12 +59,10 @@ export function FilterControls({ tab, list, small = false, on }: { tab: Tab; lis
           </div>
         </div>
       )}
-      {tab === 'rules' ? null : (
-        <div>
-          {lab('Priority')}
-          <SegCtl opts={priOpts(true)} on={list.pri} small={small} pick={(v) => on.set('pri', v)} />
-        </div>
-      )}
+      <div>
+        {lab('Priority')}
+        <SegCtl opts={priOpts(true)} on={list.pri} small={small} pick={(v) => on.set('pri', v)} />
+      </div>
       <div>
         {lab('Sort')}
         <SegCtl opts={SORT_WORDS} on={list.sort} small={small} pick={(v) => on.set('sort', v)} />
@@ -115,7 +111,7 @@ export function filtersSheet({ tab, list, filtered, shown, open }: { tab: Tab; l
       <div className="flex flex-col gap-5">
         <FilterControls tab={tab} list={list} on={on} />
         <button onClick={on.close} className={`${PRIMARY} w-full`}>
-          Show {tab === 'items' && open !== shown ? `${open} open, ${shown - open} finished` : `${shown} ${tab === 'rules' ? 'rule' : 'item'}${shown === 1 ? '' : 's'}`}
+          Show {tab === 'items' && open !== shown ? `${open} open, ${shown - open} finished` : `${shown} item${shown === 1 ? '' : 's'}`}
         </button>
       </div>
     ),

@@ -4,22 +4,21 @@
 import { closed, latestFirst, needsOrder, needsYou, rowAction, workOrder, type NeedAction } from '../../model/items'
 import type { ProjectModel } from '../../model/project'
 import type { ListQuery } from '../../model/route'
-import type { Item } from '../../model/types'
+import { rulesDoc, waitingProposals } from '../../model/rules'
+import type { Item, RuleProposal } from '../../model/types'
 import { filtered, visible } from '../../model/visible'
-import { NEEDS_SHOWN, type Tab } from '../../model/words'
-
-export type ZoneKind = 'needs' | 'rules' | 'retired'
+import type { Tab } from '../../model/words'
 
 export type Row =
-  | { kind: 'zone'; zone: ZoneKind; label: string; n: number }
   /** `said`: what you just did to it, while the list holds still (it is no longer in the list, or no longer waits on you) */
   | { kind: 'item'; it: Item; depth: number; foldable: boolean; folded: boolean; band: string; said?: string }
   | { kind: 'needs'; it: Item; depth: number; said?: string; act?: NeedAction }
   | { kind: 'hidden-kids'; parent: number; depth: number; open: boolean; later: number }
-  | { kind: 'needs-more'; open: boolean; rest: number }
   | { kind: 'archive-all'; n: number }
+  /** an agent's proposed change to the rules, waiting on you (I693): first in Needs you */
+  | { kind: 'proposal'; p: RuleProposal }
 
-export type EmptyWhy = 'no-items' | 'none' | 'no-rules' | 'nothing-archived' | 'no-match' | 'no-match-rules' | 'nothing'
+export type EmptyWhy = 'no-items' | 'none' | 'nothing-archived' | 'no-match' | 'nothing'
 
 export type ListBody =
   | { kind: 'loading' }
@@ -31,7 +30,6 @@ export interface ListState {
   folded: ReadonlySet<number>
   /** parents whose hidden subitems are shown under them */
   subMore: ReadonlySet<number>
-  needsAll: boolean
   open: number | null
   desk: boolean
 }
@@ -83,17 +81,6 @@ function tree(group: Item[], st: ListState, opts: { needs?: boolean; hidden?: Ma
   return out
 }
 
-function needsBand(needs: Item[], st: ListState): Row[] {
-  if (!needs.length) return []
-  const long = st.desk && needs.length > NEEDS_SHOWN + 1
-  const cut = long && !st.needsAll && !needs.slice(NEEDS_SHOWN).some((it) => it.n === st.open)
-  const out: Row[] = [{ kind: 'zone', zone: 'needs', label: 'Needs you', n: needs.filter(needsYou).length }]
-  for (const it of cut ? needs.slice(0, NEEDS_SHOWN) : needs) out.push({ kind: 'needs', it, depth: 0 })
-  if (cut) out.push({ kind: 'needs-more', open: false, rest: needs.length - NEEDS_SHOWN })
-  else if (long && st.needsAll) out.push({ kind: 'needs-more', open: true, rest: needs.length - NEEDS_SHOWN })
-  return out
-}
-
 /** While a row you acted on holds still, the list keeps the rows it had, each showing its item as it is now. A row you
  * acted on that no longer belongs in the list, or no longer waits on you, stays the row it was, its title struck and
  * its button saying what you did: same place, same height, nothing jumps (B699). A Needs-you row someone else
@@ -118,7 +105,9 @@ export function listBody(m: ProjectModel | null, tab: Tab, list: ListQuery, st: 
   const rows = visible(m.items, tab, list)
   const done = (r: Row[], views: boolean): ListBody => ({ kind: 'rows', views, rows: r, shown: rows.length })
   const none = !m.items.length
-  if (none && tab === 'rules') return { kind: 'empty', why: 'no-rules', status: list.status }
+  // a proposed change to the rules waits on you first in Items' own order (and in Needs you), as the items do
+  const proposals: Row[] = tab === 'items' && list.sort === 'all' && (list.status === 'all' || list.status === 'wait') && list.type === 'all' && list.pri === 'all' && list.when === 'all' ? waitingProposals(rulesDoc(m)).map((p) => ({ kind: 'proposal', p })) : []
+  if (none && proposals.length) return done(proposals, true)
   if (none && tab === 'archive') return { kind: 'empty', why: 'nothing-archived', status: list.status }
   if (none) return { kind: 'empty', why: 'no-items', status: list.status }
   if (tab === 'items' && list.sort === 'all') {
@@ -128,27 +117,15 @@ export function listBody(m: ProjectModel | null, tab: Tab, list: ListQuery, st: 
     const out: Row[] = []
     if ((list.status === 'done' || list.status === 'dropped') && ordered.some((it) => !it.archived && closed(it.status)))
       out.push({ kind: 'archive-all', n: ordered.filter((it) => !it.archived && closed(it.status)).length })
+    out.push(...proposals)
     if (!ordered.length) {
       const why = list.type !== 'all' || list.pri !== 'all' ? 'no-match' : 'nothing'
-      return { kind: 'rows', views: true, rows: out, shown: 0, empty: why }
+      return { kind: 'rows', views: true, rows: out, shown: 0, ...(out.length ? {} : { empty: why }) }
     }
     out.push(...tree(group, st, { hidden, needs: true }))
     return done(out, true)
   }
-  if (!rows.length && filtered(tab, list)) return { kind: 'empty', why: tab === 'rules' ? 'no-match-rules' : 'no-match', status: list.status }
-  if (tab === 'rules') {
-    if (!rows.length) return { kind: 'empty', why: 'no-rules', status: list.status }
-    const wait = rows.filter((it) => it.status === 'proposed' || needsYou(it)).sort(needsOrder)
-    // in force is any rule not finished and not waiting on you; done and dropped ones are retired (r1075: a done rule
-    // showed nowhere yet the tab counted it)
-    const on = rows.filter((it) => !closed(it.status) && it.status !== 'proposed' && !needsYou(it))
-    const off = rows.filter((it) => closed(it.status) && !needsYou(it))
-    const out: Row[] = needsBand(wait, st)
-    const plain = (it: Item, band = ''): Row => ({ kind: 'item', it, depth: 0, foldable: false, folded: false, band })
-    if (on.length) out.push({ kind: 'zone', zone: 'rules', label: 'Active', n: on.length }, ...on.map((it) => plain(it)))
-    if (off.length) out.push({ kind: 'zone', zone: 'retired', label: 'Retired', n: off.length }, ...off.map((it) => plain(it, 'retired')))
-    return done(out, false)
-  }
+  if (!rows.length && filtered(tab, list)) return { kind: 'empty', why: 'no-match', status: list.status }
   // Archive, or Items in another order: the list in that order; what waits on you is the Needs-you row there too
   const out: Row[] = rows.map((it) =>
     needsYou(it) ? { kind: 'needs', it, depth: 0 } : { kind: 'item', it, depth: 0, foldable: false, folded: false, band: '' },
@@ -186,7 +163,8 @@ export function viewChips(m: ProjectModel, tab: Tab, list: ListQuery): ViewChip[
       return { value, label, count: n, on: tab === 'archive', needs: false }
     }
     const asItems = tab !== 'items' ? { type: 'all', when: 'all', status: value, pri: 'all', sort: 'all' } : { ...list, status: value }
-    const n = visible(m.items, 'items', asItems).length
+    // a proposed change to the rules is in Needs you too (I693)
+    const n = visible(m.items, 'items', asItems).length + (value === 'wait' && asItems.type === 'all' && asItems.pri === 'all' && asItems.when === 'all' ? waitingProposals(rulesDoc(m)).length : 0)
     return { value, label, count: n, on: tab === 'items' && list.status === value, needs: value === 'wait' && n > 0 }
   })
 }

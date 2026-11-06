@@ -9,7 +9,7 @@ import type { AgentsFacts } from './Agents'
 
 /** `guide` is the guide for agents, once it has come. */
 export function agentsFacts(m: ProjectModel, guide: string | null): AgentsFacts {
-  const live = m.items.filter((it) => !it.mergedInto && !it.archived && it.type !== 'rule')
+  const live = m.items.filter((it) => !it.mergedInto && !it.archived)
   const queue = live.filter((it) => inQueue(it) && it.status !== 'doing' && it.when === 'now').length
   const [tone, , line] = agentState(m.facts.agents, m.facts.work, m.at, queue)
   const base = m.facts.base

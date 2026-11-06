@@ -24,6 +24,7 @@ import type { Box } from './inputs/box'
 import { copyText, forAgent } from './page/clipboard'
 import type { Docs } from './docs/docs'
 import type { DocEditor } from './docs/editor'
+import type { Rules } from './docs/rules'
 import type { Fields } from './page/fields'
 import type { ProjectRoute } from './hooks'
 import type { ItemActions } from './items/itemActions'
@@ -49,6 +50,7 @@ export interface ActionWorld {
   sheets: Sheets
   docs: Docs
   docEditor: DocEditor
+  rules: Rules
   box: Box
   voice: Voice
   media: Media
@@ -119,7 +121,7 @@ const steps = (d: 1 | -1) => (w: Pick<ActionWorld, 'nav' | 'listOrder' | 'toasts
   const m = h.m
   if (m) w.nav.step(d, w.listOrder, (k) => codeOf(m, k), (words) => w.toasts.show(words))
 }
-const stepWhy = (_: unknown, h: Here) => (lists(h) ? null : h.r.place.kind === 'settings' || h.r.place.kind === 'help' ? 'Press Esc to return to the list' : 'J and K move in Items, Archive and Rules')
+const stepWhy = (_: unknown, h: Here) => (lists(h) ? null : h.r.place.kind === 'settings' || h.r.place.kind === 'help' ? 'Press Esc to return to the list' : 'J and K move in Items and Archive')
 
 /** always a fresh new input, written in the box */
 function newInput(w: Pick<ActionWorld, 'box' | 'route' | 'nav' | 'fields'>): void {
@@ -241,7 +243,7 @@ export const ACTIONS = {
     run: (w) => void w.feedback.getState().undo.at(-1)?.run(),
   }),
   keys: page(['sheets'], { label: 'Keyboard shortcuts', keys: '?', listed: true, desk: true, run: (w) => w.sheets.open({ kind: 'keys' }) }),
-  back: page(['finder', 'route', 'nav', 'media', 'ui', 'sheet', 'sheets', 'selection', 'voice', 'desk', 'fields', 'boxStore', 'box', 'docs', 'docEditor', 'itemEdits', 'itemView', 'docView'], { label: 'Step back one level', keys: 'Escape', run: (w, h) => stepBack(w, h) }),
+  back: page(['finder', 'route', 'nav', 'media', 'ui', 'sheet', 'sheets', 'selection', 'voice', 'desk', 'fields', 'boxStore', 'box', 'docs', 'docEditor', 'rules', 'itemEdits', 'itemView', 'docView'], { label: 'Step back one level', keys: 'Escape', run: (w, h) => stepBack(w, h) }),
   step: page(['nav', 'listOrder', 'toasts'], { label: 'Next item', keys: 'j', why: stepWhy, run: steps(1) }),
   'step-back': page(['nav', 'listOrder', 'toasts'], { label: 'Previous item', keys: 'k', why: stepWhy, run: steps(-1) }),
 } satisfies Record<string, Action>
@@ -253,7 +255,7 @@ export const ACTION_IDS = Object.keys(ACTIONS) as ActionId[]
 
 const typingIn = (el: Element | null) => /INPUT|TEXTAREA|SELECT/.test(el?.tagName || '') || !!(el as HTMLElement | null)?.isContentEditable
 
-type BackWorld = Pick<ActionWorld, 'finder' | 'route' | 'nav' | 'media' | 'ui' | 'sheet' | 'sheets' | 'selection' | 'voice' | 'desk' | 'fields' | 'boxStore' | 'box' | 'docs' | 'docEditor' | 'itemEdits' | 'itemView' | 'docView'>
+type BackWorld = Pick<ActionWorld, 'finder' | 'route' | 'nav' | 'media' | 'ui' | 'sheet' | 'sheets' | 'selection' | 'voice' | 'desk' | 'fields' | 'boxStore' | 'box' | 'docs' | 'docEditor' | 'rules' | 'itemEdits' | 'itemView' | 'docView'>
 
 /** Esc: one level back: the drawer, the sheet, a subitem being written, an edit, the search, a field, full width, the
  * search's words, the item. */
@@ -274,6 +276,13 @@ function stepBack(w: BackWorld, h: Here): void {
   const view = w.itemView.getState()
   if (view.subFor != null && typingIn(active)) return w.itemEdits.subLeave()
   if (view.editing != null) return w.itemEdits.leave()
+  if (r.tab === 'rules' && (r.place.kind === 'tab' || r.place.kind === 'rules')) {
+    // the rules (I693): the editor (kept as a draft), what you picked, then a page of them back to the rules
+    const doc = w.docView.getState()
+    if (doc.editing) return w.rules.keep()
+    if (doc.quote || doc.sel.size || doc.reply) return w.docs.unpick()
+    if (r.place.kind === 'rules' && !typingIn(active)) return w.rules.go({ kind: 'read' }, false)
+  }
   if (r.place.kind === 'doc') {
     // a document: its editor (kept as a draft), the area being drawn, what you picked, then the document itself
     const doc = w.docView.getState()
@@ -347,7 +356,7 @@ export class Actions {
   why(id: ActionId, h: Here): string | null {
     const a = byId(id)
     if ('item' in a) {
-      if (!onAnItem(h)) return a.none ?? (h.r.tab === 'inputs' || h.r.place.kind === 'new' ? 'Open an item in Items, Archive or Rules to use these keys' : 'First pick an item: J or a click')
+      if (!onAnItem(h)) return a.none ?? (h.r.tab === 'inputs' || h.r.place.kind === 'new' ? 'Open an item in Items or Archive to use these keys' : 'First pick an item: J or a click')
       return a.why?.(given(this.w, a.uses), h) ?? null
     }
     return a.why?.(given(this.w, a.uses), h) ?? null

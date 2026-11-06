@@ -3,6 +3,7 @@
 // reply in, the whole document); its threads opened and closed.
 
 import { docTarget, splitThread } from '../../model/docs'
+import { placeDoc } from '../../model/rules'
 import { codeOf, liveN } from '../../model/project'
 import type { Tab } from '../../model/words'
 import type { DocViewStore } from '../../stores/docView'
@@ -31,10 +32,10 @@ export class Docs {
     this.stop = d.route.subscribe(() => this.follow())
   }
 
-  /** The document shown is the address's: another one (or none) starts afresh. */
+  /** The document shown is the address's (the rules on the Rules tab): another one (or none) starts afresh. */
   private follow(): void {
     const r = this.d.route.getState().route
-    const d = r.page === 'project' && r.place.kind === 'doc' ? r.place.d : null
+    const d = r.page === 'project' ? placeDoc(r, this.d.model(r.slug)) : null
     const v = this.d.view.getState()
     if (v.editing && v.newFor == null && d !== v.d) this.d.leaveEditor()
     v.show(d)
@@ -45,8 +46,9 @@ export class Docs {
     const h = docHere(this.d)
     if (!h) return
     const doc = h.m.docs.find((x) => x.d === dn)
+    if (doc?.kind === 'rules') return this.d.nav.rules('', true) // the rules are the Rules tab (I693)
     const it = doc ? h.m.byN.get(liveN(h.m, doc.n)) : undefined
-    const tab: Tab = it?.archived ? 'archive' : it?.type === 'rule' ? 'rules' : 'items'
+    const tab: Tab = it?.archived ? 'archive' : 'items'
     this.d.nav.openDoc(dn, this.d.route.getState().side ? undefined : tab)
   }
 
@@ -133,6 +135,15 @@ export class Docs {
   whole(): void {
     const v = this.d.view.getState()
     v.pick({ sel: new Set(), quote: { key: 'doc', text: '' }, reply: null })
+    v.setTyping(true)
+    this.d.fields.focus('box')
+  }
+
+  /** A comment on an agent's proposed change to the rules (I693): the box writes it on the proposal's thread, which
+   * its agent reads and answers. */
+  proposalComment(p: number, why: string): void {
+    const v = this.d.view.getState()
+    v.pick({ sel: new Set(), quote: { key: `p${p}`, text: why }, reply: null })
     v.setTyping(true)
     this.d.fields.focus('box')
   }

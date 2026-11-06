@@ -15,6 +15,7 @@ import { OfflinePill } from './Header'
 import { DeletedPickContainer } from '../features/side/SideListContainer'
 import { DocPaneContainer, DocSheetContainer } from '../features/docs/DocContainer'
 import { composing } from '../model/route'
+import { RulesContainer } from '../features/docs/RulesContainer'
 
 export function DetailContainer({ route, place, hidden, full = false, footRoom = 0 }: { route: ProjectRoute; place: string; hidden?: boolean; full?: boolean; footRoom?: number }) {
   const app = useServices('items', 'listOrder', 'nav', 'sheets', 'toasts')
@@ -50,6 +51,8 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
   const editingDoc = useStoreValue(stores.docView, (s) => s.editing)
   const docIt = doc && m ? m.byN.get(liveN(m, doc.n)) : undefined
   useTwoColumns(desk && !hidden ? body : null, desk && !compose && (!!it || (!!doc && !editingDoc && !!docIt)), !!doc && !editingDoc, (on) => stores.ui.getState().setDuo(on))
+  // the Rules tab: the rules document (I693), over both columns on the desktop
+  if (route.tab === 'rules' && (route.place.kind === 'tab' || route.place.kind === 'rules')) return <RulesContainer route={route} place={place} hidden={hidden} />
   // a document the address names: on the desktop in the pane; on the phone, while it loads or when it is not in the
   // project, in the pane too (one that is there opens over its item, below)
   if (dn != null && (desk || !doc)) {

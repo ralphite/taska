@@ -17,8 +17,8 @@ export const Segments: Story = {
       {() => (
         <States
           items={[
-            ['type', <div className="p-3">{seg(typeOpts(true), 'bug')}</div>],
-            ['type, a filter', <div className="p-3">{seg(typeOpts(false), 'all')}</div>],
+            ['type', <div className="p-3">{seg(typeOpts(false), 'bug')}</div>],
+            ['type, a filter', <div className="p-3">{seg(typeOpts(true), 'all')}</div>],
             ['priority', <div className="p-3">{seg(priOpts(false), 'P0')}</div>],
             ['priority, a small filter', <div className="p-3">{seg(priOpts(true), 'all', true)}</div>],
           ]}
@@ -28,4 +28,4 @@ export const Segments: Story = {
   ),
 }
 // ---- more states (T639)
-export const SegmentsPointer: Story = { name: 'The segmented choices: one under the pointer', parameters: { pseudo: { hover: ['button:nth-of-type(2)'] } }, render: () => <Frames phone={false} deskWidth={460}>{() => <div className="p-3">{seg(typeOpts(true), 'bug')}</div>}</Frames> }
+export const SegmentsPointer: Story = { name: 'The segmented choices: one under the pointer', parameters: { pseudo: { hover: ['button:nth-of-type(2)'] } }, render: () => <Frames phone={false} deskWidth={460}>{() => <div className="p-3">{seg(typeOpts(false), 'bug')}</div>}</Frames> }

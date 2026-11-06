@@ -82,7 +82,6 @@ export class ItemActions {
             : {}
     const words =
       opts.said ||
-      (it.type === 'rule' && f === 'status' && before !== 'proposed' && ({ open: 'is active again', dropped: 'is retired' } as Record<string, string>)[String(v)]) ||
       saidOf(m, f, v, before, ref)
     const undo = this.d.toasts.undoable(`${ref} ${words}`, async () => {
       const now = this.d.model()?.byN.get(n) as (Item & Record<string, unknown>) | undefined

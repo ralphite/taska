@@ -1,7 +1,7 @@
 // What the server sends: a project's view (GET /p/<project>/api/view) and the workspace's answers. The shapes are
 // the server's page_api/views.py.
 
-export type ItemType = 'feature' | 'bug' | 'idea' | 'task' | 'rule'
+export type ItemType = 'feature' | 'bug' | 'idea' | 'task'
 export type Status = 'proposed' | 'open' | 'doing' | 'review' | 'done' | 'dropped'
 export type Pri = 'P0' | 'P1' | 'P2' | 'P3'
 export type When = 'now' | 'later'
@@ -156,6 +156,45 @@ export interface Doc {
   whole: Comment[]
   unanswered: number
   resolved: Record<string, string>
+  /** the project's rules (I693): one document of the project, not of an item (n 0) */
+  kind?: 'rules'
+  proposals?: RuleProposal[]
+  history?: RuleVersion[]
+}
+
+/** A version of the rules (I693): who, when (its first and last save), every why (newest first), the inputs it came
+ * from, the text it left; a restore says which version it put back; an approved proposal, which one. */
+export interface RuleVersion {
+  v: number
+  by: string
+  t0: string
+  t: string
+  md: string
+  whys: string[]
+  srcs: string[]
+  /** its last save's number in the log (Undo takes it back) */
+  seq: number
+  restored?: number
+  p?: number
+  ses?: string
+}
+
+/** An agent's proposed change to the rules: waiting (with the text it would make now), approved, declined, or sent
+ * back to its agent because a section it changes changed since (note). Its talk is its thread. */
+export interface RuleProposal {
+  id: number
+  by: string
+  ses?: string
+  t: string
+  why: string
+  state: 'wait' | 'approved' | 'declined' | 'stale'
+  /** the version it was written on */
+  on: number
+  md?: string
+  note?: string
+  decided?: string
+  src?: string
+  comments: Comment[]
 }
 
 export interface AgentSeen {

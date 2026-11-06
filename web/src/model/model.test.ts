@@ -87,18 +87,18 @@ describe('which items a list shows', () => {
   const items = [
     item({ n: 1, title: 'Export ignores the filter' }),
     item({ n: 2, status: 'done', title: 'Sort by priority' }),
-    item({ n: 3, type: 'rule', title: 'Commit in English' }),
+    item({ n: 3, type: 'task', when: 'later', title: 'Commit in English' }),
     item({ n: 4, archived: true, title: 'Old export' }),
     item({ n: 5, title: 'Talk', thread: [message({ id: 1, text: 'the CSV export keeps every row' })] }),
   ]
   const ns = (tab: Parameters<typeof visible>[1], list: Partial<typeof NO_FILTERS>) => visible(items, tab, { ...NO_FILTERS, ...list }).map((x) => x.n)
 
-  test('Items shows open work now; the archive and the rules have their own tabs', () => {
+  test('Items shows open work now; the archive has its own tab; the rules are a document, no items (I693, r1118)', () => {
     expect(ns('items', {})).toEqual([1, 5])
     expect(ns('items', { status: 'done' })).toEqual([2])
     expect(ns('items', { status: 'open' })).toEqual([1, 5])
     expect(ns('archive', {})).toEqual([4])
-    expect(ns('rules', {})).toEqual([3])
+    expect(ns('rules', {})).toEqual([])
   })
 })
 

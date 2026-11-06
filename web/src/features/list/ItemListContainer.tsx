@@ -21,7 +21,7 @@ import { heldRows, listBody, type Row } from './rows'
 const NO_WORDS: string[] = []
 
 export function ItemListContainer({ route }: { route: ProjectRoute }) {
-  const app = useServices('fields', 'itemDrag', 'items', 'listHold', 'listOrder', 'media', 'nav', 'seen', 'selection', 'sheets', 'views', 'voice')
+  const app = useServices('fields', 'itemDrag', 'items', 'listHold', 'listOrder', 'media', 'nav', 'rules', 'seen', 'selection', 'sheets', 'views', 'voice')
   const stores = useStores('box', 'drafts', 'drag', 'route', 'ui', 'views')
   const layout = useLayout()
   const m = useProjectModel(route.slug)
@@ -44,8 +44,8 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   const listKey = JSON.stringify([route.slug, route.tab, route.list])
 
   const body = useMemo(
-    () => listBody(m, route.tab, route.list, { folded: ui.folded, subMore: ui.subMore, needsAll: ui.needsAll, open: openN, desk }),
-    [m, route.tab, route.list, ui.folded, ui.subMore, ui.needsAll, openN, desk],
+    () => listBody(m, route.tab, route.list, { folded: ui.folded, subMore: ui.subMore, open: openN, desk }),
+    [m, route.tab, route.list, ui.folded, ui.subMore, openN, desk],
   )
   // while a row you acted on holds still the list keeps the rows it had
   const heldFor = holdKey(route, desk)
@@ -116,7 +116,6 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     picture: (_group, f) => app.media.view(route.slug, [f], f),
     view: (value: string) => app.nav.view(value),
     subMore: (n) => stores.ui.getState().toggleSubMore(n),
-    needsMore: () => stores.ui.getState().toggleNeedsAll(),
     archiveAll: () => m && app.items.archiveAll(visible(m.items, route.tab, route.list).filter((it) => !it.archived && closed(it.status)).map((it) => it.n)),
     ownView: (i) => app.views.show(i),
     dragStart: (n) => app.itemDrag.start(n),
@@ -126,6 +125,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     ownMenu: (i, x, y) => app.sheets.open({ kind: 'view-menu', i }, { pop: true, focus: false, at: { x, y } }),
     rename: (i, name) => app.views.rename(i, name),
     renameStop: () => stores.views.getState().setEdit(-1),
+    proposal: (p) => app.rules.go({ kind: 'proposal', p }),
   }
 
   const empty =

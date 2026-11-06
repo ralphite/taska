@@ -167,7 +167,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     subTyped: (title) => app.itemEdits.subTyped(n, title),
     subAdd: (title) => {
       // same kind, priority and now/later as the parent; it shows under its parent at once (its code "…")
-      const type = it.type === 'rule' ? 'task' : it.type
+      const type = it.type
       const tmp = STAND + (Date.now() % 1e11)
       const now = new Date().toISOString()
       const stand: Item = { ...it, n: tmp, code: '…', type, title, body: '', status: 'open', parent: n, next: '', thread: [], srcs: [], wait: null, talked: false, archived: false, rank: null, t0: now, t1: now, agent: undefined, readBy: undefined, by: 'you', decided: null }

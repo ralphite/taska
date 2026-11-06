@@ -1,5 +1,5 @@
 // An item's status icon (T591: Icons and marks > Item status icon): the page's own StateIcon for what the page shows
-// of each status (shownStatus: Needs you while a question waits), and a rule's.
+// of each status (shownStatus: Needs you while a question waits).
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { shownStatus, statusChoices } from '../model/items'
 import type { Item } from '../model/types'
@@ -25,8 +25,4 @@ const statuses = (type: Item['type']) => statusChoices(item({ n: 1, type, status
 export const ItemStatuses: Story = {
   name: 'Every item status',
   render: () => <Frames phoneWidth={393} deskWidth={360}>{() => <div className="py-2">{[...statuses('feature').map(row), row(item({ n: 9, status: 'open', ...ask }))]}</div>}</Frames>,
-}
-export const RuleStatuses: Story = {
-  name: 'Every rule status',
-  render: () => <Frames phoneWidth={393} deskWidth={360}>{() => <div className="py-2">{statuses('rule').map(row)}</div>}</Frames>,
 }

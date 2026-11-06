@@ -19,7 +19,7 @@ import { act, acts } from './acts'
 const firstActs = acts('First steps', ['connect', 'say', 'phone'] as const, { connect: 'Agents › Who works here', phone: 'Settings › Use on your phone' })
 export const listOn: ListEvents = {
   ...noRowEvents,
-  ...acts('List', ['view', 'ownView', 'drop', 'dragEnd', 'ownMenu', 'rename', 'renameStop', 'subMore', 'needsMore', 'archiveAll'] as const, { ownMenu: 'Item list › Views › Your own views, sorting' }),
+  ...acts('List', ['view', 'ownView', 'drop', 'dragEnd', 'ownMenu', 'rename', 'renameStop', 'subMore', 'archiveAll', 'proposal'] as const, { ownMenu: 'Item list › Views › Your own views, sorting', proposal: 'Rules › Screens › A proposal opened' }),
   dragStart: () => null,
   dragOver: () => false,
 }
@@ -38,8 +38,6 @@ export const PROJECT: Item[] = [
   item({ n: 8, status: 'done', title: 'Undo puts the row back' }),
   item({ n: 9, type: 'bug', status: 'dropped', title: 'Export button too small on the phone' }),
   item({ n: 10, status: 'done', archived: true, title: 'Rename projects' }),
-  item({ n: 11, type: 'rule', title: 'Commit messages are in English' }),
-  item({ n: 12, type: 'rule', status: 'proposed', by: 'claude-code', title: 'Screenshots go in the item' }),
   item({ n: 14, type: 'task', parent: 1, title: 'Read the filter from the address' }),
   item({ n: 15, type: 'task', parent: 1, status: 'done', title: 'Write the rows the list shows' }),
   item({ n: 16, type: 'task', parent: 1, when: 'later', title: 'Keep the sort too' }),
@@ -87,10 +85,9 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
   const { tab, query } = where
   const [folded, setFolded] = useState(() => new Set(h.folded))
   const [subMore, setSubMore] = useState(() => new Set(h.subMore))
-  const [needsAll, setNeedsAll] = useState(false)
   const [selected, setSelected] = useState(() => new Set(h.selected))
   const from = useRef<number | null>(null)
-  const st = { folded, subMore, needsAll, open: h.open ?? null, desk }
+  const st = { folded, subMore, open: h.open ?? null, desk }
   const body = listBody(m, tab, query, st)
   let rows = body.kind === 'rows' ? body.rows : []
   // rows you acted on hold still until the list changes (another view)
@@ -119,7 +116,6 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
     open: (n, how) => (desk && how && (how.metaKey || how.ctrlKey || how.shiftKey) ? pick(n, how.shiftKey) : listOn.open(n, how)),
     fold: (n) => setFolded(toggle(folded, n)),
     subMore: (n) => setSubMore(toggle(subMore, n)),
-    needsMore: () => setNeedsAll(!needsAll),
     view: (value) => (value === 'archive' ? setWhere({ tab: 'archive', query: { ...query, status: 'all' } }) : show({ status: value }, true)),
     ownView: (i) => {
       const v = h.saved?.[i]

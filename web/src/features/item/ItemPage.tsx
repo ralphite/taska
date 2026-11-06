@@ -82,7 +82,7 @@ function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
         {shown.label}
         {caret}
       </button>
-      {it.type === 'rule' ? null : (
+      {(
         <button
           title="Priority · P"
           onClick={(e) => on.menu('p', e.currentTarget)}
@@ -92,13 +92,13 @@ function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
           {caret}
         </button>
       )}
-      {it.type === 'rule' ? null : (
+      {(
         <button title="Type · T" onClick={(e) => on.menu('t', e.currentTarget)} className={`${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200`}>
           {it.type[0].toUpperCase() + it.type.slice(1)}
           {caret}
         </button>
       )}
-      {closed(it.status) || it.type === 'rule' ? null : (
+      {closed(it.status) || (
         <button title="Later · L" onClick={(e) => on.later(e.currentTarget)} className={`${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200`}>
           <Icon n="clock" c="size-3.5 opacity-60" />
           {it.when === 'later' ? (f.laterOn ? `Later · ${f.laterOn}` : 'Later') : 'Now'}

@@ -24,7 +24,7 @@ export function Picker({ items, code, placeholder, skip, sort, current, desk, ex
 }) {
   const [q, setQ] = useState('')
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
-  const cands = items.filter((c) => !skip.has(c.n) && !c.mergedInto && !c.archived && c.type !== 'rule' && words.every((w) => hay(c).includes(w))).sort(sort).slice(0, 40)
+  const cands = items.filter((c) => !skip.has(c.n) && !c.mergedInto && !c.archived && words.every((w) => hay(c).includes(w))).sort(sort).slice(0, 40)
   return (
     <div className="flex flex-col gap-2">
       <input autoFocus={desk} className={`${FIELD} lg:h-9 lg:py-0 lg:text-sm`} placeholder={placeholder} autoComplete="off" value={q} onChange={(e) => setQ(e.target.value)} />

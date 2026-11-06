@@ -15,7 +15,6 @@ export interface Held {
 export interface UiState {
   folded: ReadonlySet<number>
   subMore: ReadonlySet<number>
-  needsAll: boolean
   held: ReadonlyMap<number, Held>
   /** the list's settings and open item when the rows began holding: anything else lets them go */
   heldFor: string
@@ -44,7 +43,6 @@ export interface UiState {
   toggleFold(n: number): void
   unfold(n: number): void
   toggleSubMore(n: number): void
-  toggleNeedsAll(): void
   hold(n: number, h: Held, forList: string): void
   release(): void
   dropHeld(n: number): void
@@ -72,7 +70,6 @@ export function createUiStore(kv: KeyValueStore): UiStore {
   return createStore<UiState>()((set) => ({
     folded: new Set(),
     subMore: new Set(),
-    needsAll: false,
     held: new Map(),
     heldFor: '',
     selected: new Set(),
@@ -96,7 +93,6 @@ export function createUiStore(kv: KeyValueStore): UiStore {
     toggleFold: (n) => set((s) => ({ folded: flip(s.folded, n) })),
     unfold: (n) => set((s) => (s.folded.has(n) ? { folded: flip(s.folded, n) } : s)),
     toggleSubMore: (n) => set((s) => ({ subMore: flip(s.subMore, n) })),
-    toggleNeedsAll: () => set((s) => ({ needsAll: !s.needsAll })),
     hold: (n, h, forList) =>
       set((s) => {
         const held = new Map(s.heldFor === forList ? s.held : [])
@@ -118,6 +114,6 @@ export function createUiStore(kv: KeyValueStore): UiStore {
       kv.set('taska.sideHidden', on ? '1' : null)
       set({ sideHidden: on })
     },
-    reset: () => set({ folded: new Set(), subMore: new Set(), needsAll: false, held: new Map(), heldFor: '', selected: new Set(), lastSent: null, sideSel: null }),
+    reset: () => set({ folded: new Set(), subMore: new Set(), held: new Map(), heldFor: '', selected: new Set(), lastSent: null, sideSel: null }),
   }))
 }

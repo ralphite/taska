@@ -66,7 +66,7 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
     by: whoName(d.by),
     when: when(d.t1, m.at),
     rows,
-    showTitle: !isTitled && d.fmt !== 'html',
+    showTitle: !isTitled && d.fmt !== 'html' && d.kind !== 'rules',
     outline: d.fmt === 'html' ? [] : outline(d),
     whole: { n: (d.whole || []).length, open: desk && v.threads.has('doc') && d.whole.length ? { t: { tk: 'doc', comments: d.whole, quote: '' }, isNew: threadNew(seen, d, 'doc', d.whole), ...doneOf(d, 'doc') } : null },
     wholeThreads: desk ? [] : wholeThreads.map((t) => shown(t, 'doc')),

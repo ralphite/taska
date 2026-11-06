@@ -130,7 +130,8 @@ export const listedCommentCount = (d: Doc) => d.blocks.reduce((k, b) => k + b.co
 /** The documents as Documents lists them, the newest first: each with its item (its code and title) and how many
  * comments it has. */
 export function listedDocs(m: ProjectModel): { d: number; title: string; web: boolean; on: string; comments: number }[] {
-  return [...m.docs]
+  return m.docs
+    .filter((d) => d.kind !== 'rules') // the rules are the Rules tab, not one of the documents (I693)
     .sort((a, b) => b.d - a.d)
     .map((d) => {
       const it = m.byN.get(liveN(m, d.n))

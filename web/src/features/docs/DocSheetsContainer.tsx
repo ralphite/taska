@@ -8,6 +8,8 @@ import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
 import { pickSheet } from '../../ui/Pickers'
 import { commentMenuSheet, commentMoveSheet, docMenuSheet } from './DocSheets'
+import { restoreAsk } from './Rules'
+import { nowVersion, rulesDoc } from '../../model/rules'
 import { DocEditContainer } from './DocEditContainer'
 
 type Req<K extends SheetRequest['kind']> = { req: Extract<SheetRequest, { kind: K }> }
@@ -99,4 +101,13 @@ export function DocEditSheet({ req }: Req<'doc-edit'>) {
   useCloseSheetWhen(!!m && 'd' in req && !d)
   if (!m || ('d' in req && !d)) return null
   return <SheetLayout title={d ? `D${d.d}` : `New doc on ${codeOf(m, (req as { n: number }).n)}`} body={<DocEditContainer slug={slug} />} />
+}
+
+/** Restoring a version of the rules asks once: it becomes the next version (I693). */
+export function RulesRestoreSheet({ req }: Req<'rules-restore'>) {
+  const app = useServices('rules', 'sheets')
+  const slug = useProjectRoute()?.slug ?? ''
+  const d = rulesDoc(useProjectModel(slug))
+  const next = (nowVersion(d)?.v ?? 0) + 1
+  return <SheetLayout {...restoreAsk(req.v, next, { cancel: () => app.sheets.close(), restore: () => void app.rules.restore(req.v) })} />
 }

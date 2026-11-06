@@ -15,6 +15,8 @@ const REMOVED: { why: string; gone: RegExp }[] = [
   { why: 'r1080: no "Speak or write about it" beside a place\'s two buttons', gone: /Speak or write about it/ },
   { why: 'r1092, T689 #2: no text filter in the lists; search is the search page/dialog', gone: /SearchHints|searchHints|\bsearchWords\b|\binputMatch\b|inputs\?q=|list\.q\b|Clear search and filters|Searching other projects/ },
   { why: 'r437: no "New input instead" / "Add to … instead" on the New input page', gone: /New input instead|Add to \S+ instead/ },
+  { why: 'I693, r1118: no rule items: no rule type, no R code, no rule in force read from items (the rules are one document)', gone: /type: 'rule'|type [!=]== 'rule'|rule: 'R'|"rule": "R"|RULE_STATUS_WORD|rules_in_force|is_rule_in_force|type [!=]= "rule"/ },
+  { why: 'I693, r1118: no rule list, rule rows or rule item page (Active, Retired, Retire, Reactivate)', gone: /['"]Retire['"]|['"]Reactivate['"]|No matching rules|['"]no-rules['"]|zone: 'rules'|ItemRowSwipeRules|ItemPageRules|label: 'Active'|label: 'Retired'/ },
   { why: 'B682: a voice note shows its words (or that they are coming, or that none were heard), never "Voice note" in their place', gone: /(isAudio|audio\/)[^\n]*['"]Voice note['"]/ },
 ]
 

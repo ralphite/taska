@@ -40,8 +40,6 @@ export const LoadingAndEveryEmptyList: Story = {
               ['no-items', 'wait', false],
               ['none', 'wait', false],
               ['no-match', 'wait', false],
-              ['no-match-rules', 'wait', false],
-              ['no-rules', 'wait', false],
               ['nothing-archived', 'wait', false],
               ['nothing', 'wait', false],
               ['nothing', 'done', false],

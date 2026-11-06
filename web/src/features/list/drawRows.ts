@@ -4,6 +4,7 @@
 
 import { closed, excerpt, lastAgentMessage, workNews, type DropHow } from '../../model/items'
 import { codeOf, filesOf, type ProjectModel } from '../../model/project'
+import { ruleWho } from '../../model/rules'
 import { laterOn } from '../../model/time'
 import type { Item, SavedView } from '../../model/types'
 import { showsView, visible } from '../../model/visible'
@@ -84,21 +85,19 @@ export function rowLook(it: Item, w: DrawWith): RowLook {
 }
 
 export function drawRows(m: ProjectModel, rows: Row[], w: DrawWith): DrawnRow[] {
-  return rows.map((r, i): DrawnRow => {
+  return rows.map((r): DrawnRow => {
     switch (r.kind) {
       case 'item':
         return { kind: 'item', key: 'i' + r.it.n, it: r.it, depth: r.depth, band: r.band, foldable: r.foldable, folded: r.folded, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), said: r.said }
       case 'needs': {
         return { kind: 'needs', key: 'i' + r.it.n, it: r.it, depth: r.depth, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), excerpt: excerpt(r.it), said: r.said, act: r.act }
       }
-      case 'zone':
-        return { kind: 'zone', key: 'z' + r.zone + i, zone: r.zone, label: r.label, n: r.n }
       case 'hidden-kids':
         return { kind: 'hidden-kids', key: 'h' + r.parent, parent: r.parent, depth: r.depth, open: r.open, later: r.later }
-      case 'needs-more':
-        return { kind: 'needs-more', key: 'needs-more', open: r.open, rest: r.rest }
       case 'archive-all':
         return { kind: 'archive-all', key: 'archive-all', n: r.n }
+      case 'proposal':
+        return { kind: 'proposal', key: 'p' + r.p.id, p: r.p, who: ruleWho(r.p.by) }
     }
   })
 }

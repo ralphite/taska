@@ -38,6 +38,7 @@ import { PictureSizes } from './project/pictureSizes'
 import { Activity } from './project/activity'
 import { Restores } from './project/restores'
 import { Docs } from './docs/docs'
+import { Rules } from './docs/rules'
 import { DocComments } from './docs/comments'
 import { DocChoices } from './docs/choices'
 import { DocEditor } from './docs/editor'
@@ -174,6 +175,8 @@ export interface App {
   restores: Restores
   /** a document as you read it: open, close, what a comment goes to, its threads */
   docs: Docs
+  /** the project's rules (I693): edited with why, restored, proposals decided, its pages */
+  rules: Rules
   docComments: DocComments
   /** a document's choices, ticked and sent */
   docChoices: DocChoices
@@ -285,6 +288,7 @@ export function createApp(env: AppEnv): App {
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
   const docs = new Docs({ route, model, view: docView, nav, fields, toasts, desk: env.desk, leaveEditor: () => docEditor.keep() })
   const docEditor: DocEditor = new DocEditor({ route, model, runner, view: docView, sheets, toasts, kv: env.kv, desk: env.desk, open: (dn) => docs.open(dn), close: () => docs.close(), mic: { discard: (key) => dictation.discard(key), settled: () => dictation.settled() } })
+  const rules = new Rules({ route, model, runner, view: docView, nav, sheets, toasts, kv: env.kv })
   const docComments = new DocComments({ route, model, runner, changes, view: docView, box, boxStore, fields, sheets, toasts, desk: env.desk })
   const docChoices = new DocChoices({ route, model, runner, ticks: docTicks, view: docView, box, inputs, toasts, desk: env.desk })
   const projects = new Projects({ api, data, kv: env.kv, toasts, home: () => route.getState().route.page === 'home' })
@@ -330,7 +334,7 @@ export function createApp(env: AppEnv): App {
     voiceSlug: () => slug() || data.getState().projects?.[0]?.name || '',
     pauses: uploadPauses,
   })
-  const actions = new Actions({ finder, items, itemEdits, keyArm, answers, toasts, nav, fields, sheets, docs, docEditor, box, voice, media, selection, listOrder, route, ui, feedback, sheet: sheetStore, itemView, docView, boxStore, desk: env.desk, model })
+  const actions = new Actions({ finder, items, itemEdits, keyArm, answers, toasts, nav, fields, sheets, docs, docEditor, rules, box, voice, media, selection, listOrder, route, ui, feedback, sheet: sheetStore, itemView, docView, boxStore, desk: env.desk, model })
   const keptNotes: KeptNotes = new KeptNotes({
     vault: env.vault ?? memoryVault(),
     kv: env.kv,
@@ -426,6 +430,7 @@ export function createApp(env: AppEnv): App {
     docComments,
     docChoices,
     docEditor,
+    rules,
     settings,
     notices,
     voice,

@@ -22,11 +22,11 @@ export class ItemDrag {
     this.d = d
   }
 
-  /** It starts, if it can be dragged (not a rule, not finished). -> its code */
+  /** It starts, if it can be dragged (not finished). -> its code */
   start(n: number): string | null {
     const m = this.d.model()
     const it = m?.byN.get(n)
-    if (!m || !it || it.type === 'rule' || closed(it.status)) return null
+    if (!m || !it || closed(it.status)) return null
     this.d.store.getState().set({ n, at: null, project: null })
     return codeOf(m, n)
   }

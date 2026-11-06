@@ -38,7 +38,7 @@ export const HELP_GROUPS: HelpGroup[] = [
 | --- | --- |
 | Items | The work, with what needs you at the top; its views include **Archive**, the finished items you put away |
 | Inputs | Everything you said, as you said it, and what each became: on the desktop under **New input**, on the phone its own tab |
-| Rules | How agents work in this project |
+| Rules | One document: how agents work in this project |
 
 ## Finding your way
 
@@ -101,7 +101,7 @@ When you write, Taska tells the connected agent at once. An agent waiting for wo
         key: 'items',
         title: 'Items',
         about: 'Codes, types, statuses, priority, Now and Later, and subitems.',
-        text: `An item is one piece of work: a feature, a bug, an idea, a task or a rule.
+        text: `An item is one piece of work: a feature, a bug, an idea or a task.
 
 ## Codes
 
@@ -113,7 +113,6 @@ Each item has a code: its type's letter and a number, such as **F12** or **B3**.
 | B | Bug |
 | I | Idea |
 | T | Task |
-| R | Rule |
 
 ## Statuses
 
@@ -126,8 +125,6 @@ Each item has a code: its type's letter and a number, such as **F12** or **B3**.
 | {status:done} Done | You accepted it |
 | {status:dropped} Won't do | You decided against it |
 | {status:wait} Needs you | An agent asked you something |
-
-A rule is **Active** {status:open} while agents follow it and **Retired** {status:dropped} once they no longer do.
 
 ## Priority, Now and Later
 
@@ -167,7 +164,7 @@ The views over the list are **Needs you**, **Active**, **All**, **Archive**, **O
 
 ## Search
 
-Search (**⌘K** or **/**, or the magnifier beside Taska in the sidebar) finds items, inputs, rules and documents in every project, by what the words mean. Type, or click the mic and say it. Words that name something you can do, like **Done** or **Settings**, show it under Actions.
+Search (**⌘K** or **/**, or the magnifier beside Taska in the sidebar) finds items, inputs, the rules and documents in every project, by what the words mean. Type, or click the mic and say it. Words that name something you can do, like **Done** or **Settings**, show it under Actions.
 
 ## Order the queue
 
@@ -198,18 +195,22 @@ Select words, or point at a paragraph, to comment on it. The agent answers in th
       {
         key: 'rules',
         title: 'Rules',
-        about: 'Standing instructions every agent follows in this project.',
-        text: `Rules tell agents how to work in this project. Every agent reads them before it starts.
+        about: 'One document of standing instructions every agent follows in this project.',
+        text: `The rules are one document: how agents work in this project. Every agent reads it before it starts, and is told when it changes.
 
 ## Writing good rules
 
-- Keep them few.
-- Make each one about one area.
+- One section per area, under its own heading.
 - Say when it applies.
+- **Edit** changes the whole document; say why in one line.
 
-## Proposed and retired rules
+## Versions
 
-An agent may **propose** a rule: it waits for your approval like any proposal. A rule you no longer want is **retired**: it stays under **Rules** with its history.`,
+Every save is a version: who, when, why. **History** lists them by day. Open one to see what it changed; **Compare with now**; **Restore** makes it the next version, so nothing is lost.
+
+## Proposed changes
+
+An agent proposes a change; it waits in **Needs you**. **View changes** shows it marked in the text: **Approve** or **Not now**. **Comment** answers the agent.`,
       },
       {
         key: 'undo',

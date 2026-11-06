@@ -29,8 +29,8 @@ import { PLACE_LEVELS } from '../../ui/PlaceVoice'
 
 const SIDE_NAME = { docs: 'Documents', log: 'Activity', deleted: 'Deleted' } as const
 
-/** The document's view, with what it does. */
-function useDoc(slug: string, dn: number) {
+/** The document's view, with what it does (the rules' too: RulesContainer). */
+export function useDoc(slug: string, dn: number) {
   const app = useServices('box', 'docChoices', 'docComments', 'docEditor', 'docVoice', 'docs', 'nav', 'seen', 'sheets', 'voice')
   const stores = useStores('box', 'docTicks', 'docView', 'drafts', 'recent', 'recording', 'sheet', 'ui')
   const desk = useLayout() === 'desk'
@@ -58,7 +58,7 @@ function useDoc(slug: string, dn: number) {
   // opened: one of the search's Recent
   const docTitle = d?.title
   useEffect(() => {
-    if (m && docTitle != null && d) stores.recent.getState().saw({ project: slug, kind: 'docs', n: d.n, d: dn, code: 'D' + dn, title: docTitle, on: codeOf(m, d.n) })
+    if (m && docTitle != null && d && d.kind !== 'rules') stores.recent.getState().saw({ project: slug, kind: 'docs', n: d.n, d: dn, code: 'D' + dn, title: docTitle, on: codeOf(m, d.n) })
   }, [stores, m, slug, dn, docTitle]) // eslint-disable-line react-hooks/exhaustive-deps
   const media = useFiles(slug)
   const env: DocEnv = { world, now: m?.at ?? 0, desk, tidy: media.tidy, play: media.play, url: world.url }

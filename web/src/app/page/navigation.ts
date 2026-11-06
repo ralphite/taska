@@ -242,6 +242,13 @@ export class Navigation {
     this.go(tab ?? (r.tab === 'inputs' ? 'items' : r.tab), { kind: 'doc', d }, r.list, !(r.place.kind === 'doc' && r.place.d === d))
   }
 
+  /** The rules (I693): the document (`at` ''), its history, a version, a proposal (model/rules: rulesSeg). */
+  rules(at: string, push: boolean): void {
+    const r = this.here()
+    if (!r) return
+    this.go('rules', at ? { kind: 'rules', at } : { kind: 'tab' }, NO_FILTERS, push)
+  }
+
   /** Documents, Activity or Deleted, in the list's column (the desktop). */
   side(side: 'docs' | 'log' | 'deleted'): void {
     const r = this.here()

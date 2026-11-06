@@ -3,6 +3,7 @@
 // both use it.
 
 import { closed, needsYou } from '../model/items'
+import { needsCount } from '../model/rules'
 import type { ProjectModel } from '../model/project'
 import { projectCard, type ProjectCardFacts } from '../model/projects'
 import type { ProjectRow } from '../model/types'
@@ -39,10 +40,10 @@ export function sideProjects(rows: readonly ProjectRow[] | null | undefined, m: 
           name: slug,
           title: m.facts.title,
           open: openCount(m.items),
-          needs: m.items.filter(needsYou).length,
+          needs: needsCount(m, needsYou),
           closed: m.items.filter((it) => !it.mergedInto && inTab(it, 'items') && closed(it.status)).length,
           inputs: m.inputs.length,
-          docs: m.docs.length,
+          docs: m.docs.filter((d) => d.kind !== 'rules').length,
           agents: m.facts.agents,
           work: m.facts.work,
         }

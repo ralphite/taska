@@ -16,6 +16,7 @@ import { toneOf } from '../ui/tones'
 import { FoundPreview, SearchDialog, type DialogEvents } from './SearchDialog'
 import { isFound, itemOf, searchDialogView, type DialogPlace, type FoundLine } from './searchDialogView'
 import { docWords } from '../model/docs'
+import { rulesDoc } from '../model/rules'
 
 const ACTIONS = [...listedActions(true), ...listedActions(false)]
 
@@ -23,13 +24,14 @@ function Preview({ l, place, now }: { l: FoundLine; place: DialogPlace; now: num
   const x = l.found
   const m = place.model(x.project)
   const it = itemOf(x, place)
-  if ((x.kind === 'items' || x.kind === 'rules') && it && m?.byN.get(it.n) === it) return <ItemPageContainer it={it} m={m} slug={x.project} tab="items" desk preview />
+  if (x.kind === 'items' && it && m?.byN.get(it.n) === it) return <ItemPageContainer it={it} m={m} slug={x.project} tab="items" desk preview />
   if (x.kind === 'docs') {
     const d = m?.docs.find((y) => y.d === x.d)
     return <FoundPreview l={l} text={d ? docWords(d).slice(0, 1500) : ''} meta={foundMeta(x, now)} />
   }
   if (x.kind === 'inputs') return <FoundPreview l={l} text="" meta={foundMeta(x, now)} />
-  return <FoundPreview l={l} text={(it?.body ?? '').slice(0, 1500)} meta={it ? [statusWord(it), it.type === 'rule' ? '' : it.pri].filter(Boolean).join(' · ') : ''} />
+  if (x.kind === 'rules') return <FoundPreview l={l} text={(rulesDoc(m)?.md ?? '').slice(0, 1500)} meta={foundMeta(x, now)} />
+  return <FoundPreview l={l} text={(it?.body ?? '').slice(0, 1500)} meta={it ? [statusWord(it), it.pri].filter(Boolean).join(' · ') : ''} />
 }
 
 export function SearchSheet(_: { req: Extract<SheetRequest, { kind: 'search' }> }) {

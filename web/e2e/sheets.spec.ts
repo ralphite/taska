@@ -49,21 +49,6 @@ test('T529: Delete asked again soon after an Undo keeps asking for its own 3 sec
   await expect(del).toHaveText('Delete')
 })
 
-test("T529: a rule's menu has no New doc, Add subitem or Put under…, on the phone as on the desktop", async ({
-  page,
-  request,
-}) => {
-  const p = await project(request, {
-    agent: 'new task P2 now Write the user docs\nnew rule P2 now Keep commits small\n',
-    approve: ['T1', 'R2'],
-  })
-  await open(page, p, 'R2')
-  await itemMenu(page).click()
-  await expect(menuChoice(page, /^Edit\b/)).toBeVisible()
-  await expect(menuChoice(page, /^Delete/)).toBeVisible()
-  for (const act of [/^New doc/, /^Add subitem/, /^Put under/]) await expect(menuChoice(page, act)).toHaveCount(0)
-})
-
 test("D115: the desktop's item menu has Status…, Priority… and Type…, each opening its choices", async ({ page, request }) => {
   test.skip(!isDesk(page), "the phone's menu shows the three fields in the sheet")
   const p = await project(request, LOOP)

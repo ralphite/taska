@@ -19,7 +19,7 @@ export interface FindState {
   /** what it found last */
   answer: FindAnswer | null
   kind: FindKind | 'all'
-  /** the desktop: only this project's, only open or finished items and rules */
+  /** the desktop: only this project's, only open or finished items */
   project: string | null
   status: FindStatus | null
   /** the desktop: the highlighted row */
