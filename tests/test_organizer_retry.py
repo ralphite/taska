@@ -5,6 +5,7 @@ import os
 import sys
 import tempfile
 import threading
+import time
 import unittest
 from unittest import mock
 
@@ -109,6 +110,31 @@ class OrganizerTogether(unittest.TestCase):
             p.news.bump()
         p.close()
         tmp.cleanup()
+
+
+class BothModels(unittest.TestCase):
+    """B684 (Yadong, #9933): the organizer asks both models at once and takes the first good answer."""
+
+    def ask(self, answers):
+        def fake(who, system, parts, think=0, model=None, **k):
+            delay, plan = answers[model]
+            time.sleep(delay)
+            if isinstance(plan, Exception):
+                raise plan
+            return plan
+        with mock.patch.object(org, "MODELS", list(answers)), mock.patch.object(org.gemini, "ask", side_effect=fake):
+            return org.first_plan([{"text": "x"}], 0)
+
+    def test_the_first_answer_wins(self):
+        self.assertEqual(self.ask({"pro": (0.2, "new task P1 now slow"), "flash": (0.0, "new task P1 now fast")}), "new task P1 now fast")
+
+    def test_an_empty_or_failed_answer_waits_for_the_other(self):
+        self.assertEqual(self.ask({"pro": (0.1, "new task P1 now pro"), "flash": (0.0, "")}), "new task P1 now pro")
+        self.assertEqual(self.ask({"pro": (0.1, "new task P1 now pro"), "flash": (0.0, Refused("Gemini HTTP 503"))}), "new task P1 now pro")
+
+    def test_both_failing_fails(self):
+        with self.assertRaisesRegex(Refused, "503"):
+            self.ask({"pro": (0.0, Refused("Gemini HTTP 503")), "flash": (0.05, Refused("Gemini HTTP 503"))})
 
 
 if __name__ == "__main__":

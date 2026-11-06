@@ -20,11 +20,11 @@ import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from ..agent_text.render import log_entries
-from ..infra import gemini
 from ..domain.vocab import MAX_FILE
 from ..infra.audio import audio_type
 from ..page_api import views
 from ..page_api.sync import Cursor
+from ..services import organizer
 from ..services.project import Project
 from ..services.voice_jobs import answer as voice_answer
 from .agent_routes import presence, scope_of
@@ -45,7 +45,7 @@ def _view(ctx: "AppContext", req: Request, p: Project, since: Optional[Cursor]) 
         out = ctx.pages(p).feed.view(at, p.news.boot, lambda: views.entities(p.state, p.agents), since)
         pres = presence(p)
         out["project"] = views.project_view(p.state, p.agents, slug=p.slug, title=p.title, organizer_on=p.organizing.on,
-                                            organizer_busy=sorted(p.organizing.busy), organizer_model=gemini.MODEL,
+                                            organizer_busy=sorted(p.organizing.busy), organizer_model=" + ".join(organizer.MODELS),
                                             presence=pres["agents"], work=pres["work"], db_path=p.store.path)
     key = ws.key.value
     if _PHONE.search(req.header("User-Agent")):

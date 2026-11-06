@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import base64
 import os
+import queue
 import re
 import sys
 import threading
@@ -46,6 +47,33 @@ def context(p: Project, inp: Input) -> str:
 
 
 PARALLEL = int(os.environ.get("TASKA_ORGANIZE_PARALLEL", 4))  # inputs organized at the same time
+# B684 (Yadong, #9933): each input is asked of both models at once, and the first good answer is the plan
+MODELS = [m.strip() for m in os.environ.get("TASKA_ORGANIZER_MODELS", "gemini-3.1-pro-preview,gemini-3.8-flash").split(",") if m.strip()]
+
+
+def first_plan(parts: List[Dict[str, Any]], think: int) -> str:
+    """The plan of whichever model answers first with words; an empty or failed answer waits for the other. Every
+    model failed: the first failure (a busy service is asked again later by the organizer)."""
+    done: "queue.Queue[Tuple[Optional[str], Optional[Exception]]]" = queue.Queue()
+
+    def one(model: str) -> None:
+        try:
+            done.put((gemini.ask("organizer", INSTRUCTIONS, parts, think=think, model=model), None))
+        except Exception as ex:  # one failing must not lose the other's answer
+            done.put((None, ex))
+
+    for m in MODELS:
+        threading.Thread(target=one, args=(m,), daemon=True).start()
+    errors: List[Exception] = []
+    for _ in MODELS:
+        plan, err = done.get()
+        if plan and plan.strip():
+            return plan
+        if err is not None:
+            errors.append(err)
+    if errors:
+        raise errors[0]
+    return ""
 
 
 class Organizer(threading.Thread):
@@ -105,7 +133,7 @@ class Organizer(threading.Thread):
                     if os.path.getsize(path) < 12 * 1024 * 1024:
                         with open(path, "rb") as fh:
                             parts.append({"inline_data": {"mime_type": mime.split(";")[0], "data": base64.b64encode(fh.read()).decode()}})
-            plan = gemini.ask("organizer", INSTRUCTIONS, parts, think=int(os.environ.get("TASKA_THINK", "512")))
+            plan = first_plan(parts, int(os.environ.get("TASKA_THINK", "512")))
             if not plan.strip():  # an empty answer (MALFORMED_RESPONSE and the like) is not "no changes needed"
                 err = "Gemini gave an empty answer"
         except Exception as ex:
