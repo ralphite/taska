@@ -2,7 +2,7 @@
 # Put new Taska code live without restarting it under Yadong's hands. Run it after committing:
 #   zsh tools/ship.sh
 # Every check runs first (npm run check in web: types, lint, the architecture check, the page's and
-# the server's tests), then the page is built and copied to web/live, which the service serves (a build made to
+# the server's tests), then the page is built; it is copied to web/live, which the service serves, as Taska restarts (a build made to
 # test something never goes live by itself). None of these opens a browser. If nobody used Taska in the last minute, it
 # restarts now. Otherwise this waits and restarts it by itself once Taska has been left alone for a minute; the open
 # pages then reload by themselves at a good moment (B654).
@@ -20,11 +20,14 @@ fi
 }
 npm --prefix web run check >/tmp/taska-ship-check.log 2>&1 || { echo "ship: a check failed (see /tmp/taska-ship-check.log)"; exit 1; }
 npm --prefix web run build >/tmp/taska-ship-build.log 2>&1 || { echo "ship: the page did not build (see /tmp/taska-ship-build.log)"; exit 1; }
-rsync -a --delete --delete-excluded --exclude /storybook/ web/dist/ web/live/  # Storybook is its own server
 idle() { curl -s -m 3 "$URL/api/idle" | /usr/bin/python3 -c 'import json,sys; print(json.load(sys.stdin)["idle"])' 2>/dev/null || echo 9999; }
 # which run of Taska answers: the process listening on its port (a restart, by this or from the page, is another)
 serving() { lsof -tiTCP:${URL##*:} -sTCP:LISTEN 2>/dev/null | head -n 1; }
+# the page goes live with the server that answers it: a new page talking to the old server for the minute this may wait
+# breaks on what changed between them (r1125)
+golive() { rsync -a --delete --delete-excluded --exclude /storybook/ web/dist/ web/live/; }  # Storybook is its own server
 restart() {
+  golive
   launchctl kickstart -k gui/$(id -u)/com.taska.app
   for i in {1..60}; do sleep 1; curl -s -m 2 -o /dev/null "$URL/health" && { echo "ship: Taska restarted"; return 0; }; done
   echo "ship: Taska did not come back in a minute: look at its log"; return 1
@@ -36,6 +39,6 @@ echo "ship: Yadong used Taska in the last minute: restarting once Taska is left 
 while true; do
   sleep 15
   now=$(serving)
-  [[ -n "$now" && "$now" != "$was" ]] && { echo "ship: restarted from the page"; exit 0; }
+  [[ -n "$now" && "$now" != "$was" ]] && { golive; echo "ship: restarted from the page"; exit 0; }
   (( $(idle) >= 60 )) && { restart; exit $?; }
 done
