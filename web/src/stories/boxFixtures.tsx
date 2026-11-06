@@ -193,7 +193,7 @@ export const sentLine = (f: SentFacts, desk: boolean) => <LiveLine f={f} desk={d
 function LiveLine({ f, desk }: { f: SentFacts; desk: boolean }) {
   const [gone, setGone] = useState(false)
   const m = boxProject(f.sent ? [f.sent] : [], f.organizer)
-  const r = feedbackLine({ m, desk, composePage: false, scope: null, mine: f.mine ?? [], lastSent: f.sent?.id ?? null, others: !!f.others })
+  const r = feedbackLine({ m, desk, scope: null, mine: f.mine ?? [], lastSent: f.sent?.id ?? null, others: !!f.others })
   return (
     <div className="bg-zinc-50 p-3 dark:bg-zinc-950">
       <Feedback line={gone ? null : (r?.line ?? null)} on={{ ...noLine, dismiss: () => setGone(true), cancel: (q) => (noLine.cancel(q), setGone(true)) }} />

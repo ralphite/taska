@@ -2,7 +2,7 @@
 // search and filters. Changing tab, opening the New input page or an item on the phone are steps Back can undo;
 // picking items in the desktop's list, search and filters only rewrite the address.
 
-import { LIST_KEYS, NO_FILTERS, parseRoute, projectPath, type ListQuery, type Place } from '../../model/route'
+import { LIST_KEYS, NO_FILTERS, composing, parseRoute, projectPath, type ListQuery, type Place } from '../../model/route'
 import { TAB_WORD, type Tab } from '../../model/words'
 import type { RouteStore } from '../../stores/route'
 
@@ -30,7 +30,7 @@ export class Navigation {
         if (this.desk() && r.place.kind === 'side') queueMicrotask(() => this.go(r.tab, { kind: 'new' }, r.list, false))
       }
       this.settingsSteps = 0
-      this.from = { tab: r.tab, compose: r.place.kind === 'new' || (r.place.kind === 'tab' && r.tab !== 'inputs') }
+      this.from = { tab: r.tab, compose: composing(r) }
     })
   }
 

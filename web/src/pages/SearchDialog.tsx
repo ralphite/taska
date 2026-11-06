@@ -207,12 +207,12 @@ function Field({ v, field, on }: { v: SearchDialogView; field: RefObject<HTMLInp
   )
 }
 
-export function SearchDialog({ v, preview, menuAt = null, on }: { v: SearchDialogView; /** the highlighted row's preview */ preview: ReactNode; /** a filter's menu open from the start (a story's) */ menuAt?: 'project' | 'status' | null; on: DialogEvents }) {
+export function SearchDialog({ v, preview, on }: { v: SearchDialogView; /** the highlighted row's preview */ preview: ReactNode; on: DialogEvents }) {
   const root = useRef<HTMLDivElement>(null)
   const field = useRef<HTMLInputElement>(null)
   const list = useRef<HTMLDivElement>(null)
   const look = useRef<HTMLDivElement>(null)
-  const [menu, setMenu] = useState(menuAt)
+  const [menu, setMenu] = useState<'project' | 'status' | null>(null)
   const rows = [...v.recent, ...v.results, ...v.actions]
   const busy = v.phase === 'listening' || v.phase === 'writing'
   const hasPreview = rows.some(isFound)

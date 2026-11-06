@@ -178,8 +178,9 @@ function agentDid(r: Input, m: ProjectModel): string {
   return b.k === 'filed' ? b.items.map((x) => [x.did, x.item.code].filter(Boolean).join(' ')).join(' · ') : ''
 }
 
-export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; composePage: boolean; scope: string | null; mine: Outgoing[]; lastSent: string | null; others: boolean }): { line: FeedbackLine; final?: string } | null {
-  if ((a.desk && a.composePage) || a.scope) return null // on the New input page each input is in the list; in an item, in its talk
+export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; scope: string | null; mine: Outgoing[]; lastSent: string | null; others: boolean }): { line: FeedbackLine; final?: string } | null {
+  // the phone's only (T689, r576): on the desktop each input is in the New input page's list; in an item, in its talk
+  if (a.desk || a.scope) return null
   const first = a.mine[0]
   const q = first?.quiet && first.state !== 'failed' ? null : first
   if (q) {

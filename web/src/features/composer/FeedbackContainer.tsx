@@ -10,7 +10,7 @@ import type { DraftKey } from '../../model/draftTarget'
 import { codeOf } from '../../model/project'
 import { Feedback } from './Composer'
 
-export function FeedbackContainer({ route, composePage, scope, boxKey }: { route: ProjectRoute; composePage: boolean; scope: string | null; boxKey: DraftKey }) {
+export function FeedbackContainer({ route, scope, boxKey }: { route: ProjectRoute; scope: string | null; boxKey: DraftKey }) {
   const app = useServices('box', 'fields', 'inputActions', 'inputs', 'nav', 'sheets')
   const stores = useStores('data', 'outbox', 'ui')
   const desk = useLayout() === 'desk'
@@ -21,7 +21,7 @@ export function FeedbackContainer({ route, composePage, scope, boxKey }: { route
   const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent && showsOnItsWay(o))
   // the input the line speaks of
   const sentRow = lastSent?.slug === route.slug && m ? m.byId.get(lastSent.rid) : undefined
-  const feedback = feedbackLine({ m, desk, composePage, scope, mine, lastSent: lastSent?.slug === route.slug ? lastSent.rid : null, others: (projects || []).some((p) => p.name !== route.slug) })
+  const feedback = feedbackLine({ m, desk, scope, mine, lastSent: lastSent?.slug === route.slug ? lastSent.rid : null, others: (projects || []).some((p) => p.name !== route.slug) })
   // a line that says where it ended up goes after a while
   useEffect(() => {
     if (!feedback?.final) return

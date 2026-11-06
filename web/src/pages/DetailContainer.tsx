@@ -14,6 +14,7 @@ import { PaneFrame } from '../ui/PaneFrame'
 import { OfflinePill } from './Header'
 import { DeletedPickContainer } from '../features/side/SideListContainer'
 import { DocPaneContainer, DocSheetContainer } from '../features/docs/DocContainer'
+import { composing } from '../model/route'
 
 export function DetailContainer({ route, place, hidden, full = false, footRoom = 0 }: { route: ProjectRoute; place: string; hidden?: boolean; full?: boolean; footRoom?: number }) {
   const app = useServices('items', 'listOrder', 'nav', 'sheets', 'toasts')
@@ -28,7 +29,7 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
   // a document: on the desktop in the pane; on the phone over its item
   const n = route.place.kind === 'item' ? Number(/\d+/.exec(route.place.ref)?.[0]) : doc && !desk ? doc.n : null
   const it = m && n ? m.byN.get(liveN(m, n)) : undefined
-  const compose = route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs')
+  const compose = composing(route)
   const back = () => app.nav.closeItem()
   const from = useStoreValue(stores.route, (s) => s.from)
   // the desktop's two columns, while the pane is wide: the item (or its document) on the left, its talk on the right

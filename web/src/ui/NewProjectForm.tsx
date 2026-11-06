@@ -6,15 +6,14 @@ import { useState } from 'react'
 import { ProjTile } from './bits'
 import { DISABLED, FIELD, PRIMARY } from './tones'
 
-export function NewProjectForm({ value = '', error, tone, onCreate, onCancel }: {
-  value?: string
+export function NewProjectForm({ error, tone, onCreate, onCancel }: {
   error: string
   /** the colour its tile will have, for the name typed */
   tone(name: string): string
   onCreate(title: string): void
   onCancel(): void
 }) {
-  const [name, setName] = useState(value)
+  const [name, setName] = useState('')
   const create = () => name.trim() && onCreate(name.trim())
   return (
     <div className="min-w-0">

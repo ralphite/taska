@@ -57,7 +57,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
       {desk && composePage ? (
         <ComposeHead title={title} tone={toneOf(tones, route.slug)} />
       ) : null}
-      <FeedbackContainer route={route} composePage={composePage} scope={role.scope} boxKey={key} />
+      <FeedbackContainer route={route} scope={role.scope} boxKey={key} />
       <BoxContainer route={route} composePage={composePage} boxRef={boxRef} />
       {desk && composePage ? (
         <SaidLatelyContainer route={route} boxKey={key} view={saidView} draft={mode ? null : <DraftCardContainer route={route} boxKey={key} scope={role.scope} fixing={fixing} setFixing={setFixing} />} />

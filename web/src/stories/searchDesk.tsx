@@ -15,7 +15,7 @@ import { FoundPreview, SearchDialog, type DialogEvents } from '../pages/SearchDi
 import { isFound, searchDialogView, type DialogPlace, type FoundLine } from '../pages/searchDialogView'
 import { Sheet } from '../ui/Sheet'
 import { toneOf } from '../ui/tones'
-import { Frame } from './Frames'
+import { After, Frame } from './Frames'
 import { ADDED, HEARD, MISHEARD, MORE, RIGHT, SHOP, searchOf } from './searchFixtures'
 import { DeskPage, TONES, modelFor, previewOf, titleOf } from './searchDeskPage'
 import { pickSide } from '../model/doubts'
@@ -177,9 +177,18 @@ function StoryDialog({ f, set, onOpen, onClose }: { f: Desk; set(p: Partial<Desk
   }
   return (
     <Sheet open look={{ search: true }} desk onClose={onClose}>
-      <SearchDialog v={v} menuAt={f.menu} preview={isFound(v.lit) ? <Preview l={v.lit} /> : null} on={on} />
+      {/* a filter's menu open: its chip pressed, as you would (the dialog's own state) */}
+      <After run={(root) => openFilter(root, f.menu)}>
+        <SearchDialog v={v} preview={isFound(v.lit) ? <Preview l={v.lit} /> : null} on={on} />
+      </After>
     </Sheet>
   )
+}
+
+/** A filter's chip pressed, as you would: its menu opens (Project is the first chip, Status the second). */
+function openFilter(root: HTMLElement, menu: Desk['menu']) {
+  const chip = menu ? [...root.querySelectorAll<HTMLButtonElement>('[data-chips] button[aria-expanded]')][menu === 'project' ? 0 : 1] : undefined
+  if (chip?.getAttribute('aria-expanded') === 'false') chip.click()
 }
 
 // ---------------------------------------------------------------- the whole of it

@@ -7,6 +7,7 @@ import { usePaneRef } from '../../app/panes'
 import { Rail, Sidebar, type SidebarEvents } from './Sidebar'
 import { SIDE_KEYS, sideLinks } from './sideLinks'
 import { NEW_DRAFT } from '../../model/draftTarget'
+import { composing } from '../../model/route'
 
 const DEV_LINKS = [
   { label: 'Storybook', href: 'http://localhost:6007/', icon: 'book' as const },
@@ -28,7 +29,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
   const route = useStoreValue(stores.route, (s) => s.route)
   const undo = useStoreValue(stores.feedback, (s) => s.undo.at(-1) ?? null)
   const sideHidden = useStoreValue(stores.ui, (s) => s.sideHidden)
-  const composing = route.page === 'project' && (route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs'))
+  const composingNow = route.page === 'project' && composing(route)
   // the list beside the pane (Documents, Activity, Deleted) stays lit while what you opened from it shows
   const side = useStoreValue(stores.route, (s) => s.side)
   const base = `/p/${encodeURIComponent(slug)}/`
@@ -61,14 +62,14 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
     },
   }
   const dev = typeof location !== 'undefined' && /^(localhost|127(\.\d{1,3}){3}|\[::1\])$/.test(location.hostname)
-  if (rail) return <Rail keys={SIDE_KEYS} projects={list} links={links} composing={composing && layout === 'desk'} settingsOpen={route.page === 'project' && route.place.kind === 'settings'} hidden={hidden} on={on} />
+  if (rail) return <Rail keys={SIDE_KEYS} projects={list} links={links} composing={composingNow && layout === 'desk'} settingsOpen={route.page === 'project' && route.place.kind === 'settings'} hidden={hidden} on={on} />
   return (
     <Sidebar
       keys={SIDE_KEYS}
       footRef={drawerFoot}
       phone={layout === 'phone'}
       projects={list}
-      composing={composing && layout === 'desk'}
+      composing={composingNow && layout === 'desk'}
       links={links}
       undoLabel={undo?.label ?? null}
       devLinks={dev ? DEV_LINKS : []}

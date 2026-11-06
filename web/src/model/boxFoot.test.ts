@@ -63,7 +63,7 @@ describe('what the box writes to', () => {
 
 describe('the line over the box', () => {
   const out = (o: Partial<Outgoing>): Outgoing => ({ q: 'q1', slug: 'taska', text: 'Keep the filter', scope: null, files: [], t: 1, state: 'sending', tries: 0, ...o })
-  const base = { m, desk: false, composePage: false, scope: null, mine: [] as Outgoing[], lastSent: null, others: false }
+  const base = { m, desk: false, scope: null, mine: [] as Outgoing[], lastSent: null, others: false }
 
   test('on its way, or not sent', () => {
     expect(feedbackLine({ ...base, mine: [out({})] })?.line).toEqual({ kind: 'sending', q: 'q1', text: 'Keep the filter', more: 0, uploading: false })
@@ -72,7 +72,8 @@ describe('the line over the box', () => {
   })
 
   test('none on the New input page, nor in an item', () => {
-    expect(feedbackLine({ ...base, desk: true, composePage: true, mine: [out({})] })).toBeNull()
+    // the phone's only (T689)
+    expect(feedbackLine({ ...base, desk: true, mine: [out({})] })).toBeNull()
     expect(feedbackLine({ ...base, scope: code, mine: [out({})] })).toBeNull()
   })
 })
