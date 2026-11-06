@@ -64,7 +64,7 @@ A proposal is a new event `DocProposed` (full new Markdown, the version it was w
 |---|---|---|---|
 | Rules tab | List of rule items | Opens the rules document; tab badge only when a proposal waits | change |
 | Status filter, Active / Retired zones, rule rows, swipes, row actions | Yes | Gone (no list) | remove |
-| Rule item page (R12) | Title, status, body, talk | Deleted with its talk; old codes in texts become the rule's title | remove |
+| Rule item page (R12) | Title, status, body, talk | Deleted with its talk; old codes in texts stay as plain text | remove |
 | Item type `rule` (picker, `new rule`, letter R) | Yes | Gone; `new rule` refused with "use `rules propose`" | remove |
 | Reading the rules | Rows, then each item | The document: headings, outline when long, paragraph comments | change |
 | Editing | Each rule's title and body | Edit the whole document (`DocEdit`), optional "why" line | change |
@@ -106,15 +106,13 @@ Most codes point at rules retired long ago (R488 alone is named 102 times in the
 2. Version 1 of each project's rules document: the rules in force (and nextjob's rule waiting for review, as a
    proposal on version 1), in the order `/rules` gives them today, each a section `## <title>` then its body (the
    body's own headings one level down). By "taska", why "Rules moved into one document".
-3. Every code of a rule item in the current texts (messages, documents' current versions, item titles and bodies,
-   inputs, the rules themselves) is replaced by the rule's title in quotes, e.g. `R055` → `“沟通和工作方式”`; for a
-   rule in force it links to that section of the document. One event per changed text, by "taska", why "rule codes
-   removed"; it is not an edit of Yadong's and nobody is told.
+3. Old texts that name rule codes (messages, documents, item bodies; ~95% name rules retired long ago) are **not
+   changed** (r1128): they are history, and the codes there are plain text, no longer links. The rules document's
+   section headings carry no codes, and nothing makes new codes.
 4. All rule items are deleted with their talk: no archive, no item page, no list. `rule` leaves the item types
    (`vocab.py`), so `R` is no longer a code anyone can write; `new rule` is refused with "use `rules propose`".
 5. A project with no rules gets an empty document only when someone first writes or proposes.
-6. `tests/check_data.py`: every rule in force landed in version 1 word for word; no rule items are left; no text
-   holds a code of a former rule. `web/src/removed.test.ts` gains the rule list, rule rows and rule codes.
+6. `tests/check_data.py`: every rule in force landed in version 1 word for word; no rule items are left. `web/src/removed.test.ts` gains the rule list, rule rows and rule codes.
 ## The mock
 
 Storybook, **Prototype / I693 Project rules as one document** (`web/src/stories/i693/`), each on the phone and the
@@ -140,7 +138,7 @@ Approve is Taska's Approve blue, as everywhere else, not black.
 |---|---|---|
 | 1 | An agent's change to the rules | Waits as a proposal for Approve (as today); never applied silently |
 | 2 | The organizer's change from Yadong's own words | Applied at once, marked as from his input, Undo in the toast (as today) |
-| 3 | Old codes like R055 | Gone everywhere: each code in today's texts becomes the rule's title (r1118) |
+| 3 | Old codes like R055 | No codes anywhere new; old texts keep theirs as plain text, unchanged (r1128) |
 | 4 | Retired rules and old rule items | Deleted with their talk; only the backup keeps them, no screen reads it (r1118) |
 | 5 | What one version is | Each save; saves by the same writer less than 10 minutes apart are one (Nota) |
 | 6 | A proposal made on an older version | Taska tells the agent to write it again on the current one; Yadong only approves proposals on the current version |
@@ -155,7 +153,7 @@ What changed, and why:
 
 | # | Before | Now | Why |
 |---|---|---|---|
-| 1 | Old rule items archived, readable; codes link to sections | Deleted; codes in texts replaced by titles; backup only | r1118: no backward compatibility |
+| 1 | Old rule items archived, readable; codes link to sections | Deleted; old texts unchanged, codes plain text; backup only | r1118, r1128 |
 | 2 | Agents and the organizer send the whole new document | They name the sections they replace, add or delete; the server writes the version | R055 is long: a model that retypes the whole text drops or changes words it did not mean to; a section edit can be checked and diffed exactly |
 | 3 | Agents told "rules changed, GET /rules" | Told the why and the changed sections | Agents should not reread a long document for a small change |
 | 4 | One version = saves less than 10 minutes apart, each with a why | The merged version shows every why it holds, newest first | Otherwise a why is lost when two saves merge |
@@ -166,7 +164,10 @@ Risks I checked:
 - The rules document has no item, but `Doc` today belongs to an item (`Doc.n`). The rules document gets `n = 0` and
   `kind "rules"`; the places that look up the item (`commands/docs.py` uses `s.items.get(d.n)`) treat 0 as the project. Comments,
   threads and the editor work on the doc; each lookup of `d.n` is checked when this is built.
-- Replacing codes in messages changes old words; it is limited to the code itself, the rest of each text stays byte
-  for byte, and the backup holds the originals.
 - Search, the type picker, help, `/agent`, `/next`, filters, counts and stories that name rules all change in the
   same change, with `removed.test.ts` locking the rule list, rows and codes out.
+
+## Decided (r1128)
+
+Yadong: the design is fine overall; the obvious points need no ticking. All recommendations above stand, with point 3
+as amended (old texts unchanged).
