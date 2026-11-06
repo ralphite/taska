@@ -11,6 +11,8 @@ from __future__ import annotations
 import http.client
 import json
 import os
+import random
+import re
 import time
 import urllib.error
 import urllib.request
@@ -30,8 +32,9 @@ EMBED_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model
 EMBED_DIMS = 768
 EMBED_BATCH = 100  # texts in one request
 DOCUMENT, QUERY = "RETRIEVAL_DOCUMENT", "RETRIEVAL_QUERY"  # what is searched, what searches it
-ATTEMPTS = 3
-BUSY = frozenset((429, 500, 502, 503, 504))
+ATTEMPTS = 6
+SERVER = frozenset((500, 502, 503, 504))  # its servers busy or failing: often over in seconds (B684)
+TOO_MANY = 429  # over a rate (tokens or requests per minute): it says when to come back
 
 
 def api_key() -> Optional[str]:
@@ -130,6 +133,7 @@ class Gemini:
     post: Callable[[str, bytes, Dict[str, str], float], Json] = https_post
     pause: Callable[[float], None] = time.sleep
     clock: Callable[[], float] = field(default=time.monotonic)
+    jitter: Callable[[], float] = random.random
 
     def ask(self, who: str, q: Question, timeout: float = 120, model: Optional[str] = None) -> str:
         return q.answer(self.generate(who, model or self.model, q.body(), timeout))
@@ -178,19 +182,31 @@ class Gemini:
             return reply
         raise Refused("Gemini failed")
 
-    @staticmethod
-    def _again(fail: Failed, body: Json, attempt: int) -> Optional[float]:
-        """How long to wait before the next attempt (0: at once); None: no more attempts. A model without a
-        thinking switch is asked again at once without it; busy or cut off, after a pause."""
+    def _again(self, fail: Failed, body: Json, attempt: int) -> Optional[float]:
+        """How long to wait before the next attempt (0: at once); None: no more attempts (B684, aimed at what
+        happens most): a model without a thinking switch is asked again at once without it; over a rate (429), after
+        the wait it names; its servers busy or failing (5xx), after 1, 2, 4, 8, 16 s, each spread at random so many
+        waiting do not come back together; the connection dropped, after a short pause. A request that ran out of
+        time is not sent again here: it took the whole time already, and its caller asks again later."""
         config = body.get("generationConfig") or {}
         if fail.status == 400 and "hinking" in fail.detail and "thinkingConfig" in config:
             del config["thinkingConfig"]
             return 0
         if attempt >= ATTEMPTS - 1:
             return None
+        spread = 0.5 + self.jitter()  # 0.5 to 1.5 times the wait
         if fail.status is None:
-            return 2
-        return 2 * (attempt + 1) if fail.status in BUSY else None
+            return None if re.search(r"(?i)timed? ?out", fail.detail) else min(8.0, 2.0 ** attempt) * spread
+        if fail.status == TOO_MANY:
+            named = retry_delay(fail.detail)
+            return min(60.0, named if named is not None else 2.0 ** (attempt + 1)) + self.jitter()
+        return min(16.0, 2.0 ** attempt) * spread if fail.status in SERVER else None
+
+
+def retry_delay(detail: str) -> Optional[float]:
+    """The wait a 429 names (its RetryInfo: "retryDelay": "23s", or "retry in 23.5s"), in seconds."""
+    m = re.search(r'"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"', detail) or re.search(r"(?i)retry in (\d+(?:\.\d+)?)\s*s", detail)
+    return float(m.group(1)) if m else None
 
 
 client = Gemini()

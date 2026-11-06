@@ -11,9 +11,9 @@ from __future__ import annotations
 import os
 import sys
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, List, Optional, Protocol, Sequence, Tuple
+from typing import Any, Callable, List, Optional, Protocol, Sequence, Set, Tuple
 
 from ..agent_text.render import Reading
 from ..commands.run import Command, run_all
@@ -48,10 +48,10 @@ def now_iso() -> str:
 
 @dataclass
 class Organizing:
-    """What the organizer is doing here: whether it runs, and the input it is working on now."""
+    """What the organizer is doing here: whether it runs, and the inputs it is working on now (several at once, B684)."""
 
     on: bool = False
-    busy: Optional[str] = None
+    busy: Set[str] = field(default_factory=set)
 
 
 class Project:

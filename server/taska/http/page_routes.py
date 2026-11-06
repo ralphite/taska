@@ -45,7 +45,7 @@ def _view(ctx: "AppContext", req: Request, p: Project, since: Optional[Cursor]) 
         out = ctx.pages(p).feed.view(at, p.news.boot, lambda: views.entities(p.state, p.agents, p.held), since)
         pres = presence(p)
         out["project"] = views.project_view(p.state, p.agents, slug=p.slug, title=p.title, organizer_on=p.organizing.on,
-                                            organizer_busy=p.organizing.busy, organizer_model=gemini.MODEL,
+                                            organizer_busy=sorted(p.organizing.busy), organizer_model=gemini.MODEL,
                                             presence=pres["agents"], work=pres["work"], db_path=p.store.path)
     key = ws.key.value
     if _PHONE.search(req.header("User-Agent")):

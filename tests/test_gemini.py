@@ -31,7 +31,7 @@ class Fake:
 
 def client(fake):
     waits = []
-    return Gemini(key=lambda: "k", model="m", post=fake, pause=waits.append, clock=lambda: 0.0), waits
+    return Gemini(key=lambda: "k", model="m", post=fake, pause=waits.append, clock=lambda: 0.0, jitter=lambda: 0.5), waits
 
 
 class GeminiTest(unittest.TestCase):
@@ -61,10 +61,28 @@ class GeminiTest(unittest.TestCase):
     def test_busy_then_answers(self):
         g, waits = client(Fake(Failed(503, "busy"), Failed(None, "reset"), REPLY))
         self.assertEqual(g.ask("voice", Question("", [])), "Hello")
-        self.assertEqual(waits, [2, 2])
+        self.assertEqual(waits, [1, 2])
+
+    def test_servers_busy_waits_longer_each_time(self):
+        """B684 (Yadong: aim the retries at what happens most, its servers busy and its rates): 1, 2, 4, 8, 16 s."""
+        g, waits = client(Fake(*[Failed(503, "high demand")] * 5, REPLY))
+        self.assertEqual(g.ask("voice", Question("", [])), "Hello")
+        self.assertEqual(waits, [1, 2, 4, 8, 16])
+
+    def test_over_a_rate_waits_as_long_as_it_says(self):
+        detail = '{"error": {"code": 429, "status": "RESOURCE_EXHAUSTED", "details": [{"retryDelay": "23s"}]}}'
+        g, waits = client(Fake(Failed(429, detail), REPLY))
+        self.assertEqual(g.ask("voice", Question("", [])), "Hello")
+        self.assertEqual(waits, [23.5])
+
+    def test_a_request_that_ran_out_of_time_is_not_sent_again(self):
+        g, waits = client(Fake(Failed(None, "TimeoutError('The read operation timed out')"), REPLY))
+        with self.assertRaisesRegex(Refused, "Gemini unreachable: TimeoutError"):
+            g.ask("voice", Question("", []))
+        self.assertEqual(waits, [])
 
     def test_gives_up(self):
-        g, _ = client(Fake(Failed(429, "slow down\nmore"), Failed(429, "slow down"), Failed(429, "slow down")))
+        g, _ = client(Fake(Failed(429, "slow down\nmore"), *[Failed(429, "slow down")] * 5))
         with self.assertRaisesRegex(Refused, "Gemini HTTP 429: slow down"):
             g.ask("voice", Question("", []))
         g, _ = client(Fake(Failed(403, "no key")))
@@ -81,7 +99,7 @@ class GeminiTest(unittest.TestCase):
         g, waits = client(fake)
         with self.assertLogs("taska", "INFO") as logged:
             got = g.embed("search", texts, DOCUMENT)
-        self.assertEqual((len(got), waits), (len(texts), [2]))
+        self.assertEqual((len(got), waits), (len(texts), [1]))
         url, body, _ = fake.sent[1]
         self.assertTrue(url.endswith(f"/models/{EMBED_MODEL}:batchEmbedContents"))
         self.assertEqual(len(body["requests"]), EMBED_BATCH)

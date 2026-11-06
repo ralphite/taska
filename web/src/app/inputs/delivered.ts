@@ -44,7 +44,7 @@ export class Delivered {
     if (o.unsent && rid) {
       const m = d.model(o.slug)
       const r = m?.byId.get(rid)
-      if (m && r && (r.acked || m.facts.organizer.busy === rid || r.org)) d.toasts.show(`${inputCode(rid)} already reached ${r.org ? 'the organizer' : 'your agent'}; delete it from Inputs`)
+      if (m && r && (r.acked || m.facts.organizer.busy.includes(rid) || r.org)) d.toasts.show(`${inputCode(rid)} already reached ${r.org ? 'the organizer' : 'your agent'}; delete it from Inputs`)
       else void d.runner.send({ id: newId(), slug: o.slug, commands: [{ op: 'delete', id: rid }], patches: [], said: `taking back ${rid}`, t: Date.now() })
     }
     const here = o.slug === d.slug()

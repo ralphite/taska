@@ -82,7 +82,7 @@ export const shopWithHistory = (agents: AgentSeen[] = SEEN, o: { work?: boolean;
     base: 'http://localhost:7340/p/shop',
     remote: o.remote ?? 'https://taska.example/k/a1b2/p/shop',
     key: 'a1b2-c3d4',
-    organizer: { on: true, model: 'gemini-flash-latest', busy: null },
+    organizer: { on: true, model: 'gemini-flash-latest', busy: [] },
     undo: [{ seq: 40, n: 4, f: { status: 'done' }, was: { status: 'review' }, t: at(20) }],
     deleted: [{ kind: 'item', n: 9, code: 'B009', title: 'Export button too small on the phone', at: at(90), more: 2 }, { kind: 'doc', d: 3, title: 'Old export notes', at: at(200), on: 'F001' }],
     deletedInputs: [

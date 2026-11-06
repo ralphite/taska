@@ -98,7 +98,7 @@ const OUTBOX = [
   out({ q: 'q8', slug: 'taska', text: 'Also check the phone layout after that.', state: 'failed', net: true }),
   out({ q: 'q9', slug: 'taska', text: '把输入列表上面的搜索框去掉，用侧栏里的搜索。', state: 'sending' }),
 ]
-const M = modelOf(ITEMS, INPUTS, { slug: 'taska', title: 'taska', organizer: { on: true, model: 'gemini-flash-latest', busy: 'r1030' } })
+const M = modelOf(ITEMS, INPUTS, { slug: 'taska', title: 'taska', organizer: { on: true, model: 'gemini-flash-latest', busy: ['r1030'] } })
 const title = (slug: string) => ({ home: 'Home' })[slug] ?? slug
 const DRAFTS = { [draftKey({ kind: 'amend', mode: 'edit', id: 'r1023' })]: 'my edit' }
 

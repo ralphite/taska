@@ -105,7 +105,7 @@ export interface Said {
 }
 
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
-const project = (s: Said, items = ITEMS) => modelOf(items, s.inputs ?? DAY, { organizer: { on: s.organizer ?? true, model: 'gemini-flash-latest', busy: s.busy ?? null } })
+const project = (s: Said, items = ITEMS) => modelOf(items, s.inputs ?? DAY, { organizer: { on: s.organizer ?? true, model: 'gemini-flash-latest', busy: s.busy ? [s.busy] : [] } })
 const fileUrl = (x: string) => (x.endsWith('.png') ? PICTURE : '#' + x)
 const swipeActs = acts('Input swipe', ['open'] as const)
 const inputActs = acts('Input', ['goto', 'retry', 'send', 'draft', 'moved', 'ref', 'outboxRetry', 'outboxEdit', 'end', 'append', 'loadMore'] as const, { append: 'Input box › What it writes to › Changing what you said', draft: 'Input box › What it writes to › Changing what you said' })

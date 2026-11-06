@@ -227,7 +227,8 @@ export interface ProjectFacts {
   title: string
   width: number
   file: string
-  organizer: { on: boolean; model: string; busy: string | null }
+  /** busy: the inputs the organizer works on now (several at once) */
+  organizer: { on: boolean; model: string; busy: readonly string[] }
   agents: AgentSeen[]
   work: boolean
   agentsVersion: number

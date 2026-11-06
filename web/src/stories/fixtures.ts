@@ -74,7 +74,7 @@ export function projectFacts(f: Partial<ProjectFacts> = {}): ProjectFacts {
     title: 'Taska',
     width: 3,
     file: '',
-    organizer: { on: true, model: 'gemini-flash-latest', busy: null },
+    organizer: { on: true, model: 'gemini-flash-latest', busy: [] },
     agents: [{ name: 'claude-code', t: Date.parse(T), waiting: true }],
     work: true,
     agentsVersion: 0,

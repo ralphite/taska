@@ -4,6 +4,7 @@ itself, longer each time; only a failure that cannot go away by itself (a refuse
 import os
 import sys
 import tempfile
+import threading
 import unittest
 from unittest import mock
 
@@ -71,6 +72,35 @@ class OrganizerRetry(unittest.TestCase):
         until, tries = self.o.later["r1"]
         self.assertEqual(tries, 12)
         self.assertEqual(until - self.clock.now, 600)
+
+
+class OrganizerTogether(unittest.TestCase):
+    """B684 (Yadong: one at a time is not needed): inputs are organized at the same time, not one after another."""
+
+    def test_two_inputs_are_organized_at_once(self):
+        tmp = tempfile.TemporaryDirectory()
+        p = Project(tmp.name, "demo")
+        p.organizing.on = True
+        p.emit(ev.InputAdded(by="you", id="r1", text="Export loses the filter"))
+        p.emit(ev.InputAdded(by="you", id="r2", text="The coupon box is in the way"))
+        both, go = threading.Barrier(2, timeout=5), threading.Event()
+
+        def ask(*a, **k):
+            both.wait()  # each waits until the other is being asked too
+            go.wait(5)
+            return "pass"
+
+        with mock.patch.object(org.gemini, "ask", side_effect=ask):
+            org.Organizer(p).start()
+            with p.lock:
+                self.assertTrue(p.news.wait_for(lambda: p.organizing.busy == {"r1", "r2"}, timeout=5))
+            go.set()
+            with p.lock:
+                self.assertTrue(p.news.wait_for(lambda: all(p.state.inputs[r].org for r in ("r1", "r2")), timeout=5))
+            p.gone = True
+            p.news.bump()
+        p.close()
+        tmp.cleanup()
 
 
 if __name__ == "__main__":

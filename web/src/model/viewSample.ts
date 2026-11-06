@@ -172,7 +172,7 @@ export const VIEW_SAMPLE = {
   "organizer": {
    "on": false,
    "model": "gemini-flash-latest",
-   "busy": null
+   "busy": []
   },
   "agents": [
    {

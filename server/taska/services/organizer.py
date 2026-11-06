@@ -44,6 +44,9 @@ def context(p: Project, inp: Input) -> str:
     return "\n\n".join(out)
 
 
+PARALLEL = int(os.environ.get("TASKA_ORGANIZE_PARALLEL", 4))  # inputs organized at the same time
+
+
 class Organizer(threading.Thread):
     def __init__(self, project: Project, clock: Any = time.time):
         super().__init__(daemon=True)
@@ -65,20 +68,23 @@ class Organizer(threading.Thread):
         return max(1.0, min([30.0] + [until - now for until, _ in self.later.values() if until > now]))
 
     def run(self) -> None:
+        """Inputs are organized several at once, as they come (B684: one at a time was not needed), at most
+        PARALLEL; each in its own thread, the oldest first."""
         p = self.p
         while True:
             with p.lock:
                 while True:
                     if p.gone:  # the project was deleted: its organizer stops; restoring it starts a new one
                         return
-                    todo = [i for i in rules.pending(p.state) if self.due(i) and not p.held(i)]
-                    if todo:
+                    room = PARALLEL - len(p.organizing.busy)
+                    todo = [i for i in rules.pending(p.state) if i.id not in p.organizing.busy and self.due(i) and not p.held(i)]
+                    if todo and room > 0:
                         break
                     p.news.wait(timeout=self.nap())
-                inp = min(todo, key=lambda i: i.number)
-                p.organizing.busy = inp.id
+                for inp in sorted(todo, key=lambda i: i.number)[:room]:
+                    p.organizing.busy.add(inp.id)
+                    threading.Thread(target=self.organize, args=(inp.id,), daemon=True).start()
                 p.news.bump()
-            self.organize(inp.id)
 
     def organize(self, rid: str) -> None:
         p, t0 = self.p, time.time()
@@ -101,7 +107,7 @@ class Organizer(threading.Thread):
         except Exception as ex:
             plan, err = "", str(ex)
         with p.lock:
-            p.organizing.busy = None
+            p.organizing.busy.discard(rid)
             current = p.state.inputs[rid]
             if current.v != version or current.moved or current.acked:
                 p.news.bump()  # a plan made for older words must not overwrite or handle the newer input

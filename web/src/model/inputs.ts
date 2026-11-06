@@ -3,7 +3,7 @@
 
 import type { Input } from './types'
 
-export const organizing = (r: Input, organizer: { on: boolean; busy: string | null }) => organizer.busy === r.id || (!r.acked && organizer.on && !r.org && r.kind !== 'cancelled')
+export const organizing = (r: Input, organizer: { on: boolean; busy: readonly string[] }) => organizer.busy.includes(r.id) || (!r.acked && organizer.on && !r.org && r.kind !== 'cancelled')
 
 /** A recording cancelled with Esc, kept in the inputs: it can be sent after all (B627). */
 export const canSend = (r: Input) => r.kind === 'cancelled' && !r.moved

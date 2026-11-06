@@ -44,7 +44,7 @@ class Moves:
                 raise Refused(f"{rid} was moved already")
             if inp.deleted:
                 raise Refused(f"{rid} is deleted; restore it first")
-            if here.organizing.busy == rid:
+            if rid in here.organizing.busy:
                 raise Refused(f"{rid} is being organized right now; try again in a moment")
             self._leaving(here.slug, rid, True)
             blobs: List[Tuple[FileRef, bytes]] = [(f, here.files.read(f.f)) for f in inp.files]

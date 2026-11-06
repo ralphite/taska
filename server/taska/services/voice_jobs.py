@@ -38,7 +38,7 @@ class VoiceProject(Protocol):
 
     lock: Any
     news: News
-    organizing: Any  # .busy: the input the organizer works on now
+    organizing: Any  # .busy: the inputs the organizer works on now
 
     @property
     def state(self) -> Any: ...
@@ -222,7 +222,7 @@ class VoiceJobs:
         return next((i for i in self._p.state.inputs.values() if not i.moved and any(f.f == fid for f in i.files)), None)
 
     def _late(self, inp: Input) -> bool:
-        return bool(inp.acked or inp.org or self._p.organizing.busy == inp.id)
+        return bool(inp.acked or inp.org or inp.id in self._p.organizing.busy)
 
     def words_in(self, fid: str, job: Job) -> None:
         """A note's words are in: the input that has the note gets them. They come late when an agent or the

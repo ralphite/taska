@@ -99,7 +99,7 @@ describe('which items a list shows', () => {
 })
 
 describe('a recording cancelled with Esc, kept in the inputs (B627)', () => {
-  const organizer = { on: true, busy: null }
+  const organizer = { on: true, busy: [] as string[] }
   const kept = { t: '', by: 'you', text: 'Keep the columns too', scope: null, files: [], acked: false, touched: [], org: null, seq: 1, v: 0, id: 'r4', kind: 'cancelled' as const }
 
   test("it stands as cancelled, is no one's work, and can be sent", () => {
@@ -121,13 +121,13 @@ describe('a recording cancelled with Esc, kept in the inputs (B627)', () => {
   test('B684: an input the organizer has not finished reads Organizing whether it is on it, next or trying again', () => {
     const copy = { cursor: '', items: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), facts: projectFacts(), server: { page: '', update: false }, at: 0 }
     const sent = project(copy, [], 0, [{ id: kept.id, f: { kind: undefined } }]).byId.get(kept.id)!
-    for (const busy of [sent.id, 'r999', null])
+    for (const busy of [[sent.id], ['r999'], []])
       expect(becameOf(sent, project({ ...copy, facts: projectFacts({ organizer: { model: '', ...organizer, busy } }) }), (s) => s)).toEqual({ k: 'organizing' })
   })
 })
 
 describe('what became of an input, in one set of words (B629)', () => {
-  const m = modelOf([item({ n: 14, type: 'bug' }), item({ n: 12 }), item({ n: 7, type: 'task' })], [], { organizer: { on: true, model: '', busy: null } })
+  const m = modelOf([item({ n: 14, type: 'bug' }), item({ n: 12 }), item({ n: 7, type: 'task' })], [], { organizer: { on: true, model: '', busy: [] } })
   const org = (msg: string, f = {}) => ({ ok: true, msg, t: '', keep: false, changed: true, undone: false, ...f })
   const of = (f: Parameters<typeof input>[0]) => becameOf(input(f), m, (s) => (s === 'mobile-app' ? 'Mobile app' : s))
 

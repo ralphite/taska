@@ -124,7 +124,7 @@ export function becameOf(r: Input, m: ProjectModel, title: (slug: string) => str
   if (r.trWait) return { k: 'transcribing' }
   // one word for every input the organizer has not finished: whether it is on it now, next in line or asking Gemini
   // again after a busy answer, it is being organized; no "Queued" to fall back to (B684: it jumped back and forth)
-  if (organizer.busy === r.id || organizing(r, organizer)) return { k: 'organizing' }
+  if (organizing(r, organizer)) return { k: 'organizing' }
   const retry = !r.acked && organizer.on
   if (r.org?.undone) return { k: 'undone', retry }
   if (r.kind === 'answer' && r.scope) {

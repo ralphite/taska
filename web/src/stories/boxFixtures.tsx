@@ -62,7 +62,7 @@ export interface Here {
 }
 
 export const boxProject = (inputs: Input[] = [VOICE_INPUT], organizer = true, docItemGone = false) =>
-  modelOf([item({ n: 12 })], inputs, { organizer: { on: organizer, model: 'gemini-flash-latest', busy: null } }, [docItemGone ? { ...PLAN, n: 99 } : PLAN, WEB])
+  modelOf([item({ n: 12 })], inputs, { organizer: { on: organizer, model: 'gemini-flash-latest', busy: [] } }, [docItemGone ? { ...PLAN, n: 99 } : PLAN, WEB])
 
 export const boxAt = (h: Here, desk: boolean, extra: Partial<ComposerProps> = {}) => <LiveBox h={h} desk={desk} extra={extra} />
 
