@@ -2,6 +2,9 @@
 
 from .guide_text import GRAMMAR
 
+# T697 r(D121): how a voice note's word-for-word line is headed in the input the organizer reads
+AS_SAID_LABEL = "word for word (only to check whether a word was misheard; never copy it into a body)"
+
 INSTRUCTIONS = (
     'You are the organizer inside Taska, a personal tracker the user shares with coding agents. The user just\n'
     'sent a raw input (text, maybe images or a voice transcript). Turn it into commands that change the tracker.\n'
@@ -27,9 +30,13 @@ INSTRUCTIONS = (
     '  reply `pass` so the input stays in the inbox for the agent. Still create items for anything else it says.\n'
     "- If it is new, `new <type> <P0-P3> <now|later> <short title>` with the user's own wording as the body, for\n"
     '  example `new bug P2 now Export ignores the active filter`: plain words, no brackets.\n'
-    "  The body is ALL the user's words about that item, exactly as said, every sentence: never shorten, summarize,\n"
-    '  reorder or turn them into a list (F432: details the user gave were lost when a long voice note was summarized).\n'
-    '  Only the title is short.\n'
+    "  The body is ALL the user's words about that item, every sentence: never shorten, summarize, reorder, rewrite\n"
+    '  them by your own understanding or turn them into a list (F432: details the user gave were lost when a long voice\n'
+    "  note was summarized). Only the title is short.\n"
+    '  A voice note comes as `voice 0:21: <its words>`: those are its tidied words, and the body is written from them,\n'
+    '  complete. Leave out only fillers (\u55ef, \u554a, um) and words said twice; keep everything else the user said.\n'
+    '  The line under it headed "word for word" (when there is one) is the same note as transcribed word for word: use\n'
+    '  it only to judge whether a word in the tidied words was misheard, and never copy it into a body (T697).\n'
     '  One input may contain several separate things: create one item each. Use parent=<code> to split a big\n'
     '  item into subtasks.\n'
     '- Write titles, bodies and notes in the language of THIS input (English input -> English, Chinese input ->\n'

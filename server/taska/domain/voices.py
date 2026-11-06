@@ -51,9 +51,12 @@ def lacking(v: Optional[Voice]) -> str:
     return "(transcription failed)" if v.state == "failed" else "(no words heard)"
 
 
-def voice_line(st: ProjectState, f: FileRef, as_said: bool = False) -> str:
+AS_SAID = "word for word"
+
+
+def voice_line(st: ProjectState, f: FileRef, as_said: bool = False, said_as: str = AS_SAID) -> str:
     """One voice note as agents read it: "voice 0:21: <its words>"; with `as_said`, its words word for word too when
-    they differ (the tidied words are what count)."""
+    they differ, on a line headed `said_as` (the tidied words are what count)."""
     v = st.voices.get(f.f)
     n = length(f)
     head = f"voice {n}:" if n else "voice:"
@@ -64,14 +67,14 @@ def voice_line(st: ProjectState, f: FileRef, as_said: bool = False) -> str:
     if v and v.fixed:
         out += " (corrected by the user)"
     if as_said and v and v.said and " ".join(v.said.split()) != " ".join(words.split()):
-        out += f"\n  word for word: {' '.join(v.said.split())}"
+        out += f"\n  {said_as}: {' '.join(v.said.split())}"
     return out
 
 
-def for_agents(st: ProjectState, text: str, files: Iterable[FileRef], as_said: bool = False) -> str:
+def for_agents(st: ProjectState, text: str, files: Iterable[FileRef], as_said: bool = False, said_as: str = AS_SAID) -> str:
     """What was said as agents read it: the words typed, then one line per voice note with its words."""
     lines = [text.rstrip()] if text.strip() else []
-    lines += [voice_line(st, f, as_said) for f in voices_of(files)]
+    lines += [voice_line(st, f, as_said, said_as) for f in voices_of(files)]
     return "\n".join(lines)
 
 

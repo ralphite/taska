@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from ..agent_text import render
 from ..agent_text.language import parse
-from ..agent_text.organizer_text import INSTRUCTIONS
+from ..agent_text.organizer_text import AS_SAID_LABEL, INSTRUCTIONS
 from ..domain import events as ev, rules
 from ..domain.model import Input
 from ..domain.text import hm
@@ -42,7 +42,10 @@ def context(p: Project, inp: Input) -> str:
                    "Do not repeat completed external actions. The coding agent must see the update: include pass.")
         out.append("Previous input text:\n" + inp.history[-1].text)
         out.append("Linked items:\n" + "\n".join(render.card(rd, st.items[n]) for n in inp.touched if n in st.items))
-    out.append(f"New input {inp.id} at {hm(inp.t)}{scope}:\n{for_agents(st, inp.text, inp.files, as_said=True) or '(no text)'}")
+    # T697 r(D121): a voice note's tidied words are what the body is written from; its words word for word come only
+    # to judge whether something was misheard
+    said = for_agents(st, inp.text, inp.files, as_said=True, said_as=AS_SAID_LABEL)
+    out.append(f"New input {inp.id} at {hm(inp.t)}{scope}:\n{said or '(no text)'}")
     return "\n\n".join(out)
 
 
