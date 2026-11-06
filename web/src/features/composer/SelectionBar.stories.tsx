@@ -37,6 +37,21 @@ export const Bar: Story = {
   ),
 }
 
+/** Words selected in a voice note's words in the box (not a document's): speak about them, or correct them. */
+export const SpeakOrCorrect: Story = {
+  name: "Speak or correct (a voice note's words)",
+  render: () => (
+    <Frames phoneWidth={393} deskWidth={640} height={160}>
+      {() => (
+        <div className="relative h-40">
+          <p className="pt-8 pl-14 text-[15px]">Move the filter to the sidebar</p>
+          <LiveBar at={at} recording={false} comment={false} fix />
+        </div>
+      )}
+    </Frames>
+  ),
+}
+
 /** Recording a comment about them: the bar is its recording strip, where it was (✕, ✓, ↑; B498). Under it, Correct,
  * for a voice note's words. */
 export const Recording: Story = {
