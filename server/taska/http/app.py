@@ -30,7 +30,7 @@ from .static import PageFiles
 
 PROJECT_PATH = re.compile(r"/p/([a-z0-9][a-z0-9-]*)(/.*)?")
 # the page's views: a browser opening one gets the page there
-VIEW_PATH = re.compile(r"/(inputs|archive|rules|new|settings|phone|notifications|spellings|log|deleted|"
+VIEW_PATH = re.compile(r"/(inputs|archive|rules(?:/[a-z0-9/]+)?|new|settings|phone|notifications|spellings|log|deleted|"
                        r"docs|about|projects|organizer|[A-Za-z]\d+)")
 SLOW_IS_FINE = re.compile(r"/api/(changes|words)|[?&]wait=")  # what waits on purpose
 

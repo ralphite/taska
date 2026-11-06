@@ -129,7 +129,7 @@ def rules_view(st: ProjectState, d: Doc) -> View:
                 row["md"], row["note"] = d.md, str(ex)
         props.append(row)
     return {"kind": "rules", "proposals": props,
-            "versions": [{"v": x.v, "by": x.by, "t0": x.t0, "t": x.t, "md": x.md, "whys": x.whys, "srcs": x.srcs,
+            "history": [{"v": x.v, "by": x.by, "t0": x.t0, "t": x.t, "md": x.md, "whys": x.whys, "srcs": x.srcs,
                           "seq": x.seqs[-1], **({"restored": x.restored} if x.restored else {}),
                           **({"p": x.p} if x.p else {}), **({"ses": x.ses} if x.ses else {})} for x in vs]}
 

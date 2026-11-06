@@ -22,7 +22,7 @@ _HEADING = re.compile(r"(#{1,5})(?=\s)")
 
 
 def _rule(it: Item) -> bool:
-    return it.type == "rule" and it.live and not it.archived
+    return it.type == "rule" and it.live and not it.archived  # I693: the old rule items, read once to move them
 
 
 def in_force(st: ProjectState) -> List[Item]:
@@ -53,7 +53,7 @@ def section(it: Item) -> str:
 
 def plan(st: ProjectState, t: str) -> List[ev.Event]:
     """The changes, in order (none: nothing to move)."""
-    rule_items = sorted(n for n, i in st.items.items() if i.type == "rule")
+    rule_items = sorted(n for n, i in st.items.items() if i.type == "rule")  # I693
     if not rule_items:
         return []
     out: List[ev.Event] = []

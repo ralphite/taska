@@ -28,7 +28,9 @@ B1 ask Which format should the export use?
 B1 doc Plan
   # Plan
   First read the filter, then write the rows.
-new rule P1 now Keep the filter in every export
+rules propose Keep the filter in every export
+  add ## Exports
+    - Keep the filter in every export.
 """
 
 
@@ -53,7 +55,8 @@ def main() -> None:
         req = urllib.request.Request(base + "/api/projects", data=b'{"title": "Shop"}', headers={"Content-Type": "application/json"})
         p = base + "/p/" + json.loads(urllib.request.urlopen(req, timeout=10).read())["name"]
         urllib.request.urlopen(urllib.request.Request(p + "/do?by=claude-code", data=SEED.encode()), timeout=10).read()
-        body = json.dumps({"id": "sample-input", "commands": [{"op": "input", "text": "And the sort, please.", "scope": "B1"}]}).encode()
+        body = json.dumps({"id": "sample-input", "commands": [{"op": "input", "text": "And the sort, please.", "scope": "B1"},
+                                                               {"op": "rules", "md": "## Commits\n\n- In English.", "why": "Commits"}]}).encode()
         urllib.request.urlopen(urllib.request.Request(p + "/api/commands", data=body, headers={"Content-Type": "application/json"}), timeout=10).read()
         view = json.loads(urllib.request.urlopen(p + "/api/view", timeout=10).read())
     finally:
