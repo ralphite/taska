@@ -13,7 +13,7 @@ import { Frames } from '../../stories/Frames'
 import { HISTORY, PROPOSAL, rulesDocOf } from '../../stories/rulesFixtures'
 import { BarBtn, ChangedText, NoRules, ProposalCard, restoreAsk, RestoreFoot, RulesHead, VersionList, VersionTools, WhyField } from './Rules'
 
-export default { title: 'Components/Rules/Parts' } satisfies Meta
+export default { title: 'UI/Rules tab/Parts' } satisfies Meta
 type Story = StoryObj
 
 const on = acts('Rules', ['view', 'comment', 'decline', 'approve', 'pick', 'marks', 'now', 'restore', 'cancel', 'why', 'write', 'history'] as const)

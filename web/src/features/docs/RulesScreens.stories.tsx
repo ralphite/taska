@@ -20,7 +20,7 @@ import { DocEdit } from './DocEdit'
 import { restoreAsk } from './Rules'
 import { RulesEditing, RulesHistory, RulesProposal, RulesReading, RulesVersion, type ProposalShown, type RulesFrame } from './RulesScreens'
 
-export default { title: 'Components/Rules/Screens', parameters: { layout: 'fullscreen' } } satisfies Meta
+export default { title: 'UI/Rules tab/Screens', parameters: { layout: 'fullscreen' } } satisfies Meta
 type Story = StoryObj
 
 const on = acts('Rules', ['history', 'copy', 'edit', 'view', 'comment', 'decline', 'approve', 'restore', 'cancel', 'save', 'discard', 'leave', 'back', 'pick', 'undo', 'marks', 'now', 'mic'] as const, {

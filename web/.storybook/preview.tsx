@@ -55,7 +55,7 @@ const preview: Preview = {
                 [
                   'Still to do',
                   ['Open', 'Next in the queue', 'Open, you replied', 'In progress', 'In progress: the agent at work, its name in the tip', 'Waits for review', 'Later'],
-                  'Finished, and rules',
+                  'Finished',
                 ],
                 'Pointer, keys and picking', ['Pointer on it', 'Open, picked, dragged'],
                 'Swiping on the phone', ['Forward', 'Back', 'Rules and archived rows'],
@@ -66,10 +66,11 @@ const preview: Preview = {
               'Group heads',
               'Picked, folded, just acted on',
               'Selection bar',
-              'Views', ["The Items tab's views", 'Your own views, sorting', 'Archive and Rules', 'Filtered'],
+              'Views', ["The Items tab's views", 'Your own views, sorting', 'Archive', 'Filtered'],
               'Empty list',
               'Dragging items',
             ],
+            'Rules tab', ['Screens', 'Parts', 'Restored'],
             'Item pane',
             [
               'Bar',

@@ -12,7 +12,7 @@ import { modelOf } from './fixtures'
 import { Frames } from './Frames'
 import { RESTORED, rulesDocOf } from './rulesFixtures'
 
-export default { title: 'Components/Rules/Restored', parameters: { layout: 'fullscreen' } } satisfies Meta
+export default { title: 'UI/Rules tab/Restored', parameters: { layout: 'fullscreen' } } satisfies Meta
 
 const on = acts('Rules', ['history', 'copy', 'edit', 'undo', 'close'] as const)
 
