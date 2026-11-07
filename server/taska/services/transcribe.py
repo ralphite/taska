@@ -53,7 +53,7 @@ class Hearing:
 #   whatever the format, loudness or silence was changed to; only the strong model heard the rest. Such a note (exact
 #   digital silence inside the speech, which none of 59 notes from a computer had) is heard by it too.
 # T687 (Yadong's choice, #9841, measured on 40 of his notes): the speech model's words show at once (~2 s); the strong
-# model hears the note too and its words win (D121, 11-06: waited for with no time limit, asked again when it fails); tidying
+# model hears the note too and its words win (D121, 11-06: a try with no answer in 30 s fails and it is asked again); tidying
 # and pieces use gemini-3.5-flash (tidying: median 1.7 s against 45 s, judged 4.04 against 4.29).
 VOICE_MODEL = os.environ.get("TASKA_VOICE_MODEL", "gemini-3.5-flash")
 ASR_MODEL = os.environ.get("TASKA_ASR_MODEL", "gemini-3.5-transcribe")
@@ -61,7 +61,8 @@ PRO_MODEL = os.environ.get("TASKA_PRO_MODEL", "gemini-3.1-pro-preview")
 # How long one voice note may take, in seconds: the strong model once took 250 s on a phone note. Each model gets its
 # own cap; what one did not finish in time is left out.
 VOICE_CAP = float(os.environ.get("TASKA_VOICE_CAP", 50))  # the main and the speech model
-PRO_TRIES = int(os.environ.get("TASKA_PRO_TRIES", 3))  # D121 (11-06): the strong model has no time limit; failed, asked again
+PRO_TRIES = int(os.environ.get("TASKA_PRO_TRIES", 3))  # D121 (11-06): failed, the strong model is asked again
+PRO_TRY = float(os.environ.get("TASKA_PRO_TRY", 30))  # T697 (11-06): one try with no answer in 30 s failed (the slowest answer was 8 s)
 
 
 def voice_main(audio: Dict[str, Any], prompt: str, model: Optional[str] = None) -> str:
@@ -145,9 +146,10 @@ Step = Dict[str, Any]
 
 
 def strong(steps: List[Step], name: str, audio: Dict[str, Any], prompt: str, times: Dict[str, float], key: str) -> Callable[[], str]:
-    """The strong model's words, waited for with no time limit (Yadong on D121, 11-06: "not 10 s: wait, and when it
-    fails, ask again"): up to PRO_TRIES tries, each its own step (every result kept), a little apart."""
-    hear = lambda: voice_main(audio, prompt, PRO_MODEL)
+    """The strong model's words (Yadong on D121, 11-06: "not 10 s: wait, and when it fails, ask again"; T697: a try
+    with no answer in PRO_TRY seconds has failed, as connections stalled for 4 to 6 minutes): up to PRO_TRIES tries,
+    each its own step (every result kept), a little apart."""
+    hear = lambda: capped(lambda: voice_main(audio, prompt, PRO_MODEL), PRO_TRY, "the strong model")  # a stalled connection is a failed try
     first = ran(steps, name, PRO_MODEL, hear)  # its step in the order the steps are started
 
     def go() -> str:

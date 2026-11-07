@@ -10,6 +10,7 @@ import json
 import os
 import sys
 import tempfile
+import threading
 import unittest
 from collections import Counter
 from unittest import mock
@@ -90,6 +91,23 @@ class Steps(unittest.TestCase):
         self.assertEqual([s["step"] for s in steps], ["pro", "pro_2", "pro_3"])
         self.assertEqual([s.get("error") for s in steps[:2]], ["Gemini HTTP 503"] * 2)
         self.assertEqual((steps[2]["text"], steps[2].get("chosen"), out["tr_by"]), (SAID, True, "pro"))
+
+    def test_a_try_with_no_answer_in_30_s_fails_and_is_asked_again(self):
+        # T697 (Yadong, 11-06, "照这个改"): each try waits PRO_TRY (30 s); a stalled one is a failed try
+        self.assertEqual(tr.PRO_TRY, 30)
+        tries = []
+
+        def stalls_once(audio, prompt, model=None):
+            tries.append(1)
+            if len(tries) == 1:
+                threading.Event().wait(0.3)  # time.sleep is a no-op in these tests
+            return SAID
+        with mock.patch.object(tr, "PRO_TRY", 0.1):
+            out = self.heard(stalls_once)
+        steps = [s for s in out["steps"] if s["step"].startswith("pro")]
+        self.assertEqual([s["step"] for s in steps], ["pro", "pro_2"])
+        self.assertIn("timed out", steps[0]["error"])
+        self.assertEqual((steps[1]["text"], out["tr_by"]), (SAID, "pro"))
 
     def test_the_words_set_aside_are_kept_too(self):
         out = self.heard(lambda audio, prompt, model=None: "导出")  # it stopped early: the speech model's words
