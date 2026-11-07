@@ -1,11 +1,13 @@
 // The desktop's search (F479), the way desktop apps have it: a dialog over nearly the whole window whose top is a large
-// field with the focus (typing is the default; the mic at its end records, with the time and the level only, then
-// Transcribing…, as the phone does); under it the kinds and the Project and Status filters; then one list, best
-// first, each row with its project as a path (nothing typed: Recent; words that name an action: Actions), the
+// field with the focus (typing is the default; an x clears the words; the mic at its end records, with the time and
+// the level only, then Transcribing…, as the phone does); under it the kinds and the Project and Status filters; then
+// one list, best first (All: by kind, each kind named), each row with its project as a path (nothing typed: Recent;
+// words that name an action: Actions), the
 // highlighted row's preview beside it (each scrolls only when it holds more than the room), and the keys at the foot.
 // Props only; it sits in the page's sheet.
 
-import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
+import { Fragment, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
+import { flushSync } from 'react-dom'
 import { RecBar } from '../ui/PlaceVoice'
 import { DraftWords } from '../features/composer/Doubts'
 import { CHIP, ViewBar } from '../features/list/ViewBar'
@@ -194,6 +196,21 @@ function Field({ v, field, on }: { v: SearchDialogView; field: RefObject<HTMLInp
         className="min-w-0 flex-1 bg-transparent text-lg outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
       />
       {v.faded ? <Icon n="spinner" c="size-4 shrink-0 animate-spin text-zinc-400" sw="2.25" /> : null}
+      {/* words there: the x beside the mic clears them, the focus kept in the field (T642 R9) */}
+      {v.words && !busy ? (
+        <button
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            flushSync(() => on.type(''))
+            field.current?.focus()
+          }}
+          aria-label="Clear the words"
+          title="Clear"
+          className={ICON}
+        >
+          <Icon n="x" c="size-4.5" />
+        </button>
+      ) : null}
       {rec ? (
         <button onClick={on.stop} aria-label="Stop and search" title="Stop and search · ↵" className="grid size-8 shrink-0 place-items-center rounded-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900">
           <Icon n="up" c="size-4" sw="2.25" />
@@ -355,7 +372,11 @@ export function SearchDialog({ v, preview, on }: { v: SearchDialogView; /** the 
               <div ref={list} className={`flex flex-col gap-0.5 p-1.5 transition-opacity ${v.faded ? 'opacity-45' : ''}`}>
                 {v.recent.length ? <p className={LABEL}>Recent</p> : null}
                 {[...v.recent, ...v.results].map((l, i) => (
-                  <FoundRow key={l.key} l={l} i={i} sel={i === v.sel} marks={v.recent.length ? [] : v.marks} recent={!!v.recent.length} on={on} />
+                  <Fragment key={l.key}>
+                    {/* All: each kind named over its first row (T642 R9) */}
+                    {l.head ? <p className={LABEL}>{l.head}</p> : null}
+                    <FoundRow l={l} i={i} sel={i === v.sel} marks={v.recent.length ? [] : v.marks} recent={!!v.recent.length} on={on} />
+                  </Fragment>
                 ))}
                 {v.actions.length ? <p className={LABEL}>Actions</p> : null}
                 {v.actions.map((a, j) => {
