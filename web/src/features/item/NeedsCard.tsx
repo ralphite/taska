@@ -34,11 +34,16 @@ export interface CardEvents extends TalkEvents {
 
 const msgName = (x: { by: string; ses?: string | null }) => whoName(x.by) + (x.ses ? ` · ${x.ses}` : '')
 
-export function NeedFrame({ icon, title, t, done = false, body, foot, hint = '', going = '', act = null, now }: {
+/** A question's words, the card's most prominent (T642 R9): its paragraphs a step larger and heavier than the rest. */
+const QUESTION = '[&>p]:text-[16px] [&>p]:font-medium'
+
+export function NeedFrame({ icon, title, t, done = false, quiet = false, body, foot, hint = '', going = '', act = null, now }: {
   icon: IconName
   title: string
   t?: string
   done?: boolean
+  /** the title only says who asks: faint and plain, like the time beside it, so the question under it stands out */
+  quiet?: boolean
   body: ReactNode
   foot: ReactNode
   hint?: string
@@ -51,7 +56,13 @@ export function NeedFrame({ icon, title, t, done = false, body, foot, hint = '',
     <section className={`w-full rounded-2xl border ${done ? 'group/form border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900' : NEEDS_CARD}`}>
       <div className="flex items-center gap-2.5 px-4 pt-3.5 lg:px-5 lg:pt-4">
         <Icon n={icon} c={`size-5 ${done ? 'text-zinc-400 dark:text-zinc-500' : 'text-amber-600 dark:text-amber-400'}`} />
-        <p className={`min-w-0 flex-1 text-sm font-semibold lg:text-[15px] ${done ? 'text-zinc-600 dark:text-zinc-300' : 'text-amber-900 dark:text-amber-200'}`}>{title}</p>
+        <p
+          className={`min-w-0 flex-1 text-sm ${
+            quiet ? MUTED : `font-semibold lg:text-[15px] ${done ? 'text-zinc-600 dark:text-zinc-300' : 'text-amber-900 dark:text-amber-200'}`
+          }`}
+        >
+          {title}
+        </p>
         {act}
         {going ? (
           <span className="animate-pulse text-xs text-blue-600 dark:text-blue-400">{going}</span>
@@ -158,7 +169,7 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
   const name = msgName(m || it.wait || { by: it.by && it.by !== 'you' ? it.by : 'agent' })
   const text = (x: Message) => <MsgText x={x} env={env} on={on} whole />
   const card = (icon: IconName, title: string, body: ReactNode, buttons: ReactNode, hint = '') => (
-    <NeedFrame icon={icon} title={title} t={m?.t} body={body} foot={buttons} hint={hint} now={env.now} />
+    <NeedFrame icon={icon} title={title} t={m?.t} quiet={icon === 'ask'} body={body} foot={buttons} hint={hint} now={env.now} />
   )
   if (it.wait) {
     const w = it.wait
@@ -166,7 +177,7 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
     const asking = env.choosing
     const body = (
       <>
-        <Rich text={w.text} world={env.world} cls="text-zinc-900 dark:text-zinc-100" choosing={asking} onRef={on.ref} onPicture={on.picture} />
+        <Rich text={w.text} world={env.world} cls={`${QUESTION} text-zinc-900 dark:text-zinc-100`} choosing={asking} onRef={on.ref} onPicture={on.picture} />
         {w.files?.length ? (
           <div className="flex gap-2 overflow-x-auto lg:scrollbar-thin">
             <Thumbs files={w.files} url={env.url} size="h-48 w-24" play={env.play} tidy={env.tidy} on={on} />
@@ -327,13 +338,14 @@ export function Answered({ it, x, done, env, on, reasking, going = '' }: {
         title={`${msgName(x)} asks you`}
         t={x.t}
         now={env.now}
+        quiet
         // Cancel in the head, as when a decision is changed: the buttons keep one line on the phone
         act={
           <button onClick={on.cancelReask} className={MODIFY_LINK.replace(/lg:opacity-0\S*|lg:group-hover\S*/g, '')}>
             Cancel
           </button>
         }
-        body={<Rich text={x.text} world={env.world} cls="text-zinc-900 dark:text-zinc-100" choosing={env.choosing} onRef={on.ref} onPicture={on.picture} />}
+        body={<Rich text={x.text} world={env.world} cls={`${QUESTION} text-zinc-900 dark:text-zinc-100`} choosing={env.choosing} onRef={on.ref} onPicture={on.picture} />}
         foot={
           <>
             {last ? <KeepBtn it={it} on={on} /> : null}
@@ -350,6 +362,7 @@ export function Answered({ it, x, done, env, on, reasking, going = '' }: {
       now={env.now}
       going={going}
       done
+      quiet
       // no Edit while the new answer is on its way: it comes back once Taska has it (D115 #5)
       act={
         going ? null : (
@@ -358,7 +371,7 @@ export function Answered({ it, x, done, env, on, reasking, going = '' }: {
           </button>
         )
       }
-      body={<Rich text={x.text} world={env.world} cls="text-zinc-600 dark:text-zinc-300" done={done} onRef={on.ref} onPicture={on.picture} />}
+      body={<Rich text={x.text} world={env.world} cls={`${QUESTION} text-zinc-600 dark:text-zinc-300`} done={done} onRef={on.ref} onPicture={on.picture} />}
       foot={
         <>
           {last ? <KeepBtn it={it} on={on} /> : null}
