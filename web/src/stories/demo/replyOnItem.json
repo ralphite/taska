@@ -1,0 +1,20 @@
+{
+ "note": "What lies outside Taska in the Demo \"Reply to an agent\" (T589): the words the microphone's recording (replyOnItem.webm) says, as transcription gives them; the organizer's answer for what is said on an item an agent works on (it is left for the agent); and Claude Code's replies, as it would write them. web/scripts/record-demo.mjs hands them to the real server it records against.",
+ "story": "demo-reply-to-an-agent--phone-and-desktop",
+ "words": "安卓上也看一下，别只测 iPhone。",
+ "plan": "pass\n",
+ "replies": [
+  {
+   "by": "claude-code",
+   "session": "worker",
+   "ms": 2500,
+   "do": "ack {input}\nF01 say 好：iOS 上改成在新标签页打开 CSV，页面顶部提示「点分享 › 存储到“文件”」。今天下午和电脑版一起上线。"
+  },
+  {
+   "by": "claude-code",
+   "session": "worker",
+   "ms": 2500,
+   "do": "ack {input}\nF01 say 收到，安卓 Chrome 也测一遍，结果贴到 T15。"
+  }
+ ]
+}

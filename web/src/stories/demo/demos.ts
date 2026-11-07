@@ -16,6 +16,9 @@ import rulesPhone from './recordings/rulesChange.phone.json'
 import rulesDesk from './recordings/rulesChange.desk.json'
 import rowsPhone from './recordings/handleRows.phone.json'
 import rowsDesk from './recordings/handleRows.desk.json'
+import replyClip from './replyOnItem.webm?inline'
+import replyPhone from './recordings/replyOnItem.phone.json'
+import replyDesk from './recordings/replyOnItem.desk.json'
 
 export interface Demo {
   id: string
@@ -174,4 +177,47 @@ export const handleRows: Demo = {
   recordings: { phone: rowsPhone, desk: rowsDesk },
 }
 
-export const DEMOS: Record<string, Demo> = { sayIt, answerAndAccept, rulesChange, handleRows }
+// Reply to Claude Code on F01: typed, then said; its replies come (replyOnItem.json).
+/** A paragraph on the page with these words (a message in an item's talk). */
+const words = (name: RegExp, label: string): Target => ({ css: 'p', name, label })
+const typed = 'iOS 先在新标签页打开，让用户自己点分享存到“文件”。'
+const reply1 = words(/新标签页打开 CSV/, 'Claude Code’s reply')
+const said = words(/安卓上也看一下/, 'Your words')
+const reply2 = words(/安卓 Chrome 也测一遍/, 'Claude Code’s reply')
+
+/** Reply to an agent on an item, typed and said; the agent's reply comes (D124: the fifth Demo). */
+export const replyOnItem: Demo = {
+  id: 'replyOnItem',
+  start: '/p/shop/',
+  now: story.now,
+  clip: replyClip,
+  tours: {
+    phone: {
+      steps: [
+        { say: 'Open an item Claude Code is working on.', target: title(1, 'F01'), wait: 15000 },
+        { say: 'Tap the box and type a reply.', target: role('textbox', 'Input', { label: 'The box' }), type: typed, until: shows(button('Send')) },
+        { say: 'Tap ↑ to send it.', target: button('Send') },
+        { say: 'Claude Code’s reply comes here.', until: shows(reply1) },
+        { say: 'Tap the mic to say more.', target: button('Record a voice note'), pace: 2000 },
+        { say: 'Say it (here a recording plays), then tap ↑.', target: button('Stop and send'), pace: 4000 },
+        { say: 'Taska writes out your words.', until: shows(said) },
+        { say: 'Claude Code replies again.', until: shows(reply2) },
+      ],
+    },
+    desk: {
+      steps: [
+        { say: 'Open an item Claude Code is working on.', target: title(1, 'F01'), wait: 15000 },
+        { say: 'Click the box and type a reply.', target: role('textbox', 'Input', { label: 'The box' }), type: typed, until: shows(button('Send')) },
+        { say: 'Click ↑ to send it.', target: button('Send') },
+        { say: 'Claude Code’s reply comes here.', until: shows(reply1) },
+        { say: 'Click the mic to say more.', target: button('Record a voice note'), pace: 2000 },
+        { say: 'Say it (here a recording plays), then click ↑.', target: button('Stop and send'), pace: 4000 },
+        { say: 'Taska writes out your words.', until: shows(said) },
+        { say: 'Claude Code replies again.', until: shows(reply2) },
+      ],
+    },
+  },
+  recordings: { phone: replyPhone, desk: replyDesk },
+}
+
+export const DEMOS: Record<string, Demo> = { sayIt, answerAndAccept, rulesChange, handleRows, replyOnItem }
