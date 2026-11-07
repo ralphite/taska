@@ -183,7 +183,12 @@ const t0 = Date.now()
 let sbDir = opt('--storybook')
 if (flag('--build') || !sbDir) {
   sbDir = path.join(ROOT, 'web', 'dist-storybook')
-  execFileSync('npm', ['--prefix', path.join(ROOT, 'web'), 'run', 'build-storybook'], { stdio: ['ignore', 'ignore', 'inherit'] })
+  try {
+    execFileSync('npm', ['--prefix', path.join(ROOT, 'web'), 'run', 'build-storybook'], { stdio: 'pipe', maxBuffer: 64 << 20 })
+  } catch (e) { // its warnings only when it fails
+    console.log(`Error: the Storybook build failed\n${String(e.stderr || e).slice(-3000)}`)
+    process.exit(1)
+  }
 }
 const stateDir = opt('--state', path.join(ROOT, '.logs', 'ui-audit'))
 const outDir = opt('--out') || fs.mkdtempSync(path.join(os.tmpdir(), 'ui-audit-')) // its own: removed at the end
