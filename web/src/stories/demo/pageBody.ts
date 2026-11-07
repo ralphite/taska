@@ -1,0 +1,5 @@
+// The page's body classes, as web/index.html sets them: a Demo frame gives its body the same (pageBody.test.ts keeps
+// the two equal). Imported as a string because Storybook's dev server answers index.html?raw with the page itself,
+// not its text, and a Demo then failed to load there (T589, r1161).
+export const PAGE_BODY =
+  'h-dvh overflow-hidden bg-white text-zinc-900 antialiased [-webkit-tap-highlight-color:transparent] dark:bg-zinc-950 dark:text-zinc-100 [&_:is(button,a[href],summary)[data-pressed]]:opacity-60 [&_[data-expand][data-pressed]]:opacity-70 [&_button:is(:disabled:not([aria-pressed]),[aria-busy=true])]:opacity-40 [&_button:disabled:not([aria-pressed])]:cursor-not-allowed [&_button[aria-busy=true]]:cursor-progress [&_:is(button,a[href],summary):focus-visible]:outline-2 [&_:is(button,a[href],summary):focus-visible]:outline-offset-2 [&_:is(button,a[href],summary):focus-visible]:outline-blue-500 dark:[&_:is(button,a[href],summary):focus-visible]:outline-blue-400 motion-reduce:[&_*]:transition-none motion-reduce:[&_*]:animate-none'

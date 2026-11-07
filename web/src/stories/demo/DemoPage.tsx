@@ -8,7 +8,7 @@ import { AppProvider, type Layout } from '../../app/context'
 import { createApp } from '../../app/createApp'
 import { installPressFeedback } from '../../app/press'
 import { App } from '../../pages/App'
-import page from '../../../index.html?raw'
+import { PAGE_BODY } from './pageBody'
 import type { Demo } from './demos'
 import { fixClock, fixMic, frameEnv, lockNetwork, recordingTransport, type DemoNet } from './frameEnv'
 import { replay, type ReplayLog } from './replay'
@@ -31,7 +31,7 @@ function start(demo: Demo, layout: Layout, record: boolean) {
   }
   lockNetwork(w)
   // the page's own body, as index.html gives it
-  document.body.className = /<body class="([^"]*)"/.exec(page)?.[1] ?? ''
+  document.body.className = PAGE_BODY
   installPressFeedback()
   return createApp(frameEnv(transport, demo.start, layout === 'desk'))
 }
