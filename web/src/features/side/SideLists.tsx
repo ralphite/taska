@@ -150,7 +150,8 @@ export function DeletedList({ rows, picked, on }: { rows: GoneRow[]; picked: str
               </>
             )}
           </div>
-          <button onClick={() => on.restore(x.key)} className={HOVER_BTN}>
+          {/* on the first line, as Undo beside activity (-my-1: its padding outside the row's line) */}
+          <button onClick={() => on.restore(x.key)} className={`${HOVER_BTN} -my-1`}>
             Restore
           </button>
         </div>
