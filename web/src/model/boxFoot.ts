@@ -118,7 +118,11 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
       ? { ...none, scope: reply, doc: docOf.d, line, placeholder: `Reply to ${reply}…`, send: 'Send' }
       : { aim: { d: docOf.d, target: { key: 'doc', quote: '' } }, scope: null, doc: docOf.d, line, placeholder: `Comment on D${docOf.d}…`, send: 'Comment' }
   }
-  if (docOf && !desk && !mode && docOf.kind !== 'rules') {
+  if (docOf && !mode && docOf.kind === 'rules') {
+    // the rules, nothing picked: the box comments on them, desktop and phone alike (F706, r1145, r1146)
+    return { aim: { d: docOf.d, target: { key: 'doc', quote: '' } }, scope: null, doc: docOf.d, line: null, placeholder: 'Comment on the rules…', send: 'Comment' }
+  }
+  if (docOf && !desk && !mode) {
     // the phone, nothing picked: a comment on the whole document (Reply to its item instead)
     const host = m ? liveN(m, docOf.n) : null
     const line: BoxLine = { icon: 'comment', label: `Comment on D${docOf.d}`, detail: '· or tap a part', ...(host != null && m?.byN.has(host) ? { right: { kind: 'to-item', code: codeOf(m, host) } } : {}) }

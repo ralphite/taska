@@ -24,6 +24,17 @@ describe('what the box writes to', () => {
     expect(boxRole(m, at({ kind: 'tab' }), false, 'taska', null, nothing, noTicks).line).toBeNull()
   })
 
+  // Yadong (F706, r1146): on the rules, the box comments on them; change only on his explicit word
+  test('the rules open, nothing picked: a comment on the rules, desktop and phone', () => {
+    const rules = { ...doc(), d: 9, n: 0, kind: 'rules' as const }
+    const rm = modelOf([item({ n: 12 })], [], {}, [rules])
+    const rulesAt: Place = { page: 'project', slug: 'taska', tab: 'rules', place: { kind: 'tab' }, list: NO_FILTERS }
+    for (const desk of [true, false]) {
+      const r = boxRole(rm, rulesAt, desk, 'taska', null, nothing, noTicks)
+      expect([r.aim, r.scope, r.line, r.placeholder, r.send]).toEqual([{ d: 9, target: { key: 'doc', quote: '' } }, null, null, 'Comment on the rules…', 'Comment'])
+    }
+  })
+
   test('an item open: a reply on it', () => {
     const r = boxRole(m, at({ kind: 'item', ref: code }), true, 'taska', null, nothing, noTicks)
     expect([r.scope, r.line, r.placeholder]).toEqual([code, null, `Reply to ${code}…`])
