@@ -121,7 +121,9 @@ export function visitFound(v: Visit, model: (slug: string) => ProjectModel | nul
     return { project: v.project, kind: 'docs', key: 'd' + v.d, n: v.n, d: v.d, code: 'D' + v.d, title: d?.title ?? v.title, on: v.on }
   }
   const it = m?.byN.get(v.n)
-  const item = it ?? ({ n: v.n, title: v.title, type: v.type ?? 'feature', status: v.status ?? 'open' } as Item)
+  // a project whose model is not here: the row drawn from what was kept of the visit, a whole item (B710: a partial
+  // one, cast, had no thread, and the phone's search went white opening on its Recent)
+  const item: Item = it ?? { n: v.n, code: v.code, type: v.type ?? 'feature', title: v.title, body: '', pri: v.pri ?? 'P2', when: 'now', status: v.status ?? 'open', parent: null, next: '', srcs: [], mergedInto: null, archived: false, t0: '', t1: '', by: null, thread: [], wait: null, talked: false }
   return { project: v.project, kind: 'items', key: 'i' + v.n, n: v.n, item: it ? undefined : { ...item, code: v.code } }
 }
 

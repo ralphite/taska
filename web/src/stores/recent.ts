@@ -3,7 +3,7 @@
 // ("taska.recent").
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
-import type { ItemType, Status } from '../model/types'
+import type { ItemType, Pri, Status } from '../model/types'
 import type { KeyValueStore } from './storage'
 
 export interface Visit {
@@ -18,6 +18,7 @@ export interface Visit {
   /** an item's type and status; a document's item's code */
   type?: ItemType
   status?: Status
+  pri?: Pri
   on?: string
 }
 
