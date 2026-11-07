@@ -36,6 +36,7 @@ class Echo(unittest.TestCase):
         self.p.run([(0, {"op": "input", "text": "Swipe down does nothing", "q": "q2"})], "you")
         inp = self.p.state.inputs["r2"]
         self.assertTrue(echo(self.p, inp, self.say("$", "截图")))
+        self.assertTrue(echo(self.p, inp, self.say("B099", "截图")))  # by its code, made by the same plan
 
     def test_any_message_on_that_item_is_dropped_one_elsewhere_stays(self):
         self.assertTrue(echo(self.p, self.inp, self.say("T001", "Noted: the plan follows the code.")))

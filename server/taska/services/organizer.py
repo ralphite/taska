@@ -61,8 +61,10 @@ def echo(p: Project, inp: Input, c: Any) -> bool:
     no organizer message goes on that item; it is dropped here."""
     if not isinstance(c, dict) or c.get("op") != "say":
         return False
-    if str(c.get("ref") or "").strip() == "$":
-        return True  # on the item this plan just made from the input: it already shows the input's words and files (B714)
+    ref = str(c.get("ref") or "").strip()
+    num = re.fullmatch(r"[A-Za-z]?(\d+)", ref)
+    if ref == "$" or (num and int(num.group(1)) > p.state.max_n):
+        return True  # on an item this plan makes from the input: it already shows the input's words and files (B714)
     if inp.scope is None:
         return False
     try:
