@@ -63,6 +63,34 @@ deployment to verify the service and existing records still work.
 backup of the data (default `~/.taska`). It runs ordinary code, never a model. It reports test failures to Taska. Its launchd job runs at standard
 priority: as a background job macOS throttled it enough that the unit tests' workers timed out starting (B660).
 
+### UI audit
+
+`node tools/ui_audit.mjs` builds the static Storybook, opens every story in headless Chromium (one browser, four
+pages, about two minutes for 800 stories) and measures visible display problems, with no model:
+
+| Kind | What it measures |
+| --- | --- |
+| `align` | controls in one row whose vertical centres differ by more than 1.5 px; in a row with text on several lines, a small control set at the top against the text's first line |
+| `height` | boxed buttons or chips side by side whose heights differ by 2 to 12 px; in a pill or toolbar, any difference over 2 px |
+| `icon` | a control's icon not centred on its one-line label |
+| `wrap` | a short label (up to five words) of a button, tab or chip drawn on two lines |
+| `midword` | a short word broken across lines (break-words in a box narrower than the word) |
+| `cut` | text cut off by its box without an ellipsis, a fade or a scroller |
+| `overflow` | a phone frame (393 wide) that scrolls sideways, and the element that sticks out |
+
+Stories draw the phone and the desktop side by side in their frames (`data-layout`), so one pass covers both; a
+finding names the layouts it was seen in. Prototype and Review stories are skipped. The rules that keep meant looks
+out (story frames, rows aligned to the end, multi-line rows, an icon over its label, ellipses) are in
+`tools/ui_audit_probe.mjs` and tested on small pages by `node --test tools/ui_audit.test.mjs`. Findings that are
+meant are listed with the reason in `tools/ui_audit_exceptions.json`.
+
+Without `--file` it only prints what it finds; `--only <story id part>` measures some stories, `--out <dir>` keeps
+the findings and their cropped pictures. The nightly checks run it with `--file`: each new problem becomes one open
+P1 bug in the taska project, by `ui-audit`, with its picture, stories, layouts and source file. A problem's
+signature (its check, and the tag and classes of the elements involved) is kept in `.logs/ui-audit/known.json`
+once filed, so it is never filed twice; at most ten are filed a night. `--baseline` records what it finds now as
+known without filing it.
+
 ## Storybook
 
 Storybook runs independently from the Taska server at `http://127.0.0.1:6007`:

@@ -1,7 +1,9 @@
 #!/bin/zsh
-# Check the committed source and a consistent copy of the current data. No models or live-data writes.
+# Check the committed source and a consistent copy of the current data. No models or live-data writes; Taska hears
+# what to fix through its agent interface.
 #   zsh tools/nightly-checks.sh [data root, default ~/.taska]
-# The LaunchAgent runs this at 03:30. Failures are grouped into one Taska item until they change.
+# The LaunchAgent runs this at 03:30. Failures are grouped into one Taska item until they change; the UI audit files
+# each new display problem as its own bug.
 set -u
 ROOT=${0:A:h:h}
 DATA=${1:-$HOME/.taska}
@@ -27,6 +29,12 @@ data_check() {
   python3 "$WORK/source/tools/copy_data.py" "$DATA" "$WORK/data" &&
     python3 "$WORK/source/tests/check_data.py" "$WORK/data"
 }
+# the UI audit (T113): every Storybook story measured in a headless browser; each new display problem becomes an open
+# bug in Taska, filed once (what was filed is kept in $LOGS/ui-audit). Its own rules are tested first.
+ui_audit() {
+  node --test "$WORK/source/tools/ui_audit.test.mjs" &&
+    node "$WORK/source/tools/ui_audit.mjs" --build --file "$URL" --state "$LOGS/ui-audit" --out "$WORK/ui-audit"
+}
 step() {
   local name=$1; shift
   if "$@" > "$WORK/step.out" 2>&1; then
@@ -42,6 +50,7 @@ step() {
   step "code checks (types, lint, architecture rules, unit tests)" check
   step "current data loads and replays consistently" data_check
   step "daily copy of the data (last 14 kept)" python3 "$WORK/source/tools/backup_data.py" "$DATA"
+  step "UI display check (every story; new problems filed as bugs)" ui_audit
 } > "$LOG" 2>&1
 if ! grep -q '^FAILED' "$LOG"; then
   rm -f "$LAST"
@@ -56,7 +65,7 @@ if [[ -f "$LAST" && "$(cut -d' ' -f2 "$LAST")" == "$sig" ]]; then
   code=$(cut -d' ' -f1 "$LAST")
   printf '%s say Failed again tonight (%s), the same way.\n' "$code" "$(date '+%m-%d')" | post
 else
-  out=$(printf 'new bug P1 now The nightly checks failed (%s)\n  Every night at 03:30: the code checks (types, lint, architecture rules, unit tests) on the committed code, loading a copy of the data, and the daily backup. What failed, and the lines that say why:\n%s\n' "$(date '+%m-%d')" "$body" | post)
+  out=$(printf 'new bug P1 now The nightly checks failed (%s)\n  Every night at 03:30: the code checks (types, lint, architecture rules, unit tests) on the committed code, loading a copy of the data, the daily backup and the UI display check. What failed, and the lines that say why:\n%s\n' "$(date '+%m-%d')" "$body" | post)
   code=$(print -r -- "$out" | sed -n 's/^ok \([A-Z][0-9]*\) new.*/\1/p' | head -1)
   [[ -n "$code" ]] && echo "$code $sig" > "$LAST"
 fi
