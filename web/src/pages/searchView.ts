@@ -1,12 +1,13 @@
 // The phone's search page as it is drawn, from where the search is (stores/find) and the page's data: the box's
-// words and what may be misheard in them, the kinds found, the rows by project (an item of the project you are in
+// words and what may be misheard in them, the kinds found, the rows by project (All: by kind in each, each kind
+// named; an item of the project you are in
 // drawn from its model, as the list draws it; another project's from what the search sent). Pure: the container and
 // the stories draw the same page from the same data.
 
 import { clock } from '../model/time'
 import { codeOf, type ProjectModel } from '../model/project'
 import { openDoubts, spotsIn } from '../model/doubts'
-import { foundGroups, foundKinds, foundMeta, type Found } from '../model/find'
+import { byKind, foundGroups, foundKinds, foundMeta, type Found } from '../model/find'
 import type { FindState } from '../stores/find'
 import type { Visit } from '../stores/recent'
 import { visitFound } from './searchDialogView'
@@ -72,6 +73,8 @@ export function searchView(s: SearchNow, p: SearchPlace): SearchView {
     return [{ kind: 'other', key: x.project + '/' + x.key, found: x, icon: x.kind === 'rules' ? 'book' : x.kind === 'docs' ? (p.model(x.project)?.docs.find((d) => d.d === x.d)?.fmt === 'html' ? 'web' : 'doc') : 'newinput', code: x.code ?? '', title: x.title ?? '', meta: foundMeta(x, p.now) }]
   }
   const toCheck = s.heard.length ? openDoubts(s.words, s.heard).length : 0
+  // All: each project's rows by kind, each kind named when it found more than one kind anywhere (T642 R9)
+  const heads = !!a && new Set(a.found.map((x) => x.kind)).size > 1
   // nothing asked yet: Recent, by project in the order you visited them, as the desktop's search opens with it
   const recent = !a && !s.words.trim() && (s.phase === 'ready' || s.phase === 'listening') && p.recent.length ? recentGroups(p.recent.map((v) => visitFound(v, p.model))) : null
   return {
@@ -84,7 +87,12 @@ export function searchView(s: SearchNow, p: SearchPlace): SearchView {
     kinds: a
       ? [{ value: 'all', label: 'All', count: a.found.length, on: s.kind === 'all', needs: false }, ...foundKinds(a).map(([k, label, n]) => ({ value: k, label, count: n, on: s.kind === k, needs: false }))]
       : null,
-    groups: a ? foundGroups(a, p.here, p.order, s.kind).map((g) => ({ project: g.project, title: g.project === p.here && p.m ? p.m.facts.title : g.title, tone: p.tone(g.project), rows: g.rows.flatMap(row) })) : null,
+    groups: a
+      ? foundGroups(a, p.here, p.order, s.kind).map((g) => {
+          const rows = g.rows.flatMap(row)
+          return { project: g.project, title: g.project === p.here && p.m ? p.m.facts.title : g.title, tone: p.tone(g.project), rows: s.kind === 'all' ? byKind(rows, heads) : rows }
+        })
+      : null,
     recent,
     marks,
   }

@@ -3,7 +3,7 @@
 // or what it is doing, and the box at the bottom, which is the search box: what you said (or typed) is its words.
 // Words on the screen are as few as will do. Props only.
 
-import { useRef, type ReactNode } from 'react'
+import { Fragment, useRef, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import { RecBar } from '../ui/PlaceVoice'
 import { BOX_WORDS_LOOK, Doubts, DraftWords } from '../features/composer/Doubts'
@@ -19,9 +19,13 @@ import { Icon } from '../ui/Icon'
 import { noMatches } from '../model/words'
 
 /** A row of what it found: an item or a rule is the list's own row; an input or a document, a row like it. */
-export type FoundRowView =
+export type FoundRowView = (
   | { kind: 'item'; key: string; found: Found; it: Item; facts: RowFacts; look: RowLook; on: RowEvents }
   | { kind: 'other'; key: string; found: Found; icon: 'doc' | 'web' | 'newinput' | 'book'; code: string; title: string; meta: string }
+) & {
+  /** All: its kind's name, over the first row of that kind in its project */
+  head?: string
+}
 
 export interface FoundGroupView {
   project: string
@@ -72,6 +76,8 @@ export interface SearchEvents {
 const ROUND = 'grid size-11 shrink-0 place-items-center rounded-full'
 const MAIN = `${ROUND} bg-zinc-900 text-white disabled:opacity-25 dark:bg-zinc-100 dark:text-zinc-900`
 const SIDE = `${ROUND} text-zinc-500 dark:text-zinc-400`
+/** a small name over rows: Recent, and in All each kind */
+const LABEL = 'px-4 pt-3 pb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400'
 
 /** The box while you search: the words you said (or typed), and its buttons. Recording, writing out: what you said
  * before stays above. The main button is the mic (say it, say more); it is the up arrow while you record (stop and
@@ -202,13 +208,13 @@ function Results({ groups, marks, faded, onOpen }: { groups: FoundGroupView[]; m
             <ProjTile title={g.title} tone={g.tone} />
             {g.title}
           </h2>
-          {g.rows.map((r) =>
-            r.kind === 'item' ? (
-              <ItemRow key={r.key} it={r.it} depth={0} band="" foldable={false} folded={false} facts={r.facts} look={r.look} on={r.on} />
-            ) : (
-              <OtherRow key={r.key} r={r} marks={marks} onOpen={onOpen} />
-            ),
-          )}
+          {g.rows.map((r) => (
+            <Fragment key={r.key}>
+              {/* All: each kind named over its first row (T642 R9) */}
+              {r.head ? <h3 className={LABEL}>{r.head}</h3> : null}
+              {r.kind === 'item' ? <ItemRow it={r.it} depth={0} band="" foldable={false} folded={false} facts={r.facts} look={r.look} on={r.on} /> : <OtherRow r={r} marks={marks} onOpen={onOpen} />}
+            </Fragment>
+          ))}
         </section>
       ))}
     </div>
@@ -240,7 +246,7 @@ export function SearchBody({ v, on, desk = false }: { v: SearchView; on: SearchE
   else if (v.recent)
     body = (
       <>
-        <p className="px-4 pt-3 pb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">Recent</p>
+        <p className={LABEL}>Recent</p>
         <Results groups={v.recent} marks={[]} faded={false} onOpen={on.open} />
       </>
     )

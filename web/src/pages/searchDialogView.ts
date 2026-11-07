@@ -1,13 +1,13 @@
 // The desktop's search dialog as it is drawn (F479), from where the search is (stores/find) and the page's data: the
 // field's words (as typed, or as said: lit, or with a word to check), the kinds and filters, one list of rows best
-// first (each with its project as a path), Recent while nothing is typed, the Actions its words name, the
+// first (All: by kind, each kind named; each row with its project as a path), Recent while nothing is typed, the Actions its words name, the
 // highlighted row. Pure: the container and the stories draw the same dialog from the same data.
 
 import type { ActionId } from '../app/actions'
 import type { FindStatus } from '../stores/find'
 import type { Visit } from '../stores/recent'
 import { openDoubts, spotsIn, type Spot } from '../model/doubts'
-import { FIND_KINDS, type FindPhase, type Found } from '../model/find'
+import { byKind, FIND_KINDS, type FindPhase, type Found } from '../model/find'
 import { closed, shownStatus } from '../model/items'
 import { codeOf, type ProjectModel } from '../model/project'
 import { clock } from '../model/time'
@@ -30,6 +30,8 @@ export interface FoundLine {
   project: string
   projectTitle: string
   tone: string
+  /** All: its kind's name, over the first row of that kind */
+  head?: string
 }
 
 /** An action its words name (the table's, done as its key does). */
@@ -142,7 +144,9 @@ export function searchDialogView(s: DialogNow, p: DialogPlace): SearchDialogView
     return x.kind === 'items' && !!it && closed(it.status) === (s.status === 'finished')
   }
   const narrowed = a ? a.found.filter((x) => (s.project === null || x.project === s.project) && (s.status === null || status(x))) : []
-  const results = typed && a ? narrowed.filter((x) => s.kind === 'all' || x.kind === s.kind).map((x) => lineOf(x, p)) : []
+  // All: by kind, each named over its first row (T642 R9); one kind: best first
+  const lines = typed && a ? narrowed.filter((x) => s.kind === 'all' || x.kind === s.kind).map((x) => lineOf(x, p)) : []
+  const results = s.kind === 'all' ? byKind(lines) : lines
   const recent = !typed && (s.phase === 'ready' || busy) ? p.recent.map((v) => lineOf(visitFound(v, p.model), p)) : []
   const actions = s.typed && !busy && s.kind === 'all' && !s.project && !s.status ? actionsFor(s.words, p) : []
   const rows: DialogLine[] = [...recent, ...results, ...actions]

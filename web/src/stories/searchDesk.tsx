@@ -61,8 +61,8 @@ export const AT: Record<string, Partial<Desk>> = {
   typingFirst: { open: true, phase: 'searching', words: 'export' },
   typingMore: found(TYPED, RIGHT, { phase: 'searching', words: TYPED + ' on the ph' }),
   found: found(TYPED, RIGHT),
-  previewInput: found(TYPED, RIGHT, { sel: 1 }),
-  previewDoc: found(TYPED, RIGHT, { sel: 2 }),
+  previewInput: found(TYPED, RIGHT, { sel: 5 }),
+  previewDoc: found(TYPED, RIGHT, { sel: 8 }),
   oneKind: found(TYPED, RIGHT, { kind: 'items' }),
   projectMenu: found(TYPED, RIGHT, { menu: 'project' }),
   inHome: found(TYPED, RIGHT, { project: 'home' }),
@@ -156,7 +156,8 @@ function StoryDialog({ f, set, onOpen, onClose }: { f: Desk; set(p: Partial<Desk
   const v = searchDialogView({ ...f, typed: f.typing, levels: LEVELS }, place)
   const busy = f.phase === 'listening' || f.phase === 'writing'
   const on: DialogEvents = {
-    type: (w) => set({ words: w, added: '', heard: [], typing: true, replace: false, sel: 0, ...(busy || f.phase === 'unheard' ? { phase: f.answer ? 'found' : 'ready' } : {}) }),
+    // as the finder's typeLive: too few words (cleared by the x) and what it found goes at once
+    type: (w) => set({ words: w, added: '', heard: [], typing: true, replace: false, sel: 0, ...(w.trim().length < 2 ? { phase: 'ready', answer: null } : busy || f.phase === 'unheard' ? { phase: f.answer ? 'found' : 'ready' } : {}) }),
     toTyping: () => set({ typing: true, added: '', heard: [] }),
     mic: (replace) => set({ phase: 'listening', typing: false, replace, voice: true, ms: 0 }),
     stop: () => set({ phase: 'writing' }),

@@ -80,6 +80,13 @@ export function foundGroups(a: FindAnswer, here: string, order: readonly string[
   })
 }
 
+/** All the kinds shown at once: the rows put together by kind (Items, Inputs, Rules, Documents, as the chips), each
+ * kind's closest first, its name over the first of it; `heads`: whether to name them (one kind only: nothing to tell
+ * apart). T642 R9 (D115, 11-06). */
+export function byKind<T extends { found: Pick<Found, 'kind'> }>(rows: readonly T[], heads = new Set(rows.map((r) => r.found.kind)).size > 1): (T & { head?: string })[] {
+  return FIND_KINDS.flatMap(([k, label]) => rows.filter((r) => r.found.kind === k).map((r, i) => (heads && !i ? { ...r, head: label } : r)))
+}
+
 /** The kinds it found, each with how many (only those it found). */
 export const foundKinds = (a: FindAnswer): [FindKind, string, number][] =>
   FIND_KINDS.map(([k, label]) => [k, label, a.found.filter((x) => x.kind === k).length] as [FindKind, string, number]).filter(([, , n]) => n > 0)

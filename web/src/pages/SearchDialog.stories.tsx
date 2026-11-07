@@ -27,7 +27,8 @@ export const Recent: StoryObj = { name: 'Opened: Recent', ...deskStory('recent')
 export const FirstLetters: StoryObj = { name: 'Searching as you type', ...deskStory('typingFirst') }
 /** Typing on: what it found stays, faded, the spinner in the field. */
 export const TypingOn: StoryObj = { name: 'Typing on', ...deskStory('typingMore') }
-/** Best first, one list; each row's project as a path; the words found lit; the first row's preview. */
+/** All: by kind, each kind named over its rows, best first in each (T642 R9); each row's project as a path; the words
+ * found lit; the first row's preview; the x beside the mic clears the words. */
 export const Results: StoryObj = { name: 'Results', ...deskStory('found') }
 export const PreviewInput: StoryObj = { name: 'An input highlighted', ...deskStory('previewInput') }
 export const PreviewDoc: StoryObj = { name: 'A document highlighted', ...deskStory('previewDoc') }

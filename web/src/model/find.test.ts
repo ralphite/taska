@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { foundGroups, foundKinds, foundMeta, foundPath, hitPath, heardWords, saidMore, type FindAnswer, type Found } from './find'
+import { byKind, foundGroups, foundKinds, foundMeta, foundPath, hitPath, heardWords, saidMore, type FindAnswer, type Found } from './find'
 
 const f = (project: string, kind: Found['kind'], key: string, more: Partial<Found> = {}): Found => ({ project, kind, key, n: 1, ...more })
 const A: FindAnswer = {
@@ -47,5 +47,23 @@ describe('the phone search', () => {
     expect(foundPath(f('shop', 'inputs', 'r8', { title: 'The export should keep the filter', became: null }))).toBe('/p/shop/inputs#r8')
     expect(hitPath({ project: 'shop', kind: 'input', code: 'r8' })).toBe('/p/shop/inputs#r8')
     expect(hitPath({ project: 'shop', kind: 'item', code: 'B018' })).toBe('/p/shop/B018')
+  })
+})
+
+describe('All, by kind (T642 R9 (D115, 11-06))', () => {
+  const rows = A.found.map((found) => ({ found }))
+  it("puts the rows together by kind in the chips' order, each closest first, its name over the first", () => {
+    expect(byKind(rows).map((r) => [r.found.key, r.head ?? ''])).toEqual([
+      ['i21', 'Items'],
+      ['i1', ''],
+      ['r8', 'Inputs'],
+      ['i17', 'Rules'],
+      ['d2', 'Documents'],
+    ])
+  })
+  it('names no kind when only one is there, or when told not to', () => {
+    expect(byKind(rows.filter((r) => r.found.kind === 'items')).some((r) => r.head)).toBe(false)
+    expect(byKind(rows, false).some((r) => r.head)).toBe(false)
+    expect(byKind(rows.slice(0, 1), true)[0].head).toBe('Items')
   })
 })

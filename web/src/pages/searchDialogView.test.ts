@@ -16,9 +16,17 @@ const place: DialogPlace = {
 const now = (p: Partial<DialogNow>): DialogNow => ({ phase: 'found', words: 'export filter', added: '', heard: [], answer: RIGHT, kind: 'all', typed: true, ms: 0, levels: [], project: null, status: null, sel: 0, replace: false, ...p })
 
 describe("the desktop search's dialog", () => {
-  it('lists what it found best first, each with its project as a path', () => {
+  it('lists what it found by kind in All, each kind named and best first, each row with its project as a path (T642 R9 (D115, 11-06))', () => {
     const v = searchDialogView(now({}), place)
-    expect(v.results.map((l) => l.code)).toEqual(['F001', '#8', 'D1', 'F003', 'T014', 'F006', 'Rules', 'F021', '#4'])
+    expect(v.results.map((l) => l.code)).toEqual(['F001', 'F003', 'T014', 'F006', 'F021', '#8', '#4', 'Rules', 'D1'])
+    expect(v.results.filter((l) => l.head).map((l) => [l.code, l.head])).toEqual([
+      ['F001', 'Items'],
+      ['#8', 'Inputs'],
+      ['Rules', 'Rules'],
+      ['D1', 'Documents'],
+    ])
+    // one kind: best first, no names over it
+    expect(searchDialogView(now({ kind: 'items' }), place).results.some((l) => l.head)).toBe(false)
     expect(v.results.find((l) => l.code === 'T014')?.path).toBe('Shop / F001')
     expect(v.results.find((l) => l.code === 'F021')?.path).toBe('Home')
   })
