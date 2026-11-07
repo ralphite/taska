@@ -9,7 +9,8 @@ import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
 import type { SheetParts } from '../../ui/Sheet'
-import { MENU_ROW } from '../../ui/tones'
+import type { ItemTimes } from '../../model/itemTimes'
+import { MENU_ROW, MUTED } from '../../ui/tones'
 import { Skeleton } from '../../ui/bits'
 
 /** What an agent reading the item gets, word for word (F568); null while it comes. */
@@ -121,6 +122,29 @@ export function sourcesSheet({ code, inputs, world, now, files }: { code: string
         ) : (
           <p className="text-sm text-zinc-500">No sources.</p>
         )}
+      </div>
+    ),
+  }
+}
+
+/** When an item was made (by whom) and last changed, in full (F704 r1157): the phone's sheet from the line under its
+ * chips. */
+export function timesSheet(x: Pick<ItemTimes, 'created' | 'last'>): SheetParts {
+  const row = (label: string, at: string, who: string) => (
+    <div className="flex items-baseline justify-between gap-4 py-3">
+      <span className={MUTED}>{label}</span>
+      <span className="text-right">
+        <span className="block font-medium tabular-nums">{at}</span>
+        {who ? <span className={`block text-[13px] ${MUTED}`}>{who}</span> : null}
+      </span>
+    </div>
+  )
+  return {
+    title: 'Times',
+    body: (
+      <div className="divide-y divide-zinc-100 pb-2 text-[15px] dark:divide-zinc-800">
+        {row('Created', x.created.at, x.created.by)}
+        {x.last ? row('Last updated', x.last, '') : null}
       </div>
     ),
   }

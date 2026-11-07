@@ -57,7 +57,7 @@ export const noItemEvents: ItemEvents = acts('Item', [
   'decide', 'notYet', 'modify', 'cancelModify', 'sendAnswer', 'reask', 'cancelReask', 'later',
   'ref', 'picture', 'more', 'play', 'words', 'view', 'topSize', 'duoSize',
   'inputMore', 'inputHistory', 'goInput', 'moved', 'msgMenu', 'peek', 'unhide', 'docAt', 'cancel', 'outboxRetry', 'outboxEdit',
-  'menu', 'set', 'sources', 'goto', 'doc', 'subNew', 'subAdd', 'subCancel', 'subTyped', 'editSave', 'editCancel', 'editTyped',
+  'menu', 'set', 'sources', 'times', 'goto', 'doc', 'subNew', 'subAdd', 'subCancel', 'subTyped', 'editSave', 'editCancel', 'editTyped',
 ] as const, { sources: 'Sheets › An item: what it came from', inputMore: 'What you said: its menu', inputHistory: 'Sheets › An input: its words and history' })
 
 export const comment = (f: Partial<Comment> & { id: number }): Comment => ({ key: 'k1', th: f.id, quote: 'The export keeps the filter', text: 'Yes, and its name says which filter.', by: 'you', t: T, files: [], ...f })

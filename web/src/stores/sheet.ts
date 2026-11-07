@@ -15,6 +15,8 @@ export type SheetRequest =
   | { kind: 'item-move-project'; n: number }
   /** the inputs an item came from */
   | { kind: 'item-sources'; n: number }
+  /** when an item was made and last changed, in full (F704) */
+  | { kind: 'item-times'; n: number }
   | { kind: 'message-menu'; n: number; id: number }
   | { kind: 'input-menu'; id: string }
   | { kind: 'input-history'; id: string }

@@ -149,6 +149,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     menu: (arm, from) => openItemMenu(app, desk, n, arm, from),
     later: (from) => openLater(app, desk, n, from),
     sources: () => app.sheets.open({ kind: 'item-sources', n }),
+    times: () => app.sheets.open({ kind: 'item-times', n }),
     goto,
     doc: (d: number) => app.docs.open(d),
     more: (id) => iv().toggleOpened(id),

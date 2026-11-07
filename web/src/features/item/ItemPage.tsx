@@ -18,6 +18,7 @@ import { FileRows } from '../../ui/Files'
 import { DocCard } from './DocCard'
 import { NeedsCard } from './NeedsCard'
 import { Talk, docNotes, type TalkFacts, type TalkLineEvents } from './Talk'
+import { TimesLine } from './TimesLine'
 import type { TalkEnv } from './talkEnv'
 
 export interface ItemEvents extends TalkLineEvents {
@@ -27,6 +28,8 @@ export interface ItemEvents extends TalkLineEvents {
   /** Later's choices: until a day, none, or back to now (D115 #21), from its chip or the bar's Later */
   later(from: Element | null): void
   sources(): void
+  /** both of its times in full: the phone's sheet (the desktop's are in the line's tip) */
+  times(): void
   /** the item's part over its talk dragged to this height (`done`: let go, kept) */
   topSize(px: number, done: boolean): void
   /** in two columns, the left one dragged to this width (0: back to the page's own) */
@@ -357,6 +360,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
       <div className="flex flex-wrap items-center gap-2">
         <Chips it={it} f={f} on={on} />
       </div>
+      <TimesLine it={it} now={env.now} desk={env.desk} onOpen={on.times} />
     </div>
   )
   const desc =

@@ -10,7 +10,8 @@ import type { Input } from '../../model/types'
 import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
 import { Thumbs } from '../../ui/Files'
-import { agentCardSheet, laterSheet, messageMenuSheet, sourcesSheet } from './ItemSheets'
+import { agentCardSheet, laterSheet, messageMenuSheet, sourcesSheet, timesSheet } from './ItemSheets'
+import { itemTimes } from '../../model/itemTimes'
 import { laterDay, laterDays } from '../../model/time'
 import { itemMoveProjectSheet } from '../../ui/ProjectSheets'
 import { useOtherProjects } from '../../app/projectLists'
@@ -142,6 +143,13 @@ export function SourcesSheet({ req }: Req<'item-sources'>) {
       )}
     />
   )
+}
+
+/** When the item was made and last changed, in full (F704 r1157). */
+export function TimesSheet({ req }: Req<'item-times'>) {
+  const { m, it } = useSubject(req.n)
+  if (!m || !it) return null
+  return <SheetLayout {...timesSheet(itemTimes(it, m.at))} />
 }
 
 export function MessageMenuSheet({ req }: Req<'message-menu'>) {

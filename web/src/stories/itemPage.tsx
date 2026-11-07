@@ -7,7 +7,8 @@ import type { ItemEvents, ItemFacts } from '../features/item/ItemPage'
 import { ItemActs, ItemHead, ItemNav, ItemPage, ItemTalk } from '../features/item/ItemPage'
 import { itemMenuPop, itemMenuSheet, type ItemMenuEvents, type ItemMenuFacts } from '../features/item/ItemMenu'
 import { itemMenuFacts } from '../features/item/itemMenuFacts'
-import { messageMenuSheet } from '../features/item/ItemSheets'
+import { messageMenuSheet, timesSheet } from '../features/item/ItemSheets'
+import { itemTimes } from '../model/itemTimes'
 import { gripVars } from '../stores/grips'
 import type { TalkFacts } from '../features/item/Talk'
 import type { TalkEnv } from '../features/item/talkEnv'
@@ -80,7 +81,7 @@ const hideMessage = act('Message menu: hide')
  * it): Change your decision and its Cancel, answering a question again, its choices picked, Show more and Show
  * earlier, a hidden message peeked at, adding a subitem and editing (their Cancel), Full width, the lines between its
  * parts dragged, voice notes playing, pictures opened, the item's menu and its Status, Priority and Type, a message's
- * menu (T662). What needs Taska or the rest of the page (deciding, sending, opening another item) shows in the
+ * menu (T662), its times in full (F704). What needs Taska or the rest of the page (deciding, sending, opening another item) shows in the
  * Actions panel. */
 function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; o: PageOpts; talkOnly?: boolean }) {
   const m = modelOf([...(o.others ?? []), it], o.inputs ?? [], {}, o.docs ?? [])
@@ -97,7 +98,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
   const [full, setFull] = useState(!!o.full)
   const [sizes, setSizes] = useState({ top: 0, duo: 0 })
   const media = useMedia(e0.url)
-  const menu = usePop<{ arm: ItemMenuFacts['arm']; asking: boolean } | { msg: number }>(desk)
+  const menu = usePop<{ arm: ItemMenuFacts['arm']; asking: boolean } | { msg: number } | { times: true }>(desk)
   const inputMenu = usePop<InputMenuAt>(desk)
   // the page's one tooltip (a voice note's words, icon buttons' names), over the whole window as the page has it; the
   // phone has none
@@ -129,6 +130,8 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
     view: (f, all) => media.on.view(f, all),
     menu: (arm, from) => openMenu(arm, from),
     msgMenu: (id, from) => menu.open({ msg: id }, from),
+    // the line under its chips: both times in full, the phone's sheet (F704)
+    times: () => menu.open({ times: true }),
     // your message's ⋯: the menu of the input its words came from, as the page opens it
     inputMore: (id, from) => inputMenu.open({ id, asked: {} }, from),
   }
@@ -137,6 +140,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
   const done = (run: () => void) => () => (menu.close(), run())
   const menuParts = (w: NonNullable<typeof menu.what>) => {
     if ('msg' in w) return messageMenuSheet(done(() => hideMessage(w.msg)))
+    if ('times' in w) return timesSheet(itemTimes(it, env.now))
     const mOn: ItemMenuEvents = {
       ...itemMenuActs,
       edit: done(() => setEditing(true)),
