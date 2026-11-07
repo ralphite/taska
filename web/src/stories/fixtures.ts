@@ -1,6 +1,7 @@
 // Made-up data for stories: items, inputs and the facts a row or a list shows, each built from a few fields.
 
 import { fn } from 'storybook/test'
+import SHOT_SMALL from './assets/screenshot-search-small.jpg'
 import { Diagrams } from '../app/page/diagrams'
 import type { RowEvents, RowFacts, RowLook } from '../features/list/ListRows'
 import { commentWithVoices, inputWithVoices, itemWithVoices, project, type ProjectModel } from '../model/project'
@@ -88,10 +89,9 @@ export const noRowEvents: RowEvents = {
   picture: fn().mockName('Row: picture'),
 }
 
-/** A small picture, drawn here, for a row's thumbnail. */
-export const PICTURE =
-  'data:image/svg+xml,' +
-  encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="60"><rect width="80" height="60" fill="#dbeafe"/><rect x="10" y="12" width="44" height="8" rx="2" fill="#60a5fa"/><rect x="10" y="28" width="60" height="6" rx="2" fill="#93c5fd"/><rect x="10" y="40" width="36" height="6" rx="2" fill="#93c5fd"/></svg>')
+/** A small picture for a thumbnail: a real screenshot of Taska (its demo data), as people send them; never a drawing
+ * that reads as a loading placeholder (B709). */
+export const PICTURE = SHOT_SMALL
 
 /** A project's facts as Taska is normally used: the organizer on, a coding agent around and waiting for work,
  * work waiting for it. A story of another setting says so in its name (…: organizer off). */
