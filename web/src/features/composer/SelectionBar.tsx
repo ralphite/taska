@@ -5,7 +5,7 @@
 
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import { Icon } from '../../ui/Icon'
-import { PlaceVoice, PlaceVoiceRow } from '../../ui/PlaceVoice'
+import { PLACE_BUTTON, PlaceVoice, PlaceVoiceRow } from '../../ui/PlaceVoice'
 
 export interface Box {
   top: number
@@ -54,40 +54,24 @@ export function SelectionBar({ at, recording, desk = true, meter, comment, fix, 
       </div>
     )
   }
+  // the same small white buttons as beside a paragraph (B708, r1153: not a black pill); on the phone made for a thumb
+  const size = desk ? 'size-7' : 'size-10'
+  const btn = PLACE_BUTTON.replace('size-7', size)
   return (
-    <div
-      ref={ref}
-      hidden={!at}
-      role="toolbar"
-      aria-label="On the selected text"
-      data-selection-bar
-      {...keep}
-      className="fixed z-[65] flex items-center rounded-full bg-zinc-900 p-1 shadow-lg ring-1 ring-black/10 dark:bg-zinc-100 dark:ring-white/10"
-    >
-      <button
-        onClick={on.mic}
-        aria-label="Record comment on selection"
-        title="Voice comment"
-        className="grid size-11 place-items-center rounded-full text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"
-      >
-        <Icon n="mic" c="size-5" />
+    <div ref={ref} hidden={!at} role="toolbar" aria-label="On the selected text" data-selection-bar {...keep} className="fixed z-[65] flex items-center gap-1">
+      <button onClick={on.mic} aria-label="Record comment on selection" title="Voice comment" className={btn}>
+        <Icon n="mic" c={desk ? 'size-4' : 'size-5'} />
       </button>
-      <button
-        onClick={on.comment}
-        hidden={!comment}
-        aria-label="Comment"
-        title="Comment"
-        className="grid size-11 place-items-center rounded-full text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"
-      >
-        <Icon n="comment" c="size-5" />
+      <button onClick={on.comment} hidden={!comment} aria-label="Comment" title="Comment" className={btn}>
+        <Icon n="comment" c={desk ? 'size-4' : 'size-5'} />
       </button>
       <button
         onClick={on.fix}
         hidden={!fix}
         aria-label="Correct the words"
-        className="flex h-11 items-center gap-1.5 rounded-full pr-4 pl-3 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"
+        className={`${PLACE_BUTTON.replace('grid size-7', 'flex').replace('place-items-center', 'items-center')} ${desk ? 'h-7 gap-1 px-2 text-xs' : 'h-10 gap-1.5 px-3 text-sm'} font-semibold whitespace-nowrap`}
       >
-        <Icon n="pencil" c="size-5" />
+        <Icon n="pencil" c={desk ? 'size-4' : 'size-5'} />
         Correct
       </button>
     </div>
