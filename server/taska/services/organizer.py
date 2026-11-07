@@ -22,7 +22,7 @@ from ..domain import events as ev, rules
 from ..domain.model import Input
 from ..domain.text import hm
 from ..domain.vocab import CLOSED, TEXT_VERBS, Refused
-from ..domain.voices import for_agents, said as said_words, words_of
+from ..domain.voices import for_agents, words_of
 from ..infra import gemini
 from .project import Project
 
@@ -55,19 +55,15 @@ MODELS = [m.strip() for m in os.environ.get("TASKA_ORGANIZER_MODELS", "gemini-3.
 
 
 def echo(p: Project, inp: Input, c: Any) -> bool:
-    """A message from the organizer on the item the input was said in, repeating the input (B703): it is already in
-    that item's talk, the user's own message; the model sometimes copies it anyway, so it is dropped here."""
+    """A message from the organizer on the item the input was said in (B703, r1144, #10330): the user's own words
+    are already there (tidied); with nothing to do they stay as said, and anything to do is done by changing things,
+    never by writing the words again in other words. So no organizer message goes on that item; it is dropped here."""
     if not isinstance(c, dict) or c.get("op") != "say" or inp.scope is None:
         return False
     try:
-        if rules.item_at(p.state, c.get("ref") or "").n != inp.scope:
-            return False
+        return rules.item_at(p.state, c.get("ref") or "").n == inp.scope
     except Refused:
         return False
-    flat = lambda t: re.sub(r"\s+", "", t or "")
-    mine = flat(said_words(p.state, inp.text, inp.files))
-    text = flat(str(c.get("text") or ""))
-    return bool(text) and (text in mine or mine in text)
 
 
 def first_plan(parts: List[Dict[str, Any]], think: int) -> str:

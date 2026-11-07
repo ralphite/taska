@@ -1,5 +1,6 @@
-"""B703 (r1141): an input said in an item is already in that item's talk, as the user's own message; the organizer
-must not repeat it there as its own message. Change only on Yadong's explicit word."""
+"""B703 (r1141, r1144, #10330): an input said in an item is already in that item's talk, as the user's own words; the
+organizer never writes a message there (no repeat, no rewrite): it only does what needs doing. Change only on
+Yadong's explicit word."""
 
 import os
 import sys
@@ -30,9 +31,10 @@ class Echo(unittest.TestCase):
     def test_repeating_the_input_on_its_own_item_is_dropped(self):
         self.assertTrue(echo(self.p, self.inp, self.say("T001", "Update this task from the latest code.")))
 
-    def test_other_words_or_another_item_stay(self):
-        self.assertFalse(echo(self.p, self.inp, self.say("T001", "Noted: the plan follows the code.")))
-        self.assertFalse(echo(self.p, self.inp, self.say("T002", "Update this task from the latest code.")))
+    def test_any_message_on_that_item_is_dropped_one_elsewhere_stays(self):
+        self.assertTrue(echo(self.p, self.inp, self.say("T001", "Noted: the plan follows the code.")))
+        self.p.run([(0, {"op": "new", "type": "task", "pri": "P1", "when": "now", "title": "Other"})], "you")
+        self.assertFalse(echo(self.p, self.inp, self.say("T002", "The part about the other task.")))
 
 
 if __name__ == "__main__":

@@ -26,7 +26,8 @@ INSTRUCTIONS = (
     'that are about organizing.\n'
     'Work like this:\n'
     '- If the input belongs to an existing item (listed below), update that item instead of creating a duplicate.\n'
-    "- An input with a scope item is already shown in that item's thread: never repeat it with say. Only apply\n"
+    "- An input with a scope item is already shown in that item's thread, in the user's words: never write a message\n"
+    "  (say) on that item. Only apply\n"
     '  field changes it asks for ("set high priority" = P1, "urgent" = P0, "later", "done", ...) or new items it\n'
     "  mentions. A reply to an agent's ask is for that agent: change nothing and reply `ack <input id>`.\n"
     '- An input that also speaks about other existing items: on each of them write the part about that item, summed up\n'
