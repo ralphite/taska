@@ -5,7 +5,7 @@
 
 import type { Layout } from '../../app/context'
 import story from '../../../.storybook/demo-data/story.json'
-import { button, role, row, shows, type Target, type Tour } from '../tour/tour'
+import { button, marked, role, row, shows, type Target, type Tour } from '../tour/tour'
 import type { Recording } from './replay'
 import sayItClip from './sayIt.webm?inline'
 import sayItPhone from './recordings/sayIt.phone.json'
@@ -14,6 +14,8 @@ import answerPhone from './recordings/answerAndAccept.phone.json'
 import answerDesk from './recordings/answerAndAccept.desk.json'
 import rulesPhone from './recordings/rulesChange.phone.json'
 import rulesDesk from './recordings/rulesChange.desk.json'
+import rowsPhone from './recordings/handleRows.phone.json'
+import rowsDesk from './recordings/handleRows.desk.json'
 
 export interface Demo {
   id: string
@@ -133,4 +135,43 @@ export const rulesChange: Demo = {
   recordings: { phone: rulesPhone, desk: rulesDesk },
 }
 
-export const DEMOS: Record<string, Demo> = { sayIt, answerAndAccept, rulesChange }
+// Rows of the list: Later (F37), Won't do (T38) and Undo, Done (T40). The phone swipes them; the desktop opens each and
+// uses the buttons over the item (the row's own buttons show only under the pointer).
+const swipeRow = (n: number, code: string) => marked('swipe', n, { label: `Row ${code}` })
+const pane = marked('part', 'pane', { label: 'The item' })
+const nextWeek = button(/^Next week/, { label: 'Next week' })
+
+/** Handle rows of the list: Later, Won't do, Undo, Done (D124: the fourth Demo). */
+export const handleRows: Demo = {
+  id: 'handleRows',
+  start: '/p/shop/',
+  now: story.now,
+  tours: {
+    phone: {
+      steps: [
+        { say: 'Swipe a row left for more.', target: swipeRow(37, 'F37'), swipe: 'left', until: shows(button('Later', { within: row(37) })), wait: 15000 },
+        { say: 'Tap Later.', target: button('Later', { within: row(37) }) },
+        { say: 'Pick when it comes back.', target: nextWeek },
+        { say: 'Swipe another row left.', target: swipeRow(38, 'T38'), swipe: 'left', until: shows(button("Won't do", { within: row(38) })), pace: 1800 },
+        { say: 'Tap Won’t do.', target: button("Won't do", { within: row(38) }) },
+        { say: 'Changed your mind? Tap Undo.', target: button('Undo'), pace: 1500 },
+        { say: 'Swipe a row right: Done.', target: swipeRow(40, 'T40'), swipe: 'right', until: shows(role('status', /T40 is done/, { label: 'Done' })), pace: 1800 },
+      ],
+    },
+    desk: {
+      steps: [
+        { say: 'Click a row to open it.', target: title(37, 'F37'), wait: 15000 },
+        { say: 'Click Later.', target: button('Later', { within: pane }) },
+        { say: 'Pick when it comes back.', target: nextWeek },
+        { say: 'Open another row.', target: title(38, 'T38'), pace: 1500 },
+        { say: 'Click Won’t do.', target: button("Won't do", { within: pane }) },
+        { say: 'Changed your mind? Click Undo.', target: button('Undo'), pace: 1500 },
+        { say: 'Open one more.', target: title(40, 'T40'), pace: 1500 },
+        { say: 'Click Done.', target: button('Done', { within: pane }) },
+      ],
+    },
+  },
+  recordings: { phone: rowsPhone, desk: rowsDesk },
+}
+
+export const DEMOS: Record<string, Demo> = { sayIt, answerAndAccept, rulesChange, handleRows }
