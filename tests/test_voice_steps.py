@@ -41,6 +41,7 @@ class Steps(unittest.TestCase):
                          ("louder", lambda data, mime: b""), ("pieces", lambda path: ([], 0.0)))]
         self.patches.append(mock.patch.object(tr, "voice_asr", lambda audio, vocab: ASR))
         self.patches.append(mock.patch.object(tr, "ask", lambda *a, **k: TIDIED))
+        self.patches.append(mock.patch.object(tr.time, "sleep", lambda s: None))
         for p in self.patches:
             p.start()
 
@@ -72,6 +73,23 @@ class Steps(unittest.TestCase):
         self.assertTrue(steps["asr"]["chosen"])
         self.assertNotIn("tidy", steps)  # not asked: not a step
         self.assertEqual(out["tr"], ASR)
+
+    def test_the_strong_model_has_no_time_limit_and_is_asked_again_when_it_fails(self):
+        # D121 (Yadong, 11-06): "why at most 10 s? there is no limit: wait for it, and when it fails, ask again"
+        self.assertFalse(hasattr(tr, "PRO_CAP"))
+        tries = []
+
+        def flaky(audio, prompt, model=None):
+            tries.append(model)
+            if len(tries) < 3:
+                raise Refused("Gemini HTTP 503")
+            return SAID
+        out = self.heard(flaky)
+        self.assertEqual(len(tries), 3)
+        steps = [s for s in out["steps"] if s["step"].startswith("pro")]
+        self.assertEqual([s["step"] for s in steps], ["pro", "pro_2", "pro_3"])
+        self.assertEqual([s.get("error") for s in steps[:2]], ["Gemini HTTP 503"] * 2)
+        self.assertEqual((steps[2]["text"], steps[2].get("chosen"), out["tr_by"]), (SAID, True, "pro"))
 
     def test_the_words_set_aside_are_kept_too(self):
         out = self.heard(lambda audio, prompt, model=None: "导出")  # it stopped early: the speech model's words
