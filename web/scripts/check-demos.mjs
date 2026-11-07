@@ -44,7 +44,7 @@ async function check(b, sb, demo) {
       if (!log?.nothingNew) bad.push(`${l}: the long wait for news was not answered "nothing new" after the wait`)
       if (offline) bad.push(`${l}: the page says it is out of reach while it waits`)
       if (log?.unmatched.length) bad.push(`${l}: asked for what was not recorded: ${log.unmatched.join(', ')}`)
-      if ((await page.locator(`figure[data-demo="${l}"]`).getAttribute('data-step')) !== '0') bad.push(`${l}: moved on by itself`)
+      if ((await page.locator(`[data-tour][data-demo="${l}"]`).getAttribute('data-step')) !== '0') bad.push(`${l}: moved on by itself`)
     }
     await page.context().close()
   }
@@ -55,12 +55,12 @@ async function check(b, sb, demo) {
   page.on('request', (r) => leaves(sb, r.url()) && left.push(r.url()))
   page.on('pageerror', (e) => bad.push(`page error: ${e.message}`))
   await page.goto(storyUrl(sb, demo.story))
-  for (const l of LAYOUTS) await page.locator(`figure[data-demo="${l}"]`).getByRole('button', { name: 'Play' }).click()
+  for (const l of LAYOUTS) await page.locator(`[data-tour][data-demo="${l}"]`).getByRole('button', { name: 'Play' }).click()
   const seen = {}
   const shoot = async () => {
     if (!shots) return
     for (const l of LAYOUTS) {
-      const f = page.locator(`figure[data-demo="${l}"]`)
+      const f = page.locator(`[data-tour][data-demo="${l}"]`)
       const step = await f.getAttribute('data-step')
       if (seen[l] === step) continue
       seen[l] = step

@@ -1,6 +1,6 @@
 // A tour running over a screen (F566, D105): once a frame it looks at the screen, hands what it saw to engine.ts and
 // says where the spot goes. TourFrame runs it over a story's own frame; a Demo's frame (T589) over a page in a frame
-// of its own. The screen is found again each frame (a Demo's page is new after Restart).
+// of its own. The screen is found again each frame (a Demo's page is new after Start again).
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { advance, begin, missing } from './engine'
 import { find, shown, type Target, type Tour, type Until } from './tour'

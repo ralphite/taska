@@ -8,7 +8,7 @@
 // - The long wait for news (changes?wait=25) is held like the real server holds it: the news when it is due, else
 //   "nothing new" after the wait. A page that waits is never answered "away", so it never thinks it is offline.
 // - A read asked again after its recorded answers ran out gets the last of them. Off the route (a change, or a read
-//   never recorded) nothing answers, as a server that stopped at this step (Restart starts again).
+//   never recorded) nothing answers, as a server that stopped at this step (Start again begins it anew).
 
 import type { Transport } from '../../api/http'
 

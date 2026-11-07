@@ -75,7 +75,7 @@ export const storyUrl = (base, story, extra = '') => `${base}/iframe.html?id=${s
 /** Waits until the Demo's frame for `layout` is at its end; throws when a step's part is missing or a step was done
  * before it began. */
 export async function untilDone(page, layout, ms) {
-  const f = page.locator(`figure[data-demo="${layout}"]`)
+  const f = page.locator(`[data-tour][data-demo="${layout}"]`)
   for (const t0 = Date.now(); ; await page.waitForTimeout(250)) {
     const [done, missing, skipped, step] = await Promise.all(['data-done', 'data-missing', 'data-skipped', 'data-step'].map((a) => f.getAttribute(a)))
     if (missing) throw new Error(`${layout}: step ${Number(step) + 1}: its part is not on the screen`)

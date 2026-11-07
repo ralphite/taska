@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { DemoFrames } from './DemoFrames'
 import { sayIt } from './demos'
 
-export default { title: 'Demo/Say it, it becomes an item', parameters: { layout: 'fullscreen' } } satisfies Meta
+export default { title: 'Demo/Say it, it becomes an item', parameters: { layout: 'padded' } } satisfies Meta
 
 /** Tap through it (the yellow spot shows what to press), or press Play. */
 export const PhoneAndDesktop: StoryObj = {
