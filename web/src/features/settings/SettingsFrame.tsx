@@ -5,6 +5,7 @@
 import type { ReactNode, Ref } from 'react'
 import { SECTIONS, type SectionKey } from './sectionList'
 import { PhHead } from './SettingsParts'
+import { PULL } from '../../ui/tones'
 
 export function SettingsFrame({ desk, sec, place, prefs = false, paneRef, nav, body, onBack }: {
   desk: boolean
@@ -28,14 +29,14 @@ export function SettingsFrame({ desk, sec, place, prefs = false, paneRef, nav, b
       <nav
         hidden={!desk && !!sec}
         aria-label="Sections of Settings"
-        className="flex min-h-0 flex-1 flex-col overflow-y-auto outline-none overscroll-contain pb-10 lg:w-60 lg:flex-none lg:shrink-0 lg:scrollbar-thin lg:border-r lg:border-zinc-200 lg:pb-4 dark:lg:border-zinc-800"
+        className={`${PULL} flex min-h-0 flex-1 flex-col overflow-y-auto outline-none overscroll-contain pb-10 lg:w-60 lg:flex-none lg:shrink-0 lg:scrollbar-thin lg:border-r lg:border-zinc-200 lg:pb-4 dark:lg:border-zinc-800`}
       >
         {nav}
       </nav>
       <div
         ref={paneRef}
         hidden={!desk && !sec}
-        className={`min-h-0 min-w-0 flex-1 overflow-y-auto outline-none overscroll-contain lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${prefs ? 'pb-64' : ''}`}
+        className={`${PULL} min-h-0 min-w-0 flex-1 overflow-y-auto outline-none overscroll-contain lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${prefs ? 'pb-64' : ''}`}
       >
         {!desk ? (
           sec ? (

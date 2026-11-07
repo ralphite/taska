@@ -10,6 +10,7 @@ import { Hit, Kbd } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { HELP_GROUPS, HELP_TOPICS, searchWordsOf, topicParts, type HelpFound, type HelpTopic } from './topics'
 import { noMatches } from '../../model/words'
+import { PULL } from '../../ui/tones'
 
 export interface HelpEvents {
   open(key: string): void
@@ -197,7 +198,7 @@ export function HelpPage({ desk, topic, q, found, back, menu, render, place, on 
             </button>
           )}
         </header>
-        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain px-4 pb-12">
+        <div ref={scroller} className={`${PULL} min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain px-4 pb-12`}>
           {menu ? (
             <>
               <div className="pt-3">{searchBox}</div>

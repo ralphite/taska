@@ -12,6 +12,7 @@ import { INPUT_LIST, InputRow, OutgoingRow as OutgoingLine, RecordingRow } from 
 import { inputWords } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
 import { useRowSwipe, type RowSwipe } from '../../ui/rowSwipe'
+import { PULL } from '../../ui/tones'
 
 export interface InputFacts extends InputLine {
   /** gone to: lit up for a moment, brought into view ('shown') or where the list is ('still') */
@@ -132,7 +133,7 @@ export function InputsView({ hidden, rows, more, outgoing, world, files, recordi
       ref={ref}
       hidden={hidden}
       data-vc-area
-      className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)]"
+      className={`${PULL} -mb-(--foot-h) min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)]`}
     >
       {hidden || !recording ? null : <RecordingRow clock={recording} />}
       {hidden ? null : (

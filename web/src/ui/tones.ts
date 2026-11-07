@@ -32,6 +32,10 @@ export const STATE_ON: Record<Status, string> = {
 export const PAGE_BODY = 'min-h-dvh bg-zinc-100 text-zinc-900 antialiased dark:bg-zinc-900 dark:text-zinc-100'
 
 export const HIT = 'relative after:absolute after:inset-x-0 after:-inset-y-1.5'
+/** A phone scroll area always gives the elastic pull, even when what it holds is shorter than it (B713): iOS Safari
+ * bounces only an area that can scroll, and the page itself never scrolls (html and body are overflow: hidden), so an
+ * invisible mark 1px taller than the area keeps it scrollable by 1px. */
+export const PULL = 'phone:relative phone:after:pointer-events-none phone:after:absolute phone:after:top-0 phone:after:left-0 phone:after:h-[calc(100%+1px)] phone:after:w-px'
 /** A destructive action (Delete): red, last, after a line of its own (MENU_SEP; SEP_V in a row of buttons). */
 export const DANGER = 'text-red-600 dark:text-red-400'
 export const MENU_SEP = 'my-1 border-t border-zinc-100 dark:border-zinc-800'
