@@ -5,9 +5,12 @@ what lies outside Taska fixed, so every recording gives the same answers and cos
 - a voice note's words are the demo's fixed words (no speech model);
 - the organizer's question to the model is answered by the demo's own plan (no model), and it organizes only what is
   said during the demo;
+- an agent's replies are the demo's own (--replies): once the organizer has handled each thing said in the demo, the
+  next reply is sent a moment later as the agent sends it (POST /do);
 - nothing reaches Gemini or any other service (a request to one fails).
 
-    python3 tools/demo_server.py --root <copy> --port <port> --words <file> --plan <file> [--think-ms 1500]
+    python3 tools/demo_server.py --root <copy> --port <port> --words <file> --plan <file> [--replies <file>]
+                                 [--think-ms 1500]
 
 The root must be a copy (tools/copy_data.py), never ~/.taska. web/scripts/record-demo.mjs starts it.
 """
@@ -18,7 +21,9 @@ import argparse
 import json
 import os
 import sys
+import threading
 import time
+import urllib.request
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -32,6 +37,8 @@ def main() -> None:
     ap.add_argument("--port", type=int, required=True)
     ap.add_argument("--words", required=True, help="a file: what the microphone's recording says")
     ap.add_argument("--plan", required=True, help="a file: the organizer's answer, in the agents' command language")
+    ap.add_argument("--replies", help="a file: the agent's replies, a JSON list of {by, session, do, ms}; {input} in"
+                    " `do` is the id of what was said")
     ap.add_argument("--think-ms", type=int, default=1500, help="how long the organizer seems to think")
     args = ap.parse_args()
     root = os.path.abspath(os.path.expanduser(args.root))
@@ -88,6 +95,30 @@ def main() -> None:
 
     organizer.Organizer.__init__ = demo_start  # type: ignore[method-assign]
     organizer.Organizer.due = demo_due  # type: ignore[assignment]
+
+    # an agent's replies: one each time the organizer has handled the next thing said, through the agents' own door
+    replies: List[Dict[str, Any]] = []
+    if args.replies:
+        with open(args.replies, encoding="utf-8") as fh:
+            replies = json.load(fh)
+    organize = organizer.Organizer.organize
+    taking = threading.Lock()
+
+    def reply(slug: str, rid: str, r: Dict[str, Any]) -> None:
+        time.sleep(r.get("ms", 2500) / 1000)
+        url = f"http://127.0.0.1:{args.port}/p/{slug}/do?by={r['by']}&session={r.get('session', '')}"
+        body = r["do"].replace("{input}", rid).encode("utf-8")
+        with urllib.request.urlopen(urllib.request.Request(url, data=body, method="POST")) as answer:
+            answer.read()
+
+    def demo_organize(self: Any, rid: str) -> None:
+        organize(self, rid)
+        with taking:
+            r = replies.pop(0) if replies else None
+        if r:
+            reply(self.p.slug, rid, r)
+
+    organizer.Organizer.organize = demo_organize  # type: ignore[assignment]
 
     def transcriber_for(_p: Any, _workspace: Any) -> Any:
         def run(_data: bytes, _mime: str, _scope: Optional[int], _path: Optional[str], first: Any) -> Dict[str, Any]:

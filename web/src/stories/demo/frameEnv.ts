@@ -75,11 +75,13 @@ export function fixClock(w: Win, at: number) {
   w.Date = DemoDate as DateConstructor
 }
 
-/** The frame's microphone: it plays `clip` (a data: address, so nothing is fetched) for as long as the page records. */
-export function fixMic(w: Win, clip: string) {
+/** The frame's microphone: it plays `clip` (a data: address, so nothing is fetched) for as long as the page records; a
+ * Demo that says nothing has none. */
+export function fixMic(w: Win, clip?: string) {
   const md = w.navigator.mediaDevices
   if (!md) return
   md.getUserMedia = async () => {
+    if (!clip) throw new DOMException('This Demo has no microphone', 'NotFoundError')
     const ac = new w.AudioContext()
     if (ac.state === 'suspended') await ac.resume().catch(() => {})
     const bytes = Uint8Array.from(w.atob(clip.slice(clip.indexOf(',') + 1)), (c) => c.charCodeAt(0))

@@ -83,6 +83,8 @@ export function useTour(tour: Tour, again: number, screen: () => Screen | null, 
       const was = run.i
       run = advance(tour, run, look)
       if (run.i !== was) {
+        // what the step waited for, now there, in sight (a reply that came below the fold)
+        if (subject && u && !('gone' in u)) bringIntoSight(subject, sc.box ?? r)
         target.current = subject = null
         setSpot(null)
       } else if (el) {

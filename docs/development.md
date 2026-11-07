@@ -116,8 +116,8 @@ node web/scripts/check-demos.mjs web/dist-storybook [--shots dir] [--video dir] 
 ```
 
 Recording runs `tools/demo_server.py` on a fresh copy of `web/.storybook/demo-data` and a free port: the real server
-with its clock, the voice note's words and the organizer's answer fixed (the Demo's `<demo>.json`); nothing reaches
-a model. The check plays each Demo to the end and leaves it alone for half a minute (the page's long wait for news
+with its clock, the voice note's words, the organizer's answer and an agent's replies fixed (the Demo's
+`<demo>.json`); nothing reaches a model. The check plays each Demo to the end and leaves it alone for half a minute (the page's long wait for news
 must be answered as the server answers it, not seen as offline).
 
 The watchdog checks Storybook health without calling a model. It restarts only after five minutes of failure and

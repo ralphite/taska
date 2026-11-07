@@ -13,7 +13,7 @@ export const ROOT = join(WEB, '..')
 export const DEMO_DIR = join(WEB, 'src', 'stories', 'demo')
 export const KEYS = ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'GOOGLE_GENERATIVE_AI_API_KEY', 'GOOGLE_APPLICATION_CREDENTIALS']
 
-/** Each Demo: its id, its story and what lies outside Taska in it (words, plan). */
+/** Each Demo: its id, its story and what lies outside Taska in it (words, plan, an agent's replies). */
 export function demos() {
   return readdirSync(DEMO_DIR)
     .filter((f) => f.endsWith('.json'))
@@ -50,6 +50,7 @@ export function child(cmd, args, opts = {}) {
   const p = spawn(cmd, args, { ...opts, env, stdio: opts.stdio ?? 'ignore' })
   const stop = () => p.exitCode === null && p.kill()
   process.on('exit', stop)
+  p.on('exit', () => process.off('exit', stop))
   return { proc: p, stop }
 }
 

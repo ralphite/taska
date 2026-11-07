@@ -17,8 +17,8 @@ export interface Demo {
   start: string
   /** the frame's clock starts here (ms): the demo data's time */
   now: number
-  /** what the microphone plays (a data: address) */
-  clip: string
+  /** what the microphone plays (a data: address); a Demo that says nothing has no microphone */
+  clip?: string
   tours: Record<Layout, Tour>
   recordings: Record<Layout, Recording>
 }

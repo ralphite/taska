@@ -33,6 +33,10 @@ export interface Step {
   wait?: number
   /** playing it (a Demo's Play): how long a person takes on this step before tapping, in ms (1200) */
   pace?: number
+  /** playing it: swipe its part this way instead of tapping it (a row on the phone; give the step an `until`) */
+  swipe?: 'left' | 'right'
+  /** playing it: tap its part, then type these words into it (a text box; give the step an `until`) */
+  type?: string
 }
 
 export interface Tour {

@@ -1,6 +1,6 @@
 // Records a Demo's server answers (T589, r881): the Demo's own steps, played by its Play in a headless browser, on
 // the real page against a real Taska on a fresh copy of the demo projects (tools/demo_server.py: the clock, the voice
-// note's words and the organizer's answer fixed; nothing reaches a model). Every request the page makes and every
+// note's words, the organizer's answer and an agent's replies fixed; nothing reaches a model). Every request the page makes and every
 // answer goes into src/stories/demo/recordings/<demo>.<layout>.json, which the Demo replays.
 //
 //   node scripts/record-demo.mjs <storybook-static-dir> [demo] [phone|desk]
@@ -25,11 +25,13 @@ async function record(sb, demo, layout) {
   const tmp = mkdtempSync(join(tmpdir(), 'taska-demo-'))
   const data = join(tmp, 'data')
   execFileSync('python3', [join(ROOT, 'tools', 'copy_data.py'), join(ROOT, 'web', '.storybook', 'demo-data'), data], { stdio: 'ignore' })
-  writeFileSync(join(tmp, 'words.txt'), demo.words)
-  writeFileSync(join(tmp, 'plan.txt'), demo.plan)
+  writeFileSync(join(tmp, 'words.txt'), demo.words ?? '')
+  writeFileSync(join(tmp, 'plan.txt'), demo.plan ?? '')
+  const replies = demo.replies ? ['--replies', join(tmp, 'replies.json')] : []
+  if (demo.replies) writeFileSync(join(tmp, 'replies.json'), JSON.stringify(demo.replies))
   const port = await freePort()
   const server = `http://127.0.0.1:${port}`
-  const taska = child('python3', [join(ROOT, 'tools', 'demo_server.py'), '--root', data, '--port', String(port), '--words', join(tmp, 'words.txt'), '--plan', join(tmp, 'plan.txt')], { stdio: ['ignore', 'ignore', 'inherit'] })
+  const taska = child('python3', [join(ROOT, 'tools', 'demo_server.py'), '--root', data, '--port', String(port), '--words', join(tmp, 'words.txt'), '--plan', join(tmp, 'plan.txt'), ...replies], { stdio: ['ignore', 'ignore', 'inherit'] })
   const b = await browser()
   try {
     if (!(await answers(`${server}/health`))) throw new Error('the demo server did not start')
