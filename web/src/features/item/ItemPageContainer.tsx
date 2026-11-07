@@ -56,7 +56,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   // opened: one of the search's Recent
   useEffect(() => {
     if (!preview) stores.recent.getState().saw({ project: slug, kind: 'items', n, code: ref, title: it.title, type: it.type, status: it.status, pri: it.pri })
-  }, [stores, preview, slug, n, ref, it.title, it.type, it.status])
+  }, [stores, preview, slug, n, ref, it.title, it.type, it.status, it.pri])
 
   // the open question's choices: picked here, or before a reload (kept by their words)
   void view.choice

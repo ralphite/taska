@@ -38,7 +38,7 @@ export function createRecentStore(kv: KeyValueStore): RecentStore {
     list: kv.getJson<Visit[]>(KEY) ?? [],
     saw: (v) => {
       const was = get().list
-      if (was[0] && same(was[0], v) && was[0].title === v.title && was[0].status === v.status) return
+      if (was[0] && same(was[0], v) && was[0].title === v.title && was[0].status === v.status && was[0].pri === v.pri) return
       const list = [v, ...was.filter((x) => !same(x, v))].slice(0, MOST)
       kv.setJson(KEY, list)
       set({ list })
