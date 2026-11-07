@@ -58,7 +58,8 @@ export function RulesContainer({ route, place, hidden, footRoom = 0 }: { route: 
         f={f}
         sub={sub()}
         proposals={waitingProposals(d).map(shown)}
-        doc={d && d.md.trim() && doc.facts ? <DocView facts={doc.facts} env={doc.env} on={doc.on} meter={<RecMeter n={desk ? PLACE_LEVELS.desk : PLACE_LEVELS.phone} />} aim={doc.v.aim} onAimed={doc.aimed} /> : null}
+        // no Comment on the whole document: the page's box under the rules already comments on them (F706, r1145)
+        doc={d && d.md.trim() && doc.facts ? <DocView facts={doc.facts} boxBelow env={doc.env} on={doc.on} meter={<RecMeter n={desk ? PLACE_LEVELS.desk : PLACE_LEVELS.phone} />} aim={doc.v.aim} onAimed={doc.aimed} /> : null}
         on={{ history: () => go({ kind: 'history' }), copy: () => app.rules.copy(), edit: () => app.rules.edit() }}
       />
     )

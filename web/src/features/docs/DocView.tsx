@@ -159,7 +159,7 @@ function Outline({ heads, onJump }: { heads: DocFacts['outline']; onJump(key: st
   )
 }
 
-export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAimed }: {
+export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAimed, boxBelow = false }: {
   facts: DocFacts
   env: DocEnv
   on: DocEvents
@@ -173,6 +173,8 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
   page?: ReactNode
   /** the recording's time and level, for the strip of the place it is about (B498) */
   meter?: ReactNode
+  /** the page's box under it comments on the whole document (the rules): no Comment on the whole document (F706) */
+  boxBelow?: boolean
 }) {
   const { d, rows, desk } = { ...facts, desk: env.desk }
   const web = d.fmt === 'html'
@@ -353,7 +355,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
         {desk ? null : (
           <>
             <p className={`mt-6 text-center text-xs ${MUTED}`}>{web ? 'Tap a part to comment' : 'Tap, select or circle to comment'}</p>
-            {facts.wholeRec ? (
+            {boxBelow ? null : facts.wholeRec ? (
               // speaking about the whole document: its button is the recording strip (B498)
               <div className="mx-auto mt-1 w-full max-w-sm">
                 <PlaceVoiceRow rec meter={meter} on={{ say: on.whole, comment: on.type, cancel: on.sayCancel, check: on.sayCheck }} />

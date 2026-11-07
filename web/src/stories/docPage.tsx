@@ -42,6 +42,8 @@ export interface DocHere {
   typing?: boolean
   /** a web page's Comment mode (the desktop) */
   inspect?: boolean
+  /** the page's box under it comments on it (the rules page) */
+  boxBelow?: boolean
   /** Delete pressed once; a file's Take off asking ("unfile 12 <id> <file>") */
   asked?: Record<string, number>
   /** a paragraph's own mic records a comment about it (`bar`: from the bar over selected words) */
@@ -174,7 +176,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
       />
     )
   }
-  const view = <DocView facts={facts} env={env} on={on} page={page} meter={recMeter(desk)} lasso={v.circle ? <Lasso onDrawn={(keys) => setV({ ...v, circle: false, sel: new Set(keys), quote: null })} /> : null} />
+  const view = <DocView facts={facts} boxBelow={h.boxBelow} env={env} on={on} page={page} meter={recMeter(desk)} lasso={v.circle ? <Lasso onDrawn={(keys) => setV({ ...v, circle: false, sel: new Set(keys), quote: null })} /> : null} />
   if (h.viewOnly)
     return (
       <>
