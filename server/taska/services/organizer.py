@@ -55,10 +55,15 @@ MODELS = [m.strip() for m in os.environ.get("TASKA_ORGANIZER_MODELS", "gemini-3.
 
 
 def echo(p: Project, inp: Input, c: Any) -> bool:
-    """A message from the organizer on the item the input was said in (B703, r1144, #10330): the user's own words
-    are already there (tidied); with nothing to do they stay as said, and anything to do is done by changing things,
-    never by writing the words again in other words. So no organizer message goes on that item; it is dropped here."""
-    if not isinstance(c, dict) or c.get("op") != "say" or inp.scope is None:
+    """A message from the organizer on the item the input was said in (B703, r1144, #10330), or on the item its plan
+    just made from it (B714, r1167): the user's own words and files are already there (tidied); with nothing to do
+    they stay as said, and anything to do is done by changing things, never by writing them again in a message. So
+    no organizer message goes on that item; it is dropped here."""
+    if not isinstance(c, dict) or c.get("op") != "say":
+        return False
+    if str(c.get("ref") or "").strip() == "$":
+        return True  # on the item this plan just made from the input: it already shows the input's words and files (B714)
+    if inp.scope is None:
         return False
     try:
         return rules.item_at(p.state, c.get("ref") or "").n == inp.scope

@@ -31,6 +31,12 @@ class Echo(unittest.TestCase):
     def test_repeating_the_input_on_its_own_item_is_dropped(self):
         self.assertTrue(echo(self.p, self.inp, self.say("T001", "Update this task from the latest code.")))
 
+    def test_a_message_on_the_item_the_plan_just_made_is_dropped(self):
+        # B714 (r1167): the organizer made B713 and added "截图" with the input's picture as a message on it
+        self.p.run([(0, {"op": "input", "text": "Swipe down does nothing", "q": "q2"})], "you")
+        inp = self.p.state.inputs["r2"]
+        self.assertTrue(echo(self.p, inp, self.say("$", "截图")))
+
     def test_any_message_on_that_item_is_dropped_one_elsewhere_stays(self):
         self.assertTrue(echo(self.p, self.inp, self.say("T001", "Noted: the plan follows the code.")))
         self.p.run([(0, {"op": "new", "type": "task", "pri": "P1", "when": "now", "title": "Other"})], "you")

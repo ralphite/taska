@@ -37,6 +37,7 @@ INSTRUCTIONS = (
     '  reply `pass` so the input stays in the inbox for the agent. Still create items for anything else it says.\n'
     "- If it is new, `new <type> <P0-P3> <now|later> <short title>` with the user's own wording as the body, for\n"
     '  example `new bug P2 now Export ignores the active filter`: plain words, no brackets.\n'
+    "  (A new item already shows the input's words, pictures and voice notes: never add a message to it with say.)\n"
     "  The body is ALL the user's words about that item, every sentence: never shorten, summarize, reorder, rewrite\n"
     '  them by your own understanding or turn them into a list (F432: details the user gave were lost when a long voice\n'
     "  note was summarized). Only the title is short.\n"
