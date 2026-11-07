@@ -31,6 +31,8 @@ export interface Step {
   next?: boolean
   /** how long to wait for its part before saying it is missing, in ms (3000) */
   wait?: number
+  /** playing it (a Demo's Play): how long a person takes on this step before tapping, in ms (1200) */
+  pace?: number
 }
 
 export interface Tour {
@@ -77,7 +79,8 @@ export const nameOf = (e: Element) => (e.getAttribute('aria-label') || e.textCon
 /** shown: it has a size and is not hidden */
 export const shown = (e: Element) => {
   const r = e.getBoundingClientRect()
-  return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'
+  // its own window's style: a Demo's part is in a frame of its own
+  return r.width > 0 && r.height > 0 && (e.ownerDocument.defaultView ?? window).getComputedStyle(e).visibility !== 'hidden'
 }
 
 function findAll(root: Element, t: Target): Element[] {
