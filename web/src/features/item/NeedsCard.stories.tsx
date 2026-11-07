@@ -8,6 +8,13 @@ export default { title: 'UI/Item pane/Talk/Needs-you card/A question' } satisfie
 type Story = StoryObj
 
 export const Question: Story = { ...at(q('Which format should the export use?\n- ( ) CSV\n- ( ) Excel')), name: 'One choice to pick' }
+const LONG =
+  'The export can keep the filter in two ways, and each changes what a file opened later says. Which should I build?\n' +
+  '- ( ) Keep the filter in the file itself: the export writes only the rows the list shows, adds a first line that says which filter made it, and names the file after the filter, so a file opened next month still says what it holds.\n' +
+  '- ( ) Keep the filter beside the file: the export writes every row as it does now, and a second small file lists the filter, so the same export can be filtered again in a spreadsheet without asking Taska for it a second time.\n' +
+  '- ( ) Ask each time'
+/** long choices, one picked: each circle and its key at its choice's first line (T642 R9) */
+export const LongChoices: Story = { ...at(q(LONG), { picked: [1] }), name: 'Long choices' }
 export const ChecklistQuestion: Story = { ...at(q('Which formats should the export offer?\n- [ ] CSV\n- [ ] Excel\n- [ ] JSON')), name: 'A checklist' }
 /** a question with nothing to tick: the question alone, answered in the box under it */
 export const OpenQuestion: Story = { ...at(q('How should the export name its files?')), name: 'Nothing to tick' }

@@ -92,6 +92,7 @@ function Table({ b, world }: { b: Extract<MdBlock, { kind: 'table' }>; world: In
 }
 
 function Choices({ b, world, choosing, done }: { b: Extract<MdBlock, { kind: 'choices' }>; world: InlineWorld; choosing?: Choosing | null; done?: readonly string[] | null }) {
+  // the circle (or the box) and the key at the choice's first line, so a long choice's are plainly its own (T642 R9)
   const box = `grid size-5 shrink-0 place-items-center border-2 ${b.multi ? 'rounded-md' : 'rounded-full'}`
   const check = <Icon n="check" c="size-3.5 invisible group-aria-pressed:visible" sw="3" />
   return (
@@ -106,7 +107,7 @@ function Choices({ b, world, choosing, done }: { b: Extract<MdBlock, { kind: 'ch
             <div
               key={k}
               aria-pressed={on}
-              className="group flex min-h-11 w-full items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 text-[15px] leading-snug text-zinc-500 aria-pressed:border-zinc-400 aria-pressed:text-zinc-800 dark:border-zinc-800 dark:text-zinc-400 dark:aria-pressed:border-zinc-600 dark:aria-pressed:text-zinc-200"
+              className="group flex min-h-11 w-full items-start gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 text-[15px] leading-snug text-zinc-500 aria-pressed:border-zinc-400 aria-pressed:text-zinc-800 dark:border-zinc-800 dark:text-zinc-400 dark:aria-pressed:border-zinc-600 dark:aria-pressed:text-zinc-200"
             >
               <span className={`${box} border-zinc-300 group-aria-pressed:border-zinc-500 group-aria-pressed:bg-zinc-500 group-aria-pressed:text-white dark:border-zinc-700 dark:group-aria-pressed:border-zinc-500 dark:group-aria-pressed:bg-zinc-500 dark:group-aria-pressed:text-zinc-900`}>{check}</span>
               {words}
@@ -118,7 +119,7 @@ function Choices({ b, world, choosing, done }: { b: Extract<MdBlock, { kind: 'ch
             data-choice={i}
             onClick={() => choosing.pick(i, b.multi)}
             aria-pressed={on}
-            className="group flex min-h-11 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left text-[15px] leading-snug hover:border-zinc-300 hover:bg-zinc-50 aria-pressed:border-blue-500 aria-pressed:bg-blue-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/70 dark:aria-pressed:border-blue-400 dark:aria-pressed:bg-blue-400/10"
+            className="group flex min-h-11 w-full items-start gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left text-[15px] leading-snug hover:border-zinc-300 hover:bg-zinc-50 aria-pressed:border-blue-500 aria-pressed:bg-blue-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/70 dark:aria-pressed:border-blue-400 dark:aria-pressed:bg-blue-400/10"
           >
             <span className={`${box} border-zinc-300 group-aria-pressed:border-blue-600 group-aria-pressed:bg-blue-600 group-aria-pressed:text-white dark:border-zinc-600 dark:group-aria-pressed:border-blue-400 dark:group-aria-pressed:bg-blue-400 dark:group-aria-pressed:text-zinc-900`}>{check}</span>
             {words}
