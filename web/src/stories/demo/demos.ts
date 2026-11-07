@@ -5,11 +5,13 @@
 
 import type { Layout } from '../../app/context'
 import story from '../../../.storybook/demo-data/story.json'
-import { button, role, shows, type Tour } from '../tour/tour'
+import { button, role, row, shows, type Target, type Tour } from '../tour/tour'
 import type { Recording } from './replay'
 import sayItClip from './sayIt.webm?inline'
 import sayItPhone from './recordings/sayIt.phone.json'
 import sayItDesk from './recordings/sayIt.desk.json'
+import answerPhone from './recordings/answerAndAccept.phone.json'
+import answerDesk from './recordings/answerAndAccept.desk.json'
 
 export interface Demo {
   id: string
@@ -22,6 +24,9 @@ export interface Demo {
   tours: Record<Layout, Tour>
   recordings: Record<Layout, Recording>
 }
+
+/** A row's title in the list, by its number: a tap there opens the item. */
+const title = (n: number, code: string): Target => ({ css: `[data-n="${n}"] p`, label: `Row ${code}` })
 
 // what the organizer makes of the words (sayIt.json)
 const TITLE = /导出的日期用设置里选的格式/
@@ -55,4 +60,43 @@ export const sayIt: Demo = {
   recordings: { phone: sayItPhone, desk: sayItDesk },
 }
 
-export const DEMOS: Record<string, Demo> = { sayIt }
+// Answer an agent's question (T07, its choices) and accept an agent's finished work (T03): each card stays where it
+// is, answered, its buttons where they were (r1003).
+const needsYou = button(/^Needs you/, { label: 'Needs you' })
+const answerT07 = button('Answer', { within: row(7), label: 'Answer' })
+const choice = button(/^两个都提供/, { label: 'A choice' })
+const finished = { css: 'section', name: /^Claude Code · worker finished this/, label: 'The finished work' }
+const accept = button('Accept', { within: finished, label: 'Accept' })
+
+/** Answer an agent's question, accept an agent's finished work (D124: the second Demo). */
+export const answerAndAccept: Demo = {
+  id: 'answerAndAccept',
+  start: '/p/shop/',
+  now: story.now,
+  tours: {
+    phone: {
+      steps: [
+        { say: 'Tap Needs you: what waits on you.', target: needsYou, wait: 15000 },
+        { say: 'Tap Answer on an agent’s question.', target: answerT07 },
+        { say: 'Pick one.', target: choice, pace: 1800 },
+        { say: 'Tap Send answer. The card stays where it is.', target: button('Send answer') },
+        { say: 'Go back to the list.', target: button('Back'), pace: 2200 },
+        { say: 'Open the finished work.', target: title(3, 'T03') },
+        { say: 'Read what was done, then tap Accept.', target: accept, pace: 2500 },
+      ],
+    },
+    desk: {
+      steps: [
+        { say: 'Click Needs you: what waits on you.', target: needsYou, wait: 15000 },
+        { say: 'Click Answer on an agent’s question.', target: answerT07 },
+        { say: 'Pick one.', target: choice, pace: 1800 },
+        { say: 'Click Send answer. The card stays where it is.', target: button('Send answer') },
+        { say: 'Open the finished work.', target: title(3, 'T03'), pace: 2200 },
+        { say: 'Read what was done, then click Accept.', target: accept, pace: 2500 },
+      ],
+    },
+  },
+  recordings: { phone: answerPhone, desk: answerDesk },
+}
+
+export const DEMOS: Record<string, Demo> = { sayIt, answerAndAccept }
