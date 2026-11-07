@@ -3,15 +3,14 @@
 // turns the row into a recording strip (✕ cancels, ✓ posts it: no ↑ on the phone, r1062); Comment opens the box to write about it.
 // Comment on the whole document at its end speaks about all of it, its button the strip meanwhile. The box comes
 // only to write: that Comment, or an edit of a comment of yours or of the document.
-// The page's own facts and DocView, in the page's own phone sheet, with a demo document.
+// The page's own facts and DocView, in the page's own phone sheet, with a demo document. Its ⋯ is with the bar's
+// stories, in DocOnThePhoneMenu.stories.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { After, Frame, Frames } from '../../stories/Frames'
-import { acts, opened } from '../../stories/menuFixtures'
+import { After, Frame } from '../../stories/Frames'
 import { doc } from '../../stories/docFixtures'
 import { docAt, type DocHere } from '../../stories/docPage'
-import { docMenuSheet } from './DocSheets'
 
-export default { title: 'Components/Document/On the phone' } satisfies Meta
+export default { title: 'UI/Document pane/Commenting/On the phone' } satisfies Meta
 type Story = StoryObj
 
 const PLAN = doc()
@@ -41,17 +40,5 @@ export const Behaviour: Story = {
 export const Opened: Story = { name: 'Opened: no box', render: () => step('phone', {}) }
 export const PartPicked: Story = { name: 'A part picked: Voice and Comment under it', render: () => step('phone', { sel: ['p1'] }) }
 export const Speaking: Story = { name: 'Speaking about a part', render: () => step('phone', { sel: ['p1'], speaking: { key: 'p1', bar: false } }) }
-// ---- its ⋯ (D115 #41): Copy, Move, Mark an area, Edit and Delete, out of the way of reading
-const docActs = acts('Document menu', ['copy', 'move', 'mark', 'edit', 'remove'], { move: 'Move and pick › Put a document on' })
-/** ⋯ by the close button opens them; Delete last, red */
-export const ItsMenu: Story = {
-  name: 'Its ⋯: Copy, Move, Mark an area, Edit, Delete',
-  render: () => <Frames desk={false} height={760} phoneWidth={393}>{() => opened(docMenuSheet('D12', { web: false, deleting: false }, docActs), false, { under: docAt(PLAN, false) })}</Frames>,
-}
-/** Delete pressed once: Delete? asks again */
-export const ItsMenuDeleteAsking: Story = {
-  name: 'Its ⋯: Delete asking again',
-  render: () => <Frames desk={false} height={760} phoneWidth={393}>{() => opened(docMenuSheet('D12', { web: false, deleting: true }, docActs), false, { under: docAt(PLAN, false) })}</Frames>,
-}
 /** Mark an area picked: draw around a part; Done where ⋯ was ends it */
 export const MarkingAnArea: Story = { name: 'Marking an area: Done in the ⋯’s place', render: () => step('phone', { circle: true }) }

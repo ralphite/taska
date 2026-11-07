@@ -1,10 +1,11 @@
-// The sidebar and the phone's drawer: its projects, under the pointer, from the keys, pressed; the drawer's foot; loading; a project not listed yet.
+// The sidebar and the phone's drawer: its projects, under the pointer, from the keys, pressed; loading; a project not
+// listed yet. Its foot is in SidebarBottomLinks.stories.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { After, Frame, Frames } from '../../stories/Frames'
 import { side } from '../../stories/sideFixtures'
 import { mark } from '../../stories/sidebarFixtures'
 
-export default { title: 'Components/Around the page/Sidebar/The sidebar' } satisfies Meta
+export default { title: 'UI/Left sidebar/Whole' } satisfies Meta
 type Story = StoryObj
 
 /** The desktop's sidebar (New input lit while you write one) and the phone's drawer: the projects in your order, each
@@ -40,18 +41,10 @@ export const SidebarLooks: Story = {
     </div>
   ),
 }
-/** The drawer's foot on the phone: Undo of what you did last (a phone has no Z), the links. */
-export const DrawerFoot: Story = { name: 'Drawer foot on the phone', render: () => <Frames desk={false} phoneWidth={320} height={760}>{() => side(true, { undo: 'T009 approved' })}</Frames> }
 // ---- more states (B636)
 export const ProjectsLoading: Story = { name: 'Projects loading (phone drawer)', render: () => <Frames desk={false} phoneWidth={320} height={420}>{() => side(true, { loading: true })}</Frames> }
 /** Before the projects were ever listed in this browser. */
 export const NotListedYet: Story = {
   name: 'Not listed yet',
   render: () => <Frames phoneWidth={320} deskWidth={240} height={420}>{(layout) => side(layout === 'phone', { loading: true, noLinks: true })}</Frames>,
-}
-// ---- more states (T639)
-/** a project in the phone's drawer pressed (a finger on it) */
-export const DrawerProjectPressed: Story = {
-  name: 'Phone drawer: a project pressed',
-  render: () => <Frames desk={false} phoneWidth={320} height={560}>{() => <After run={mark('home', 'data-pressed')}>{side(true)}</After>}</Frames>,
 }
