@@ -83,11 +83,17 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
     logs.setup(log_db, log_level)
     organizers = Organizers(enabled=organizer)
 
+    made = threading.Event()  # the workspace exists: notes resumed while it opens its projects wait for it
+
+    def workspace() -> "Workspace":
+        made.wait()
+        return ws
+
     def opened(p: "object") -> None:
         from .services.project import Project
         assert isinstance(p, Project)
         p.organizing.on = organizer
-        p.voice.set_transcriber(transcriber_for(p, lambda: ws))
+        p.voice.set_transcriber(transcriber_for(p, workspace))
         with p.lock:
             p.voice.split_once()  # B682, once: each voice note's words in one record, out of the texts
         p.blocks_to_asks()  # T646, once: the agents' earlier blocks are asks
@@ -96,6 +102,7 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
         organizers.start(p)
 
     ws = Workspace(root, public, on_open=opened, voice_fix=logs.voice_fix, gemini=organizer)
+    made.set()
     push = Push(ws.root)
     stop = threading.Event()
 
