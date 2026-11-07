@@ -1,0 +1,6 @@
+{
+  "note": "What lies outside Taska in the Demo \"Say it, it becomes an item\" (T589): the words the microphone's recording (sayIt.webm) says, as transcription gives them, and the organizer's answer for them, as the model would write it. web/scripts/record-demo.mjs hands both to the real server it records against.",
+  "story": "demo-say-it-it-becomes-an-item--phone-and-desktop",
+  "words": "日期格式用设置里选的那个，不要 ISO 格式，财务那边看不惯。",
+  "plan": "new task P1 now 导出的日期用设置里选的格式\n  日期格式用设置里选的那个，不要 ISO 格式，财务那边看不惯。\n"
+}

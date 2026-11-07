@@ -189,7 +189,8 @@ export function storyCoverage(src, allowText) {
     return seen
   }
 
-  const stories = [...mods.values()].filter((m) => m.path.endsWith('.stories.tsx'))
+  // a Demo (stories/demo/) runs the whole page in a frame: it shows no component's states, so it covers none
+  const stories = [...mods.values()].filter((m) => m.path.endsWith('.stories.tsx') && !rel(m.path).startsWith('stories/demo/'))
   const covered = reach(stories.flatMap((m) => [...edges(m, m.sf)]))
   const main = [...mods.values()].find((m) => rel(m.path) === 'main.tsx')
   const used = main ? reach(edges(main, main.sf)) : new Set()

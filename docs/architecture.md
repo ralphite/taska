@@ -110,8 +110,10 @@ Rules, checked by `web/eslint.config.js` (imports, page lookups) and `web/script
 5. Dark mode follows the system; `data-theme` on any ancestor forces one (Storybook sets it on `<html>` from its toolbar, one theme at a time, R598).
 6. Styling: Tailwind utility classes only; the one CSS file imports Tailwind and declares the variants; no raw
    colours, no `<style>`.
-7. Every presentational component has a story file next to it: its states side by side, drawn from props (static);
-   demos (played) are under `Demos/` and are the only stories with `play`; no story loads the app. Every exported
+7. Every presentational component has a story file next to it: its states side by side, drawn from props (static).
+   Demos (`Demo/`, T589) are the only stories that play (`play`, Play): each runs the real page in a frame of its
+   own (`stories/demo/DemoPage.tsx`, the one place a story loads the app) whose network is a replay of a real
+   server's recorded answers, every other way out closed; a Demo covers no component. Every exported
    component under `ui/` and `features/` is drawn by some story, directly or through what the story renders (read
    from the source by `web/scripts/story-coverage.mjs`); a container (`*Container`, or in `app/`) is covered when
    everything it renders is. The few that need no story are listed with a reason in `web/.storybook/no-story.txt`.

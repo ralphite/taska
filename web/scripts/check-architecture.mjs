@@ -13,6 +13,8 @@ import { readAllow, storyCoverage } from './story-coverage.mjs'
 
 const WEB = join(dirname(fileURLToPath(import.meta.url)), '..')
 const MAX_LINES = 600
+// the one file that loads the whole app for a story: a Demo's frame (T589)
+const DEMO_PAGE = 'stories/demo/DemoPage.tsx'
 
 function files(dir) {
   const out = []
@@ -53,10 +55,21 @@ export function check(src, allow = readAllow(WEB)) {
         if (/^(export )?(let|var) /.test(line) || /^(export )?const \w+(: [^=]+)? = new (Map|Set|Array)\b/.test(line))
           say(p, `line ${i + 1}: state kept in the module (${line.trim().slice(0, 60)})`)
     if (story) {
-      // stories draw components from props; only demos play
-      if (/^\s*(play\s*:|async play\s*\()/m.test(text) && !/title:\s*'Demos\//.test(text)) say(p, 'a story that plays outside Demos/')
+      // stories draw components from props; only Demos play
+      const demo = /title:\s*'Demo\//.test(text)
+      if (/^\s*(play\s*:|async play\s*\()/m.test(text) && !demo) say(p, 'a story that plays outside Demo/')
       if (/from '[./]*(app\/(createApp|context)|pages\/App|main)'/.test(text)) say(p, 'a story that loads the app (feed the component data instead)')
+      // Play (a Demo pressing for you) only in Demo/ (T589)
+      if (/from '[./]*(stories\/)?(demo\/)?DemoFrames'/.test(text) && !demo) say(p, 'Play outside Demo/ (only a Demo plays itself)')
     }
+    // a Demo's frame (T589): the one place the whole app is loaded for a story, its network the replay and every
+    // other way out closed; nothing in a Demo makes a request of its own
+    if (r.startsWith('stories/') && !story && /^import (?!type )[^\n]*from '[./]*(app\/createApp|pages\/App|main)'/m.test(text)) {
+      if (r !== DEMO_PAGE) say(p, "a story that loads the app (only a Demo's frame does: stories/demo/DemoPage.tsx)")
+      else if (!/\blockNetwork\(/.test(text) || !/createApp\(frameEnv\(/.test(text)) say(p, 'loads the app without closing its network (lockNetwork, frameEnv)')
+    }
+    if (r.startsWith('stories/demo/') && !test && /(?<![\w.])fetch\(|\.fetch\(|new (XMLHttpRequest|WebSocket|EventSource)\b|sendBeacon\(/.test(text.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '')))
+      say(p, 'a request out of a Demo (its page is answered by the replay only)')
   }
   // a feature is a leaf: it imports no other feature and no page (pages/ puts features together; what they share is
   // in app/, model/ or ui/)
@@ -93,6 +106,9 @@ function selfCheck() {
       'model/planted.ts': 'let count = 0\nexport const seen = new Map()\nexport const up = () => ++count\n',
       'ui/Long.tsx': 'export const Long = () => null\n' + '// filler\n'.repeat(MAX_LINES + 1),
       'features/list/leans.ts': "import { Sidebar } from '../sidebar/Sidebar'\nimport { Header } from '../../pages/Header'\nexport const s = [Sidebar, Header]\n",
+      'stories/demo/Leaky.tsx': "import { App } from '../../pages/App'\nexport const L = () => (void fetch('/api/projects'), <App />)\n",
+      'stories/PlaysAlone.stories.tsx': "import { DemoFrames } from './demo/DemoFrames'\nexport default { title: 'UI/X' }\nexport const A = { render: () => <DemoFrames demo={null as never} theme=\"light\" /> }\n",
+      [DEMO_PAGE]: readFileSync(join(tmp, DEMO_PAGE), 'utf8').replace(/\blockNetwork\(w\)/, 'void w'),
     }
     for (const [p, text] of Object.entries(plant)) writeFileSync(join(tmp, p), text)
     const allow = 'ui/Gone.tsx#Gone: planted\nui/Icon.tsx#Icon: planted\nui/Grip.tsx#Grip\n'
@@ -101,7 +117,7 @@ function selfCheck() {
       'extra.css: a stylesheet',
       'features/list/Planted.tsx: a raw colour',
       'features/list/Planted.tsx: no Planted.stories.tsx',
-      'stories/Planted.stories.tsx: a story that plays',
+      'stories/Planted.stories.tsx: a story that plays outside Demo/',
       'stories/Planted.stories.tsx: a story that loads the app',
       'model/planted.ts: line 1: state kept',
       'model/planted.ts: line 2: state kept',
@@ -113,6 +129,10 @@ function selfCheck() {
       'no-story.txt line 1: ui/Gone.tsx#Gone is not a component any more',
       'no-story.txt line 2: ui/Icon.tsx#Icon has a story now',
       'no-story.txt line 3: write it as',
+      "stories/demo/Leaky.tsx: a story that loads the app (only a Demo's frame",
+      'stories/demo/Leaky.tsx: a request out of a Demo',
+      'stories/PlaysAlone.stories.tsx: Play outside Demo/',
+      `${DEMO_PAGE}: loads the app without closing its network`,
     ]
     const missed = want.filter((w) => !got.includes(w))
     // a story that renders the new component covers it, and its container with it

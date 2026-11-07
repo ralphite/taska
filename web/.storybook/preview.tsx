@@ -8,8 +8,9 @@ const preview: Preview = {
     // no controls; the Actions panel logs each click on a story's menus and buttons (D115 #16: stories pass act())
     controls: { disable: true },
     // by the page's design (T701, D122): Base components are the parts used everywhere; UI is each place on the page,
-    // left to right, top to bottom, and in each place its parts in the order you meet them (B636); then Prototype and
-    // Review. A folder's own stories come before its folders; folders not named here keep their files' order
+    // left to right, top to bottom, and in each place its parts in the order you meet them (B636); then Demo (what
+    // the product does, played on the real page: T589, D124), Prototype and Review. A folder's own stories come before
+    // its folders; folders not named here keep their files' order
     options: {
       storySort: {
         order: [
@@ -152,6 +153,7 @@ const preview: Preview = {
             'Floating', ['Picture viewer', 'Switch project', 'Keyboard shortcuts', 'Not saved, sign in'],
             'About this section',
           ],
+          'Demo',
           'Prototype', ['About this section'],
           'Review', ['About this section'],
           '*',
