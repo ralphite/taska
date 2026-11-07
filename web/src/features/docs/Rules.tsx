@@ -64,7 +64,7 @@ export interface ProposalEvents {
 
 /** An agent's proposed change: who, why, when; waiting (View changes), opened (Comment, Not now, Approve), or decided
  * (in place, faded, its buttons disabled, the one chosen in the past tense; r1003). Sent back: what changed since. */
-export function ProposalCard({ f, open = false, desk, on }: { f: ProposalFacts; open?: boolean; desk: boolean; on: ProposalEvents }) {
+export function ProposalCard({ f, open = false, on }: { f: ProposalFacts; open?: boolean; on: ProposalEvents }) {
   const { p } = f
   const decided = p.state === 'approved' ? 'Approve' : p.state === 'declined' ? 'Not now' : null
   const past: Record<string, string> = { Approve: 'Approved', 'Not now': 'Not now' }
@@ -95,7 +95,7 @@ export function ProposalCard({ f, open = false, desk, on }: { f: ProposalFacts; 
         </div>
         {!open && p.state === 'wait' ? (
           <button onClick={on.view} className="h-9 shrink-0 rounded-lg bg-amber-100 px-3 text-sm font-semibold text-amber-900 hover:bg-amber-200 dark:bg-amber-400/15 dark:text-amber-100 dark:hover:bg-amber-400/25">
-            {desk ? 'View changes' : 'View'}
+            View changes
           </button>
         ) : null}
       </div>
@@ -103,7 +103,7 @@ export function ProposalCard({ f, open = false, desk, on }: { f: ProposalFacts; 
         <div className="mt-3 flex items-center justify-end gap-2">
           <button onClick={on.comment} disabled={!!decided || p.state === 'stale'} title="Comment" className={`${decided || p.state === 'stale' ? DECIDED_OFF : SECOND} mr-auto lg:mr-0`}>
             <Icon n="comment" c="size-4" />
-            {f.talk ? f.talk : desk ? 'Comment' : null}
+            {f.talk ? f.talk : 'Comment'}
           </button>
           {btn('Not now', on.decline, false)}
           {btn('Approve', on.approve, true)}

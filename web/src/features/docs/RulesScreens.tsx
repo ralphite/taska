@@ -44,14 +44,13 @@ export interface ProposalShown {
   on: ProposalEvents
 }
 
-/** The rules read: the version, who and when in the bar (the phone: the version), History, Copy (the desktop) and
- * Edit; the proposals waiting above the document; none yet: what they are for and Write the rules. */
-export function RulesReading({ f, sub, phoneSub, proposals, doc, on }: { f: RulesFrame; sub: string; phoneSub: string; proposals: ProposalShown[]; doc: ReactNode | null; on: { history(): void; copy(): void; edit(): void } }) {
+/** The rules read: the version, who and when in the bar, History, Copy and Edit, the phone's as the desktop's; the proposals waiting above the document; none yet: what they are for and Write the rules. */
+export function RulesReading({ f, sub, proposals, doc, on }: { f: RulesFrame; sub: string; proposals: ProposalShown[]; doc: ReactNode | null; on: { history(): void; copy(): void; edit(): void } }) {
   const reading = (
     <>
       {proposals.map((p) => (
         <div key={p.f.p.id} className={`mb-6 ${RULES_COLUMN}`}>
-          <ProposalCard f={p.f} desk={f.desk} on={p.on} />
+          <ProposalCard f={p.f} on={p.on} />
         </div>
       ))}
       {doc ?? <NoRules onWrite={on.edit} />}
@@ -82,9 +81,10 @@ export function RulesReading({ f, sub, phoneSub, proposals, doc, on }: { f: Rule
     <section data-part="rules" hidden={f.hidden} className={`flex min-h-0 flex-1 flex-col ${f.place}`}>
       <div className="flex h-12 shrink-0 items-center gap-1 border-b border-zinc-100 pr-2 pl-4 dark:border-zinc-800/70">
         <span className="min-w-0 flex-1">
-          <RulesHead sub={phoneSub} />
+          <RulesHead sub={sub} />
         </span>
         {history}
+        {sub ? <BarBtn icon="copy" label="Copy" onClick={on.copy} /> : null}
         {edit}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-[calc(var(--foot-h,0px)+1.5rem)]">{reading}</div>
@@ -174,7 +174,7 @@ export function RulesProposal({ f, p, chunks, world, onBack }: { f: RulesFrame; 
   return (
     <Screen f={f} head={<RulesHead sub={`Proposal on v${p.f.p.on}`} />} box onBack={onBack}>
       <div className={`mb-6 ${RULES_COLUMN}`}>
-        <ProposalCard f={p.f} open desk={f.desk} on={p.on} />
+        <ProposalCard f={p.f} open on={p.on} />
       </div>
       <ChangedText key={p.f.p.id} chunks={chunks} world={world} />
     </Screen>

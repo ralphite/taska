@@ -42,7 +42,7 @@ const screens = (draw: (desk: boolean) => ReactNode): Story => ({
 function Reading({ desk, history = HISTORY, proposals = [PROPOSAL] }: { desk: boolean; history?: RuleVersion[]; proposals?: RuleProposal[] }) {
   const d = rulesDocOf(history, proposals)
   const x = history.at(-1) as RuleVersion
-  return <RulesReading f={frame(desk)} sub={sub(x)} phoneSub={`v${x.v}`} proposals={proposals.filter((p) => p.state === 'wait').map(shown)} doc={docAt(d, desk, { viewOnly: true })} on={on} />
+  return <RulesReading f={frame(desk)} sub={sub(x)} proposals={proposals.filter((p) => p.state === 'wait').map(shown)} doc={docAt(d, desk, { viewOnly: true })} on={on} />
 }
 
 /** The Rules tab opens the document: the bar says its version, who made it and when (the phone: the version);
@@ -55,7 +55,7 @@ export const ReadingNoProposal: Story = { ...screens((desk) => <Reading desk={de
 
 /** A project with no rules yet: what they are for, and Write the rules. */
 export const NoRulesYet: Story = {
-  ...screens((desk) => <RulesReading f={frame(desk)} sub="" phoneSub="" proposals={[]} doc={null} on={on} />),
+  ...screens((desk) => <RulesReading f={frame(desk)} sub="" proposals={[]} doc={null} on={on} />),
   name: 'No rules yet',
 }
 

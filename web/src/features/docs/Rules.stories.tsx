@@ -52,13 +52,13 @@ export const Head: Story = {
 export const Proposals: Story = {
   render: () => (
     <Frames deskWidth={760} phoneWidth={393}>
-      {(layout) =>
+      {() =>
         rows([
-          ['waiting', <ProposalCard f={f(PROPOSAL)} desk={layout === 'desk'} on={on} />],
-          ['opened', <ProposalCard f={f(PROPOSAL)} open desk={layout === 'desk'} on={on} />],
-          ['approved', <ProposalCard f={f({ ...PROPOSAL, state: 'approved' })} open desk={layout === 'desk'} on={on} />],
-          ['declined', <ProposalCard f={f({ ...PROPOSAL, state: 'declined' })} open desk={layout === 'desk'} on={on} />],
-          ['sent back', <ProposalCard f={f({ ...PROPOSAL, state: 'stale', note: 'changed since: Commits' })} open desk={layout === 'desk'} on={on} />],
+          ['waiting', <ProposalCard f={f(PROPOSAL)} on={on} />],
+          ['opened', <ProposalCard f={f(PROPOSAL)} open on={on} />],
+          ['approved', <ProposalCard f={f({ ...PROPOSAL, state: 'approved' })} open on={on} />],
+          ['declined', <ProposalCard f={f({ ...PROPOSAL, state: 'declined' })} open on={on} />],
+          ['sent back', <ProposalCard f={f({ ...PROPOSAL, state: 'stale', note: 'changed since: Commits' })} open on={on} />],
         ])
       }
     </Frames>

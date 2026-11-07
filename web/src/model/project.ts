@@ -276,7 +276,7 @@ export const docsOf = (m: Pick<ProjectModel, 'docs'>, n: number) => m.docs.filte
 
 /** What a code in some words names in this project: an item (its letter must match), a document, an input. */
 export function findRef(m: Pick<ProjectModel, 'byN' | 'byId' | 'docs'>, c: string): { kind: 'item'; n: number } | { kind: 'doc'; d: number } | { kind: 'input'; id: string } | null {
-  if (/^[rR#]\d+$/.test(c)) {
+  if (/^[r#]\d+$/.test(c)) {
     const r = 'r' + c.slice(1)
     return m.byId.has(r) ? { kind: 'input', id: r } : null
   }
