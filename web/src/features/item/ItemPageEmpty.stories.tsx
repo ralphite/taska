@@ -6,7 +6,7 @@ import { PaneFrame } from '../../ui/PaneFrame'
 import { Missing, NoSelection } from './ItemPage'
 import { act } from '../../stories/acts'
 
-export default { title: 'Components/Item page/Loading and empty' } satisfies Meta
+export default { title: 'UI/Item pane/Whole/Loading and empty' } satisfies Meta
 type Story = StoryObj
 
 /** An item the address names, not here (yet): in the pane as the page draws it, its bar with the code (and Back on

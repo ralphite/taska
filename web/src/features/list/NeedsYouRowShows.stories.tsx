@@ -6,7 +6,7 @@ import { listOf } from '../../stories/listFixtures'
 import { one, question, row } from '../../stories/needsYouRowFixtures'
 import { one as tipOne } from '../../stories/tipFixtures'
 
-export default { title: 'Components/Item list/Needs-you row/What it shows' } satisfies Meta
+export default { title: 'UI/List pane/Needs-you row/What it shows' } satisfies Meta
 type Story = StoryObj
 
 export const LaterPartOfAnother: Story = { ...one({ it: { n: 14, status: 'proposed', when: 'later', parent: 3 }, excerpt: 'Split from F003', f: { code: 'F014', parentCode: 'F003' } }), name: 'Later, part of another item' }

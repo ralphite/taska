@@ -7,7 +7,7 @@ import { listOf, PROJECT } from '../../stories/listFixtures'
 import { CANT_RECORD, MUTED_BY_PHONE, TOO_SHORT, cancelledKept, micTrouble, noSound } from '../../model/micWords'
 import { Toast, type ToastView } from './Toast'
 
-export default { title: 'Components/Around the page/Floating/Toast' } satisfies Meta
+export default { title: 'Base components/Toasts' } satisfies Meta
 type Story = StoryObj
 
 const toastAction = act('Toast: its button')

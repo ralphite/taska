@@ -7,7 +7,7 @@ import { comment, doc } from '../../stories/itemFixtures'
 import { talkOf } from '../../stories/itemPage'
 import { record, shownComment } from '../../stories/fixtures'
 
-export default { title: 'Components/Conversation/Message/Document comment' } satisfies Meta
+export default { title: 'UI/Item pane/Talk/Message/Document comment' } satisfies Meta
 type Story = StoryObj
 
 const later = (min: number) => new Date(Date.parse(T) + min * 60_000).toISOString()

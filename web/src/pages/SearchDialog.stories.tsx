@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { After } from '../stories/Frames'
 import { DeskFrame, SearchDesk, deskStory } from '../stories/searchDesk'
 
-export default { title: 'Components/Search on the desktop/Type and find' } satisfies Meta
+export default { title: 'UI/Search/Desktop dialog/Type and find' } satisfies Meta
 
 /** The page before the search: the magnifier right of the logo (⌘K); no search box over the list. */
 export const InTheSidebar: StoryObj = { name: 'Search in the sidebar', ...deskStory('closed') }

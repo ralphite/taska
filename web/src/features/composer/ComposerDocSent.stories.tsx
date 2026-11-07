@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { at, one } from '../../stories/composerDocFixtures'
 
-export default { title: 'Components/Input box/Commenting on a document/Sent and not sent' } satisfies Meta
+export default { title: 'UI/Input box/Commenting on a document/Sent and not sent' } satisfies Meta
 type Story = StoryObj
 
 /** Sent (a comment, a voice comment or a reply, on a page or a web page): what was picked is let go, and the box is as

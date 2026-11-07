@@ -6,7 +6,7 @@ import { acts, opened } from '../../stories/menuFixtures'
 import { PLAN, edited, one, withFiles } from '../../stories/threadFixtures'
 import { commentMenuSheet } from './DocSheets'
 
-export default { title: 'Components/Document/Comment threads/Your comments' } satisfies Meta
+export default { title: 'UI/Document pane/Comment threads/Your comments' } satisfies Meta
 type Story = StoryObj
 
 /** The desktop: the pointer on your comment shows Edit, Move and Delete (an agent's: Move and Delete). */

@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { hits, shown } from '../../stories/homeFixtures'
 
-export default { title: 'Components/Around the page/Home page/Searching' } satisfies Meta
+export default { title: 'UI/Home page/Searching' } satisfies Meta
 type Story = StoryObj
 
 /** Words typed in the search: what was found in every project (an item, a done one, an input). */

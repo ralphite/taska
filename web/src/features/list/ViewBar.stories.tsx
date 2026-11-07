@@ -5,7 +5,7 @@ import { FiltersButton } from './Filters'
 import { VIEWS, type ViewChip } from './rows'
 import { ViewBar } from './ViewBar'
 
-const meta: Meta = { title: 'Components/Item list/View chips' }
+const meta: Meta = { title: 'UI/List pane/View tabs/View chips' }
 export default meta
 type Story = StoryObj
 

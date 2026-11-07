@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { one } from '../../stories/itemRowFixtures'
 
-export default { title: 'Components/Item list/Item row/Subitems' } satisfies Meta
+export default { title: 'UI/List pane/Item row/Subitems' } satisfies Meta
 type Story = StoryObj
 
 export const WithSubitems: Story = { ...one({ foldable: true, f: { kids: { done: 3, all: 8 } } }), name: 'With subitems' }

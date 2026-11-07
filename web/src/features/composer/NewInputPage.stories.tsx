@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
 import { DeskPage, PhonePage } from '../../stories/newInputPage'
 
-export default { title: 'Components/Inputs/New input page/The whole page' } satisfies Meta
+export default { title: 'UI/Inputs page/New input page/The whole page' } satisfies Meta
 type Story = StoryObj
 
 const pad = (node: ReactNode) => <div className="bg-zinc-200 p-6 dark:bg-zinc-800">{node}</div>

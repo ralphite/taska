@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { T, at, mine } from '../../stories/fromYouFixtures'
 
-export default { title: 'Components/Conversation/Message/From you/Sent' } satisfies Meta
+export default { title: 'UI/Item pane/Talk/Message/From you/Sent' } satisfies Meta
 type Story = StoryObj
 
 export const YourWords: Story = { ...at([mine()]), name: 'Sent' }

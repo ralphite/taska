@@ -4,7 +4,7 @@ import { input } from '../../stories/fixtures'
 import { at } from '../../stories/composerFixtures'
 import { record, shown } from '../../stories/fixtures'
 
-export default { title: 'Components/Input box/What it writes to/Changing what you said' } satisfies Meta
+export default { title: 'UI/Input box/What it writes to/Changing what you said' } satisfies Meta
 type Story = StoryObj
 
 export const EditingAnInput: Story = { ...at({ at: 'F012', mode: { kind: 'amend', id: 'r7', mode: 'edit', v: 0 }, text: 'Keep the filter, and the sort.' }), name: 'Editing an input' }

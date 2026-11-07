@@ -3,7 +3,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { deskStory } from '../stories/searchDesk'
 
-export default { title: 'Components/Search on the desktop/Say it' } satisfies Meta
+export default { title: 'UI/Search/Desktop dialog/Say it' } satisfies Meta
 
 /** The mic (or ⌥V): the time and the level, no words (r797); Recent stays under it. */
 export const Listening: StoryObj = { name: 'Listening', ...deskStory('listening') }

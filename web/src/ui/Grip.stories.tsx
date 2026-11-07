@@ -5,7 +5,7 @@ import { After, Frame, States } from '../stories/Frames'
 import { it } from '../stories/itemPageLayoutFixtures'
 import { pageOf } from '../stories/itemPage'
 
-const meta: Meta = { title: 'Components/Item page/Layout' }
+const meta: Meta = { title: 'UI/Item pane/Layout' }
 export default meta
 type Story = StoryObj
 

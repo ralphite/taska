@@ -3,7 +3,7 @@ import { Frame } from "../../stories/Frames";
 import { act, acts } from "../../stories/acts";
 import { DocPaneActs, DocPaneHead, DocPaneNav } from "./DocPane";
 
-const meta: Meta = { title: "Components/Document/Its bar, the pointer on it" };
+const meta: Meta = { title: "UI/Document pane/Its bar, the pointer on it" };
 export default meta;
 type Story = StoryObj;
 

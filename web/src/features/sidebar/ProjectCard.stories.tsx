@@ -8,7 +8,7 @@ import { projectCard } from '../../model/projects'
 import { PROJECT_TONES } from '../../ui/tones'
 import { ProjectCard } from './ProjectCard'
 
-export default { title: 'Components/Around the page/Sidebar/Project card' } satisfies Meta
+export default { title: 'UI/Left sidebar/Projects list/Project item' } satisfies Meta
 type Story = StoryObj
 
 /** the sidebar with a mouse on a project (by its slug), its card beside it */

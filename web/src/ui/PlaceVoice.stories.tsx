@@ -9,7 +9,7 @@ import { Hold } from '../stories/Frames'
 import { acts } from '../stories/acts'
 import { PLACE_LEVELS, PlaceVoice, PlaceVoiceRow, RecBar } from './PlaceVoice'
 
-export default { title: 'Components/Document/Commenting/The control on a place' } satisfies Meta
+export default { title: 'Base components/Recording strip' } satisfies Meta
 type Story = StoryObj
 
 const acted = acts('Place', ['comment', 'check', 'send'] as const)

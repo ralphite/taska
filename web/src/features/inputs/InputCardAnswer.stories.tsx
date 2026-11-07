@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ONE } from '../../stories/inputFixtures'
 import { one } from '../../stories/inputCardFixtures'
 
-export default { title: 'Components/Inputs/Input card/What it became/An answer, or moved away' } satisfies Meta
+export default { title: 'UI/Inputs page/Input row/What it became/An answer, or moved away' } satisfies Meta
 type Story = StoryObj
 
 /** Your answer to T007's question, sent from its card: an input of its own, an answer. */

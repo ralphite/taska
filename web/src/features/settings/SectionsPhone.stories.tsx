@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { one } from '../../stories/sectionsFixtures'
 
-export default { title: 'Components/Settings, help and parts/Settings/Use on your phone' } satisfies Meta
+export default { title: 'UI/Settings and help/Settings/Use on your phone' } satisfies Meta
 type Story = StoryObj
 
 /** The link and the key to open Taska from anywhere. */

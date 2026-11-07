@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { one } from '../../stories/itemRowFixtures'
 
-export default { title: 'Components/Item list/Item row/By status/Finished' } satisfies Meta
+export default { title: 'UI/List pane/Item row/By status/Finished' } satisfies Meta
 type Story = StoryObj
 
 export const Done = one({ it: { status: 'done' } })

@@ -7,7 +7,7 @@ import { item, message, modelOf } from '../../stories/fixtures'
 import { noItemEvents, talkEnv } from '../../stories/itemFixtures'
 import { MsgText } from './MsgText'
 
-export default { title: 'Components/Conversation/Message parts/Words' } satisfies Meta
+export default { title: 'Base components/Markdown' } satisfies Meta
 type Story = StoryObj
 
 // what the message names is in the project: D1 and F014 are links, as on the page

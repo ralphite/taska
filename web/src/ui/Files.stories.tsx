@@ -7,7 +7,7 @@ import type { FileRef } from '../model/types'
 import { FileRows, Thumbs, VoiceChip, type PlayState } from './Files'
 import { record } from '../stories/fixtures'
 
-const meta: Meta = { title: 'Components/Conversation/Message parts/Voice notes, pictures, files' }
+const meta: Meta = { title: 'Base components/Voice note and files' }
 export default meta
 type Story = StoryObj
 

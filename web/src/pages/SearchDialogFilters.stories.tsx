@@ -3,7 +3,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { deskStory } from '../stories/searchDesk'
 
-export default { title: 'Components/Search on the desktop/Filters and actions' } satisfies Meta
+export default { title: 'UI/Search/Desktop dialog/Filters and actions' } satisfies Meta
 
 export const OneKind: StoryObj = { name: 'One kind', ...deskStory('oneKind') }
 export const ProjectMenu: StoryObj = { name: 'Project: its menu', ...deskStory('projectMenu') }

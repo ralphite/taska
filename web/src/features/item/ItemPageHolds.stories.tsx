@@ -7,7 +7,7 @@ import { T, input, item, message } from '../../stories/fixtures'
 import { comment, doc } from '../../stories/itemFixtures'
 import { KIDS, PARENT, pageOf, you, type PageOpts } from '../../stories/itemPage'
 
-export default { title: 'Components/Item page/By what it holds' } satisfies Meta
+export default { title: 'UI/Item pane/Whole/By what it holds' } satisfies Meta
 type Story = StoryObj
 
 const at = (f: Partial<Item>, o: PageOpts = {}, height = 820): Story => ({

@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { rail, side } from '../../stories/sideFixtures'
 
-export default { title: 'Components/Around the page/Sidebar/A new project' } satisfies Meta
+export default { title: 'UI/Left sidebar/Projects list/A new project' } satisfies Meta
 type Story = StoryObj
 
 export const NewProject: Story = { name: 'Naming it', render: () => <Frames phoneWidth={393} deskWidth={640} height={760}>{(layout) => side(layout === 'phone', { naming: '', namingValue: 'Garden', width: 240 })}</Frames> }

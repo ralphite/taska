@@ -1,6 +1,6 @@
 // A voice note's words as said, and what you said's earlier versions (T591: Menus and sheets > Sheets): the page's
 // own sheets: Original words on the phone (the desktop shows them under the pointer), the history on both. Its menu is in
-// stories/OtherMenus.
+// stories/InputMenu.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { input, steps, T } from '../../stories/fixtures'
@@ -10,7 +10,7 @@ import { modelOf } from '../../stories/fixtures'
 import type { VoiceStep } from '../../model/types'
 import { asSaidSheet, historySheet } from './InputSheets'
 
-export default { title: 'Components/Around the page/Menus and sheets/Sheets/An input: its words and history' } satisfies Meta
+export default { title: 'UI/Inputs page/Its words and history' } satisfies Meta
 type Story = StoryObj
 
 const at = (min: number) => new Date(Date.parse(T) - min * 60_000).toISOString()

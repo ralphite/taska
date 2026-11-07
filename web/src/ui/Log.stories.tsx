@@ -4,7 +4,7 @@ import { Frames, States } from '../stories/Frames'
 import { LogLine, LogMore } from './Log'
 import { acts } from '../stories/acts'
 
-const meta: Meta = { title: 'Components/Around the page/Side lists/Activity' }
+const meta: Meta = { title: 'UI/Left sidebar/A list open beside it/Activity' }
 export default meta
 type Story = StoryObj
 

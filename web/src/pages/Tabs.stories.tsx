@@ -6,7 +6,7 @@ import type { Tab } from '../model/words'
 import { Frames, States } from '../stories/Frames'
 import { headOf } from '../stories/headFixtures'
 
-export default { title: 'Components/Around the page/Top bar and list head/Tabs' } satisfies Meta
+export default { title: 'UI/List pane/View tabs/Tabs' } satisfies Meta
 type Story = StoryObj
 
 const on = (tab: Tab): Story => ({ render: () => <Frames deskWidth={1100} phoneWidth={393} height={200}>{(layout) => headOf(layout === 'desk', { tab })}</Frames> })

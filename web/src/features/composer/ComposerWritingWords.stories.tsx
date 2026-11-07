@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { LINES, MANY, at } from '../../stories/composerWritingFixtures'
 
-export default { title: 'Components/Input box/Writing/Words in it' } satisfies Meta
+export default { title: 'UI/Input box/Writing/Words in it' } satisfies Meta
 type Story = StoryObj
 
 export const Empty = at()

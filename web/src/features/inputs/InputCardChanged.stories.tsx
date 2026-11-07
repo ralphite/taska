@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ONE } from '../../stories/inputFixtures'
 import { one } from '../../stories/inputCardFixtures'
 
-export default { title: 'Components/Inputs/Input card/Failed, undone, edited' } satisfies Meta
+export default { title: 'UI/Inputs page/Input row/Failed, undone, edited' } satisfies Meta
 type Story = StoryObj
 
 /** The organizer's commands failed (it named an item the project does not have): why, and Try again. */

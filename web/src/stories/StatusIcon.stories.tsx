@@ -7,7 +7,7 @@ import { StateIcon } from '../ui/Icon'
 import { Frames } from './Frames'
 import { item } from './fixtures'
 
-export default { title: 'Components/Settings, help and parts/Icons and marks/Item status icon' } satisfies Meta
+export default { title: 'Base components/Status icons and marks/Item status icon' } satisfies Meta
 type Story = StoryObj
 
 const row = (it: Item) => {

@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { one } from '../../stories/sectionsFixtures'
 
-export default { title: 'Components/Settings, help and parts/Settings/Voice spellings' } satisfies Meta
+export default { title: 'UI/Settings and help/Settings/Voice spellings' } satisfies Meta
 type Story = StoryObj
 
 /** Words the voice gets wrong and how they are written, and how voice notes are written down. */

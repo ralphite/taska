@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { T, message } from '../../stories/fixtures'
 import { askOf, at, proposal, q, repliedOnProposal, report } from '../../stories/needsCardFixtures'
 
-export default { title: 'Components/Item page/Needs-you card/While you answer' } satisfies Meta
+export default { title: 'UI/Item pane/Talk/Needs-you card/While you answer' } satisfies Meta
 type Story = StoryObj
 
 // ---- more states (B636)

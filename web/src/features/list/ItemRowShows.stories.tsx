@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { PICTURE } from '../../stories/fixtures'
 import { one } from '../../stories/itemRowFixtures'
 
-export default { title: 'Components/Item list/Item row/What it shows' } satisfies Meta
+export default { title: 'UI/List pane/Item row/What it shows' } satisfies Meta
 type Story = StoryObj
 
 export const P0: Story = { ...one({ it: { type: 'bug', pri: 'P0', title: 'Saving drops the last word' }, f: { code: 'B012' } }), name: 'P0' }

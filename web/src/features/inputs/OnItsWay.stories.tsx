@@ -5,7 +5,7 @@ import { out } from '../../stories/boxFixtures'
 import { inputsOf } from '../../stories/inputFixtures'
 import { PICTURE } from '../../stories/fixtures'
 
-export default { title: 'Components/Inputs/On its way' } satisfies Meta
+export default { title: 'UI/Inputs page/On its way' } satisfies Meta
 type Story = StoryObj
 
 /** Sending; two sent while Taska is out of reach (they go by themselves when it answers); one Taska refused. */

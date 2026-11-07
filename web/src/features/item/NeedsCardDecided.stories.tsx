@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { T } from '../../stories/fixtures'
 import { approved, at, proposal, report } from '../../stories/needsCardFixtures'
 
-export default { title: 'Components/Item page/Needs-you card/After you decided' } satisfies Meta
+export default { title: 'UI/Item pane/Talk/Needs-you card/After you decided' } satisfies Meta
 type Story = StoryObj
 
 export const ProposalApproved: Story = { ...at(approved), name: 'Proposal approved' }

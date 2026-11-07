@@ -7,7 +7,7 @@ import { Frame } from '../../stories/Frames'
 import { PROJECT, listOf, type Holding } from '../../stories/listFixtures'
 import { side } from '../../stories/sideFixtures'
 
-export default { title: 'Components/Item list/Dragging items' } satisfies Meta
+export default { title: 'UI/List pane/Dragging items' } satisfies Meta
 type Story = StoryObj
 
 const drag = (label: string, h: Holding, drop?: string): Story => ({

@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { T, message } from '../../stories/fixtures'
 import { at, said } from '../../stories/itemPageFixtures'
 
-export default { title: 'Components/Item page/By item status/Being worked on' } satisfies Meta
+export default { title: 'UI/Item pane/Whole/By item status/Being worked on' } satisfies Meta
 type Story = StoryObj
 
 export const Open = at({ thread: [said] })

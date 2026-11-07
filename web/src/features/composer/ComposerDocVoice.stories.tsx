@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { VOICE } from '../../stories/boxFixtures'
 import { at, one } from '../../stories/composerDocFixtures'
 
-export default { title: 'Components/Input box/Commenting on a document/Speaking a comment' } satisfies Meta
+export default { title: 'UI/Input box/Commenting on a document/Speaking a comment' } satisfies Meta
 type Story = StoryObj
 
 export const PickedRecording: Story = { ...at({ ...one, rec: true }), name: 'Recording' }

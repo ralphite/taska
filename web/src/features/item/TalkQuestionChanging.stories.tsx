@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { answered, at } from '../../stories/talkQuestionFixtures'
 
-export default { title: 'Components/Conversation/Message/Question/Changing the answer' } satisfies Meta
+export default { title: 'UI/Item pane/Talk/Message/Question/Changing the answer' } satisfies Meta
 
 export const ChangingTheAnswer: StoryObj = { ...at(answered, {}, { t: { reask: 4 } }), name: 'Picking another choice' }
 export const NewAnswerOnItsWay: StoryObj = { ...at(answered, {}, { t: { going: { text: '✓ Excel', state: 'Sending…' } } }), name: 'The new answer on its way' }

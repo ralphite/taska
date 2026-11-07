@@ -5,7 +5,7 @@ import { acts } from '../../stories/acts'
 import { RecBar } from '../../ui/PlaceVoice'
 import { SelectionBar } from './SelectionBar'
 
-const meta: Meta = { title: 'Components/Input box/Bar over selected words' }
+const meta: Meta = { title: 'UI/Input box/Bar over selected words' }
 export default meta
 type Story = StoryObj
 

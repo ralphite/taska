@@ -6,7 +6,7 @@ import { After, Frames } from '../../stories/Frames'
 import { doc } from '../../stories/docFixtures'
 import { docAt, type DocHere } from '../../stories/docPage'
 
-export default { title: 'Components/Document/Its bar, the pointer on it' } satisfies Meta
+export default { title: 'UI/Document pane/Its bar, the pointer on it' } satisfies Meta
 type Story = StoryObj
 
 const PLAN = doc()

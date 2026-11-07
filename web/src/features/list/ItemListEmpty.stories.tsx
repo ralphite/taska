@@ -7,7 +7,7 @@ import { act } from '../../stories/menuFixtures'
 import { EmptyList, ItemList } from './ItemList'
 import { view } from '../../stories/itemListFixtures'
 
-export default { title: 'Components/Item list/Views/Empty, small, loading' } satisfies Meta
+export default { title: 'UI/List pane/Empty list' } satisfies Meta
 type Story = StoryObj
 
 /** An empty project: its first steps as done (D115 #20) */

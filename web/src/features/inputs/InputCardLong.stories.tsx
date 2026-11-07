@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ONE } from '../../stories/inputFixtures'
 import { one } from '../../stories/inputCardFixtures'
 
-export default { title: 'Components/Inputs/Input card/Long, and jumped to' } satisfies Meta
+export default { title: 'UI/Inputs page/Input row/Long, and jumped to' } satisfies Meta
 type Story = StoryObj
 
 /** A long one: folded to a few lines, More opens it. */

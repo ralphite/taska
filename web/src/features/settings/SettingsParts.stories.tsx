@@ -3,7 +3,7 @@ import { Frame, Hold } from '../../stories/Frames'
 import { act } from '../../stories/acts'
 import { CopyBtn, Loading, Part, PhHead, PhLabel, PH_GROUP, Setting, TextBox, Toggle } from './SettingsParts'
 
-const meta: Meta = { title: 'Components/Settings, help and parts/Settings/The page and its parts' }
+const meta: Meta = { title: 'UI/Settings and help/Settings/The page and its parts' }
 export default meta
 type Story = StoryObj
 

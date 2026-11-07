@@ -8,7 +8,7 @@ import { After, Frames, typeInto } from '../stories/Frames'
 import { AT_BUTTON, act, menuModel, opened, underList } from '../stories/menuFixtures'
 import { moveParentSheet, pickSheet } from './Pickers'
 
-export default { title: 'Components/Around the page/Menus and sheets/Move and pick' } satisfies Meta
+export default { title: 'Base components/Menus/Move and pick' } satisfies Meta
 type Story = StoryObj
 
 const putUnder = (desk: boolean, n = 14) => {

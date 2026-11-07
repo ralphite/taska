@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { at, one } from '../../stories/composerDocFixtures'
 
-export default { title: 'Components/Input box/Commenting on a document/Picking what to comment on' } satisfies Meta
+export default { title: 'UI/Input box/Commenting on a document/Picking what to comment on' } satisfies Meta
 type Story = StoryObj
 
 /** Nothing picked: the desktop replies on the document's item; the phone comments on the whole document. */

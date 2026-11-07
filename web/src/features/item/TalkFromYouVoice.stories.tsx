@@ -5,7 +5,7 @@ import { at, mine, out, r4, shot, voice } from '../../stories/fromYouFixtures'
 import { message } from '../../stories/fixtures'
 import { record, waiting } from '../../stories/fixtures'
 
-export default { title: 'Components/Conversation/Message/From you/Voice notes' } satisfies Meta
+export default { title: 'UI/Item pane/Talk/Message/From you/Voice notes' } satisfies Meta
 type Story = StoryObj
 
 const LINK_AND_WORDS = 'http://127.0.0.1:7340/p/demo/D2\nSync it to its three subpages.'

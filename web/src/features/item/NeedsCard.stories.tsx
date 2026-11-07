@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { message } from '../../stories/fixtures'
 import { askOf, at, proposal, q, report } from '../../stories/needsCardFixtures'
 
-export default { title: 'Components/Item page/Needs-you card/A question' } satisfies Meta
+export default { title: 'UI/Item pane/Talk/Needs-you card/A question' } satisfies Meta
 type Story = StoryObj
 
 export const Question: Story = { ...at(q('Which format should the export use?\n- ( ) CSV\n- ( ) Excel')), name: 'One choice to pick' }

@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { PARENT } from '../../stories/itemPage'
 import { at } from '../../stories/itemPageLayoutFixtures'
 
-export default { title: 'Components/Item page/Editing and replying' } satisfies Meta
+export default { title: 'UI/Item pane/Whole/Editing and replying' } satisfies Meta
 type Story = StoryObj
 
 export const Editing: Story = { ...at({ f: { editing: true } }), name: 'Editing its title and words' }

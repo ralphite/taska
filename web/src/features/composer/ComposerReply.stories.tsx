@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { scopeDraft } from '../../model/draftTarget'
 import { at, words } from '../../stories/composerFixtures'
 
-export default { title: 'Components/Input box/What it writes to/A reply to an item' } satisfies Meta
+export default { title: 'UI/Input box/What it writes to/A reply to an item' } satisfies Meta
 type Story = StoryObj
 
 export const AReplyToAnItem: Story = { ...at({ at: 'F012' }), name: 'Empty' }

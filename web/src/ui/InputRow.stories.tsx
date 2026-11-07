@@ -10,7 +10,7 @@ import { Frames, States } from '../stories/Frames'
 import { BecameLine, OutgoingRow, RecordingRow } from './InputRow'
 import { act, acts } from '../stories/acts'
 
-export default { title: 'Components/Inputs/Input card/Every state of a line' } satisfies Meta
+export default { title: 'UI/Inputs page/Input row/Every state of a line' } satisfies Meta
 type Story = StoryObj
 
 const it = (n: number, code: string, title: string, s: Status = 'open', type: ItemRef['type'] = 'bug'): ItemRef => ({ n, code, type, title, status: { s, label: STATUS_WORD[s] } })

@@ -1,6 +1,6 @@
 // What an item came from (T591: Menus and sheets > Sheets): the page's own sheet with the inputs that made it, from
 // its chip in the item's head; what an agent reading it gets (F568), from its menu. A message's menu is in
-// stories/OtherMenus.
+// stories/MessageMenu.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { input, item, modelOf, T } from '../../stories/fixtures'
@@ -11,7 +11,7 @@ import { Thumbs } from '../../ui/Files'
 import { agentCardSheet, laterSheet, sourcesSheet } from './ItemSheets'
 import { record, shown } from '../../stories/fixtures'
 
-export default { title: 'Components/Around the page/Menus and sheets/Sheets/An item: what it came from, what agents see' } satisfies Meta
+export default { title: 'UI/Item pane/An item: what it came from, what agents see' } satisfies Meta
 type Story = StoryObj
 
 const fileOn = acts('A file', ['play', 'words', 'view'])

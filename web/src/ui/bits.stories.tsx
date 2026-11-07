@@ -3,7 +3,7 @@ import { Frames, States } from '../stories/Frames'
 import { PICTURE } from '../stories/fixtures'
 import { Count, DraftMark, Empty, Pic, SectionHead, Soft } from './bits'
 
-const meta: Meta = { title: 'Components/Settings, help and parts/Icons and marks/Other marks' }
+const meta: Meta = { title: 'Base components/Status icons and marks/Other marks' }
 export default meta
 type Story = StoryObj
 

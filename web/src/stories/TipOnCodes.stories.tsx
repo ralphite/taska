@@ -8,7 +8,7 @@ import { PROJECT } from './listFixtures'
 import { one } from './tipFixtures'
 import { record, shown, steps } from './fixtures'
 
-export default { title: 'Components/Around the page/Floating/Tip/On codes and voice notes' } satisfies Meta
+export default { title: 'Base components/Tips/On codes and voice notes' } satisfies Meta
 type Story = StoryObj
 
 /** A code in some words: a card about what it names. */

@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Hit } from '../ui/bits'
 import { Frames } from './Frames'
 
-export default { title: 'Components/Settings, help and parts/Icons and marks/Search hit' } satisfies Meta
+export default { title: 'Base components/Status icons and marks/Search hit' } satisfies Meta
 type Story = StoryObj
 
 const words = ['export', 'filter']

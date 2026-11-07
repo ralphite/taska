@@ -6,7 +6,7 @@ import { DraftCard, DRAFT_WORDS } from './DraftCard'
 import { VOICE, boxAt } from '../../stories/boxFixtures'
 import { AGAIN, AGAIN_HEARD, LiveWords, Picking } from '../../stories/doubtsFixtures'
 
-export default { title: 'Components/Input box/Voice/Maybe misheard' } satisfies Meta
+export default { title: 'UI/Input box/Voice/Maybe misheard' } satisfies Meta
 type Story = StoryObj
 
 /** only the word the main model was unsure of */

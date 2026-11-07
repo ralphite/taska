@@ -6,7 +6,7 @@ import { After, Frames } from '../../stories/Frames'
 import { LONG, comment, doc } from '../../stories/docFixtures'
 import { docAt, type DocHere } from '../../stories/docPage'
 
-export default { title: 'Components/Document/Reading' } satisfies Meta
+export default { title: 'UI/Document pane/Reading' } satisfies Meta
 type Story = StoryObj
 
 const PLAN = doc()

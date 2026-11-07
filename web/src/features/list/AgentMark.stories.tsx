@@ -5,7 +5,7 @@ import { T, item } from '../../stories/fixtures'
 import { listOf } from '../../stories/listFixtures'
 import { one as tip } from '../../stories/tipFixtures'
 
-export default { title: 'Components/Item list/Item row/By status/Still to do' } satisfies Meta
+export default { title: 'UI/List pane/Item row/By status/Still to do' } satisfies Meta
 
 const hoursAgo = (h: number) => new Date(Date.parse(T) - h * 3600e3).toISOString()
 const items = [

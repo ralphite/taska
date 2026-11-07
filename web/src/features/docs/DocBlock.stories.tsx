@@ -9,7 +9,7 @@ import { CHOICES, CHOICES_SENT, doc } from '../../stories/docFixtures'
 import { message } from '../../stories/fixtures'
 import { docAt, type DocHere } from '../../stories/docPage'
 
-export default { title: 'Components/Document/Choices' } satisfies Meta
+export default { title: 'UI/Document pane/Choices' } satisfies Meta
 type Story = StoryObj
 
 const [, , formats] = blockKeys(CHOICES)

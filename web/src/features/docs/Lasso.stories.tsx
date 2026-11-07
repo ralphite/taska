@@ -5,7 +5,7 @@ import { Frames } from '../../stories/Frames'
 import { doc } from '../../stories/docFixtures'
 import { docAt } from '../../stories/docPage'
 
-export default { title: 'Components/Document/Commenting/Circle to select' } satisfies Meta
+export default { title: 'UI/Document pane/Commenting/Circle to select' } satisfies Meta
 type Story = StoryObj
 
 /** The phone's Mark an area (the desktop picks with the pointer and has no such mode). */

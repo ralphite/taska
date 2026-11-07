@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { agent, hover, one } from '../../stories/itemRowFixtures'
 
-export default { title: 'Components/Item list/Item row/Pointer, keys and picking/Pointer on it' } satisfies Meta
+export default { title: 'UI/List pane/Item row/Pointer, keys and picking/Pointer on it' } satisfies Meta
 type Story = StoryObj
 
 export const PointerOnIt: Story = { ...one({}), ...hover, name: "Open: Done, Won't do, Later" }

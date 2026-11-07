@@ -4,7 +4,7 @@ import { After, Frames } from '../../stories/Frames'
 import { docAt } from '../../stories/docPage'
 import { PLAN, at, one, toEnd, twoThreads, wholeDoc, withFiles } from '../../stories/threadFixtures'
 
-export default { title: 'Components/Document/Comment threads/Reading a thread' } satisfies Meta
+export default { title: 'UI/Document pane/Comment threads/Reading a thread' } satisfies Meta
 type Story = StoryObj
 
 /** Its count pressed: its comments, the words it quotes, Resolve and Reply. */

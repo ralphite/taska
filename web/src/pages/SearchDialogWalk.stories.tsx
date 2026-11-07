@@ -5,7 +5,7 @@ import { SearchDesk, Tips } from '../stories/searchDesk'
 import { TourFrame } from '../stories/tour/TourFrame'
 import { button, gone, marked, role, shows, type Tour } from '../stories/tour/tour'
 
-export default { title: 'Components/Search on the desktop/Walk through' } satisfies Meta
+export default { title: 'UI/Search/Desktop dialog/Walk through' } satisfies Meta
 
 const STOP = button('Stop and search')
 const DIALOG = role('dialog')

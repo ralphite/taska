@@ -4,7 +4,7 @@ import { act } from '../stories/menuFixtures'
 import { PRIMARY } from './tones'
 import { Sheet, SheetLayout } from './Sheet'
 
-const meta: Meta = { title: 'Components/Around the page/Menus and sheets/Sheets/The sheet itself' }
+const meta: Meta = { title: 'Base components/Sheets' }
 export default meta
 type Story = StoryObj
 

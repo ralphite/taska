@@ -3,7 +3,7 @@ import { Frames, Hold, States } from '../../stories/Frames'
 import { act } from '../../stories/menuFixtures'
 import { ArchiveAllLine, HiddenKidsLine } from './ListRows'
 
-const meta: Meta = { title: 'Components/Item list/Lines between rows' }
+const meta: Meta = { title: 'UI/List pane/Group heads' }
 export default meta
 type Story = StoryObj
 

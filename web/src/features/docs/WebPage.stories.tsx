@@ -6,7 +6,7 @@ import { Frames } from '../../stories/Frames'
 import { WEB } from '../../stories/docFixtures'
 import { docAt } from '../../stories/docPage'
 
-export default { title: 'Components/Document/Reading' } satisfies Meta
+export default { title: 'UI/Document pane/Reading' } satisfies Meta
 type Story = StoryObj
 
 /** Each thread's count in its part's corner. */

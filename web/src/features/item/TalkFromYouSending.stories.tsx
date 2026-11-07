@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { PICTURE } from '../../stories/fixtures'
 import { at, mine, out } from '../../stories/fromYouFixtures'
 
-export default { title: 'Components/Conversation/Message/From you/Sending, or not sent' } satisfies Meta
+export default { title: 'UI/Item pane/Talk/Message/From you/Sending, or not sent' } satisfies Meta
 type Story = StoryObj
 
 export const SendingCancel: Story = { ...at([mine()], out('Sending…')), name: 'Sending: × cancels' }

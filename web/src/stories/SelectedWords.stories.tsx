@@ -10,7 +10,7 @@ import { acts } from './acts'
 
 const bar = acts('Selection bar', ['comment', 'fix', 'check', 'send'] as const)
 
-export default { title: 'Components/Document/Commenting/Selected words' } satisfies Meta
+export default { title: 'UI/Document pane/Commenting/Selected words' } satisfies Meta
 type Story = StoryObj
 
 /** Selects `words` in the paragraph `key`, as a drag over them would. */

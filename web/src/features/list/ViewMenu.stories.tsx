@@ -5,7 +5,7 @@ import { Frames } from '../../stories/Frames'
 import { AT_POINTER, acts, opened, underList } from '../../stories/menuFixtures'
 import { viewMenuSheet } from './ViewMenu'
 
-export default { title: 'Components/Around the page/Menus and sheets/Other menus' } satisfies Meta
+export default { title: 'UI/List pane/View tabs/View chips/Its menu' } satisfies Meta
 type Story = StoryObj
 
 /** Rename makes its tab a field ([View chips › Your own view: shown, being renamed](?path=/story/components-item-list-view-chips--your-own-view-shown-being-renamed)). */

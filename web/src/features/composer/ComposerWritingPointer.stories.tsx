@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { at } from '../../stories/composerWritingFixtures'
 
-export default { title: 'Components/Input box/Writing/Pointer on its buttons' } satisfies Meta
+export default { title: 'UI/Input box/Writing/Pointer on its buttons' } satisfies Meta
 type Story = StoryObj
 
 export const PointingAtTheMic: Story = { ...at({}, { hover: ['[aria-label="Record a voice note"]'] }), name: 'Pointing at the mic' }

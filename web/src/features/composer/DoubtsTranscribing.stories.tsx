@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { voice } from '../../stories/doubtsFixtures'
 
-export default { title: 'Components/Input box/Voice/Writing it out' } satisfies Meta
+export default { title: 'UI/Input box/Voice/Writing it out' } satisfies Meta
 type Story = StoryObj
 
 export const Transcribing = voice({ tr: '', transcribing: true })

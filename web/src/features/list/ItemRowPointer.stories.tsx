@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames, States } from '../../stories/Frames'
 import { one, row } from '../../stories/itemRowFixtures'
 
-export default { title: 'Components/Item list/Item row/Pointer, keys and picking/Open, picked, dragged' } satisfies Meta
+export default { title: 'UI/List pane/Item row/Pointer, keys and picking/Open, picked, dragged' } satisfies Meta
 type Story = StoryObj
 
 /** Under the pointer, open in the pane, picked, dragged and where a dragged row would go, together. */

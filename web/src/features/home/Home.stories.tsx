@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { shown } from '../../stories/homeFixtures'
 
-export default { title: 'Components/Around the page/Home page/Your projects' } satisfies Meta
+export default { title: 'UI/Home page/Your projects' } satisfies Meta
 type Story = StoryObj
 
 /** Every project with its agent, open count, the Needs you mark when something needs you (how many in its tip) and the

@@ -5,7 +5,7 @@ import { Frames, Hold } from '../../stories/Frames'
 import { listOf, PROJECT } from '../../stories/listFixtures'
 import { Viewer } from './Viewer'
 
-export default { title: 'Components/Around the page/Floating/Picture viewer' } satisfies Meta
+export default { title: 'UI/Floating/Picture viewer' } satisfies Meta
 type Story = StoryObj
 
 /** a screenshot larger than the window (1600×1000), so fitted and at 100% differ */

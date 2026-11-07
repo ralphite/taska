@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { help } from '../../stories/helpFixtures'
 
-export default { title: 'Components/Settings, help and parts/Help/Searching' } satisfies Meta
+export default { title: 'UI/Settings and help/Help/Searching' } satisfies Meta
 type Story = StoryObj
 
 /** the words searched for are marked; a topic found by its words shows the sentence that matched, not what it answers */

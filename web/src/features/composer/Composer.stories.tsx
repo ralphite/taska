@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { at, words } from '../../stories/composerFixtures'
 
-export default { title: 'Components/Input box/What it writes to/A new input' } satisfies Meta
+export default { title: 'UI/Input box/What it writes to/A new input' } satisfies Meta
 type Story = StoryObj
 
 export const ANewInputTheNewInputPage: Story = { ...at({ at: 'new' }), name: 'Empty (the New input page)' }

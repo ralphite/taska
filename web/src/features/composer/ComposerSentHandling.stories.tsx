@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { at, org, sent } from '../../stories/composerSentFixtures'
 import { shown, waiting } from '../../stories/fixtures'
 
-export default { title: 'Components/Input box/Line after sending/Being handled' } satisfies Meta
+export default { title: 'UI/Input box/Line after sending/Being handled' } satisfies Meta
 type Story = StoryObj
 
 export const SentTranscribing: Story = { ...at({ sent: shown(sent({ text: '', files: [{ f: 'f9-voice_0-06.webm', name: 'voice_0-06.webm', mime: 'audio/webm' }] }), waiting('f9-voice_0-06.webm')) }), name: 'Sent, transcribing' }

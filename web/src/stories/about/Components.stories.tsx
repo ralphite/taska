@@ -3,7 +3,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { SectionAbout } from './Section'
 
-export default { title: 'Components/Settings, help and parts/About this section', parameters: { layout: 'padded' } } satisfies Meta
+export default { title: 'UI/About this section', parameters: { layout: 'padded' } } satisfies Meta
 
 /** The rules, short. */
 export const About: StoryObj = {

@@ -6,7 +6,7 @@ import { Frames } from '../../stories/Frames'
 import { WEB, WEB_CORNERS, WEB_PART, comment } from '../../stories/docFixtures'
 import { docAt, type DocHere } from '../../stories/docPage'
 
-export default { title: 'Components/Document/Commenting/Web pages' } satisfies Meta
+export default { title: 'UI/Document pane/Commenting/Web pages' } satisfies Meta
 type Story = StoryObj
 
 const B = { key: WEB_PART.b, text: 'B: export with the filters as columns' }

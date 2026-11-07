@@ -9,7 +9,7 @@ import { agentsFacts } from './agentsFacts'
 import { inQueue } from '../../model/items'
 import { PROJECT } from '../../stories/listFixtures'
 
-export default { title: 'Components/Around the page/Menus and sheets/Agents/Who works here' } satisfies Meta
+export default { title: 'UI/List pane/Top bar/Agent pill/Who works here' } satisfies Meta
 type Story = StoryObj
 
 /** the project with nothing in its queue now (what waits is for later, or in progress) */

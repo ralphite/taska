@@ -4,7 +4,7 @@ import type { ListQuery } from '../../model/route'
 import { Frames } from '../../stories/Frames'
 import { PROJECT, listOf } from '../../stories/listFixtures'
 
-export default { title: 'Components/Item list/Filtered' } satisfies Meta
+export default { title: 'UI/List pane/Views/Filtered' } satisfies Meta
 type Story = StoryObj
 
 const at = (q: Partial<ListQuery>): Story => ({

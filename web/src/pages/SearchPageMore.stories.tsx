@@ -3,7 +3,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { stateStory } from '../stories/searchPhone'
 
-export default { title: 'Components/Search on the phone/Say more or change it', parameters: { layout: 'padded' } } satisfies Meta
+export default { title: 'UI/Search/Phone page/Say more or change it', parameters: { layout: 'padded' } } satisfies Meta
 
 export const MaybeMisheard: StoryObj = { name: 'A word may be misheard', ...stateStory('misheard') }
 export const SayingMore: StoryObj = { name: 'Saying more', ...stateStory('sayingMore') }

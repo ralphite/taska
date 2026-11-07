@@ -3,7 +3,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { at, org, sent } from '../../stories/composerSentFixtures'
 
-export default { title: 'Components/Input box/Line after sending/What it became' } satisfies Meta
+export default { title: 'UI/Input box/Line after sending/What it became' } satisfies Meta
 type Story = StoryObj
 
 export const FiledByYourAgent: Story = { ...at({ sent: sent({ acked: true, touched: [12], org: org(true, 'Created F012') }) }), name: 'Filed: made an item' }

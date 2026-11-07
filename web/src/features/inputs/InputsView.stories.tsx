@@ -7,7 +7,7 @@ import { showSwiped } from '../../ui/rowSwipe'
 import { out } from '../../stories/boxFixtures'
 import { inputsOf, type Said } from '../../stories/inputFixtures'
 
-export default { title: 'Components/Inputs/Inputs tab' } satisfies Meta
+export default { title: 'UI/Inputs page/Inputs tab' } satisfies Meta
 type Story = StoryObj
 
 const one = (s: Said): Story => ({ render: () => <Frames desk={false} phoneWidth={393} height={852}>{() => inputsOf(s)}</Frames> })

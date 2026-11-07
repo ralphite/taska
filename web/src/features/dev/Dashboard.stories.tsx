@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { act } from '../../stories/acts'
 import { Dashboard } from './Dashboard'
 
-const meta: Meta = { title: 'Components/Settings, help and parts/Dev/Dashboard' }
+const meta: Meta = { title: 'UI/Settings and help/Dev dashboard' }
 export default meta
 type Story = StoryObj
 

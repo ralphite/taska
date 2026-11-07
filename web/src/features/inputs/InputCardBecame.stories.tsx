@@ -4,7 +4,7 @@ import { T, input } from '../../stories/fixtures'
 import { ONE } from '../../stories/inputFixtures'
 import { one } from '../../stories/inputCardFixtures'
 
-export default { title: 'Components/Inputs/Input card/What it became/Filed by the organizer' } satisfies Meta
+export default { title: 'UI/Inputs page/Input row/What it became/Filed by the organizer' } satisfies Meta
 type Story = StoryObj
 
 const note = (msg: string, f = {}) => ({ ok: true, msg, t: '', keep: false, changed: true, undone: false, ...f })

@@ -5,7 +5,7 @@ import { T, item, message } from '../../stories/fixtures'
 import { talkOf } from '../../stories/itemPage'
 import { CHECKS, answered, ask, at, said } from '../../stories/talkQuestionFixtures'
 
-export default { title: 'Components/Conversation/Message/Question/Answered' } satisfies Meta
+export default { title: 'UI/Item pane/Talk/Message/Question/Answered' } satisfies Meta
 type Story = StoryObj
 
 export const Answered = at(answered)

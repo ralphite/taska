@@ -5,7 +5,7 @@ import { Frames } from '../../stories/Frames'
 import { PICTURE } from '../../stories/fixtures'
 import { DraftFiles, type DraftFile } from './DraftFiles'
 
-const meta: Meta = { title: 'Components/Input box/Pictures and files' }
+const meta: Meta = { title: 'UI/Input box/Pictures and files' }
 export default meta
 type Story = StoryObj
 

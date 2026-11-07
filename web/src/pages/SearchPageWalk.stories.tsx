@@ -5,7 +5,7 @@ import { SearchPhone } from '../stories/searchPhone'
 import { TourFrame } from '../stories/tour/TourFrame'
 import { button, marked, row, type Tour } from '../stories/tour/tour'
 
-export default { title: 'Components/Search on the phone/Walk through', parameters: { layout: 'padded' } } satisfies Meta
+export default { title: 'UI/Search/Phone page/Walk through', parameters: { layout: 'padded' } } satisfies Meta
 
 const TOUR: Tour = {
   steps: [

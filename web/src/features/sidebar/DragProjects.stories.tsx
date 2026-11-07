@@ -6,7 +6,7 @@ import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import { Frame } from '../../stories/Frames'
 import { side } from '../../stories/sideFixtures'
 
-export default { title: 'Components/Around the page/Sidebar/Dragging projects' } satisfies Meta
+export default { title: 'UI/Left sidebar/Projects list/Dragging projects' } satisfies Meta
 type Story = StoryObj
 
 const middle = (root: HTMLElement, slug: string) => {

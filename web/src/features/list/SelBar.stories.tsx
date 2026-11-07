@@ -3,7 +3,7 @@ import { Frames } from '../../stories/Frames'
 import { SelBar } from './SelBar'
 import { act } from '../../stories/menuFixtures'
 
-const meta: Meta = { title: 'Components/Item list/Bar for picked items' }
+const meta: Meta = { title: 'UI/List pane/Selection bar' }
 export default meta
 type Story = StoryObj
 

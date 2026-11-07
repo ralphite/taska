@@ -3,7 +3,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { onDesk } from '../../stories/sectionsFixtures'
 
-export default { title: 'Components/Settings, help and parts/Settings/Notifications/In this browser' } satisfies Meta
+export default { title: 'UI/Settings and help/Settings/Notifications/In this browser' } satisfies Meta
 type Story = StoryObj
 
 export const Notifications: Story = { ...onDesk('notifications'), name: 'On' }

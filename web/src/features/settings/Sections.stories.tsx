@@ -8,7 +8,7 @@ import { act, acts } from '../../stories/acts'
 import { goneProjectMenuSheet, projectMenuSheet } from '../../ui/ProjectSheets'
 import { PROJECT_TONES } from '../../ui/tones'
 
-export default { title: 'Components/Settings, help and parts/Settings/Projects' } satisfies Meta
+export default { title: 'UI/Settings and help/Settings/Projects' } satisfies Meta
 type Story = StoryObj
 
 /** Every project (this one with this page's counts), new, rename, delete; a deleted one asking to be deleted forever. */

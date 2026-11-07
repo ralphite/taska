@@ -9,7 +9,7 @@ import { act } from '../../stories/acts'
 // a document picked is lit in the list; it opens in the pane beside it (the page: the Actions panel)
 const openDoc = act('Documents: open → Document › Reading')
 
-export default { title: 'Components/Around the page/Side lists/Documents' } satisfies Meta
+export default { title: 'UI/Left sidebar/A list open beside it/Documents' } satisfies Meta
 type Story = StoryObj
 
 /** Every document, the newest first, each with its item and its comments; the one open beside the list lit. */

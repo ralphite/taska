@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { view } from '../../stories/itemListFixtures'
 
-export default { title: "Components/Item list/Views/The Items tab's views" } satisfies Meta
+export default { title: "UI/List pane/Views/The Items tab's views" } satisfies Meta
 
 export const NeedsYou: StoryObj = { ...view('items', { status: 'wait' }), name: 'Needs you' }
 export const Active = view('items', { status: 'all' })

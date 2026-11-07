@@ -8,7 +8,7 @@ import { Frames } from '../../stories/Frames'
 import { doc } from '../../stories/docFixtures'
 import { docAt, type DocHere } from '../../stories/docPage'
 
-export default { title: 'Components/Document/Commenting/Paragraphs' } satisfies Meta
+export default { title: 'UI/Document pane/Commenting/Paragraphs' } satisfies Meta
 type Story = StoryObj
 
 const PLAN = doc()

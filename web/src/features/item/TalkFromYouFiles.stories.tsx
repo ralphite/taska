@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { LONG, at, later, message, mine, pdf, r4, shot } from '../../stories/fromYouFixtures'
 
-export default { title: 'Components/Conversation/Message/From you/Pictures, files, long words' } satisfies Meta
+export default { title: 'UI/Item pane/Talk/Message/From you/Pictures, files, long words' } satisfies Meta
 type Story = StoryObj
 
 export const WithPictures: Story = { ...at([mine()], { inputs: [r4({ files: [shot, { ...shot, f: 'f4-shot.png' }] })] }), name: 'With pictures' }

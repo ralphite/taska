@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { input, item, message } from '../../stories/fixtures'
 import { at } from '../../stories/talkFromAgentFixtures'
 
-export default { title: 'Components/Conversation/Message/From an agent/Who sent it' } satisfies Meta
+export default { title: 'UI/Item pane/Talk/Message/From an agent/Who sent it' } satisfies Meta
 type Story = StoryObj
 
 export const FromCodex: Story = { ...at([message({ id: 2, by: 'codex', ses: 'tests', text: 'The export tests pass with three filters.' })]), name: 'From Codex' }

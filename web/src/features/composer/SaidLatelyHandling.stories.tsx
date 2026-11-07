@@ -5,7 +5,7 @@ import { Frames } from '../../stories/Frames'
 import { out } from '../../stories/boxFixtures'
 import { DAY, ONE, saidOf } from '../../stories/inputFixtures'
 
-export default { title: 'Components/Inputs/New input page/Latest inputs/One on its way or being handled' } satisfies Meta
+export default { title: 'UI/Inputs page/New input page/Latest inputs/One on its way or being handled' } satisfies Meta
 type Story = StoryObj
 
 const list = (s: Parameters<typeof saidOf>[0]): Story => ({ render: () => <Frames phone={false} deskWidth={1024}>{() => <div className="p-6">{saidOf(s)}</div>}</Frames> })

@@ -1,9 +1,10 @@
-// Every story of a Storybook folder (T582 #5, pilot: Components/Item list) opened on the running Storybook: it draws,
-// the console says no error, and it looks exactly like its saved picture (storyshots/pictures). A change that alters
-// another story's look fails here; when the change is meant, save the pictures again with --update-snapshots.
+// Every story of a Storybook folder (T582 #5, pilot: UI/List pane, Components/Item list before T701) opened on the
+// running Storybook: it draws, the console says no error, and it looks exactly like its saved picture
+// (storyshots/pictures). A change that alters another story's look fails here; when the change is meant, save the
+// pictures again with --update-snapshots.
 import { expect, test } from '@playwright/test'
 
-const FOLDER = process.env.STORY_FOLDER || 'Components/Item list'
+const FOLDER = process.env.STORY_FOLDER || 'UI/List pane'
 const BASE = process.env.STORYBOOK_URL || 'http://localhost:6007'
 
 type Entry = { id: string; title: string; name: string; type: string }

@@ -5,7 +5,7 @@ import { comment, doc } from '../../stories/itemFixtures'
 import { DocCard } from './DocCard'
 import { act } from '../../stories/acts'
 
-const meta: Meta = { title: 'Components/Item page/Document card' }
+const meta: Meta = { title: 'UI/Item pane/Documents on it' }
 export default meta
 type Story = StoryObj
 

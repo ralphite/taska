@@ -4,7 +4,7 @@ import { Frames } from '../../stories/Frames'
 import { boxAt } from '../../stories/boxFixtures'
 import { recording } from '../../stories/doubtsFixtures'
 
-export default { title: 'Components/Input box/Voice/Recording' } satisfies Meta
+export default { title: 'UI/Input box/Voice/Recording' } satisfies Meta
 type Story = StoryObj
 
 export const Recording = recording()

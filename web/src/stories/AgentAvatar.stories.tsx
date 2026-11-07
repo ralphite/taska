@@ -5,7 +5,7 @@ import { whoName } from '../model/words'
 import { Avatar } from '../ui/bits'
 import { Frames } from './Frames'
 
-export default { title: 'Components/Settings, help and parts/Icons and marks/Agent avatar' } satisfies Meta
+export default { title: 'Base components/Avatars' } satisfies Meta
 type Story = StoryObj
 
 export const Agents: Story = {

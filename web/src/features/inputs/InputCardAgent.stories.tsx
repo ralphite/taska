@@ -5,7 +5,7 @@ import { T, input } from '../../stories/fixtures'
 import { ONE } from '../../stories/inputFixtures'
 import { one } from '../../stories/inputCardFixtures'
 
-export default { title: 'Components/Inputs/Input card/What it became/Left for an agent' } satisfies Meta
+export default { title: 'UI/Inputs page/Input row/What it became/Left for an agent' } satisfies Meta
 type Story = StoryObj
 
 /** The organizer left it for your coding agent (its model said pass). */

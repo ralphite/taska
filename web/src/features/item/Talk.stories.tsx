@@ -8,7 +8,7 @@ import { T, input, item, message } from '../../stories/fixtures'
 import { comment, doc } from '../../stories/itemFixtures'
 import { talkOf, type PageOpts } from '../../stories/itemPage'
 
-export default { title: 'Components/Conversation/Whole conversation' } satisfies Meta
+export default { title: 'UI/Item pane/Talk/Whole conversation' } satisfies Meta
 type Story = StoryObj
 
 const at = (min: number) => new Date(Date.parse(T) + min * 60_000).toISOString()

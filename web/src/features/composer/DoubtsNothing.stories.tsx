@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { voice } from '../../stories/doubtsFixtures'
 
-export default { title: 'Components/Input box/Voice/Cut short or nothing heard' } satisfies Meta
+export default { title: 'UI/Input box/Voice/Cut short or nothing heard' } satisfies Meta
 
 export const MayBeCutShort: StoryObj = { ...voice({ tr: 'Keep the sort', more: true }, 'Keep the sort'), name: 'More words coming' }
 export const NoWordsHeard: StoryObj = { ...voice({ tr: '' }), name: 'No words heard' }

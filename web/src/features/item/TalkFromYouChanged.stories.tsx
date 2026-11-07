@@ -6,7 +6,7 @@ import { talkOf } from '../../stories/itemPage'
 import { one as tip } from '../../stories/tipFixtures'
 import { record } from '../../stories/fixtures'
 
-export default { title: 'Components/Conversation/Message/From you/Changed afterwards' } satisfies Meta
+export default { title: 'UI/Item pane/Talk/Message/From you/Changed afterwards' } satisfies Meta
 type Story = StoryObj
 
 export const Edited = at([mine({ edited: later(1) })])

@@ -6,7 +6,7 @@ import { listOf, PROJECT } from './listFixtures'
 import { rail, side } from './sideFixtures'
 import { button, one } from './tipFixtures'
 
-export default { title: 'Components/Around the page/Floating/Tip/On buttons' } satisfies Meta
+export default { title: 'Base components/Tips/On buttons' } satisfies Meta
 type Story = StoryObj
 
 export const OnApprove: Story = { ...one(() => listOf(PROJECT, 'items', {}, true), button('[data-n="3"]', 'Approve'), { height: 520 }), name: 'On Approve, in a row that waits on you' }

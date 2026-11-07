@@ -4,7 +4,7 @@ import { act } from '../stories/menuFixtures'
 import { Icon } from './Icon'
 import { PaneFrame } from './PaneFrame'
 
-const meta: Meta = { title: 'Components/Item page/Layout' }
+const meta: Meta = { title: 'UI/Item pane/Layout' }
 export default meta
 type Story = StoryObj
 

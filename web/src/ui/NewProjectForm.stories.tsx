@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../stories/Frames'
 import { withNewProject } from '../stories/newProjectFixtures'
 
-export default { title: 'Components/Around the page/Sidebar/A new project/The form' } satisfies Meta
+export default { title: 'UI/Left sidebar/Projects list/A new project/The form' } satisfies Meta
 type Story = StoryObj
 
 const at = (value: string, error = ''): Story => ({

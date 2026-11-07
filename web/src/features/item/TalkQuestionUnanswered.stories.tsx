@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { message } from '../../stories/fixtures'
 import { ASK, FORM, ask, at, later, said, waits } from '../../stories/talkQuestionFixtures'
 
-export default { title: 'Components/Conversation/Message/Question/Not answered with a choice' } satisfies Meta
+export default { title: 'UI/Item pane/Talk/Message/Question/Not answered with a choice' } satisfies Meta
 type Story = StoryObj
 
 export const SkippedYouRepliedInstead: Story = { ...at([ask(), said('Whichever is quicker.')], { talked: true }), name: 'Skipped: you replied instead' }

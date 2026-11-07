@@ -7,7 +7,7 @@ import { frame, it, newInputHead } from '../../stories/itemPageLayoutFixtures'
 import { BackTo, NoSelection } from './ItemPage'
 import { act } from '../../stories/acts'
 
-export default { title: 'Components/Item page/Its bar' } satisfies Meta
+export default { title: 'UI/Item pane/Bar' } satisfies Meta
 type Story = StoryObj
 
 export const PointerKeysPressed: Story = {

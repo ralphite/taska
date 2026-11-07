@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { T, message } from '../../stories/fixtures'
 import { at, report, said } from '../../stories/itemPageFixtures'
 
-export default { title: 'Components/Item page/By item status/Finished' } satisfies Meta
+export default { title: 'UI/Item pane/Whole/By item status/Finished' } satisfies Meta
 type Story = StoryObj
 
 export const Done = at({ status: 'done', thread: [said, report], decided: { from: 'review', to: 'done', msg: 6, t: T } })

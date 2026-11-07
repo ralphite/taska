@@ -5,7 +5,7 @@ import { WEB, doc } from '../../stories/docFixtures'
 import { docAt } from '../../stories/docPage'
 import { at, desk } from '../../stories/itemPageLayoutFixtures'
 
-export default { title: 'Components/Item page/Layout' } satisfies Meta
+export default { title: 'UI/Item pane/Layout' } satisfies Meta
 type Story = StoryObj
 
 export const FullWidth: Story = { ...desk({ full: true }, 1400), name: 'Full width' }

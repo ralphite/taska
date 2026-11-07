@@ -3,7 +3,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { deskStory } from '../stories/searchDesk'
 
-export default { title: 'Components/Search on the desktop/When it goes wrong, dark, narrower' } satisfies Meta
+export default { title: 'UI/Search/Desktop dialog/When it goes wrong, dark, narrower' } satisfies Meta
 
 export const NothingFound: StoryObj = { name: 'Nothing found', ...deskStory('nothing') }
 export const DidntCatchThat: StoryObj = { name: "Didn't catch that", ...deskStory('unheard') }

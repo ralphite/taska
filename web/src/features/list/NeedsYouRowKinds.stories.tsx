@@ -7,7 +7,7 @@ import { Frames } from '../../stories/Frames'
 import { ask, one, question } from '../../stories/needsYouRowFixtures'
 import { ProposalRow } from './ListRows'
 
-export default { title: 'Components/Item list/Needs-you row/By what it needs' } satisfies Meta
+export default { title: 'UI/List pane/Needs-you row/By what it needs' } satisfies Meta
 
 export const Question = one(question)
 export const ChecklistQuestion: StoryObj = { ...one({ it: ask('Which formats should the export offer?\n- [ ] CSV\n- [ ] Excel\n- [ ] JSON'), excerpt: 'Which formats should the export offer?' }), name: 'A checklist question' }

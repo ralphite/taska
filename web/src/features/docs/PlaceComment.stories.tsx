@@ -8,7 +8,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { PlaceStep, type Kind, type Step } from '../../stories/placeComment'
 
-export default { title: 'Components/Document/Commenting/Voice and words on a place', parameters: { layout: 'padded' } } satisfies Meta
+export default { title: 'UI/Document pane/Commenting/Voice and words on a place', parameters: { layout: 'padded' } } satisfies Meta
 type Story = StoryObj
 
 const STEPS: { step: Step; title: string; note(desk: boolean): string; phone?: boolean }[] = [

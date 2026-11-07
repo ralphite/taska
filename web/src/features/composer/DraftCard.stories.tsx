@@ -5,7 +5,7 @@ import { LiveWords } from '../../stories/doubtsFixtures'
 import { DraftWords } from './Doubts'
 import { DraftCard, DRAFT_WORDS } from './DraftCard'
 
-const meta: Meta = { title: 'Components/Input box/Draft card' }
+const meta: Meta = { title: 'UI/Input box/Draft card' }
 export default meta
 type Story = StoryObj
 

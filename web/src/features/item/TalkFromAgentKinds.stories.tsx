@@ -4,7 +4,7 @@ import { message } from '../../stories/fixtures'
 import { you } from '../../stories/itemPage'
 import { at, later } from '../../stories/talkFromAgentFixtures'
 
-export default { title: 'Components/Conversation/Message/From an agent/Kinds of message' } satisfies Meta
+export default { title: 'UI/Item pane/Talk/Message/From an agent/Kinds of message' } satisfies Meta
 type Story = StoryObj
 
 export const Progress = at([message({ id: 2 })])

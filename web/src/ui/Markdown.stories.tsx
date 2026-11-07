@@ -7,7 +7,7 @@ import { item, modelOf } from '../stories/fixtures'
 import { talkEnv } from '../stories/itemFixtures'
 import { Rich } from './Markdown'
 
-const meta: Meta = { title: 'Components/Conversation/Message parts/Words' }
+const meta: Meta = { title: 'Base components/Markdown' }
 export default meta
 type Story = StoryObj
 

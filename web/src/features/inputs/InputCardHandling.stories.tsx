@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ONE } from '../../stories/inputFixtures'
 import { one } from '../../stories/inputCardFixtures'
 
-export default { title: 'Components/Inputs/Input card/Being handled' } satisfies Meta
+export default { title: 'UI/Inputs page/Input row/Being handled' } satisfies Meta
 type Story = StoryObj
 
 export const VoiceNote: Story = { ...one(ONE.voice), name: 'Voice note' }

@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { out } from '../../stories/boxFixtures'
 import { at } from '../../stories/composerSentFixtures'
 
-export default { title: 'Components/Input box/Line after sending/On its way' } satisfies Meta
+export default { title: 'UI/Input box/Line after sending/On its way' } satisfies Meta
 type Story = StoryObj
 
 export const Sending = at({ mine: [out()] })

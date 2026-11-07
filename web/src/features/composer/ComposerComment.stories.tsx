@@ -4,7 +4,7 @@ import { threadKey } from '../../model/docs'
 import { PLAN } from '../../stories/boxFixtures'
 import { at } from '../../stories/composerFixtures'
 
-export default { title: 'Components/Input box/What it writes to/A comment on a document' } satisfies Meta
+export default { title: 'UI/Input box/What it writes to/A comment on a document' } satisfies Meta
 type Story = StoryObj
 
 export const ADocumentOpenNothingPicked: Story = { ...at({ at: 'D1' }), name: 'A document open, nothing picked' }

@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { message } from '../../stories/fixtures'
 import { agent, one } from '../../stories/itemRowFixtures'
 
-export default { title: 'Components/Item list/Item row/By status/Still to do' } satisfies Meta
+export default { title: 'UI/List pane/Item row/By status/Still to do' } satisfies Meta
 type Story = StoryObj
 
 export const Open = one({})

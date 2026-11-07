@@ -6,7 +6,7 @@ import { Frames } from '../../stories/Frames'
 import { doc } from '../../stories/docFixtures'
 import { editAt } from '../../stories/docPage'
 
-export default { title: 'Components/Document/Editing' } satisfies Meta
+export default { title: 'UI/Document pane/Editing' } satisfies Meta
 type Story = StoryObj
 
 const PLAN = doc()
