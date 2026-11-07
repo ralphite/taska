@@ -3,6 +3,8 @@
 // webFacts with a demo project, and the page's DocView, WebPage, Thread and DocEdit draw it, with the state the page
 // keeps for it. Used by the document's stories.
 import { useState, type ReactNode } from 'react'
+import { SelectionBar } from '../features/composer/SelectionBar'
+import { selected, useSelectedWords } from '../features/composer/selectedWords'
 import { DocEdit } from '../features/docs/DocEdit'
 import { DocPaneActs, DocPaneHead, DocPaneNav } from '../features/docs/DocPane'
 import { DocSheetMore } from '../features/docs/DocSheets'
@@ -21,6 +23,7 @@ import { PaneFrame } from '../ui/PaneFrame'
 import { PLACE_LEVELS, RecBar } from '../ui/PlaceVoice'
 import { Sheet, SheetLayout } from '../ui/Sheet'
 import { DIAGRAMS, PICTURE, T, item, modelOf } from './fixtures'
+import { inFrame, inLayout } from './Frames'
 import { acts } from './acts'
 import { useMedia } from './liveParts'
 
@@ -95,6 +98,8 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
   const seen = h.seen ?? { since: T }
   const env0 = envOf(m, desk)
   const media = useMedia(env0.url)
+  // the browser's selection, followed as the page's SelectionBarContainer follows it (B708 r1149)
+  const words = useSelectedWords(d.d, v.circle, !!speaking, !!speaking?.bar)
   const env = { ...env0, play: media.play }
   const facts = factsOf(m, d, v, seen, desk, asked, speaking, ticks, h.notSent ?? [])
   const web = d.fmt === 'html'
@@ -176,11 +181,47 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
       />
     )
   }
+  // the page's bar over words selected in this frame: the mic speaks about them (pressed again it is ✓), Comment
+  // makes them what the box comments on (B584)
+  const layout = desk ? 'desk' : 'phone'
+  const mine = () => {
+    const p = selected(d.d, v.circle)
+    return p && inLayout(p.range.commonAncestorContainer, layout) ? p : null
+  }
+  const at = words.at && words.from && inLayout(words.from.commonAncestorContainer, layout) ? inFrame(words.at, words.from.commonAncestorContainer) : null
+  const bar = (
+    <SelectionBar
+      at={at}
+      recording={!!speaking?.bar}
+      desk={desk}
+      meter={recMeter(desk)}
+      comment={!speaking && !!words.s?.key}
+      fix={false}
+      on={{
+        mic: () => {
+          if (speaking?.bar) return on.sayCheck()
+          const p = mine()
+          if (speaking || !p) return
+          words.start(p)
+          setSpeaking({ key: p.key, bar: true, quote: p.text })
+        },
+        comment: () => {
+          const p = mine()
+          if (p?.key) setV({ ...v, quote: { key: p.key, text: p.text }, sel: new Set(), reply: null })
+        },
+        cancel: on.sayCancel,
+        check: on.sayCheck,
+        send: on.saySend,
+        fix: () => {},
+      }}
+    />
+  )
   const view = <DocView facts={facts} boxBelow={h.boxBelow} env={env} on={on} page={page} meter={recMeter(desk)} lasso={v.circle ? <Lasso onDrawn={(keys) => setV({ ...v, circle: false, sel: new Set(keys), quote: null })} /> : null} />
   if (h.viewOnly)
     return (
       <>
         {view}
+        {bar}
         {media.node}
       </>
     )
@@ -197,6 +238,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
         {/* a web page brings its own margins: none are added around it */}
         <div className={web ? 'w-full' : 'w-full px-8 pt-8 pb-12'}>{view}</div>
       </PaneFrame>
+      {bar}
       {media.node}
     </div>
   ) : (
@@ -204,6 +246,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
       <Sheet open look={PHONE_DOC_LOOK} desk={false} onClose={paneActs.back}>
         <SheetLayout title={`D${d.d}`} extra={<DocSheetMore code={`D${d.d}`} circle={!!h.circle} on={{ more: sheetActs.more, done: sheetActs.done }} />} body={view} />
       </Sheet>
+      {bar}
       {media.node}
     </>
   )

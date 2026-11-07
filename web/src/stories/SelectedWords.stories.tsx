@@ -1,14 +1,10 @@
 // Words selected in a document (T591: Commenting > Words selected, Bar over selected words): the page's own document
-// with the browser's selection on some of its words, and the page's bar over them (SelectionBar) where they are.
+// with the browser's selection on some of its words, and the page's bar over them (SelectionBar), which the document
+// draws where they are as the page does (B708 r1149). Select other words in it and the bar follows them.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState } from 'react'
-import { SelectionBar, type Box } from '../features/composer/SelectionBar'
 import { After, Frames } from './Frames'
 import { doc } from './docFixtures'
-import { docAt, recMeter } from './docPage'
-import { acts } from './acts'
-
-const bar = acts('Selection bar', ['comment', 'fix', 'check', 'send'] as const)
+import { docAt } from './docPage'
 
 export default { title: 'UI/Document pane/Commenting/Selected words' } satisfies Meta
 type Story = StoryObj
@@ -31,27 +27,24 @@ function select(root: HTMLElement, key: string, words: string): Range | null {
   return null
 }
 
-function Selected({ desk, recording: start }: { desk: boolean; recording: boolean }) {
-  const [at, setAt] = useState<Box | null>(null)
-  // the mic records a comment about the words (the bar is its strip); ✕ stops it, ✓ and ↑ hand it on (Actions)
-  const [recording, setRecording] = useState(start)
+/** The document with "written from scratch" selected; `recording`: its bar's mic pressed once. */
+function Selected({ desk, recording }: { desk: boolean; recording: boolean }) {
   return (
-    <>
-      <After
-        run={(root) => {
-          const r = select(root, 'p1', 'written from scratch')
-          const b = r?.getBoundingClientRect()
-          if (b && !at) setAt({ top: b.top, bottom: b.bottom, left: b.left, width: b.width, height: b.height })
-        }}
-      >
-        {docAt(doc(), desk)}
-      </After>
-      <SelectionBar at={at} recording={recording} desk={desk} meter={recMeter(desk)} comment fix={false} on={{ mic: () => setRecording(!recording), comment: bar.comment, fix: bar.fix, cancel: () => setRecording(false), check: () => (setRecording(false), bar.check()), send: () => (setRecording(false), bar.send()) }} />
-    </>
+    <After
+      run={(root) => {
+        if (root.querySelector('[data-selection-bar]:not([hidden])')) return
+        select(root, 'p1', 'written from scratch')
+        if (recording) setTimeout(() => root.querySelector<HTMLButtonElement>('[data-selection-bar] [aria-label="Record comment on selection"]')?.click(), 50)
+      }}
+    >
+      {docAt(doc(), desk)}
+    </After>
   )
 }
 
 /** Words selected in a paragraph: they stay only selected, and the bar over them offers to speak or comment. */
 export const WordsSelected: Story = { name: 'Words selected', render: () => <Frames phone={false} height={560} deskWidth={900}>{() => <Selected desk recording={false} />}</Frames> }
-/** The bar's mic pressed: it records a comment about them, the same button stops it. */
+/** On the phone: the same bar over them, in the document's sheet. */
+export const WordsSelectedPhone: Story = { name: 'Words selected, on the phone', render: () => <Frames desk={false} phoneWidth={393}>{() => <Selected desk={false} recording={false} />}</Frames> }
+/** The bar's mic pressed: it records a comment about them, the same button is ✓. */
 export const SelectionBarRecording: Story = { name: 'Bar over selected words', render: () => <Frames phone={false} height={560} deskWidth={900}>{() => <Selected desk recording />}</Frames> }

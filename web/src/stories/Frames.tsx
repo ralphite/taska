@@ -52,6 +52,18 @@ export function Frame({ layout, width, height, label, page = false, children }: 
   )
 }
 
+/** Whether `node` is drawn in the `layout` frame (a story's phone and desktop show the same part, side by side). */
+export function inLayout(node: Node, layout: Layout): boolean {
+  return (node.nodeType === 1 ? (node as Element) : node.parentElement)?.closest<HTMLElement>('[data-layout]')?.dataset.layout === layout
+}
+
+/** A box on the screen (a selection's, as the page measures it) as the frame that holds `node` sees it: the frame is
+ * the story's window, so what the page places by the window's corner is placed by the frame's here. */
+export function inFrame(box: { top: number; bottom: number; left: number; width: number; height: number }, node: Node) {
+  const o = (node.nodeType === 1 ? (node as Element) : node.parentElement)?.closest('[data-layout]')?.getBoundingClientRect() ?? { top: 0, left: 0 }
+  return { top: box.top - o.top, bottom: box.bottom - o.top, left: box.left - o.left, width: box.width, height: box.height }
+}
+
 /** The same part in each frame: phone and desktop. The desktop's width is the story's own: what its part needs (F554:
  * there is no one desktop width), Yadong resizes it from there. */
 export function Frames({ children, phone = true, desk = true, deskWidth, phoneWidth, height, page = false }: {
