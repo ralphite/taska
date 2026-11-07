@@ -72,8 +72,25 @@ npm --prefix web run storybook
 ```
 
 On the managed development machine, the existing `com.taska.storybook-app` LaunchAgent owns that port. Reuse it;
-do not start a second instance. Static component stories use the product components and props. Demos exercise
-real interactions with mock services. Storybook is not bundled into the deployed app.
+do not start a second instance. Static component stories use the product components and props. Storybook is not
+bundled into the deployed app.
+
+A Demo (`Demo/` in Storybook, `web/src/stories/demo/`) plays something you do in Taska on the real page, in a phone's
+frame and a desktop's, answered by a real server's recorded answers. One list of steps per layout (`demos.ts`)
+drives the guided tour, Play, the recording and the check. After a change to what a Demo goes through, record it
+again and check it, on a static build (never the running Storybook):
+
+```sh
+npm --prefix web run build-storybook
+node web/scripts/record-demo.mjs web/dist-storybook [demo] [phone|desk]   # a real Taska on a copy of the demo data
+npm --prefix web run build-storybook
+node web/scripts/check-demos.mjs web/dist-storybook [--shots dir] [--video dir] [--quick]
+```
+
+Recording runs `tools/demo_server.py` on a fresh copy of `web/.storybook/demo-data` and a free port: the real server
+with its clock, the voice note's words and the organizer's answer fixed (the Demo's `<demo>.json`); nothing reaches
+a model. The check plays each Demo to the end and leaves it alone for half a minute (the page's long wait for news
+must be answered as the server answers it, not seen as offline).
 
 The watchdog checks Storybook health without calling a model. It restarts only after five minutes of failure and
 logs the reason. After an intentional Storybook configuration change, use
