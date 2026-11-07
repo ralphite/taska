@@ -22,7 +22,7 @@ from ..domain import events as ev, rules
 from ..domain.model import Input
 from ..domain.text import hm
 from ..domain.vocab import CLOSED, TEXT_VERBS, Refused
-from ..domain.voices import for_agents, words_of
+from ..domain.voices import for_agents, said as said_words, words_of
 from ..infra import gemini
 from .project import Project
 
@@ -52,6 +52,22 @@ def context(p: Project, inp: Input) -> str:
 PARALLEL = int(os.environ.get("TASKA_ORGANIZE_PARALLEL", 4))  # inputs organized at the same time
 # B684 (Yadong, #9933): each input is asked of both models at once, and the first good answer is the plan
 MODELS = [m.strip() for m in os.environ.get("TASKA_ORGANIZER_MODELS", "gemini-3.1-pro-preview,gemini-3.8-flash").split(",") if m.strip()]
+
+
+def echo(p: Project, inp: Input, c: Any) -> bool:
+    """A message from the organizer on the item the input was said in, repeating the input (B703): it is already in
+    that item's talk, the user's own message; the model sometimes copies it anyway, so it is dropped here."""
+    if not isinstance(c, dict) or c.get("op") != "say" or inp.scope is None:
+        return False
+    try:
+        if rules.item_at(p.state, c.get("ref") or "").n != inp.scope:
+            return False
+    except Refused:
+        return False
+    flat = lambda t: re.sub(r"\s+", "", t or "")
+    mine = flat(said_words(p.state, inp.text, inp.files))
+    text = flat(str(c.get("text") or ""))
+    return bool(text) and (text in mine or mine in text)
 
 
 def first_plan(parts: List[Dict[str, Any]], think: int) -> str:
@@ -160,6 +176,7 @@ class Organizer(threading.Thread):
             self.later.pop(rid, None)
             keep = had_history or bool(re.search(r"(?im)^\s*pass\s*$", plan))
             commands = parse(re.sub(r"(?im)^\s*pass\s*$", "", indent_strays(plan)))
+            commands = [(no, c) for no, c in commands if not echo(p, current, c)]
             if keep:  # the input is for the coding agent: changes may be made, but it stays in the inbox
                 commands = [(no, c) for no, c in commands if isinstance(c, Refused) or c.get("op") != "ack"]
             lines, labels = p.run(commands, "org", src=rid, keep=keep)
