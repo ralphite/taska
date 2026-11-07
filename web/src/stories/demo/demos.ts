@@ -12,6 +12,8 @@ import sayItPhone from './recordings/sayIt.phone.json'
 import sayItDesk from './recordings/sayIt.desk.json'
 import answerPhone from './recordings/answerAndAccept.phone.json'
 import answerDesk from './recordings/answerAndAccept.desk.json'
+import rulesPhone from './recordings/rulesChange.phone.json'
+import rulesDesk from './recordings/rulesChange.desk.json'
 
 export interface Demo {
   id: string
@@ -99,4 +101,36 @@ export const answerAndAccept: Demo = {
   recordings: { phone: answerPhone, desk: answerDesk },
 }
 
-export const DEMOS: Record<string, Demo> = { sayIt, answerAndAccept }
+// An agent proposes a change to one section of the rules; approved, it is the next version; History shows each
+// version's change.
+const viewChange = button('View changes', { label: 'View' })
+
+/** Approve an agent's change to the rules, then see it in History (D124: the third Demo). */
+export const rulesChange: Demo = {
+  id: 'rulesChange',
+  start: '/p/shop/',
+  now: story.now,
+  tours: {
+    phone: {
+      steps: [
+        { say: 'Tap View on the proposed change to the rules.', target: viewChange, wait: 15000 },
+        { say: 'Read the change, then tap Approve.', target: button('Approve'), pace: 2500 },
+        { say: 'Close it: the rules have the new version.', target: button('Close'), pace: 2000 },
+        { say: 'Tap History.', target: button('History') },
+        { say: 'Tap the new version to see what it changed.', target: button(/v3\s*[+−]/, { label: 'Version 3' }), pace: 1800 },
+      ],
+    },
+    desk: {
+      steps: [
+        { say: 'Click View on the proposed change to the rules.', target: viewChange, wait: 15000 },
+        { say: 'Read the change, then click Approve.', target: button('Approve'), pace: 2500 },
+        { say: 'Back to the rules: the new version.', target: button('Back to Rules'), pace: 2000 },
+        { say: 'Click History: each version and what it changed.', target: button('History') },
+        { say: 'Click an earlier version to see its change.', target: button(/v2\s*[+−]/, { label: 'Version 2' }), pace: 2200 },
+      ],
+    },
+  },
+  recordings: { phone: rulesPhone, desk: rulesDesk },
+}
+
+export const DEMOS: Record<string, Demo> = { sayIt, answerAndAccept, rulesChange }
