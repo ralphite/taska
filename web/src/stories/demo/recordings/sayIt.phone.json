@@ -1,7 +1,7 @@
 {
  "demo": "sayIt",
  "layout": "phone",
- "made": "2026-11-07T07:17:55.642Z at e427ddf5",
+ "made": "2026-11-07T17:34:28.025Z at dc7e5e11",
  "exchanges": [
   {
    "method": "GET",
@@ -25,8 +25,8 @@
      860
     ]
    },
-   "sent": 365,
-   "at": 369
+   "sent": 311,
+   "at": 315
   },
   {
    "method": "GET",
@@ -49,12 +49,12 @@
       }
      ],
      "work": true,
-     "t": 1794035859224
+     "t": 1794072853398
     },
     {
      "name": "shop",
      "title": "Shop",
-     "open": 18,
+     "open": 20,
      "needs": 7,
      "closed": 15,
      "inputs": 20,
@@ -67,7 +67,7 @@
       }
      ],
      "work": true,
-     "t": 1794035859232
+     "t": 1794072853404
     },
     {
      "name": "website",
@@ -79,11 +79,19 @@
      "docs": 0,
      "agents": [],
      "work": false,
-     "t": 1794035859233
+     "t": 1794072853406
     }
    ],
-   "sent": 366,
-   "at": 371
+   "sent": 312,
+   "at": 318
+  },
+  {
+   "method": "GET",
+   "url": "/api/views",
+   "status": 200,
+   "json": [],
+   "sent": 313,
+   "at": 317
   },
   {
    "method": "GET",
@@ -98,7 +106,7 @@
      "title": "改到结账流程的，上线前先在真 iPhone Safari 上测一遍",
      "kind": "rules",
      "pri": "P1",
-     "t": "2026-10-23T11:55:10-07:00",
+     "t": "2026-10-23T11:50:10-07:00",
      "p": 271
     },
     {
@@ -182,23 +190,15 @@
      "t": "2026-09-28T13:55:10-07:00"
     }
    ],
-   "sent": 367,
-   "at": 371
-  },
-  {
-   "method": "GET",
-   "url": "/api/views",
-   "status": 200,
-   "json": [],
-   "sent": 367,
-   "at": 372
+   "sent": 313,
+   "at": 318
   },
   {
    "method": "GET",
    "url": "/p/shop/api/view",
    "status": 200,
    "json": {
-    "cursor": "1a16a1df40a.67.272.0",
+    "cursor": "1a16a1df36d.69.279.0",
     "full": true,
     "items": [
      {
@@ -900,15 +900,33 @@
       "status": "open",
       "parent": 1,
       "next": "",
-      "srcs": [],
+      "srcs": [
+       "r20"
+      ],
       "mergedInto": null,
       "archived": false,
       "t0": "2026-09-28T13:57:10-07:00",
-      "t1": "2026-09-28T15:15:10-07:00",
+      "t1": "2026-10-23T11:50:15-07:00",
       "by": "codex",
-      "thread": [],
+      "thread": [
+       {
+        "id": 275,
+        "by": "org",
+        "kind": "say",
+        "text": "手机上点 Export 没反应，手机上还导不出来。",
+        "t": "2026-10-23T11:50:15-07:00",
+        "src": "r20",
+        "files": [
+         {
+          "f": "f7-voice_0-15.webm",
+          "name": "voice_0-15.webm",
+          "mime": "audio/webm"
+         }
+        ]
+       }
+      ],
       "wait": null,
-      "talked": false,
+      "talked": true,
       "agent": {
        "by": "codex",
        "t": "2026-09-28T13:57:10-07:00",
@@ -2132,6 +2150,52 @@
        "msg": null,
        "t": "2026-10-21T02:57:10-07:00"
       }
+     },
+     {
+      "n": 44,
+      "code": "B44",
+      "type": "bug",
+      "title": "订单页订单多时滚动很卡",
+      "body": "订单页列表很长的时候滚动很卡，见截图。大概 2,000 单以上就开始卡了。",
+      "pri": "P1",
+      "when": "now",
+      "status": "open",
+      "parent": null,
+      "next": "",
+      "srcs": [
+       "r19"
+      ],
+      "mergedInto": null,
+      "archived": false,
+      "t0": "2026-10-23T11:50:12-07:00",
+      "t1": "2026-10-23T11:50:12-07:00",
+      "by": "org",
+      "thread": [],
+      "wait": null,
+      "talked": false
+     },
+     {
+      "n": 45,
+      "code": "B45",
+      "type": "bug",
+      "title": "手机上订单列表的筛选按钮太小，常点到搜索框",
+      "body": "手机上订单列表的筛选按钮太小了，老是点到旁边的搜索框，点了好几次才点中。",
+      "pri": "P1",
+      "when": "now",
+      "status": "open",
+      "parent": null,
+      "next": "",
+      "srcs": [
+       "r20"
+      ],
+      "mergedInto": null,
+      "archived": false,
+      "t0": "2026-10-23T11:50:15-07:00",
+      "t1": "2026-10-23T11:50:15-07:00",
+      "by": "org",
+      "thread": [],
+      "wait": null,
+      "talked": false
      }
     ],
     "inputs": [
@@ -2604,11 +2668,31 @@
         "size": 18537
        }
       ],
-      "acked": false,
-      "touched": [],
-      "org": null,
+      "acked": true,
+      "touched": [
+       44
+      ],
+      "org": {
+       "ok": true,
+       "msg": "Created B44",
+       "t": "2026-10-23T11:50:12-07:00",
+       "keep": false,
+       "changed": true,
+       "undone": false
+      },
       "seq": 262,
-      "v": 0
+      "v": 0,
+      "filing": {
+       "can": true,
+       "what": "removes B44",
+       "why": ""
+      },
+      "deletion": {
+       "go": [
+        44
+       ],
+       "keep": []
+      }
      },
      {
       "id": "r20",
@@ -2624,11 +2708,32 @@
         "size": 48738
        }
       ],
-      "acked": false,
-      "touched": [],
-      "org": null,
+      "acked": true,
+      "touched": [
+       15,
+       45
+      ],
+      "org": {
+       "ok": true,
+       "msg": "Noted on T15 · Created B45",
+       "t": "2026-10-23T11:50:15-07:00",
+       "keep": false,
+       "changed": true,
+       "undone": false
+      },
       "seq": 266,
-      "v": 0
+      "v": 0,
+      "filing": {
+       "can": true,
+       "what": "takes back the note on T15 · removes B45",
+       "why": ""
+      },
+      "deletion": {
+       "go": [
+        45
+       ],
+       "keep": []
+      }
      },
      {
       "id": "r21",
@@ -2637,11 +2742,18 @@
       "text": "顺便看一下 B6 修好的那个邮件问题，客服说今天上午还有一个顾客收到了两封。",
       "scope": 6,
       "files": [],
-      "acked": false,
+      "acked": true,
       "touched": [
        6
       ],
-      "org": null,
+      "org": {
+       "ok": true,
+       "msg": "Added to B06",
+       "t": "2026-10-23T11:50:17-07:00",
+       "keep": false,
+       "changed": false,
+       "undone": false
+      },
       "seq": 267,
       "v": 0
      }
@@ -2954,7 +3066,7 @@
        {
         "id": 271,
         "by": "claude-code",
-        "t": "2026-10-23T11:55:10-07:00",
+        "t": "2026-10-23T11:50:10-07:00",
         "why": "改到结账流程的，上线前先在真 iPhone Safari 上测一遍",
         "state": "wait",
         "on": 1,
@@ -2966,8 +3078,8 @@
        {
         "v": 1,
         "by": "taska",
-        "t0": "2026-10-23T11:55:10-07:00",
-        "t": "2026-10-23T11:55:10-07:00",
+        "t0": "2026-10-23T11:50:10-07:00",
+        "t": "2026-10-23T11:50:10-07:00",
         "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode",
         "whys": [
          "Rules moved into one document"
@@ -2980,8 +3092,8 @@
       "n": 0,
       "title": "Rules",
       "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode",
-      "t0": "2026-10-23T11:55:10-07:00",
-      "t1": "2026-10-23T11:55:10-07:00",
+      "t0": "2026-10-23T11:50:10-07:00",
+      "t1": "2026-10-23T11:50:10-07:00",
       "by": "taska",
       "versions": 1,
       "fmt": "md",
@@ -3047,7 +3159,7 @@
      "slug": "shop",
      "title": "Shop",
      "width": 2,
-     "file": "/var/folders/pv/h1nh3j1n7k94z_2nvdcz4rfc0000gn/T/taska-demo-NblcaF/data/shop/taska.db",
+     "file": "/var/folders/pv/h1nh3j1n7k94z_2nvdcz4rfc0000gn/T/taska-demo-j6fFfb/data/shop/taska.db",
      "organizer": {
       "on": true,
       "model": "gemini-3.1-pro-preview + gemini-3.8-flash",
@@ -3133,32 +3245,32 @@
      ],
      "deleted": [],
      "phone": false,
-     "base": "http://127.0.0.1:56325/p/shop",
-     "key": "pab9-yuua",
+     "base": "http://127.0.0.1:60625/p/shop",
+     "key": "ut47-xske",
      "remote": "",
      "lan": ""
     },
     "server": {
-     "page": "index-DK3U16Bb.js",
+     "page": "da39a3ee5e",
      "update": false
     }
    },
-   "sent": 373,
-   "at": 382
+   "sent": 316,
+   "at": 331
   },
   {
    "method": "GET",
-   "url": "/p/shop/api/changes?cursor=1a16a1df40a.67.272.0&wait=25",
+   "url": "/p/shop/api/changes?cursor=1a16a1df36d.69.279.0&wait=25",
    "status": 200,
    "json": {
-    "cursor": "1a16a1df40a.68.273.0",
+    "cursor": "1a16a1df36d.70.280.0",
     "full": false,
     "items": [],
     "inputs": [],
     "docs": [],
     "voices": [
      {
-      "f": "f8-voice_0-06.webm",
+      "f": "f8-voice_0-05.webm",
       "state": "wait",
       "said": "",
       "tidied": ""
@@ -3174,7 +3286,7 @@
      "slug": "shop",
      "title": "Shop",
      "width": 2,
-     "file": "/var/folders/pv/h1nh3j1n7k94z_2nvdcz4rfc0000gn/T/taska-demo-NblcaF/data/shop/taska.db",
+     "file": "/var/folders/pv/h1nh3j1n7k94z_2nvdcz4rfc0000gn/T/taska-demo-j6fFfb/data/shop/taska.db",
      "organizer": {
       "on": true,
       "model": "gemini-3.1-pro-preview + gemini-3.8-flash",
@@ -3260,36 +3372,36 @@
      ],
      "deleted": [],
      "phone": false,
-     "base": "http://127.0.0.1:56325/p/shop",
-     "key": "pab9-yuua",
+     "base": "http://127.0.0.1:60625/p/shop",
+     "key": "ut47-xske",
      "remote": "",
      "lan": ""
     },
     "server": {
-     "page": "index-DK3U16Bb.js",
+     "page": "da39a3ee5e",
      "update": false
     }
    },
-   "sent": 400,
-   "at": 9289
+   "sent": 348,
+   "at": 7883
   },
   {
    "method": "POST",
-   "url": "/p/shop/api/file?name=voice+0-06.webm&transcribe=1",
+   "url": "/p/shop/api/file?name=voice+0-05.webm&transcribe=1",
    "status": 200,
    "json": {
-    "f": "f8-voice_0-06.webm",
-    "name": "voice 0-06.webm",
+    "f": "f8-voice_0-05.webm",
+    "name": "voice 0-05.webm",
     "mime": "audio/webm",
-    "size": 105551,
+    "size": 94909,
     "pending": true
    },
-   "sent": 9194,
-   "at": 9289
+   "sent": 7829,
+   "at": 7883
   },
   {
    "method": "POST",
-   "url": "/p/shop/api/commands?cursor=1a16a1df40a.67.272.0",
+   "url": "/p/shop/api/commands?cursor=1a16a1df36d.69.279.0",
    "status": 200,
    "json": {
     "ok": true,
@@ -3297,35 +3409,35 @@
      "ok r22"
     ],
     "changes": {
-     "cursor": "1a16a1df40a.69.274.0",
+     "cursor": "1a16a1df36d.71.281.0",
      "full": false,
      "items": [],
      "inputs": [
       {
        "id": "r22",
-       "t": "2026-10-23T11:55:19-07:00",
+       "t": "2026-10-23T11:55:18-07:00",
        "by": "you",
        "text": "",
        "scope": null,
        "files": [
         {
-         "f": "f8-voice_0-06.webm",
-         "name": "voice 0-06.webm",
+         "f": "f8-voice_0-05.webm",
+         "name": "voice 0-05.webm",
          "mime": "audio/webm;codecs=opus",
-         "size": 105551
+         "size": 94909
         }
        ],
        "acked": false,
        "touched": [],
        "org": null,
-       "seq": 274,
+       "seq": 281,
        "v": 0
       }
      ],
      "docs": [],
      "voices": [
       {
-       "f": "f8-voice_0-06.webm",
+       "f": "f8-voice_0-05.webm",
        "state": "wait",
        "said": "",
        "tidied": ""
@@ -3341,7 +3453,7 @@
       "slug": "shop",
       "title": "Shop",
       "width": 2,
-      "file": "/var/folders/pv/h1nh3j1n7k94z_2nvdcz4rfc0000gn/T/taska-demo-NblcaF/data/shop/taska.db",
+      "file": "/var/folders/pv/h1nh3j1n7k94z_2nvdcz4rfc0000gn/T/taska-demo-j6fFfb/data/shop/taska.db",
       "organizer": {
        "on": true,
        "model": "gemini-3.1-pro-preview + gemini-3.8-flash",
@@ -3427,62 +3539,62 @@
       ],
       "deleted": [],
       "phone": false,
-      "base": "http://127.0.0.1:56325/p/shop",
-      "key": "pab9-yuua",
+      "base": "http://127.0.0.1:60625/p/shop",
+      "key": "ut47-xske",
       "remote": "",
       "lan": ""
      },
      "server": {
-      "page": "index-DK3U16Bb.js",
+      "page": "da39a3ee5e",
       "update": false
      }
     }
    },
-   "sent": 9290,
-   "at": 9295
+   "sent": 7884,
+   "at": 7889
   },
   {
    "method": "POST",
-   "url": "/p/shop/api/words?f=f8-voice_0-06.webm",
+   "url": "/p/shop/api/words?f=f8-voice_0-05.webm",
    "status": 200,
    "json": {
-    "f": "f8-voice_0-06.webm",
+    "f": "f8-voice_0-05.webm",
     "done": true,
     "tr": "日期格式用设置里选的那个，不要 ISO 格式，财务那边看不惯。",
     "tr_error": "",
     "tr_by": "asr",
     "more": true
    },
-   "sent": 9291,
-   "at": 9905
+   "sent": 7885,
+   "at": 8494
   },
   {
    "method": "GET",
-   "url": "/p/shop/api/changes?cursor=1a16a1df40a.68.273.0&wait=25",
+   "url": "/p/shop/api/changes?cursor=1a16a1df36d.70.280.0&wait=25",
    "status": 200,
    "json": {
-    "cursor": "1a16a1df40a.69.274.0",
+    "cursor": "1a16a1df36d.71.281.0",
     "full": false,
     "items": [],
     "inputs": [
      {
       "id": "r22",
-      "t": "2026-10-23T11:55:19-07:00",
+      "t": "2026-10-23T11:55:18-07:00",
       "by": "you",
       "text": "",
       "scope": null,
       "files": [
        {
-        "f": "f8-voice_0-06.webm",
-        "name": "voice 0-06.webm",
+        "f": "f8-voice_0-05.webm",
+        "name": "voice 0-05.webm",
         "mime": "audio/webm;codecs=opus",
-        "size": 105551
+        "size": 94909
        }
       ],
       "acked": false,
       "touched": [],
       "org": null,
-      "seq": 274,
+      "seq": 281,
       "v": 0
      }
     ],
@@ -3498,7 +3610,7 @@
      "slug": "shop",
      "title": "Shop",
      "width": 2,
-     "file": "/var/folders/pv/h1nh3j1n7k94z_2nvdcz4rfc0000gn/T/taska-demo-NblcaF/data/shop/taska.db",
+     "file": "/var/folders/pv/h1nh3j1n7k94z_2nvdcz4rfc0000gn/T/taska-demo-j6fFfb/data/shop/taska.db",
      "organizer": {
       "on": true,
       "model": "gemini-3.1-pro-preview + gemini-3.8-flash",
@@ -3584,32 +3696,32 @@
      ],
      "deleted": [],
      "phone": false,
-     "base": "http://127.0.0.1:56325/p/shop",
-     "key": "pab9-yuua",
+     "base": "http://127.0.0.1:60625/p/shop",
+     "key": "ut47-xske",
      "remote": "",
      "lan": ""
     },
     "server": {
-     "page": "index-DK3U16Bb.js",
+     "page": "da39a3ee5e",
      "update": false
     }
    },
-   "sent": 9293,
-   "at": 9295
+   "sent": 7886,
+   "at": 7889
   },
   {
    "method": "GET",
-   "url": "/p/shop/api/changes?cursor=1a16a1df40a.69.274.0&wait=25",
+   "url": "/p/shop/api/changes?cursor=1a16a1df36d.71.281.0&wait=25",
    "status": 200,
    "json": {
-    "cursor": "1a16a1df40a.70.275.0",
+    "cursor": "1a16a1df36d.72.282.0",
     "full": false,
     "items": [],
     "inputs": [],
     "docs": [],
     "voices": [
      {
-      "f": "f8-voice_0-06.webm",
+      "f": "f8-voice_0-05.webm",
       "state": "wait",
       "said": "",
       "tidied": "",
@@ -3626,7 +3738,7 @@
      "slug": "shop",
      "title": "Shop",
      "width": 2,
-     "file": "/var/folders/pv/h1nh3j1n7k94z_2nvdcz4rfc0000gn/T/taska-demo-NblcaF/data/shop/taska.db",
+     "file": "/var/folders/pv/h1nh3j1n7k94z_2nvdcz4rfc0000gn/T/taska-demo-j6fFfb/data/shop/taska.db",
      "organizer": {
       "on": true,
       "model": "gemini-3.1-pro-preview + gemini-3.8-flash",
@@ -3712,32 +3824,32 @@
      ],
      "deleted": [],
      "phone": false,
-     "base": "http://127.0.0.1:56325/p/shop",
-     "key": "pab9-yuua",
+     "base": "http://127.0.0.1:60625/p/shop",
+     "key": "ut47-xske",
      "remote": "",
      "lan": ""
     },
     "server": {
-     "page": "index-DK3U16Bb.js",
+     "page": "da39a3ee5e",
      "update": false
     }
    },
-   "sent": 9302,
-   "at": 9907
+   "sent": 7890,
+   "at": 8496
   },
   {
    "method": "GET",
-   "url": "/p/shop/api/changes?cursor=1a16a1df40a.70.275.0&wait=25",
+   "url": "/p/shop/api/changes?cursor=1a16a1df36d.72.282.0&wait=25",
    "status": 200,
    "json": {
-    "cursor": "1a16a1df40a.71.277.0",
+    "cursor": "1a16a1df36d.73.284.0",
     "full": false,
     "items": [],
     "inputs": [],
     "docs": [],
     "voices": [
      {
-      "f": "f8-voice_0-06.webm",
+      "f": "f8-voice_0-05.webm",
       "state": "done",
       "said": "日期格式用设置里选的那个，不要 ISO 格式，财务那边看不惯。",
       "tidied": "日期格式用设置里选的那个，不要 ISO 格式，财务那边看不惯。"
@@ -3753,7 +3865,7 @@
      "slug": "shop",
      "title": "Shop",
      "width": 2,
-     "file": "/var/folders/pv/h1nh3j1n7k94z_2nvdcz4rfc0000gn/T/taska-demo-NblcaF/data/shop/taska.db",
+     "file": "/var/folders/pv/h1nh3j1n7k94z_2nvdcz4rfc0000gn/T/taska-demo-j6fFfb/data/shop/taska.db",
      "organizer": {
       "on": true,
       "model": "gemini-3.1-pro-preview + gemini-3.8-flash",
@@ -3841,30 +3953,30 @@
      ],
      "deleted": [],
      "phone": false,
-     "base": "http://127.0.0.1:56325/p/shop",
-     "key": "pab9-yuua",
+     "base": "http://127.0.0.1:60625/p/shop",
+     "key": "ut47-xske",
      "remote": "",
      "lan": ""
     },
     "server": {
-     "page": "index-DK3U16Bb.js",
+     "page": "da39a3ee5e",
      "update": false
     }
    },
-   "sent": 9913,
-   "at": 10508
+   "sent": 8498,
+   "at": 9117
   },
   {
    "method": "GET",
-   "url": "/p/shop/api/changes?cursor=1a16a1df40a.71.277.0&wait=25",
+   "url": "/p/shop/api/changes?cursor=1a16a1df36d.73.284.0&wait=25",
    "status": 200,
    "json": {
-    "cursor": "1a16a1df40a.73.279.0",
+    "cursor": "1a16a1df36d.75.286.0",
     "full": false,
     "items": [
      {
-      "n": 44,
-      "code": "T44",
+      "n": 46,
+      "code": "T46",
       "type": "task",
       "title": "导出的日期用设置里选的格式",
       "body": "日期格式用设置里选的那个，不要 ISO 格式，财务那边看不惯。",
@@ -3878,8 +3990,8 @@
       ],
       "mergedInto": null,
       "archived": false,
-      "t0": "2026-10-23T11:55:22-07:00",
-      "t1": "2026-10-23T11:55:22-07:00",
+      "t0": "2026-10-23T11:55:20-07:00",
+      "t1": "2026-10-23T11:55:20-07:00",
       "by": "org",
       "thread": [],
       "wait": null,
@@ -3889,40 +4001,40 @@
     "inputs": [
      {
       "id": "r22",
-      "t": "2026-10-23T11:55:19-07:00",
+      "t": "2026-10-23T11:55:18-07:00",
       "by": "you",
       "text": "",
       "scope": null,
       "files": [
        {
-        "f": "f8-voice_0-06.webm",
-        "name": "voice 0-06.webm",
+        "f": "f8-voice_0-05.webm",
+        "name": "voice 0-05.webm",
         "mime": "audio/webm;codecs=opus",
-        "size": 105551
+        "size": 94909
        }
       ],
       "acked": true,
       "touched": [
-       44
+       46
       ],
       "org": {
        "ok": true,
-       "msg": "Created T44",
-       "t": "2026-10-23T11:55:22-07:00",
+       "msg": "Created T46",
+       "t": "2026-10-23T11:55:20-07:00",
        "keep": false,
        "changed": true,
        "undone": false
       },
-      "seq": 274,
+      "seq": 281,
       "v": 0,
       "filing": {
        "can": true,
-       "what": "removes T44",
+       "what": "removes T46",
        "why": ""
       },
       "deletion": {
        "go": [
-        44
+        46
        ],
        "keep": []
       }
@@ -3940,7 +4052,7 @@
      "slug": "shop",
      "title": "Shop",
      "width": 2,
-     "file": "/var/folders/pv/h1nh3j1n7k94z_2nvdcz4rfc0000gn/T/taska-demo-NblcaF/data/shop/taska.db",
+     "file": "/var/folders/pv/h1nh3j1n7k94z_2nvdcz4rfc0000gn/T/taska-demo-j6fFfb/data/shop/taska.db",
      "organizer": {
       "on": true,
       "model": "gemini-3.1-pro-preview + gemini-3.8-flash",
@@ -4026,18 +4138,18 @@
      ],
      "deleted": [],
      "phone": false,
-     "base": "http://127.0.0.1:56325/p/shop",
-     "key": "pab9-yuua",
+     "base": "http://127.0.0.1:60625/p/shop",
+     "key": "ut47-xske",
      "remote": "",
      "lan": ""
     },
     "server": {
-     "page": "index-DK3U16Bb.js",
+     "page": "da39a3ee5e",
      "update": false
     }
    },
-   "sent": 10510,
-   "at": 12022
+   "sent": 9125,
+   "at": 10631
   }
  ]
 }

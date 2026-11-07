@@ -75,14 +75,18 @@ def main() -> None:
 
     organizer.first_plan = think  # type: ignore[assignment]
 
-    # only what is said in the demo is organized: an input of the demo data still waiting stays as it is
-    due = organizer.Organizer.due
+    # only what is said in the demo is organized: an input of the demo data still waiting stays as it is (the inputs
+    # there when the project's organizer starts, before anything is said)
+    start, due = organizer.Organizer.__init__, organizer.Organizer.due
+
+    def demo_start(self: Any, p: Any, *a: Any, **k: Any) -> None:
+        start(self, p, *a, **k)
+        self.before = set(p.state.inputs)
 
     def demo_due(self: Any, inp: Any) -> bool:
-        if not hasattr(self, "before"):
-            self.before = set(self.p.state.inputs)
         return inp.id not in self.before and due(self, inp)
 
+    organizer.Organizer.__init__ = demo_start  # type: ignore[method-assign]
     organizer.Organizer.due = demo_due  # type: ignore[assignment]
 
     def transcriber_for(_p: Any, _workspace: Any) -> Any:
