@@ -40,7 +40,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--root", default="~/.taska", help="data folder, one subfolder per project (default ~/.taska)")
     ap.add_argument("--organizer", choices=("auto", "off"), default="auto", help="auto = use Gemini when a key is set")
-    ap.add_argument("--public", default="", help="the tunnel's public address, e.g. https://xxxx-7340.usw2.devtunnels.ms")
+    ap.add_argument("--public", default="", help="the public address behind a proxy, e.g. https://<machine>.<tailnet>.ts.net:7340")
     ap.add_argument("--log-db", default=None, help="the log also goes into this SQLite file (default: logs.db in the data folder; '' for none)")
     ap.add_argument("--log-level", default="INFO", help="what the terminal shows (DEBUG shows every request)")
     args = ap.parse_args(argv)

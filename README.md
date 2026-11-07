@@ -131,7 +131,7 @@ flowchart LR
   Python. The page is built once with Node.js, and the release is one file, `taska.pyz`, that needs only Python.
 - **Your history stays with your data.** Each project is one SQLite file holding an append-only log of every
   change. The full history comes with it, and every change can be traced back to what you said.
-- **Local first.** Taska runs on your machine. Reach it from your phone through a tunnel, protected by a key.
+- **Local first.** Taska runs on your machine. Reach it from your phone through a proxy such as Tailscale Serve, protected by a key.
 
 ## Quick start
 
@@ -203,16 +203,16 @@ Codes are a type letter and a number: **F**eature, **B**ug, **I**dea, **T**ask, 
 Taska is designed for the phone first. Open it in your phone's browser and add it to the Home Screen.
 
 - **On the same network:** open your computer's address; no key is needed.
-- **From anywhere:** put Taska behind a tunnel, such as a VS Code Dev Tunnel, and start it with
-  `--public <tunnel address>`.
-  - Requests through the tunnel need the key, which Taska creates in `~/.taska/key`.
+- **From anywhere:** put Taska behind a proxy that forwards to it, such as Tailscale Serve (tailnet only), and
+  start it with `--public <its address>`.
+  - Requests through the proxy need the key, which Taska creates in `~/.taska/key`.
   - **Use on your phone** in the menu gives you a link that carries the key. Open it once on the phone and the key
     is remembered.
 
 > [!IMPORTANT]
 > Taska trusts requests from this machine and your local network without a key. It recognizes forwarded requests
-> by their `X-Forwarded-For` or `X-Forwarded-Host` header, and only those need the key. Use a tunnel that sets one
-> of these headers. Dev Tunnels does.
+> by their `X-Forwarded-For` or `X-Forwarded-Host` header, and only those need the key. Use a proxy that sets one
+> of these headers. Tailscale Serve does.
 
 ## Configuration
 
@@ -220,7 +220,7 @@ Taska is designed for the phone first. Open it in your phone's browser and add i
 | --- | --- |
 | `--port 7340`, `--host 127.0.0.1` | Where Taska listens |
 | `--root ~/.taska` | Where projects are stored, one folder each |
-| `--public <url>` | The public address behind a tunnel, used for phone links and remote agents |
+| `--public <url>` | The public address behind a proxy, used for phone links and remote agents |
 | `--organizer off` | Leave organizing to your agents, even with a Gemini key |
 | `GEMINI_API_KEY` | Turns on the organizer and voice transcription |
 | `TASKA_MODEL` | The organizer's Gemini model (default `gemini-flash-latest`) |

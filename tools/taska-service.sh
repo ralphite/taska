@@ -2,7 +2,7 @@
 # Runs Taska as the always-on service on port 7340 with the data in ~/.taska, from the LaunchAgent
 # com.taska.app. zsh reads ~/.zshenv, which can provide GEMINI_API_KEY (the organizer). The page comes from
 # web/live, the copy of web/dist that tools/ship.sh makes when it puts new code live (a build made for a
-# test stays out of it); before the first ship, from web/dist. The public address (a tunnel to this port), if any:
+# test stays out of it); before the first ship, from web/dist. The public address (a proxy to this port), if any:
 # $TASKA_PUBLIC, or the first line of ~/.taska/public-url; from there Taska asks for the key in ~/.taska/key.
 cd "$(dirname "$0")/../server" || exit 1
 # ffmpeg, ffprobe (voice notes) are where Homebrew puts them: launchd gives none of that
