@@ -26,7 +26,7 @@ export const PillOffline: Story = { ...one({ away: 2 }), name: 'Offline' }
 export const NotSaved: Story = { ...one({ notSaved: 2 }), name: 'Not saved count' }
 /** On the phone an item's page covers the list's head, so it says Offline, retrying under its own bar (D82 #5). */
 export const OfflineOnPhoneItem: Story = {
-  name: 'Offline, on the phone over an item',
+  name: 'Phone: Offline over an item',
   render: () => (
     <Frames desk={false} phoneWidth={393} height={220}>
       {() => (

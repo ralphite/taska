@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { agent, swiped } from '../../stories/itemRowFixtures'
 import { askOf } from '../../stories/needsCardFixtures'
 
-export default { title: 'UI/List pane/Item row/Swiping on the phone/Forward' } satisfies Meta
+export default { title: 'UI/List pane/Item row/Phone: Swiping/Forward' } satisfies Meta
 type Story = StoryObj
 
 export const SwipingForward: Story = { ...swiped({ it: { status: 'doing', agent } }, 140), name: 'In progress: Done' }

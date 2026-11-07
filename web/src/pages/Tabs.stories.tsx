@@ -16,7 +16,7 @@ export const Items: Story = { ...on('items'), name: 'Items' }
 export const Inputs: Story = { ...on('inputs'), name: 'Inputs' }
 export const Rules: Story = { ...on('rules'), name: 'Rules' }
 export const TabsLooks: Story = {
-  name: 'Pointer on a tab (desktop)',
+  name: 'Desktop: Pointer on a tab',
   parameters: { pseudo: { hover: ['[data-look="pointer"] [role="tab"]:nth-of-type(3)'] } },
   render: () => (
     <Frames phone={false} deskWidth={1100}>

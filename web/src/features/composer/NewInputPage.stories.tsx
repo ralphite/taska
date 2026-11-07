@@ -21,4 +21,4 @@ export const UnderThePointer: Story = {
 }
 
 /** The phone's Inputs tab: the same rows, ⋯ on each (its menu has the rest); the box at its foot. */
-export const OnThePhone: Story = { name: 'On the phone', render: () => pad(<PhonePage />) }
+export const OnThePhone: Story = { name: 'Phone', render: () => pad(<PhonePage />) }

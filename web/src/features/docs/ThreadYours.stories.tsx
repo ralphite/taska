@@ -15,7 +15,7 @@ export const EditedComment: Story = { ...one({ threads: ['p1#1'] }, edited), nam
 /** The phone: a comment's ⋯ opens its menu (Edit on yours, Move, Delete). Move opens
  * [Move and pick › Move a comment](?path=/story/components-around-the-page-menus-and-sheets-move-and-pick--move-comment). */
 export const ItsMenuOnThePhone: Story = {
-  name: 'Its menu on the phone',
+  name: 'Phone: Its menu',
   render: () => <Frames desk={false} height={760} phoneWidth={393}>{() => opened(commentMenuSheet(true, acts('Comment menu', ['edit', 'move', 'remove'], { move: 'Move and pick › Move a comment' })), false, { under: docAt(PLAN, false, { threads: ['p1#1'] }) })}</Frames>,
 }
 /** the × on its picture pressed once: Take off? over the picture, pressed again to take it off (the desktop's × shows

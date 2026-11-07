@@ -3,7 +3,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { onPhone } from '../../stories/sectionsFixtures'
 
-export default { title: 'UI/Settings and help/Settings/Notifications/On the phone' } satisfies Meta
+export default { title: 'UI/Settings and help/Settings/Notifications/Phone' } satisfies Meta
 type Story = StoryObj
 
 export const PhonePushesOnQuiet: Story = { ...onPhone('notifications', { push: { sub: true, blocked: false, quiet: true } }), name: 'Pushes on, quiet hours' }

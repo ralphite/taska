@@ -32,7 +32,7 @@ export const PoppedNoSpot: Story = {
 }
 /** the phone's sheet dragged down by its handle, as the finger moves it (let go far enough, it closes) */
 export const DraggedDown: Story = {
-  name: 'Dragged down by its handle (phone)',
+  name: 'Phone: Dragged down by its handle',
   render: () => (
     <Frames desk={false} height={520}>
       {() => (

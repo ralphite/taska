@@ -6,4 +6,4 @@ import { settingsAt } from '../../stories/settingsFixtures'
 export default { title: 'UI/Settings and help/Settings/The page and its parts' } satisfies Meta
 type Story = StoryObj
 
-export const SettingsIndex: Story = { name: 'Settings list on the phone', render: () => <Frames desk={false}>{() => settingsAt(null, false)}</Frames> }
+export const SettingsIndex: Story = { name: 'Phone: Settings list', render: () => <Frames desk={false}>{() => settingsAt(null, false)}</Frames> }

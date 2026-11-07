@@ -11,7 +11,7 @@ type Story = StoryObj
 
 export const DevLinks: Story = { name: 'The sidebar with its dev links', render: () => <Frames phone={false} deskWidth={240} height={760}>{() => side(false)}</Frames> }
 /** The drawer's foot on the phone: Undo of what you did last (a phone has no Z), the links. */
-export const DrawerFoot: Story = { name: 'Drawer foot on the phone', render: () => <Frames desk={false} phoneWidth={320} height={760}>{() => side(true, { undo: 'T009 approved' })}</Frames> }
+export const DrawerFoot: Story = { name: 'Phone: Drawer foot', render: () => <Frames desk={false} phoneWidth={320} height={760}>{() => side(true, { undo: 'T009 approved' })}</Frames> }
 // ---- more states (T639)
 /** a project in the phone's drawer pressed (a finger on it) */
 export const DrawerProjectPressed: Story = {

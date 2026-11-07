@@ -21,7 +21,7 @@ export const NewProjectNotMade: Story = { ...one('projects', { projects: { pNew:
 /** the phone's ⋯ opens the project's menu as a sheet, as its other ⋯ do (r1095) */
 const sheetOver = (parts: Parameters<typeof opened>[0]): Story => ({ render: () => <Frames desk={false}>{() => opened(parts, false, { under: settingsAt('projects', false) })}</Frames> })
 const projectOn = acts('Project menu', ['open', 'settings', 'rename', 'remove'])
-export const PhoneProjectMenuOpen: Story = { ...sheetOver(projectMenuSheet({ here: false, slug: 'home', title: 'Home', tone: PROJECT_TONES[1], open: 13, settingsKeys: '' }, projectOn)), name: "On the phone: a project's ⋯ open" }
-export const PhoneDeletedProjectPurging: Story = { ...sheetOver(goneProjectMenuSheet({ title: 'Old', asking: true }, act('Project menu: delete forever'))), name: "On the phone: a deleted project's Delete forever asks again" }
+export const PhoneProjectMenuOpen: Story = { ...sheetOver(projectMenuSheet({ here: false, slug: 'home', title: 'Home', tone: PROJECT_TONES[1], open: 13, settingsKeys: '' }, projectOn)), name: "Phone: a project's ⋯ open" }
+export const PhoneDeletedProjectPurging: Story = { ...sheetOver(goneProjectMenuSheet({ title: 'Old', asking: true }, act('Project menu: delete forever'))), name: "Phone: a deleted project's Delete forever asks again" }
 export const ProjectsLoading: Story = { ...one('projects', { projectsLoading: true }), name: 'Loading' }
 export const ProjectsNoneDeleted: Story = { ...one('projects', { noneDeleted: true }), name: 'None deleted' }

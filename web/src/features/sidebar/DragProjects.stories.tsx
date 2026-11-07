@@ -62,7 +62,7 @@ export const PickedUp: Story = { ...desk('Picked up with the mouse: lifted, it f
 export const MovedUp: Story = { ...desk('Moved over another project: the others slide out of its way', 'notes', 'home'), name: 'Moved up' }
 export const MovedDown: Story = { ...desk('Moved down past two projects', 'home', 'notes'), name: 'Moved down' }
 export const OnThePhone: Story = {
-  name: 'On the phone: held still, then dragged',
+  name: 'Phone: held still, then dragged',
   render: () => (
     <div className="bg-zinc-200 p-6 dark:bg-zinc-800">
       <Frame layout="phone" width={320} label="phone drawer">

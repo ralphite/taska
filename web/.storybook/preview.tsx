@@ -58,7 +58,7 @@ const preview: Preview = {
                   'Finished',
                 ],
                 'Pointer, keys and picking', ['Pointer on it', 'Open, picked, dragged'],
-                'Swiping on the phone', ['Forward', 'Back', 'Rules and archived rows'],
+                'Phone: Swiping', ['Forward', 'Back', 'Rules and archived rows'],
                 'Subitems',
                 'What it shows',
               ],
@@ -103,7 +103,7 @@ const preview: Preview = {
             [
               'Its bar, the pointer on it',
               'Reading',
-              'Commenting', ['Paragraphs', 'Selected words', 'Circle to select', 'Voice and words on a place', 'Web pages', 'On the phone'],
+              'Commenting', ['Paragraphs', 'Selected words', 'Circle to select', 'Voice and words on a place', 'Web pages', 'Phone'],
               'Comment threads', ['Reading a thread', 'Your comments'],
               'Choices',
               'Editing',
@@ -139,7 +139,7 @@ const preview: Preview = {
               'Settings',
               [
                 'Projects',
-                'Notifications', ['In this browser', 'On the phone'],
+                'Notifications', ['In this browser', 'Phone'],
                 'Use on your phone',
                 'Voice spellings',
                 'Organizer',

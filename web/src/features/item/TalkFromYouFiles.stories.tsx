@@ -7,7 +7,7 @@ type Story = StoryObj
 
 export const WithPictures: Story = { ...at([mine()], { inputs: [r4({ files: [shot, { ...shot, f: 'f4-shot.png' }] })] }), name: 'With pictures' }
 export const WithAFile: Story = { ...at([mine()], { inputs: [r4({ files: [pdf] })] }), name: 'With a file' }
-export const LongCutOnTheDesktop: Story = { ...at([mine({ text: LONG }), { ...message({ id: 2 }), t: later(3) }]), name: 'Long: cut on the desktop' }
+export const LongCutOnTheDesktop: Story = { ...at([mine({ text: LONG }), { ...message({ id: 2 }), t: later(3) }]), name: 'Desktop: Long: cut' }
 // ---- more states (T639)
 /** pictures and a file with no words: no bubble, the pictures and the line under them */
 export const OnlyPicturesNoWords: Story = { ...at([mine({ text: '' })], { inputs: [r4({ text: '', files: [shot, { ...shot, f: 'f7-shot2.png', name: 'shot2.png' }, pdf] })] }), name: 'Only pictures and a file, no words' }

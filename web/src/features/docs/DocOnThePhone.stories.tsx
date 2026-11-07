@@ -10,7 +10,7 @@ import { After, Frame } from '../../stories/Frames'
 import { doc } from '../../stories/docFixtures'
 import { docAt, type DocHere } from '../../stories/docPage'
 
-export default { title: 'UI/Document pane/Commenting/On the phone' } satisfies Meta
+export default { title: 'UI/Document pane/Commenting/Phone' } satisfies Meta
 type Story = StoryObj
 
 const PLAN = doc()

@@ -7,7 +7,7 @@ import { NO_FILTERS } from '../model/route'
 import { Frames } from './Frames'
 import { acts, menuModel, opened, underList } from './menuFixtures'
 
-export default { title: 'UI/Phone only/Sheets/Filters on the phone' } satisfies Meta
+export default { title: 'UI/Phone only/Sheets/Filters' } satisfies Meta
 type Story = StoryObj
 
 const filtersOn = acts('Filters', ['set', 'unset', 'reset', 'saveView', 'close'])

@@ -10,8 +10,8 @@ type Story = StoryObj
 
 const BUGS = { type: 'bug', pri: 'P0', sort: 'new' }
 
-export const PhoneStrip: Story = { name: 'Strip on the phone', render: () => <Frames desk={false} phoneWidth={393} height={200}>{() => headOf(false, { list: BUGS })}</Frames> }
-export const DeskPanel: Story = { name: 'Panel on the desktop', render: () => <Frames phone={false} deskWidth={1100} height={460}>{() => headOf(true, { list: BUGS, filtersOpen: true })}</Frames> }
+export const PhoneStrip: Story = { name: 'Phone: Strip', render: () => <Frames desk={false} phoneWidth={393} height={200}>{() => headOf(false, { list: BUGS })}</Frames> }
+export const DeskPanel: Story = { name: 'Desktop: Panel', render: () => <Frames phone={false} deskWidth={1100} height={460}>{() => headOf(true, { list: BUGS, filtersOpen: true })}</Frames> }
 /** Set and folded: the chips, Clear, the dot on the filters button. */
 export const FilterChipsAndDot: Story = { name: 'Chips', render: () => <Frames deskWidth={1100} phoneWidth={393} height={220}>{(layout) => headOf(layout === 'desk', { list: BUGS })}</Frames> }
 // ---- more states (B636)
@@ -20,4 +20,4 @@ export const PanelArchive: Story = { name: 'Panel: archive', render: () => <Fram
 // ---- more states (T639)
 /** the phone's strip on Archive with every filter set: more than fit slide sideways under Clear, which stays at the
  * end; the sort shows last, with no × */
-export const PhoneStripMoreThanFit: Story = { name: 'Strip on the phone: every filter set', render: () => <Frames desk={false} phoneWidth={393} height={200}>{() => headOf(false, { tab: 'archive', list: { type: 'bug', when: 'later', status: 'done', pri: 'P1', sort: 'new' } })}</Frames> }
+export const PhoneStripMoreThanFit: Story = { name: 'Phone: Strip: every filter set', render: () => <Frames desk={false} phoneWidth={393} height={200}>{() => headOf(false, { tab: 'archive', list: { type: 'bug', when: 'later', status: 'done', pri: 'P1', sort: 'new' } })}</Frames> }

@@ -49,12 +49,12 @@ export const MisheardInSeveralPlaces: Story = {
   render: () => <Frames phone={false} deskWidth={640}>{() => boxAt({ at: 'F012', text: AGAIN, files: AGAIN_HEARD.map((h) => ({ ...VOICE, ...h, tr: AGAIN })), heard: { showing: true } }, true)}</Frames>,
 }
 export const MisheardWordsAllPickedPhone: Story = {
-  name: 'Misheard words all picked (phone)',
+  name: 'Phone: Misheard words all picked',
   render: () => <Frames desk={false} phoneWidth={393}>{() => boxAt({ text: PICKED_TEXT, files: PICKED.map((h) => ({ ...VOICE, ...h, tr: PICKED_TEXT })), heard: {} }, false)}</Frames>,
 }
 /** The phone, Show the words pressed: the box shows its words in place of its field, the misheard ones to pick from. */
 export const MaybeMisheardWordsShownPhone: Story = {
-  name: 'Its words in the box, to pick from (phone)',
+  name: 'Phone: Its words in the box, to pick from',
   render: () => (
     <Frames desk={false} phoneWidth={393}>
       {() =>

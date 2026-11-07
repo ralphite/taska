@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { agent, swiped } from '../../stories/itemRowFixtures'
 import { askOf } from '../../stories/needsCardFixtures'
 
-export default { title: 'UI/List pane/Item row/Swiping on the phone/Back' } satisfies Meta
+export default { title: 'UI/List pane/Item row/Phone: Swiping/Back' } satisfies Meta
 type Story = StoryObj
 
 export const OpenBack: Story = { ...swiped({ it: { status: 'doing', agent } }, -160), name: "In progress: Won't do, Later" }
