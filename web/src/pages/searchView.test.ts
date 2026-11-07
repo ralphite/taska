@@ -21,7 +21,7 @@ const shown = (kind: SearchNow['kind']) => searchView(now({ kind }), place).grou
 describe("the phone search's page", () => {
   it('in All, puts each project\'s rows by kind, each kind named over its first row (T642 R9 (D115, 11-06))', () => {
     expect(shown('all')).toEqual([
-      ['shop', ['Items: shop/i1', 'shop/i3', 'shop/i14', 'shop/i6', 'Inputs: shop/r8', 'Rules: shop/i17', 'Documents: shop/d1']],
+      ['shop', ['Items: shop/i1', 'shop/i3', 'shop/i14', 'shop/i6', 'Inputs: shop/r8', 'Rules: shop/s0', 'Documents: shop/d1']],
       ['home', ['Items: home/i21', 'Inputs: home/r4']],
     ])
   })
