@@ -85,7 +85,7 @@ export function check(src, allow = readAllow(WEB)) {
   // every presentational component has its stories next to it
   for (const p of code) {
     const r = rel(p)
-    if (!/^(features|pages|ui)\//.test(r) || r === 'pages/App.tsx' || !r.endsWith('.tsx') || r.endsWith('.stories.tsx') || r.endsWith('Container.tsx')) continue
+    if (!/^(features|pages|ui)\//.test(r) || r === 'pages/App.tsx' || !r.endsWith('.tsx') || r.endsWith('.stories.tsx') || r.endsWith('.test.tsx') || r.endsWith('Container.tsx')) continue
     if (!existsSync(p.replace(/\.tsx$/, '.stories.tsx'))) say(p, `no ${basename(p, '.tsx')}.stories.tsx next to it`)
   }
   // every component the page draws is drawn by a story, directly or through what the story renders

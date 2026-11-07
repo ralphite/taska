@@ -11,7 +11,7 @@ import { plural, whoName } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
 import { BUSY, COMMENT_CARD, COMMENT_WHO, DC_BTN, DC_DANGER, HIT, MUTED, SEP_V } from '../../ui/tones'
-import { Thumbs, VoiceLine, type FileEvents, type PlayState } from '../../ui/Files'
+import { Thumbs, isAudio, type FileEvents, type PlayState } from '../../ui/Files'
 import type { InlineWorld } from '../../ui/markdown/inline'
 import type { WebCard } from './docFacts'
 
@@ -37,8 +37,6 @@ export interface ThreadEvents extends FileEvents {
   resolve(tk: string, on: boolean): void
   reply(tk: string): void
 }
-
-const isAudio = (f: FileRef) => (f.mime || '').startsWith('audio/')
 
 export const NewDot = () => <span className="ml-0.5 size-1.5 rounded-full bg-blue-600 dark:bg-blue-400" title="New from an agent" />
 
@@ -111,8 +109,8 @@ function CommentFiles({ c, asking, env, on }: { c: Comment; asking: string | nul
         </div>
       ) : null}
       {files.filter(isAudio).map((f) => (
-        <div key={f.f} className="flex items-center">
-          <VoiceLine files={[f]} url={env.url} play={env.play} tidy={env.tidy} on={on} />
+        <div key={f.f} className="mt-1.5 flex items-center gap-1">
+          {thumbs([f])}
           {mine ? (
             <button onClick={off(f)} title={tip(f)} aria-label={tip(f)} className={`${ask(f) ? DC_DANGER : DC_BTN} ${ask(f) ? '' : 'lg:invisible lg:group-hover:visible lg:focus-visible:visible'}`}>
               {ask(f) ? 'Remove?' : <Icon n="x" c="size-3.5" />}

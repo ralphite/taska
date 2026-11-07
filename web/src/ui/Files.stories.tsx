@@ -25,13 +25,15 @@ const unnamed: FileRef = { f: 'f4-note.webm', name: 'note.webm', mime: 'audio/we
 const picture: FileRef = { f: 'f5-shot.png', name: 'shot.png', mime: 'image/png' }
 const pdf: FileRef = { f: 'f6-report.pdf', name: 'Orders export, Paid, last 30 days, sorted by total.pdf', mime: 'application/pdf' }
 /** a voice note that plays and pauses from where it is (the page's player) */
-function LiveChip({ f, start, tidy }: { f: FileRef; start: PlayState; tidy: boolean }) {
+function LiveChip({ f, start, tidy, blue }: { f: FileRef; start: PlayState; tidy: boolean; blue: boolean }) {
   const media = useMedia(() => '#', start.t == null && !start.playing ? null : { src: f.f, ...start })
-  return <VoiceChip f={f} src={f.f} play={media.play(f.f)} tidy={tidy} onPlay={() => media.on.play(f.f)} onWords={() => media.on.words(f.f)} />
+  return <VoiceChip f={f} src={f.f} play={media.play(f.f)} tidy={tidy} blue={blue} onPlay={() => media.on.play(f.f)} onWords={() => media.on.words(f.f)} />
 }
-const chip = (f: FileRef, play: PlayState, tidy = true) => (
+const chip = (f: FileRef, play: PlayState, tidy = true, blue = false) => (
   <div className="flex p-3">
-    <LiveChip f={f} start={play} tidy={tidy} />
+    <div className={blue ? 'rounded-2xl rounded-tr-md bg-blue-600 p-1.5 dark:bg-blue-500' : 'flex'}>
+      <LiveChip f={f} start={play} tidy={tidy} blue={blue} />
+    </div>
   </div>
 )
 /** pictures and files with the page's player and viewer: a voice note plays, a picture opens */
@@ -46,7 +48,8 @@ function LiveFiles({ url, children }: { url: (f: string) => string; children: (m
 }
 
 /** A voice note, its words tidied as Taska normally has it (the phone: its original words): its length; playing, how
- * far; paused partway; and with tidying off in Settings (no original words). */
+ * far; paused partway; with tidying off in Settings (no original words); and the same chip in your blue bubble
+ * (r1165: one chip everywhere). */
 export const Voice: Story = {
   name: 'Voice notes',
   render: () => (
@@ -59,6 +62,8 @@ export const Voice: Story = {
             ['paused partway', chip(voice, { playing: false, t: 41000 })],
             ['no length in its name', chip(unnamed, { playing: false, t: null })],
             ['tidying voice notes off (Settings): no original words', chip(voice, { playing: false, t: null }, false)],
+            ['in your blue bubble', chip(voice, { playing: false, t: null }, true, true)],
+            ['in your blue bubble, playing', chip(voice, { playing: true, t: 23000 }, true, true)],
           ]}
         />
       )}

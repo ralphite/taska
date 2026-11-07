@@ -146,7 +146,6 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
             tidy={env.tidy}
             top={y.text ? <MsgText x={y} env={env} on={on} /> : null}
             hearing={transcribing(src?.files)}
-            words={!!src?.moved}
             attrs={voiceMark(src)}
             on={on}
           />

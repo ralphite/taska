@@ -1,5 +1,5 @@
-// Files that came with what was said: a voice note is one chip (play and its length), a picture a thumbnail, any
-// other file a link with its name. Props only.
+// Files that came with what was said: a voice note is one chip everywhere (play, its length, its original words; r1165),
+// a picture a thumbnail, any other file a link with its name. Props only.
 
 import type { ReactNode } from 'react'
 import type { FileRef, VoiceStep } from '../model/types'
@@ -70,28 +70,50 @@ function VoiceTime({ total, play, quiet = MUTED }: { total: number | null; play:
  * it (above only when there is no room below). */
 const saidTip = (f: FileRef, tidy: boolean) => (tidy && f.voice ? { 'data-heard': f.voice.said, 'data-tidied': f.voice.tidied, 'data-voice': f.f, 'data-tip-side': 'bottom' } : {})
 
-export function VoiceChip({ f, src, play, tidy, onPlay, onWords }: { f: FileRef; src: string; play: PlayState; tidy: boolean; onPlay(src: string): void; onWords(f: string): void }) {
+/** A voice note, the one way every place draws it (r1165): play, its length, and on the phone a mark for its original
+ * words (on the desktop, pointing at play shows them). `blue`: in your blue bubble, the same chip in white on blue.
+ * `busy`: still on its way, it cannot be played yet. */
+export function VoiceChip({ f, src, play, tidy, blue = false, busy = false, onPlay, onWords }: {
+  f: FileRef
+  src: string
+  play: PlayState
+  tidy: boolean
+  blue?: boolean
+  busy?: boolean
+  onPlay(src: string): void
+  onWords(f: string): void
+}) {
   const total = voiceLength(f)
+  const t = blue
+    ? { chip: 'border-white/35 text-white', play: 'hover:text-white', disc: 'bg-white text-blue-600 dark:text-blue-500', quiet: 'text-white/60', quote: 'text-white/80 hover:bg-white/15' }
+    : {
+        chip: 'border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300',
+        play: 'hover:text-zinc-900 dark:hover:text-white',
+        disc: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200',
+        quiet: MUTED,
+        quote: `hover:bg-zinc-100 dark:hover:bg-zinc-800 ${MUTED}`,
+      }
   return (
-    <span className="flex h-9 shrink-0 items-center self-end rounded-full border border-zinc-200 pl-1 text-[13px] text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
+    <span className={`flex h-9 shrink-0 items-center self-end rounded-full border pl-1 text-[13px] ${t.chip}`}>
       <button
         aria-label={`Play the voice note${total ? `, ${clock(total)}` : ''}`}
         {...saidTip(f, tidy)}
+        disabled={busy}
         onClick={(e) => (e.stopPropagation(), onPlay(src))}
-        className={`${HIT} flex h-full items-center gap-2 rounded-full pr-3 hover:text-zinc-900 dark:hover:text-white`}
+        className={`${HIT} flex h-full items-center gap-2 rounded-full pr-3 ${t.play}`}
       >
-        <span className="grid size-7 place-items-center rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+        <span className={`grid size-7 place-items-center rounded-full ${t.disc}`}>
           <Icon n={play.playing ? 'pausefill' : 'play'} c="size-3.5" />
         </span>
         <span className="font-mono tabular-nums">
-          <VoiceTime total={total} play={play} />
+          <VoiceTime total={total} play={play} quiet={t.quiet} />
         </span>
       </button>
       {tidy ? (
         <button
           aria-label="Original words"
           onClick={(e) => (e.stopPropagation(), onWords(f.f))}
-          className={`relative mr-1 -ml-1.5 grid size-7 place-items-center rounded-full after:absolute after:-inset-2 hover:bg-zinc-100 lg:hidden dark:hover:bg-zinc-800 ${MUTED}`}
+          className={`relative mr-1 -ml-1.5 grid size-7 place-items-center rounded-full after:absolute after:-inset-2 lg:hidden ${t.quote}`}
         >
           <Icon n="quote" c="size-4" />
         </button>
@@ -164,8 +186,7 @@ export const sizeWord = (n: number) => (n < 1024 ? `${n} B` : n < 1024 * 1024 ? 
 const CHIP =
   'inline-flex max-w-full min-w-0 items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-100/90 p-1.5 pr-3 shadow-2xs transition-colors hover:bg-zinc-200/80 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800'
 
-/** An input's files as the lists of inputs draw them (T661): a voice note a pill (play and its length; on the
- * desktop, pointing at it shows its original words), a picture a chip with a small view of it, its name and size,
+/** An input's files as the lists of inputs draw them (T661): a voice note its chip (VoiceChip, r1165), a picture a chip with a small view of it, its name and size,
  * any other file a chip with its mark, name and size. */
 export function FileChips({ files, url, play, tidy, on }: { files: FileRef[]; url(f: string): string; play(src: string): PlayState; tidy: boolean; on: FileEvents }) {
   const pictures = files.filter(isImage).map((f) => f.f)
@@ -180,33 +201,7 @@ export function FileChips({ files, url, play, tidy, on }: { files: FileRef[]; ur
       {files.map((f) => {
         if (isAudio(f)) {
           const src = url(f.f)
-          const total = voiceLength(f)
-          const p = play(src)
-          return (
-            <span key={f.f} className="inline-flex items-center rounded-full border border-zinc-200/80 bg-zinc-100 font-mono text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
-              <button
-                aria-label={`Play the voice note${total ? `, ${clock(total)}` : ''}`}
-                {...saidTip(f, tidy)}
-                onClick={(e) => (e.stopPropagation(), on.play(src))}
-                className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 transition-colors hover:bg-zinc-200/80 dark:hover:bg-zinc-800"
-              >
-                <Icon n={p.playing ? 'pausefill' : 'play'} c="size-3 text-zinc-900 dark:text-zinc-100" />
-                <span className="tabular-nums">
-                  <VoiceTime total={total} play={p} />
-                </span>
-              </button>
-              {/* the phone has no pointing: its original words open from a small mark at the note's end (B640) */}
-              {tidy ? (
-                <button
-                  aria-label="Original words"
-                  onClick={(e) => (e.stopPropagation(), on.words(f.f))}
-                  className="relative mr-1 -ml-1.5 grid size-5 place-items-center rounded-full text-zinc-500 after:absolute after:-inset-3 hover:bg-zinc-200/80 lg:hidden dark:text-zinc-400 dark:hover:bg-zinc-800"
-                >
-                  <Icon n="quote" c="size-3" />
-                </button>
-              ) : null}
-            </span>
-          )
+          return <VoiceChip key={f.f} f={f} src={src} play={play(src)} tidy={tidy} onPlay={on.play} onWords={on.words} />
         }
         if (isImage(f))
           return (
@@ -262,50 +257,6 @@ export function FileRows({ files, cls = '', ...rest }: { files: FileRef[]; cls?:
   )
 }
 
-/** A voice note under a comment's words in a document's thread: one small line: play, its length, the original words
- * (the phone's button; on the desktop, pointing at play shows them).
- * (In an item's talk your voice notes are in your bubble: VoiceBubble.) */
-export function VoiceLine({ files, url, play, tidy, on }: { files: FileRef[]; url(f: string): string; play(src: string): PlayState; tidy: boolean; on: FileEvents }) {
-  const words = tidy
-  return (
-    <>
-      {files.filter(isAudio).map((f) => {
-        const src = url(f.f)
-        const p = play(src)
-        return (
-          <span key={f.f} className={`flex items-center gap-1 px-1 text-[11px] ${MUTED}`}>
-            <button
-              aria-label={`Play ${f.name}`}
-              {...saidTip(f, tidy)}
-              onClick={(e) => (e.stopPropagation(), on.play(src))}
-              className={`${HIT} flex h-7 items-center gap-1 rounded-full px-1.5 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200`}
-            >
-              {/* the time grows to the left: the button stays where it was pressed */}
-              <span className="font-mono tabular-nums">
-                <VoiceTime total={voiceLength(f)} play={p} />
-              </span>
-              <span>
-                <Icon n={p.playing ? 'pausefill' : 'play'} c="size-3.5" />
-              </span>
-            </button>
-            {words ? (
-              <>
-                <span className="lg:hidden">·</span>
-                <button
-                  onClick={(e) => (e.stopPropagation(), on.words(f.f))}
-                  className={`${HIT} h-7 rounded-lg px-1 font-medium hover:bg-zinc-100 hover:text-zinc-700 lg:hidden dark:hover:bg-zinc-800 dark:hover:text-zinc-200`}
-                >
-                  Original words
-                </button>
-              </>
-            ) : null}
-          </span>
-        )
-      })}
-    </>
-  )
-}
-
 const DELAYS = [0, 200, 400]
 /** words still being written out: a quiet mark in the bubble where they will be */
 function Transcribing() {
@@ -321,46 +272,10 @@ function Transcribing() {
   )
 }
 
-/** One voice note of yours in your blue bubble (T668): a soft pill, a white play disc and its time (on the desktop,
- * pointing at it shows its original words). `solo`: nothing else is in the bubble, so the bubble is the pill. `busy`:
- * still on its way, it cannot be played yet. */
-export function VoicePill({ f, src, play, tidy, solo = false, busy = false, onPlay }: {
-  f: FileRef
-  src: string
-  play: PlayState
-  tidy: boolean
-  solo?: boolean
-  busy?: boolean
-  onPlay(src: string): void
-}) {
-  const total = voiceLength(f)
-  return (
-    <button
-      aria-label={`${play.playing ? 'Pause' : 'Play'} the voice note${total ? `, ${clock(total)}` : ''}`}
-      {...saidTip(f, tidy)}
-      disabled={busy}
-      onClick={(e) => (e.stopPropagation(), onPlay(src))}
-      className={
-        solo
-          ? 'flex min-h-11 min-w-34 items-center gap-2.5 rounded-2xl rounded-tr-md bg-blue-600 py-2 pr-4 pl-2 text-white transition-colors hover:bg-blue-700 disabled:opacity-70 dark:bg-blue-500 dark:hover:bg-blue-600'
-          : `inline-flex min-h-[38px] items-center gap-2.5 rounded-full border py-1 pr-3.5 pl-1.5 text-white transition-colors disabled:opacity-60 ${play.playing ? 'border-white/30 bg-white/25' : 'border-white/20 bg-white/15 hover:bg-white/25'}`
-      }
-    >
-      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-white text-blue-600 shadow-sm dark:text-blue-500">
-        <Icon n={play.playing ? 'pausefill' : 'play'} c="size-3.5" />
-      </span>
-      {/* the time grows to the right: the disc stays where it was pressed */}
-      <span className="font-mono text-[13px] font-medium tabular-nums">
-        <VoiceTime total={total} play={play} quiet="text-white/60" />
-      </span>
-    </button>
-  )
-}
-
 /** Your blue bubble with your voice notes inside it (T668): what you said on top (`top`: a comment's quote, the
- * words), each note's pill under it; with nothing on top, the bubble is the pill. `words`: the phone shows a mark for
- * a note's original words beside it (where the message's menu does not have them). */
-export function VoiceBubble({ cls, files, url, play, tidy, top, hearing = false, busy = false, words = false, attrs, on }: {
+ * words), each note's chip under it, the chip every place draws (r1165), in white on blue; with nothing on top, the
+ * bubble holds the chips alone. */
+export function VoiceBubble({ cls, files, url, play, tidy, top, hearing = false, busy = false, attrs, on }: {
   /** the blue bubble's own classes */
   cls: string
   files: FileRef[]
@@ -370,41 +285,20 @@ export function VoiceBubble({ cls, files, url, play, tidy, top, hearing = false,
   top?: ReactNode
   hearing?: boolean
   busy?: boolean
-  words?: boolean
   attrs?: Record<string, string>
   on: Pick<FileEvents, 'play' | 'words'>
 }) {
-  const pill = (f: FileRef, i: number, solo: boolean) => {
-    const src = url(f.f)
-    const quote =
-      words && tidy ? (
-        <button
-          aria-label="Original words"
-          onClick={(e) => (e.stopPropagation(), on.words(f.f))}
-          className={`relative grid size-7 place-items-center rounded-full after:absolute after:-inset-2 lg:hidden ${solo ? `hover:bg-zinc-100 dark:hover:bg-zinc-800 ${MUTED}` : 'text-white/80 hover:bg-white/15'}`}
-        >
-          <Icon n="quote" c="size-4" />
-        </button>
-      ) : null
-    return (
-      <span key={`${f.f}-${i}`} className="flex items-center gap-1">
-        {solo ? quote : null}
-        <VoicePill f={f} src={src} play={play(src)} tidy={tidy} solo={solo} busy={busy} onPlay={on.play} />
-        {solo ? null : quote}
-      </span>
-    )
-  }
-  if (!top && !hearing)
-    return (
-      <div {...attrs} className="flex max-w-full flex-col items-end gap-1">
-        {files.map((f, i) => pill(f, i, true))}
-      </div>
-    )
+  const alone = !top && !hearing
   return (
-    <div {...attrs} className={`${cls} ${busy ? 'opacity-70' : ''}`}>
+    <div {...attrs} className={`${cls} ${alone ? 'p-1.5!' : ''} ${busy ? 'opacity-70' : ''}`}>
       {top}
       {hearing ? <Transcribing /> : null}
-      <div className="mt-2.5 flex flex-wrap items-center gap-2">{files.map((f, i) => pill(f, i, false))}</div>
+      <div className={`flex flex-wrap items-center gap-2 ${alone ? '' : 'mt-2.5'}`}>
+        {files.map((f, i) => {
+          const src = url(f.f)
+          return <VoiceChip key={`${f.f}-${i}`} f={f} src={src} play={play(src)} tidy={tidy} blue busy={busy} onPlay={on.play} onWords={on.words} />
+        })}
+      </div>
     </div>
   )
 }
