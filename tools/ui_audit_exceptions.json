@@ -1,0 +1,15 @@
+{
+  "about": "Findings of tools/ui_audit.mjs that are meant: never filed. kind = the check; match = part of the element's signature (its tag and classes).",
+  "exceptions": [
+    {
+      "kind": "overflow",
+      "match": "animate-pulse rounded-full bg-yellow-300/60",
+      "why": "the walk-through stories' finger marker (web/src/stories/tour/TourFrame.tsx) is drawn over a tap at the screen's edge; it is not part of the page"
+    },
+    {
+      "kind": "height",
+      "match": "div.flex h-9 items-center gap-1 rounded-full bg-white p-0.5 shadow-sm",
+      "why": "an input row's recording strip (web/src/ui/PlaceVoice.tsx, 36 px) beside its 28 px More button: the strip is a larger pill on purpose, its level meter needs the room; at 28 px the bars reach its edge"
+    }
+  ]
+}
