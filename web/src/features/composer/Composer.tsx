@@ -6,6 +6,7 @@ import { useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
 import type { BoxLine, BoxRight, FeedbackLine } from '../../model/boxFoot'
 import { VC_MARK } from '../../model/voiceComments'
 import { sayIn } from '../../model/voiceStates'
+import { OUT_ACT_WORD, type OutTone } from '../../model/outgoingStates'
 import { Icon, type IconName } from '../../ui/Icon'
 import { RecBar } from '../../ui/PlaceVoice'
 import { HIT, MUTED } from '../../ui/tones'
@@ -325,9 +326,11 @@ const Dismiss = ({ onClick, cancel = false }: { onClick(): void; cancel?: boolea
 )
 
 const Pulse = () => <span className="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400" />
+/** what is on its way, in its tone: amber while it waits for Taska, red when Taska said no */
+const LINE_TONE: Record<OutTone, string> = { busy: '', partial: 'text-amber-600 dark:text-amber-400', failed: 'text-red-600 dark:text-red-400' }
 
 /** The line above the box: what happened to what you sent last; while it is on its way, its × cancels it. */
-export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismiss(): void; cancel(q: string): void; retry(): void; edit(): void; view(): void; undoFiling(): void; move(): void; retryOrganizer(): void } }) {
+export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismiss(): void; cancel(q: string): void; retry(q: string): void; edit(q: string): void; view(): void; undoFiling(): void; move(): void; retryOrganizer(): void } }) {
   const link = (label: string, run: () => void) => (
     <button onClick={run} className="-my-2 h-11 shrink-0 rounded-full px-2 font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">
       {label}
@@ -337,43 +340,22 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
   let node: ReactNode = null
   if (line)
     switch (line.kind) {
-      case 'waiting':
+      case 'going': {
+        const tone = LINE_TONE[line.show.tone]
         node = (
           <>
-            <Pulse />
-            <span className="min-w-0 flex-1 truncate">
-              Waiting for Taska…{more(line.more)} · {line.text}
-            </span>
-            {link('Edit', on.edit)}
-            <Dismiss cancel onClick={() => on.cancel(line.q)} />
-          </>
-        )
-        break
-      case 'not-sent':
-        node = (
-          <>
-            <Icon n="alert" c="size-4 text-red-600 dark:text-red-400" sw="2" />
-            <span className="min-w-0 flex-1 truncate text-red-600 dark:text-red-400">
-              Not sent{more(line.more)} · {line.text}
-            </span>
-            {link('Retry', on.retry)}
-            {link('Edit', on.edit)}
-            <Dismiss cancel onClick={() => on.cancel(line.q)} />
-          </>
-        )
-        break
-      case 'sending':
-        node = (
-          <>
-            <Pulse />
-            <span className="min-w-0 flex-1 truncate">
-              {line.uploading ? 'Uploading' : 'Sending'}
+            {line.show.tone === 'busy' ? <Pulse /> : <Icon n="alert" c={`size-4 ${tone}`} sw="2" />}
+            <span className={`min-w-0 flex-1 truncate ${line.show.tone === 'failed' ? tone : ''}`}>
+              {line.show.say}
               {more(line.more)} · {line.text}
             </span>
-            <Dismiss cancel onClick={() => on.cancel(line.q)} />
+            {line.show.acts.includes('retry') ? link(OUT_ACT_WORD.retry, () => on.retry(line.q)) : null}
+            {line.show.acts.includes('edit') ? link(OUT_ACT_WORD.edit, () => on.edit(line.q)) : null}
+            {line.show.acts.includes('cancel') ? <Dismiss cancel onClick={() => on.cancel(line.q)} /> : null}
           </>
         )
         break
+      }
       case 'moved':
         node = (
           <>

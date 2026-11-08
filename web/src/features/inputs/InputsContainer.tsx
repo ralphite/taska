@@ -72,8 +72,8 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
           else if (to?.kind === 'input') app.nav.goInput(to.id)
         },
         picture: (f, all) => media.on.view(f, all),
-        outboxRetry: () => void app.inputs.flush(),
-        outboxEdit: () => app.box.editOutgoing(route.slug, boxKey) && app.fields.focus('box'),
+        outboxRetry: (q) => app.inputs.retry(q),
+        outboxEdit: (q) => app.box.editOutgoing(route.slug, boxKey, q, away) && app.fields.focus('box'),
         outboxCancel: (q) => app.box.cancel(q),
         end: () => setUpTo((n) => n + PAGE),
         moveInput: (id) => app.sheets.open({ kind: 'input-move', id }),

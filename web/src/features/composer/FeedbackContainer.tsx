@@ -3,9 +3,8 @@
 
 import { useEffect } from 'react'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
-import { useProjectModel, type ProjectRoute } from '../../app/hooks'
+import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { feedbackLine } from '../../model/boxFoot'
-import { showsOnItsWay } from '../../model/outgoing'
 import type { DraftKey } from '../../model/draftTarget'
 import { codeOf } from '../../model/project'
 import { Feedback } from './Composer'
@@ -18,10 +17,11 @@ export function FeedbackContainer({ route, scope, boxKey }: { route: ProjectRout
   const outbox = useStoreValue(stores.outbox, (s) => s.list)
   const lastSent = useStoreValue(stores.ui, (s) => s.lastSent)
   const projects = useStoreValue(stores.data, (s) => s.projects)
-  const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent && showsOnItsWay(o))
+  const away = useAway(route.slug)
+  const mine = outbox.filter((o) => o.slug === route.slug)
   // the input the line speaks of
   const sentRow = lastSent?.slug === route.slug && m ? m.byId.get(lastSent.rid) : undefined
-  const feedback = feedbackLine({ m, desk, scope, mine, lastSent: lastSent?.slug === route.slug ? lastSent.rid : null, others: (projects || []).some((p) => p.name !== route.slug) })
+  const feedback = feedbackLine({ m, desk, scope, mine, away, lastSent: lastSent?.slug === route.slug ? lastSent.rid : null, others: (projects || []).some((p) => p.name !== route.slug) })
   // a line that says where it ended up goes after a while
   useEffect(() => {
     if (!feedback?.final) return
@@ -34,8 +34,8 @@ export function FeedbackContainer({ route, scope, boxKey }: { route: ProjectRout
       on={{
         dismiss: () => stores.ui.getState().setLastSent(null),
         cancel: (q) => app.box.cancel(q),
-        retry: () => void app.inputs.flush(),
-        edit: () => app.box.editOutgoing(route.slug, boxKey) && app.fields.focus('box'),
+        retry: (q) => app.inputs.retry(q),
+        edit: (q) => app.box.editOutgoing(route.slug, boxKey, q, away) && app.fields.focus('box'),
         view: () => {
           const n = sentRow?.touched[0]
           if (m && n) app.nav.openItem(codeOf(m, n))

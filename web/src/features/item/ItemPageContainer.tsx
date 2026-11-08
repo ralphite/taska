@@ -15,7 +15,8 @@ import { answerOf, latestMessage } from '../../model/talk'
 import type { Item } from '../../model/types'
 import { inTab, tabOf } from '../../model/visible'
 import type { Tab } from '../../model/words'
-import { inTalk, outgoingLine, outgoingState, outgoingText, showsOnItsWay } from '../../model/outgoing'
+import { inTalk, outgoingLine, outgoingText } from '../../model/outgoing'
+import { outgoingIn } from '../../model/outgoingStates'
 import { withVoice } from '../../model/voices'
 import { isAudio } from '../../ui/Files'
 import { ItemPage, type ItemEvents, type ItemFacts } from './ItemPage'
@@ -74,15 +75,20 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   const choosing = { picked, pick: (i: number, multi: boolean) => app.answers.pick(it, i, multi) }
 
   const shown = inTalk(it.thread, m.byId)
-  const mine = outbox.filter((o) => o.slug === slug && o.scope === ref && showsOnItsWay(o) && !shown.has(o.q))
-  const answering = mine.filter((o) => o.kind === 'answer').at(-1)
+  const mine = outbox.filter((o) => o.slug === slug && o.scope === ref && !shown.has(o.q))
+  const answering = mine.filter((o) => o.kind === 'answer').flatMap((o) => {
+    const card = outgoingIn(o, away, 'card')
+    return card ? [{ text: o.text, card }] : []
+  }).at(-1)
   const outgoing: Outgoing[] = mine
     .filter((o) => !(o.kind === 'answer' && !o.files.length))
-    .map((o) => {
+    .flatMap((o) => {
+      const show = outgoingIn(o, away, 'talk')
+      if (!show) return []
       const previews = o.files.flatMap((f) => (f.preview ? [f.preview] : []))
       // its voice notes in the bubble (T668), so no "Voice note" words for them
       const voices = o.kind === 'cancelled' ? [] : o.files.filter(isAudio).map((f) => (f.f ? withVoice(f, m.voices) : f))
-      return { q: o.q, text: outgoingText(o, m.voices) || (previews.length || voices.length ? '' : outgoingLine(o)), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net, previews, voices }
+      return [{ q: o.q, text: outgoingText(o, m.voices) || (previews.length || voices.length ? '' : outgoingLine(o)), show, previews, voices }]
     })
 
   const media = useFiles(slug)
@@ -101,7 +107,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     inputs: m.byId,
     peeking: view.peeking,
     reask: view.reask,
-    going: answering ? { text: answering.text, state: outgoingState(answering, away) } : null,
+    going: answering ?? null,
     outgoing,
     title: (s) => projects?.find((p) => p.name === s)?.title || s,
     made: (id) => {
@@ -211,8 +217,8 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     unhide: (id) => void send([{ op: 'hide', ref, id, on: false }], `showing a message on ${ref} again`),
     docAt: (d, key) => app.docs.openAt(d, key),
     cancel: (q) => app.box.cancel(q),
-    outboxRetry: () => void app.inputs.flush(),
-    outboxEdit: () => app.box.editOutgoing(slug, replyDraft(ref)) && app.fields.focus('box'),
+    outboxRetry: (q) => app.inputs.retry(q),
+    outboxEdit: (q) => app.box.editOutgoing(slug, replyDraft(ref), q, away) && app.fields.focus('box'),
   }
   return <ItemPage it={it} f={f} env={env} facts={facts} on={on} talkRef={preview ? undefined : talkRef} duo={duo} left={left} bare={bare} readOnly={preview} />
 }

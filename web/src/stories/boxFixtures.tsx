@@ -190,14 +190,14 @@ const noLine = acts('Sent line', ['dismiss', 'cancel', 'retry', 'edit', 'view', 
 
 /** The line over the box about what you sent last, as the page works it out (feedbackLine): what is on its way, or
  * what became of the input you sent. */
-type SentFacts = { mine?: Outgoing[]; sent?: Input; organizer?: boolean; others?: boolean }
+type SentFacts = { mine?: Outgoing[]; sent?: Input; organizer?: boolean; others?: boolean; away?: number }
 export const sentLine = (f: SentFacts, desk: boolean) => <LiveLine f={f} desk={desk} />
 /** the line as the page keeps it: Dismiss lets it go, and so does × on what is on its way (it is cancelled); Retry,
  * View, Move need Taska (the Actions panel) */
 function LiveLine({ f, desk }: { f: SentFacts; desk: boolean }) {
   const [gone, setGone] = useState(false)
   const m = boxProject(f.sent ? [f.sent] : [], f.organizer)
-  const r = feedbackLine({ m, desk, scope: null, mine: f.mine ?? [], lastSent: f.sent?.id ?? null, others: !!f.others })
+  const r = feedbackLine({ m, desk, scope: null, mine: f.mine ?? [], away: f.away ?? 0, lastSent: f.sent?.id ?? null, others: !!f.others })
   return (
     <div className="bg-zinc-50 p-3 dark:bg-zinc-950">
       <Feedback line={gone ? null : (r?.line ?? null)} on={{ ...noLine, dismiss: () => setGone(true), cancel: (q) => (noLine.cancel(q), setGone(true)) }} />

@@ -5,6 +5,7 @@ import type { Input, Item, Message } from '../model/types'
 import { Frames } from './Frames'
 import { T, input, item, message } from './fixtures'
 import { talkOf, type PageOpts } from './itemPage'
+import { phaseIn, type OutPhase } from '../model/outgoingStates'
 
 type Story = StoryObj
 
@@ -49,7 +50,10 @@ export const LONG = [
   'Screenshots of the list and the file are in the thread above.',
 ].join('\n')
 /** what you sent, still on its way */
-/** What you sent, on its way, in each state the page's outgoingState gives; only one Taska refused is bad (Retry, Edit),
- * as the page has it; × cancels any of them. */
-export const out = (state: 'Sending…' | 'Uploading…' | 'Waiting for Taska…' | 'Not sent', previews: string[] = []) => ({ t: { outgoing: [{ q: 'q1', text: 'Also keep the sort.', state, bad: state === 'Not sent', previews }] } })
+/** What you sent, on its way, in each of its phases (named by their words), as the talk shows it (model/outgoingStates:
+ * Retry only when Taska said no, Edit while it is not going out); × cancels any of them. */
+const PHASE = { 'Sending…': 'sending', 'Uploading…': 'uploading', 'Waiting for Taska…': 'waiting', 'Not sent': 'notSent' } as const satisfies Record<string, OutPhase>
+export const out = (state: keyof typeof PHASE, previews: string[] = []) => ({ t: { outgoing: [{ q: 'q1', text: 'Also keep the sort.', show: talkShow(PHASE[state]), previews }] } })
+/** what the talk shows in a phase */
+export const talkShow = (p: OutPhase) => phaseIn(p, 'talk') ?? { say: '', tone: 'busy' as const, acts: [] }
 export { message, T }

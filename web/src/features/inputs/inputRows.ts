@@ -5,8 +5,8 @@
 import { inputLine, type InputLineWith } from '../../model/became'
 import { newestFirst } from '../../model/inputs'
 import type { ProjectModel } from '../../model/project'
-import { outgoingLine, outgoingState, outgoingText, outgoingWaits, showsOnItsWay, type Outgoing } from '../../model/outgoing'
-import type { InputFacts, OutgoingRow } from './InputsView'
+import { outgoingFacts, type Outgoing, type OutgoingFacts } from '../../model/outgoing'
+import type { InputFacts } from './InputsView'
 
 /** What the rows are drawn with besides the project. */
 export interface InputRowsWith extends InputLineWith {
@@ -25,10 +25,10 @@ export function inputRows(m: ProjectModel, a: InputRowsWith): { rows: InputFacts
   return { rows, total: all.length }
 }
 
-/** What this project's outbox still has on its way, the latest first, and where each is (`away`: how long Taska has
- * not answered). */
-export const outgoingRows = (outbox: readonly Outgoing[], slug: string, away: number): OutgoingRow[] =>
+/** What this project's outbox still has on its way, the latest first, as the Inputs page shows each (`away`: how sure
+ * the page is that Taska is out of reach). */
+export const outgoingRows = (outbox: readonly Outgoing[], slug: string, away: number): OutgoingFacts[] =>
   outbox
-    .filter((o) => o.slug === slug && showsOnItsWay(o))
+    .filter((o) => o.slug === slug)
     .reverse()
-    .map((o) => ({ q: o.q, text: outgoingText(o) || outgoingLine(o), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net, waiting: outgoingWaits(o, away), failed: o.state === 'failed', scope: o.scope, previews: o.files.flatMap((f) => (f.preview ? [f.preview] : [])) }))
+    .flatMap((o) => outgoingFacts(o, away, 'inputs') ?? [])

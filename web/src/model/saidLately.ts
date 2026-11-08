@@ -4,21 +4,11 @@
 import type { BoxMode } from './boxFoot'
 import { inputLine, type InputLine } from './became'
 import { newestFirst } from './inputs'
-import { outgoingLine, outgoingState, outgoingText, outgoingWaits, type Outgoing } from './outgoing'
+import { outgoingFacts, type Outgoing, type OutgoingFacts } from './outgoing'
 import type { ProjectModel } from './project'
 import type { Input } from './types'
 
 export type SaidInput = InputLine
-
-export interface SaidOutgoing {
-  q: string
-  text: string
-  state: string
-  failed: boolean
-  net: boolean
-  /** Taska is out of reach: it waits */
-  waiting: boolean
-}
 
 /** What you said (`all`) and the rows shown of it (the first `upTo`, and down to the input gone to, `lit`); `adding`:
  * the inputs a voice note said on their own line is on its way to (F657), transcribing until Taska has it and its
@@ -33,6 +23,5 @@ export function saidRows(m: ProjectModel, a: { upTo: number; lit?: string | null
   return { all, rows }
 }
 
-/** What is on its way, oldest last. */
-export const saidOutgoing = (mine: readonly Outgoing[], away: number): SaidOutgoing[] =>
-  [...mine].reverse().map((o) => ({ q: o.q, text: outgoingText(o) || outgoingLine(o), state: outgoingState(o, away), failed: o.state === 'failed', net: !!o.net, waiting: outgoingWaits(o, away) }))
+/** What is on its way, oldest last, as the desktop's New input list shows each. */
+export const saidOutgoing = (mine: readonly Outgoing[], away: number): OutgoingFacts[] => [...mine].reverse().flatMap((o) => outgoingFacts(o, away, 'row') ?? [])

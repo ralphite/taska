@@ -73,6 +73,63 @@ file (`madeFrom`) and `web/src/features/item/Talk.tsx`.
 | A question for an agent | For an agent | | | in the agent's queue |
 | An input edited after it was sent | read again, and left for an agent too | its items follow the new words | | |
 
+## On its way to Taska
+
+From Send until Taska has it, an input is on its way: in the page's outbox, kept in this browser, sent in order and
+again until Taska has it (rule 13: when Taska cannot be reached it goes again by itself; Retry is only for one Taska
+said no to). Its phases, every way between them (the event that causes it) and what each place shows in each phase,
+its words, their colour and what can be done there, are defined once, in `web/src/model/outgoingStates.ts` (T728 #2);
+every place that shows something on its way reads it there, and the outbox changes only by its steps (`outStep`). The
+diagram and the table below are made from that file, and `web/src/model/outgoingStates.test.ts` fails when they differ
+from it. A voice message on its way is in the voice state its phase names (Sending, Waiting for Taska, Not sent:
+[voice.md](voice.md)). Once Taska has it, what became of it is below.
+
+<!-- made from outgoingStates.ts: outgoingDiagram() -->
+```mermaid
+flowchart TD
+    start(("Send"))
+    gone(("gone"))
+    uploading["Uploading"]
+    sending["Sending"]
+    waiting["Waiting for Taska"]
+    notSent["Not sent"]
+    reloaded["Sent before a reload, its files going up"]
+    takenBack["Taken back while going out"]
+    start -->|"Send"| uploading
+    start -->|"Send · The page reloaded"| sending
+    start -->|"The page reloaded"| reloaded
+    reloaded -->|"Its files up"| sending
+    uploading -->|"Its files up"| sending
+    sending -->|"Goes out"| sending
+    uploading -->|"No answer for a while"| waiting
+    sending -->|"No answer for a while · Taska out of reach"| waiting
+    waiting -->|"Taska answers again · Tried again (by itself, sooner once Taska is back)"| sending
+    sending -->|"Taska said no"| notSent
+    notSent -->|"Retry"| sending
+    waiting -->|"Edit: back in the box · ×"| gone
+    notSent -->|"Edit: back in the box · ×"| gone
+    waiting -->|"Edit: back in the box · ×"| takenBack
+    uploading -->|"×"| gone
+    sending -->|"× · Taska has it"| gone
+    sending -->|"×"| takenBack
+    takenBack -->|"Taska has it · Taska said no"| gone
+    takenBack -->|"Taska out of reach · Tried again (by itself, sooner once Taska is back) · Goes out"| takenBack
+```
+
+The tone in brackets is the colour: busy blue and moving, partial amber (it waits, nothing to do), failed red. ×
+cancels it: it is not sent (one going out right now is deleted as soon as Taska has it). Edit takes it back into the
+box to change it.
+
+<!-- made from outgoingStates.ts: outgoingPlacesTable() -->
+| Phase | its row in the desktop's New input list | the line over the phone's box (New input) | its row on the Inputs page | your bubble in the item's talk | an answer, on its question's card in the item's talk |
+|---|---|---|---|---|---|
+| Uploading (`uploading`) | Uploading… (busy) · × | Uploading… (busy) · × | Uploading… (busy) · × | Uploading… (busy) · × | Uploading… (busy) |
+| Sending (`sending`) | Sending… (busy) · × | Sending… (busy) · × | Sending… (busy) · × | Sending… (busy) · × | Sending… (busy) |
+| Waiting for Taska (`waiting`) | Waiting for Taska… (partial) · Edit × | Waiting for Taska… (partial) · Edit × | Waiting for Taska… (partial) · Edit × | Waiting for Taska… (partial) · Edit × | Waiting for Taska… (partial) |
+| Not sent (`notSent`) | Not sent (failed) · Retry Edit × | Not sent (failed) · Retry Edit × | Not sent (failed) · Retry Edit × | Not sent (failed) · Retry Edit × | Not sent (failed) |
+| Sent before a reload, its files going up (`reloaded`) | — | — | — | — | — |
+| Taken back while going out (`takenBack`) | — | — | — | — | — |
+
 ## Never
 
 - The organizer writes a note or a proposal on an item it just made, or on the item the input was said in (a

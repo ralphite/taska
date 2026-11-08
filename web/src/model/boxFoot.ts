@@ -15,6 +15,7 @@ import { sentNotes } from './voiceStates'
 import { vcCount } from './voiceComments'
 import { inputCode, plural } from './words'
 import { outgoingLine, type Outgoing } from './outgoing'
+import { outgoingIn, showsOnItsWay, type OutShow } from './outgoingStates'
 import { docName, placeDoc } from './rules'
 
 /** a button at the line's right */
@@ -177,9 +178,9 @@ export function shownBox(role: BoxRole, a: { mode: BoxMode; text: string; key: s
 /** The line over the box: what you sent is on its way (`q`: the one it names, which its × cancels), or what became of
  * the last one you sent from here. */
 export type FeedbackLine =
-  | { kind: 'sending'; q: string; text: string; more: number; uploading: boolean }
-  | { kind: 'waiting'; q: string; text: string; more: number }
-  | { kind: 'not-sent'; q: string; text: string; more: number }
+  /** on its way: where it is and what can be done, as model/outgoingStates says for the line; `more`: how many more
+   * are on their way after it */
+  | { kind: 'going'; q: string; text: string; more: number; show: OutShow }
   | { kind: 'organizing' }
   /** its voice notes' words still to come: what the line says is the voice state's (model/voiceStates) */
   | { kind: 'transcribing'; state: 'sentTranscribing' | 'sentFastWords' }
@@ -197,17 +198,14 @@ function agentDid(r: Input, m: ProjectModel): string {
   return b.k === 'filed' ? b.items.map((x) => [x.did, x.item.code].filter(Boolean).join(' ')).join(' · ') : ''
 }
 
-export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; scope: string | null; mine: Outgoing[]; lastSent: string | null; others: boolean }): { line: FeedbackLine; final?: string } | null {
+/** `mine`: what this project has on its way, oldest first; `away`: how sure the page is that Taska is out of reach. */
+export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; scope: string | null; mine: Outgoing[]; away: number; lastSent: string | null; others: boolean }): { line: FeedbackLine; final?: string } | null {
   // the phone's only (T689, r576): on the desktop each input is in the New input page's list; in an item, in its talk
   if (a.desk || a.scope) return null
-  const first = a.mine[0]
-  const q = first?.quiet && first.state !== 'failed' ? null : first
-  if (q) {
-    const more = a.mine.length - 1
-    if (q.state === 'failed' && q.net) return { line: { kind: 'waiting', q: q.q, text: outgoingLine(q), more } }
-    if (q.state === 'failed') return { line: { kind: 'not-sent', q: q.q, text: outgoingLine(q), more } }
-    return { line: { kind: 'sending', q: q.q, text: outgoingLine(q), more, uploading: q.files.some((f) => f.uploading) } }
-  }
+  const going = a.mine.filter((o) => showsOnItsWay(o))
+  const first = going[0]
+  const show = first ? outgoingIn(first, a.away, 'line') : null
+  if (first && show) return { line: { kind: 'going', q: first.q, text: outgoingLine(first), more: going.length - 1, show } }
   const r = a.lastSent && a.m ? a.m.byId.get(a.lastSent) : undefined
   if (!r || !a.m || r.scope) return null
   const org = a.m.facts.organizer

@@ -16,6 +16,7 @@ import { Rich } from '../../ui/Markdown'
 import { ACT_ICON, CHOSEN_TONE, DECIDED_OFF, DECIDED_ON, MODIFY_LINK, MUTED, NEED, NEEDS_CARD, PRIMARY_BASE, SECOND } from '../../ui/tones'
 import { Thumbs } from '../../ui/Files'
 import { MsgText } from './MsgText'
+import type { OutShow, OutTone } from '../../model/outgoingStates'
 import type { TalkEnv, TalkEvents } from './talkEnv'
 
 export interface CardEvents extends TalkEvents {
@@ -37,7 +38,9 @@ const msgName = (x: { by: string; ses?: string | null }) => whoName(x.by) + (x.s
 /** A question's words, the card's most prominent (T642 R9): its paragraphs a step larger and heavier than the rest. */
 const QUESTION = '[&>p]:text-[16px] [&>p]:font-medium'
 
-export function NeedFrame({ icon, title, t, done = false, quiet = false, body, foot, hint = '', going = '', act = null, now }: {
+const GOING_TONE: Record<OutTone, string> = { busy: 'animate-pulse text-blue-600 dark:text-blue-400', partial: 'text-amber-700 dark:text-amber-400', failed: 'text-red-600 dark:text-red-400' }
+
+export function NeedFrame({ icon, title, t, done = false, quiet = false, body, foot, hint = '', going = null, act = null, now }: {
   icon: IconName
   title: string
   t?: string
@@ -47,8 +50,8 @@ export function NeedFrame({ icon, title, t, done = false, quiet = false, body, f
   body: ReactNode
   foot: ReactNode
   hint?: string
-  /** an answer on its way says so where the time goes, until Taska has it */
-  going?: string
+  /** an answer on its way says where it is where the time goes, until Taska has it (model/outgoingStates) */
+  going?: OutShow | null
   act?: ReactNode
   now: number
 }) {
@@ -65,7 +68,7 @@ export function NeedFrame({ icon, title, t, done = false, quiet = false, body, f
         </p>
         {act}
         {going ? (
-          <span className="animate-pulse text-xs text-blue-600 dark:text-blue-400">{going}</span>
+          <span className={`text-xs ${GOING_TONE[going.tone]}`}>{going.say}</span>
         ) : t ? (
           <span className={`text-xs ${act ? 'hidden lg:inline' : ''} ${done ? ' ' : 'text-amber-700/80 dark:text-amber-300/70'} ${MUTED}`}>{when(t, now)}</span>
         ) : null}
@@ -319,7 +322,7 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
 /** An answered question, in the card it was asked in, its layout as it was (r1003): your picks ticked, Send answer
  * where it was said as Sent (Replied when you wrote instead), greyed and not to be clicked, and Edit (under the
  * pointer on the desktop) to pick again (r1007). */
-export function Answered({ it, x, done, env, on, reasking, going = '' }: {
+export function Answered({ it, x, done, env, on, reasking, going = null }: {
   it: Item
   x: Message
   done: readonly string[]
@@ -328,7 +331,7 @@ export function Answered({ it, x, done, env, on, reasking, going = '' }: {
   /** being answered again: a form again */
   reasking: boolean
   /** an answer on its way: where it is */
-  going?: string
+  going?: OutShow | null
 }) {
   const last = answeredLast(it) && lastAgentMessage(it)?.id === x.id
   if (reasking)

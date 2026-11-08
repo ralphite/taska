@@ -13,3 +13,5 @@ export const SeveralOnTheirWay: Story = { ...at({ mine: [out(), out({ q: 'q2', t
 export const WaitingForTaska: Story = { ...at({ mine: [out({ state: 'failed', net: true })] }), name: 'Taska out of reach: waiting for it' }
 // ---- more states (B636)
 export const NotSent: Story = { ...at({ mine: [out({ state: 'failed' })] }), name: 'Not sent' }
+/** going out while Taska has not answered for a while: Waiting for Taska, as every list says it (T728) */
+export const WaitingWhileGoingOut: Story = { ...at({ mine: [out()], away: 2 }), name: 'Taska not answering while it goes out' }

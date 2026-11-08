@@ -1,8 +1,10 @@
-// What you sent that Taska does not have yet: each input on its way, with its files, and how the lists say it.
+// What you sent that Taska does not have yet: each input on its way, with its files, and its words as the lists show
+// them (where it is on its way, and what can be done: model/outgoingStates).
 
 import type { FileRef, Input, Message, Voice } from './types'
 import { voiceWords } from './voices'
 import { voiceLacks } from './voiceStates'
+import { outgoingIn, type OutPlace, type OutShow } from './outgoingStates'
 
 export interface OutFile extends FileRef {
   /** still being uploaded */
@@ -31,6 +33,8 @@ export interface Outgoing {
   /** each voice note's words as they were in the box when you sent it, by file (B682): what was typed is `text` */
   words?: Record<string, string>
   t: number
+  /** waiting: to go out (in order); sending: going out now; failed: not answered (`net`) or refused. Its phase, as
+   * every place shows it, is model/outgoingStates `outPhase` */
   state: 'waiting' | 'sending' | 'failed'
   /** failed because the server was away (it goes again by itself) */
   net?: boolean
@@ -42,10 +46,6 @@ export interface Outgoing {
   /** cancelled while on its way (its ×): deleted once the server has it */
   unsent?: boolean
 }
-
-/** Whether it shows as on its way: one sent before a reload whose file goes up again shows once it is up, as the page
- * always has (it is sent all the same). */
-export const showsOnItsWay = (o: Pick<Outgoing, 'back' | 'files'>) => !(o.back && o.files.some((f) => f.uploading))
 
 /** What you sent that a talk has already, by the page's own id for it: Taska's news of it can come before its answer
  * to the send, and then it shows there, not a second time on its way (B719 r1178: shown twice a moment, then one went
@@ -78,9 +78,18 @@ export const outgoingLine = (o: Pick<Outgoing, 'text' | 'files'> & Pick<Partial<
   )
 }
 
-/** Taska is out of reach (its connection lost, or no answer for a while): it waits to be sent. */
-export const outgoingWaits = (o: Pick<Outgoing, 'state' | 'net'>, away: number) => (o.state === 'failed' ? !!o.net : away >= 2)
+/** Something on its way as a list draws it: its words on one line, where it is and what can be done
+ * (model/outgoingStates), the item it goes to, its pictures as they were picked. */
+export interface OutgoingFacts {
+  q: string
+  text: string
+  show: OutShow
+  scope: string | null
+  previews: string[]
+}
 
-/** Where it is, in a few words: on its way, waiting for Taska (away), uploading its files, or not sent. */
-export const outgoingState = (o: Outgoing, away: number) =>
-  o.state === 'failed' && !o.net ? 'Not sent' : outgoingWaits(o, away) ? 'Waiting for Taska…' : o.files.some((f) => f.uploading) ? 'Uploading…' : 'Sending…'
+/** `o` as `place` lists it (`away`: how sure the page is that Taska is out of reach); null: it does not show there. */
+export function outgoingFacts(o: Outgoing, away: number, place: OutPlace): OutgoingFacts | null {
+  const show = outgoingIn(o, away, place)
+  return show ? { q: o.q, text: outgoingText(o) || outgoingLine(o), show, scope: o.scope, previews: o.files.flatMap((f) => (f.preview ? [f.preview] : [])) } : null
+}

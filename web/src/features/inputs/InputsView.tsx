@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { InputLine } from '../../model/became'
+import type { OutgoingFacts } from '../../model/outgoing'
 import { useLitRow } from '../../ui/litRow'
 import type { FileRef } from '../../model/types'
 import { Empty } from '../../ui/bits'
@@ -21,19 +22,6 @@ export interface InputFacts extends InputLine {
   movable?: boolean
 }
 
-export interface OutgoingRow {
-  q: string
-  text: string
-  state: string
-  /** Taska said no (not only a lost connection): it can be sent again */
-  bad: boolean
-  /** Taska is out of reach: it waits */
-  waiting: boolean
-  /** not sent: it can be taken back into the box */
-  failed: boolean
-  scope: string | null
-  previews: string[]
-}
 
 export interface InputEvents {
   goto(n: number): void
@@ -47,8 +35,8 @@ export interface InputEvents {
   ref(code: string): void
   picture(fid: string, all: string[]): void
   /** what is on its way and was not sent: send it again, or take it back into the box */
-  outboxRetry(): void
-  outboxEdit(): void
+  outboxRetry(q: string): void
+  outboxEdit(q: string): void
   /** one on its way, cancelled (its ×): it does not go */
   outboxCancel(q: string): void
   /** the list scrolled to its last drawn rows: draw more */
@@ -79,22 +67,19 @@ export function InputCard({ x, world, files, on }: { x: InputFacts; world: Inlin
   )
 }
 
-/** What is still on its way, shown first where your inputs are listed: Retry when Taska said no, Edit when not sent,
- * × to cancel it. */
-export function OutboxRows({ list, on }: { list: OutgoingRow[]; on: Pick<InputEvents, 'outboxRetry' | 'outboxEdit' | 'outboxCancel'> }) {
+/** What is still on its way, shown first where your inputs are listed, with what can be done to each there
+ * (model/outgoingStates). */
+export function OutboxRows({ list, on }: { list: OutgoingFacts[]; on: Pick<InputEvents, 'outboxRetry' | 'outboxEdit' | 'outboxCancel'> }) {
   return (
     <>
       {list.map((q) => (
         <OutgoingLine
           key={q.q}
           text={q.text}
-          state={q.state}
-          bad={q.bad}
-          waiting={q.waiting}
+          show={q.show}
           scope={q.scope}
           previews={q.previews}
-          acts={[...(q.bad ? [{ label: 'Retry', run: on.outboxRetry }] : []), ...(q.failed ? [{ label: 'Edit', run: on.outboxEdit }] : [])]}
-          cancel={() => on.outboxCancel(q.q)}
+          on={{ retry: () => on.outboxRetry(q.q), edit: () => on.outboxEdit(q.q), cancel: () => on.outboxCancel(q.q) }}
         />
       ))}
     </>
@@ -106,7 +91,7 @@ export function InputsView({ hidden, rows, more, outgoing, world, files, on }: {
   rows: InputFacts[]
   /** older inputs not drawn yet: they come when the list nears its end */
   more: boolean
-  outgoing: OutgoingRow[]
+  outgoing: OutgoingFacts[]
   world: InlineWorld
   files(f: FileRef[]): ReactNode
   on: InputEvents

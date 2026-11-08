@@ -8,6 +8,7 @@ import type { Status } from '../model/types'
 import { STATUS_WORD } from '../model/words'
 import { Frames, States } from '../stories/Frames'
 import { BecameLine, OutgoingRow } from './InputRow'
+import { phaseIn, type OutPhase } from '../model/outgoingStates'
 import { act, acts } from '../stories/acts'
 
 export default { title: 'UI/Inputs page/Input row/Every state of a line' } satisfies Meta
@@ -40,7 +41,9 @@ const BECAME: [string, Became][] = [
 ]
 // what its buttons do needs Taska or the rest of the page: the Actions panel
 const on = acts('Input', ['goto', 'retry', 'send', 'moved'] as const)
-const outAct = (label: string) => act(`On its way: ${label}`)
+const outOn = { retry: act('On its way: Retry'), edit: act('On its way: Edit'), cancel: act('On its way: Cancel') }
+/** what the desktop's New input list shows in a phase (model/outgoingStates) */
+const rowShow = (p: OutPhase) => phaseIn(p, 'row') ?? { say: '', tone: 'busy' as const, acts: [] }
 
 /** What became of an input, each kind as every list says it. */
 export const WhatItBecame: Story = {
@@ -69,9 +72,10 @@ export const OnItsWay: Story = {
       {() => (
         <div className="lg:px-6 lg:py-3">
           <div className="space-y-2 px-4 py-3 lg:px-0">
-            <OutgoingRow text="Also the sort, please." state="Sending…" bad={false} waiting={false} scope="F012" acts={[]} cancel={outAct('Cancel')} />
-            <OutgoingRow text="Make the export button bigger" state="Waiting for Taska…" bad={false} waiting acts={[{ label: 'Edit', run: outAct('Edit') }]} cancel={outAct('Cancel')} />
-            <OutgoingRow text="This one Taska refused" state="Not sent" bad waiting={false} acts={[{ label: 'Retry', run: outAct('Retry') }, { label: 'Edit', run: outAct('Edit') }]} cancel={outAct('Cancel')} />
+            <OutgoingRow text="Also the sort, please." show={rowShow('sending')} scope="F012" on={outOn} />
+            <OutgoingRow text="The button here" show={rowShow('uploading')} on={outOn} />
+            <OutgoingRow text="Make the export button bigger" show={rowShow('waiting')} on={outOn} />
+            <OutgoingRow text="This one Taska refused" show={rowShow('notSent')} on={outOn} />
           </div>
         </div>
       )}

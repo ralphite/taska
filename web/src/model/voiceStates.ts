@@ -39,7 +39,7 @@ export type Show =
   | { say: string; tone: VoiceTone }
   /** its words (typed and heard), nothing said of them */
   | 'words'
-  /** what is on its way says where it is, as for anything sent (model/outgoing: Sending…, Uploading…, Waiting for
+  /** what is on its way says where it is, as for anything sent (model/outgoingStates: Sending…, Uploading…, Waiting for
    * Taska…, Not sent) */
   | 'going'
   /** the input's own words for what became of it, as for any input (model/became: Organizing…, Created B014, For an

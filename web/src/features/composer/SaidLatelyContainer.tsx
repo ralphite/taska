@@ -11,7 +11,6 @@ import { fixRange, voiceStretches } from '../../model/doubts'
 import { codeOf, findRef } from '../../model/project'
 import { inputWords } from '../../ui/Markdown'
 import { saidOutgoing, saidRows } from '../../model/saidLately'
-import { showsOnItsWay } from '../../model/outgoing'
 import { notesState } from '../../model/voiceStates'
 import { RecMeter } from '../../app/RecMeter'
 import { FileChips } from '../../ui/Files'
@@ -70,7 +69,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
     else if (to?.kind === 'doc') app.docs.open(to.d)
   }
   if (!m || !said) return null
-  const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent && showsOnItsWay(o))
+  const mine = outbox.filter((o) => o.slug === route.slug)
   const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
   return (
     <section aria-label="Latest inputs" data-vc-area className="mx-auto mt-8 block max-w-[42rem]">
@@ -100,8 +99,8 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
           cancel: (q) => app.box.cancel(q),
           retry: (id) => app.inputActions.organizeAgain(route.slug, id),
           send: (id) => app.inputActions.sendCancelled(route.slug, id),
-          outboxRetry: () => void app.inputs.flush(),
-          outboxEdit: () => app.box.editOutgoing(route.slug, boxKey) && app.fields.focus('box'),
+          outboxRetry: (q) => app.inputs.retry(q),
+          outboxEdit: (q) => app.box.editOutgoing(route.slug, boxKey, q, away) && app.fields.focus('box'),
           discard: () => void app.voice.cancel(),
           loadMore: view.more,
           moved: (href) => app.nav.to(href),

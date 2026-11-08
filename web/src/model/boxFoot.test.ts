@@ -93,12 +93,27 @@ describe('a recording in the box', () => {
 
 describe('the line over the box', () => {
   const out = (o: Partial<Outgoing>): Outgoing => ({ q: 'q1', slug: 'taska', text: 'Keep the filter', scope: null, files: [], t: 1, state: 'sending', tries: 0, ...o })
-  const base = { m, desk: false, scope: null, mine: [] as Outgoing[], lastSent: null, others: false }
+  const base = { m, desk: false, scope: null, mine: [] as Outgoing[], away: 0, lastSent: null, others: false }
+  const said = (f: Partial<typeof base>) => {
+    const l = feedbackLine({ ...base, ...f })?.line
+    return l?.kind === 'going' ? `${l.show.say} ${l.show.acts.join(' ')}` : l?.kind
+  }
 
-  test('on its way, or not sent', () => {
-    expect(feedbackLine({ ...base, mine: [out({})] })?.line).toEqual({ kind: 'sending', q: 'q1', text: 'Keep the filter', more: 0, uploading: false })
-    expect(feedbackLine({ ...base, mine: [out({ state: 'failed' })] })?.line.kind).toBe('not-sent')
-    expect(feedbackLine({ ...base, mine: [out({ state: 'failed', net: true })] })?.line.kind).toBe('waiting')
+  test('on its way, or not sent: the words and acts of model/outgoingStates', () => {
+    expect(feedbackLine({ ...base, mine: [out({})] })?.line).toEqual({ kind: 'going', q: 'q1', text: 'Keep the filter', more: 0, show: { say: 'Sending…', tone: 'busy', acts: ['cancel'] } })
+    expect(said({ mine: [out({ state: 'failed' })] })).toBe('Not sent retry edit cancel')
+    expect(said({ mine: [out({ state: 'failed', net: true })] })).toBe('Waiting for Taska… edit cancel')
+  })
+
+  test('T728: Taska out of reach for a while says Waiting for Taska, as the lists do (it said Sending)', () => {
+    expect(said({ mine: [out({})], away: 2 })).toBe('Waiting for Taska… edit cancel')
+    expect(said({ mine: [out({})], away: 1 })).toBe('Sending… cancel')
+  })
+
+  test('a quiet one (an answer, a kept recording) shows only when it needs you; taken back, never', () => {
+    expect(said({ mine: [out({ quiet: true })] })).toBeUndefined()
+    expect(said({ mine: [out({ quiet: true, state: 'failed' })] })).toBe('Not sent retry edit cancel')
+    expect(said({ mine: [out({ unsent: true }), out({ q: 'q2' })] })).toBe('Sending… cancel')
   })
 
   test('none on the New input page, nor in an item', () => {

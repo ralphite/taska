@@ -17,6 +17,7 @@ import { Rich } from '../../ui/Markdown'
 import { BUSY, DC_BTN, DC_LINK, MUTED } from '../../ui/tones'
 import { FileRows, VoiceBubble, isAudio } from '../../ui/Files'
 import { sayIn, sentNotes, voiceLacks } from '../../model/voiceStates'
+import { OUT_ACT_WORD, type OutShow, type OutTone } from '../../model/outgoingStates'
 import { MsgText } from './MsgText'
 import { Answered, type CardEvents } from './NeedsCard'
 import type { TalkEnv } from './talkEnv'
@@ -36,15 +37,17 @@ export interface TalkLineEvents extends CardEvents {
   docAt(d: number, key: string): void
   /** what you sent and Taska has not yet, cancelled (its ×, B666): it does not go */
   cancel(q: string): void
-  outboxRetry(): void
-  outboxEdit(): void
+  /** one Taska said no to, sent again */
+  outboxRetry(q: string): void
+  /** one not sent yet, back in the box to change */
+  outboxEdit(q: string): void
 }
 
 export interface Outgoing {
   q: string
   text: string
-  state: string
-  bad: boolean
+  /** where it is and what can be done, as model/outgoingStates says for the talk */
+  show: OutShow
   /** its pictures, as they were picked (shown while they go up) */
   previews?: string[]
   /** its voice notes: in the bubble while it goes, not yet to play */
@@ -58,8 +61,8 @@ export interface TalkFacts {
   peeking: ReadonlySet<number>
   /** the question being answered again */
   reask: number | null
-  /** an answer on its way: its words, and where it is */
-  going: { text: string; state: string } | null
+  /** an answer on its way: its words, and where it is as its question's card says it */
+  going: { text: string; card: OutShow } | null
   /** what you sent to this item and Taska has not yet */
   outgoing: Outgoing[]
   /** a project's title by its name (where an input was moved to) */
@@ -296,7 +299,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
         env={env}
         on={on}
         reasking={facts.reask === x.id}
-        going={facts.going && it.thread.filter((m) => m.kind === 'ask').at(-1)?.id === x.id ? facts.going.state : ''}
+        going={facts.going && it.thread.filter((m) => m.kind === 'ask').at(-1)?.id === x.id ? facts.going.card : null}
       />
     )
   return (
@@ -447,47 +450,59 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents)
   })
 }
 
-/** What you sent to this item, in the talk at once, saying where it is, until Taska has it. */
+const PENDING_TONE: Record<OutTone, string> = {
+  busy: 'animate-pulse text-blue-600 dark:text-blue-400',
+  partial: 'text-amber-700 dark:text-amber-400',
+  failed: 'text-red-600 dark:text-red-400',
+}
+
+/** What you sent to this item, in the talk at once, saying where it is and what can be done (model/outgoingStates),
+ * until Taska has it; faded while it waits or Taska said no. */
 function Pending({ list, env, on }: { list: Outgoing[]; env: TalkEnv; on: TalkLineEvents }) {
   return (
     <>
-      {list.map((q) => (
-        <div key={q.q} className="flex flex-col items-end gap-1">
-          {q.voices?.length ? (
-            <VoiceBubble cls={YOU_BUBBLE} files={q.voices} url={env.url} play={env.play} tidy={env.tidy} top={q.text ? <Rich text={q.text} world={env.world} onRef={on.ref} onPicture={on.picture} /> : null} busy on={on} />
-          ) : q.text ? (
-            // on its way, its words as they will read once sent (Markdown, r1099)
-            <div className={`${YOU_BUBBLE} ${q.bad ? 'opacity-70' : ''}`}>
-              <Rich text={q.text} world={env.world} onRef={on.ref} onPicture={on.picture} />
-            </div>
-          ) : null}
-          {q.previews?.length ? (
-            <div className={`flex max-w-full flex-wrap justify-end gap-2 ${q.bad ? 'opacity-70' : ''}`}>
-              {q.previews.map((src, i) => (
-                <img key={i} src={src} alt="" className="size-20 rounded-lg border border-zinc-200 bg-zinc-50 object-cover dark:border-zinc-700 dark:bg-zinc-900" />
-              ))}
-            </div>
-          ) : null}
-          <div className="flex flex-wrap items-center justify-end gap-x-1">
-            <span className={`px-1 text-[11px] ${MUTED}`}>
-              <span className={q.bad ? 'text-red-600 dark:text-red-400' : 'animate-pulse text-blue-600 dark:text-blue-400'}>{q.state}</span>
-            </span>
-            {q.bad ? (
-              <>
-                <button onClick={on.outboxRetry} className={DC_LINK}>
-                  Retry
-                </button>
-                <button onClick={on.outboxEdit} className={DC_LINK}>
-                  Edit
-                </button>
-              </>
+      {list.map((q) => {
+        const faded = q.show.tone === 'busy' ? '' : 'opacity-70'
+        return (
+          <div key={q.q} className="flex flex-col items-end gap-1">
+            {q.voices?.length ? (
+              <VoiceBubble cls={YOU_BUBBLE} files={q.voices} url={env.url} play={env.play} tidy={env.tidy} top={q.text ? <Rich text={q.text} world={env.world} onRef={on.ref} onPicture={on.picture} /> : null} busy on={on} />
+            ) : q.text ? (
+              // on its way, its words as they will read once sent (Markdown, r1099)
+              <div className={`${YOU_BUBBLE} ${faded}`}>
+                <Rich text={q.text} world={env.world} onRef={on.ref} onPicture={on.picture} />
+              </div>
             ) : null}
-            <button onClick={() => on.cancel(q.q)} aria-label="Cancel" title="Cancel: it is not sent" className={`${DC_BTN} min-w-11 justify-center`}>
-              <Icon n="x" c="size-3.5" />
-            </button>
+            {q.previews?.length ? (
+              <div className={`flex max-w-full flex-wrap justify-end gap-2 ${faded}`}>
+                {q.previews.map((src, i) => (
+                  <img key={i} src={src} alt="" className="size-20 rounded-lg border border-zinc-200 bg-zinc-50 object-cover dark:border-zinc-700 dark:bg-zinc-900" />
+                ))}
+              </div>
+            ) : null}
+            <div className="flex flex-wrap items-center justify-end gap-x-1">
+              <span className={`px-1 text-[11px] ${MUTED}`}>
+                <span className={PENDING_TONE[q.show.tone]}>{q.show.say}</span>
+              </span>
+              {q.show.acts.includes('retry') ? (
+                <button onClick={() => on.outboxRetry(q.q)} className={DC_LINK}>
+                  {OUT_ACT_WORD.retry}
+                </button>
+              ) : null}
+              {q.show.acts.includes('edit') ? (
+                <button onClick={() => on.outboxEdit(q.q)} className={DC_LINK}>
+                  {OUT_ACT_WORD.edit}
+                </button>
+              ) : null}
+              {q.show.acts.includes('cancel') ? (
+                <button onClick={() => on.cancel(q.q)} aria-label="Cancel" title="Cancel: it is not sent" className={`${DC_BTN} min-w-11 justify-center`}>
+                  <Icon n="x" c="size-3.5" />
+                </button>
+              ) : null}
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </>
   )
 }

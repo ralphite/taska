@@ -89,6 +89,7 @@ import { Delivered } from './inputs/delivered'
 import { DraftSender } from './inputs/draftSender'
 import { Arrival } from './page/arrival'
 import { waitsForWords } from '../model/voiceStates'
+import { inFlight } from '../model/outgoingStates'
 
 export interface AppEnv {
   http?: Http
@@ -362,7 +363,7 @@ export function createApp(env: AppEnv): App {
     dictationStore.getState().waiting.length > 0 ||
     find.getState().phase === 'writing' ||
     Object.values(boxStore.getState().files).some((fs) => fs.some((f) => f.uploading || waitsForWords(f))) ||
-    outbox.getState().list.some((o) => o.state === 'sending' || o.files.some((f) => f.uploading))
+    outbox.getState().list.some((o) => inFlight(o) || o.files.some((f) => f.uploading))
   // leaving while something is being said asks first
   const leaveGuard = new LeaveGuard(sayingNow)
   const arrival = new Arrival({ route, fields, data, model, desk: env.desk, session: env.session ?? memoryStore() })

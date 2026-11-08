@@ -11,6 +11,7 @@
 import type { ReactNode, Ref } from 'react'
 import { BECAME_WORD as W, type Became, type InputLine, type ItemRef } from '../model/became'
 import { voiceMark } from '../model/inputs'
+import { OUT_ACT_WORD, type OutAct, type OutShow, type OutTone } from '../model/outgoingStates'
 import { sayIn } from '../model/voiceStates'
 import { Icon, Spinner, StateIcon } from './Icon'
 import { PLACE_BUTTON, PlaceVoice } from './PlaceVoice'
@@ -319,31 +320,33 @@ export interface InputSwipe {
   on: { move(id: string): void; remove(id: string): void }
 }
 
-export interface OutgoingAct {
-  label: string
-  run(): void
+/** What can be done to something on its way (its acts, model/outgoingStates): send it again, take it back into the
+ * box, cancel it. */
+export interface OutgoingEvents {
+  retry(): void
+  edit(): void
+  /** ×: it does not go */
+  cancel(): void
+}
+
+const OUT_TONE: Record<OutTone, { box: string; state: string; act: string }> = {
+  failed: { box: 'border-red-200/80 bg-red-50/70 dark:border-red-900/40 dark:bg-red-950/25', state: 'text-red-700 dark:text-red-400', act: 'font-semibold text-red-800 hover:underline dark:text-red-300' },
+  partial: { box: 'border-amber-200/80 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-950/25', state: 'text-amber-700 dark:text-amber-400', act: 'font-semibold text-amber-800 hover:underline dark:text-amber-300' },
+  busy: { box: 'border-blue-200/80 bg-blue-50/70 dark:border-blue-900/40 dark:bg-blue-950/25', state: 'text-blue-600 dark:text-blue-400', act: 'font-medium text-zinc-500 underline underline-offset-2 hover:text-zinc-900 dark:hover:text-zinc-100' },
 }
 
 /** What is still on its way, as a line over the list: its words on one line, where it is (blue on its way, amber
- * waiting for Taska, red when Taska said no), what can be done, and × at the end, which cancels it (B666). */
-export function OutgoingRow({ text, state, bad, waiting, scope = null, previews = [], acts, cancel }: {
+ * waiting for Taska, red when Taska said no), what can be done there, and × at the end, which cancels it (B666). */
+export function OutgoingRow({ text, show, scope = null, previews = [], on }: {
   text: string
-  state: string
-  /** Taska said no */
-  bad: boolean
-  /** Taska is out of reach: it waits */
-  waiting: boolean
+  /** where it is and what can be done, as model/outgoingStates says for this place */
+  show: OutShow
   scope?: string | null
   previews?: string[]
-  acts: OutgoingAct[]
-  /** ×: it does not go */
-  cancel(): void
+  on: OutgoingEvents
 }) {
-  const tone = bad
-    ? { box: 'border-red-200/80 bg-red-50/70 dark:border-red-900/40 dark:bg-red-950/25', state: 'text-red-700 dark:text-red-400', act: 'font-semibold text-red-800 hover:underline dark:text-red-300' }
-    : waiting
-      ? { box: 'border-amber-200/80 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-950/25', state: 'text-amber-700 dark:text-amber-400', act: 'font-semibold text-amber-800 hover:underline dark:text-amber-300' }
-      : { box: 'border-blue-200/80 bg-blue-50/70 dark:border-blue-900/40 dark:bg-blue-950/25', state: 'text-blue-600 dark:text-blue-400', act: 'font-medium text-zinc-500 underline underline-offset-2 hover:text-zinc-900 dark:hover:text-zinc-100' }
+  const tone = OUT_TONE[show.tone]
+  const acts = show.acts.filter((a): a is Exclude<OutAct, 'cancel'> => a !== 'cancel')
   return (
     <div role="status" className={`flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2 text-xs ${tone.box}`}>
       <div className="flex min-w-0 items-center gap-2">
@@ -355,17 +358,19 @@ export function OutgoingRow({ text, state, bad, waiting, scope = null, previews 
       </div>
       <div className="flex shrink-0 items-center gap-2.5">
         <span className={`flex items-center gap-1 font-medium ${tone.state}`}>
-          {bad || waiting ? <Icon n="alert" c="size-3" sw="2" /> : <Spinner c="size-3" />}
-          {state}
+          {show.tone === 'busy' ? <Spinner c="size-3" /> : <Icon n="alert" c="size-3" sw="2" />}
+          {show.say}
         </span>
         {acts.map((a) => (
-          <button key={a.label} onClick={a.run} className={`transition-colors ${tone.act}`}>
-            {a.label}
+          <button key={a} onClick={on[a]} className={`transition-colors ${tone.act}`}>
+            {OUT_ACT_WORD[a]}
           </button>
         ))}
-        <button onClick={cancel} aria-label="Cancel" title="Cancel: it is not sent" className="-my-1 -mr-1.5 grid size-6 place-items-center rounded-full text-zinc-500 hover:bg-zinc-900/5 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-zinc-100">
-          <Icon n="x" c="size-3.5" sw="2" />
-        </button>
+        {show.acts.includes('cancel') ? (
+          <button onClick={on.cancel} aria-label="Cancel" title="Cancel: it is not sent" className="-my-1 -mr-1.5 grid size-6 place-items-center rounded-full text-zinc-500 hover:bg-zinc-900/5 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-zinc-100">
+            <Icon n="x" c="size-3.5" sw="2" />
+          </button>
+        ) : null}
       </div>
     </div>
   )

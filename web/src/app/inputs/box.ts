@@ -293,15 +293,17 @@ export class Box {
     this.d.toasts.show(`${code}: your change did not go through. Your words are back in the box; send again`, null, { error: true, sticky: true })
   }
 
-  /** What did not go out yet, back in the box to change (the box must be empty). -> it came back */
-  editOutgoing(slug: string, key: DraftKey): boolean {
-    const o = this.d.outbox.getState().list.find((x) => x.slug === slug && !x.unsent)
+  /** What did not go out yet (`q`), back in the box to change (the box must be empty); one going out right now is
+   * deleted as soon as Taska has it, as a cancelled one is. `away`: how sure the page that offered Edit was that Taska
+   * is out of reach. -> it came back */
+  editOutgoing(slug: string, key: DraftKey, q: string, away: number): boolean {
+    const o = this.d.outbox.getState().list.find((x) => x.q === q && x.slug === slug)
     if (!o) return false
     if (this.text(slug, key).trim() || (this.d.store.getState().files[key] || []).length) {
       this.d.toasts.show('Send or clear the box first')
       return false
     }
-    this.d.outbox.getState().remove(o.q)
+    if (!this.d.inputs.step(q, 'edit', away)) return false
     this.write(slug, key, outgoingText(o)) // what was typed with each voice note's words, as you left them
     if (o.files.length) this.d.store.getState().putFiles(key, o.files.map((f) => ({ ...f, key: f.key || f.f })))
     return true
@@ -310,11 +312,7 @@ export class Box {
   /** What you sent and Taska does not have yet, cancelled (its ×, B666): it does not go; one going out right now is
    * deleted as soon as Taska has it. Once Taska has an input, its ⋯ deletes it. */
   cancel(q: string): void {
-    const out = this.d.outbox.getState()
-    const o = out.list.find((x) => x.q === q)
-    if (!o) return
-    if (o.state === 'sending') out.update(q, { unsent: true })
-    else out.remove(q)
+    this.d.inputs.step(q, 'cancel')
   }
 
   /** Edit or add details to something you said: the box writes there (an edit begins with its words). */

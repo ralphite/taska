@@ -5,10 +5,11 @@
 // search found it, a source of an item) in view and lit. Search is the sidebar's (F479). Props only.
 
 import { useEffect, useRef, type ReactNode } from 'react'
-import type { SaidInput, SaidOutgoing } from '../../model/saidLately'
+import type { SaidInput } from '../../model/saidLately'
+import type { OutgoingFacts } from '../../model/outgoing'
 import type { FileRef } from '../../model/types'
 import { Spinner } from '../../ui/Icon'
-import { INPUT_LIST, InputRow, OutgoingRow, type OutgoingAct } from '../../ui/InputRow'
+import { INPUT_LIST, InputRow, OutgoingRow } from '../../ui/InputRow'
 import { useLitRow } from '../../ui/litRow'
 
 export interface SaidEvents {
@@ -29,8 +30,10 @@ export interface SaidEvents {
   send(id: string): void
   /** to the project it was moved to */
   moved(href: string): void
-  outboxRetry(): void
-  outboxEdit(): void
+  /** one Taska said no to, sent again */
+  outboxRetry(q: string): void
+  /** one not sent yet, back in the box to change */
+  outboxEdit(q: string): void
   /** the voice note being recorded here (a new input, or more for one): let it go (✕, Esc) */
   discard(): void
   loadMore(): void
@@ -52,15 +55,9 @@ export function SaidRow({ x, files, words, rec = null, lit = false, on }: {
   return <InputRow x={x} rec={rec} lit={lit} rowRef={litRef} text={(cut) => words(x.r.text, cut)} files={files} on={on} />
 }
 
-/** What can be done about one on its way besides its × (cancel): Retry when Taska said no, Edit when not sent. */
-const outgoingActs = (q: SaidOutgoing, on: SaidEvents): OutgoingAct[] => [
-  ...(q.failed && !q.net ? [{ label: 'Retry', run: on.outboxRetry }] : []),
-  ...(q.failed ? [{ label: 'Edit', run: on.outboxEdit }] : []),
-]
-
 export function SaidLately({ rows, outgoing, more, draft, files, words, adding = null, lit = null, on }: {
   rows: SaidInput[]
-  outgoing: SaidOutgoing[]
+  outgoing: OutgoingFacts[]
   /** more rows to load as you scroll */
   more: boolean
   draft?: ReactNode
@@ -89,7 +86,7 @@ export function SaidLately({ rows, outgoing, more, draft, files, words, adding =
       {/* what is on its way; empty, no room taken */}
       <div className="mt-3 mb-6 space-y-2 empty:hidden">
         {outgoing.map((o) => (
-          <OutgoingRow key={o.q} text={o.text} state={o.state} bad={o.failed && !o.net} waiting={o.waiting} acts={outgoingActs(o, on)} cancel={() => on.cancel(o.q)} />
+          <OutgoingRow key={o.q} text={o.text} show={o.show} on={{ retry: () => on.outboxRetry(o.q), edit: () => on.outboxEdit(o.q), cancel: () => on.cancel(o.q) }} />
         ))}
       </div>
       {rows.length ? (
