@@ -1,5 +1,5 @@
-// T711 prototype (r1186): the sessions the stories show. A project has one active session; the others are old. Only
-// for the stories.
+// T711 prototype (r1186): the sessions the stories show. A project has one active session; the others are old. A
+// session works on many items, so its name is never an item's (r1198). Only for the stories.
 
 import { T } from '../fixtures'
 
@@ -18,7 +18,7 @@ export const NOW = Date.parse(T)
 
 export const F012 = { n: 12, code: 'F012', title: 'Export ignores the active filter' }
 
-const active: Session = { agent: 'claude-code', name: 'Export keeps the filter', when: 'now' }
+const active: Session = { agent: 'claude-code', name: 'Shop project work', when: 'now' }
 
 /** The two states every place is drawn in: the active session at work, and blocked on Yadong. */
 export const ACTIVE = {
@@ -30,6 +30,6 @@ export type Case = keyof typeof ACTIVE
 
 /** The project's old sessions, the latest first. */
 export const OLD: Session[] = [
-  { agent: 'claude-code', name: 'Fix phone search', when: '3h' },
-  { agent: 'codex', name: 'Rules versions', when: '1d' },
+  { agent: 'claude-code', name: 'Shop manager', when: '3h' },
+  { agent: 'codex', name: 'Shop nightly checks', when: '1d' },
 ]

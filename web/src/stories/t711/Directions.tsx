@@ -137,15 +137,3 @@ export function SheetBody({ way, x, old }: { way: Way; x: Session; old: readonly
     </div>
   )
 }
-
-// ---- the item page: only while the active session is blocked on Yadong ---------------------------------------------
-
-/** The agent's icon with the amber dot, no words: the session working on this item is blocked on Yadong. */
-export function ItemWait({ x }: { x: Session }) {
-  if (!x.blocked) return null
-  return (
-    <span title={tipOf(x)} className="flex w-fit">
-      <Dotted x={x} />
-    </span>
-  )
-}

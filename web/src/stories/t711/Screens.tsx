@@ -12,7 +12,7 @@ import { pageOf } from '../itemPage'
 import { listOf } from '../listFixtures'
 import { act } from '../acts'
 import { Sheet, SheetLayout } from '../../ui/Sheet'
-import { AgentIcon, CardMark, ItemWait, Pill, SheetBody, type Way } from './Directions'
+import { AgentIcon, CardMark, Pill, SheetBody, type Way } from './Directions'
 import { ACTIVE, F012, NOW, OLD, type Case } from './sessions'
 import { Swap } from './Swap'
 
@@ -24,7 +24,7 @@ const ITEMS: Item[] = [
     ...F012,
     status: 'doing',
     pri: 'P1',
-    agent: { by: 'claude-code', t: T, ses: 'Export keeps the filter' },
+    agent: { by: 'claude-code', t: T, ses: 'Shop project work' },
     body: 'Export writes **all** rows; it should write only the rows the list shows.',
     thread: [
       message({ id: 1, by: 'you', kind: 'say', text: 'The export should keep the filter I set.', t: at(50) }),
@@ -33,7 +33,7 @@ const ITEMS: Item[] = [
   }),
   item({ n: 5, pri: 'P1', title: 'Search finds words in the talk' }),
   item({ n: 6, title: 'Excel export as well' }),
-  item({ n: 33, type: 'task', title: 'Rules: show each version’s date', code: 'T033' }),
+  item({ n: 33, type: 'task', title: 'Checkout remembers the last address', code: 'T033' }),
   item({ n: 3, status: 'proposed', by: 'claude-code', title: 'Keep the filter in the export file name' }),
 ]
 
@@ -69,25 +69,15 @@ export const sheetScreen = (way: Way, c: Case) => (
   </Frames>
 )
 
-/** The item page: as today, and the agent's icon with the amber dot while the session is blocked on Yadong. */
-export const itemScreen = (c: Case) => (
+/** The item page: as today; a session works on many items, so nothing about it shows here (r1198). */
+export const itemScreen = () => (
   <Frames phoneWidth={393} deskWidth={900} height={420}>
-    {(layout) => {
+    {(layout) => (
       // the agent's message in the talk shows the app's icon in place of the product's letter
-      const page = (
-        <Swap sel=".flex-wrap > span.size-5.rounded-md" how="replace" part={<AgentIcon by={ACTIVE[c].agent} />}>
-          {pageOf(ITEMS[0], layout === 'desk', { env: { now: NOW } })}
-        </Swap>
-      )
-      // the icon with the amber dot ends the chips' line, after the item's status
-      return ACTIVE[c].blocked ? (
-        <Swap sel='[data-part="item-title"] + div' how="append" part={<ItemWait x={ACTIVE[c]} />}>
-          {page}
-        </Swap>
-      ) : (
-        page
-      )
-    }}
+      <Swap sel=".flex-wrap > span.size-5.rounded-md" how="replace" part={<AgentIcon by="claude-code" />}>
+        {pageOf(ITEMS[0], layout === 'desk', { env: { now: NOW } })}
+      </Swap>
+    )}
   </Frames>
 )
 

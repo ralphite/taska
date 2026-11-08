@@ -5,7 +5,7 @@
 // blocked on Yadong. No state words and nothing about what it is blocked on (r1187): the dot alone says it (emerald
 // pulsing at work, amber blocked). The agent is its app's icon (Claude Code, Codex), not a letter. Rows stay as today
 // (the agent's icon on the row in progress, nothing more). Who works here: the active session, then "2 earlier"
-// folded. The item page: nothing, or the agent's icon with the amber dot while the session is blocked. The page's own
+// folded. The item page: nothing (a session works on many items, r1198). The page's own
 // parts draw everything but the direction's piece; nothing here changes Taska itself.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { States } from './Frames'
@@ -23,7 +23,7 @@ const story = (way: Way, c: Case, name: string): Story => ({
       items={[
         ['the list: the pill in the head; the rows as today', listScreen(way, c)],
         ['Who works here (the pill opens it)', sheetScreen(way, c)],
-        ['the item page (F012)', itemScreen(c)],
+        ['the item page (F012)', itemScreen()],
         ['the sidebar card', cardScreen(way, c)],
       ]}
     />
