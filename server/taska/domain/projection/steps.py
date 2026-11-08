@@ -9,7 +9,7 @@ from .. import events as ev
 from ..model import AgentMark, FileRef, Input, Item, Message, OrgNote
 from ..state import ProjectState, ident
 from ..text import edit_note, seconds
-from ..vocab import CLAIM_TTL, PEOPLE
+from ..vocab import CLAIM_TTL, PEOPLE, TASKA
 
 
 def post(state: ProjectState, it: Item, e: ev.Event, kind: str, text: str, src: Optional[str],
@@ -40,6 +40,8 @@ def note_agent(state: ProjectState, e: ev.Event) -> None:
     """Who works on an item: an agent's change or message there (another session's message leaves the work with
     the session on it); its first change or word on each item, per session."""
     if not e.by or e.by in PEOPLE or not isinstance(e, (ev.ItemAdded, ev.FieldsSet, ev.MessagePosted)):
+        return
+    if isinstance(e, ev.MessagePosted) and e.by == TASKA:  # Taska's note to an agent: nobody works on it for that
         return
     it = state.items.get(e.n)
     if not it:

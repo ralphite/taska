@@ -14,7 +14,7 @@ from . import events as ev
 from .markdown import blocks as md_blocks, block_key
 from .model import Comment, Doc, Input, Item, Message
 from .state import ProjectState
-from .vocab import CLOSED, DOC_KEY, PEOPLE, TYPE_OF, USER_KINDS, Refused
+from .vocab import CLOSED, DOC_KEY, NOTES, PEOPLE, TYPE_OF, USER_KINDS, Refused
 
 Held = Callable[[Input], bool]
 
@@ -48,7 +48,7 @@ def replied(it: Item) -> bool:
     for x in reversed(it.thread):
         if user_word(x):
             user = True
-        elif x.by != "org":  # the organizer's own notes are neither side's word
+        elif x.by not in NOTES:  # the organizer's own notes, and Taska's, are neither side's word
             return user
     return False
 
@@ -60,7 +60,7 @@ def talked(state: ProjectState, it: Item) -> bool:
     if it.by not in (None, "you") and it.t0:
         said.append((it.t0, -1, False))
     for i, x in enumerate(it.thread):
-        if user_word(x) or x.by != "org":
+        if user_word(x) or x.by not in NOTES:
             said.append((x.t, i, user_word(x)))
     for d in state.docs.values():
         if d.n == it.n and not d.deleted:

@@ -1,19 +1,21 @@
-"""Commands on documents: write one, tick its choices, comment, resolve, edit, delete, move, take a file off."""
+"""Commands on documents: write one, tick its choices, comment, resolve, edit, delete, move, take a file off; a
+diagram that does not draw goes back to its writer."""
 
 from __future__ import annotations
 
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from ..domain import events as ev
 from ..domain.markdown import block_key, blocks as md_blocks
 from ..domain.rules import doc_at, doc_view, is_proposal_key, item_at
-from ..domain.vocab import DOC_KEY, MAX_TEXT, PEOPLE, Refused
+from ..domain.vocab import DOC_KEY, MAX_TEXT, PEOPLE, TASKA, Refused
 from .base import Args, Outcome, Run, handles
 from .inputs import sent_files, voice_words
 
 RULES_HOW = "the rules change with `rules propose <why>` (by sections; the user approves), not as a document"
 _PAGE_TITLE = re.compile(r"<title>(.*?)</title>|<h1[^>]*>(.*?)</h1>", re.S | re.I)
+_MERMAID = re.compile(r"\s*```[ \t]*mermaid\b", re.I)
 
 
 @handles("doc")
@@ -232,3 +234,50 @@ def change_comment(r: Run, a: Args) -> Outcome:
         r.emit(ev.CommentRestored(d=d.d, id=cid, by=r.by))
     word = "deleted" if a.name == "dcdel" else "restored"
     return Outcome(f"ok D{d.d} comment {cid} {word}", f"{word.capitalize()} a comment on D{d.d}")
+
+
+def _writer(writes: List[ev.DocWritten], key: str) -> Optional[ev.DocWritten]:
+    """The write that put this paragraph in the document as it is (the user ticking a choice or editing another
+    paragraph leaves it its writer's)."""
+    had: Set[str] = set()
+    found = None
+    for e in writes:
+        keys = {block_key(t) for _, t in md_blocks(e.md)}
+        if key in keys and key not in had:
+            found = e
+        had = keys
+    return found
+
+
+@handles("diagram-failed")
+def diagram_failed(r: Run, a: Args) -> Outcome:
+    """Taska's own (B714 r1181): a diagram the page could not draw goes to the agent that wrote it, so it fixes it,
+    as a message on the document's item addressed to that agent's session; once per version of the document and
+    paragraph. Nothing goes when the user wrote it, or the document changed since the page drew it."""
+    if r.by != TASKA:
+        raise Refused("only Taska reports a diagram that does not draw")
+    s = r.state
+    d = doc_at(s, a.get("d"))
+    key = a.text("key")
+    why = "\n".join(x.rstrip() for x in a.text("error").strip().splitlines())[:600].strip() or "Mermaid says nothing"
+    if d.is_rules or d.is_page or d.deleted or (a.has("v") and a.number("v") != d.versions):
+        return Outcome(f"ok D{d.d} no notice", "")
+    k = next((i for i, b in enumerate(doc_view(d)[0], 1) if b.key == key and _MERMAID.match(b.text)), 0)
+    if not k:
+        return Outcome(f"ok D{d.d} has no such diagram", "")
+    writes = [e for e in s.events if isinstance(e, ev.DocWritten) and e.d == d.d]
+    w = _writer(writes, key)
+    if not w or w.by in PEOPLE or w.by == TASKA:
+        return Outcome(f"ok D{d.d} ¶{k} is the user's: no notice", "")
+    it = s.items.get(d.n)
+    while it and it.merged_into:
+        it = s.items.get(it.merged_into)
+    if not it or it.deleted:
+        return Outcome(f"ok D{d.d} no item to tell on", "")
+    head = f"D{d.d} ¶{k}: this diagram does not draw:"
+    if any(x.by == TASKA and x.id > writes[-1].seq and x.text.startswith(head) for x in it.thread):
+        return Outcome(f"ok D{d.d} ¶{k} told already", "")
+    text = f"{head} {why.rstrip('.')}. Fix it." if "\n" not in why else f"{head}\n```\n{why}\n```\nFix it."
+    to = w.ses or w.by
+    r.emit(ev.MessagePosted(n=it.n, by=TASKA, kind="say", text=text, to=[to]))
+    return Outcome(f"ok D{d.d} ¶{k} told {to}", "")

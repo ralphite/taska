@@ -7,7 +7,7 @@ from .. import events as ev
 from ..model import Decision, Item
 from ..state import DeletedGroup, ProjectState
 from ..text import clean_title
-from ..vocab import DECISIONS, PEOPLE
+from ..vocab import DECISIONS, PEOPLE, TASKA
 from .core import reduces
 from .steps import link, post
 
@@ -33,7 +33,7 @@ def _set(state: ProjectState, e: ev.Event) -> None:
         was = e.was.get("status", it.status)
         dec = it.decided
         if was in DECISIONS and f["status"] != was:
-            last = next((x for x in reversed(it.thread) if x.by not in PEOPLE), None)
+            last = next((x for x in reversed(it.thread) if x.by not in PEOPLE and x.by != TASKA), None)
             it.decided = Decision(from_=was, to=f["status"], msg=last.id if last else None, t=e.t)
         elif dec and dec.from_ == f["status"]:
             it.decided = None  # taken back: the question is open again

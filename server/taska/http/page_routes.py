@@ -8,6 +8,7 @@
     GET  activity?n=&before=    the change log, newest first
     GET  picture-sizes          each picture's width and height
     POST page-log               the page's own records, into the log
+    POST diagram-failed         {d, v, key, error}: a document's diagram the page could not draw, to its writer
     POST move-input, move-item  work that belongs in another project
 """
 
@@ -20,7 +21,7 @@ import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from ..agent_text.render import log_entries
-from ..domain.vocab import MAX_FILE
+from ..domain.vocab import MAX_FILE, TASKA
 from ..infra.audio import audio_type
 from ..page_api import views
 from ..page_api.sync import Cursor
@@ -112,6 +113,13 @@ def post(ctx: "AppContext", req: Request, p: Project, sub: str) -> Response:
     if sub == "/api/page-log":
         _page_log(ctx, req, p)
         return as_json({"ok": True})
+    if sub == "/api/diagram-failed":  # B714 r1181: Taska tells the agent that wrote it
+        d = req.json_body(10_000)
+        if not isinstance(d, dict):
+            raise ValueError("expected an object")
+        cmd = {"op": "diagram-failed", **{k: d[k] for k in ("d", "v", "key", "error") if k in d}}
+        lines, _ = p.run([(0, cmd)], TASKA)
+        return as_json({"ok": not lines[0].startswith("err"), "result": lines[0]})
     if sub == "/api/move-input":
         d = req.json_body(10_000)
         return as_json(ctx.workspace.moves.input(p, ctx.workspace.projects.get(str(d.get("to") or "")), d.get("id")))

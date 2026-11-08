@@ -20,6 +20,9 @@ CLOSED = ("done", "dropped")
 DECISIONS = {"proposed": ("open", "dropped"), "review": ("done", "open")}
 # "you" is the user; the organizer writes down what the user said, so it acts for the user
 PEOPLE = ("you", "org")
+# Taska's own notes to an agent (a diagram that does not draw, B714 r1181) are neither side's word, as the organizer's
+TASKA = "taska"
+NOTES = ("org", TASKA)
 MESSAGE_KINDS = ("say", "ask", "withdraw", "propose", "decide", "progress")
 # an agent that is stuck asks for what it needs (T646): the one way it waits on the user. Its old word, block, is
 # still read and lands as an ask
