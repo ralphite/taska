@@ -9,6 +9,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { RefCard } from '../model/refCard'
 import type { VoiceStep } from '../model/types'
 import { VoiceSteps } from '../ui/Files'
+import { stepsOf } from '../model/voiceSteps'
 
 const TARGET = '[data-ref], [data-heard], [data-tip], [title], button[aria-label], a[aria-label]'
 
@@ -39,33 +40,10 @@ function split(text: string): { text: string; key: string } {
   return { text: parts.join(' · '), key }
 }
 
-/** A voice note's words: word for word, then tidied (what the organizer and agents get), then its steps, as its sheet
- * shows them on the phone (F568, T697). */
+/** A voice note's words, as its sheet shows them on the phone (F568, T697, B727): each step in the order its words
+ * came, no words twice. */
 function SaidWords({ heard, tidied, steps = [] }: { heard: string; tidied: string; steps?: VoiceStep[] }) {
-  const part = (label: string, text: string) => (
-    <div>
-      <div className="text-[11px] font-medium opacity-70">{label}</div>
-      <p className="mt-0.5 break-words whitespace-pre-wrap">{text}</p>
-    </div>
-  )
-  return (
-    <span className="flex flex-col gap-3">
-      {heard && tidied && heard !== tidied ? (
-        <>
-          {part('Word for word', heard)}
-          {part('Tidied · what agents get', tidied)}
-        </>
-      ) : (
-        part('Not tidied: words as said', heard || tidied || 'No words heard')
-      )}
-      {steps.length ? (
-        <div className="border-t border-current/20 pt-2.5">
-          <div className="mb-1 text-[11px] font-medium opacity-70">Steps</div>
-          <VoiceSteps steps={steps} tip />
-        </div>
-      ) : null}
-    </span>
-  )
+  return heard || tidied || steps.length ? <VoiceSteps steps={stepsOf(steps, heard, tidied)} tip /> : <span>No words heard</span>
 }
 
 /** `card`: what a code names, as its card (read when it shows); `steps`: the steps that worked out a voice note's

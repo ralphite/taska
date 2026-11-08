@@ -28,7 +28,7 @@ export const MovedPointerOnItsVoiceNote: Story = {
   ...tip(
     () => talkOf(item({ n: 12, thread: [mine()] }), true, { inputs: [r4({ files: [{ ...voice, voice: record(voice.f, 'The export should keep the filter I set.', 'the export should keep the filter i set') }], moved: { to: 'mobile-app', as: 'r4' } })] }),
     'button[aria-label^="Play"]',
-    { width: 720, height: 320 },
+    { width: 720, height: 320, pageTip: true },
   ),
   name: 'Moved, pointer on its voice note',
 }

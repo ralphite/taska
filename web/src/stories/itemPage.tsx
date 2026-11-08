@@ -12,7 +12,7 @@ import { itemTimes } from '../model/itemTimes'
 import { gripVars } from '../stores/grips'
 import type { TalkFacts } from '../features/item/Talk'
 import type { TalkEnv } from '../features/item/talkEnv'
-import type { Doc, Input, Item } from '../model/types'
+import type { Doc, Input, Item, VoiceStep } from '../model/types'
 import { latestMessage } from '../model/talk'
 import { PaneFrame } from '../ui/PaneFrame'
 import { item, message } from './fixtures'
@@ -57,6 +57,8 @@ export interface PageOpts {
   /** the document on the left: the pane is the document's, its bar the document's (the way back to its item, Copy,
    * Edit, Move, Delete), as the page draws it */
   doc?: Doc
+  /** the steps that worked out its voice notes' words, for the tooltip (T697) */
+  steps?: VoiceStep[]
 }
 
 export const pageOf = (it: Item, desk: boolean, o: PageOpts = {}) => <LiveItem it={it} desk={desk} o={o} />
@@ -104,7 +106,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
   const inputMenu = usePop<InputMenuAt>(desk)
   // the page's one tooltip (a voice note's words, icon buttons' names), over the whole window as the page has it; the
   // phone has none
-  const tip = desk && createPortal(<Tooltip card={(ref) => refCard(m, ref)} />, document.body)
+  const tip = desk && createPortal(<Tooltip card={(ref) => refCard(m, ref)} steps={() => Promise.resolve(o.steps ?? [])} />, document.body)
   const facts = { ...start, remodify, editing, addingSub }
   const env = { ...e0, play: o.env?.play && !media.touched ? o.env.play : media.play, opened, choosing: e0.choosing && { picked, pick: (i: number, multi: boolean) => setPicked(multi ? toggle(picked, i) : new Set([i])) } }
   const tf = { ...t0, reask, peeking }

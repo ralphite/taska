@@ -7,6 +7,7 @@ import { Pic } from './bits'
 import { Icon } from './Icon'
 import { HIT, MUTED } from './tones'
 import { clock } from '../model/time'
+import { stepsInOrder } from '../model/voiceSteps'
 
 export const isAudio = (f: { mime?: string }) => (f.mime || '').startsWith('audio/')
 export const isImage = (f: { mime?: string }) => (f.mime || '').startsWith('image/')
@@ -24,23 +25,40 @@ const STEP_NAME: Record<string, string> = {
   pro_loud: 'Strong model, louder',
   asr_loud: 'Speech model, louder',
   pieces: 'Piece by piece',
-  tidy: 'Tidied',
+  said: 'Word for word',
+  tidy: 'Tidied · what agents get',
+}
+const stepName = (step: string) => {
+  const n = /^(.*)_(\d+)$/.exec(step)
+  return n && STEP_NAME[n[1]] ? `${STEP_NAME[n[1]]}, try ${n[2]}` : STEP_NAME[step] || step
 }
 
-/** Every step that worked out a voice note's words (T697): its name and model, its time, its words or its error; a
- * check on the words chosen. The same in the phone's sheet and the desktop's tip (`tip`: on the tip's dark ground). */
+/** How a voice note's words came about (T697, B727): every step in the order its words arrived, the first words in
+ * full, each later step only as what it changed (struck out, and marked), so no words show twice; a check on the
+ * words chosen. The same in the phone's sheet and the desktop's tip (`tip`: on the tip's dark ground). */
 export function VoiceSteps({ steps, tip = false }: { steps: VoiceStep[]; tip?: boolean }) {
+  const added = tip ? 'rounded-sm bg-emerald-400/25 dark:bg-emerald-600/20' : 'rounded-sm bg-emerald-100 dark:bg-emerald-400/20'
   return (
     <ol className="flex flex-col gap-3">
-      {steps.map((s, i) => (
+      {stepsInOrder(steps).map(({ step: s, diff, full }, i) => (
         <li key={i} className="min-w-0">
           <div className="flex items-center gap-1.5 text-[12px] leading-5">
             {s.chosen ? <Icon n="check" c={`size-3.5 ${tip ? 'text-emerald-400 dark:text-emerald-600' : 'text-emerald-600 dark:text-emerald-400'}`} sw="2.5" /> : null}
-            <span className="shrink-0 font-semibold">{STEP_NAME[s.step] || s.step}</span>
-            <span className="min-w-0 truncate opacity-70">{s.model}</span>
+            <span className="shrink-0 font-semibold">{stepName(s.step)}</span>
+            {s.model ? <span className="min-w-0 truncate opacity-70">{s.model}</span> : null}
             {s.secs !== undefined ? <span className="ml-auto shrink-0 tabular-nums opacity-70">{s.secs} s</span> : null}
           </div>
-          <p className={`mt-0.5 break-words whitespace-pre-wrap ${s.error ? 'italic opacity-70' : ''}`}>{s.error || s.text || 'No words'}</p>
+          <p className={`mt-0.5 break-words whitespace-pre-wrap ${s.error || !(full || diff) ? 'italic opacity-70' : ''}`}>
+            {s.error
+              ? s.error
+              : full
+                ? s.text
+                : diff
+                  ? diff.map((d, k) => (d.mark === 'removed' ? <del key={k} className="opacity-50">{d.text}</del> : d.mark === 'added' ? <mark key={k} className={`text-inherit ${added}`}>{d.text}</mark> : <span key={k}>{d.text}</span>))
+                  : s.text
+                    ? 'Same words'
+                    : 'No words'}
+          </p>
         </li>
       ))}
     </ol>
