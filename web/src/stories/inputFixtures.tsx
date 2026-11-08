@@ -93,8 +93,6 @@ export interface Said {
   /** jumped to this input (lit; `litStill`: stays lit) */
   lit?: string
   litStill?: boolean
-  /** a voice note being recorded into a new input: how long so far */
-  recording?: string
   /** more being said into this input on its own line (its Voice), and how long so far */
   adding?: { id: string; clock: string }
   /** stopped there: on its way to these inputs */
@@ -195,7 +193,7 @@ function LiveInputs({ s }: { s: Said }) {
   const { m, rows, total } = rowsOf(s, live.opened)
   return (
     <div className="flex h-full flex-col">
-      <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(live.going(s.outbox), 'demo', s.away ?? 0)} world={talkEnv(m, false).world} files={live.chips} recording={s.recording ?? null} on={live.inputOn} />
+      <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(live.going(s.outbox), 'demo', s.away ?? 0)} world={talkEnv(m, false).world} files={live.chips} on={live.inputOn} />
       {live.node}
     </div>
   )
@@ -246,7 +244,6 @@ function LiveSaid({ s }: { s: Said }) {
         lit={s.lit}
         more={said.all.length > said.rows.length}
         files={live.chips}
-        recording={s.recording ?? null}
         adding={live.adding ? { id: live.adding.id, meter: <RecBar time={live.adding.clock} levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> } : null}
         on={live.saidOn}
       />

@@ -370,16 +370,3 @@ export function OutgoingRow({ text, state, bad, waiting, scope = null, previews 
     </div>
   )
 }
-
-/** A voice note being recorded into a new input: first, with how long so far (B627); drawn as before T661 (r1051). */
-export function RecordingRow({ clock }: { clock: string }) {
-  return (
-    <article className="border-zinc-100 px-4 py-2.5 lg:-mx-3 lg:px-3 dark:border-zinc-800/70">
-      <div className="flex h-5 min-w-0 items-center gap-2 text-[13px] font-medium text-red-600 dark:text-red-400">
-        <span className="size-1.5 animate-pulse rounded-full bg-current" />
-        Recording
-        <span className="font-mono tabular-nums">{clock}</span>
-      </div>
-    </article>
-  )
-}

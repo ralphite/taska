@@ -9,7 +9,7 @@ import { spotsIn, type HeardFile } from '../../model/doubts'
 import type { FileRef, Input, Item, Message } from '../../model/types'
 import type { Outgoing } from '../../model/outgoing'
 import { Frame } from '../../stories/Frames'
-import { REC, VOICE, boxAt, out as outgoing, sentLine, toastOver, type Here } from '../../stories/boxFixtures'
+import { VOICE, boxAt, out as outgoing, sentLine, toastOver, type Here } from '../../stories/boxFixtures'
 import { org } from '../../stories/composerSentFixtures'
 import { HEARD, HEARD_TEXT } from '../../stories/doubtFixtures'
 import { AGAIN, AGAIN_HEARD, LiveWords } from '../../stories/doubtsFixtures'
@@ -169,7 +169,7 @@ const ROWS: Record<VoiceState, Row[]> = {
     {
       section: 'normal',
       cells: [
-        { where: 'the box, the list under it', node: <>{boxAt({ rec: true }, true)}<div className="px-3 pb-3">{saidOf({ inputs: [], recording: REC.time })}</div></> },
+        { where: 'the box', node: boxAt({ rec: true }, true) },
         { where: 'the box', node: boxAt({ rec: true }, false) },
         ...itemBox({ rec: true }),
       ],

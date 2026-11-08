@@ -4,8 +4,7 @@
 
 import { useMemo, useState, type ReactNode } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
-import { draftTarget, NEW_DRAFT } from '../../model/draftTarget'
-import { clock } from '../../model/time'
+import { draftTarget } from '../../model/draftTarget'
 import { useAway, useFiles, useItemWorld, useLitFades, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import type { DraftKey } from '../../model/draftTarget'
 import { fixRange, voiceStretches } from '../../model/doubts'
@@ -39,7 +38,6 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
   const app = useServices('box', 'docs', 'fields', 'inputActions', 'inputs', 'nav', 'sheets', 'voice')
   const stores = useStores('box', 'recording', 'data', 'drafts', 'outbox', 'ui')
   // a voice note being recorded into a new input here: its row comes first, with how long so far (B627)
-  const recording = useStoreValue(stores.recording, (st) => (st.rec && st.rec.slug === route.slug && !st.rec.about && st.rec.key === NEW_DRAFT ? clock(st.rec.ms) : null))
   // more being said into one of them, on its line (its Voice): which
   const adding = useStoreValue(stores.recording, (st) => {
     const t = st.rec && st.rec.slug === route.slug ? draftTarget(st.rec.key) : null
@@ -77,7 +75,6 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
   return (
     <section aria-label="Latest inputs" data-vc-area className="mx-auto mt-8 block max-w-[42rem]">
       <SaidLately
-        recording={recording}
         adding={adding ? { id: adding, meter: <RecMeter n={PLACE_LEVELS.desk} /> } : null}
         rows={said.rows}
         outgoing={saidOutgoing(mine, away)}

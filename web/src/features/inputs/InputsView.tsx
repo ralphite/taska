@@ -8,7 +8,7 @@ import type { InputLine } from '../../model/became'
 import { useLitRow } from '../../ui/litRow'
 import type { FileRef } from '../../model/types'
 import { Empty } from '../../ui/bits'
-import { INPUT_LIST, InputRow, OutgoingRow as OutgoingLine, RecordingRow } from '../../ui/InputRow'
+import { INPUT_LIST, InputRow, OutgoingRow as OutgoingLine } from '../../ui/InputRow'
 import { inputWords } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
 import { useRowSwipe, type RowSwipe } from '../../ui/rowSwipe'
@@ -101,14 +101,12 @@ export function OutboxRows({ list, on }: { list: OutgoingRow[]; on: Pick<InputEv
   )
 }
 
-export function InputsView({ hidden, rows, more, outgoing, world, files, recording = null, on }: {
+export function InputsView({ hidden, rows, more, outgoing, world, files, on }: {
   hidden: boolean
   rows: InputFacts[]
   /** older inputs not drawn yet: they come when the list nears its end */
   more: boolean
   outgoing: OutgoingRow[]
-  /** a voice note being recorded into a new input: how long so far (it shows first, B627) */
-  recording?: string | null
   world: InlineWorld
   files(f: FileRef[]): ReactNode
   on: InputEvents
@@ -135,7 +133,6 @@ export function InputsView({ hidden, rows, more, outgoing, world, files, recordi
       data-vc-area
       className={`${PULL} -mb-(--foot-h) min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)]`}
     >
-      {hidden || !recording ? null : <RecordingRow clock={recording} />}
       {hidden ? null : (
         <div className="mb-6 space-y-2 px-4 pt-4 empty:hidden">
           {outgoing.length ? <OutboxRows list={outgoing} on={on} /> : null}
@@ -150,7 +147,7 @@ export function InputsView({ hidden, rows, more, outgoing, world, files, recordi
           </div>
           {more ? <div ref={end} aria-hidden className="h-24" /> : null}
         </>
-      ) : outgoing.length || recording ? null : (
+      ) : outgoing.length ? null : (
         <Empty>No inputs</Empty>
       )}
     </section>

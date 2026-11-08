@@ -8,7 +8,7 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import type { SaidInput, SaidOutgoing } from '../../model/saidLately'
 import type { FileRef } from '../../model/types'
 import { Spinner } from '../../ui/Icon'
-import { INPUT_LIST, InputRow, OutgoingRow, RecordingRow, type OutgoingAct } from '../../ui/InputRow'
+import { INPUT_LIST, InputRow, OutgoingRow, type OutgoingAct } from '../../ui/InputRow'
 import { useLitRow } from '../../ui/litRow'
 
 export interface SaidEvents {
@@ -58,7 +58,7 @@ const outgoingActs = (q: SaidOutgoing, on: SaidEvents): OutgoingAct[] => [
   ...(q.failed ? [{ label: 'Edit', run: on.outboxEdit }] : []),
 ]
 
-export function SaidLately({ rows, outgoing, more, draft, files, words, recording = null, adding = null, lit = null, on }: {
+export function SaidLately({ rows, outgoing, more, draft, files, words, adding = null, lit = null, on }: {
   rows: SaidInput[]
   outgoing: SaidOutgoing[]
   /** more rows to load as you scroll */
@@ -67,8 +67,6 @@ export function SaidLately({ rows, outgoing, more, draft, files, words, recordin
   files(f: FileRef[], gid: string): ReactNode
   /** an input's words as the page shows text everywhere (Markdown, r1099); `cut`: closed up */
   words(text: string, cut: boolean): ReactNode
-  /** a voice note being recorded into a new input: how long so far (it shows first, B627) */
-  recording?: string | null
   /** more being said into one of them (its Voice): which, and its time and level */
   adding?: { id: string; meter: ReactNode } | null
   /** the input gone to: in view and lit */
@@ -85,10 +83,9 @@ export function SaidLately({ rows, outgoing, more, draft, files, words, recordin
   }, [more, rows.length, on])
   return (
     <div>
-      {/* empty (nothing recording, on its way or to check): no room taken */}
-      {/* the draft and a voice note being recorded, as the page had them over the list before T661 (r1051) */}
+      {/* empty (nothing on its way or to check): no room taken; a recording shows in the box only (B730) */}
+      {/* the draft, as the page had it over the list before T661 (r1051) */}
       <ol>{draft}</ol>
-      {recording ? <RecordingRow clock={recording} /> : null}
       {/* what is on its way; empty, no room taken */}
       <div className="mt-3 mb-6 space-y-2 empty:hidden">
         {outgoing.map((o) => (

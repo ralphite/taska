@@ -182,7 +182,7 @@ export function PhonePage() {
     <Frame layout="phone" width={PHONE.width}>
       <div className="flex h-full flex-col bg-zinc-50 dark:bg-zinc-950">
         <div data-phone-list className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(live.going(OUTBOX), 'taska', 0)} world={talkEnv(M, false).world} files={live.chips} recording="0:07" on={live.inputOn} />
+          <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(live.going(OUTBOX), 'taska', 0)} world={talkEnv(M, false).world} files={live.chips} on={live.inputOn} />
         </div>
         {live.node}
         <div className="shrink-0 border-t border-zinc-200 dark:border-zinc-800">{boxAt({ at: '' }, false, { placeholder: 'Write to taska…' })}</div>
