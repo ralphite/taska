@@ -9,6 +9,8 @@ type Story = StoryObj
 export const Index: Story = { ...help(null), name: 'Opened: the first topic' }
 export const ATopic: Story = { ...help('connect'), name: 'A topic open: Connect an agent' }
 export const ATopicWithATable: Story = { ...help('items'), name: 'A topic with tables: Items' }
+/** B714 #10594: the way an input goes, step by step, where each case shows, and what never happens */
+export const WhatHappensToWhatYouSay: Story = { ...help('after-you-say'), name: 'A topic with steps: What happens to what you say' }
 /** a desktop window too narrow for On this page: the topic and the column only */
 export const Narrower: Story = { ...help('items', '', { deskWidth: 1080 }), name: 'A narrower window: no On this page' }
 /** the phone's Topics: every topic in its group, the search above them */

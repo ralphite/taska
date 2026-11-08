@@ -63,11 +63,57 @@ The microphone records a voice note. Taska writes out what you said and keeps th
 
 ## What happens next
 
-The organizer reads each input and turns it into items: new ones, or words added to the item it is about. Every input keeps a link to what it became, with your inputs.
+The organizer reads each input and turns it into items: new ones, or words added to the item it is about. Every input keeps a link to what it became, with your inputs. **What happens to what you say** has the whole way.
 
 ## Reply on an item
 
 On an item, the box under it replies there: an answer to a question, more detail, or a change of mind. The connected agent sees it at once.`,
+      },
+      {
+        key: 'after-you-say',
+        title: 'What happens to what you say',
+        about: 'Where an input goes, and where you see what it became.',
+        text: `Everything you say is an input: words, a voice note, a picture, or all of them. Here is where it goes.
+
+## Step by step
+
+1. **You say it**, under **New input** or in an item's box.
+2. **It shows at once** as a new line in your inputs. Said in an item, it is also your message there.
+3. **A voice note writes itself out**: its first words in about two seconds, then tidied words, used everywhere.
+4. **The organizer reads it** and does what it asks: one input can do several things.
+5. **Not sure what you meant?** The organizer asks you on the item, with choices, as an agent does.
+
+## What the organizer does
+
+- Something new becomes a **new item**: a short title, and all your words as its body.
+- Words about an item go into **that item's talk**: only the part about it.
+- "Make it P0", "later", "done" or "won't do" **change the item**.
+- "From now on, always…" **changes the Rules**.
+- A question or request for an agent is **left for an agent**.
+- Hello and thanks need nothing.
+
+New items are P1 and Now, unless you say urgent or later.
+
+## Where you see what
+
+| You say | Your inputs show | Where else |
+| --- | --- | --- |
+| Something new, under New input | Created B713 | B713: your words, pictures and voice notes |
+| More about T03, under New input | Added to T03 | T03's talk: the part about it |
+| More about T03, in T03 | Added to T03 | Only your message in T03 |
+| "Make it P0", in T03 | Added to T03 | T03's priority changes |
+| Something new, in T03 | Created B713 | Your message in T03, with **→ Created B713** under it |
+| A rule | Changed the rules | A new version of the Rules |
+| A question for an agent | For an agent | The agent picks it up |
+
+Change an input you sent and it is read again: its items follow the new words.
+
+## What never happens
+
+- No notes from the organizer on an item it just made, or on the item you spoke in. A question for you is the only exception.
+- Your whole input is never pasted into another item.
+- Your words are never shortened, reordered or rewritten. Only "um"s and words said twice go.
+- You never press Retry: when the organizer can't be reached, Taska keeps trying.`,
       },
       {
         key: 'connect',

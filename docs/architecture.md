@@ -14,6 +14,7 @@ taska/
 ```
 
 What an item's status means and who moves it: [item-states.md](item-states.md).
+What happens to what the user says, from Inputs to the items it lands on: [inputs.md](inputs.md).
 
 ## Backend: layers and the direction of their imports
 
