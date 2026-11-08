@@ -2,7 +2,8 @@
 // (its line on top, its placeholder, what Send says, what a comment from it goes to) and the line over the box about
 // what you sent last. Pure, so it is tested alone and the containers only connect it.
 
-import { becameOf, failWhy } from './became'
+import { becameOf, type Became } from './became'
+import { INPUT_STATES, actsIn, becameText, showsIn, type InputAct } from './inputStates'
 import { allComments, docTarget, type DocTarget } from './docs'
 import { ticksNotSent, type TickState } from './docTicks'
 import { draftName, draftTarget } from './draftTarget'
@@ -11,7 +12,6 @@ import { plainQuote } from './markdown'
 import { codeOf, liveN, type ProjectModel } from './project'
 import type { Route } from './route'
 import type { Input } from './types'
-import { sentNotes } from './voiceStates'
 import { vcCount } from './voiceComments'
 import { inputCode, plural } from './words'
 import { outgoingLine, type Outgoing } from './outgoing'
@@ -181,25 +181,13 @@ export type FeedbackLine =
   /** on its way: where it is and what can be done, as model/outgoingStates says for the line; `more`: how many more
    * are on their way after it */
   | { kind: 'going'; q: string; text: string; more: number; show: OutShow }
-  | { kind: 'organizing' }
-  /** its voice notes' words still to come: what the line says is the voice state's (model/voiceStates) */
-  | { kind: 'transcribing'; state: 'sentTranscribing' | 'sentFastWords' }
-  /** why in plain words; `raw`: the words as they came; `retry`: trying again could help (not with its key refused) */
-  | { kind: 'org-failed'; msg: string; raw: string; retry: boolean }
-  | { kind: 'undone'; code: string }
-  | { kind: 'organized'; msg: string; view: boolean; undo: boolean; move: boolean }
-  | { kind: 'sent'; organizer: boolean; move: boolean }
-  | { kind: 'moved'; code: string; to: string; as: string; href: string }
+  /** what became of it: its words and what can be done, as model/inputStates says for the line */
+  | { kind: 'became'; b: Became; text: string; acts: InputAct[] }
 
-/** What an agent did for an input the organizer said nothing of, as the input's own row says it ("Changed F012 ·
- * Added to B014"); '' when it made no item. */
-function agentDid(r: Input, m: ProjectModel): string {
-  const b = becameOf(r, m, (slug) => slug)
-  return b.k === 'filed' ? b.items.map((x) => [x.did, x.item.code].filter(Boolean).join(' ')).join(' · ') : ''
-}
-
-/** `mine`: what this project has on its way, oldest first; `away`: how sure the page is that Taska is out of reach. */
-export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; scope: string | null; mine: Outgoing[]; away: number; lastSent: string | null; others: boolean }): { line: FeedbackLine; final?: string } | null {
+/** `mine`: what this project has on its way, oldest first; `away`: how sure the page is that Taska is out of reach;
+ * `title`: a project's title by its name; `others`: there is another project to move it to. `final`: the input it
+ * names, once it ended up somewhere (the line lets it go after a while). */
+export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; scope: string | null; mine: Outgoing[]; away: number; lastSent: string | null; others: boolean; title(slug: string): string }): { line: FeedbackLine; final?: string } | null {
   // the phone's only (T689, r576): on the desktop each input is in the New input page's list; in an item, in its talk
   if (a.desk || a.scope) return null
   const going = a.mine.filter((o) => showsOnItsWay(o))
@@ -208,24 +196,7 @@ export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; scope: 
   if (first && show) return { line: { kind: 'going', q: first.q, text: outgoingLine(first), more: going.length - 1, show } }
   const r = a.lastSent && a.m ? a.m.byId.get(a.lastSent) : undefined
   if (!r || !a.m || r.scope) return null
-  const org = a.m.facts.organizer
-  const move = a.others && !r.scope
-  let line: FeedbackLine
-  const hearing = sentNotes(r.files)
-  if (r.moved) line = { kind: 'moved', code: inputCode(r.id), to: r.moved.to, as: r.moved.as ? inputCode(r.moved.as) : '', href: `/p/${encodeURIComponent(r.moved.to)}/` }
-  else if (hearing) line = { kind: 'transcribing', state: hearing }
-  else if (org.busy.includes(r.id) || (!r.acked && org.on && !r.org)) line = { kind: 'organizing' }
-  else if (r.org && !r.org.ok) line = { kind: 'org-failed', msg: failWhy(r.org.msg), raw: r.org.msg, retry: true }
-  else if (r.org?.undone) line = { kind: 'undone', code: inputCode(r.id) }
-  else if (r.acked)
-    line = {
-      kind: 'organized',
-      msg: r.org?.msg || agentDid(r, a.m) || 'Seen, no item made',
-      view: !!r.touched.length,
-      undo: !!(r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length),
-      move,
-    }
-  else line = { kind: 'sent', organizer: !!r.org, move }
-  const final = r.acked || (r.org && r.org.ok) || r.moved
-  return { line, final: final ? r.id : undefined }
+  const b = becameOf(r, a.m, a.title)
+  if (!showsIn(b, 'line')) return null
+  return { line: { kind: 'became', b, text: becameText(b, 'line'), acts: actsIn(b, 'line', { others: a.others }) }, final: INPUT_STATES[b.k].settled ? r.id : undefined }
 }

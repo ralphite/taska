@@ -21,7 +21,7 @@ export function FeedbackContainer({ route, scope, boxKey }: { route: ProjectRout
   const mine = outbox.filter((o) => o.slug === route.slug)
   // the input the line speaks of
   const sentRow = lastSent?.slug === route.slug && m ? m.byId.get(lastSent.rid) : undefined
-  const feedback = feedbackLine({ m, desk, scope, mine, away, lastSent: lastSent?.slug === route.slug ? lastSent.rid : null, others: (projects || []).some((p) => p.name !== route.slug) })
+  const feedback = feedbackLine({ m, desk, scope, mine, away, lastSent: lastSent?.slug === route.slug ? lastSent.rid : null, others: (projects || []).some((p) => p.name !== route.slug), title: (s) => projects?.find((p) => p.name === s)?.title || s })
   // a line that says where it ended up goes after a while
   useEffect(() => {
     if (!feedback?.final) return
@@ -36,10 +36,7 @@ export function FeedbackContainer({ route, scope, boxKey }: { route: ProjectRout
         cancel: (q) => app.box.cancel(q),
         retry: (q) => app.inputs.retry(q),
         edit: (q) => app.box.editOutgoing(route.slug, boxKey, q, away) && app.fields.focus('box'),
-        view: () => {
-          const n = sentRow?.touched[0]
-          if (m && n) app.nav.openItem(codeOf(m, n))
-        },
+        open: (n) => m && app.nav.openItem(codeOf(m, n)),
         undoFiling: () => sentRow && app.inputActions.undoFiling(route.slug, sentRow.id),
         move: () => sentRow && app.sheets.open({ kind: 'input-move', id: sentRow.id }),
         retryOrganizer: () => sentRow && app.inputActions.organizeAgain(route.slug, sentRow.id),

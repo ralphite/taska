@@ -4,7 +4,7 @@
 import type { ItemEvents, ItemFacts } from '../features/item/ItemPage'
 import type { TalkFacts } from '../features/item/Talk'
 import type { TalkEnv } from '../features/item/talkEnv'
-import { madeFrom } from '../model/became'
+import { becameOf, madeFrom } from '../model/became'
 import { laterOn } from '../model/time'
 import { codeOf, filesOf, findRef, sourceCount, type ProjectModel } from '../model/project'
 import type { Comment, Doc, Item } from '../model/types'
@@ -33,7 +33,10 @@ export const talkFacts = (m: ProjectModel, f: Partial<TalkFacts> = {}): TalkFact
   reask: null,
   going: null,
   outgoing: [],
-  title: (s) => (s === 'mobile-app' ? 'Mobile app' : s),
+  became: (id) => {
+    const r = m.byId.get(id)
+    return r ? becameOf(r, m, (s) => (s === 'mobile-app' ? 'Mobile app' : s)) : null
+  },
   made: (id) => {
     const r = m.byId.get(id)
     return r ? madeFrom(r, m) : []

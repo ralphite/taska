@@ -186,7 +186,7 @@ function LiveBox({ h, desk, extra }: { h: Here; desk: boolean; extra: Partial<Co
   )
 }
 
-const noLine = acts('Sent line', ['dismiss', 'cancel', 'retry', 'edit', 'view', 'undoFiling', 'move', 'retryOrganizer'] as const, { move: 'Move and pick › Input to another project', edit: 'Input box › What it writes to › Changing what you said' })
+const noLine = acts('Sent line', ['dismiss', 'cancel', 'retry', 'edit', 'open', 'undoFiling', 'move', 'retryOrganizer'] as const, { move: 'Move and pick › Input to another project', edit: 'Input box › What it writes to › Changing what you said' })
 
 /** The line over the box about what you sent last, as the page works it out (feedbackLine): what is on its way, or
  * what became of the input you sent. */
@@ -197,7 +197,7 @@ export const sentLine = (f: SentFacts, desk: boolean) => <LiveLine f={f} desk={d
 function LiveLine({ f, desk }: { f: SentFacts; desk: boolean }) {
   const [gone, setGone] = useState(false)
   const m = boxProject(f.sent ? [f.sent] : [], f.organizer)
-  const r = feedbackLine({ m, desk, scope: null, mine: f.mine ?? [], away: f.away ?? 0, lastSent: f.sent?.id ?? null, others: !!f.others })
+  const r = feedbackLine({ m, desk, scope: null, mine: f.mine ?? [], away: f.away ?? 0, lastSent: f.sent?.id ?? null, others: !!f.others, title: (s) => ({ home: 'Home' })[s] ?? s })
   return (
     <div className="bg-zinc-50 p-3 dark:bg-zinc-950">
       <Feedback line={gone ? null : (r?.line ?? null)} on={{ ...noLine, dismiss: () => setGone(true), cancel: (q) => (noLine.cancel(q), setGone(true)) }} />

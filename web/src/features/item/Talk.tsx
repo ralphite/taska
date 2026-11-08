@@ -6,7 +6,8 @@ import { Fragment, type ReactNode } from 'react'
 import { oneLine } from '../../model/items'
 import { voiceMark } from '../../model/inputs'
 import { hasChoices, plainQuote } from '../../model/markdown'
-import { BECAME_WORD, movedOf, type ItemRef } from '../../model/became'
+import type { Became, ItemRef } from '../../model/became'
+import { MADE_WORD, becameText, showsIn } from '../../model/inputStates'
 import { answerOf, readMark, versions, withdrawn, type Version } from '../../model/talk'
 import { when } from '../../model/time'
 import type { Comment, Doc, FileRef, Input, Item, Message } from '../../model/types'
@@ -65,8 +66,8 @@ export interface TalkFacts {
   going: { text: string; card: OutShow } | null
   /** what you sent to this item and Taska has not yet */
   outgoing: Outgoing[]
-  /** a project's title by its name (where an input was moved to) */
-  title(slug: string): string
+  /** what became of an input your messages came from (model/became) */
+  became(id: string): Became | null
   /** the items an input made, besides the item it was said in (B714 #10594) */
   made(id: string): readonly ItemRef[]
 }
@@ -137,14 +138,16 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
     ) : null
   if (you && y.text && y.text.trim().split('\n').every((l) => /^\s*✓/.test(l)) && !src?.files?.length) return null // an answer's ticks show on its card
   if (you) {
-    const moved = src?.moved && !ver?.old ? movedOf(src.moved, facts.title) : null
+    // what became of the input it came from, as the talk shows it (model/inputStates): moved, what it made, its words
+    // still to come
+    const b = src ? facts.became(src.id) : null
+    const shown = b && showsIn(b, 'talk') ? b : null
+    const moved = shown?.k === 'moved' && !ver?.old ? shown : null
     // B714 #10594: what your words here made, as one line under them; the same on the phone and the desktop
-    const made = src && !ver?.old && !src.moved ? facts.made(src.id) : []
+    const made = src && shown?.k === 'filed' && !ver?.old ? facts.made(src.id) : []
     // your voice notes inside your bubble, under your words (T668); an earlier version shows its words only
     const voices = ver?.old ? [] : (src?.files || []).filter(isAudio)
-    // its voice notes' words still to come: the talk's mark for that state
-    const hearing = sentNotes(src?.files)
-    const mark = hearing ? sayIn(hearing, 'talk')?.say : null
+    const mark = shown?.k === 'transcribing' ? becameText(shown, 'talk') : null
     return (
       <div className={`group group/msg flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl ${ver?.old ? 'opacity-60' : ''}`}>
         {voices.length ? (
@@ -203,7 +206,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
                   }}
                   className="relative font-medium text-zinc-500 underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
                 >
-                  {BECAME_WORD.moved(moved.to)}
+                  {becameText(moved, 'talk')}
                 </a>
               </>
             ) : null}
@@ -231,7 +234,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
         </div>
         {made.length ? (
           <div className={`px-1 text-[11px] ${MUTED}`}>
-            → {BECAME_WORD.created}{' '}
+            → {MADE_WORD}{' '}
             {made.map((y, i) => (
               <Fragment key={y.n}>
                 {i ? ', ' : ''}

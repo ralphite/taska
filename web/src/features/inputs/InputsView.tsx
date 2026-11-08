@@ -56,6 +56,7 @@ export function InputCard({ x, world, files, on }: { x: InputFacts; world: Inlin
   const to = x.became.k === 'filed' ? (x.became.items[0]?.item ?? null) : x.became.k === 'answer' ? x.became.item : null
   return (
     <InputRow
+      place="inputs"
       x={x}
       lit={!!x.lit}
       rowRef={litRef}

@@ -1,15 +1,7 @@
-// The page's rules about inputs: whether one is being organized, can be sent after all or have its filing undone, the
-// order lists show them in, their days and times. (What became of one, in words: became.ts.)
+// The page's rules about inputs: the order lists show them in, their days and times. (What became of one: became.ts
+// works it out, inputStates.ts says it in every place.)
 
 import type { Input } from './types'
-
-export const organizing = (r: Input, organizer: { on: boolean; busy: readonly string[] }) => organizer.busy.includes(r.id) || (!r.acked && organizer.on && !r.org && r.kind !== 'cancelled')
-
-/** A recording cancelled with Esc, kept in the inputs: it can be sent after all (B627). */
-export const canSend = (r: Input) => r.kind === 'cancelled' && !r.moved
-
-export const canUndoFiling = (r: Input) =>
-  !!r.org && r.org.ok && !r.org.undone && !!r.touched.length && (!r.org.keep || (!!r.history?.length && !!r.org.changed)) && !!r.filing?.can
 
 const num = (id: string) => Number(id.replace(/\D/g, '')) || 0
 /** Newest first by when it was said, so one restored or moved back keeps its place. */

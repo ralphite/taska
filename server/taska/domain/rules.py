@@ -10,7 +10,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple
 
-from . import events as ev
+from . import events as ev, input_states
 from .markdown import blocks as md_blocks, block_key
 from .model import Comment, Doc, Input, Item, Message
 from .state import ProjectState
@@ -89,9 +89,10 @@ def pending(state: ProjectState) -> List[Input]:
 
 
 def for_agent(state: ProjectState, organizer_on: bool, held: Held) -> List[Input]:
-    """Inputs a coding agent should handle (the organizer, when on, sees them first; an undone filing waits until
-    the user asks again; an input waiting for its voice note's words waits)."""
-    return [i for i in pending(state) if (not organizer_on or i.org) and not (i.org and i.org.undone) and not held(i)]
+    """Inputs a coding agent should handle (input_states.FOR_AGENTS: the organizer, when on, sees them first; an undone
+    filing waits until the user asks again; an input waiting for its voice note's words waits)."""
+    return [i for i in pending(state) if input_states.state_of(i, organizer_on, ()) in input_states.FOR_AGENTS
+            and not held(i)]
 
 
 def by_number(inputs: Iterable[Input]) -> List[Input]:

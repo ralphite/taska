@@ -4,7 +4,8 @@ filing back, put it back, ask the organizer again, put back one change of yours.
 from __future__ import annotations
 
 from ..domain import events as ev
-from ..domain.history import filings, redo_blocked, undoable
+from ..domain.history import filings, redo_blocked, undoable as changes_undoable
+from ..domain.input_states import undoable
 from ..domain.vocab import Refused
 from .base import Args, Outcome, Run, handles
 from .items import set_fields
@@ -15,10 +16,14 @@ from .rules import undo_filing as undo_rules
 def undo_filing(r: Run, a: Args) -> Outcome:
     rid = a.get("id")
     inp = r.state.inputs.get(rid)
-    if not inp or inp.deleted or not inp.org or inp.org.undone:
+    # the organizer filed it (its note says so: it did not fail, and it was not taken back already), and what it filed
+    # is there to take back (T728: one that failed, or only an agent changed things for, was let through)
+    if not inp or not undoable(inp):
         raise Refused(f"nothing to undo for {rid}")
     f = filings(r.state).get(rid)
-    if f and not f.can:  # only the organizer's own work, as it left it
+    if not f:
+        raise Refused(f"nothing the organizer filed for {rid}")
+    if not f.can:  # only the organizer's own work, as it left it
         raise Refused(f"{f.why}: undo that by hand")
     r.emit(ev.FilingUndone(src=rid, by="you"))
     undo_rules(r, rid)  # its change to the rules too (I693)
@@ -50,7 +55,7 @@ def organize_again(r: Run, a: Args) -> Outcome:
 def revert(r: Run, a: Args) -> Outcome:
     """Put back one of your changes (the page's Undo of something done earlier)."""
     seq = a.number("seq")
-    u = next((u for u in undoable(r.state, 50) if u.seq == seq), None)
+    u = next((u for u in changes_undoable(r.state, 50) if u.seq == seq), None)
     if not u:
         raise Refused("that change can't be undone any more: it was undone already, or changed again since")
     return set_fields(r, Args({"op": "set", "ref": r.state.code(u.n), "f": u.was, "undo_of": seq}))

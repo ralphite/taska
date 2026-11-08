@@ -1,10 +1,10 @@
-// What became of an input, in one set of words for every list of inputs (B629): the items it made or was added to (with
-// the organizer's note when it says more than they do), the item it answers, or where it stands (transcribing,
-// organizing or waiting to be, couldn't organize, undone, cancelled, left for an agent or waiting for one, handled, moved). And one
-// input as a line of those lists draws it: its number, its day and time, what became of it, a draft of yours on it,
-// whether it is long. Pure.
+// What became of an input (B629), worked out once from what Taska sent of it and the organizer's facts: its state of
+// model/inputStates (which says the words, the tone and what can be done in every place) with what that state names:
+// the items it made or was added to (with the organizer's note when it says more than they do), the item it answers,
+// why it failed, where it went. And one input as a line of the lists draws it: its number, its day and time, what
+// became of it, a draft of yours on it, whether it is long. Pure.
 
-import { canSend, dayOf, organizing, timeOf } from './inputs'
+import { dayOf, timeOf } from './inputs'
 import { when } from './time'
 import { shownStatus } from './items'
 import { codeOf, inputDraft, type ProjectModel } from './project'
@@ -20,46 +20,27 @@ export interface ItemRef {
   status: { s: string; label: string }
 }
 
+/** What became of an input: its state (`k`, one of model/inputStates) and what that state names. */
 export type Became =
   /** its voice notes' words still to come (model/voiceStates says how each place shows it), or more said into it on
    * its way (`adding`) */
   | { k: 'transcribing'; state: 'sentTranscribing' | 'sentFastWords' | 'adding' }
   | { k: 'organizing' }
-  /** the organizer is on and will take it, after the ones before it */
-  /** `retry`: the organizer is on, so it can try again */
-  | { k: 'failed'; why: string; retry: boolean }
+  /** `why`: in a few plain words, `raw`: as the organizer said it; `retry`: the organizer is on, so asking it again can
+   * help */
+  | { k: 'failed'; why: string; raw: string; retry: boolean }
   | { k: 'undone'; retry: boolean }
-  /** a recording cancelled with Esc, kept: Send sends it after all (B627) */
   | { k: 'cancelled' }
-  /** `did`: what was done to each ("Created", "Added to"; "" when nothing says); `note`: what else the organizer said */
-  | { k: 'filed'; items: { did: string; item: ItemRef }[]; note: string | null }
-  | { k: 'answer'; item: ItemRef }
+  /** `did`: what was done to each ("Created", "Added to"; "" when nothing says); `note`: what else the organizer said;
+   * `undo`: Taska would take back what the organizer filed */
+  | { k: 'filed'; items: { did: string; item: ItemRef }[]; note: string | null; undo: boolean }
+  | { k: 'answer'; item: ItemRef; undo: boolean }
   /** the organizer had nothing to file, and said why */
   | { k: 'note'; text: string }
+  /** left for an agent by the organizer, or no organizer: the agents read it */
   | { k: 'agent' }
-  /** no organizer: the agents read it */
-  | { k: 'waiting' }
   | { k: 'handled' }
   | { k: 'moved'; to: string; as: string; href: string }
-
-/** The words for each state, the same in every list. */
-export const BECAME_WORD = {
-  organizing: 'Organizing…',
-  failed: "Couldn't organize",
-  undone: 'Undone',
-  cancelled: 'Cancelled',
-  agent: 'For an agent',
-  waiting: 'For an agent',
-  handled: 'Handled',
-  answer: 'Answer to',
-  /** under your words in an item, what they made there (B714 #10594) */
-  created: 'Created',
-  tryAgain: 'Retry',
-  organizeAgain: 'Organize',
-  send: 'Send',
-  moved: (to: string) => `Moved to ${to}`,
-  open: (as: string) => as,
-}
 
 export const itemRef = (m: ProjectModel, n: number): ItemRef | null => {
   const it = m.byN.get(n)
@@ -105,14 +86,12 @@ export const shortWhy = (msg: string) =>
     .filter((p) => p && !/^No changes needed$/i.test(p))
     .join(' · ') || msg
 
-/** The organizer's service refused its key: trying again fails the same way until the key is fixed on the server. */
-export const keyRefused = (msg: string) => /\b(401|403)\b|api.?key|unauthori[sz]ed|permission denied/.test(msg.toLowerCase())
-
 /** A failure of the service behind the organizer in plain words (busy, too slow, out of reach, its key and where to
- * fix it); null when the words are Taska's own, plain already. */
-export function serviceWhy(msg: string): string | null {
+ * fix it); null when the words are Taska's own, plain already. Only words: whether it goes away by itself is Taska's
+ * to say (`org.again`, server domain/input_states.transient). */
+function serviceWhy(msg: string): string | null {
   const m = msg.toLowerCase()
-  if (keyRefused(msg)) return 'Gemini key not accepted · check GEMINI_API_KEY on the server'
+  if (/\b(401|403)\b|api.?key|unauthori[sz]ed|permission denied/.test(m)) return 'Gemini key not accepted · check GEMINI_API_KEY on the server'
   if (/\b429\b|rate.?limit|quota|resource.?exhausted/.test(m)) return 'busy for now'
   if (/\b5\d\d\b|overload|unavailable|internal error/.test(m)) return 'busy'
   if (/timed? ?out|deadline/.test(m)) return 'too slow'
@@ -131,24 +110,30 @@ export const movedOf = (moved: NonNullable<Input['moved']>, title: (slug: string
   href: `/p/${encodeURIComponent(moved.to)}/`,
 })
 
-/** What became of `r`; `title`: a project's title by its name. */
+/** Taska would take back what the organizer filed for it (the server's filing-undo allows it): the organizer's own
+ * filing, as it left it (`filing.can`). */
+const canUndo = (r: Input) => !!r.org && r.org.ok && !r.org.undone && !!r.touched.length && (!r.org.keep || (!!r.history?.length && !!r.org.changed)) && !!r.filing?.can
+
+/** What became of `r`, the one place it is worked out; `title`: a project's title by its name. */
 export function becameOf(r: Input, m: ProjectModel, title: (slug: string) => string): Became {
   const organizer = m.facts.organizer
   if (r.moved) return movedOf(r.moved, title)
-  if (canSend(r)) return { k: 'cancelled' }
+  if (r.kind === 'cancelled') return { k: 'cancelled' }
   const hearing = sentNotes(r.files)
   if (hearing) return { k: 'transcribing', state: hearing }
-  // one word for every input the organizer has not finished: whether it is on it now, next in line or asking Gemini
-  // again after a busy answer, it is being organized; no "Queued" to fall back to (B684: it jumped back and forth)
-  if (organizing(r, organizer)) return { k: 'organizing' }
+  // one word for every input the organizer has not finished: whether it is on it now, next in line or asking its
+  // service again after a busy answer (Taska says so: `again`), it is being organized; no "Queued" (B684) to fall
+  // back to: it jumped back and forth
+  const next = !r.acked && organizer.on && (!r.org || (!r.org.ok && !!r.org.again))
+  if (organizer.busy.includes(r.id) || next) return { k: 'organizing' }
   const retry = !r.acked && organizer.on
   if (r.org?.undone) return { k: 'undone', retry }
   if (r.kind === 'answer' && r.scope) {
     const it = itemRef(m, r.scope)
-    if (it) return { k: 'answer', item: it }
+    if (it) return { k: 'answer', item: it, undo: canUndo(r) }
   }
   // its key refused too: once the key is fixed, Retry is the way to have it organized (nothing asks again by itself)
-  if (r.org && !r.org.ok) return { k: 'failed', why: failWhy(r.org.msg), retry }
+  if (r.org && !r.org.ok) return { k: 'failed', why: failWhy(r.org.msg), raw: r.org.msg, retry }
   // said on an item (its own box): added to it; then what the organizer or an agent did with it
   const ns = [...new Set([...(r.scope ? [r.scope] : []), ...r.touched])]
   const items = ns.map((n) => itemRef(m, n)).filter((x): x is ItemRef => !!x)
@@ -159,10 +144,9 @@ export function becameOf(r: Input, m: ProjectModel, title: (slug: string) => str
   const msg = (r.org?.msg ?? '').toLowerCase()
   const at = (d: string) => (d && msg.includes(d.toLowerCase()) ? msg.indexOf(d.toLowerCase()) : msg.length + (d ? 0 : 1))
   const filed = items.map((it) => ({ did: did(it.n), item: it })).sort((a, b) => at(a.did) - at(b.did))
-  if (items.length) return { k: 'filed', items: filed, note: told.rest.join(' · ') || null }
+  if (items.length) return { k: 'filed', items: filed, note: told.rest.join(' · ') || null, undo: canUndo(r) }
   if (told.rest.length) return { k: 'note', text: told.rest.join(' · ') }
-  if (r.acked) return { k: 'handled' }
-  return r.org?.keep ? { k: 'agent' } : { k: 'waiting' }
+  return r.acked ? { k: 'handled' } : { k: 'agent' }
 }
 
 /** A long input shows a few lines and More: about four lines of the narrower list (a Chinese character is as wide as

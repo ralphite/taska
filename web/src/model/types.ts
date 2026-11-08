@@ -95,6 +95,9 @@ export interface OrgNote {
   keep: boolean
   changed: boolean
   undone: boolean
+  /** it failed only for now (its service busy, slow or out of reach): the organizer asks again by itself (Taska's one
+   * rule for it, server domain/input_states.transient) */
+  again?: boolean
 }
 
 export interface Input {

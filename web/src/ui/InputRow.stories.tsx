@@ -21,21 +21,20 @@ const T007 = it(7, 'T007', 'Which formats should the export offer?', 'open', 'ta
 /** what the organizer said when it failed, as Taska keeps it (the line says it as failWhy does) */
 const FAILED = 'No changes needed · Some commands failed: err: B99 not found'
 const BECAME: [string, Became][] = [
-  ['made an item', { k: 'filed', items: [{ did: 'Created', item: B014 }], note: null }],
-  ['made two, added to one', { k: 'filed', items: [{ did: 'Created', item: B014 }, { did: 'Created', item: it(43, 'F043', 'Close the keyboard by tapping outside it', 'open', 'feature') }, { did: 'Added to', item: F012 }], note: null }],
-  ["an item, and the organizer's note", { k: 'filed', items: [{ did: 'Created', item: B014 }], note: 'Commented on D1' }],
-  ['an agent changed an item for it (no organizer)', { k: 'filed', items: [{ did: 'Changed', item: F012 }], note: null }],
-  ['left for an agent, which changed an item', { k: 'filed', items: [{ did: '', item: F012 }], note: null }],
-  ['an answer', { k: 'answer', item: T007 }],
+  ['made an item', { k: 'filed', items: [{ did: 'Created', item: B014 }], note: null, undo: true }],
+  ['made two, added to one', { k: 'filed', items: [{ did: 'Created', item: B014 }, { did: 'Created', item: it(43, 'F043', 'Close the keyboard by tapping outside it', 'open', 'feature') }, { did: 'Added to', item: F012 }], note: null, undo: true }],
+  ["an item, and the organizer's note", { k: 'filed', items: [{ did: 'Created', item: B014 }], note: 'Commented on D1', undo: true }],
+  ['an agent changed an item for it (no organizer)', { k: 'filed', items: [{ did: 'Changed', item: F012 }], note: null, undo: false }],
+  ['left for an agent, which changed an item', { k: 'filed', items: [{ did: '', item: F012 }], note: null, undo: false }],
+  ['an answer', { k: 'answer', item: T007, undo: false }],
   ["the organizer's note, no item", { k: 'note', text: 'No changes needed' }],
   ['transcribing', { k: 'transcribing', state: 'sentTranscribing' }],
   ['organizing', { k: 'organizing' }],
-  ["couldn't organize: Try again", { k: 'failed', why: failWhy(FAILED), retry: true }],
-  ["couldn't organize, the organizer off", { k: 'failed', why: failWhy(FAILED), retry: false }],
+  ["couldn't organize: Try again", { k: 'failed', why: failWhy(FAILED), raw: FAILED, retry: true }],
+  ["couldn't organize, the organizer off", { k: 'failed', why: failWhy(FAILED), raw: FAILED, retry: false }],
   ['organizing undone: Organize again', { k: 'undone', retry: true }],
   ['a cancelled recording: Send', { k: 'cancelled' }],
-  ['left for an agent', { k: 'agent' }],
-  ['waiting for an agent (no organizer)', { k: 'waiting' }],
+  ['for an agent: left by the organizer, or none on', { k: 'agent' }],
   ['handled by an agent', { k: 'handled' }],
   ['moved to another project', { k: 'moved', to: 'Mobile app', as: '#4', href: '#' }],
 ]
@@ -55,7 +54,7 @@ export const WhatItBecame: Story = {
           items={BECAME.map(([name, b]): [string, ReactNode] => [
             name,
             <div key={name} className="px-4 py-2 text-[13px] leading-5">
-              <BecameLine b={b} id="r1" on={on} />
+              <BecameLine b={b} id="r1" place="row" on={on} />
             </div>,
           ])}
         />

@@ -5,8 +5,8 @@
 import { useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
 import type { BoxLine, BoxRight, FeedbackLine } from '../../model/boxFoot'
 import { VC_MARK } from '../../model/voiceComments'
-import { sayIn } from '../../model/voiceStates'
 import { OUT_ACT_WORD, type OutTone } from '../../model/outgoingStates'
+import { INPUT_ACT_WORD, INPUT_STATES, type InputAct, type InputState, type InputTone } from '../../model/inputStates'
 import { Icon, type IconName } from '../../ui/Icon'
 import { RecBar } from '../../ui/PlaceVoice'
 import { HIT, MUTED } from '../../ui/tones'
@@ -326,11 +326,29 @@ const Dismiss = ({ onClick, cancel = false }: { onClick(): void; cancel?: boolea
 )
 
 const Pulse = () => <span className="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400" />
+/** what became of it, its mark by its tone (model/inputStates): moving while Taska is on it, red when it failed,
+ * green once it went somewhere, grey where it rests; a move and an undo say so */
+const MARK: Record<InputTone, ReactNode> = {
+  busy: <Pulse />,
+  failed: <Icon n="alert" c="size-4 text-red-600 dark:text-red-400" sw="2" />,
+  done: (
+    <span className="grid size-4 shrink-0 place-items-center rounded-full bg-emerald-500 text-white dark:bg-emerald-400 dark:text-emerald-950">
+      <Icon n="check" c="size-3" sw="3" />
+    </span>
+  ),
+  quiet: <span className="size-2 shrink-0 rounded-full bg-zinc-400" />,
+  plain: (
+    <span className="grid size-4 shrink-0 place-items-center rounded-full bg-emerald-500 text-white dark:bg-emerald-400 dark:text-emerald-950">
+      <Icon n="check" c="size-3" sw="3" />
+    </span>
+  ),
+}
+const BECAME_MARK: Partial<Record<InputState, ReactNode>> = { moved: <Icon n="arrow" c="size-4 text-zinc-500" sw="2" />, undone: <Icon n="undo" c="size-4 text-zinc-500" sw="2" /> }
 /** what is on its way, in its tone: amber while it waits for Taska, red when Taska said no */
 const LINE_TONE: Record<OutTone, string> = { busy: '', partial: 'text-amber-600 dark:text-amber-400', failed: 'text-red-600 dark:text-red-400' }
 
 /** The line above the box: what happened to what you sent last; while it is on its way, its × cancels it. */
-export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismiss(): void; cancel(q: string): void; retry(q: string): void; edit(q: string): void; view(): void; undoFiling(): void; move(): void; retryOrganizer(): void } }) {
+export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismiss(): void; cancel(q: string): void; retry(q: string): void; edit(q: string): void; open(n: number): void; undoFiling(): void; move(): void; retryOrganizer(): void } }) {
   const link = (label: string, run: () => void) => (
     <button onClick={run} className="-my-2 h-11 shrink-0 rounded-full px-2 font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">
       {label}
@@ -356,84 +374,32 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
         )
         break
       }
-      case 'moved':
-        node = (
-          <>
-            <Icon n="arrow" c="size-4 text-zinc-500" sw="2" />
-            <span className="min-w-0 flex-1 truncate">
-              Moved {line.code} to {line.to}
-              {line.as ? ` as ${line.as}` : ''}
-            </span>
-            <a href={line.href} className="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">
-              Open
+      case 'became': {
+        const { b } = line
+        const tone = INPUT_STATES[b.k].tone
+        const first = b.k === 'filed' ? b.items[0]?.item : b.k === 'answer' ? b.item : undefined
+        const act = (a: InputAct) =>
+          a === 'open' && b.k === 'moved' ? (
+            <a key={a} href={b.href} className="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">
+              {b.as || INPUT_ACT_WORD.open}
             </a>
-            <Dismiss onClick={on.dismiss} />
-          </>
-        )
-        break
-      case 'transcribing':
-        node = (
-          <>
-            <Pulse />
-            <span className="min-w-0 flex-1 truncate">{sayIn(line.state, 'line')?.say}</span>
-            <Dismiss onClick={on.dismiss} />
-          </>
-        )
-        break
-      case 'organizing':
-        node = (
-          <>
-            <Pulse />
-            <span className="min-w-0 flex-1 truncate">Sent · organizing…</span>
-            <Dismiss onClick={on.dismiss} />
-          </>
-        )
-        break
-      case 'org-failed':
-        node = (
-          <>
-            <Icon n="alert" c="size-4 text-red-600 dark:text-red-400" sw="2" />
-            <span className="line-clamp-2 min-w-0 flex-1 leading-snug text-red-600 dark:text-red-400" title={line.raw}>
-              Couldn&apos;t organize · {line.msg}
+          ) : (
+            <span key={a} className="contents">
+              {link(INPUT_ACT_WORD[a], () => (a === 'open' ? first && on.open(first.n) : a === 'undo' ? on.undoFiling() : a === 'move' ? on.move() : on.retryOrganizer()))}
             </span>
-            {line.retry ? link('Retry', on.retryOrganizer) : null}
-            <Dismiss onClick={on.dismiss} />
-          </>
-        )
-        break
-      case 'undone':
+          )
         node = (
           <>
-            <Icon n="undo" c="size-4 text-zinc-500" sw="2" />
-            <span className="min-w-0 flex-1 truncate">Undid filing of {line.code}</span>
-            <Dismiss onClick={on.dismiss} />
-          </>
-        )
-        break
-      case 'organized':
-        node = (
-          <>
-            <span className="grid size-4 shrink-0 place-items-center rounded-full bg-emerald-500 text-white dark:bg-emerald-400 dark:text-emerald-950">
-              <Icon n="check" c="size-3" sw="3" />
+            {BECAME_MARK[b.k] ?? MARK[tone]}
+            <span className={`line-clamp-2 min-w-0 flex-1 leading-snug ${tone === 'failed' ? 'text-red-600 dark:text-red-400' : ''}`} title={b.k === 'failed' ? b.raw : undefined}>
+              {line.text}
             </span>
-            <span className="min-w-0 flex-1 truncate">{line.msg}</span>
-            {line.view ? link('Open', on.view) : null}
-            {line.undo ? link('Undo', on.undoFiling) : null}
-            {line.move ? link('Move to…', on.move) : null}
+            {line.acts.map(act)}
             <Dismiss onClick={on.dismiss} />
           </>
         )
         break
-      case 'sent':
-        node = (
-          <>
-            <span className="size-2 shrink-0 rounded-full bg-zinc-400" />
-            <span className="line-clamp-2 min-w-0 flex-1 leading-snug">Sent · {line.organizer ? 'left for agent' : 'waiting for agent'}</span>
-            {line.move ? link('Move to…', on.move) : null}
-            <Dismiss onClick={on.dismiss} />
-          </>
-        )
-        break
+      }
     }
   return (
     <div

@@ -18,7 +18,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from ..agent_text import render
 from ..agent_text.language import parse
 from ..agent_text.organizer_text import AS_SAID_LABEL, INSTRUCTIONS
-from ..domain import events as ev, rules
+from ..domain import events as ev, input_states, rules
+from ..domain.input_states import transient
 from ..domain.model import Input
 from ..domain.text import hm
 from ..domain.vocab import CLOSED, TEXT_VERBS, Refused
@@ -107,10 +108,10 @@ class Organizer(threading.Thread):
         self.later: Dict[str, Tuple[float, int]] = {}  # an input the service could not take yet: when to ask again, tries
 
     def due(self, inp: Input) -> bool:
-        """An input to organize now: not organized yet, or failed only because the service was busy, slow or out of
-        reach (T424: Taska asks again by itself; the user never has to press Try again), and not waiting to be asked
-        again."""
-        if inp.org and (inp.org.ok or inp.org.undone or not transient(inp.org.msg)):
+        """An input to organize now: for the organizer (input_states: not organized yet, or failed only because the
+        service was busy, slow or out of reach; T424: Taska asks again by itself, the user never has to press Retry),
+        and not waiting to be asked again (`later`: a busy answer just now, kept in memory; the input stays queued)."""
+        if input_states.state_of(inp, True, ()) not in input_states.FOR_ORGANIZER:
             return False
         return self.later.get(inp.id, (0.0, 0))[0] <= self.clock()
 
@@ -195,15 +196,6 @@ class Organizer(threading.Thread):
                 msg += " · Some commands failed: " + "; ".join(bad)
             p.emit(ev.Organized(src=rid, ok=not bad, msg=msg, plan=plan, keep=keep, changed=bool(labels),
                                 ms=int((time.time() - t0) * 1000), by="org"))
-
-
-_TRANSIENT = re.compile(r"(?i)\b(429|5\d\d)\b|rate.?limit|quota|exhausted|overload|unavailable|high demand|"
-                        r"unreachable|timed? ?out|timeout|deadline|connection|reset|network|temporar|empty answer")
-
-
-def transient(msg: str) -> bool:
-    """A failure that goes away by itself: the service busy, slow or out of reach (not a refused key or request)."""
-    return bool(_TRANSIENT.search(msg or "")) and not re.search(r"(?i)\b(401|403)\b|api.?key|unauthori", msg or "")
 
 
 # a line that starts a command: new, ack, pass, or an item or document code ($ is the item made just before)

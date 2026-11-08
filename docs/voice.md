@@ -9,8 +9,9 @@ from it (its message prints them as they should be).
 Before it is sent the note is the page's own: its state is worked out from what the page keeps of it
 (`noteState`) and changed only by `noteStep`, which refuses a way the table does not have. Once Taska has it, the
 note's record on the server is the truth for its words (`server/taska/domain/voice_states.py`: wait, done, none,
-failed, with the steps between them), and what the input became is the input's own line (`web/src/model/became.ts`).
-What happens to an input after that: [inputs.md](inputs.md). The Storybook page UI/Input box/Voice/Whole workflow
+failed, with the steps between them), and what the input became is the input's own state
+(`web/src/model/inputStates.ts`, which names the voice state for each of its states); on its way, the outbox's phase
+names it (`web/src/model/outgoingStates.ts`). What happens to an input after that: [inputs.md](inputs.md). The Storybook page UI/Input box/Voice/Whole workflow
 draws one row for each state, in each place.
 
 Two models work out the words at once (T687): the fast words come in about 2 s, the strong model's replace them.

@@ -9,7 +9,7 @@ import { inputOf, inputPath, NO_FILTERS, parseRoute, projectPath } from './route
 import type { ViewAnswer } from './types'
 import { visible } from './visible'
 import { becameOf, madeFrom } from './became'
-import { canSend, organizing } from './inputs'
+import { actsIn } from './inputStates'
 
 const answer = (a: Partial<ViewAnswer>): ViewAnswer => ({ cursor: 'c1', full: false, items: [], inputs: [], docs: [], project: projectFacts(), server: { page: '', update: false }, ...a })
 
@@ -109,17 +109,16 @@ describe('a recording cancelled with Esc, kept in the inputs (B627)', () => {
   test("it stands as cancelled, is no one's work, and can be sent", () => {
     const m = project({ cursor: '', items: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), voices: new Map(), facts: projectFacts({ organizer: { ...organizer, model: '' } }), server: { page: '', update: false }, at: 0 })
     expect(becameOf(kept, m, (s) => s)).toEqual({ k: 'cancelled' })
-    expect(organizing(kept, organizer)).toBe(false)
-    expect(canSend(kept)).toBe(true)
-    expect(canSend({ ...kept, moved: { to: 'other', as: 'r1' } })).toBe(false)
+    expect(actsIn(becameOf(kept, m, (s) => s), 'sheet', { others: false })).toEqual(['send'])
+    expect(becameOf({ ...kept, moved: { to: 'other', as: 'r1' } }, m, (s) => s).k).toBe('moved')
   })
 
   test('Send shows it sent at once: an ordinary new input, waiting for the organizer', () => {
     const copy = { cursor: '', items: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), voices: new Map(), facts: projectFacts(), server: { page: '', update: false }, at: 0 }
     const sent = project(copy, [], 0, [{ id: kept.id, f: { kind: undefined } }]).byId.get(kept.id)!
-    expect(canSend(sent)).toBe(false)
-    expect(becameOf(sent, project({ ...copy, facts: projectFacts({ organizer: { ...organizer, model: '' } }) }), (s) => s)).toEqual({ k: 'organizing' })
-    expect(organizing(sent, organizer)).toBe(true)
+    const b = becameOf(sent, project({ ...copy, facts: projectFacts({ organizer: { ...organizer, model: '' } }) }), (s) => s)
+    expect(b).toEqual({ k: 'organizing' })
+    expect(actsIn(b, 'sheet', { others: true })).toEqual([])
   })
 
   test('B684: an input the organizer has not finished reads Organizing whether it is on it, next or trying again', () => {
@@ -142,7 +141,7 @@ describe('what became of an input, in one set of words (B629)', () => {
   })
 
   test('where one stands when no item came of it', () => {
-    expect(of({ id: 'r2', org: org('B99 is not in this project', { ok: false }) })).toEqual({ k: 'failed', why: 'B99 is not in this project', retry: true })
+    expect(of({ id: 'r2', org: org('B99 is not in this project', { ok: false }) })).toEqual({ k: 'failed', why: 'B99 is not in this project', raw: 'B99 is not in this project', retry: true })
     // the service's own words in plain ones; Taska's own reason as it is
     expect(of({ id: 'r2', org: org('Gemini HTTP 503: overloaded', { ok: false }) })).toMatchObject({ k: 'failed', why: 'busy' })
     // its key refused: where to fix it, and Retry once it is fixed (nothing asks again by itself)

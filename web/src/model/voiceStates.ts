@@ -6,9 +6,9 @@
 // Before it is sent the note is the page's own (a draft's file, the box store): its state is worked out from what is
 // kept of it by `noteState`, and changed only by `noteStep`. Once Taska has it, Taska's record of its words is the
 // truth (server/taska/domain/voice_states.py: wait, done, none, failed), read by `sentNotes`, and what its input
-// became is the input's (model/became). Pure.
+// became is the input's (model/inputStates: each of its states names the voice state it is, `voiceStateOf`). On its
+// way, the outbox's phase names it (model/outgoingStates). Pure.
 
-import type { Became } from './became'
 import type { FileRef, Voice, WordsAnswer } from './types'
 
 /** The states of a voice note's one record on the server (server/taska/domain/voice_states.py): being worked out
@@ -42,7 +42,7 @@ export type Show =
   /** what is on its way says where it is, as for anything sent (model/outgoingStates: Sending…, Uploading…, Waiting for
    * Taska…, Not sent) */
   | 'going'
-  /** the input's own words for what became of it, as for any input (model/became: Organizing…, Created B014, For an
+  /** the input's own words for what became of it, as for any input (model/inputStates: Organizing…, Created B014, For an
    * agent, ...) */
   | 'became'
   /** nothing: the note's state does not show there */
@@ -304,16 +304,6 @@ export function sentNotes(files: readonly FileRef[] | undefined): 'sentTranscrib
 /** What a sent note says where it has no words to show: being worked out, nobody was heard, or it failed. */
 const LACKS: Record<RecordState, string> = { wait: 'Transcribing…', done: 'No words heard', none: 'No words heard', failed: 'Transcription failed' }
 export const voiceLacks = (v: Voice | null | undefined): string => LACKS[v?.state ?? 'wait']
-
-/** What a sent voice message is now, from what its input's line says of it (model/became `becameOf`, from Taska's
- * data: its notes' words by `sentNotes`, more said into it on its way: adding). null: an outcome any input has, not
- * its voice's (moved, undone). */
-export function sentState(became: Became): VoiceState | null {
-  if (became.k === 'transcribing') return became.state
-  if (became.k === 'filed') return became.items.some((x) => x.did === 'Created') ? 'created' : 'added'
-  const of: Partial<Record<Became['k'], VoiceState>> = { organizing: 'organizing', failed: 'organizeFailed', cancelled: 'cancelled', answer: 'added', note: 'handled', handled: 'handled', agent: 'forAgent', waiting: 'forAgent' }
-  return of[became.k] ?? null
-}
 
 // ---------------------------------------------------------------- the diagram (docs/voice.md)
 

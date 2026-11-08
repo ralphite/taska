@@ -2,7 +2,8 @@
 // another project and it is not being organized), History, what it is with, a file's Take off asking, what Delete also
 // deletes; and for Move, its words and what else moves with it. Pure: the container and the stories both use it.
 
-import { canSend, canUndoFiling, organizing } from '../../model/inputs'
+import { becameOf } from '../../model/became'
+import { actsIn } from '../../model/inputStates'
 import { codeOf, type ProjectModel } from '../../model/project'
 import type { Input } from '../../model/types'
 import { inputCode } from '../../model/words'
@@ -15,12 +16,14 @@ export const inputDeleteAsk = (id: string) => `input-delete ${id}`
  * `tidy`: voice notes' words are tidied (Settings), so the phone's menu offers them. */
 export function inputMenuFacts(m: ProjectModel, r: Input, otherProjects: number, asked: Readonly<Record<string, number>>, desk: boolean, tidy: boolean): InputMenuFacts {
   const code = (n: number) => codeOf(m, n)
+  // what can be done to it here, as model/inputStates says for its menu
+  const acts = actsIn(becameOf(r, m, (s) => s), 'sheet', { others: otherProjects > 0 })
   return {
     r,
-    send: canSend(r),
+    send: acts.includes('send'),
     tidy: !desk && tidy,
-    undo: canUndoFiling(r) ? { tip: `${inputCode(r.id)}: ${r.filing?.what || ''}` } : null,
-    move: otherProjects > 0 && !organizing(r, m.facts.organizer),
+    undo: acts.includes('undo') ? { tip: `${inputCode(r.id)}: ${r.filing?.what || ''}` } : null,
+    move: acts.includes('move'),
     history: !!r.history?.length,
     scope: r.scope ? code(r.scope) : null,
     asking: r.files.find((f) => asked[`unfile ${r.id} ${f.f}`])?.f ?? null,

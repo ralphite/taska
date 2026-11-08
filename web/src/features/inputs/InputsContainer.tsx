@@ -10,7 +10,7 @@ import { FileChips } from '../../ui/Files'
 import { useBoxHere } from '../../app/inputs/boxHere'
 import { InputsView, type InputFacts } from './InputsView'
 import { useOtherProjects } from '../../app/projectLists'
-import { organizing } from '../../model/inputs'
+import { actsIn } from '../../model/inputStates'
 import { inputRows, outgoingRows } from './inputRows'
 
 /** how many inputs are drawn at first, and how many more each time the list nears its end */
@@ -41,8 +41,8 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
     if (!m || hidden) return { rows: [], total: 0 }
     const title = (slug: string) => projects?.find((p) => p.name === slug)?.title || slug
     const got = inputRows(m, { title, opened, drafts: draftWords || stores.drafts.getState().of(route.slug), writing, lit, litStill, upTo })
-    // Move, as its menu has it: another project to go to, and the organizer not on it
-    return { ...got, rows: got.rows.map((x) => ({ ...x, movable: others > 0 && !organizing(x.r, m.facts.organizer) })) }
+    // Move, as its menu has it (model/inputStates): another project to go to, and Taska not working on it
+    return { ...got, rows: got.rows.map((x) => ({ ...x, movable: actsIn(x.became, 'sheet', { others: others > 0 }).includes('move') })) }
   }, [m, hidden, projects, opened, draftWords, stores, route.slug, writing, lit, litStill, upTo, others])
   // an input gone to further down is drawn with those above it, and stays drawn once it is no longer lit (React's
   // adjust-state-while-rendering pattern)

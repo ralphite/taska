@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { describe, expect, test } from 'vitest'
 import { input, item, modelOf, record, shown, waiting } from '../stories/fixtures'
 import { becameOf } from './became'
+import { voiceStateOf } from './inputStates'
 import type { Input, WordsAnswer } from './types'
 import {
   NOTE_STOPPED,
@@ -19,7 +20,6 @@ import {
   noteStep,
   notesState,
   sayIn,
-  sentState,
   showIn,
   voiceDiagram,
   voicePlacesTable,
@@ -135,7 +135,7 @@ describe('sent with its fast words: the strong words come after', () => {
   const F = 'f6-voice_0-05.webm'
   const at = (r: Input, busy: string[] = []) => {
     const m = modelOf([item({ n: 12 })], [r], { organizer: { on: true, model: '', busy } })
-    return sentState(becameOf(r, m, (s) => s))
+    return voiceStateOf(becameOf(r, m, (s) => s))
   }
   const bare = input({ id: 'r26', text: '', files: [{ f: F, name: 'voice_0-05.webm', mime: 'audio/webm' }] })
 

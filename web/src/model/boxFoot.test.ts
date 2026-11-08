@@ -93,7 +93,7 @@ describe('a recording in the box', () => {
 
 describe('the line over the box', () => {
   const out = (o: Partial<Outgoing>): Outgoing => ({ q: 'q1', slug: 'taska', text: 'Keep the filter', scope: null, files: [], t: 1, state: 'sending', tries: 0, ...o })
-  const base = { m, desk: false, scope: null, mine: [] as Outgoing[], away: 0, lastSent: null, others: false }
+  const base = { m, desk: false, scope: null, mine: [] as Outgoing[], away: 0, lastSent: null, others: false, title: (s: string) => s }
   const said = (f: Partial<typeof base>) => {
     const l = feedbackLine({ ...base, ...f })?.line
     return l?.kind === 'going' ? `${l.show.say} ${l.show.acts.join(' ')}` : l?.kind

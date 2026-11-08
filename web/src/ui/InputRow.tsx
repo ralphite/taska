@@ -8,11 +8,11 @@
 // after sending). What is still on its way (its × cancels it), and a voice note being recorded, are lines of their own
 // over the list. Props only.
 
-import type { ReactNode, Ref } from 'react'
-import { BECAME_WORD as W, type Became, type InputLine, type ItemRef } from '../model/became'
+import { Fragment, type ReactNode, type Ref } from 'react'
+import type { Became, InputLine, ItemRef } from '../model/became'
+import { INPUT_ACT_WORD, INPUT_STATES, actsIn, becameText, type InputAct, type InputTone } from '../model/inputStates'
 import { voiceMark } from '../model/inputs'
 import { OUT_ACT_WORD, type OutAct, type OutShow, type OutTone } from '../model/outgoingStates'
-import { sayIn } from '../model/voiceStates'
 import { Icon, Spinner, StateIcon } from './Icon'
 import { PLACE_BUTTON, PlaceVoice } from './PlaceVoice'
 import { TYPE_TEXT } from './tones'
@@ -73,12 +73,17 @@ function ItemLink({ it, narrow, on }: { it: ItemRef; narrow: boolean; on: Pick<I
 const say = (s: string) => s[0].toUpperCase() + s.slice(1)
 const Dot = () => <span>·</span>
 
-/** What became of it, the same words in every list: the items with what was done to each (said once over the items
- * it was done to) and the organizer's note; or where it stands, in its tint (blue while Taska is on it, red when it
- * failed, green when an agent handled it), with what can be done now. */
-export function BecameLine({ b, id, on }: { b: Became; id: string; on: Pick<InputRowEvents, 'goto' | 'retry' | 'send' | 'moved'> }) {
+/** Each state's tint (model/inputStates): blue while Taska is on it, red when it failed, green when it was handled,
+ * grey where it rests or what it went to. */
+const TINT: Record<InputTone, string> = { busy: BUSY, failed: `${FAILED} flex-wrap`, done: DONE, quiet: `${QUIET} gap-1.5`, plain: `${GREY} text-zinc-500 dark:text-zinc-400` }
+const ACT: Partial<Record<InputTone, string>> = { failed: 'font-semibold underline hover:text-red-900 dark:hover:text-red-200' }
+
+/** What became of it, the same words in every list (model/inputStates): the items with what was done to each (said
+ * once over the items it was done to) and the organizer's note; or where it stands, in its tint, with what can be done
+ * there now. */
+export function BecameLine({ b, id, place, on }: { b: Became; id: string; place: 'row' | 'inputs'; on: Pick<InputRowEvents, 'goto' | 'retry' | 'send' | 'moved'> }) {
   if (b.k === 'filed' || b.k === 'answer') {
-    const rows = b.k === 'filed' ? b.items : [{ did: W.answer, item: b.item }]
+    const rows = b.k === 'filed' ? b.items : [{ did: INPUT_STATES.answer.say, item: b.item }]
     const note = b.k === 'filed' ? b.note : null
     if (rows.length === 1 && !note)
       return (
@@ -108,86 +113,37 @@ export function BecameLine({ b, id, on }: { b: Became; id: string; on: Pick<Inpu
       </div>
     )
   }
-  switch (b.k) {
-    case 'transcribing':
-    case 'organizing':
-      return (
-        <div className={`${SHELF} ${BUSY}`}>
-          <Spinner c="size-3 text-blue-600 dark:text-blue-400" />
-          <span>{b.k === 'transcribing' ? sayIn(b.state, 'row')?.say : W.organizing}</span>
-        </div>
-      )
-    case 'failed':
-      return (
-        <div className={`${SHELF} ${FAILED} flex-wrap`}>
-          <span>
-            {W.failed} · {b.why}
-          </span>
-          {b.retry ? (
-            <>
-              <Dot />
-              <button onClick={() => on.retry(id)} className="font-semibold underline hover:text-red-900 dark:hover:text-red-200">
-                {W.tryAgain}
-              </button>
-            </>
-          ) : null}
-        </div>
-      )
-    case 'undone':
-      return (
-        <div className={`${SHELF} ${QUIET}`}>
-          <span>{W.undone}</span>
-          {b.retry ? (
-            <>
-              <Dot />
-              <button onClick={() => on.retry(id)} className={LINK}>
-                {W.organizeAgain}
-              </button>
-            </>
-          ) : null}
-        </div>
-      )
-    case 'cancelled':
-      return (
-        <div className={`${SHELF} ${QUIET}`}>
-          <span>{W.cancelled}</span>
+  const tone = INPUT_STATES[b.k].tone
+  const act = (a: InputAct) =>
+    a === 'open' && b.k === 'moved' ? (
+      <a
+        href={b.href}
+        onClick={(e) => {
+          if (e.metaKey || e.ctrlKey) return
+          e.preventDefault()
+          on.moved(b.href)
+        }}
+        className={`${LINK} font-medium`}
+      >
+        {b.as || INPUT_ACT_WORD.open}
+      </a>
+    ) : (
+      <button onClick={() => (a === 'send' ? on.send(id) : on.retry(id))} className={ACT[tone] ?? `${LINK} ${a === 'send' ? 'font-semibold' : ''}`}>
+        {INPUT_ACT_WORD[a]}
+      </button>
+    )
+  return (
+    <div className={`${SHELF} ${TINT[tone]}`}>
+      {tone === 'busy' ? <Spinner c="size-3 text-blue-600 dark:text-blue-400" /> : tone === 'done' ? <Icon n="bolt" c="size-3.5 text-emerald-600 dark:text-emerald-400" sw="2" /> : null}
+      <span>{becameText(b, place)}</span>
+      {actsIn(b, place, { others: false }).map((a) => (
+        <Fragment key={a}>
           <Dot />
-          <button onClick={() => on.send(id)} className={`${LINK} font-semibold`}>
-            {W.send}
-          </button>
-        </div>
-      )
-    case 'note':
-      return <div className={`${SHELF} ${QUIET}`}>{say(b.text)}</div>
-    case 'agent':
-    case 'waiting':
-      return <div className={`${SHELF} ${QUIET} gap-1.5`}>{W[b.k]}</div>
-    case 'handled':
-      return (
-        <div className={`${SHELF} ${DONE}`}>
-          <Icon n="bolt" c="size-3.5 text-emerald-600 dark:text-emerald-400" sw="2" />
-          <span>{W.handled}</span>
-        </div>
-      )
-    default:
-      return (
-        <div className={`${SHELF} ${GREY} text-zinc-500 dark:text-zinc-400`}>
-          <span>{W.moved(b.to)}</span>
-          <Dot />
-          <a
-            href={b.href}
-            onClick={(e) => {
-              if (e.metaKey || e.ctrlKey) return
-              e.preventDefault()
-              on.moved(b.href)
-            }}
-            className={`${LINK} font-medium`}
-          >
-            {W.open(b.as)}
-          </a>
-        </div>
-      )
-  }
+          {act(a)}
+        </Fragment>
+      ))}
+    </div>
+  )
 }
 
 /** Its words: a long one shows four lines with More; opened, all of it, with Less. `text(cut)`: its words drawn,
@@ -233,8 +189,10 @@ function RowButtons({ x, rec, on }: { x: InputLine; rec: ReactNode | null; on: I
   )
 }
 
-export function InputRow({ x, text, files, lit = false, rec = null, rowRef, swipe = null, on }: {
+export function InputRow({ x, text, files, place = 'row', lit = false, rec = null, rowRef, swipe = null, on }: {
   x: InputLine
+  /** the list it is in: the desktop's New input list, or the Inputs page (model/inputStates says what each shows) */
+  place?: 'row' | 'inputs'
   text(cut: boolean): ReactNode
   /** its voice notes, pictures and files */
   files: ReactNode
@@ -275,7 +233,7 @@ export function InputRow({ x, text, files, lit = false, rec = null, rowRef, swip
       {r.text ? <Words x={x} text={text} on={on} /> : null}
       {files ? <div className={`flex flex-wrap items-center gap-2 ${!r.text ? 'my-1.5' : voiceOnly ? 'mt-2' : 'mt-2.5'}`}>{files}</div> : null}
       <footer className="mt-2.5">
-        <BecameLine b={x.became} id={r.id} on={on} />
+        <BecameLine b={x.became} id={r.id} place={place} on={on} />
       </footer>
     </article>
   )

@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 
 from ..domain import events as ev
+from ..domain.input_states import reached
 from ..domain.model import FileRef, Input, Voice
 from ..domain.vocab import VOICE_HOLD
 from ..domain.voice_states import DONE, FAILED, NONE, STATES, WAIT, answer_state
@@ -204,9 +205,10 @@ class VoiceJobs:
         return next((i for i in self._p.state.inputs.values() if not i.moved and any(f.f == fid for f in i.files)), None)
 
     def _late(self, fid: str) -> bool:
-        """An agent or the organizer had an input with this note before its words: it gets the input again."""
+        """An agent or the organizer had an input with this note before its words (input_states.reached): it gets the
+        input again."""
         busy = self._p.organizing.busy
-        return any(i.acked or i.org or i.id in busy for i in self._p.state.inputs.values()
+        return any(reached(i, busy) for i in self._p.state.inputs.values()
                    if not i.moved and any(f.f == fid for f in i.files))
 
     def split_once(self) -> Optional[SplitReport]:

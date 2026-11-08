@@ -55,8 +55,10 @@ flowchart TD
 
 Where they are kept: rules 3 to 5 in `echo` (`server/taska/services/organizer.py`, tested in
 `tests/test_organizer_echo.py`), the rest of the organizer's side in its instructions
-(`server/taska/agent_text/organizer_text.py`); rule 1 in `web/src/model/became.ts` (`becameOf`), rule 6 in the same
-file (`madeFrom`) and `web/src/features/item/Talk.tsx`.
+(`server/taska/agent_text/organizer_text.py`); rule 1 in `web/src/model/became.ts` (`becameOf`) and
+`web/src/model/inputStates.ts` (below), rule 6 in `web/src/model/became.ts` (`madeFrom`) and
+`web/src/features/item/Talk.tsx`; rule 13 in `server/taska/domain/input_states.py` (`transient`) and
+`web/src/model/outgoingStates.ts`.
 
 ## Where each case shows
 
@@ -129,6 +131,98 @@ box to change it.
 | Not sent (`notSent`) | Not sent (failed) · Retry Edit × | Not sent (failed) · Retry Edit × | Not sent (failed) · Retry Edit × | Not sent (failed) · Retry Edit × | Not sent (failed) |
 | Sent before a reload, its files going up (`reloaded`) | — | — | — | — | — |
 | Taken back while going out (`takenBack`) | — | — | — | — | — |
+
+## What became of it
+
+Once Taska has an input, what became of it is one of the states below. Every state, every way between them (the event
+that causes it) and what each place shows in each state, its words, their colour and what can be done there, are
+defined once, in `web/src/model/inputStates.ts` (T728 #1); the state with what it names (the items, why it failed,
+where it went) is worked out in one place, `becameOf` (`web/src/model/became.ts`), and every place reads both. The
+diagram and the table are made from that file, and `web/src/model/inputStates.test.ts` fails when they differ from
+it. Each state names the voice state a voice message is in then ([voice.md](voice.md)).
+
+Taska's side of the same way is `server/taska/domain/input_states.py`: queued, organizing, failed, again (a failure the
+service only was busy for: asked again by itself), undone, left, agents, handled, cancelled, moved, deleted, with the
+steps between them; the organizer takes what it says is queued, an agent's inbox holds what it says is theirs, and
+Undo of a filing goes through only when the organizer filed it and that filing is there to take back. Whether a
+failure goes away by itself is one rule there (`transient`), told to the page as `org.again`: such an input is
+Organizing, never Retry (rule 13).
+
+<!-- made from inputStates.ts: inputDiagram() -->
+```mermaid
+flowchart TD
+    start(("sent"))
+    transcribing["Its words to come"]
+    organizing["Organizing"]
+    filed["Made or changed items"]
+    answer["An answer on its item"]
+    agent["For an agent"]
+    note["Nothing filed, the organizer said why"]
+    handled["Handled"]
+    failed["Couldn't organize"]
+    undone["Its filing undone"]
+    cancelled["Recording kept as cancelled"]
+    moved["Moved to another project"]
+    start -->|"Taska has it"| transcribing
+    start -->|"Taska has it"| organizing
+    start -->|"Taska has it"| agent
+    start -->|"Esc (New input: kept)"| cancelled
+    cancelled -->|"Send"| transcribing
+    cancelled -->|"Send"| organizing
+    cancelled -->|"Send"| agent
+    transcribing -->|"Its words in"| organizing
+    transcribing -->|"Its words in"| agent
+    organizing -->|"Made or changed items"| filed
+    organizing -->|"Filed as an answer"| answer
+    organizing -->|"Nothing to file, said why"| note
+    organizing -->|"Nothing to do"| handled
+    organizing -->|"Left for an agent"| agent
+    organizing -->|"Service busy: asked again by itself"| organizing
+    organizing -->|"Organizer failed"| failed
+    failed -->|"Retry · Edited after sending"| organizing
+    failed -->|"Retry · Edited after sending"| agent
+    undone -->|"Organize · Edited after sending"| organizing
+    undone -->|"Organize · Edited after sending"| agent
+    filed -->|"Undo"| undone
+    answer -->|"Undo"| undone
+    agent -->|"An agent did it"| filed
+    agent -->|"An agent did it"| handled
+    filed -->|"Edited after sending"| organizing
+    filed -->|"Edited after sending"| agent
+    answer -->|"Edited after sending"| organizing
+    answer -->|"Edited after sending"| agent
+    agent -->|"Edited after sending"| organizing
+    agent -->|"Edited after sending"| agent
+    note -->|"Edited after sending"| organizing
+    note -->|"Edited after sending"| agent
+    handled -->|"Edited after sending"| organizing
+    handled -->|"Edited after sending"| agent
+    filed -->|"More voice said into it"| transcribing
+    answer -->|"More voice said into it"| transcribing
+    agent -->|"More voice said into it"| transcribing
+    note -->|"More voice said into it"| transcribing
+    handled -->|"More voice said into it"| transcribing
+    any(("any state")) -->|"Moved to another project"| moved
+```
+
+The tone in brackets is the colour: busy blue and moving, failed red, done green, quiet grey, plain the items it went
+to as links. Retry and Organize show only while the organizer is on to take it; Undo only where Taska would take back
+what the organizer filed (`filing.can`); Move only when there is another project; Open goes to what it went to.
+
+<!-- made from inputStates.ts: inputPlacesTable() -->
+| State | its row in the desktop's New input list | its row on the Inputs page | the line over the phone's box (New input) | under your message in the item's talk | its menu (⋯, a long press) and Move |
+|---|---|---|---|---|---|
+| Its words to come (`transcribing`) | as model/voiceStates says it (busy) | as model/voiceStates says it (busy) | as model/voiceStates says it (busy) | as model/voiceStates says it (busy) | (nothing to do) |
+| Organizing (`organizing`) | Organizing… (busy) | Organizing… (busy) | Organizing… (busy) | — | (nothing to do) |
+| Made or changed items (`filed`) | its items: Created B014 · Added to F012 (plain) | its items: Created B014 · Added to F012 (plain) | its items: Created B014 · Added to F012 (plain) · Open, Undo, Move to… | → Created B713 (the items it made there) (plain) | Undo, Move to… |
+| An answer on its item (`answer`) | Answer to T007 (plain) | Answer to T007 (plain) | Answer to T007 (plain) · Open, Undo, Move to… | — | Undo, Move to… |
+| For an agent (`agent`) | For an agent (quiet) | For an agent (quiet) | For an agent (quiet) · Move to… | — | Move to… |
+| Nothing filed, the organizer said why (`note`) | the organizer's words (quiet) | the organizer's words (quiet) | the organizer's words (quiet) · Move to… | — | Move to… |
+| Handled (`handled`) | Handled (done) | Handled (done) | Handled (done) · Move to… | — | Move to… |
+| Couldn't organize (`failed`) | Couldn't organize · why (failed) · Retry | Couldn't organize · why (failed) · Retry | Couldn't organize · why (failed) · Retry | — | Move to… |
+| Its filing undone (`undone`) | Undone (quiet) · Organize | Undone (quiet) · Organize | Undone (quiet) · Organize | — | Move to… |
+| Recording kept as cancelled (`cancelled`) | Cancelled (quiet) · Send | Cancelled (quiet) · Send | — | — | Send, Move to… |
+| Moved to another project (`moved`) | Moved to Shop (plain) · Open | Moved to Shop (plain) · Open | Moved to Shop (plain) · Open | Moved to Shop (plain) · Open | — |
 
 ## Never
 
