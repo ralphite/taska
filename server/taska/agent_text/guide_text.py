@@ -27,6 +27,10 @@ GRAMMAR = (
     '                            "- [ ] option" lines = pick any. The reply lists the picks as "✓ option".\n'
     '  B03 doc [title]           new document on B03 (plans, designs); its Markdown is the indented lines, first line = title\n'
     "  D1 doc [new title]        replace D1's Markdown with the indented lines; comments stay with unchanged paragraphs\n"
+    '                            a ```mermaid block is drawn as a diagram. Keep it small and plain: flowchart or\n'
+    '                            sequenceDiagram only; every node label in double quotes (A["Save (draft)"] --> B["Done"]);\n'
+    '                            no HTML but <br/>; no special characters outside quotes. One that does not draw comes\n'
+    "                            back to you on the doc's item with Mermaid's reason: fix it\n"
     '  B03 html [title]          new web page document on B03: the indented lines are HTML (scripts allowed), shown as a page\n'
     '  D1 html [new title]       replace D1 with the indented HTML\n'
     '  D1 reply ¶3 <text>        answer the comments on paragraph 3 of D1 (¶3.2: its second thread, as /D1 names it)\n'
