@@ -234,6 +234,46 @@ test('B643 B715 r1169: on the phone a document opens with no box, and nothing at
   await expect(page.getByText('Tap, select or circle to comment')).toHaveCount(0)
 })
 
+test('B715 r1169: a block picked, its comment buttons float over the page: no words below it move, on the phone and the desktop', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc The plan
+  First part of the plan.
+
+  Second part of the plan.
+
+  Third part of the plan.
+`,
+  })
+  await open(page, p, 'D1')
+  const below = async () => Promise.all(['Second part', 'Third part'].map(async (w) => (await docBlock(page, w).boundingBox())?.y))
+  await expect(docBlock(page, 'Third part')).toBeVisible()
+  const before = await below()
+  const first = docBlock(page, 'First part')
+  // its own buttons (the desktop's bar has a Comment too)
+  const pick = first.getByRole('button', { name: 'Comment', exact: true })
+  const say = first.getByRole('button', { name: 'Voice comment', exact: true })
+  if (isDesk(page)) {
+    // pointed at, then its Comment pressed (picked)
+    await first.locator('[data-block]').hover()
+    await expect(pick).toBeVisible()
+    expect(await below()).toEqual(before)
+    await pick.click()
+  } else await first.locator('[data-block]').click({ position: { x: 10, y: 5 } })
+  await expect(say).toBeVisible()
+  expect(await below()).toEqual(before)
+  // speaking: the strip in their place, still over the page
+  await say.click()
+  await expect(placeRec(page)).toHaveCount(1)
+  expect(await below()).toEqual(before)
+  await sayCancel(page).click()
+  await expect(placeRec(page)).toHaveCount(0)
+  expect(await below()).toEqual(before)
+})
+
 test("r292 r298: any comment on a document can be deleted, yours and an agent's", async ({ page, request }) => {
   const p = await project(request, {
     ...LOOP,
