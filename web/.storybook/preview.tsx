@@ -113,7 +113,7 @@ const preview: Preview = {
             [
               'Writing', ['Words in it', 'Pointer on its buttons'],
               'What it writes to', ['A new input', 'A reply to an item', 'A comment on a document', 'Changing what you said'],
-              'Voice', ['Recording', 'Writing it out', 'Maybe misheard', 'Cut short or nothing heard'],
+              'Voice', ['Whole workflow', 'Recording', 'Writing it out', 'Maybe misheard', 'Cut short or nothing heard'],
               'Line after sending', ['On its way', 'Being handled', 'What it became', 'Move and filing undone'],
               'Commenting on a document', ['Picking what to comment on', 'Speaking a comment', 'Replies and choices', 'Sent and not sent'],
               'Pictures and files',

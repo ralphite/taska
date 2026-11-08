@@ -16,7 +16,7 @@ import { inputWords } from '../ui/Markdown'
 import type { ProjectModel } from '../model/project'
 import { acts } from './acts'
 import { useMedia, usePop } from './liveParts'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { inputMenuSheet } from '../features/inputs/InputSheets'
 import { inputDeleteAsk, inputMenuFacts } from '../features/inputs/inputSheetFacts'
 
@@ -99,6 +99,8 @@ export interface Said {
   adding?: { id: string; clock: string }
   /** stopped there: on its way to these inputs */
   addingUp?: string[]
+  /** what is in the New input page's box, as its Draft card over the list */
+  draft?: ReactNode
 }
 
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
@@ -239,6 +241,7 @@ function LiveSaid({ s }: { s: Said }) {
       <SaidLately
         words={live.words}
         rows={said.rows}
+        draft={s.draft}
         outgoing={saidOutgoing(live.going(s.outbox), s.away ?? 0)}
         lit={s.lit}
         more={said.all.length > said.rows.length}
