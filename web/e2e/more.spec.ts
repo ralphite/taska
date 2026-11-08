@@ -79,6 +79,27 @@ test('D115 #42: on the phone an input swiped left shows Move and Delete; Delete 
   await expect.poll(async () => p.read('inbox')).not.toContain('Another thought to throw away')
 })
 
+test('T589 #10486: on the phone a row swiped open closes as its Won’t do acts, and is closed when Undo puts it back', async ({ page, request }) => {
+  test.skip(isDesk(page), "the phone's rows swipe")
+  const p = await project(request, { agent: 'new task P1 now Tidy the readme\nnew task P1 now Rename the export\n', approve: ['T1', 'T2'] })
+  await open(page, p)
+  const r = page.locator('[data-swipe]').filter({ hasText: 'Tidy the readme' }).first()
+  const under = r.locator('xpath=..').locator('[data-swipe-right]')
+  // closed: drawn where it is, nothing of what lies under it showing
+  const closed = async () => {
+    await expect.poll(async () => r.evaluate((el) => el.style.transform)).toBe('')
+    await expect(under).toBeHidden()
+  }
+  await touchRow(page, r, -160)
+  await page.waitForTimeout(450) // a tap right after a swipe is not a tap
+  await under.getByRole('button', { name: "Won't do" }).click()
+  await expect.poll(async () => (await p.read('T1')).split('\n')[0]).toContain('dropped')
+  await closed()
+  await page.getByRole('button', { name: 'Undo', exact: true }).filter({ visible: true }).first().click()
+  await expect.poll(async () => (await p.read('T1')).split('\n')[0]).not.toContain('dropped')
+  await closed()
+})
+
 test('the desktop: picked rows change together', async ({ page, request }) => {
   test.skip(!isDesk(page), 'desktop only')
   const p = await project(request, LOOP)
