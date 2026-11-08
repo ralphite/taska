@@ -1,10 +1,11 @@
-// T711 (r1185): how the page shows the agent sessions connected to a project, now that Taska knows each by its own id
-// (its name, whether it works, idles or waits on you and on what, its item). A proposal, to decide on before anything
-// is built: the three directions Gemini proposed, each in every place agents show (the pill in the project's bar, the
-// rows in progress, the Agents sheet, the item page, the sidebar card), on the phone and the desktop, all at work and
-// with one session blocked. The sessions: two Claude Code ("Export keeps the filter" on F012, "Fix phone search" on
-// B031) and one Codex ("Rules versions", idle). The page's own parts draw everything but the direction's piece;
-// nothing here changes Taska itself.
+// T711 (r1186): how the page shows the project's agent session, redone after r1185's three were turned down ("the
+// less text the better"; one active session per project, the old ones are not worth showing). A proposal, to decide
+// on before anything is built: Gemini's two directions, each in every place (the pill in the project's bar, the rows,
+// Who works here, the item page, the sidebar card), on the phone and the desktop, with the active session at work and
+// waiting on Yadong. No state words: the dot says it (emerald pulsing at work, amber waiting), the tip says the rest.
+// Rows stay as today (the agent's badge on the row in progress, nothing more). Who works here: the active session,
+// what it waits on while it waits, then "2 earlier" folded. The item page: nothing, or one amber line while the
+// session waits. The page's own parts draw everything but the direction's piece; nothing here changes Taska itself.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { States } from './Frames'
 import type { Way } from './t711/Directions'
@@ -19,32 +20,21 @@ const story = (way: Way, c: Case, name: string): Story => ({
   render: () => (
     <States
       items={[
-        ['the list: the pill in the head, the marks on the rows in progress', listScreen(way, c)],
-        ['the Agents sheet the pill opens', sheetScreen(way, c)],
-        ['the item page (F012)', itemScreen(way, c)],
+        ['the list: the pill in the head; the rows as today', listScreen(way, c)],
+        ['Who works here (the pill opens it)', sheetScreen(way, c)],
+        ['the item page (F012)', itemScreen(c)],
         ['the sidebar card', cardScreen(way, c)],
       ]}
     />
   ),
 })
 
-/** a. Calm context. Pill: "3 sessions"; blocked, the session's own name ("Export keeps the filter · blocked"). Rows:
- * the badge and the session's name; blocked, an amber "Blocked" instead. Sheet: one flat row per session (name; what it
- * does and since when; its item), the blocked one tinted. Item page: a quiet line, an amber box while blocked. Card: the
- * pill's words. */
-export const CalmNormal = story('a', 'normal', 'a. Calm context · all at work')
-export const CalmBlocked = story('a', 'blocked', 'a. Calm context · one blocked')
+/** a. Name. Pill: the badge, the session's name cut short, the dot. Who works here: the badge and the name, the dot at
+ * the end; "2 earlier ›" folded. Card: the pill's mark, smaller. */
+export const NameWorking = story('a', 'working', 'a. Name · at work')
+export const NameWaiting = story('a', 'waiting', 'a. Name · waiting on you')
 
-/** b. Session threads. Pill: counts ("3 sessions", "1 blocked"). Rows: the badge and the session's name at the row's
- * end, amber with a dot while blocked. Sheet: a card per session, its time at the right ("Working on B031", "Idle,
- * listening"; blocked: what it waits on and its item's code). Item page: a box with the session and what it does. Card:
- * "1 blocked · 3 in queue". */
-export const ThreadsNormal = story('b', 'normal', 'b. Session threads · all at work')
-export const ThreadsBlocked = story('b', 'blocked', 'b. Session threads · one blocked')
-
-/** c. Session stacks. Pill: every session's badge stacked, then "working" or "1 blocked". Rows: a chip with the badge and
- * the session's name, amber with a dot while blocked. Sheet: a card per session (its time; what it does, a dot when it
- * waits on you; its item as a link). Item page: a box with the session, its time and what it does. Card: the stacked
- * badges and "1 blocked". */
-export const StacksNormal = story('c', 'normal', 'c. Session stacks · all at work')
-export const StacksBlocked = story('c', 'blocked', 'c. Session stacks · one blocked')
+/** b. Badge. Pill: the badge alone, the dot on its corner. Who works here: the badge with its dot and the name;
+ * "› 2 earlier" folded. Card: the badge with its dot. */
+export const BadgeWorking = story('b', 'working', 'b. Badge · at work')
+export const BadgeWaiting = story('b', 'waiting', 'b. Badge · waiting on you')

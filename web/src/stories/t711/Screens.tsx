@@ -1,8 +1,7 @@
-// T711 prototype: each place agents show, drawn by the page's own parts with a direction's piece put where it goes
-// (Swap): the list (the pill in the head, the marks on the rows in progress), the Agents sheet, the item page, the
+// T711 prototype (r1186): each place the project's agent shows, drawn by the page's own parts with a direction's piece
+// put where it goes (Swap): the list with its head (the pill; the rows as today), Who works here, the item page, the
 // sidebar card. Only for the stories.
 
-import type { ReactNode } from 'react'
 import { ProjectCard } from '../../features/sidebar/ProjectCard'
 import type { Item } from '../../model/types'
 import { PROJECT_TONES } from '../../ui/tones'
@@ -13,14 +12,13 @@ import { pageOf } from '../itemPage'
 import { listOf } from '../listFixtures'
 import { act } from '../acts'
 import { Sheet, SheetLayout } from '../../ui/Sheet'
-import { CardAgent, ItemAgent, Pill, RowMark, SheetBody, type Way } from './Directions'
-import { B031, F012, NOW, SESSIONS, type Case } from './sessions'
+import { CardMark, ItemWait, Pill, SheetBody, type Way } from './Directions'
+import { ACTIVE, F012, NOW, OLD, type Case } from './sessions'
 import { Swap } from './Swap'
 
 const at = (min: number) => new Date(NOW - min * 60e3).toISOString()
-const QUEUE = 3
 
-/** The project's items: two in progress (one per Claude Code session), three waiting for an agent, one proposed. */
+/** The project's items: F012 in progress (the active session's), three waiting for an agent, one proposed. */
 const ITEMS: Item[] = [
   item({
     ...F012,
@@ -33,35 +31,17 @@ const ITEMS: Item[] = [
       message({ id: 2, text: 'Testing with three filters', t: at(12) }),
     ],
   }),
-  item({
-    ...B031,
-    type: 'bug',
-    status: 'doing',
-    agent: { by: 'claude-code', t: T, ses: 'Fix phone search' },
-    thread: [message({ id: 3, text: 'Found it: words split on spaces only', t: at(1) })],
-  }),
   item({ n: 5, pri: 'P1', title: 'Search finds words in the talk' }),
   item({ n: 6, title: 'Excel export as well' }),
   item({ n: 33, type: 'task', title: 'Rules: show each version’s date', code: 'T033' }),
   item({ n: 3, status: 'proposed', by: 'claude-code', title: 'Keep the filter in the export file name' }),
 ]
 
-const mark = (n: number) => `article[data-n="${n}"] [aria-label$="is on it"]`
-
-/** The list with its head: the pill in the head, each row in progress with its session's mark. */
+/** The list with its head: the direction's pill in the head; the rows exactly as the page draws them. */
 function List({ way, c, desk }: { way: Way; c: Case; desk: boolean }) {
-  const s = SESSIONS[c]
-  const [exp, search] = s
-  const list = listOf(ITEMS, 'items', {}, desk)
-  const rows = (
-    <Swap2 sel={mark(F012.n)} part={<RowMark way={way} x={exp} />}>
-      <Swap2 sel={mark(B031.n)} part={<RowMark way={way} x={search} />}>
-        {list}
-      </Swap2>
-    </Swap2>
-  )
+  const rows = listOf(ITEMS, 'items', {}, desk)
   return (
-    <Swap sel='button[aria-label="Agents"]' how="inside" part={<Pill way={way} s={s} />}>
+    <Swap sel='button[aria-label="Agents"]' how="inside" part={<Pill way={way} x={ACTIVE[c]} />}>
       <div className="flex h-full flex-col">
         {headOf(desk)}
         {desk ? <div className="h-full w-[420px] border-r border-zinc-200 dark:border-zinc-800">{rows}</div> : rows}
@@ -70,12 +50,6 @@ function List({ way, c, desk }: { way: Way; c: Case; desk: boolean }) {
   )
 }
 
-const Swap2 = ({ sel, part, children }: { sel: string; part: ReactNode; children: ReactNode }) => (
-  <Swap sel={sel} how="replace" part={part}>
-    {children}
-  </Swap>
-)
-
 export const listScreen = (way: Way, c: Case) => (
   <Frames phoneWidth={393} deskWidth={1000} height={420}>
     {(layout) => <List way={way} c={c} desk={layout === 'desk'} />}
@@ -83,22 +57,28 @@ export const listScreen = (way: Way, c: Case) => (
 )
 
 export const sheetScreen = (way: Way, c: Case) => (
-  <Frames height={640} deskWidth={900}>
+  <Frames height={520} deskWidth={900}>
     {(layout) => (
       <Sheet open look={{ tall: true, wide: true }} desk={layout === 'desk'} onClose={act('Sheet: close')}>
-        <SheetLayout title="Agents" body={<SheetBody way={way} s={SESSIONS[c]} queue={QUEUE} />} />
+        <SheetLayout title="Agents" body={<SheetBody way={way} x={ACTIVE[c]} old={OLD} />} />
       </Sheet>
     )}
   </Frames>
 )
 
-export const itemScreen = (way: Way, c: Case) => (
-  <Frames phoneWidth={393} deskWidth={900} height={560}>
-    {(layout) => (
-      <Swap sel='[data-part="item-times"]' how="after" part={<ItemAgent way={way} x={SESSIONS[c][0]} />}>
-        {pageOf(ITEMS[0], layout === 'desk', { env: { now: NOW } })}
-      </Swap>
-    )}
+/** The item page: as today, and the one amber line while the active session waits on something about it. */
+export const itemScreen = (c: Case) => (
+  <Frames phoneWidth={393} deskWidth={900} height={420}>
+    {(layout) => {
+      const page = pageOf(ITEMS[0], layout === 'desk', { env: { now: NOW } })
+      return ACTIVE[c].waitingFor ? (
+        <Swap sel='[data-part="item-times"]' how="after" part={<ItemWait x={ACTIVE[c]} />}>
+          {page}
+        </Swap>
+      ) : (
+        page
+      )
+    }}
   </Frames>
 )
 
@@ -108,7 +88,7 @@ export const cardScreen = (way: Way, c: Case) => (
   <div className="bg-zinc-200 p-6 dark:bg-zinc-800">
     <Frame layout="desk" width={380} height={170} label="desktop only">
       <div className="p-6">
-        <Swap sel="[data-card-agent]" how="replace" part={<CardAgent way={way} s={SESSIONS[c]} queue={QUEUE} />}>
+        <Swap sel="[data-card-agent]" how="replace" part={<CardMark way={way} x={ACTIVE[c]} />}>
           <ProjectCard title="Shop" tone={PROJECT_TONES[4]} card={CARD} />
         </Swap>
       </div>

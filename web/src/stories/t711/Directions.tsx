@@ -1,29 +1,26 @@
-// T711 prototype (r1185): how the page could show the agent sessions connected to a project, in the three directions
-// Gemini proposed (brief in the scratchpad, gemini-3.1-pro-preview). Each direction says what every place shows: the
-// pill in the project's bar, the Agents sheet's top, the mark on an item row in progress, the sidebar card's agent
-// part, and a line on the item page. Only for the stories; the page itself is unchanged.
-//   a. Calm context: the pill names the blocked session; rows name their session, a blocked one says Blocked
-//   b. Session threads: the pill counts ("3 sessions", "1 blocked"); the sheet's sessions are cards
-//   c. Session stacks: the pill stacks the sessions' badges; rows carry a chip with the session's name
+// T711 prototype (r1186): the project's one active session, almost without words, in the two directions Gemini drew
+// (briefs in the scratchpad, gemini-3.1-pro-preview). State is the dot alone: emerald and softly pulsing while the
+// session works, amber while it waits on Yadong; the rest is in the tip. Rows are as today. Only for the stories.
+//   a. Name: the pill is the badge, the session's name cut short, the dot
+//   b. Badge: the pill is the badge alone, the dot on its corner
 
-import type { ReactNode } from 'react'
-import { AgentPill } from '../../pages/Header'
 import { Avatar } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { MUTED } from '../../ui/tones'
 import { AVATAR_LETTER, whoName } from '../../model/words'
-import { ordered, type Session } from './sessions'
+import type { Session } from './sessions'
 
-export type Way = 'a' | 'b' | 'c'
+export type Way = 'a' | 'b'
 
 const AMBER = 'text-amber-700 dark:text-amber-400'
-const AMBER_BOX = 'bg-amber-50 ring-1 ring-amber-600/20 ring-inset dark:bg-amber-400/10 dark:ring-amber-400/25'
-const DOT_AMBER = 'size-1.5 shrink-0 rounded-full bg-amber-500 dark:bg-amber-400'
-const DOT_GREEN = 'size-1.5 shrink-0 rounded-full bg-emerald-500 dark:bg-emerald-400'
 
-const blockedOf = (s: readonly Session[]) => s.filter((x) => x.state === 'blocked')
+/** The dot: emerald, pulsing, while it works; amber while it waits on Yadong. */
+const dot = (x: Session) => (x.waitingFor ? 'bg-amber-500 dark:bg-amber-400' : 'animate-pulse bg-emerald-500 dark:bg-emerald-400')
 
-/** The agent's letter badge, smaller than Avatar where the line is small (the card, the stacked pill). */
+/** What the tip says (never on the screen). */
+export const tipOf = (x: Session) => [whoName(x.agent), x.name, x.waitingFor, x.waitingFor ? x.when : null].filter(Boolean).join(' · ')
+
+/** The agent's letter badge, smaller than Avatar where the line is small. */
 function Badge({ by }: { by: string }) {
   return (
     <span className="grid size-4 shrink-0 place-items-center rounded bg-zinc-900 text-[9px] font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
@@ -32,128 +29,90 @@ function Badge({ by }: { by: string }) {
   )
 }
 
-/** Each session's badge, side by side (c). */
-function Stack({ s }: { s: readonly Session[] }) {
+/** b: the badge with the dot on its corner. */
+function Dotted({ x, big = false }: { x: Session; big?: boolean }) {
   return (
-    <span className="flex shrink-0 gap-0.5">
-      {s.map((x) => (
-        <Badge key={x.name} by={x.agent} />
-      ))}
-    </span>
-  )
-}
-
-// ---- the pill in the project's bar ------------------------------------------------------------------------------
-
-export function Pill({ way, s }: { way: Way; s: readonly Session[] }) {
-  const b = blockedOf(s)
-  if (way === 'a')
-    return b.length ? (
-      // the session's name gives way, "blocked" stays
-      <span className="flex h-8 max-w-52 items-center gap-2 rounded-full bg-amber-50 px-3 text-[13px] font-medium text-amber-800 ring-1 ring-amber-600/20 ring-inset dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/25">
-        <span className="size-2 shrink-0 rounded-full bg-amber-500 dark:bg-amber-400" />
-        <span className="min-w-0 truncate">{b[0].name}</span>
-        <span className="shrink-0">· blocked</span>
-      </span>
-    ) : (
-      <AgentPill tone="recent" label={`${s.length} sessions`} offline={false} />
-    )
-  if (way === 'b') return <AgentPill tone={b.length ? 'blocked' : 'recent'} label={b.length ? `${b.length} blocked` : `${s.length} sessions`} offline={false} />
-  return (
-    <span
-      className={`flex h-8 items-center gap-2 rounded-full pr-3 pl-1.5 text-[13px] font-medium ring-1 ring-inset ${
-        b.length
-          ? 'bg-amber-50 text-amber-800 ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/25'
-          : 'bg-zinc-100 text-zinc-700 ring-zinc-900/5 dark:bg-zinc-800/80 dark:text-zinc-300 dark:ring-white/5'
-      }`}
-    >
-      <Stack s={s} />
-      {b.length ? `${b.length} blocked` : 'working'}
-    </span>
-  )
-}
-
-// ---- the Agents sheet's top ---------------------------------------------------------------------------------------
-
-/** What the session does, in a few words: the directions word it differently. */
-const stateWords = (way: Way, x: Session): ReactNode => {
-  if (x.state === 'blocked') return way === 'c' ? x.waitingFor : `Blocked: ${x.waitingFor}`
-  if (x.state === 'working')
-    return way === 'b' ? (
-      <>
-        Working on <span className="font-semibold text-zinc-800 dark:text-zinc-200">{x.item?.code}</span>
-      </>
-    ) : way === 'c' ? (
-      'working'
-    ) : (
-      'Working'
-    )
-  return way === 'b' ? 'Idle, listening' : way === 'c' ? 'idle, waiting for work' : 'Idle, waiting for work'
-}
-
-/** a: one flat row per session; the blocked one tinted. */
-function RowA({ x }: { x: Session }) {
-  const blocked = x.state === 'blocked'
-  return (
-    <li className={`flex gap-3 rounded-xl px-3 py-3 ${blocked ? AMBER_BOX : ''}`}>
-      <span className="mt-0.5">
+    <span className="relative flex shrink-0">
+      {big ? (
+        <span className="grid size-6 place-items-center rounded-md bg-zinc-900 text-xs font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">{AVATAR_LETTER[x.agent]}</span>
+      ) : (
         <Avatar by={x.agent} />
+      )}
+      <span className={`absolute -top-1 -right-1 size-2.5 rounded-full ring-2 ring-white dark:ring-zinc-950 ${dot(x)}`} />
+    </span>
+  )
+}
+
+// ---- the top bar (and the sidebar card, the same mark smaller) ------------------------------------------------------
+
+export function Pill({ way, x }: { way: Way; x: Session }) {
+  if (way === 'b')
+    return (
+      <span title={tipOf(x)} className="grid size-8 place-items-center">
+        <Dotted x={x} big />
       </span>
-      <div className="min-w-0 flex-1 text-[13px] leading-5">
+    )
+  return (
+    <span title={tipOf(x)} className="flex h-8 max-w-40 items-center gap-2 rounded-full bg-zinc-100 pr-3 pl-1.5 text-[13px] font-medium text-zinc-700 ring-1 ring-zinc-900/5 ring-inset dark:bg-zinc-800/80 dark:text-zinc-300 dark:ring-white/5">
+      <Avatar by={x.agent} />
+      <span className="min-w-0 truncate">{x.name}</span>
+      <span className={`size-2 shrink-0 rounded-full ${dot(x)}`} />
+    </span>
+  )
+}
+
+export function CardMark({ way, x }: { way: Way; x: Session }) {
+  if (way === 'b')
+    return (
+      <span title={tipOf(x)} className="relative inline-flex shrink-0">
+        <Badge by={x.agent} />
+        <span className={`absolute -top-0.5 -right-0.5 size-1.5 rounded-full ring-1 ring-white dark:ring-zinc-900 ${dot(x)}`} />
+      </span>
+    )
+  return (
+    <span title={tipOf(x)} className="inline-flex min-w-0 items-center gap-1">
+      <Badge by={x.agent} />
+      <span className="max-w-28 truncate">{x.name}</span>
+      <span className={`size-1.5 shrink-0 rounded-full ${dot(x)}`} />
+    </span>
+  )
+}
+
+// ---- Who works here ---------------------------------------------------------------------------------------------
+
+/** The active session: its badge, its name, and what it waits on while it waits. */
+function Active({ way, x }: { way: Way; x: Session }) {
+  return (
+    <div title={tipOf(x)} className="flex gap-3 py-2">
+      <span className="mt-0.5">{way === 'b' ? <Dotted x={x} /> : <Avatar by={x.agent} />}</span>
+      <div className="min-w-0 flex-1 leading-6">
         <p className="truncate text-[15px] font-medium">{x.name}</p>
-        <p className={`flex items-center gap-1.5 ${blocked ? AMBER : MUTED}`}>
-          {x.state === 'working' ? <span className={DOT_GREEN} /> : null}
-          <span className="min-w-0 break-words">
-            {stateWords('a', x)}
-            <span className={blocked ? '' : 'text-zinc-400 dark:text-zinc-500'}> · {x.since ?? x.last}</span>
-          </span>
-        </p>
-        {x.item ? (
-          <p className={`truncate ${MUTED}`}>
-            on {x.item.code} {x.item.title}
-          </p>
-        ) : null}
+        {x.waitingFor ? <p className={`text-[13px] leading-5 break-words ${AMBER}`}>{x.waitingFor}</p> : null}
       </div>
-    </li>
+      {way === 'a' ? <span className={`mt-2 size-2 shrink-0 rounded-full ${dot(x)}`} /> : null}
+    </div>
   )
 }
 
-/** b: a card per session, its time at the right; the blocked one shows its item's code. */
-function CardB({ x }: { x: Session }) {
-  const blocked = x.state === 'blocked'
+/** The old sessions, folded under one line. */
+function Old({ way, old }: { way: Way; old: readonly Session[] }) {
   return (
-    <li className={`rounded-xl px-4 py-3 text-[13px] leading-5 ${blocked ? AMBER_BOX : 'bg-zinc-50 ring-1 ring-zinc-900/5 ring-inset dark:bg-zinc-900 dark:ring-white/5'}`}>
-      <div className="flex items-center gap-2.5">
-        <Avatar by={x.agent} />
-        <span className="min-w-0 flex-1 truncate text-[15px] font-medium">{x.name}</span>
-        <span className={`tabular-nums ${MUTED}`}>{x.since ?? x.last}</span>
-      </div>
-      <p className={`mt-1 break-words ${blocked ? AMBER : MUTED}`}>{stateWords('b', x)}</p>
-      {blocked && x.item ? <span className="mt-2 inline-flex h-6 items-center rounded-md bg-white px-2 font-mono text-xs ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10">{x.item.code}</span> : null}
-    </li>
-  )
-}
-
-/** c: a card per session: its time, what it does (a dot when it waits on you), its item as a link. */
-function CardC({ x }: { x: Session }) {
-  const blocked = x.state === 'blocked'
-  return (
-    <li className={`rounded-xl px-4 py-3 text-[13px] leading-5 ${blocked ? AMBER_BOX : 'ring-1 ring-zinc-200 ring-inset dark:ring-zinc-800'}`}>
-      <div className="flex items-center gap-2.5">
-        <Avatar by={x.agent} />
-        <span className="min-w-0 flex-1 truncate text-[15px] font-medium">{x.name}</span>
-        <span className={`tabular-nums ${blocked ? AMBER : MUTED}`}>{x.since ?? x.last}</span>
-      </div>
-      <p className={`mt-1 flex items-center gap-1.5 ${blocked ? AMBER : MUTED}`}>
-        {blocked ? <span className={DOT_AMBER} /> : null}
-        <span className="min-w-0 break-words">{stateWords('c', x)}</span>
-      </p>
-      {x.item ? (
-        <p className="truncate">
-          <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">{x.item.code}</span> <span className="text-zinc-600 dark:text-zinc-300">{x.item.title}</span>
-        </p>
-      ) : null}
-    </li>
+    <details className="group">
+      <summary className={`flex h-10 w-fit cursor-pointer list-none items-center gap-1 text-[13px] ${MUTED} hover:text-zinc-700 dark:hover:text-zinc-200`}>
+        {way === 'b' ? <Icon n="right" c="size-3.5 transition-transform group-open:rotate-90" sw="2" /> : null}
+        {old.length} earlier
+        {way === 'a' ? <Icon n="right" c="size-3.5 transition-transform group-open:rotate-90" sw="2" /> : null}
+      </summary>
+      <ul className="pb-1">
+        {old.map((x) => (
+          <li key={x.name} title={tipOf(x)} className="flex h-9 items-center gap-3 text-sm opacity-60">
+            <Avatar by={x.agent} />
+            <span className="min-w-0 flex-1 truncate">{x.name}</span>
+            <span className={`text-xs tabular-nums ${MUTED}`}>{x.when}</span>
+          </li>
+        ))}
+      </ul>
+    </details>
   )
 }
 
@@ -173,128 +132,24 @@ function Below() {
   )
 }
 
-export function SheetBody({ way, s, queue }: { way: Way; s: readonly Session[]; queue: number }) {
-  const list = ordered(s)
-  const One = way === 'a' ? RowA : way === 'b' ? CardB : CardC
+export function SheetBody({ way, x, old }: { way: Way; x: Session; old: readonly Session[] }) {
   return (
-    <div className="flex flex-col gap-2 px-1 pt-1 pb-2">
-      <p className={`-mt-1 mb-1 text-[13px] ${MUTED}`}>{way === 'a' ? `${queue} items in the queue` : `${queue} in the queue`}</p>
-      <ul className={`flex flex-col ${way === 'a' ? 'gap-1' : 'gap-2'}`}>
-        {list.map((x) => (
-          <One key={x.name} x={x} />
-        ))}
-      </ul>
+    <div className="flex flex-col px-1 pb-2">
+      <Active way={way} x={x} />
+      <Old way={way} old={old} />
       <Below />
     </div>
   )
 }
 
+// ---- the item page: only while the active session waits on something about it ------------------------------------
 
-// ---- the mark on an item row in progress --------------------------------------------------------------------------
-
-export function RowMark({ way, x }: { way: Way; x: Session }) {
-  const blocked = x.state === 'blocked'
-  const tip = `${whoName(x.agent)} · ${x.name}${blocked ? ` · blocked: ${x.waitingFor}` : ''}`
-  if (way === 'a')
-    return blocked ? (
-      <span title={tip} className={`inline-flex h-5 shrink-0 items-center gap-1 rounded-md pr-1.5 ${AMBER_BOX} ${AMBER}`}>
-        <Avatar by={x.agent} />
-        Blocked
-      </span>
-    ) : (
-      <span title={tip} className="inline-flex min-w-0 shrink items-center gap-1">
-        <Avatar by={x.agent} />
-        <span className="max-w-32 truncate">{x.name}</span>
-      </span>
-    )
-  if (way === 'b')
-    return (
-      <span title={tip} className={`ml-auto inline-flex min-w-0 shrink items-center gap-1 ${blocked ? AMBER : ''}`}>
-        {blocked ? <span className={DOT_AMBER} /> : null}
-        <Avatar by={x.agent} />
-        <span className="max-w-32 truncate">{x.name}</span>
-      </span>
-    )
+export function ItemWait({ x }: { x: Session }) {
+  if (!x.waitingFor) return null
   return (
-    <span title={tip} className={`ml-auto inline-flex h-5 min-w-0 shrink items-center gap-1 rounded-md pr-1.5 pl-0.5 ${blocked ? `${AMBER_BOX} ${AMBER}` : 'bg-zinc-100 dark:bg-zinc-800'}`}>
+    <p title={tipOf(x)} className={`inline-flex h-6 w-fit max-w-full items-center gap-1.5 rounded-md bg-amber-50 pr-2 pl-1 text-[13px] ring-1 ring-amber-600/20 ring-inset dark:bg-amber-400/10 dark:ring-amber-400/25 ${AMBER}`}>
       <Badge by={x.agent} />
-      <span className="max-w-32 truncate">{x.name}</span>
-      {blocked ? <span className={DOT_AMBER} /> : null}
-    </span>
-  )
-}
-
-// ---- the sidebar card's agent part (the desktop only) -------------------------------------------------------------
-
-export function CardAgent({ way, s, queue }: { way: Way; s: readonly Session[]; queue: number }) {
-  const b = blockedOf(s)
-  const tone = b.length ? AMBER : 'text-emerald-700 dark:text-emerald-400'
-  if (way === 'a')
-    return (
-      <span className={`inline-flex min-w-0 items-center gap-1 ${tone}`}>
-        {b.length ? <Badge by={b[0].agent} /> : <Icon n="bot" c="size-3.5" sw="2" />}
-        <span className="truncate">{b.length ? `${b[0].name} · blocked` : `${s.length} sessions`}</span>
-      </span>
-    )
-  if (way === 'b')
-    return (
-      <span className="inline-flex min-w-0 items-center gap-1.5">
-        <span className={b.length ? DOT_AMBER : DOT_GREEN} />
-        <span className={tone}>{b.length ? `${b.length} blocked` : `${s.length} sessions`}</span>
-        <span>· {queue} in queue</span>
-      </span>
-    )
-  return (
-    <span className="inline-flex min-w-0 items-center gap-1.5">
-      <Stack s={s} />
-      <span className={tone}>{b.length ? `${b.length} blocked` : 'working'}</span>
-    </span>
-  )
-}
-
-// ---- the item page: who works on it ---------------------------------------------------------------------------------
-
-export function ItemAgent({ way, x }: { way: Way; x: Session }) {
-  const blocked = x.state === 'blocked'
-  if (way === 'a')
-    return blocked ? (
-      <div className={`flex gap-2.5 rounded-xl px-3 py-2.5 text-[13px] leading-5 ${AMBER_BOX}`}>
-        <span className="mt-px">
-          <Avatar by={x.agent} />
-        </span>
-        <div className="min-w-0">
-          <p className="font-medium text-amber-900 dark:text-amber-100">
-            {whoName(x.agent)} · {x.name}
-          </p>
-          <p className={`break-words ${AMBER}`}>
-            Blocked: {x.waitingFor} · {x.since}
-          </p>
-        </div>
-      </div>
-    ) : (
-      <p className={`flex items-center gap-1.5 text-[13px] leading-5 ${MUTED}`}>
-        <Avatar by={x.agent} />
-        <span className="truncate">
-          {whoName(x.agent)} · {x.name} · working
-        </span>
-      </p>
-    )
-  const box = blocked ? AMBER_BOX : 'bg-zinc-50 ring-1 ring-zinc-900/5 ring-inset dark:bg-zinc-900 dark:ring-white/5'
-  return (
-    <div className={`flex gap-2.5 rounded-xl px-3 py-2.5 text-[13px] leading-5 ${box}`}>
-      <span className="mt-px">
-        <Avatar by={x.agent} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="flex items-baseline gap-2">
-          <span className={`min-w-0 flex-1 truncate font-medium ${blocked ? 'text-amber-900 dark:text-amber-100' : ''}`}>{x.name}</span>
-          {way === 'c' ? <span className={`tabular-nums ${blocked ? AMBER : MUTED}`}>{x.since ?? x.last}</span> : null}
-        </p>
-        <p className={`flex items-center gap-1.5 break-words ${blocked ? AMBER : MUTED}`}>
-          {way === 'c' && blocked ? <span className={DOT_AMBER} /> : null}
-          {blocked ? `Blocked: ${x.waitingFor}${way === 'b' ? ` (${x.since})` : ''}` : way === 'b' ? `Working · ${x.last}` : 'working'}
-        </p>
-      </div>
-    </div>
+      <span className="min-w-0 truncate">{x.waitingFor}</span>
+    </p>
   )
 }
