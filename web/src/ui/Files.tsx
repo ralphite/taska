@@ -25,6 +25,7 @@ const STEP_NAME: Record<string, string> = {
   pro_loud: 'Strong model, louder',
   asr_loud: 'Speech model, louder',
   pieces: 'Piece by piece',
+  vote: 'Reviewers voted',
   said: 'Word for word',
   tidy: 'Tidied · what agents get',
 }
