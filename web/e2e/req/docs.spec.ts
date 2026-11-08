@@ -274,6 +274,72 @@ test('B715 r1169: a block picked, its comment buttons float over the page: no wo
   expect(await below()).toEqual(before)
 })
 
+test('B715 r1175 r1176: on the phone an item of a list picked, its buttons sit right at its edge and stay there: over time, after an update, while speaking', async ({
+  page,
+  request,
+}) => {
+  test.skip(isDesk(page), "the desktop's buttons go beside the item pointed at (BlockActs)")
+  const long = 'A long item whose words wrap onto more lines of the phone, so its edge is not one line below its top. '.repeat(7).trim()
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc The plan
+  First part of the plan.
+
+  - Apples
+  - Pears
+    - Green pears
+    - Red pears
+  - ${long}
+  - Plums
+  - Cherries
+
+  Last part of the plan.
+`,
+  })
+  await open(page, p, 'D1')
+  const list = docBlock(page, 'Apples')
+  await expect(list).toBeVisible()
+  const words = async () => Promise.all(['First part', 'Apples', 'Last part'].map(async (w) => (await docBlock(page, w).boundingBox())?.y))
+  // the buttons' edge against the edge of the item lit amber (under it, or over it when the screen has no room)
+  const gap = () =>
+    page.evaluate(() => {
+      const row = document.querySelector('[data-place-row]')?.getBoundingClientRect()
+      const lit = document.querySelector('[data-doc-blocks] li[data-q]')?.getBoundingClientRect()
+      if (!row || !lit) return null
+      return Math.round(document.querySelector('[data-place-row]')?.hasAttribute('data-over') ? lit.top - row.bottom : row.top - lit.bottom)
+    })
+  const from = async () => page.evaluate(() => Math.round((document.querySelector('[data-place-row]')?.getBoundingClientRect().top ?? 0) - (document.querySelector('[data-doc-blocks] li[data-q]')?.getBoundingClientRect().top ?? 0)))
+  for (const item of ['Pears', 'Red pears', 'A long item', 'Cherries']) {
+    const li = list.locator('li').filter({ hasText: item }).last()
+    const before = await words()
+    // at the right end of its first line: its own words, not a nested item's
+    const b = await li.boundingBox()
+    await page.touchscreen.tap(b!.x + b!.width - 8, b!.y + 8)
+    // the item tapped is the one lit, its buttons at its edge at once, and the words did not move
+    await expect(li).toHaveAttribute('data-q', '')
+    expect(await gap(), item).toBe(6)
+    const at = await from()
+    expect(await words()).toEqual(before)
+    // a while later and after an update arrives, still there (B715 r1176: "after a while they jump")
+    await page.waitForTimeout(1500)
+    await p.doAs('D1 reply ¶1 An agent note')
+    await expect(threadCounts(page).first()).toBeVisible()
+    await page.waitForTimeout(1500)
+    expect(await gap(), item).toBe(6)
+    expect(await from(), item).toBe(at)
+    await page.touchscreen.tap(b!.x + b!.width - 8, b!.y + 8)
+    await expect(page.locator('[data-place-row]')).toHaveCount(0)
+  }
+  // speaking: the strip where the buttons were, by the same item
+  const plums = list.locator('li').filter({ hasText: 'Plums' })
+  const b = await plums.boundingBox()
+  await page.touchscreen.tap(b!.x + b!.width - 8, b!.y + 8)
+  await list.getByRole('button', { name: 'Voice comment', exact: true }).click()
+  await expect(placeRec(page)).toHaveCount(1)
+  expect(await gap()).toBe(6)
+  await sayCancel(page).click()
+})
+
 test("r292 r298: any comment on a document can be deleted, yours and an agent's", async ({ page, request }) => {
   const p = await project(request, {
     ...LOOP,
