@@ -101,13 +101,56 @@ def voice_context(st: ProjectState, scope: Optional[int]) -> Tuple["Counter[str]
     return words, items, [it.title for it in pool[:40]]
 
 
+# B724: the product's own words, which the models heard as everyday ones (story as storage, Taska as "task 啊"): told
+# to both models, and to the reviewers that settle where they disagree.
+PRODUCT_WORDS = ("Taska", "Storybook", "story", "stories", "Inputs", "input", "item", "subitem", "organizer", "agent",
+                 "Codex", "Claude", "Gemini", "Nota", "voice note", "tidy", "Later", "won't do", "prototype", "Demo",
+                 "worktree", "ship")
+ITEM_CODE = re.compile(r"[A-Z]\d+")
+
+
+def corrected(fixes: List[Dict[str, Any]]) -> str:
+    """The spellings the user corrected before (F144), the latest 40: "right (not wrong); ..."."""
+    return "; ".join(f"{c['right']} (not {c['wrong']})" for c in [c for c in fixes if c.get("wrong")][-40:])
+
+
+def voice_vocab(terms: List[str], items: List[str], fixes: List[Dict[str, Any]], limit: int = 100) -> List[str]:
+    """The speech model's custom vocabulary (B724), each once: priorities, the words the user corrected or added,
+    the open items' codes, the product's words, then the project's own words (terms)."""
+    codes = [m.group() for m in (ITEM_CODE.match(i) for i in items) if m]
+    out: List[str] = []
+    seen = set()
+    for t in ["Taska", "P0", "P1", "P2", "P3"] + [c["right"] for c in reversed(fixes)] + codes + list(PRODUCT_WORDS) + terms:
+        if t and t.lower() not in seen:
+            seen.add(t.lower())
+            out.append(t)
+    return out[:limit]
+
+
+def voice_glossary(items: List[str], fixes: List[Dict[str, Any]], terms: List[str], limit: int = 4000) -> str:
+    """What the reviewers of a disagreement are told about the project (B724), at most `limit` characters: the
+    spellings the user corrected, the product's words and the words the user added, the project's own words, and its
+    open items (codes and titles; the item spoken to with the start of its text)."""
+    lines = []
+    if corrected(fixes):
+        lines.append("Spellings the user corrected before: " + corrected(fixes))
+    added = [c["right"] for c in fixes if not c.get("wrong")]
+    lines.append("The product's words: " + ", ".join(dict.fromkeys(list(PRODUCT_WORDS) + added)))
+    if terms:
+        lines.append("The project's own words: " + ", ".join(terms[:60]))
+    if items:
+        lines.append("Open items (code and title): " + "; ".join(
+            i[:600] if "(the item being discussed" in i else i[:100] for i in items[:30]))
+    return "\n".join(lines)[:limit]
+
+
 def voice_prompt(terms: List[str], items: List[str], fixes: List[Dict[str, Any]], prefs: str = VOICE_PREFS) -> str:
     lines = [VOICE_RULES]
     if prefs.strip():  # F183
         lines.append("The user's own preferences for the transcript (follow them, but never add words nobody said):\n" + prefs.strip())
-    if any(c.get("wrong") for c in fixes):  # F144
-        lines.append("Spellings the user corrected before (write the right form when you hear it): " +
-                     "; ".join(f"{c['right']} (not {c['wrong']})" for c in [c for c in fixes if c.get("wrong")][-40:]))
+    if corrected(fixes):  # F144
+        lines.append("Spellings the user corrected before (write the right form when you hear it): " + corrected(fixes))
+    lines.append("This product's own words, written this way when you hear them: " + ", ".join(PRODUCT_WORDS))
     lines.append("Spelling hints, only for words you actually hear: " + ", ".join(terms))
     if items:
         lines.append("Open items, only to recognize names and codes (do not copy them): " + "; ".join(items))

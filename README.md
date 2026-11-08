@@ -226,6 +226,7 @@ Taska is designed for the phone first. Open it in your phone's browser and add i
 | `TASKA_MODEL` | The organizer's Gemini model (default `gemini-flash-latest`) |
 | `TASKA_VOICE_MODEL`, `TASKA_ASR_MODEL` | The two transcription models (default `gemini-3.8-flash`, a fixed version, and `gemini-3.5-transcribe`) |
 | `TASKA_PRO_MODEL` | The strong model that also hears a phone's voice-processed notes (default `gemini-3.1-pro-preview`; needs macOS `afconvert` to tell such notes) |
+| `TASKA_VOTERS`, `TASKA_VOTE_WAIT`, `TASKA_VOTE_MODELS` | Where the two transcripts disagree on what was said, how many reviewers are asked (default 5; 3 after a recent rate limit; the first 3 answers count), how long they are waited for (default 25 s), and their models in turn (default the strong model) |
 
 To keep Taska running, start `tools/taska-service.sh` from a macOS LaunchAgent or a systemd unit (edit its
 Python path and data folder to match your machine). It reads the public address from `$TASKA_PUBLIC` or

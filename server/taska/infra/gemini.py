@@ -134,13 +134,20 @@ class Gemini:
     pause: Callable[[float], None] = time.sleep
     clock: Callable[[], float] = field(default=time.monotonic)
     jitter: Callable[[], float] = random.random
+    limited: List[Tuple[float, str]] = field(default_factory=list)  # (when, model): each answer over a rate (B724)
 
     def ask(self, who: str, q: Question, timeout: float = 120, model: Optional[str] = None) -> str:
         return q.answer(self.generate(who, model or self.model, q.body(), timeout))
 
-    def generate(self, who: str, model: str, body: Json, timeout: float = 120) -> Json:
-        """One question -> the reply, after as many attempts as it takes (at most ATTEMPTS)."""
-        return self._send(who, model, ENDPOINT.format(model=model), body, timeout)
+    def generate(self, who: str, model: str, body: Json, timeout: float = 120, attempts: int = ATTEMPTS) -> Json:
+        """One question -> the reply, after as many attempts as it takes (at most `attempts`)."""
+        return self._send(who, model, ENDPOINT.format(model=model), body, timeout, attempts=attempts)
+
+    def limits(self, within: float, models: Optional[List[str]] = None) -> int:
+        """How many answers were over a rate or a quota (429) in the last `within` seconds, for these models (any
+        model when None) (B724)."""
+        since = self.clock() - within
+        return sum(1 for t, m in list(self.limited) if t >= since and (models is None or m in models))
 
     def embed(self, who: str, texts: List[str], task: str, timeout: float = 30) -> List[List[float]]:
         """Each text's embedding (EMBED_DIMS numbers, in its order), EMBED_BATCH texts a request; `task`: DOCUMENT for
@@ -159,10 +166,12 @@ class Gemini:
             out += got
         return out
 
-    def _send(self, who: str, model: str, url: str, body: Json, timeout: float, seen: Optional[Json] = None) -> Json:
-        """One request -> its reply, after as many attempts as it takes (at most ATTEMPTS); `seen`: what the log
-        keeps of what was sent and of the reply's size, instead of both."""
-        for attempt in range(ATTEMPTS):
+    def _send(self, who: str, model: str, url: str, body: Json, timeout: float, seen: Optional[Json] = None,
+              attempts: int = ATTEMPTS) -> Json:
+        """One request -> its reply, after as many attempts as it takes (at most `attempts`); `seen`: what the log
+        keeps of what was sent and of the reply's size, instead of both. Every answer over a rate is remembered
+        (`limited`, the last 100), so callers can ask less while it lasts."""
+        for attempt in range(attempts):
             t0 = self.clock()
             try:
                 reply = self.post(url, json.dumps(body).encode(),
@@ -170,7 +179,10 @@ class Gemini:
             except Failed as fail:
                 _logged(who, model, seen or body, int((self.clock() - t0) * 1000), status=fail.status,
                         error=fail.detail[:4000] if fail.status else fail.detail)
-                wait = self._again(fail, body, attempt)
+                if fail.status == TOO_MANY or "RESOURCE_EXHAUSTED" in fail.detail:
+                    self.limited.append((self.clock(), model))
+                    del self.limited[:-100]
+                wait = self._again(fail, body, attempt, attempts)
                 if wait is None:
                     raise Refused(f"Gemini HTTP {fail.status}: {first_line(fail.detail, 160)}" if fail.status
                                   else f"Gemini unreachable: {fail.detail}")
@@ -182,7 +194,7 @@ class Gemini:
             return reply
         raise Refused("Gemini failed")
 
-    def _again(self, fail: Failed, body: Json, attempt: int) -> Optional[float]:
+    def _again(self, fail: Failed, body: Json, attempt: int, attempts: int = ATTEMPTS) -> Optional[float]:
         """How long to wait before the next attempt (0: at once); None: no more attempts (B684, aimed at what
         happens most): a model without a thinking switch is asked again at once without it; over a rate (429), after
         the wait it names; its servers busy or failing (5xx), after 1, 2, 4, 8, 16 s, each spread at random so many
@@ -192,7 +204,7 @@ class Gemini:
         if fail.status == 400 and "hinking" in fail.detail and "thinkingConfig" in config:
             del config["thinkingConfig"]
             return 0
-        if attempt >= ATTEMPTS - 1:
+        if attempt >= attempts - 1:
             return None
         spread = 0.5 + self.jitter()  # 0.5 to 1.5 times the wait
         if fail.status is None:

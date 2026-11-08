@@ -1,5 +1,6 @@
 """Voice notes into words (B165, T101, B277, T256): two models listen at once, the project's own words are the hints,
-and the words where the two heard differently are pointed out before you send. A phone's processed recording is
+where the two heard differently in a way that changes the meaning reviewers settle it (B724, services.voice_vote),
+and the words they could not agree on are pointed out. A phone's processed recording is
 heard by the strong model too; a quiet note again, made louder; a long note with few words again, piece by piece;
 the words tidied when the user wants them tidied, the words as said kept. Every step that ran is kept with the note
 (T697 r(D121)): its model, its words or its error, how long it took, and whether its words were chosen.
@@ -21,10 +22,11 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from ..domain.vocab import Refused
-from ..domain.voice_words import (TIDY_SYSTEM, VOICE_HINT, VOICE_SYSTEM, echoed, tidy_ok, voice_doubts, voice_prompt,
-                                  voice_short, voice_terms, voice_tokens)
+from ..domain.voice_words import (TIDY_SYSTEM, VOICE_HINT, VOICE_SYSTEM, echoed, tidy_ok, voice_doubts, voice_glossary,
+                                  voice_prompt, voice_short, voice_terms, voice_tokens, voice_vocab)
 from ..infra import audio as tools
 from ..infra.gemini import ask, client, words_of
+from . import voice_vote
 
 
 def generate(model: str, body: Dict[str, Any], timeout: float = 120) -> Dict[str, Any]:
@@ -63,6 +65,9 @@ PRO_MODEL = os.environ.get("TASKA_PRO_MODEL", "gemini-3.1-pro-preview")
 VOICE_CAP = float(os.environ.get("TASKA_VOICE_CAP", 50))  # the main and the speech model
 PRO_TRIES = int(os.environ.get("TASKA_PRO_TRIES", 3))  # D121 (11-06): failed, the strong model is asked again
 PRO_TRY = float(os.environ.get("TASKA_PRO_TRY", 30))  # T697 (11-06): one try with no answer in 30 s failed (the slowest answer was 8 s)
+# B724: where the two disagree on what was said, reviewers settle it (services.voice_vote): the strong model, or the
+# models named here in turn
+VOTE_MODELS = [m.strip() for m in os.environ.get("TASKA_VOTE_MODELS", PRO_MODEL).split(",") if m.strip()]
 
 
 def voice_main(audio: Dict[str, Any], prompt: str, model: Optional[str] = None) -> str:
@@ -267,7 +272,7 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
     fixes = h.fixes()
     terms = voice_terms(words, fixes)
     audio = {"inline_data": {"mime_type": mime.split(";")[0], "data": base64.b64encode(data).decode()}}
-    vocab = list(dict.fromkeys(["Taska", "P0", "P1", "P2", "P3"] + terms))[:100]
+    vocab = voice_vocab(terms, items, fixes)  # B724: the open items' codes and the product's words too
     prompt = voice_prompt(terms, items, fixes, h.prefs())
     t0, times = time.time(), {}
     steps: List[Step] = []
@@ -294,7 +299,7 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
                 strong(steps, "pro_loud", loud, prompt, times, "main_loud"),
                 ran(steps, "asr_loud", ASR_MODEL, lambda: capped(lambda: voice_asr(loud, vocab), VOICE_CAP, "the speech model, louder", times, "asr_loud")))
             if alt:
-                out["louder"] = True
+                out["louder"], audio = True, loud
     if err:
         out["main_error"] = str(err)
     if alt_err:
@@ -338,7 +343,14 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
     for c in fixes:  # what the user fixed once stays fixed (F144)
         if c.get("wrong"):
             tr, alt = tr.replace(c["wrong"], c["right"]), alt.replace(c["wrong"], c["right"])
-    doubts = voice_doubts(tr, alt)
+    if out["tr_by"] == "pro" and alt:  # B724: where the two heard differently, reviewers settle it
+        t1 = time.time()
+        tr, doubts = voice_vote.settle(steps, audio, tr, alt, voice_glossary(items, fixes, terms), VOTE_MODELS)
+        if steps[-1]["step"] == "vote":
+            times["vote"] = round(time.time() - t1, 1)
+        times["total"] = round(time.time() - t0, 1)
+    else:
+        doubts = voice_doubts(tr, alt)
     if h.tidy():  # T256: smooth to read, the words as said kept as "heard"
         t0_ = time.time()
         step: Step = {"step": "tidy", "model": VOICE_MODEL}
