@@ -17,7 +17,7 @@ from .voices import came_late, heard, inputs_with
 @reduces(ev.InputAdded)
 def _input(state: ProjectState, e: ev.Event) -> None:
     assert isinstance(e, ev.InputAdded)
-    inp = Input(id=e.id, t=e.t, by=e.by, text=e.text, scope=e.scope, files=list(e.files), seq=e.seq)
+    inp = Input(id=e.id, t=e.t, by=e.by, text=e.text, scope=e.scope, files=list(e.files), seq=e.seq, q=e.q)
     if e.kind == "answer":  # a form you sent: in its item's talk as it is, nothing more to do
         inp.kind, inp.acked = "answer", True
     elif e.kind == "cancelled":  # a recording you cancelled: kept to listen to and send later, not work (B627)

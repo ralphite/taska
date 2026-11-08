@@ -286,6 +286,7 @@ class Input:
     updated: Optional[str] = None
     moved: Optional[Moved] = None
     deleted: Optional[InputDeletion] = None
+    q: str = ""  # the page's own id for it, as it sent it: the page tells it from what it still shows on its way
 
     @property
     def number(self) -> int:

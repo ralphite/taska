@@ -91,6 +91,8 @@ def input_view(inp: Input, filing: Optional[Filing], plan: Optional[DeletionPlan
         out["org"] = {"ok": o.ok, "msg": o.msg, "t": o.t, "keep": o.keep, "changed": bool(o.changed), "undone": o.undone}
     if inp.kind:
         out["kind"] = inp.kind
+    if inp.q:
+        out["q"] = inp.q
     if inp.history:
         out["history"] = [{"text": h.text, "t": h.t, "mode": h.mode} for h in inp.history]
         out["updated"] = inp.updated
