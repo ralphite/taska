@@ -128,8 +128,10 @@ export function PlaceVoiceFloat({ place, x, ...row }: Parameters<typeof PlaceVoi
     const parent = me?.offsetParent
     if (!me || !parent) return
     const p = parent.getBoundingClientRect()
-    const y = place?.y ?? 0
-    const h = place?.h ?? p.height
+    // a list's item picked (lit amber): the buttons go by that item, not by the whole list (B715 r1175)
+    const item = place ? null : parent.querySelector<HTMLElement>('li[data-q]')?.getBoundingClientRect()
+    const y = place?.y ?? (item ? item.top - p.top : 0)
+    const h = place?.h ?? (item ? item.height : p.height)
     const over = floatOver({ top: p.top + y, bottom: p.top + y + h }, me.offsetHeight, FLOAT_GAP, shownArea(me))
     me.style.top = `${over ? y - me.offsetHeight - FLOAT_GAP : y + h + FLOAT_GAP}px`
     me.toggleAttribute('data-over', over)
