@@ -6,6 +6,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { FileRef } from '../model/types'
 import type { OutFile, Outgoing } from '../model/outgoing'
 import { wordsByFile } from '../model/voices'
+import { isUp } from '../model/fileStates'
 import type { KeyValueStore } from './storage'
 
 export interface OutboxState {
@@ -31,7 +32,7 @@ interface Kept {
   words?: Record<string, string>
 }
 
-const keepable = (o: Outgoing) => o.files.every((f) => f.f && !f.uploading)
+const keepable = (o: Outgoing) => o.files.every(isUp)
 
 export function createOutboxStore(kv: KeyValueStore): OutboxStore {
   const keep = (slug: string, list: Outgoing[]) => {

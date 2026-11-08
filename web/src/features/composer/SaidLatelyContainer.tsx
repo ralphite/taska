@@ -12,6 +12,7 @@ import { codeOf, findRef } from '../../model/project'
 import { inputWords } from '../../ui/Markdown'
 import { saidOutgoing, saidRows } from '../../model/saidLately'
 import { notesState } from '../../model/voiceStates'
+import { goingUp } from '../../model/fileStates'
 import { RecMeter } from '../../app/RecMeter'
 import { FileChips } from '../../ui/Files'
 import { PLACE_LEVELS } from '../../ui/PlaceVoice'
@@ -46,7 +47,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
   const onItsWay = useStoreValue(stores.box, (st) =>
     Object.entries(st.files)
       .map(([k, fs]) => ({ t: draftTarget(k), fs }))
-      .filter(({ t, fs }) => t.kind === 'amend' && t.mode === 'append' && fs.some((f) => f.uploading && (f.mime || '').startsWith('audio/')))
+      .filter(({ t, fs }) => t.kind === 'amend' && t.mode === 'append' && fs.some((f) => goingUp(f) && (f.mime || '').startsWith('audio/')))
       .map(({ t }) => (t.kind === 'amend' ? t.id : ''))
       .join(' '),
   )

@@ -86,6 +86,10 @@ diagram and the table below are made from that file, and `web/src/model/outgoing
 from it. A voice message on its way is in the voice state its phase names (Sending, Waiting for Taska, Not sent:
 [voice.md](voice.md)). Once Taska has it, what became of it is below.
 
+Each of its files (a picture, a file, a voice note) is going up, up or failed by one rule, `web/src/model/fileStates.ts`
+(T728 #10): only an up file goes with it, it waits while one goes up, and one Taska refused goes without it, shown red
+in the box and said as Upload failed (a voice note's state builds on the same rule).
+
 <!-- made from outgoingStates.ts: outgoingDiagram() -->
 ```mermaid
 flowchart TD

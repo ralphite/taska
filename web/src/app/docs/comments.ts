@@ -16,7 +16,8 @@ import type { Fields } from '../page/fields'
 import type { Sheets } from '../page/sheets'
 import type { Toasts } from '../page/toasts'
 import { docHere, docSend, type DocPlace } from './shared'
-import { waitsForWords } from '../../model/voiceStates'
+import { stillComing } from '../../model/voiceStates'
+import { isUp } from '../../model/fileStates'
 
 export interface DocCommentsDeps extends DocPlace {
   runner: ChangeRunner
@@ -89,9 +90,9 @@ export class DocComments {
     if (!this.d.desk()) v.setTyping(false)
     if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
     if (this.d.desk()) this.d.fields.get('box')?.focus({ preventScroll: true })
-    for (let i = 0; live().some((f) => f.uploading || waitsForWords(f)) && i < 240; i++) await new Promise((ok) => setTimeout(ok, 500))
+    for (let i = 0; live().some(stillComing) && i < 240; i++) await new Promise((ok) => setTimeout(ok, 500))
     const held = files.length ? this.d.boxStore.getState().takeFiles(hold) : []
-    const sent = held.filter((f) => f.f && !f.failed)
+    const sent = held.filter(isUp)
     // what was typed is the comment's words; each voice note's words, as you left them, go to the note (B682)
     const said = splitVoices(typed, draftNotes(held))
     const text = said.text
@@ -133,7 +134,7 @@ export class DocComments {
   async saveComment(slug: string, dn: number, id: number, key: DraftKey): Promise<boolean> {
     const c = this.commentOf(slug, dn, id)
     const { text: shown, files } = this.d.box.take(slug, key)
-    const sent = files.filter((f) => f.f && !f.failed)
+    const sent = files.filter(isUp)
     // the box began with what was said (typed, then its voice notes' words): what was typed goes as its words, each
     // note's words as you left them go to the note (B682)
     const said = splitVoices(shown, [...shownNotes(c?.files), ...draftNotes(sent)], c?.typed ?? c?.text)

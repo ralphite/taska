@@ -11,6 +11,7 @@
 
 import type { Outgoing } from './outgoing'
 import type { VoiceState } from './voiceStates'
+import { goingUp } from './fileStates'
 
 /** Where something on its way shows. */
 export const OUT_PLACES = {
@@ -132,7 +133,7 @@ export const inFlight = (o: Pick<Outgoing, 'state'>) => o.state === 'sending'
  * is worked out. */
 export function outPhase(o: Pick<Outgoing, 'state' | 'net' | 'unsent' | 'back' | 'files'>, away: number): OutPhase {
   if (o.unsent) return 'takenBack'
-  const uploading = o.files.some((f) => f.uploading)
+  const uploading = o.files.some(goingUp)
   if (o.back && uploading) return 'reloaded'
   if (o.state === 'failed') return o.net ? 'waiting' : 'notSent'
   if (away >= AWAY) return 'waiting'

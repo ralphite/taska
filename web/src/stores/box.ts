@@ -5,6 +5,7 @@
 import type { BoxMode } from '../model/boxFoot'
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { OutFile } from '../model/outgoing'
+import { isUp } from '../model/fileStates'
 import type { Doubt } from '../model/types'
 import type { VcMark } from '../model/voiceComments'
 import type { Transcript } from '../model/voiceStates'
@@ -67,7 +68,7 @@ export function createBoxStore(session: KeyValueStore): BoxStore {
   const keep = (slug: string, files: Record<string, readonly DraftFile[]>) => {
     const out: Record<string, unknown[]> = {}
     for (const [k, fs] of Object.entries(files)) {
-      const ok = fs.filter((f) => f.f && !f.failed && !(f.mime || '').startsWith('audio/')).map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size, ...(f.rid ? { rid: f.rid } : {}) }))
+      const ok = fs.filter((f) => isUp(f) && !(f.mime || '').startsWith('audio/')).map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size, ...(f.rid ? { rid: f.rid } : {}) }))
       if (ok.length) out[k] = ok
     }
     session.setJson(KEY + slug, Object.keys(out).length ? out : null)

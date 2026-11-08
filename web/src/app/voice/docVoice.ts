@@ -21,7 +21,8 @@ import type { DocComments } from '../docs/comments'
 import type { Toasts } from '../page/toasts'
 import type { Voice } from './voice'
 import { docDraft, draftKey, type DraftKey } from '../../model/draftTarget'
-import { waitsForWords } from '../../model/voiceStates'
+import { stillComing } from '../../model/voiceStates'
+import { isUp } from '../../model/fileStates'
 
 export interface DocVoiceDeps {
   voice: Voice
@@ -149,9 +150,9 @@ export class DocVoice {
       return false
     }
     // their voice notes' words go with them
-    for (let i = 0; live().some((f) => f.uploading || waitsForWords(f)) && i < 240; i++) await wait(500)
+    for (let i = 0; live().some(stillComing) && i < 240; i++) await wait(500)
     const now = (fs: DraftFile[]) => fs.map((f) => live().find((x) => x.key === f.key) || f)
-    const ups = (fs: DraftFile[]) => now(fs).filter((f) => f.f && !f.failed)
+    const ups = (fs: DraftFile[]) => now(fs).filter(isUp)
     // each comment's typed words; its voice notes' words, as you left them under the quote, go to the notes (B682)
     const ops = posts
       .map(({ s, fs }) => {

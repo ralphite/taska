@@ -10,6 +10,7 @@
 // way, the outbox's phase names it (model/outgoingStates). Pure.
 
 import type { FileRef, Voice, WordsAnswer } from './types'
+import { fileState, goingUp, type UpFields } from './fileStates'
 
 /** The states of a voice note's one record on the server (server/taska/domain/voice_states.py): being worked out
  * (its fast words meanwhile, when they came), its words in, nobody heard, failed. */
@@ -211,12 +212,8 @@ export const sayIn = (state: VoiceState, place: VoicePlace): { say: string; tone
 // ---------------------------------------------------------------- a note in a draft (the page's own)
 
 /** What the page keeps of a note in a draft (or on its way) that its state is worked out from. */
-export interface NoteFields {
+export interface NoteFields extends UpFields {
   mime?: string
-  /** going up to Taska */
-  uploading?: boolean
-  /** Taska refused it (B725): it is not up */
-  failed?: boolean
   transcript?: Transcript
 }
 
@@ -227,8 +224,10 @@ const HEARD_STATE: Record<Transcript, VoiceState> = { wait: 'transcribing', fast
 
 /** A draft's note's state, from what is kept of it: the one place it is worked out. */
 export function noteState(f: NoteFields): VoiceState {
-  if (f.failed) return 'uploadFailed'
-  if (f.uploading) return 'uploading'
+  // going up or refused, as any file (model/fileStates); up, where its words are
+  const up = fileState(f)
+  if (up === 'failed') return 'uploadFailed'
+  if (up === 'uploading') return 'uploading'
   return HEARD_STATE[f.transcript ?? 'wait']
 }
 
@@ -241,6 +240,10 @@ export function notesState(files: readonly NoteFields[]): VoiceState | null {
 
 /** A voice note still going up or still waiting for its words (sending a comment waits for them). */
 export const waitsForWords = (f: NoteFields) => isNote(f) && (['uploading', 'transcribing'] as VoiceState[]).includes(noteState(f))
+
+/** A file still going up, or a voice note still waiting for its words: what it goes with (a comment, the page's
+ * reload) waits for it. */
+export const stillComing = (f: NoteFields) => goingUp(f) || waitsForWords(f)
 
 const isNote = (f: { mime?: string }) => (f.mime || '').startsWith('audio/')
 
@@ -263,7 +266,7 @@ export type NoteAt = 'draft' | 'sent' | 'cancelled'
  * up, then (Taska has it, or will in a moment) its words to come, or kept as cancelled. */
 function stateAt(f: NoteFields, at: NoteAt): VoiceState {
   if (at === 'draft') return noteState(f)
-  if (f.uploading) return 'sending'
+  if (goingUp(f)) return 'sending'
   return at === 'cancelled' ? 'cancelled' : f.transcript === 'fast' ? 'sentFastWords' : 'sentTranscribing'
 }
 

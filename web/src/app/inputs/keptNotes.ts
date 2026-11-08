@@ -13,6 +13,7 @@ import type { OutFile } from '../../model/outgoing'
 import type { KeyValueStore } from '../../stores/storage'
 import { plural } from '../../model/words'
 import { fromKept, keptTranscript, noteState } from '../../model/voiceStates'
+import { isUp, notFailed } from '../../model/fileStates'
 import type { InputSender } from './inputSender'
 import type { Toasts } from '../page/toasts'
 import { draftKey, draftTarget, NEW_DRAFT, replyDraft, scopeDraft, type DraftKey } from '../../model/draftTarget'
@@ -121,9 +122,9 @@ export class KeptNotes {
       this.slug = box.slug
     }
     const live = new Map<string, Rec>()
-    for (const [key, fs] of Object.entries(box.files)) for (const f of fs) if (f.rid && !f.failed) live.set(f.rid, this.rec(box.slug, key, f, null))
+    for (const [key, fs] of Object.entries(box.files)) for (const f of fs) if (f.rid && notFailed(f)) live.set(f.rid, this.rec(box.slug, key, f, null))
     for (const o of this.d.outbox.getState().list)
-      for (const f of o.files) if (f.rid && !f.failed && !o.unsent) live.set(f.rid, this.rec(o.slug, o.scope || 'new', f, { id: o.q, text: o.text, ...(o.words ? { words: o.words } : {}), ...(o.kind === 'cancelled' ? { kind: o.kind } : {}) }))
+      for (const f of o.files) if (f.rid && notFailed(f) && !o.unsent) live.set(f.rid, this.rec(o.slug, o.scope || 'new', f, { id: o.q, text: o.text, ...(o.words ? { words: o.words } : {}), ...(o.kind === 'cancelled' ? { kind: o.kind } : {}) }))
     for (const [rid, r] of live) {
       const sig = JSON.stringify(r)
       if (this.known.get(rid)?.sig === sig) continue
@@ -258,11 +259,11 @@ export class KeptNotes {
     }
     for (const [q, j] of resend) {
       this.d.inputs.push({ q, slug: j.slug, text: j.text, ...(j.words ? { words: j.words } : {}), scope: j.scope, files: j.files, t: j.t, back: true, ...(j.kind ? { kind: j.kind, quiet: true } : {}) })
-      for (const f of j.files) if (!f.f) this.d.resume(j.slug, scopeDraft(j.scope), f, this.blobs.get(f.rid as string) as Blob, j.scope)
+      for (const f of j.files) if (!isUp(f)) this.d.resume(j.slug, scopeDraft(j.scope), f, this.blobs.get(f.rid as string) as Blob, j.scope)
     }
     for (const { key, f } of back) {
       this.d.box.getState().addFile(key, f)
-      if (!f.f || (!f.plain && noteState(f) === 'transcribing')) this.d.resume(slug, key, f, this.blobs.get(f.rid as string) as Blob, (() => { const t = draftTarget(key); return t.kind === 'reply' ? t.code : null })())
+      if (!isUp(f) || (!f.plain && noteState(f) === 'transcribing')) this.d.resume(slug, key, f, this.blobs.get(f.rid as string) as Blob, (() => { const t = draftTarget(key); return t.kind === 'reply' ? t.code : null })())
       else if (!f.plain && f.tr && !f.trAdded) this.d.place(slug, key, f)
     }
     this.soon()

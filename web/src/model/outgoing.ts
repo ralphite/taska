@@ -4,12 +4,12 @@
 import type { FileRef, Input, Message, Voice } from './types'
 import { voiceWords } from './voices'
 import { voiceLacks } from './voiceStates'
+import { filesLine, type UpFields } from './fileStates'
 import { outgoingIn, type OutPlace, type OutShow } from './outgoingStates'
 
-export interface OutFile extends FileRef {
-  /** still being uploaded */
-  uploading?: boolean
-  failed?: boolean
+/** A file on its way: its upload state (`f`, `uploading`, `failed`) is model/fileStates `fileState`. */
+export interface OutFile extends FileRef, UpFields {
+  f: string
   /** a picture's look before it is up (this page only) */
   preview?: string
   /** the page's own id for it while it goes up */
@@ -74,7 +74,7 @@ export const outgoingLine = (o: Pick<Outgoing, 'text' | 'files'> & Pick<Partial<
   return (
     outgoingText(o, voices).split('\n')[0] ||
     (o.kind === 'cancelled' ? 'Cancelled voice note' : '') ||
-    (note ? voiceLacks(note.f ? voices?.get(note.f) : undefined) : `${o.files.length} file${o.files.length === 1 ? '' : 's'}`)
+    (note ? voiceLacks(note.f ? voices?.get(note.f) : undefined) : filesLine(o.files))
   )
 }
 

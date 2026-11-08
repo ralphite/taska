@@ -10,6 +10,7 @@ import type { ProjectModel } from '../../model/project'
 import { inputCode } from '../../model/words'
 import { draftNotes, shownNotes, splitVoices, wordsByFile } from '../../model/voices'
 import { outgoingText } from '../../model/outgoing'
+import { goingUp, isUp } from '../../model/fileStates'
 import { docDraft, draftKey, keyOf, NEW_DRAFT, PREFS_DRAFT, scopeDraft, type DraftKey } from '../../model/draftTarget'
 import type { BoxStore, DraftFile } from '../../stores/box'
 import type { BoxMode } from '../../model/boxFoot'
@@ -186,7 +187,7 @@ export class Box {
     if (!text && !files.length) return false
     if (mode?.kind === 'amend') {
       // a voice note or picture still going up: the save waits for it (B637), then goes by itself
-      if (files.some((f) => f.uploading)) return this.amendWhenUp(slug, mode, key)
+      if (files.some(goingUp)) return this.amendWhenUp(slug, mode, key)
       return this.amend(slug, m, mode, key, text)
     }
     this.write(slug, key, '')
@@ -209,7 +210,7 @@ export class Box {
     const text = this.text(slug, key).trim()
     const files = this.d.store.getState().files[key] || []
     if (!text && !files.length) return false
-    if (files.some((f) => f.uploading)) return this.amendWhenUp(slug, mode, key, true)
+    if (files.some(goingUp)) return this.amendWhenUp(slug, mode, key, true)
     return this.amend(slug, m, mode, key, text)
   }
 
@@ -220,11 +221,11 @@ export class Box {
     if (!quiet) this.d.toasts.show(`Saving ${inputCode(mode.id)} once the upload ends`)
     const stop = this.d.store.subscribe((s) => {
       const files = s.files[key] || []
-      if (files.some((f) => f.uploading) || !this.waitingUp.has(key)) return
+      if (files.some(goingUp) || !this.waitingUp.has(key)) return
       this.waitingUp.delete(key)
       stop()
       const text = this.text(slug, key).trim()
-      if (text || files.some((f) => f.f && !f.failed)) this.amend(slug, this.d.model?.(slug) ?? null, mode, key, text)
+      if (text || files.some(isUp)) this.amend(slug, this.d.model?.(slug) ?? null, mode, key, text)
     })
     return true
   }
@@ -239,7 +240,7 @@ export class Box {
     const r = m?.byId.get(mode.id)
     const now = r ? (mode.mode === 'edit' ? text : r.text.endsWith(text) ? r.text : [r.text, text].filter(Boolean).join('\n\n')) : text
     this.d.toasts.show(mode.mode === 'edit' ? `${inputCode(mode.id)} updated` : `Added to ${inputCode(mode.id)}`)
-    const up = drafts.filter((f) => f.f && !f.failed)
+    const up = drafts.filter(isUp)
     const files = up.map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size }))
     // an edit begins with what was said (typed, then its voice notes' words): what was typed goes as its words, the
     // notes' words as you left them go to the notes (B682)

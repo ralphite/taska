@@ -10,6 +10,7 @@ import type { OutboxStore } from '../../stores/outbox'
 import type { Outgoing } from '../../model/outgoing'
 import { outStep, type OutEvent } from '../../model/outgoingStates'
 import { wordsByFile } from '../../model/voices'
+import { goingUp, isUp } from '../../model/fileStates'
 
 export interface SenderEvents {
   cursor(slug: string): string | null
@@ -71,8 +72,8 @@ export class InputSender {
       for (;;) {
         const o = this.store.getState().list[0]
         if (!o || o.state === 'failed') break
-        if (o.files.some((f) => f.uploading)) break // its files are on their way: it goes once they are up
-        const files = o.files.filter((f) => f.f && !f.failed)
+        if (o.files.some(goingUp)) break // its files are on their way: it goes once they are up
+        const files = o.files.filter(isUp)
         const text = o.text // what was typed; a voice note's words are its own (B682), those you left in the box with it
         const words = wordsByFile(o.words, files)
         if (!text && !files.length) {
