@@ -154,7 +154,7 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
 }
 
 /** The desktop's pane with a document. */
-export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: { route: ProjectRoute; dn: number; place: string; hidden?: boolean; bodyRef?: (el: HTMLElement | null) => void; /** wide: the document on the left, its item's talk on the right */ beside?: (view: ReactNode, web: boolean) => ReactNode }) {
+export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside, talk = null }: { route: ProjectRoute; dn: number; place: string; hidden?: boolean; bodyRef?: (el: HTMLElement | null) => void; /** wide: the document on the left, its item's talk on the right */ beside?: (view: ReactNode, web: boolean) => ReactNode; /** that talk: the button to its end over it (F716) */ talk?: HTMLElement | null }) {
   const app = useServices('docEditor', 'docs')
   const stores = useStores('docView', 'route', 'sheet')
   const pane = usePaneRef('detail')
@@ -181,6 +181,7 @@ export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: 
       bodyRef={bodyRef}
       split={!!beside}
       duo={!!beside}
+      toEnd={beside ? talk : null}
       head={<DocPaneHead d={d} editing={false} />}
       acts={<DocPaneActs web={web} inspect={v.inspect} whole={v.quote?.key === 'doc'} deleting={!!asked['doc-delete ' + dn]} on={{ inspect: () => stores.docView.getState().setInspect(!v.inspect), whole: () => (v.quote?.key === 'doc' ? stores.docView.getState().pick({ quote: null }) : app.docs.whole()), copy: on.copyDoc, edit: on.editDoc, move: on.moveDoc, remove: on.deleteDoc }} />}
       lead={<DocPaneNav to={side ? SIDE_NAME[side] : codeOf(m, liveN(m, d.n))} onBack={() => app.docs.close()} />}

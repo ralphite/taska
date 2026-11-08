@@ -40,6 +40,8 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
   const [titledRef, setTitledRef] = useState<string | null>(null)
   const itemN = route.place.kind === 'item' ? route.place.ref : ''
   const titled = !!itemN && titledRef === itemN
+  // the item's talk, for the pane's button to its end (F716)
+  const [talk, setTalk] = useState<HTMLElement | null>(null)
   useEffect(() => {
     const h = !desk && body ? body.querySelector('[data-part=item-title]') : null
     if (!h || typeof IntersectionObserver === 'undefined') return
@@ -64,7 +66,8 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
           place={place}
           hidden={hidden}
           bodyRef={setBody}
-          beside={duo && docIt && m ? (view, web) => <ItemPageContainer key={docIt.n} it={docIt} m={m} slug={route.slug} tab={route.tab} desk left={view} bare={web} /> : undefined}
+          beside={duo && docIt && m ? (view, web) => <ItemPageContainer key={docIt.n} it={docIt} m={m} slug={route.slug} tab={route.tab} desk left={view} bare={web} onTalk={setTalk} /> : undefined}
+          talk={talk}
         />
       )
     return (
@@ -95,6 +98,8 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
         bodyRef={setBody}
         duo={duo && desk}
         split
+        // the phone's document over its item hides the talk
+        toEnd={doc && !desk ? null : talk}
         head={<ItemHead it={it} code={code} titled={titled} />}
         acts={<ItemActs it={it} on={{ set, later: (from) => openLater(app, desk, it.n, from) }} />}
         nav={<ItemNav full={full} on={nav} />}
@@ -103,7 +108,7 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
         onBack={back}
         onMenu={(from) => openItemMenu(app, desk, it.n, null, from)}
       >
-        <ItemPageContainer key={it.n} it={it} m={m} slug={route.slug} tab={route.tab} desk={desk} />
+        <ItemPageContainer key={it.n} it={it} m={m} slug={route.slug} tab={route.tab} desk={desk} onTalk={setTalk} />
         {doc && !desk ? <DocSheetContainer slug={route.slug} dn={doc.d} footRoom={footRoom} /> : null}
       </PaneFrame>
     )

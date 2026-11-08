@@ -1,7 +1,7 @@
 // An item's page with the page's data: what it shows (the item, its documents and files, your answer on its way,
 // what you sent to it and Taska does not have yet, what you are doing on it) and what a tap on each part does.
 
-import { useEffect, type ReactNode } from 'react'
+import { useCallback, useEffect, type ReactNode } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useAway, useFiles, useItemWorld } from '../../app/hooks'
 import { newId } from '../../app/changeRunner'
@@ -35,7 +35,7 @@ export function openItemMenu(app: Pick<App, 'sheets'>, desk: boolean, n: number,
   else app.sheets.open({ kind: 'item-menu', n, arm }, { focus: false })
 }
 
-export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = false, preview = false }: { it: Item; m: ProjectModel; slug: string; tab: Tab; desk: boolean; /** in two columns, its document on the left */ left?: ReactNode; bare?: boolean; /** the search's preview of it: read only, not counted as seen or opened */ preview?: boolean }) {
+export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = false, preview = false, onTalk }: { it: Item; m: ProjectModel; slug: string; tab: Tab; desk: boolean; /** in two columns, its document on the left */ left?: ReactNode; bare?: boolean; /** the search's preview of it: read only, not counted as seen or opened */ preview?: boolean; /** its talk's element, for the pane's button to its end (F716) */ onTalk?(el: HTMLElement | null): void }) {
   const app = useServices('answers', 'box', 'docs', 'fields', 'inputs', 'itemEdits', 'items', 'nav', 'runner', 'seen', 'sheets', 'toasts')
   const stores = useStores('data', 'docTicks', 'grips', 'itemView', 'keptEdits', 'outbox', 'recent', 'ui')
   const projects = useStoreValue(stores.data, (s) => s.projects)
@@ -48,6 +48,15 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   const away = useAway(slug)
   const world = useItemWorld(m, slug)
   const n = it.n
+  // the talk: for the keys (Space scrolls it) and for the pane round it (its button to the end, F716)
+  const fieldRef = app.fields.ref('talk')
+  const talkRef = useCallback(
+    (el: HTMLElement | null) => {
+      fieldRef(el)
+      onTalk?.(el)
+    },
+    [fieldRef, onTalk],
+  )
   const code = (k: number | null | undefined) => codeOf(m, k)
   const ref = code(n)
   // seen once it shows: what its agents wrote has no dot on its row any more
@@ -199,5 +208,5 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     outboxRetry: () => void app.inputs.flush(),
     outboxEdit: () => app.box.editOutgoing(slug, replyDraft(ref)) && app.fields.focus('box'),
   }
-  return <ItemPage it={it} f={f} env={env} facts={facts} on={on} talkRef={preview ? undefined : app.fields.ref('talk')} duo={duo} left={left} bare={bare} readOnly={preview} />
+  return <ItemPage it={it} f={f} env={env} facts={facts} on={on} talkRef={preview ? undefined : talkRef} duo={duo} left={left} bare={bare} readOnly={preview} />
 }
