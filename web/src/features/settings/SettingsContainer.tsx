@@ -3,7 +3,7 @@
 // when the section opens; what you do goes to app.settings (and app.docs, app.restores for the phone's lists).
 
 import { useEffect, type ReactNode } from 'react'
-import { Notices } from '../../app/project/notices'
+import { Notices, navWord } from '../../app/project/notices'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
@@ -52,7 +52,7 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
   const back = () => app.nav.settingsBack()
 
   const nav = navFacts(m, {
-    notifications: desk ? app.notices.state().replace('Blocked by the browser', 'Blocked') : app.notices.sub ? 'On' : 'Off',
+    notifications: navWord(desk ? app.notices.state() : app.notices.pushWord()),
     projects: projects ? projects.length : '',
     spellings: st.fixes?.length || '',
   })
@@ -95,7 +95,7 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
               void app.notices.pushState()
               return <Loading />
             }
-            const push = { sub: !!app.notices.sub, blocked: Notification.permission === 'denied', quiet: app.notices.quiet(), hours: app.notices.quietHours(), badge, on: { turnOn: () => void app.notices.pushOn(), turnOff: () => void app.notices.pushOff(), quiet: () => app.notices.setQuiet(!app.notices.quiet()), hours: (h: { from: string; to: string }) => app.notices.setQuietHours(h) } }
+            const push = { sub: app.notices.pushWord() === 'On', blocked: app.notices.pushWord() === 'Blocked by the phone', quiet: app.notices.quiet(), hours: app.notices.quietHours(), badge, on: { turnOn: () => void app.notices.pushOn(), turnOff: () => void app.notices.pushOff(), quiet: () => app.notices.setQuiet(!app.notices.quiet()), hours: (h: { from: string; to: string }) => app.notices.setQuietHours(h) } }
             return <PhonePushBody standalone onPhone={() => open('phone')} push={push} />
           })()
         )

@@ -2,6 +2,7 @@
 // index or one section's page), the way through (DeskNav, PhoneIndex) and each section's own body, with what they
 // show worked out by the page's own settingsFacts from a demo project (Shop: the item list's) and what the page has
 // of the other projects. Used by Settings' stories.
+import { navWord } from '../app/project/notices'
 import { useState, type ReactNode } from 'react'
 import { sideProjects } from '../app/sideProjects'
 import { DeletedBody, DocsBody, LogBody, PhoneProjectsBody } from '../features/settings/PhoneSections'
@@ -125,7 +126,7 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
   const st = { deleted: h.noneDeleted ? [] : GONE, ...p }
   const ask = (key: string, run: () => void) => (asked[key] ? run() : setAsked({ ...asked, [key]: 1 }))
   // the column says what the section shows (the desktop's state; the phone's pushes on or off)
-  const nav = navFacts(m, { notifications: desk ? notices.state.replace('Blocked by the browser', 'Blocked') : push?.sub ? 'On' : 'Off', projects: ROWS.length, spellings: h.spellingsLoading || h.noSpellings ? '' : FIXES.length })
+  const nav = navFacts(m, { notifications: navWord(desk ? notices.state : push?.blocked ? 'Blocked by the phone' : push?.sub ? 'On' : 'Off'), projects: ROWS.length, spellings: h.spellingsLoading || h.noSpellings ? '' : FIXES.length })
   const pOn: ProjectsEvents = {
     newProject: () => (setP({ ...p, pErr: '', renaming: null, pMenu: null }), setNaming({ value: '', error: '' })),
     rename: (slug) => setP({ ...p, renaming: slug, pMenu: null }),

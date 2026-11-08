@@ -31,6 +31,9 @@ export interface NoticesDeps {
 }
 
 export type NoticeState = 'On' | 'Off' | 'Blocked by the browser'
+export type PushState = 'On' | 'Off' | 'Blocked by the phone'
+/** A notifications state as Settings' list says it: short. */
+export const navWord = (s: NoticeState | PushState) => (s.startsWith('Blocked') ? 'Blocked' : s)
 
 /** Quiet hours, local time "HH:MM": the server keeps a phone's the same way (services/push.py in_quiet). */
 export interface QuietHours {
@@ -116,6 +119,12 @@ export class Notices {
 
   state(): NoticeState {
     return typeof Notification === 'undefined' || Notification.permission === 'denied' ? 'Blocked by the browser' : this.on() ? 'On' : 'Off'
+  }
+
+  /** The phone's pushes, one rule for Settings' list and its section (T728 #9): blocked whenever the phone took the
+   * permission back, even with a subscription left over. */
+  pushWord(): PushState {
+    return typeof Notification === 'undefined' || Notification.permission === 'denied' ? 'Blocked by the phone' : this.sub ? 'On' : 'Off'
   }
 
   quiet(): boolean {
