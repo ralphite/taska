@@ -17,6 +17,7 @@ import type { Item } from '../model/types'
 import { Hit, ProjTile } from '../ui/bits'
 import { Icon } from '../ui/Icon'
 import { noMatches } from '../model/words'
+import { REACH_WORDS } from '../model/reach'
 
 /** A row of what it found: an item or a rule is the list's own row; an input or a document, a row like it. */
 export type FoundRowView = (
@@ -260,7 +261,7 @@ export function SearchBody({ v, on, desk = false }: { v: SearchView; on: SearchE
         title={
           <span className="flex items-center justify-center gap-2">
             <Icon n="spinner" c="size-4 animate-spin text-zinc-400" sw="2" />
-            Taska is out of reach, retrying…
+            {REACH_WORDS.out}
           </span>
         }
       />

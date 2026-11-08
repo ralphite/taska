@@ -6,7 +6,6 @@ import { join } from 'node:path'
 import { describe, expect, test } from 'vitest'
 import { outgoingFacts, type Outgoing } from './outgoing'
 import {
-  AWAY,
   OUT_PHASES,
   OUT_PHASE_LIST,
   OUT_PLACES,
@@ -21,6 +20,7 @@ import {
   type OutPlace,
 } from './outgoingStates'
 import { VOICE_STATES, VOICE_STATE_LIST } from './voiceStates'
+import { AWAY } from './reach'
 
 const out = (o: Partial<Outgoing> = {}): Outgoing => ({ q: 'q1', slug: 'demo', text: 'Keep the filter', scope: null, files: [], t: 1, state: 'waiting', tries: 0, ...o })
 const PLACES = Object.keys(OUT_PLACES) as OutPlace[]

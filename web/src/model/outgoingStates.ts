@@ -5,13 +5,14 @@
 // this table (`outgoingDiagram`, `outgoingPlacesTable`, checked by a test).
 //
 // The outbox keeps what is on its way (stores/outbox: `state`, `net`, `unsent`, `back`, its files' `uploading`), and
-// the page knows how sure it is that Taska is out of reach (`away`, 2 and more: say so). The phase is worked out from
+// the page knows how sure it is that Taska is out of reach (`away`: model/reach). The phase is worked out from
 // those by `outPhase`, the one place it is; the sender changes them only by `outStep`, which refuses a way the table
 // does not have. Once Taska has it, what became of it is the input's (model/inputStates). Pure.
 
 import type { Outgoing } from './outgoing'
 import type { VoiceState } from './voiceStates'
 import { goingUp } from './fileStates'
+import { outOfReach, REACH_WORDS } from './reach'
 
 /** Where something on its way shows. */
 export const OUT_PLACES = {
@@ -53,7 +54,7 @@ export const OUT_PHASES = {
   uploading: { label: 'Uploading', say: 'Uploading…', tone: 'busy', voice: 'sending', needsYou: false, show: ALL(['cancel'] as const) },
   sending: { label: 'Sending', say: 'Sending…', tone: 'busy', voice: 'sending', needsYou: false, show: ALL(['cancel'] as const) },
   // Taska out of reach: it goes again by itself (T424: no Retry); it can be taken back to change it
-  waiting: { label: 'Waiting for Taska', say: 'Waiting for Taska…', tone: 'partial', voice: 'offline', needsYou: true, show: ALL(['edit', 'cancel'] as const) },
+  waiting: { label: 'Waiting for Taska', say: REACH_WORDS.waits, tone: 'partial', voice: 'offline', needsYou: true, show: ALL(['edit', 'cancel'] as const) },
   // Taska said no: Retry sends it again
   notSent: { label: 'Not sent', say: 'Not sent', tone: 'failed', voice: 'notSent', needsYou: true, show: ALL(['retry', 'edit', 'cancel'] as const) },
   // sent before a reload, its files going up again: it shows once they are up (it goes all the same)
@@ -123,9 +124,6 @@ export const OUT_STEPS: readonly OutStep[] = [
   { from: 'takenBack', on: 'go', to: 'takenBack' },
 ]
 
-/** Taska is out of reach for the page: it has not answered for a while (projectSync's `away`, 2 and more). */
-export const AWAY = 2
-
 /** It is going out right now (its request not answered yet). */
 export const inFlight = (o: Pick<Outgoing, 'state'>) => o.state === 'sending'
 
@@ -136,7 +134,7 @@ export function outPhase(o: Pick<Outgoing, 'state' | 'net' | 'unsent' | 'back' |
   const uploading = o.files.some(goingUp)
   if (o.back && uploading) return 'reloaded'
   if (o.state === 'failed') return o.net ? 'waiting' : 'notSent'
-  if (away >= AWAY) return 'waiting'
+  if (outOfReach(away)) return 'waiting'
   return uploading ? 'uploading' : 'sending'
 }
 

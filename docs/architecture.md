@@ -132,5 +132,7 @@ servers; `tests/check_data.py` validates a copied data root without a second imp
 - A change you make is a command in the outbox store: shown at once as an overlay on the server data (a pure
   function of server data + pending commands), sent in order with an id (the server runs it once), kept in
   localStorage until the server has it, sent again when the server is back.
+- Whether the server is out of reach is one rule, `model/reach.ts` (T728 #8): every place counts its tries without an
+  answer the same way (one that timed out counts twice), says so from the same threshold and in the same words.
 - Derived things (sections of the list, counts, needs you) are selectors over that overlay, computed with the same
   rules as the server's.

@@ -3,6 +3,7 @@
 // or deleted: it changes at once and Taska keeps it, with Undo.
 
 import { Refused, untilAnswered } from '../../api/http'
+import { REACH_WORDS } from '../../model/reach'
 import type { TaskaApi } from '../../api/taska'
 import type { ListQuery } from '../../model/route'
 import type { SavedView } from '../../model/types'
@@ -39,7 +40,7 @@ export class SavedViews {
     const was = [...this.d.store.getState().list]
     this.d.store.getState().set(list)
     try {
-      const d = await untilAnswered(() => this.d.api.setViews(list), () => this.d.toasts.show('Waiting for Taska…'))
+      const d = await untilAnswered(() => this.d.api.setViews(list), () => this.d.toasts.show(REACH_WORDS.waits))
       this.d.store.getState().set(d.views || list)
       this.d.toasts.show(said, undo ? () => this.save(was, 'Put back', false) : null)
     } catch (ex) {

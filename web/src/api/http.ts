@@ -1,6 +1,8 @@
 // Talking to the Taska server: every request has a time limit, so a dead connection fails after a while instead of
 // hanging; the three ways a request can fail are told apart (unreachable, the key is needed, the server said no).
 
+import { awayAfter, outOfReach } from '../model/reach'
+
 export const TIME_LIMIT = { command: 10000, view: 30000, read: 15000 } // ms
 
 /** The server could not be reached, or did not answer in time: worth sending again. */
@@ -35,16 +37,21 @@ export class Refused extends Error {
 }
 
 /** Asks until Taska answers (T424): out of reach, it waits (1 s, then longer, at most 10 s) and asks again, saying so
- * once (`waiting`); a refusal, or any other failure, comes back at once. */
+ * once (`waiting`) when it is sure Taska is out of reach (model/reach); a refusal, or any other failure, comes back at
+ * once. */
 export async function untilAnswered<T>(ask: () => Promise<T>, waiting?: () => void): Promise<T> {
   let told = false
+  let away = 0
   for (let wait = 1000; ; wait = Math.min(wait * 2, 10000)) {
     try {
       return await ask()
     } catch (ex) {
       if (!(ex instanceof Unreachable)) throw ex
-      if (!told) waiting?.()
-      told = true
+      away = awayAfter(away, ex.timedOut)
+      if (!told && outOfReach(away)) {
+        waiting?.()
+        told = true
+      }
       await new Promise((ok) => setTimeout(ok, wait))
     }
   }

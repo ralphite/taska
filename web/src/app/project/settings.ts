@@ -3,6 +3,7 @@
 // forgotten (with Undo); voice notes tidied or not; the transcription preferences edited in the box; a new key.
 
 import { Refused, untilAnswered } from '../../api/http'
+import { REACH_WORDS } from '../../model/reach'
 import type { TaskaApi } from '../../api/taska'
 import type { Spelling } from '../../model/types'
 import type { BoxStore } from '../../stores/box'
@@ -41,7 +42,7 @@ export class Settings {
 
   /** A change asked until Taska answers (T424); out of reach, it says so once and asks again. */
   private asked<T>(ask: () => Promise<T>): Promise<T> {
-    return untilAnswered(ask, () => this.d.toasts.show('Waiting for Taska…'))
+    return untilAnswered(ask, () => this.d.toasts.show(REACH_WORDS.waits))
   }
 
   private get s() {

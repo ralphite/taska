@@ -7,6 +7,7 @@ import { useLayout, useServices, useStores, useStoreValue } from '../app/context
 import { usePaneRef } from '../app/panes'
 import { useAway, useProjectModel, type ProjectRoute } from '../app/hooks'
 import { codeOf, liveN } from '../model/project'
+import { outOfReach } from '../model/reach'
 import { Icon } from '../ui/Icon'
 import { BackTo, ItemActs, ItemHead, ItemNav, Missing, NoSelection } from '../features/item/ItemPage'
 import { ItemPageContainer, openItemMenu, openLater } from '../features/item/ItemPageContainer'
@@ -72,7 +73,7 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
       )
     return (
       <PaneFrame place={place} hidden={hidden} desk={desk} paneRef={pane} head={<span className="font-mono text-sm font-bold">D{dn}</span>} onBack={back}>
-        <Missing what={`D${dn}`} loading={!m} away={away >= 2} />
+        <Missing what={`D${dn}`} loading={!m} away={outOfReach(away)} />
       </PaneFrame>
     )
   }
@@ -104,7 +105,7 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
         acts={<ItemActs it={it} on={{ set, later: (from) => openLater(app, desk, it.n, from) }} />}
         nav={<ItemNav full={full} on={nav} />}
         menu
-        notice={!desk && away >= 2 ? <OfflinePill /> : null}
+        notice={!desk && outOfReach(away) ? <OfflinePill /> : null}
         onBack={back}
         onMenu={(from) => openItemMenu(app, desk, it.n, null, from)}
       >
@@ -116,7 +117,7 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
   if (route.place.kind === 'item')
     return (
       <PaneFrame place={place} hidden={hidden} desk={desk} paneRef={pane} head={<span className="font-mono text-sm font-bold">{route.place.ref.toUpperCase()}</span>} onBack={back}>
-        <Missing what={route.place.ref.toUpperCase()} loading={!m} away={away >= 2} />
+        <Missing what={route.place.ref.toUpperCase()} loading={!m} away={outOfReach(away)} />
       </PaneFrame>
     )
   const side = route.place.kind === 'side' ? route.place.side : null

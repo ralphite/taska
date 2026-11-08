@@ -4,6 +4,7 @@
 
 import type { MouseEvent, Ref } from 'react'
 import { hitPath } from '../../model/find'
+import { REACH_WORDS } from '../../model/reach'
 import type { SearchHit, SearchPhase } from '../../model/types'
 import { hitWhere, inputCode, noMatches, plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
@@ -135,11 +136,11 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
           </button>
         </div>
       ) : null}
-      {away && rows ? <div className={NOTE}>{'Taska is out of reach, retrying…'}</div> : null}
+      {away && rows ? <div className={NOTE}>{REACH_WORDS.out}</div> : null}
       {q.trim() && phase !== 'idle' && (hits || phase !== 'asking') ? (
         <div className={`mb-3 overflow-hidden rounded-xl ${phase === 'asking' ? 'opacity-60' : ''} bg-white ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10`}>
           {phase === 'failed' || phase === 'retrying' ? (
-            <p className="px-4 py-3 text-sm text-zinc-500">{phase === 'failed' ? 'Search failed' : 'Taska is out of reach, retrying…'}</p>
+            <p className="px-4 py-3 text-sm text-zinc-500">{phase === 'failed' ? 'Search failed' : REACH_WORDS.out}</p>
           ) : hits?.length ? (
             hits.slice(0, 12).map((x) => (
               <a
@@ -183,7 +184,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
         </div>
         <ul>
           {!rows ? (
-            <li className={away ? 'px-4 py-3 text-sm text-zinc-500' : ''}>{away ? 'Taska is out of reach, retrying…' : <Skeleton shape="tile" cls="px-1 py-1.5" />}</li>
+            <li className={away ? 'px-4 py-3 text-sm text-zinc-500' : ''}>{away ? REACH_WORDS.out : <Skeleton shape="tile" cls="px-1 py-1.5" />}</li>
           ) : (
             rows.map((p) => {
               const next = p.next ? (

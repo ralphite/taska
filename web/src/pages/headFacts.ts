@@ -3,6 +3,7 @@
 // both use it.
 
 import { agentLine } from '../model/agents'
+import { outOfReach } from '../model/reach'
 import { rulesDoc, waitingProposals } from '../model/rules'
 import type { ProjectModel } from '../model/project'
 import type { ListQuery } from '../model/route'
@@ -24,7 +25,7 @@ export function tabCounts(m: ProjectModel, tab: Tab, list: ListQuery, desk: bool
 }
 
 /** Whether an agent is around (`away`: how long Taska has not answered). */
-export const agentInfo = (m: ProjectModel, away: number): AgentInfo => ({ ...agentLine(m.facts.agents, m.facts.work, m.at), offline: away >= 2 })
+export const agentInfo = (m: ProjectModel, away: number): AgentInfo => ({ ...agentLine(m.facts.agents, m.facts.work, m.at), offline: outOfReach(away) })
 
 /** The desktop's bar: Items and Rules (Archive is a view of Items; Inputs is the New input page); none selected while
  * Settings or a side list shows. */

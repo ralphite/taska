@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import type { Route } from '../../model/route'
+import { outOfReach } from '../../model/reach'
 import { Home, type HomeEvents } from './Home'
 import { homeRows } from './homeRows'
 
@@ -16,7 +17,7 @@ export function HomeContainer({ route }: { route: HomeRoute }) {
   const projects = useStoreValue(stores.data, (s) => s.projects)
   const needs = useStoreValue(stores.data, (s) => s.needs)
   const at = useStoreValue(stores.data, (s) => s.listedAt)
-  const away = useStoreValue(stores.data, (s) => s.listAway)
+  const away = useStoreValue(stores.data, (s) => outOfReach(s.listAway))
   const hits = useStoreValue(stores.search, (s) => s.hits)
   const phase = useStoreValue(stores.search, (s) => s.phase)
   const [q, setQ] = useState('')

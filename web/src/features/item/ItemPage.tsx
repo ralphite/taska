@@ -7,6 +7,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type Rea
 import { ACT_KEY, deskSlots, type Slot } from '../../model/actions'
 import { closed } from '../../model/items'
 import { needsYou, shownStatus, talkPlan } from '../../model/needStates'
+import { REACH_WORDS } from '../../model/reach'
 import type { Doc, FileRef, Item } from '../../model/types'
 import { Kbd, SectionHead, Soft } from '../../ui/bits'
 import { Grip } from '../../ui/Grip'
@@ -574,7 +575,7 @@ export function ItemNav({ full, on }: { full: boolean; on: { prev(): void; next(
 export function Missing({ what, loading, away }: { what: string; loading: boolean; away: boolean }) {
   return (
     <div className="grid h-full place-items-center p-8 text-center">
-      <p className="text-[15px] text-zinc-500 dark:text-zinc-400">{!loading ? `${what} is not in this project` : away ? 'Taska is out of reach, retrying…' : `Loading ${what}…`}</p>
+      <p className="text-[15px] text-zinc-500 dark:text-zinc-400">{!loading ? `${what} is not in this project` : away ? REACH_WORDS.out : `Loading ${what}…`}</p>
     </div>
   )
 }

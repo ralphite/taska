@@ -15,15 +15,16 @@ export interface DataState {
   needs: Need[]
   /** when the projects were last listed (what "an agent is around" is measured against) */
   listedAt: number
-  /** the list could not be asked lately: the one shown is the one kept from before */
-  listAway: boolean
+  /** how sure the page is that Taska is out of reach for the list of projects (model/reach `away`): the one shown is
+   * the one kept from before */
+  listAway: number
   /** each project's pictures' sizes, by file */
   sizes: Readonly<Record<string, Readonly<Record<string, readonly [number, number]>>>>
   setSizes(slug: string, sizes: Record<string, [number, number]>): void
   setCopy(slug: string, copy: ServerCopy): void
   setAway(slug: string, away: number): void
   setProjects(rows: ProjectRow[], needs: Need[] | null, at: number): void
-  setListAway(away: boolean): void
+  setListAway(away: number): void
 }
 
 export type DataStore = StoreApi<DataState>
@@ -35,12 +36,12 @@ export function createDataStore(projects: ProjectRow[] | null = null, needs: Nee
     projects,
     needs,
     listedAt: at,
-    listAway: false,
+    listAway: 0,
     sizes: {},
     setSizes: (slug, sizes) => set((s) => ({ sizes: { ...s.sizes, [slug]: { ...s.sizes[slug], ...sizes } } })),
     setCopy: (slug, copy) => set((s) => ({ copies: { ...s.copies, [slug]: copy } })),
     setAway: (slug, away) => set((s) => (s.away[slug] === away ? s : { away: { ...s.away, [slug]: away } })),
-    setProjects: (rows, needs, at) => set((s) => ({ projects: rows, needs: needs ?? s.needs, listedAt: at, listAway: false })),
+    setProjects: (rows, needs, at) => set((s) => ({ projects: rows, needs: needs ?? s.needs, listedAt: at, listAway: 0 })),
     setListAway: (away) => set((s) => (s.listAway === away ? s : { listAway: away })),
   }))
 }

@@ -4,6 +4,7 @@
 
 import { fixIn, pickSide, type HeardFile } from '../../model/doubts'
 import { Refused, untilAnswered } from '../../api/http'
+import { REACH_WORDS } from '../../model/reach'
 import type { TaskaApi } from '../../api/taska'
 import type { BoxStore } from '../../stores/box'
 import type { Box } from '../../app/inputs/box'
@@ -62,7 +63,7 @@ export class VoiceWords {
     const file = files.find((f) => r.files.some((x) => x.key === f.key))?.f || ''
     try {
       // the server keeps the fix for the developers too, with where it was heard
-      await untilAnswered(() => this.d.api.setCorrection({ wrong: at.wrong, right, project: slug, item: item || '', file }), () => this.d.toasts.show('Waiting for Taska…'))
+      await untilAnswered(() => this.d.api.setCorrection({ wrong: at.wrong, right, project: slug, item: item || '', file }), () => this.d.toasts.show(REACH_WORDS.waits))
     } catch (ex) {
       return this.d.toasts.show(ex instanceof Refused ? ex.message || 'Not saved' : 'Not saved', null, { error: true }) // refused: the draft keeps your words
     }

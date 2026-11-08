@@ -4,6 +4,7 @@
 
 import type { AgentTone } from '../model/agents'
 import { TAB_WORD, type Tab } from '../model/words'
+import { REACH_WORDS } from '../model/reach'
 import { Avatar, ProjTile } from '../ui/bits'
 import { Icon, StateIcon } from '../ui/Icon'
 import { FilterDot } from '../features/list/Filters'
@@ -31,7 +32,7 @@ export function OfflinePill() {
       className="flex h-8 items-center gap-2 rounded-full bg-zinc-100 px-3 text-[13px] font-medium text-zinc-600 ring-1 ring-zinc-900/5 ring-inset dark:bg-zinc-800/80 dark:text-zinc-300 dark:ring-white/5"
     >
       <Icon n="spinner" c="size-3.5 animate-spin" sw="2.25" />
-      Out of reach, retrying…
+      {REACH_WORDS.pill}
     </span>
   )
 }

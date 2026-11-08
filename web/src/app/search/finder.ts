@@ -6,7 +6,8 @@
 // type searches a moment after you stop; the mic runs the phone's way, and what you say takes the words' place when
 // they were all selected. While Taska is out of reach it keeps trying, and goes on by itself when it answers.
 
-import { Refused } from '../../api/http'
+import { Refused, Unreachable } from '../../api/http'
+import { awayAfter, outOfReach } from '../../model/reach'
 import type { TaskaApi } from '../../api/taska'
 import { pickSide, type HeardFile } from '../../model/doubts'
 import { heardWords, saidMore, type FindKind } from '../../model/find'
@@ -216,7 +217,7 @@ export class Finder {
   private async hear(slug: string, blob: Blob, ms: number, gen: number): Promise<{ f: string; tr: string; doubts: HeardFile['doubts'] } | null> {
     const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm'
     let f = ''
-    for (let n = 0, tries = 0, waits = 0; gen === this.gen; ) {
+    for (let n = 0, tries = 0, waits = 0, away = 0; gen === this.gen; ) {
       try {
         if (!f) f = (await this.d.api.upload(slug, blob, `search ${clock(ms).replace(':', '-')}.${ext}`, { voice: true })).f
         const w = await this.d.api.words(slug, f, true, { again: tries > 0 })
@@ -230,7 +231,9 @@ export class Finder {
         return w.done && !w.tr_error ? { f, tr: w.tr || '', doubts: w.doubts } : null
       } catch (e) {
         if (e instanceof Refused) return null
-        if (gen === this.gen) this.s.set({ phase: 'offline' })
+        // out of reach once the page is sure (model/reach): one try without an answer still says it is writing
+        away = awayAfter(away, e instanceof Unreachable && e.timedOut)
+        if (gen === this.gen && outOfReach(away)) this.s.set({ phase: 'offline' })
         await this.d.pauses.wait(Pauses.after(n++))
       }
     }
@@ -243,7 +246,7 @@ export class Finder {
     const q = this.s.words.trim()
     if (!q) return
     this.s.set(keep ? { phase: 'searching', sel: 0 } : { phase: 'searching', typed: false, kind: 'all', sel: 0 })
-    for (let n = 0; gen === this.gen; ) {
+    for (let n = 0, away = 0; gen === this.gen; ) {
       try {
         const a = await this.d.api.find(q, this.d.slug())
         if (gen !== this.gen) return
@@ -251,7 +254,9 @@ export class Finder {
       } catch (e) {
         if (gen !== this.gen) return
         if (e instanceof Refused) return this.s.set({ phase: 'nothing', answer: null })
-        this.s.set({ phase: 'offline', answer: null })
+        // out of reach once the page is sure (model/reach): until then it is still searching
+        away = awayAfter(away, e instanceof Unreachable && e.timedOut)
+        if (outOfReach(away)) this.s.set({ phase: 'offline', answer: null })
         await this.d.pauses.wait(Pauses.after(n++))
       }
     }

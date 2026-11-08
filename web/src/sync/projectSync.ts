@@ -7,6 +7,7 @@
 import { Abandoned, KeyNeeded, Unreachable } from '../api/http'
 import type { TaskaApi } from '../api/taska'
 import { merge, type ServerCopy } from '../model/project'
+import { awayAfter } from '../model/reach'
 import type { ViewAnswer } from '../model/types'
 import type { CopyCache } from './cache'
 
@@ -34,7 +35,7 @@ export class ProjectSync {
   private copy: ServerCopy | null = null
   private stop = new AbortController()
   private failures = 0 // failed tries in a row
-  private away = 0 // how sure the page is the server is away: a try that timed out counts twice
+  private away = 0 // how sure the page is the server is away (model/reach: a try that timed out counts twice)
   readonly slug: string
   private readonly api: TaskaApi
   private readonly cache: CopyCache
@@ -118,7 +119,7 @@ export class ProjectSync {
       return this.on.gone(this.slug, gone)
     }
     this.failures += 1
-    this.away += ex instanceof Unreachable && ex.timedOut ? 2 : 1
+    this.away = awayAfter(this.away, ex instanceof Unreachable && ex.timedOut)
     this.on.reach(this.slug, this.away)
   }
 
