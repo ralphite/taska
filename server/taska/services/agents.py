@@ -17,6 +17,7 @@ from ..domain.model import Input, Item, Message
 from ..domain.state import ProjectState, ident
 from ..domain.text import first_line, seconds
 from ..domain.vocab import CLAIM_TTL, PEOPLE
+from ..infra.agent_sessions import Blocked
 from ..infra.project_db import ProjectDb
 
 
@@ -66,6 +67,7 @@ class AgentActivity:
             {str(k): {int(n): int(m) for n, m in v.items()} for k, v in heard.items()} if isinstance(heard, dict) else {})
         self.told: Dict[str, Set[int]] = {}  # per session: messages for it that a /do reply named already
         self.rule_marks: Dict[str, int] = {}  # per session: how much of the log it has been told rules from
+        self.blocked: Dict[str, List[Blocked]] = {}  # per agent: its sessions that wait on the user now (T711)
 
     # -- calls ------------------------------------------------------------------
 
@@ -258,6 +260,23 @@ class AgentActivity:
             out.append(f"{ident(x.by, x.ses)} wrote {where}: {first_line(x.text, 120)} (GET /{c})")
         return out
 
+    # -- sessions waiting on the user ----------------------------------------------
+
+    def see_blocked(self, found: List[Blocked]) -> None:
+        """The sessions on this machine that wait on the user (T711): those whose title is a session name an agent
+        gave here are this project's. A change wakes the pages."""
+        mine: Dict[str, List[Blocked]] = {}
+        for b in found:
+            key = " ".join(b.name.split())[:160]
+            for k, v in self.agents.items():
+                if key and (key == v.session or key in v.sessions):
+                    mine.setdefault(k, []).append(b)
+                    break
+        if mine != self.blocked:
+            self.blocked = mine
+            self.version += 1
+            self._changed()
+
     # -- what the page shows -------------------------------------------------------
 
     def presence(self) -> List[Dict[str, object]]:
@@ -270,5 +289,8 @@ class AgentActivity:
             if v.sessions:
                 row["sessions"] = [{"name": n, "t": int(t * 1000)}
                                    for n, t in sorted(v.sessions.items(), key=lambda x: -x[1]) if t > day]
+            if self.blocked.get(k):
+                row["blocked"] = [{"session": b.name, "waitingFor": b.waiting_for, "since": b.since}
+                                  for b in self.blocked[k]]
             out.append(row)
         return out

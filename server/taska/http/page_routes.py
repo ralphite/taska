@@ -27,7 +27,7 @@ from ..page_api.sync import Cursor
 from ..services import organizer
 from ..services.project import Project
 from ..services.voice_jobs import answer as voice_answer
-from .agent_routes import presence, scope_of
+from .agent_routes import presence, scope_of, see_blocked
 from .messages import NOT_FOUND, Request, Response, as_json, text
 
 if TYPE_CHECKING:
@@ -40,10 +40,10 @@ _PHONE = re.compile(r"iPhone|Android.*Mobile")
 def _view(ctx: "AppContext", req: Request, p: Project, since: Optional[Cursor]) -> Dict[str, Any]:
     """The project for the page (all of it, or what changed since the cursor), with its own facts."""
     ws = ctx.workspace
+    pres = presence(p)  # first: a session found waiting on the user bumps the agents' version the cursor carries
     with p.lock:
         at = (p.news.rev, p.agents.version)
         out = ctx.pages(p).feed.view(at, p.news.boot, lambda: views.entities(p.state, p.agents), since)
-        pres = presence(p)
         out["project"] = views.project_view(p.state, p.agents, slug=p.slug, title=p.title, organizer_on=p.organizing.on,
                                             organizer_busy=sorted(p.organizing.busy), organizer_model=" + ".join(organizer.MODELS),
                                             presence=pres["agents"], work=pres["work"], db_path=p.store.path)
@@ -71,7 +71,11 @@ def get(ctx: "AppContext", req: Request, p: Project, sub: str) -> Optional[Respo
     if sub == "/api/changes":  # a long wait for news: a page in the background asks with wait=0 and lets go
         since = Cursor.parse(req.arg("cursor"))
         wait = max(0, min(25, int(req.arg("wait", "25") or 25)))
+        see_blocked(p)  # sessions waiting on the user are looked at on each ask and when its wait ends (T711)
         news = p.news.wait_for(lambda: _changed(p, since), timeout=wait)
+        if not news:
+            see_blocked(p)
+            news = _changed(p, since)
         if not news:
             return as_json({"cursor": req.arg("cursor"), "same": True,
                             "server": {"page": ctx.page.version(), "update": ctx.status.update_ready()}})

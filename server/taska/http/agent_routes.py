@@ -17,6 +17,7 @@ from ..agent_text.work import Asker, Work, next_work
 from ..domain import rules
 from ..domain.rules import item_at
 from ..domain.vocab import MAX_FILE, PEOPLE, Refused
+from ..infra.agent_sessions import blocked_sessions
 from ..infra.audio import leveled
 from ..services.project import Project
 from .messages import NOT_FOUND, Request, Response, as_json, text
@@ -46,8 +47,17 @@ def work_for(p: Project, req: Request, who: Optional[str], session: str) -> Work
     return w
 
 
+def see_blocked(p: Project) -> None:
+    """Which of this project's agent sessions wait on the user now (T711): a few small files, read out of the lock."""
+    found = blocked_sessions()
+    with p.lock:
+        p.agents.see_blocked(found)
+
+
 def presence(p: Project) -> dict:
-    """What the page shows about agents: who came when, who waits now, and whether work waits for them."""
+    """What the page shows about agents: who came when, who waits now (for work, or on the user), and whether work
+    waits for them."""
+    see_blocked(p)
     with p.lock:
         work = next_work(p.reading(), p.slug, p.gone, Asker()).has_work
         return {"agents": p.agents.presence(), "work": work}
