@@ -22,7 +22,8 @@ export const threadCounts = (page: Page) => shown(page.locator(THREAD_COUNTS))
 export const commentRail = (page: Page) => page.locator('aside[aria-label="Comments"]')
 /** The buttons by the block under the pointer: speak a comment, and comment. */
 export const blockSay = (page: Page) => shown(page.getByRole('button', { name: 'Voice comment', exact: true }))
-export const blockPick = (page: Page) => shown(page.getByRole('button', { name: 'Comment', exact: true }))
+// a paragraph's own Comment button, not the top bar's Comment toggle (r1095), which carries aria-pressed
+export const blockPick = (page: Page) => shown(page.locator('button[aria-label="Comment"]:not([aria-pressed])'))
 /** A choice in a document's form, to tick. */
 export const choice = (page: Page, words: string) => shown(docBlocks(page).locator('[role="group"] button[aria-pressed]').filter({ hasText: words })).first()
 /** A document's form (its choices), by one of them. */
