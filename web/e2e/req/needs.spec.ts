@@ -128,7 +128,7 @@ test("r802: the card an item's code shows under the pointer says its status in o
   await expect(tip(page)).not.toContainText('In progress')
 })
 
-test('D115 #8: a proposal you decline and work you send back from the list say so on their rows as their cards do: Declined, Sent back, then which it was', async ({
+test('D115 #8: a proposal you decline and work you send back from the list say so on their rows as their cards do: the row stays, its title struck, its button saying Declined or Sent back', async ({
   page,
   request,
 }) => {
@@ -146,7 +146,13 @@ test('D115 #8: a proposal you decline and work you send back from the list say s
   ]) {
     await row(page, title).first().hover()
     await rowActs(page, n).and(page.getByRole('button', { name: button, exact: true })).click()
-    await expect(page.locator(`#list article[data-n="${n}"]`)).toContainText(`${word} · ${title}`) // the held row: its code, the word, then its title (R6-1 #11)
+    // B699 (r1126): the row you acted on stays the row it was, in its place, its title struck and its button disabled
+    // saying what you did (not swapped for a one-line "Declined · title" as R6-1 #11 first had it)
+    const held = page.locator(`#list article[data-n="${n}"]`)
+    await expect(held).toContainText(title)
+    await expect(held.locator('span.line-through')).toContainText(title)
+    await expect(held.getByRole('button', { name: word, exact: true })).toBeDisabled()
+    await expect(held.getByRole('button', { name: button, exact: true })).toHaveCount(0)
   }
 })
 
