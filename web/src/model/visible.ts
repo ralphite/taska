@@ -1,7 +1,8 @@
 // Which items a list shows: by tab, by the preset view (on Items the status is a view, not a filter) and by the
 // filters, in the list's order. Pure: from the project and the list's settings.
 
-import { closed, needsYou } from './items'
+import { closed } from './items'
+import { needsYou } from './needStates'
 import type { ListKey, ListQuery } from './route'
 import type { Item } from './types'
 import { ARCHIVE_FILTER_WORD, LETTER, SORT_WORDS, STATUS_FILTER_WORD, STATUS_WORD, WHEN_WORD, type Tab } from './words'

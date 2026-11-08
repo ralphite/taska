@@ -2,7 +2,7 @@
 // Later, finished work), or a word on why it is empty. Props only; ItemListContainer gives it the rows.
 
 import { forwardRef, type ReactNode, useLayoutEffect, useRef } from 'react'
-import type { NeedAction } from '../../model/items'
+import type { NeedAct } from '../../model/needStates'
 import type { Item, RuleProposal } from '../../model/types'
 import { Icon, type IconName } from '../../ui/Icon'
 import { Empty, Skeleton } from '../../ui/bits'
@@ -14,7 +14,7 @@ import { PULL } from '../../ui/tones'
 
 export type DrawnRow =
   | { kind: 'item'; key: string; it: Item; depth: number; band: string; foldable: boolean; folded: boolean; facts: RowFacts; look: RowLook; said?: string }
-  | { kind: 'needs'; key: string; it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; act?: NeedAction }
+  | { kind: 'needs'; key: string; it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; act?: NeedAct }
   | { kind: 'hidden-kids'; key: string; parent: number; depth: number; open: boolean; later: number }
   | { kind: 'archive-all'; key: string; n: number }
   | { kind: 'proposal'; key: string; p: RuleProposal; who: string }

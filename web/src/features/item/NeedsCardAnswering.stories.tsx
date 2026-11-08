@@ -21,3 +21,14 @@ export const ApprovedQuestionWaits: Story = {
   ...at({ status: 'open', thread: [proposal, message({ id: 7, kind: 'ask', text: 'Which format should the export use?\n- ( ) CSV\n- ( ) Excel' })], wait: askOf('Which format should the export use?\n- ( ) CSV\n- ( ) Excel'), decided: { from: 'proposed', to: 'open', msg: 7, t: T } }),
   name: 'Proposal approved, its question still waits',
 }
+/** T728 #3: approved while a question in words still waits: ✓ Approved stays where Approve was, beside ↓ Answer below
+ * (it went before; r1003) */
+export const ApprovedWordsQuestionWaits: Story = {
+  ...at({ status: 'open', thread: [proposal, message({ id: 7, kind: 'ask', text: 'Should the file name say the filter too?' })], wait: askOf('Should the file name say the filter too?'), decided: { from: 'proposed', to: 'open', msg: 7, t: T } }),
+  name: 'Proposal approved, its question in words still waits',
+}
+/** a proposal with a question in words: Approve beside it; A answers it, as the row's Answer does (T728 #3) */
+export const ProposalWordsQuestion: Story = {
+  ...at({ status: 'proposed', thread: [proposal, message({ id: 7, kind: 'ask', text: 'Should the file name say the filter too?' })], wait: askOf('Should the file name say the filter too?') }),
+  name: 'Proposal, a question in words waits',
+}

@@ -4,7 +4,7 @@
 // the browser's push service; Taska then pushes when something newly needs you, and the phone shows what it is (sw.ts).
 
 import type { TaskaApi } from '../../api/taska'
-import { needsYou } from '../../model/items'
+import { needsYou } from '../../model/needStates'
 import { codeOf, type ProjectModel } from '../../model/project'
 import type { ProjectRow } from '../../model/types'
 import { plural } from '../../model/words'

@@ -1,7 +1,8 @@
 // What the item list shows, as a list of rows to draw: worked out from the project, the list's settings and the
 // list's own state (folded parents, held rows). Pure, so it is tested alone and the list component only draws.
 
-import { closed, latestFirst, needsOrder, needsYou, rowAction, workOrder, type NeedAction } from '../../model/items'
+import { closed, latestFirst, needsOrder, workOrder } from '../../model/items'
+import { needRow, needsYou, type NeedAct } from '../../model/needStates'
 import type { ProjectModel } from '../../model/project'
 import type { ListQuery } from '../../model/route'
 import { rulesDoc, waitingProposals } from '../../model/rules'
@@ -12,7 +13,7 @@ import type { Tab } from '../../model/words'
 export type Row =
   /** `said`: what you just did to it, while the list holds still (it is no longer in the list, or no longer waits on you) */
   | { kind: 'item'; it: Item; depth: number; foldable: boolean; folded: boolean; band: string; said?: string }
-  | { kind: 'needs'; it: Item; depth: number; said?: string; act?: NeedAction }
+  | { kind: 'needs'; it: Item; depth: number; said?: string; act?: NeedAct }
   | { kind: 'hidden-kids'; parent: number; depth: number; open: boolean; later: number }
   | { kind: 'archive-all'; n: number }
   /** an agent's proposed change to the rules, waiting on you (I693): first in Needs you */
@@ -93,7 +94,7 @@ export function heldRows(frozen: readonly Row[], m: ProjectModel, tab: Tab, list
     if (r.kind !== 'item' && r.kind !== 'needs') return r
     const it = m.byN.get(r.it.n) || r.it
     const said = held.get(it.n)
-    if (said != null && r.kind === 'needs' && (!shownNow.has(it.n) || !needsYou(it))) return { ...r, it, said, act: r.act ?? rowAction(r.it)[0] } // its button as it was
+    if (said != null && r.kind === 'needs' && (!shownNow.has(it.n) || !needsYou(it))) return { ...r, it, said, act: r.act ?? needRow(r.it)?.act } // its button as it was
     if (said != null && !shownNow.has(it.n)) return { ...r, it, said }
     if (r.kind === 'needs' && !needsYou(it)) return { kind: 'item', it, depth: r.depth, foldable: false, folded: false, band: '' }
     return r.kind === 'item' && !r.foldable && parents.has(it.n) ? { ...r, it, foldable: true } : { ...r, it }

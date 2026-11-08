@@ -1,7 +1,7 @@
 // What a code's hover card says (T12, D17, #360 in some words): its kind, state and time on top, its name, then the
 // start of it.
 
-import { shownStatus } from './items'
+import { shownStatus } from './needStates'
 import { codeOf, liveN, type ProjectModel } from './project'
 import { when } from './time'
 import { inputCode, plural, whoName } from './words'

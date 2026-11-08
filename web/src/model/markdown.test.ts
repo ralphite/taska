@@ -3,7 +3,8 @@
 import { describe, expect, it as test } from 'vitest'
 import { item, message } from '../stories/fixtures'
 import { blocks, choiceLabels, listOf, plainQuote, ticks } from './markdown'
-import { answerOf, answeredLast, decidedCard, talkPlan, versions, withdrawn } from './talk'
+import { needOf, talkPlan } from './needStates'
+import { answerOf, versions, withdrawn } from './talk'
 
 describe('blocks', () => {
   test('paragraphs keep their line breaks; a blank line starts another', () => {
@@ -57,14 +58,14 @@ describe('the talk', () => {
     expect(answerOf([ask, answer, message({ id: 4, by: 'you', kind: 'say', text: '✓ CSV' })], ask)).toEqual(['CSV'])
     expect(answerOf([ask], ask, '✓ CSV')).toEqual(['CSV'])
     expect(answerOf([ask], ask)).toBeNull()
-    expect(answeredLast(item({ n: 1, thread: [ask, answer] }))).toBe(true)
+    expect(needOf(item({ n: 1, status: 'proposed', talked: true, thread: [ask, answer] })).state).toBe('onAnswer')
   })
 
   test('your decision shows while it is the latest word', () => {
     const p = message({ id: 5, kind: 'propose', text: 'Do it' })
     const decided = item({ n: 1, status: 'open', thread: [p], decided: { from: 'proposed', to: 'open', msg: 5, t: '' } })
-    expect(decidedCard(decided)?.dec.to).toBe('open')
-    expect(decidedCard({ ...decided, thread: [p, message({ id: 6, text: 'Started' })] })).toBeNull()
+    expect(needOf(decided)).toMatchObject({ state: 'decided', dec: { to: 'open' } })
+    expect(needOf({ ...decided, thread: [p, message({ id: 6, text: 'Started' })] }).state).toBe('none')
   })
 
   test('a question taken back; an input you edited, as its versions', () => {

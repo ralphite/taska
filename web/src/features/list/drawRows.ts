@@ -2,7 +2,8 @@
 // talk, draft, whether it is next, new from an agent, who works on it, where a searched word was found) and how it
 // looks (open in the pane, picked, dragged). Pure: the container and the stories draw the same rows from the same data.
 
-import { closed, excerpt, lastAgentMessage, workNews, type DropHow } from '../../model/items'
+import { closed, lastAgentMessage, workNews, type DropHow } from '../../model/items'
+import { needRow } from '../../model/needStates'
 import { codeOf, filesOf, type ProjectModel } from '../../model/project'
 import { ruleWho } from '../../model/rules'
 import { laterOn } from '../../model/time'
@@ -90,7 +91,7 @@ export function drawRows(m: ProjectModel, rows: Row[], w: DrawWith): DrawnRow[] 
       case 'item':
         return { kind: 'item', key: 'i' + r.it.n, it: r.it, depth: r.depth, band: r.band, foldable: r.foldable, folded: r.folded, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), said: r.said }
       case 'needs': {
-        return { kind: 'needs', key: 'i' + r.it.n, it: r.it, depth: r.depth, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), excerpt: excerpt(r.it), said: r.said, act: r.act }
+        return { kind: 'needs', key: 'i' + r.it.n, it: r.it, depth: r.depth, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), excerpt: needRow(r.it)?.line ?? '', said: r.said, act: r.act }
       }
       case 'hidden-kids':
         return { kind: 'hidden-kids', key: 'h' + r.parent, parent: r.parent, depth: r.depth, open: r.open, later: r.later }

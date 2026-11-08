@@ -2,7 +2,8 @@
 // (its model), the others as last listed, each with its colour and its card (F667). Pure: the page and the stories
 // both use it.
 
-import { closed, needsYou } from '../model/items'
+import { closed } from '../model/items'
+import { needsYou } from '../model/needStates'
 import { needsCount } from '../model/rules'
 import type { ProjectModel } from '../model/project'
 import { projectCard, type ProjectCardFacts } from '../model/projects'

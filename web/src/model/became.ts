@@ -6,7 +6,7 @@
 
 import { dayOf, timeOf } from './inputs'
 import { when } from './time'
-import { shownStatus } from './items'
+import { shownStatus } from './needStates'
 import { codeOf, inputDraft, type ProjectModel } from './project'
 import type { Input, ItemType } from './types'
 import { sentNotes } from './voiceStates'

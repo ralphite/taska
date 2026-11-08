@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { decidedWord } from '../../model/talk'
+import { decidedWord } from '../../model/needStates'
 import { heldWord } from './itemActions'
 
 describe('a row just changed says it in a few words', () => {

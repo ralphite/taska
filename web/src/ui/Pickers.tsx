@@ -2,7 +2,8 @@
 // command needs. Props only.
 
 import { useState, type ReactNode } from 'react'
-import { closed, shownStatus } from '../model/items'
+import { closed } from '../model/items'
+import { shownStatus } from '../model/needStates'
 import type { Item } from '../model/types'
 import { hay } from '../model/visible'
 import { Icon, StateIcon } from './Icon'

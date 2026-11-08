@@ -5,8 +5,8 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { ACT_KEY, deskSlots, type Slot } from '../../model/actions'
-import { closed, needsYou, shownStatus } from '../../model/items'
-import { talkPlan } from '../../model/talk'
+import { closed } from '../../model/items'
+import { needsYou, shownStatus, talkPlan } from '../../model/needStates'
 import type { Doc, FileRef, Item } from '../../model/types'
 import { Kbd, SectionHead, Soft } from '../../ui/bits'
 import { Grip } from '../../ui/Grip'
@@ -357,7 +357,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
       timers.forEach(clearTimeout)
     }
   }, [readOnly])
-  const asks = !!it.wait || ((it.status === 'proposed' || it.status === 'review') && !it.talked)
+  const asks = needsYou(it)
   const asked = useRef({ n: it.n, on: asks })
   useLayoutEffect(() => {
     // the card that asks you comes back (an Undo, a change put back): the talk shows it, at its end

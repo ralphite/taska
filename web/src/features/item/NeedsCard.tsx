@@ -3,9 +3,9 @@
 // the other quieter, and Modify to choose again. Props only.
 
 import type { ReactNode } from 'react'
-import { lastAgentMessage, userWord } from '../../model/items'
+import { lastAgentMessage } from '../../model/items'
 import { hasChoices } from '../../model/markdown'
-import { answeredLast, chosenWord, decidedCard, decidedStill, heldMessage, PAST } from '../../model/talk'
+import { chosenWord, DECISION, NEED_STATES, needOf, PAST, type Need } from '../../model/needStates'
 import { when } from '../../model/time'
 import type { Item, Message } from '../../model/types'
 import { whoName } from '../../model/words'
@@ -111,34 +111,27 @@ const both = (label: string) => [label, PAST[label] ?? label]
 const KEEP_WORDS: Record<string, readonly string[]> = { proposed: ['Approve', 'Approved', 'Declined'], review: ['Accept', 'Accepted', 'Sent back'] }
 
 /** Approve or Accept as well as answering (a button like any other while it can be pressed); decided, it says what you
- * chose. */
-export function KeepBtn({ it, on }: { it: Item; on: CardEvents }) {
-  if (decidedStill(it) && it.decided) {
+ * chose (`need`: what the item needs from you, model/needStates). */
+export function KeepBtn({ it, need, on }: { it: Item; need: Need; on: CardEvents }) {
+  if (need.keep === 'decided' && need.dec) {
     // decided: the same button where it was, disabled, its word said as done in its colour (D106 #4.3, r1003)
-    const w = chosenWord(it.decided)
+    const w = chosenWord(need.dec)
     return (
       <button disabled aria-pressed className={DECIDED_ON(CHOSEN_TONE[w] ?? CHOSEN_TONE.Reply)}>
         <Icon n={ACT_ICON[w]} c="size-4" sw="2.25" />
-        <Word shown={PAST[w] ?? w} all={KEEP_WORDS[it.decided.from] ?? [PAST[w] ?? w]} />
+        <Word shown={PAST[w] ?? w} all={KEEP_WORDS[need.dec.from] ?? [PAST[w] ?? w]} />
       </button>
     )
   }
   // still to be pressed beside an answered question: a button like any other
-  if (it.status === 'proposed')
-    return (
-      <button onClick={() => on.decide(it.n, 'open')} className={SECOND}>
-        <Icon n="thumb" c="size-4" />
-        <Word shown="Approve" all={KEEP_WORDS.proposed} />
-      </button>
-    )
-  if (it.status === 'review')
-    return (
-      <button onClick={() => on.decide(it.n, 'done')} className={SECOND}>
-        <Icon n="check" c="size-4" sw="2.25" />
-        <Word shown="Accept" all={KEEP_WORDS.review} />
-      </button>
-    )
-  return null
+  if (need.keep !== 'decide' || !need.of) return null
+  const { status, yes } = DECISION[need.of]
+  return (
+    <button onClick={() => on.decide(it.n, yes.to)} className={SECOND}>
+      {need.of === 'proposal' ? <Icon n="thumb" c="size-4" /> : <Icon n="check" c="size-4" sw="2.25" />}
+      <Word shown={yes.word} all={KEEP_WORDS[status]} />
+    </button>
+  )
 }
 
 export const SendAnswerBtn = ({ n, picked, cls, keyHint = false, on }: { n: number; picked: boolean; cls: string; keyHint?: boolean; on: CardEvents }) => (
@@ -168,13 +161,16 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
   going?: string | null
 }) {
   const n = it.n
-  const m = heldMessage(it)
+  // what it needs from you, and so which card (model/needStates)
+  const need = needOf(it, going)
+  const kind = NEED_STATES[need.state].card
+  const m = need.msg
   const name = msgName(m || it.wait || { by: it.by && it.by !== 'you' ? it.by : 'agent' })
   const text = (x: Message) => <MsgText x={x} env={env} on={on} whole />
   const card = (icon: IconName, title: string, body: ReactNode, buttons: ReactNode, hint = '') => (
     <NeedFrame icon={icon} title={title} t={m?.t} quiet={icon === 'ask'} body={body} foot={buttons} hint={hint} now={env.now} />
   )
-  if (it.wait) {
+  if (kind === 'question' && it.wait) {
     const w = it.wait
     const choices = hasChoices(w.text)
     const asking = env.choosing
@@ -188,23 +184,23 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
         ) : null}
       </>
     )
-    const keep = it.status === 'proposed' || it.status === 'review'
+    const keep = need.keep != null
     return card(
       'ask',
       `${msgName(w)} asks you`,
       body,
       keep || choices ? (
         <>
-          <KeepBtn it={it} on={on} />
+          <KeepBtn it={it} need={need} on={on} />
           {choices ? <SendAnswerBtn n={n} picked={!!asking?.picked.size} cls="flex-[1.4] lg:flex-none" keyHint on={on} /> : null}
         </>
       ) : null,
       choices ? '' : '↓ Answer below',
     )
   }
-  const dc = decidedCard(it)
-  if (dc) {
-    const { dec, x } = dc
+  if (kind === 'decided' && need.dec) {
+    const dec = need.dec
+    const x = need.msg ?? undefined
     const pairs = dec.from === 'proposed' ? PROPOSED : FINISHED
     const tone = NEED[dec.from === 'proposed' ? 'approve' : 'accept'].btn
     const title = `${msgName(x || { by: it.by && it.by !== 'you' ? it.by : 'agent' })} ${dec.from === 'proposed' ? 'proposed this' : 'finished this'}`
@@ -264,12 +260,11 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
       />
     )
   }
-  if (answeredLast(it, going)) return null // the answered question's card holds Approve / Accept, where it was
-  const said = it.thread.at(-1)
-  if ((it.status === 'proposed' || it.status === 'review') && (it.talked || (said && userWord(said))))
+  // onQuestion: the answered question's card holds Approve / Accept, where it was
+  if (kind === 'replied' && need.of)
     return card(
-      it.status === 'proposed' ? 'propose' : 'done',
-      `${name} ${it.status === 'proposed' ? 'proposed this' : 'finished this'}`,
+      need.of === 'proposal' ? 'propose' : 'done',
+      `${name} ${DECISION[need.of].did}`,
       m ? text(m) : null,
       <>
         {/* what you did (you replied), done; Approve / Accept still to be pressed */}
@@ -277,10 +272,10 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
           <Icon n="reply" c="size-4" sw="2.25" />
           Skipped · you replied
         </button>
-        <KeepBtn it={it} on={on} />
+        <KeepBtn it={it} need={need} on={on} />
       </>,
     )
-  if (it.status === 'proposed')
+  if (kind === 'decide' && need.of === 'proposal')
     return card(
       'propose',
       `${name} proposed this`,
@@ -298,7 +293,7 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
         </button>
       </>,
     )
-  if (it.status === 'review')
+  if (kind === 'decide' && need.of === 'work')
     return card(
       'done',
       `${name} finished this`,
@@ -333,7 +328,9 @@ export function Answered({ it, x, done, env, on, reasking, going = null }: {
   /** an answer on its way: where it is */
   going?: OutShow | null
 }) {
-  const last = answeredLast(it) && lastAgentMessage(it)?.id === x.id
+  // the latest question you answered holds the item's Approve or Accept, or what you chose there
+  const need = needOf(it)
+  const last = NEED_STATES[need.state].card === 'onQuestion' && lastAgentMessage(it)?.id === x.id
   if (reasking)
     return (
       <NeedFrame
@@ -351,7 +348,7 @@ export function Answered({ it, x, done, env, on, reasking, going = null }: {
         body={<Rich text={x.text} world={env.world} cls={`${QUESTION} text-zinc-900 dark:text-zinc-100`} choosing={env.choosing} onRef={on.ref} onPicture={on.picture} />}
         foot={
           <>
-            {last ? <KeepBtn it={it} on={on} /> : null}
+            {last ? <KeepBtn it={it} need={need} on={on} /> : null}
             <SendAnswerBtn n={it.n} picked={!!env.choosing?.picked.size} cls="flex-[1.4] lg:flex-none" keyHint on={on} />
           </>
         }
@@ -377,7 +374,7 @@ export function Answered({ it, x, done, env, on, reasking, going = null }: {
       body={<Rich text={x.text} world={env.world} cls={`${QUESTION} text-zinc-600 dark:text-zinc-300`} done={done} onRef={on.ref} onPicture={on.picture} />}
       foot={
         <>
-          {last ? <KeepBtn it={it} on={on} /> : null}
+          {last ? <KeepBtn it={it} need={need} on={on} /> : null}
           {/* Send answer where it was: on its way still Send answer, not to be clicked; Taska has it, said as done and a
               little greyed (r1003) */}
           {going ? (

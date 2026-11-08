@@ -1,7 +1,8 @@
 // An item's status icon (T591: Icons and marks > Item status icon): the page's own StateIcon for what the page shows
 // of each status (shownStatus: Needs you while a question waits).
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { shownStatus, statusChoices } from '../model/items'
+import { statusChoices } from '../model/items'
+import { shownStatus } from '../model/needStates'
 import type { Item } from '../model/types'
 import { StateIcon } from '../ui/Icon'
 import { Frames } from './Frames'

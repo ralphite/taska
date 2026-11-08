@@ -2,8 +2,8 @@
 // cannot (in a few words, said instead); and what a row offers: the desktop's quick actions (shown on hover) and the
 // phone's swipes, as (field, value, label).
 
-import { canDone, closed, rowAction } from './items'
-import { hasChoices } from './markdown'
+import { canDone, closed } from './items'
+import { NEED_ACT_WORD, yourStep } from './needStates'
 import type { Item } from './types'
 
 export type Slot = readonly [field: string, value: string, label: string]
@@ -21,16 +21,6 @@ export function armedSet(arm: 's' | 'p' | 't', key: string, statuses: readonly s
 
 /** What S then a digit counts on the page. */
 export const pageStatuses = (_it: Item): readonly string[] => ['proposed', 'open', 'doing', 'review', 'done', 'dropped']
-
-/** The item's next step for you (A): accept or approve it, or answer what waits on you. */
-export type YourStep = { set: readonly [field: 'status', value: string, label: string, said: string] } | { answer: 'choices' | 'words' } | null
-
-export function yourStep(it: Item): YourStep {
-  if (it.status === 'review') return { set: ['status', 'done', 'Accept', 'accepted'] }
-  if (it.status === 'proposed') return { set: ['status', 'open', 'Approve', 'approved'] }
-  if (it.wait) return { answer: it.wait.kind === 'ask' && hasChoices(it.wait.text) ? 'choices' : 'words' }
-  return null
-}
 
 /** What Done and Won't do set. */
 export const doneTo = (_it: Item) => 'done'
@@ -52,13 +42,13 @@ export const whyNot = {
   later: (it: Item) => (!closed(it.status) ? null : 'Later works on open items'),
 }
 
-/** Swipe right all the way, or the desktop's first action: the step forward you take most. On an item that waits on
- * your answer the step forward is that answer (its pill), never Done. */
+/** Swipe right all the way, or the desktop's first action: the step forward you take most, A's (model/needStates). On
+ * an item that waits on your answer the step forward is that answer (its pill), never Done. */
 export function forward(it: Item | undefined): readonly [string, string, string, string?] | null {
   if (!it || it.archived) return null
-  if (it.wait) return ['need', ...rowAction(it)]
   const step = yourStep(it)
-  if (step && 'set' in step) return step.set
+  if (step && 'answer' in step) return ['need', 'answer', NEED_ACT_WORD.answer]
+  if (step) return step.set
   if (closed(it.status)) return ['archived', 'true', 'Archive', 'archived']
   return ['status', 'done', 'Done', 'done']
 }

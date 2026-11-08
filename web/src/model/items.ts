@@ -1,31 +1,16 @@
-// The page's rules about items, as pure functions: what needs you, what an item's state shows as, its next action,
-// the order agents take the work. They agree with the server's (domain/rules.py), which the page cannot ask at every
+// The page's rules about items, as pure functions: what Done applies to, the order agents take the work, where a
+// dragged row goes (what an item needs from you is model/needStates). They agree with the server's (domain/rules.py), which the page cannot ask at every
 // keystroke: a change you make shows at once, before the server has it.
 
 import type { Item, Message, Status } from './types'
-import { PLACE_WORD, STATUS_WORD } from './words'
+import { STATUS_WORD } from './words'
 
 export const closed = (s: Status | string) => s === 'done' || s === 'dropped'
-
-/** Waits on the user, exactly while a form waits on them (T646): an agent's question to answer, a proposal to
- * approve or decline, finished work to accept or send back, the last two until the user replies there. Archived
- * items are off the list, so off the counts too. */
-export const needsYou = (it: Item) =>
-  !it.mergedInto &&
-  !it.archived &&
-  !closed(it.status) &&
-  (!!it.wait || ((it.status === 'proposed' || it.status === 'review') && !it.talked))
-
-const asksYou = (it: Item) => needsYou(it) && !!it.wait
 
 /** The statuses an item can be set to, in the menu's order: [status, word][] */
 export const statusChoices = (_it: Item): [string, string][] => Object.entries(STATUS_WORD) as [string, string][]
 
 export const statusWord = (it: Item) => STATUS_WORD[it.status]
-
-/** An item's status as the page shows it: "Needs you" while an agent's question waits on you. */
-export const shownStatus = (it: Item): { s: string; label: string } =>
-  asksYou(it) ? { s: 'wait', label: PLACE_WORD.wait } : { s: it.status, label: statusWord(it) }
 
 /** The user's own words on an item: theirs, or what the organizer filed there from one of their inputs. */
 export const userWord = (m: Message) =>
@@ -62,14 +47,6 @@ export const oneLine = (t: unknown) =>
         .trim(),
     )
     .find(Boolean) || ''
-
-/** What a row that waits on you says in its second line: the question, or what the agent said last. */
-export const excerpt = (it: Item) =>
-  oneLine(it.wait ? it.wait.text : it.status === 'review' ? lastAgentMessage(it)?.text : lastAgentMessage(it)?.text || it.body)
-
-export type NeedAction = 'answer' | 'approve' | 'accept'
-export const rowAction = (it: Item): [NeedAction, string] =>
-  it.wait ? ['answer', 'Answer'] : it.status === 'proposed' ? ['approve', 'Approve'] : ['accept', 'Accept']
 
 /** Done is for open work only: a proposal is approved first, finished work accepted. */
 export const canDone = (it: Item) =>

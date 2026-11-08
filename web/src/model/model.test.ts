@@ -3,7 +3,8 @@
 
 import { describe, expect, it as test } from 'vitest'
 import { input, item, message, modelOf, projectFacts } from '../stories/fixtures'
-import { needsYou, queueHead, queueOrder } from './items'
+import { queueHead, queueOrder } from './items'
+import { needsYou } from './needStates'
 import { merge, patched, project } from './project'
 import { inputOf, inputPath, NO_FILTERS, parseRoute, projectPath } from './route'
 import type { ViewAnswer } from './types'

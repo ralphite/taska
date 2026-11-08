@@ -4,7 +4,8 @@
 
 import type { ReactNode } from 'react'
 import { deskSlots, forward, backward, ACT_KEY, type Slot } from '../../model/actions'
-import { closed, rowAction, shownStatus, statusWord, type NeedAction } from '../../model/items'
+import { closed, statusWord } from '../../model/items'
+import { NEED_ACT_WORD, needRow, shownStatus, type NeedAct } from '../../model/needStates'
 import type { Item, RuleProposal } from '../../model/types'
 import { plural, whoName } from '../../model/words'
 import { Avatar, Count, DraftMark, Hit, Pic, Soft } from '../../ui/bits'
@@ -292,10 +293,10 @@ export function ItemRow(props: {
 
 /** `said`: what you just did, while the list holds still: the same row, its title struck, its button disabled saying it
  * in the past tense (B699, as a decided card, r1003). */
-export function NeedsRow({ it, depth, facts, look, excerpt, said, act, on }: { it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; act?: NeedAction; on: RowEvents }) {
-  const [now, word] = rowAction(it)
-  const v = act ?? now
-  const label = said ?? word
+export function NeedsRow({ it, depth, facts, look, excerpt, said, act, on }: { it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; act?: NeedAct; on: RowEvents }) {
+  // its pill: what it needs from you (model/needStates); held after you acted, as it was
+  const v = act ?? needRow(it)?.act ?? 'accept'
+  const label = said ?? NEED_ACT_WORD[v]
   return (
     <Shell it={it} look={look} facts={facts} on={on}>
       <div

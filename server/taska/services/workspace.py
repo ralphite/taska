@@ -37,7 +37,7 @@ def tally(st: ProjectState) -> Dict[str, int]:
     """A project's counts, as its page counts them: what needs you (archived is not on the page's list, so not here;
     a proposed change to the rules waiting counts, I693); what Items holds, open and finished (done or dropped); its
     inputs and documents (the rules are not one of them; F667: the sidebar's card)."""
-    needs = {i.n for i in st.live_items() if i.status not in CLOSED and not i.archived and rules.needs_you(st, i)}
+    needs = {i.n for i in st.live_items() if rules.needs_you(st, i)}
     listed = [i for i in st.live_items() if not i.archived]
     closed = sum(1 for i in listed if i.status in CLOSED)
     docs = sum(1 for d in st.docs.values() if not d.deleted and not d.is_rules

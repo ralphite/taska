@@ -5,7 +5,7 @@
 import type { Command } from '../../api/taska'
 import { closed, lastAgentMessage, ranksFor } from '../../model/items'
 import { codeOf, type ItemPatch, type ProjectModel } from '../../model/project'
-import { decidedWord } from '../../model/talk'
+import { decidedWord } from '../../model/needStates'
 import { laterDay } from '../../model/time'
 import type { Item, Status } from '../../model/types'
 import { DID, LETTER, STATUS_WORD, plural } from '../../model/words'

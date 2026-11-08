@@ -79,7 +79,10 @@ def talked(state: ProjectState, it: Item) -> bool:
 def needs_you(state: ProjectState, it: Item) -> bool:
     """On the user's list of what needs them, exactly while a form waits on them (T646): an agent's question to
     answer, a proposal to approve or decline, finished work to accept or send back, the last two until the user
-    replies there."""
+    replies there; on an item not finished, archived, merged or deleted. The page's same rule, with the states of
+    what an item needs from you and what each place shows of them, is web/src/model/needStates.ts (T728 #3)."""
+    if not it.live or it.archived or it.status in CLOSED:
+        return False
     return bool(waiting(state, it)) or (it.status in ("proposed", "review") and not talked(state, it))
 
 
