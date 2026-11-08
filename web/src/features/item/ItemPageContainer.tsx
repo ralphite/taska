@@ -6,6 +6,7 @@ import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useAway, useFiles, useItemWorld } from '../../app/hooks'
 import { newId } from '../../app/changeRunner'
 import { CHOICE } from '../../model/markdown'
+import { madeFrom } from '../../model/became'
 import { laterOn } from '../../model/time'
 import { codeOf, docsOf, filesOf, findRef, liveN, sourceCount, STAND, type ProjectModel } from '../../model/project'
 import { ticksNotSent } from '../../model/docTicks'
@@ -103,6 +104,10 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     going: answering ? { text: answering.text, state: outgoingState(answering, away) } : null,
     outgoing,
     title: (s) => projects?.find((p) => p.name === s)?.title || s,
+    made: (id) => {
+      const r = m.byId.get(id)
+      return r ? madeFrom(r, m) : []
+    },
   }
   const f: ItemFacts = {
     code,

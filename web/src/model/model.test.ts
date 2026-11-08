@@ -8,7 +8,7 @@ import { merge, patched, project } from './project'
 import { inputOf, inputPath, NO_FILTERS, parseRoute, projectPath } from './route'
 import type { ViewAnswer } from './types'
 import { visible } from './visible'
-import { becameOf } from './became'
+import { becameOf, madeFrom } from './became'
 import { canSend, organizing } from './inputs'
 
 const answer = (a: Partial<ViewAnswer>): ViewAnswer => ({ cursor: 'c1', full: false, items: [], inputs: [], docs: [], project: projectFacts(), server: { page: '', update: false }, ...a })
@@ -153,5 +153,19 @@ describe('what became of an input, in one set of words (B629)', () => {
     expect(of({ id: 'r5', acked: true, org: org('Nothing to file: a thank-you') })).toEqual({ k: 'note', text: 'Nothing to file: a thank-you' })
     expect(of({ id: 'r6', acked: true, kind: 'answer', scope: 7 })).toMatchObject({ k: 'answer', item: { code: 'T007' } })
     expect(of({ id: 'r7', acked: true, moved: { to: 'mobile-app', as: 'r4' } })).toEqual({ k: 'moved', to: 'Mobile app', as: '#4', href: '/p/mobile-app/' })
+  })
+  test('B714 #10594: an input said in F012 that made B014 and T007 shows "Created" for those two, not for F012 or an older item', () => {
+    const said = '2026-10-23T14:30:00-07:00'
+    const later = '2026-10-23T14:31:00-07:00'
+    const made = modelOf([
+      item({ n: 12, srcs: ['r1'], t0: '2026-10-22T09:00:00-07:00' }),
+      item({ n: 14, type: 'bug', srcs: ['r1'], t0: later }),
+      item({ n: 7, type: 'task', srcs: ['r1'], t0: later }),
+      item({ n: 9, srcs: ['r1'], t0: '2026-10-22T09:00:00-07:00' }), // made before, by an agent: only added to
+      item({ n: 3, srcs: ['r0', 'r1'], t0: later }), // made from another input
+    ])
+    const r = input({ id: 'r1', t: said, scope: 12, touched: [12, 14, 9, 3, 7] })
+    expect(madeFrom(r, made).map((x) => x.code)).toEqual(['B014', 'T007'])
+    expect(madeFrom({ ...r, touched: [12] }, made)).toEqual([])
   })
 })

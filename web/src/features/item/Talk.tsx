@@ -2,11 +2,11 @@
 // notes, comments on its documents in time, files and voice notes; what you sent and Taska has not yet, saying where
 // it is. The card that waits on you goes where its message is. Props only.
 
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { oneLine } from '../../model/items'
 import { voiceMark } from '../../model/inputs'
 import { hasChoices, plainQuote } from '../../model/markdown'
-import { BECAME_WORD, movedOf } from '../../model/became'
+import { BECAME_WORD, movedOf, type ItemRef } from '../../model/became'
 import { answerOf, readMark, versions, withdrawn, type Version } from '../../model/talk'
 import { when } from '../../model/time'
 import type { Comment, Doc, FileRef, Input, Item, Message } from '../../model/types'
@@ -64,6 +64,8 @@ export interface TalkFacts {
   outgoing: Outgoing[]
   /** a project's title by its name (where an input was moved to) */
   title(slug: string): string
+  /** the items an input made, besides the item it was said in (B714 #10594) */
+  made(id: string): readonly ItemRef[]
 }
 
 const YOU_BUBBLE =
@@ -133,6 +135,8 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
   if (you && y.text && y.text.trim().split('\n').every((l) => /^\s*✓/.test(l)) && !src?.files?.length) return null // an answer's ticks show on its card
   if (you) {
     const moved = src?.moved && !ver?.old ? movedOf(src.moved, facts.title) : null
+    // B714 #10594: what your words here made, as one line under them; the same on the phone and the desktop
+    const made = src && !ver?.old && !src.moved ? facts.made(src.id) : []
     // your voice notes inside your bubble, under your words (T668); an earlier version shows its words only
     const voices = ver?.old ? [] : (src?.files || []).filter(isAudio)
     return (
@@ -219,6 +223,19 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
             </button>
           ) : null}
         </div>
+        {made.length ? (
+          <div className={`px-1 text-[11px] ${MUTED}`}>
+            → {BECAME_WORD.created}{' '}
+            {made.map((y, i) => (
+              <Fragment key={y.n}>
+                {i ? ', ' : ''}
+                <button onClick={() => on.ref(y.code)} title={y.title} className="relative font-mono font-medium text-blue-600 after:absolute after:-inset-2 hover:underline dark:text-blue-400">
+                  {y.code}
+                </button>
+              </Fragment>
+            ))}
+          </div>
+        ) : null}
       </div>
     )
   }

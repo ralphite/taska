@@ -51,6 +51,8 @@ export const BECAME_WORD = {
   waiting: 'For an agent',
   handled: 'Handled',
   answer: 'Answer to',
+  /** under your words in an item, what they made there (B714 #10594) */
+  created: 'Created',
   tryAgain: 'Retry',
   organizeAgain: 'Organize',
   send: 'Send',
@@ -62,6 +64,17 @@ export const itemRef = (m: ProjectModel, n: number): ItemRef | null => {
   const it = m.byN.get(n)
   return it ? { n, code: codeOf(m, n), type: it.type, title: it.title, status: shownStatus(it) } : null
 }
+
+/** The items an input said in an item made (B714 #10594), as "→ Created B713" under your words there: those it is the
+ * first source of and that were made after it was said, not the item it was said in. */
+export const madeFrom = (r: Input, m: ProjectModel): ItemRef[] =>
+  r.touched
+    .filter((n) => n !== r.scope)
+    .flatMap((n) => {
+      const it = m.byN.get(n)
+      const ref = it && it.srcs[0] === r.id && Date.parse(it.t0) >= Date.parse(r.t) ? itemRef(m, n) : null
+      return ref ? [ref] : []
+    })
 
 /** What the organizer's note says was done to each item ("Created B014 · added to F012 and T007"), and what it says
  * besides. */
