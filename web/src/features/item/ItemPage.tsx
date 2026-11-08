@@ -344,6 +344,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     })
     sc.addEventListener('scroll', seen, { passive: true })
     for (const part of [el, el.firstElementChild]) if (part) ro.observe(part)
+    ro.observe(sc, { box: 'border-box' }) // what scrolls it resized: the box grew as you wrote, shrank as you sent (B719)
     // the item opens at its latest message, again a moment later as the page settles (pictures, the parts above)
     const toLast = () => {
       sc.scrollTop = sc.scrollHeight
