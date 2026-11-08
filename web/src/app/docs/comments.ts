@@ -78,7 +78,7 @@ export class DocComments {
     const same = t.key === 'doc' ? doc.whole : doc.blocks.find((b) => b.key === t.key)?.comments || []
     const th = t.th ?? same.find((x) => x.th === x.id && sameText(x.quote, quote))?.th
     const stand: Comment = { id: -Date.now(), key: t.key, th: th ?? 0, quote, text: typed || '…', by: 'you', t: new Date().toISOString(), files: [] }
-    const showing = { id: 'show-' + newId(), slug, commands: [], patches: [], docPatches: [{ d: dn, comment: stand }], said: '', t: Date.now(), showOnly: true }
+    const showing = { id: 'show-' + newId(), slug, commands: [], patches: [], docPatches: [{ d: dn, comment: stand }], said: '', t: Date.now(), mode: 'show' as const }
     this.d.changes.getState().add(showing)
     const v = this.d.view.getState()
     const picked = { sel: v.sel, quote: v.quote, reply: v.reply }

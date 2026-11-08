@@ -140,7 +140,7 @@ export class DocVoice {
     for (const { s } of posts) v.openThread(s.key)
     v.unpick()
     if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
-    const showing = { id: 'show-' + newId(), slug, commands: [], patches: [], docPatches, said: '', t: Date.now(), showOnly: true }
+    const showing = { id: 'show-' + newId(), slug, commands: [], patches: [], docPatches, said: '', t: Date.now(), mode: 'show' as const }
     this.d.changes.getState().add(showing)
     const back = () => {
       this.d.changes.getState().remove(showing.id)

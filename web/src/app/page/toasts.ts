@@ -73,8 +73,8 @@ export class Toasts {
   /** A change Taska said no to: its sender answers it, or it is said in red in Taska's words (or the sender's), or it
    * is listed as not saved (what it was, where it belongs, its words). */
   changeRefused(c: PendingChange, why: string): void {
-    if (c.ownRefusal) return
-    if (c.refusedSay != null) return this.show(why || c.refusedSay, null, { error: true })
+    if (c.mode === 'own' || c.mode === 'show') return
+    if (c.mode) return this.show(why || c.mode.say, null, { error: true })
     this.notSaved({ what: changeWords(c.commands), why, slug: c.slug, go: changePlace(c.commands, c.slug), said: changeText(c.commands) })
   }
 

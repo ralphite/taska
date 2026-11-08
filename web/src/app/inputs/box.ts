@@ -256,7 +256,7 @@ export class Box {
         inputPatches: now ? [{ id: mode.id, f: { text: now } }] : [],
         said: what,
         t: Date.now(),
-        ownRefusal: true,
+        mode: 'own',
       })
       if (!ok) await this.editedElsewhere(slug, mode, key, text, files, drafts, what, words)
     })()

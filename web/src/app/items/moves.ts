@@ -24,7 +24,7 @@ export class Moves {
     for (let k = [n]; k.length; k = k.flatMap((x) => (m.kids.get(x) || []).map((it) => it.n))) tree.push(...k)
     const id = newId()
     // shown at once: here they are finished and archived
-    this.d.changes.getState().add({ id, slug, commands: [], patches: tree.map((k) => ({ n: k, f: { status: 'dropped', archived: true } })), said: `moving ${ref}`, t: Date.now(), showOnly: true })
+    this.d.changes.getState().add({ id, slug, commands: [], patches: tree.map((k) => ({ n: k, f: { status: 'dropped', archived: true } })), said: `moving ${ref}`, t: Date.now(), mode: 'show' as const })
     const got = { as: '' }
     const done = (async () => {
       for (let i = 0; ; i++) {

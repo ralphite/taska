@@ -19,7 +19,7 @@ export class InputActions {
 
   /** `refusedSay`: a refusal is said in red (in Taska's words, or these), not listed as not saved */
   private send(slug: string, op: Record<string, unknown>, said: string, inputPatches: InputPatch[] = [], refusedSay?: string) {
-    return this.d.runner.send({ id: newId(), slug, commands: [op as never], patches: [], inputPatches, said, t: Date.now(), ...(refusedSay ? { refusedSay } : {}) })
+    return this.d.runner.send({ id: newId(), slug, commands: [op as never], patches: [], inputPatches, said, t: Date.now(), ...(refusedSay ? { mode: { say: refusedSay } } : {}) })
   }
 
   organizeAgain(slug: string, id: string): void {
@@ -91,7 +91,7 @@ export class InputActions {
   /** It shows moved at once (B645: nothing waits on Taska); its new number comes with Taska's answer. */
   async move(slug: string, id: string, to: string): Promise<boolean> {
     const show = 'show-' + newId()
-    this.d.changes.getState().add({ id: show, slug, commands: [], patches: [], inputPatches: [{ id, f: { moved: { to, as: '' } } }], said: `moving ${inputCode(id)}`, t: Date.now(), showOnly: true })
+    this.d.changes.getState().add({ id: show, slug, commands: [], patches: [], inputPatches: [{ id, f: { moved: { to, as: '' } } }], said: `moving ${inputCode(id)}`, t: Date.now(), mode: 'show' as const })
     try {
       const r = await this.d.api.moveInput(slug, to, id)
       if (!r.ok) {

@@ -20,13 +20,14 @@ export interface PendingChange {
   /** what it was, in a few words ("F12 marked done"), for the list of what is not saved */
   said: string
   t: number
-  /** shown only: it adds nothing the server keeps (a stand-in until the server's own shows) */
-  showOnly?: boolean
-  /** a refusal is for the sender to answer (it is not listed as not saved) */
-  ownRefusal?: boolean
-  /** a refusal is said in red, in Taska's words or these (it is not listed as not saved) */
-  refusedSay?: string
+  /** what it is and who answers a refusal (T728 #11: one field, each value one case): left out, it is kept over a
+   * reload and a refusal is listed as not saved; 'show': shown only, it adds nothing the server keeps (a stand-in until
+   * the server's own shows), never refused; 'own': its sender answers a refusal; { say }: a refusal is said in red, in
+   * Taska's words or these. */
+  mode?: ChangeMode
 }
+
+export type ChangeMode = 'show' | 'own' | { say: string }
 
 export interface ChangesState {
   list: PendingChange[]
@@ -49,7 +50,7 @@ interface Kept {
 export function createChangesStore(kv: KeyValueStore): ChangesStore {
   const keep = (slug: string, list: PendingChange[]) => {
     const mine: Kept[] = list
-      .filter((c) => c.slug === slug && !c.showOnly)
+      .filter((c) => c.slug === slug && c.mode !== 'show')
       .map((c) => ({ id: c.id, o: c.commands.length === 1 ? c.commands[0] : c.commands, patches: c.patches.filter((x) => !x.add), t: c.t, p: `/p/${encodeURIComponent(slug)}/` })) // a stand-in item is not kept
     kv.setJson(KEY + slug, mine.length ? mine : null)
   }
