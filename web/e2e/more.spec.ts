@@ -182,7 +182,7 @@ test('a project is renamed in place, and its address stays', async ({ page, requ
     await itsRow.getByRole('button', { name: 'Rename', exact: true }).click()
   } else {
     await page.getByRole('button', { name: `More for ${p.title}`, exact: true }).click()
-    await page.getByRole('button', { name: 'Rename', exact: true }).filter({ visible: true }).click()
+    await page.getByRole('button', { name: 'Rename…', exact: true }).filter({ visible: true }).click() // the ⋯ opens the project's menu sheet (D115 R7 #3)
   }
   await page.getByRole('textbox', { name: `New name for ${p.title}`, exact: true }).filter({ visible: true }).first().fill(renamed)
   await page.keyboard.press('Enter')
