@@ -176,18 +176,18 @@ function Diagram({ src, draw }: { src: string; draw: NonNullable<InlineWorld['di
     }
   }, [src, dark, id, key, draw])
   const now = got?.key === key ? got : null
-  const errLine = now?.error ? /line (\d+)/i.exec(now.error)?.[1] : undefined
   return (
     <div ref={at} data-mermaid={now?.svg ? 'drawn' : now?.error ? 'failed' : 'drawing'}>
       {now?.svg ? (
         <div className="flex justify-center overflow-x-auto rounded-lg bg-zinc-50 p-4 lg:scrollbar-thin dark:bg-zinc-800/60 [&>svg]:h-auto [&>svg]:max-w-full" dangerouslySetInnerHTML={{ __html: now.svg }} />
       ) : (
         <>
-          {/* in plain words, and the line it is on; Mermaid's own words under the pointer */}
+          {/* in its place, the reason, as Mermaid says it (B714 r1181): on the phone too, where nothing hovers */}
           {now?.error ? (
-            <p title={now.error} className="pb-1.5 text-[12.5px] text-red-600 dark:text-red-400">
-              This diagram could not be drawn{errLine ? ` (line ${errLine})` : ''}
-            </p>
+            <div data-mermaid-why="" className="mb-1.5 rounded-lg bg-red-50 px-3 py-2 text-red-700 dark:bg-red-400/10 dark:text-red-300">
+              <p className="text-[13px] font-medium">This diagram could not be drawn</p>
+              <pre className="mt-1 font-mono text-[12px] leading-snug wrap-anywhere whitespace-pre-wrap">{now.error}</pre>
+            </div>
           ) : null}
           <Code text={src} />
         </>
