@@ -138,7 +138,11 @@ export function Tooltip({ card, steps }: { card(ref: string): RefCard | null; st
       pressedIn = false
     }
     // keys close it, but not while its words are selected (to copy them), only Escape then
-    const key = (e: KeyboardEvent) => (e.key === 'Escape' || !inTip(getSelection()?.anchorNode ?? null)) && hide()
+    const key = (e: KeyboardEvent) => {
+      // Escape closes the tip alone, not what is under it (the item pane)
+      if (e.key === 'Escape' && current) e.stopPropagation()
+      if (e.key === 'Escape' || !inTip(getSelection()?.anchorNode ?? null)) hide()
+    }
     // a long voice note's words scroll inside the tip: that does not close it
     const scroll = (e: Event) => !tip.current?.contains(e.target as Node) && hide()
     document.addEventListener('pointerover', over)
