@@ -1,4 +1,5 @@
-// What you sent shows where you are: a reply to the item open on the desktop takes its talk to its end at once. Once
+// What you sent shows where you are: a reply to the item open takes its talk to its end at once (the phone as the
+// desktop, T589 #10486), where your words and then the reply show. Once
 // Taska has it: what you took back meanwhile is deleted there behind you (unless the organizer or your agent has it
 // already: then it says to delete it from Inputs); the box's line says what became of it; it shows up where you are,
 // in view and lit up for a moment.
@@ -23,7 +24,6 @@ export interface DeliveredDeps {
   fields: Fields
   model(slug: string): ProjectModel | null
   slug(): string
-  desk(): boolean
 }
 
 export class Delivered {
@@ -32,11 +32,11 @@ export class Delivered {
     this.d = d
   }
 
-  /** Sent to `scope`: the item open on the desktop shows the end of its talk, where the reply is. */
+  /** Sent to `scope`: the item open shows the end of its talk, where the reply is. */
   replied(slug: string, scope: string): void {
     const m = this.d.model(slug)
     const n = openItemN(this.d.route.getState().route)
-    if (this.d.desk() && m && n != null && codeOf(m, liveN(m, n)) === scope) requestAnimationFrame(() => this.d.fields.toEnd('talk'))
+    if (m && n != null && codeOf(m, liveN(m, n)) === scope) requestAnimationFrame(() => this.d.fields.toEnd('talk'))
   }
 
   sent(o: Outgoing, rid: string): void {

@@ -1,6 +1,8 @@
 // The page's few places the keys reach, given by ref where they are drawn: the list's search, the box, the talk that
 // Space scrolls, the home page's search, the item list, the open sheet's body. Nothing looks the page up.
 
+import { toEnd } from '../../ui/scroller'
+
 export type FieldName = 'search' | 'box' | 'talk' | 'home' | 'list' | 'sheet' | 'doc'
 
 export class Fields {
@@ -29,10 +31,10 @@ export class Fields {
     this.get(name)?.focus()
   }
 
-  /** the place scrolled to its end (the talk, to what was said last) */
+  /** what scrolls the place scrolled to its end (the talk, to what was said last: on the phone the page round it) */
   toEnd(name: FieldName): void {
     const el = this.get(name)
-    if (el) el.scrollTop = el.scrollHeight
+    if (el) toEnd(el)
   }
 
   /** whether the place is where the keys go now */

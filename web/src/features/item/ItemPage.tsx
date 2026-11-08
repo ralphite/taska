@@ -1,6 +1,7 @@
 // An item as a page of its own: its title and its fields (each a tap away), what it needs from you, its text, its
 // documents, files and subitems, then its talk. On the desktop the item and its talk are two parts, each scrolling
-// on its own, with a line between them; the talk opens at its latest message. The phone has one page. Props only.
+// on its own, with a line between them; the phone has one page. On both the talk opens at its latest message and stays
+// there as more comes. Props only.
 
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { ACT_KEY, deskSlots, type Slot } from '../../model/actions'
@@ -10,6 +11,7 @@ import type { Doc, FileRef, Item } from '../../model/types'
 import { Kbd, SectionHead, Soft } from '../../ui/bits'
 import { Grip } from '../../ui/Grip'
 import { Icon, StateIcon } from '../../ui/Icon'
+import { keepsEnd, scrollerOf, toEnd } from '../../ui/scroller'
 import type { IconName } from '../../ui/icon-paths'
 import { Rich } from '../../ui/Markdown'
 import { clean, inlineHtml } from '../../ui/markdown/inline'
@@ -307,6 +309,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
   readOnly?: boolean
 }) {
   const clip = useRef<HTMLDivElement>(null)
+  const editingAtOpen = useRef(f.editing)
   const talk = useRef<HTMLDivElement | null>(null)
   useLayoutEffect(() => {
     // the item's part taller than its share fades while more of it is below
@@ -320,26 +323,36 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     return () => ro.disconnect()
   }, [])
   useLayoutEffect(() => {
-    // the talk at its latest message stays there when the part above grows or shrinks (and opens there)
+    // the talk at its latest message stays there as it grows (a message sent, a reply come) and as the part above
+    // grows or shrinks beside it, and opens there. What scrolls it: on the desktop the talk itself, on the phone the
+    // page round it (one way for both, T589 #10486). Read only (the search's preview): where its words were found, not
+    // its end; on the phone an item opened in its editor stays at the editor, above the talk.
     const el = talk.current
-    if (!el || typeof ResizeObserver === 'undefined') return
-    let atEnd = !readOnly // read only (the search's preview): where its words were found, not its end
-    const seen = () => (atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 4)
+    const sc = el && scrollerOf(el)
+    if (!el || !sc || typeof ResizeObserver === 'undefined') return
+    const go = !readOnly && (sc === el || !editingAtOpen.current)
+    let end = go
+    // it leaves its end only as you scroll up: the scroll this page made comes after the talk may have grown again
+    let was = sc.scrollTop
+    const seen = () => {
+      end = keepsEnd(sc, was, end)
+      was = sc.scrollTop
+    }
     const ro = new ResizeObserver(() => {
-      if (atEnd) el.scrollTop = el.scrollHeight
+      if (end) sc.scrollTop = sc.scrollHeight
       marks(el)
     })
-    el.addEventListener('scroll', seen, { passive: true })
-    ro.observe(el)
+    sc.addEventListener('scroll', seen, { passive: true })
+    for (const part of [el, el.firstElementChild]) if (part) ro.observe(part)
     // the item opens at its latest message, again a moment later as the page settles (pictures, the parts above)
-    const end = () => {
-      el.scrollTop = el.scrollHeight
-      atEnd = true
+    const toLast = () => {
+      sc.scrollTop = sc.scrollHeight
+      end = true
     }
-    const timers = readOnly ? [] : [120, 400, 1000].map((ms) => setTimeout(end, ms))
+    const timers = go ? [120, 400, 1000].map((ms) => setTimeout(toLast, ms)) : []
     return () => {
       ro.disconnect()
-      el.removeEventListener('scroll', seen)
+      sc.removeEventListener('scroll', seen)
       timers.forEach(clearTimeout)
     }
   }, [readOnly])
@@ -348,7 +361,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
   useLayoutEffect(() => {
     // the card that asks you comes back (an Undo, a change put back): the talk shows it, at its end
     const el = talk.current
-    if (asks && asked.current.n === it.n && !asked.current.on && el) el.scrollTop = el.scrollHeight
+    if (asks && asked.current.n === it.n && !asked.current.on && el) toEnd(el)
     asked.current = { n: it.n, on: asks }
   }, [asks, it.n])
 

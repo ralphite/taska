@@ -43,7 +43,7 @@ export interface BoxDeps {
   refresh?(slug: string): Promise<void>
   /** the other tabs: this draft went out from here */
   sent?(slug: string, key: DraftKey): void
-  /** a reply to the item open on the desktop: its talk goes to its end, where the reply shows */
+  /** a reply to the item open: its talk goes to its end, where the reply shows */
   replied?(slug: string, scope: string): void
   /** the pauses between upload tries, which end at once when Taska may be back */
   pauses?: Pauses

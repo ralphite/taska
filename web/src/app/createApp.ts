@@ -258,7 +258,7 @@ export function createApp(env: AppEnv): App {
     unreachable: () => {},
     refused: (c, why) => toasts.changeRefused(c, why),
   })
-  const delivered = new Delivered({ box: boxStore, ui, route, runner, toasts, fields, model, slug, desk: env.desk })
+  const delivered = new Delivered({ box: boxStore, ui, route, runner, toasts, fields, model, slug })
   const inputs = new InputSender(api, outbox, {
     cursor: (s) => session().cursor(s),
     changes: (s, a) => session().take(s, a),
