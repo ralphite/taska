@@ -1,12 +1,13 @@
 // One way to comment on a place picked in a page (a paragraph, words selected, a part of a web page; B498): two
-// buttons beside it, Voice and Comment. Voice turns them, where they are, into a small recording strip: ✕ at the far
-// left cancels, the time and the level run, Voice becomes ✓. On the desktop ✓ stops it and its words go into the box
-// below, at this place, and Comment becomes ↑ (send at once). Where ✓ already adds (an input's row, T661) there is
-// no ↑. On the phone, which has no box over a document, ✓ sends it, so there is no ↑ either (r1062). With no ↑ its
-// room stays empty, so ✓ is still where Voice was.
+// buttons beside it, Voice and Comment, floating over the page (they never move its words, B715 r1169). Voice turns
+// them, where they are, into a small recording strip: ✕ at the far left cancels, the time and the level run, Voice
+// becomes ✓. On the desktop ✓ stops it and its words go into the box below, at this place, and Comment becomes ↑
+// (send at once). Where ✓ already adds (an input's row, T661) there is no ↑. On the phone, which has no box over a
+// document, ✓ sends it, so there is no ↑ either (r1062). With no ↑ its room stays empty, so ✓ is still where Voice was.
 // Also the recording's time and level as the box shows them (RecBar). Props only.
 
-import type { ReactNode } from 'react'
+import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { floatOver } from '../model/placeFloat'
 import { Icon, type IconName } from './Icon'
 
 /** A recording's red dot, its time and its level, as the box shows them. */
@@ -95,21 +96,61 @@ export function PlaceVoice({ rec, meter, say, comment, labels = {}, on }: { rec:
   )
 }
 
-/** The phone's: a row under the place, made for a thumb; speaking, ✕ and ✓, which sends (no ↑, r1062). */
+/** The phone's: a row made for a thumb, Voice and Comment; speaking, ✕ and ✓, which sends (no ↑, r1062). */
 export function PlaceVoiceRow({ rec, meter, say, comment, on }: { rec: boolean; meter?: ReactNode; say?: Marks; comment?: Marks; on: Omit<PlaceVoiceEvents, 'send'> }) {
   return (
     // speaking, Comment's room (and the gap before it) stays empty, so ✓ is where Voice was
-    <div {...(rec ? { 'data-place-rec': '', role: 'status', 'aria-label': 'Recording' } : {})} className={`flex h-12 items-center gap-2 ${rec ? 'pr-13' : ''}`}>
+    <div {...(rec ? { 'data-place-rec': '', role: 'status', 'aria-label': 'Recording' } : {})} className={`flex h-12 items-center gap-2 ${rec ? 'pr-13' : 'justify-end'}`}>
       {rec ? (
         <Strip phone meter={meter} marks={say} on={{ ...on, send: undefined }} />
       ) : (
         <>
           {/* no words beside the two buttons (r1080: "Speak or write about it" said nothing they do not) */}
-          <span className="min-w-0 flex-1" />
           <B icon="mic" label="Voice comment" cls={`${MAIN(true)} shadow-lg`} on={on.say} big marks={say} />
           <B icon="comment" label="Comment" cls={RING} on={on.comment} big marks={comment} />
         </>
       )}
     </div>
   )
+}
+
+/** How far the phone's row floats from its place. */
+const FLOAT_GAP = 6
+
+/** The phone's row on a place picked, floating over the page under it (over it when the screen shows no room under
+ * it), never in the page's flow: opening and closing it move no words (B715 r1169). Its two buttons at the place's
+ * right; speaking, the strip across it. In its positioned parent: `place` is where the place is in it (none: the
+ * parent is the place); `x`: its classes across. */
+export function PlaceVoiceFloat({ place, x, ...row }: Parameters<typeof PlaceVoiceRow>[0] & { place?: { y: number; h: number }; x?: string }) {
+  const el = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const me = el.current
+    const parent = me?.offsetParent
+    if (!me || !parent) return
+    const p = parent.getBoundingClientRect()
+    const y = place?.y ?? 0
+    const h = place?.h ?? p.height
+    const over = floatOver({ top: p.top + y, bottom: p.top + y + h }, me.offsetHeight, FLOAT_GAP, shownArea(me))
+    me.style.top = `${over ? y - me.offsetHeight - FLOAT_GAP : y + h + FLOAT_GAP}px`
+    me.toggleAttribute('data-over', over)
+  })
+  return (
+    // a tap on it is not a tap on what is under it
+    <div ref={el} data-place-row onClick={(e) => e.stopPropagation()} className={`absolute z-20 rounded-full bg-white px-1 shadow-lg ring-1 ring-zinc-900/10 dark:bg-zinc-900 dark:ring-white/10 ${x ?? (row.rec ? 'inset-x-0' : 'right-0')}`}>
+      <PlaceVoiceRow {...row} />
+    </div>
+  )
+}
+
+/** What of the page the screen shows: the window, within every part that clips it (its scrolling area). */
+function shownArea(el: HTMLElement): { top: number; bottom: number } {
+  let top = 0
+  let bottom = window.innerHeight
+  for (let a = el.parentElement; a; a = a.parentElement)
+    if (getComputedStyle(a).overflowY !== 'visible') {
+      const r = a.getBoundingClientRect()
+      top = Math.max(top, r.top)
+      bottom = Math.min(bottom, r.bottom)
+    }
+  return { top, bottom }
 }

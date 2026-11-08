@@ -1,14 +1,14 @@
 // A document that is a web page an agent wrote: it runs as it is, in a frame of its own (pageHelper tells Taska what
 // happens in it). Over it, as over a Markdown document: in Comment mode (the desktop) the part under the pointer is
 // outlined with the speak and comment buttons at its corner; a tap picks a part (the phone); a picked part has the
-// amber ring, its speak and comment buttons (on the phone a row under it; speaking, they become its recording strip,
-// B498) and the box says what you comment on; each thread's count sits in its part's corner, and opens its
+// amber ring, its speak and comment buttons (on the phone a row floating under it; speaking, they become its
+// recording strip, B498) and the box says what you comment on; each thread's count sits in its part's corner, and opens its
 // comments under it. Words selected are only selected, as on any page. Props, and the page's own state.
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { plainQuote } from '../../model/markdown'
 import { Icon } from '../../ui/Icon'
-import { PlaceVoice, PlaceVoiceRow } from '../../ui/PlaceVoice'
+import { PlaceVoice, PlaceVoiceFloat } from '../../ui/PlaceVoice'
 import { PAGE_HELPER } from './pageHelper'
 import { MUTED } from '../../ui/tones'
 
@@ -329,13 +329,9 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
       {amber.map((k) => ring(k, rects[k], 'ring-amber-400'))}
       {desk && held && rects[held.key] ? buttons(held, rects[held.key], false) : hover && mode === true && !held ? buttons(hover, hover.rect, true) : null}
       {!desk && held && rects[held.key] ? (
-        // the phone's row under the part picked, over the page: speak or write about it (B498)
-        <div
-          className="absolute inset-x-3 z-20 rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-900 dark:ring-white/10"
-          style={{ top: rects[held.key].y + rects[held.key].h + 12 }}
-        >
-          <PlaceVoiceRow rec={rec} meter={meter} {...marks(held)} on={voiceOn(held)} />
-        </div>
+        // the phone's row on the part picked, floating over the page under it (over it when the screen has no room
+        // under it; B715 r1169): speak or write about it (B498)
+        <PlaceVoiceFloat rec={rec} meter={meter} {...marks(held)} place={{ y: rects[held.key].y, h: rects[held.key].h }} x={rec ? 'inset-x-3' : 'right-3'} on={voiceOn(held)} />
       ) : null}
       {counts.map((c) => (
         <button

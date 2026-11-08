@@ -1,13 +1,13 @@
 // The control on a place picked to comment on (B498), alone: Voice and Comment; speaking, the recording strip (✕, the
 // time and level, ✓, and on the desktop ↑; the phone's ✓ sends, r1062). The desktop's beside the place, the phone's a
-// row under it. Where each sits on a page:
+// row floating under it, over the words below, which never move (B715 r1169). Where each sits on a page:
 // Document › Commenting › Voice and words on a place.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
 import { clock } from '../model/time'
 import { Hold } from '../stories/Frames'
 import { acts } from '../stories/acts'
-import { PLACE_LEVELS, PlaceVoice, PlaceVoiceRow, RecBar } from './PlaceVoice'
+import { PLACE_LEVELS, PlaceVoice, PlaceVoiceFloat, PlaceVoiceRow, RecBar } from './PlaceVoice'
 
 export default { title: 'Base components/Recording strip' } satisfies Meta
 type Story = StoryObj
@@ -36,6 +36,28 @@ export const Phone: Story = {
     <div className="flex w-[393px] flex-col gap-4 bg-zinc-50 p-4 dark:bg-zinc-900">
       {live(false, (rec, on) => <PlaceVoiceRow rec={rec} meter={meter(PLACE_LEVELS.phone)} on={on} />)}
       {live(true, (rec, on) => <PlaceVoiceRow rec={rec} meter={meter(PLACE_LEVELS.phone)} on={on} />)}
+    </div>
+  ),
+}
+
+/** A paragraph picked on the phone and the next one, the row floating between them over the next one's words. */
+const picked = (rec: boolean) => (
+  <div className="w-[393px] space-y-3 bg-white p-4 text-[15px] leading-relaxed text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+    <div className="relative -mx-2 rounded-lg bg-amber-50 px-2 py-1 ring-2 ring-amber-300 dark:bg-amber-950/40 dark:ring-amber-600">
+      The new page is written from scratch, and the old one stays in use until the ports are swapped.
+      {live(rec, (r, on) => <PlaceVoiceFloat rec={r} meter={meter(PLACE_LEVELS.phone)} on={on} />)}
+    </div>
+    <p>Nothing the user relies on is frozen: the old page keeps working while the new one is checked against it.</p>
+    <p>Each step ships on its own, behind the same address.</p>
+  </div>
+)
+
+export const PhoneFloating: Story = {
+  name: 'Phone: floating under a place, over the words below (B715)',
+  render: () => (
+    <div className="flex flex-wrap items-start gap-6 bg-zinc-100 p-6 dark:bg-zinc-900">
+      {picked(false)}
+      {picked(true)}
     </div>
   ),
 }

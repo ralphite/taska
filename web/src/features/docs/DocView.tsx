@@ -13,7 +13,7 @@ import type { SheetLook } from '../../ui/Sheet'
 import { MUTED, NEEDS_PILL, PRIMARY } from '../../ui/tones'
 import { BlockActs, type CountInfo } from './BlockActs'
 import { DocBlock } from './DocBlock'
-import { PlaceVoiceRow } from '../../ui/PlaceVoice'
+import { PlaceVoiceFloat } from '../../ui/PlaceVoice'
 import { DraftCard, NewDot, Thread, type DocEnv, type ThreadEvents } from './Thread'
 import type { NotSent } from '../../model/voiceComments'
 
@@ -47,7 +47,7 @@ export interface DocRow {
   /** words picked in it (the phone marks the item of a list) */
   quote: string | null
   skipped: boolean
-  /** the phone's row to speak or write a comment, under the paragraph picked */
+  /** the phone's row to speak or write a comment, floating by the paragraph picked (B715 r1169) */
   say: boolean
   /** its own Voice is recording a comment about it */
   speaking: boolean
@@ -194,7 +194,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
   const thread = (s: ShownThread, blockText?: string, rail = false) => (
     <Thread key={s.t.tk} t={s.t} blockText={blockText} rail={rail} isNew={s.isNew} done={s.done} doneAt={s.doneAt} replying={facts.replying === s.t.tk} asking={facts.asking} env={env} on={on} />
   )
-  // the phone's row to speak or write goes under the last paragraph picked (an area drawn picks several)
+  // the phone's row to speak or write floats by the last paragraph picked (an area drawn picks several)
   const sayAt = rows.filter((r) => r.say).at(-1)?.tk
   return (
     <div ref={root} className="flex min-h-full flex-col">
@@ -281,16 +281,14 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
                   ) : null}
                 </div>
                 {r.tk === sayAt ? (
-                  // the phone's row under the place picked: speak or write about it; speaking, its recording strip
-                  // (B498). A tap on it is not a tap on the paragraph.
-                  <div className="mt-2" onClick={(e) => e.stopPropagation()}>
-                    <PlaceVoiceRow
-                      rec={r.speaking}
-                      meter={meter}
-                      say={{ 'data-part-say': '', 'data-key': r.b.key, 'data-quote': r.quote ?? '' }}
-                      on={{ say: () => on.say(r.b.key, r.quote), comment: on.type, cancel: on.sayCancel, check: on.sayCheck }}
-                    />
-                  </div>
+                  // the phone's row on the place picked, floating under it over the text (over it when the screen
+                  // has no room under it): it never moves the words (B715 r1169); speaking, its recording strip (B498)
+                  <PlaceVoiceFloat
+                    rec={r.speaking}
+                    meter={meter}
+                    say={{ 'data-part-say': '', 'data-key': r.b.key, 'data-quote': r.quote ?? '' }}
+                    on={{ say: () => on.say(r.b.key, r.quote), comment: on.type, cancel: on.sayCancel, check: on.sayCheck }}
+                  />
                 ) : null}
                 {r.skipped && CHOICE_LINE.test(r.b.text) && !TICKED_LINE.test(r.b.text) ? (
                   <div className="mt-1.5 flex items-center gap-1 text-[13px] font-medium text-zinc-500 dark:text-zinc-400">
