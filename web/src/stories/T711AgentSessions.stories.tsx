@@ -2,10 +2,11 @@
 // less text the better"; one active session per project, the old ones are not worth showing). A proposal, to decide
 // on before anything is built: Gemini's two directions, each in every place (the pill in the project's bar, the rows,
 // Who works here, the item page, the sidebar card), on the phone and the desktop, with the active session at work and
-// waiting on Yadong. No state words: the dot says it (emerald pulsing at work, amber waiting), the tip says the rest.
-// Rows stay as today (the agent's badge on the row in progress, nothing more). Who works here: the active session,
-// what it waits on while it waits, then "2 earlier" folded. The item page: nothing, or one amber line while the
-// session waits. The page's own parts draw everything but the direction's piece; nothing here changes Taska itself.
+// blocked on Yadong. No state words and nothing about what it is blocked on (r1187): the dot alone says it (emerald
+// pulsing at work, amber blocked). The agent is its app's icon (Claude Code, Codex), not a letter. Rows stay as today
+// (the agent's icon on the row in progress, nothing more). Who works here: the active session, then "2 earlier"
+// folded. The item page: nothing, or the agent's icon with the amber dot while the session is blocked. The page's own
+// parts draw everything but the direction's piece; nothing here changes Taska itself.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { States } from './Frames'
 import type { Way } from './t711/Directions'
@@ -29,12 +30,12 @@ const story = (way: Way, c: Case, name: string): Story => ({
   ),
 })
 
-/** a. Name. Pill: the badge, the session's name cut short, the dot. Who works here: the badge and the name, the dot at
+/** a. Name. Pill: the icon, the session's name cut short, the dot. Who works here: the icon and the name, the dot at
  * the end; "2 earlier ›" folded. Card: the pill's mark, smaller. */
 export const NameWorking = story('a', 'working', 'a. Name · at work')
-export const NameWaiting = story('a', 'waiting', 'a. Name · waiting on you')
+export const NameWaiting = story('a', 'waiting', 'a. Name · blocked')
 
-/** b. Badge. Pill: the badge alone, the dot on its corner. Who works here: the badge with its dot and the name;
- * "› 2 earlier" folded. Card: the badge with its dot. */
+/** b. Badge. Pill: the icon alone, the dot on its corner. Who works here: the icon with its dot and the name;
+ * "› 2 earlier" folded. Card: the icon with its dot. */
 export const BadgeWorking = story('b', 'working', 'b. Badge · at work')
-export const BadgeWaiting = story('b', 'waiting', 'b. Badge · waiting on you')
+export const BadgeWaiting = story('b', 'waiting', 'b. Badge · blocked')

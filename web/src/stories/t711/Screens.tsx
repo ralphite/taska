@@ -12,7 +12,7 @@ import { pageOf } from '../itemPage'
 import { listOf } from '../listFixtures'
 import { act } from '../acts'
 import { Sheet, SheetLayout } from '../../ui/Sheet'
-import { CardMark, ItemWait, Pill, SheetBody, type Way } from './Directions'
+import { AgentIcon, CardMark, ItemWait, Pill, SheetBody, type Way } from './Directions'
 import { ACTIVE, F012, NOW, OLD, type Case } from './sessions'
 import { Swap } from './Swap'
 
@@ -37,15 +37,18 @@ const ITEMS: Item[] = [
   item({ n: 3, status: 'proposed', by: 'claude-code', title: 'Keep the filter in the export file name' }),
 ]
 
-/** The list with its head: the direction's pill in the head; the rows exactly as the page draws them. */
+/** The list with its head: the direction's pill in the head; the rows as the page draws them, but the agent's icon
+ * in place of the product's letter on the row in progress. */
 function List({ way, c, desk }: { way: Way; c: Case; desk: boolean }) {
   const rows = listOf(ITEMS, 'items', {}, desk)
   return (
     <Swap sel='button[aria-label="Agents"]' how="inside" part={<Pill way={way} x={ACTIVE[c]} />}>
-      <div className="flex h-full flex-col">
-        {headOf(desk)}
-        {desk ? <div className="h-full w-[420px] border-r border-zinc-200 dark:border-zinc-800">{rows}</div> : rows}
-      </div>
+      <Swap sel='span[title$=" is on it"]' how="inside" part={<AgentIcon by={ACTIVE[c].agent} />}>
+        <div className="flex h-full flex-col">
+          {headOf(desk)}
+          {desk ? <div className="h-full w-[420px] border-r border-zinc-200 dark:border-zinc-800">{rows}</div> : rows}
+        </div>
+      </Swap>
     </Swap>
   )
 }
@@ -66,13 +69,19 @@ export const sheetScreen = (way: Way, c: Case) => (
   </Frames>
 )
 
-/** The item page: as today, and the one amber line while the active session waits on something about it. */
+/** The item page: as today, and the agent's icon with the amber dot while the session is blocked on Yadong. */
 export const itemScreen = (c: Case) => (
   <Frames phoneWidth={393} deskWidth={900} height={420}>
     {(layout) => {
-      const page = pageOf(ITEMS[0], layout === 'desk', { env: { now: NOW } })
-      return ACTIVE[c].waitingFor ? (
-        <Swap sel='[data-part="item-times"]' how="after" part={<ItemWait x={ACTIVE[c]} />}>
+      // the agent's message in the talk shows the app's icon in place of the product's letter
+      const page = (
+        <Swap sel=".flex-wrap > span.size-5.rounded-md" how="replace" part={<AgentIcon by={ACTIVE[c].agent} />}>
+          {pageOf(ITEMS[0], layout === 'desk', { env: { now: NOW } })}
+        </Swap>
+      )
+      // the icon with the amber dot ends the chips' line, after the item's status
+      return ACTIVE[c].blocked ? (
+        <Swap sel='[data-part="item-title"] + div' how="append" part={<ItemWait x={ACTIVE[c]} />}>
           {page}
         </Swap>
       ) : (

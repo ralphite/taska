@@ -8,9 +8,9 @@ export interface Session {
   agent: string
   /** the session's title, as the app shows it */
   name: string
-  /** what it waits on, while it waits on Yadong */
-  waitingFor?: string
-  /** waiting since, or last seen ("2m", "3h", "1d") */
+  /** blocked on Yadong (what it is blocked on never shows, r1187) */
+  blocked?: boolean
+  /** last seen ("3h", "1d"), for the old sessions */
   when: string
 }
 
@@ -20,10 +20,10 @@ export const F012 = { n: 12, code: 'F012', title: 'Export ignores the active fil
 
 const active: Session = { agent: 'claude-code', name: 'Export keeps the filter', when: 'now' }
 
-/** The two states every place is drawn in: the active session at work, and waiting on Yadong. */
+/** The two states every place is drawn in: the active session at work, and blocked on Yadong. */
 export const ACTIVE = {
   working: active,
-  waiting: { ...active, waitingFor: 'approve Bash: npm test', when: '2m' },
+  waiting: { ...active, blocked: true },
 } satisfies Record<string, Session>
 
 export type Case = keyof typeof ACTIVE
