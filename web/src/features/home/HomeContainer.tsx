@@ -17,7 +17,8 @@ export function HomeContainer({ route }: { route: HomeRoute }) {
   const needs = useStoreValue(stores.data, (s) => s.needs)
   const at = useStoreValue(stores.data, (s) => s.listedAt)
   const away = useStoreValue(stores.data, (s) => s.listAway)
-  const hits = useStoreValue(stores.search, (s) => s.last)
+  const hits = useStoreValue(stores.search, (s) => s.hits)
+  const phase = useStoreValue(stores.search, (s) => s.phase)
   const [q, setQ] = useState('')
   // the note the link brought stays until closed; the address goes back to plain /
   const [gone, setGone] = useState(() => {
@@ -54,5 +55,5 @@ export function HomeContainer({ route }: { route: HomeRoute }) {
     open,
   }
 
-  return <Home facts={{ rows, needs: needs.length, away, gone, none, q, hits }} on={on} searchRef={app.fields.ref('home')} />
+  return <Home facts={{ rows, needs: needs.length, away, gone, none, q, search: { phase, hits } }} on={on} searchRef={app.fields.ref('home')} />
 }

@@ -4,7 +4,7 @@
 
 import type { MouseEvent, Ref } from 'react'
 import { hitPath } from '../../model/find'
-import type { SearchHit } from '../../model/types'
+import type { SearchHit, SearchPhase } from '../../model/types'
 import { hitWhere, inputCode, noMatches, plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { Hit, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
@@ -33,8 +33,8 @@ export interface HomeFacts {
   /** a project that never was */
   none: string | null
   q: string
-  /** the last answer to the search (shown while words are typed) */
-  hits: SearchHit[] | null
+  /** where the search is, and its last answer (faded while the next words are asked) */
+  search: { phase: SearchPhase; hits: SearchHit[] | null }
 }
 
 export interface HomeEvents {
@@ -67,7 +67,8 @@ function AgentCell({ agent }: { agent: HomeRow['agent'] }) {
 }
 
 export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvents; searchRef?: Ref<HTMLInputElement> }) {
-  const { rows, needs, away, gone, none, q, hits } = facts
+  const { rows, needs, away, gone, none, q, search } = facts
+  const { phase, hits } = search
   // a link opens in the page; with Cmd or Ctrl, in a new tab as links do
   const follow = (e: MouseEvent<HTMLAnchorElement>) => {
     if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
@@ -135,9 +136,11 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
         </div>
       ) : null}
       {away && rows ? <div className={NOTE}>{'Taska is out of reach, retrying…'}</div> : null}
-      {hits && q.trim() ? (
-        <div className="mb-3 overflow-hidden rounded-xl bg-white ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10">
-          {hits.length ? (
+      {q.trim() && phase !== 'idle' && (hits || phase !== 'asking') ? (
+        <div className={`mb-3 overflow-hidden rounded-xl ${phase === 'asking' ? 'opacity-60' : ''} bg-white ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10`}>
+          {phase === 'failed' || phase === 'retrying' ? (
+            <p className="px-4 py-3 text-sm text-zinc-500">{phase === 'failed' ? 'Search failed' : 'Taska is out of reach, retrying…'}</p>
+          ) : hits?.length ? (
             hits.slice(0, 12).map((x) => (
               <a
                 key={x.project + x.code}

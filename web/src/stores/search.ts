@@ -1,20 +1,19 @@
-// The search across the projects (the home page's): the words asked, what came back (null while it is asked),
-// whether Taska refused it or is out of reach (asked again), and the last answer whatever its words (shown while the
-// next is asked).
+// The search across the projects (the home page's): the words asked and where the search is (T728 #7): one phase,
+// so the page cannot show "No matches" for a search Taska refused or could not be reached for. `hits`: the last
+// answer, kept (faded) while the next words are asked.
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
-import type { SearchHit } from '../model/types'
+import type { SearchHit, SearchPhase } from '../model/types'
 
 export interface SearchState {
   q: string
-  list: SearchHit[] | null
-  failed: boolean
-  waiting: boolean
-  last: SearchHit[] | null
+  phase: SearchPhase
+  hits: SearchHit[] | null
   asked(q: string): void
   /** Taska out of reach while `q` is asked: it is asked again */
   retrying(q: string): void
-  answered(q: string, list: SearchHit[] | null, failed: boolean): void
+  answered(q: string, list: SearchHit[]): void
+  refused(q: string): void
 }
 
 export type SearchStore = StoreApi<SearchState>
@@ -22,16 +21,17 @@ export type SearchStore = StoreApi<SearchState>
 export function createSearchStore(): SearchStore {
   return createStore<SearchState>()((set, get) => ({
     q: '',
-    list: null,
-    failed: false,
-    waiting: false,
-    last: null,
-    asked: (q) => set({ q, list: null, failed: false, waiting: false }),
+    phase: 'idle',
+    hits: null,
+    asked: (q) => set({ q, phase: q ? 'asking' : 'idle' }),
     retrying: (q) => {
-      if (get().q === q) set({ waiting: true })
+      if (get().q === q) set({ phase: 'retrying' })
     },
-    answered: (q, list, failed) => {
-      if (get().q === q) set({ list, failed, waiting: false, last: list ?? [] })
+    answered: (q, list) => {
+      if (get().q === q) set({ phase: 'answered', hits: list })
+    },
+    refused: (q) => {
+      if (get().q === q) set({ phase: 'failed' })
     },
   }))
 }

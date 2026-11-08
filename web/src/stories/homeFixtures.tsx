@@ -22,7 +22,7 @@ export const NEEDS: Need[] = [
   { project: 'home', ptitle: 'Home', n: 12, code: 'B012', title: 'The garden tap drips when it is turned off all the way', kind: 'review', pri: 'P2', t: '' },
 ]
 export const rows = homeRows(PROJECTS, NEEDS, now)
-export const facts: HomeFacts = { rows, needs: 13, away: false, gone: null, none: null, q: '', hits: null }
+export const facts: HomeFacts = { rows, needs: 13, away: false, gone: null, none: null, q: '', search: { phase: 'idle', hits: null } }
 export const hits: SearchHit[] = [
   { project: 'taska', ptitle: 'taska', kind: 'item', code: 'F581', title: 'Rewrite Taska from scratch', status: 'doing', t: '' },
   { project: 'home', ptitle: 'Home', kind: 'item', code: 'B3', title: 'Fix the rewrite of the shelf', status: 'done', t: '' },

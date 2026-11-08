@@ -373,6 +373,10 @@ export interface Need {
   t: string
 }
 
+/** Where a search across the projects is (T728 #7): asking: sent, no answer yet; retrying: Taska out of reach, asked
+ * again; failed: Taska refused it; answered. */
+export type SearchPhase = 'idle' | 'asking' | 'retrying' | 'failed' | 'answered'
+
 export interface SearchHit {
   project: string
   ptitle: string

@@ -24,9 +24,9 @@ export class CrossSearch {
       const s = () => this.store.getState()
       const ask = () => (s().q === q ? this.api.search(q, slug) : Promise.reject(new Abandoned()))
       try {
-        s().answered(q, await untilAnswered(ask, () => s().retrying(q)), false)
+        s().answered(q, await untilAnswered(ask, () => s().retrying(q)))
       } catch (ex) {
-        if (!(ex instanceof Abandoned)) s().answered(q, null, true)
+        if (!(ex instanceof Abandoned)) s().refused(q)
       }
     }, wait)
   }
