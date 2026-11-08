@@ -14,7 +14,7 @@ export const agoLong = (t: number, now = Date.now()) => {
   return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${days} day${days === 1 ? '' : 's'} ago`
 }
 
-export type AgentTone = 'ready' | 'recent' | 'idle' | 'bad'
+export type AgentTone = 'ready' | 'recent' | 'idle' | 'bad' | 'blocked'
 
 export interface AgentLine {
   tone: AgentTone
@@ -25,8 +25,11 @@ export interface AgentLine {
 
 /** [tone, the pill's words, a longer sentence] */
 /** `queued`: items in the queue now (the sentence never says nothing waits while some do). */
-export function agentState(agents: readonly AgentSeen[] | undefined, work: boolean | undefined, now = Date.now(), queued = 0): ['ok' | 'bad' | 'idle', string, string] {
+/** A session waiting on the user comes first (T711 #10443): `Claude Code · blocked`. */
+export function agentState(agents: readonly AgentSeen[] | undefined, work: boolean | undefined, now = Date.now(), queued = 0): ['ok' | 'bad' | 'idle' | 'blocked', string, string] {
   const list = [...(agents || [])].sort((a, b) => b.t - a.t)
+  const stuck = list.find((x) => x.blocked?.length)
+  if (stuck) return ['blocked', `${whoName(stuck.name)} · blocked`, `${whoName(stuck.name)} is blocked, waiting on you.`]
   const a = list.find((x) => x.waiting) || list[0]
   const name = a ? whoName(a.name) : ''
   if (a?.waiting) return ['ok', `${name} ready`, `${name} is ready for work.`]
@@ -44,7 +47,7 @@ export function agentLine(agents: readonly AgentSeen[] | undefined, work: boolea
     .flatMap((a) =>
       (a.sessions?.length ? a.sessions : [{ name: a.session || '', t: a.t }]).map((x, i) => ({
         t: x.t,
-        text: [whoName(a.name), x.name, agoShort(x.t, now), a.waiting && i === 0 ? 'waiting for work' : ''].filter(Boolean).join(' · '),
+        text: [whoName(a.name), x.name, agoShort(x.t, now), blockedOn(a, x.name) ?? (a.waiting && i === 0 ? 'waiting for work' : '')].filter(Boolean).join(' · '),
       })),
     )
     .sort((x, y) => y.t - x.t)
@@ -53,6 +56,12 @@ export function agentLine(agents: readonly AgentSeen[] | undefined, work: boolea
     label,
     tip: lines.map((l) => l.text).filter((l) => l !== label).join('\n') || undefined,
   }
+}
+
+/** What a session of this agent waits on, when it waits on the user ("blocked: approve plan"); undefined when not. */
+export function blockedOn(a: AgentSeen, session: string): string | undefined {
+  const b = a.blocked?.find((x) => x.session === session)
+  return b ? (b.waitingFor ? `blocked: ${b.waitingFor}` : 'blocked') : undefined
 }
 
 /** The home page's agent cell: the agent last heard of, around while it waits for work or was here in 10 minutes. */

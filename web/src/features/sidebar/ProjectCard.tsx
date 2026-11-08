@@ -20,6 +20,7 @@ const AGENT: Record<AgentTone, string> = {
   recent: 'text-emerald-700 dark:text-emerald-400',
   idle: '',
   bad: 'text-red-600 dark:text-red-400',
+  blocked: 'text-amber-700 dark:text-amber-400',
 }
 
 /** The card itself (props only): its stories draw it alone. `href`/`onOpen`: its name opens the project. */

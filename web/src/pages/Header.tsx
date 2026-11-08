@@ -20,6 +20,7 @@ const PILL: Record<AgentTone, [string, string]> = {
   ],
   idle: ['bg-zinc-100 text-zinc-600 ring-zinc-900/5 dark:bg-zinc-800/80 dark:text-zinc-400 dark:ring-white/5', 'bg-zinc-300 dark:bg-zinc-600'],
   bad: ['bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-400/10 dark:text-red-300 dark:ring-red-400/25', 'bg-red-500 dark:bg-red-400'],
+  blocked: ['bg-amber-50 text-amber-800 ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/25', 'bg-amber-500 dark:bg-amber-400'],
 }
 
 /** "Out of reach, retrying…" while the server is away: in the agent pill's place, and on the phone over an item's page. */

@@ -203,6 +203,8 @@ export interface AgentSeen {
   waiting: boolean
   session?: string
   sessions?: { name: string; t: number }[]
+  /** its sessions that wait on the user now (T711): the session's title, what it waits on, since when */
+  blocked?: { session: string; waitingFor: string; since: number }[]
 }
 
 /** A place where a voice note may be misheard: its words, what the other model heard there, why; the same two

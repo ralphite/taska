@@ -19,7 +19,15 @@ export function agentsFacts(m: ProjectModel, guide: string | null): AgentsFacts 
     line,
     queue,
     later: live.filter((it) => it.when === 'later' && !closed(it.status)).length,
-    seen: [...m.facts.agents].sort((a, b) => b.t - a.t).map((a) => ({ name: a.name, who: whoName(a.name), when: a.waiting ? 'waiting for work' : agoLong(a.t, m.at), known: a.name in AGENT_NAME && a.name !== 'agent' })),
+    seen: [...m.facts.agents]
+      .sort((a, b) => b.t - a.t)
+      .map((a) => ({
+        name: a.name,
+        who: whoName(a.name),
+        when: a.blocked?.length ? 'Blocked' : a.waiting ? 'waiting for work' : agoLong(a.t, m.at),
+        known: a.name in AGENT_NAME && a.name !== 'agent',
+        blocked: (a.blocked || []).map((b) => ({ session: b.session, waitingFor: b.waitingFor })),
+      })),
     cmd: `curl -s ${base}/connect | sh`,
     far: m.facts.remote && m.facts.remote !== base ? `curl -s ${m.facts.remote}/connect | sh` : '',
     ask,

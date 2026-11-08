@@ -12,11 +12,12 @@ import type { SheetParts } from '../../ui/Sheet'
 import { CHIP } from '../../ui/tones'
 
 export interface AgentsFacts {
-  tone: 'ok' | 'bad' | 'idle'
+  tone: 'ok' | 'bad' | 'idle' | 'blocked'
   line: string
   queue: number
   later: number
-  seen: { name: string; who: string; when: string; known: boolean }[]
+  /** `blocked`: its sessions that wait on the user, each with what it waits on (T711) */
+  seen: { name: string; who: string; when: string; known: boolean; blocked: { session: string; waitingFor: string }[] }[]
   cmd: string
   far: string
   ask: string
@@ -27,7 +28,10 @@ const CARD_LOOK = {
   bad: ['bg-red-50 dark:bg-red-400/10', 'bg-red-500 ring-4 ring-red-500/20 dark:bg-red-400', 'text-red-800 dark:text-red-200', 'text-red-700/80 dark:text-red-300/80'],
   ok: ['bg-emerald-50 dark:bg-emerald-400/10', 'bg-emerald-500 ring-4 ring-emerald-500/20 dark:bg-emerald-400', 'text-emerald-900 dark:text-emerald-100', 'text-emerald-800/80 dark:text-emerald-300/80'],
   idle: ['bg-zinc-100 dark:bg-zinc-800', 'bg-zinc-400 ring-4 ring-zinc-400/20', 'text-zinc-800 dark:text-zinc-100', 'text-zinc-500 dark:text-zinc-400'],
+  blocked: ['bg-amber-50 dark:bg-amber-400/10', 'bg-amber-500 ring-4 ring-amber-500/20 dark:bg-amber-400', 'text-amber-900 dark:text-amber-100', 'text-amber-800/80 dark:text-amber-300/80'],
 } as const
+
+const AMBER = 'text-amber-700 dark:text-amber-400'
 
 const CARD = 'rounded-2xl border border-zinc-200 dark:border-zinc-800'
 const CODE = 'rounded bg-zinc-100 px-1 font-mono text-[12.5px] dark:bg-zinc-800'
@@ -70,10 +74,18 @@ function AgentsBody({ f, on, guideOpen }: { f: AgentsFacts; on: { copy(text: str
             <h3 className="text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">Seen in this project</h3>
             <ul className="mt-1">
               {f.seen.map((a) => (
-                <li key={a.name} className={`flex h-9 items-center gap-2.5 text-sm ${a.known ? '' : 'opacity-55'}`}>
-                  <Avatar by={a.name} />
-                  <span className="min-w-0 flex-1 truncate">{a.who}</span>
-                  <span className="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">{a.when}</span>
+                <li key={a.name} className={`text-sm ${a.known ? '' : 'opacity-55'}`}>
+                  <div className="flex h-9 items-center gap-2.5">
+                    <Avatar by={a.name} />
+                    <span className="min-w-0 flex-1 truncate">{a.who}</span>
+                    <span className={`text-xs tabular-nums ${a.blocked.length ? `font-medium ${AMBER}` : 'text-zinc-500 dark:text-zinc-400'}`}>{a.when}</span>
+                  </div>
+                  {a.blocked.map((b) => (
+                    <div key={b.session} className="pb-1.5 pl-7.5">
+                      <p className="truncate text-[13px]">{b.session}</p>
+                      {b.waitingFor ? <p className={`text-xs leading-snug break-words ${AMBER}`}>{b.waitingFor}</p> : null}
+                    </div>
+                  ))}
                 </li>
               ))}
             </ul>

@@ -18,6 +18,8 @@ export const PillWorking: Story = { ...one({ agents: AGENTS.ready }), name: 'Rea
 export const PillRecent: Story = { ...one({ agents: AGENTS.recent }), name: 'Here lately' }
 /** Work waits, the last agent left 2 hours ago. */
 export const PillGone: Story = { ...one({ agents: AGENTS.gone, work: true }), name: 'Work waits, no agent' }
+/** A Claude Code session waits on the user (T711 #10443): amber, before anything else the pill could say. */
+export const PillBlocked: Story = { ...one({ agents: AGENTS.blocked }), name: 'Blocked, waiting on you' }
 /** No agent has ever come, nothing waits for one. */
 export const PillIdle: Story = { ...one({ agents: AGENTS.none, work: false }), name: 'No agent yet' }
 /** Taska does not answer: Offline, retrying. */

@@ -32,5 +32,11 @@ export const WorkWaitsAgentLeft: Story = { ...sheet(agentsFacts(shopWithHistory(
 export const NothingWaitingAgentWasHere: Story = { ...sheet(agentsFacts(shopWithHistory(gone, { work: false, items: IDLE }), guide('shop'))), name: 'Nothing waiting, an agent was here' }
 /** an agent Taska does not know by name: dimmed in Seen in this project */
 export const SeenAnUnknownAgent: Story = { ...sheet(agentsFacts(shopWithHistory([...SEEN, { name: 'helper-bot', t: SEEN[1].t, waiting: false }]), guide('shop'))), name: 'Seen: an agent Taska does not know' }
+/** a Claude Code session waits on the user (T711 #10443): the amber card; its line says Blocked, its session what it waits on */
+const blocked: AgentSeen[] = [
+  { name: 'claude-code', t: SEEN[0].t - 5 * 60_000, waiting: false, sessions: [{ name: 'Export keeps the filter', t: SEEN[0].t - 5 * 60_000 }], blocked: [{ session: 'Export keeps the filter', waitingFor: 'approve Bash: npm --prefix web run check', since: SEEN[0].t - 60_000 }] },
+  SEEN[1],
+]
+export const Blocked: Story = { ...sheet(agentsFacts(shopWithHistory(blocked), guide('shop'))), name: 'A session blocked, waiting on you' }
 /** no public address: no Copy for another network under the command */
 export const NoPublicAddress: Story = { ...sheet(agentsFacts(shopWithHistory(SEEN, { remote: '' }), guide('shop'))), name: 'No public address' }

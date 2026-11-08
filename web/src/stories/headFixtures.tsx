@@ -22,6 +22,17 @@ export const AGENTS = {
   recent: [{ name: 'codex', t: now - 4 * 60_000, waiting: false }],
   gone: [{ name: 'claude-code', t: now - 2 * 3600_000, waiting: false }],
   none: [],
+  /** a Claude Code session waits on the user (T711): it asks to run a command */
+  blocked: [
+    {
+      name: 'claude-code',
+      t: now - 6 * 60_000,
+      waiting: false,
+      session: 'Export keeps the filter',
+      sessions: [{ name: 'Export keeps the filter', t: now - 6 * 60_000 }],
+      blocked: [{ session: 'Export keeps the filter', waitingFor: 'approve Bash: npm --prefix web run check', since: now - 2 * 60_000 }],
+    },
+  ],
 } satisfies Record<string, AgentSeen[]>
 
 export interface HeadHere {
