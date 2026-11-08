@@ -135,8 +135,9 @@ const draftCard = (
 /** What you said lately under the box, as the desktop's page draws it, with what the page holds for it (useInputs:
  * More, ⋯ menus, Voice on a row, voice notes and pictures). One recording at a time, as the page has it: #1023's added
  * voice note (the box recording is a story of its own). */
+const ADDING = 'r1023'
 function DeskList() {
-  const live = useInputs(M, true, { adding: { id: 'r1023', clock: '0:11' } })
+  const live = useInputs(M, true, { adding: { id: ADDING, clock: '0:11' } })
   const said = saidRows(M, { upTo: 30, opened: live.opened, drafts: DRAFTS, mode: null, title })
   return (
     <section aria-label="Latest inputs" className="mx-auto mt-8 block max-w-[42rem]">
@@ -164,7 +165,8 @@ export function DeskPage() {
         </div>
         <div className="min-w-0 flex-1 px-8 pt-12 pb-16">
           <ComposeHead title="taska" tone={toneOf(SIDE.tones, 'taska')} />
-          <div className="[&>div]:bg-transparent [&>div]:p-0">{boxAt({ at: 'new' }, true, { placeholder: 'Write to taska…' })}</div>
+          {/* the row's recording: its strip says it, the box adds no line over itself, so the list never moves (B720) */}
+          <div className="[&>div]:bg-transparent [&>div]:p-0">{boxAt({ at: 'new', recordingFor: draftKey({ kind: 'amend', mode: 'append', id: ADDING }) }, true, { placeholder: 'Write to taska…' })}</div>
           <DeskList />
         </div>
       </div>

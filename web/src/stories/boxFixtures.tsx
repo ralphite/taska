@@ -7,7 +7,7 @@ import { Composer, Feedback, type ComposerProps } from '../features/composer/Com
 import { DraftFiles, type DraftFile } from '../features/composer/DraftFiles'
 import { BOX_WORDS_LOOK, Doubts, DraftWords, doubtsViewOf } from '../features/composer/Doubts'
 import { openDoubts, pickSide, spotsIn, type HeardFile } from '../model/doubts'
-import { boxRole, feedbackLine, shownBox, type BoxMode } from '../model/boxFoot'
+import { boxRole, boxShowsRecording, feedbackLine, shownBox, type BoxMode } from '../model/boxFoot'
 import { blockKeys } from '../model/docs'
 import type { Outgoing } from '../model/outgoing'
 import { composing, parseRoute } from '../model/route'
@@ -44,7 +44,8 @@ export interface Here {
   mode?: BoxMode
   text?: string
   rec?: boolean
-  /** a recording made for another draft (its key) */
+  /** a recording made for another draft (its key); one whose own strip is in sight (an input's row in the New input
+   * page's list) adds nothing to the box */
   recordingFor?: string
   files?: DraftFile[]
   /** the organizer is on (the default, as Taska is normally used); false: the story is the organizer off */
@@ -98,7 +99,9 @@ function LiveBox({ h, desk, extra }: { h: Here; desk: boolean; extra: Partial<Co
   const role = boxRole(m, route, desk, 'demo', mode, pick, ticks)
   // the desktop's box with nothing open is the New input page's, as the page has it
   const compose = desk && composing(route)
-  const shown = shownBox(role, { mode, text, key: 'here', recordingFor: h.recordingFor ?? null })
+  // a recording for another draft says so in the box, unless its own strip is in sight (the page's rule)
+  const recordingFor = h.recordingFor && boxShowsRecording({ key: h.recordingFor }, { place: route.place, list: compose, key: 'here' }) ? h.recordingFor : null
+  const shown = shownBox(role, { mode, text, key: 'here', recordingFor })
   const stopRec = () => setRec(null)
   // the words that may be misheard (BoxContainer and useHeard): under the box, or on the phone in the box to pick from;
   // a version picked swaps the words as voiceWords.pick does (the model's pickSide)
