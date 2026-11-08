@@ -189,7 +189,7 @@ export interface App {
   docVoice: DocVoice
   dictation: Dictation
   media: Media
-  /** Mermaid diagrams in Markdown, drawn once per words and theme */
+  /** Mermaid diagrams in Markdown, drawn once per words and theme; a document's that does not draw goes to its writer */
   diagrams: Diagrams
   views: SavedViews
   itemDrag: ItemDrag
@@ -438,7 +438,7 @@ export function createApp(env: AppEnv): App {
     docVoice,
     dictation,
     media,
-    diagrams: new Diagrams(),
+    diagrams: new Diagrams((slug, f) => api.diagramFailed(slug, f)),
     views,
     itemDrag,
     selection,

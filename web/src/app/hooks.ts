@@ -4,6 +4,8 @@
 import { useEffect, useMemo } from 'react'
 import { playOf, type PlayState } from '../stores/media'
 import { findRef, type ProjectModel } from '../model/project'
+import { codeBlock } from '../model/markdown'
+import type { Doc } from '../model/types'
 import type { InlineWorld } from '../ui/markdown/inline'
 import type { Route } from '../model/route'
 import { useApp, useStores, useStoreValue } from './context'
@@ -86,4 +88,30 @@ export function useItemWorld(m: ProjectModel | null, slug: string): InlineWorld 
     }),
     [m, slug, sizes, diagrams],
   )
+}
+
+/** A document's world: a diagram of it that does not draw is told to the agent that wrote it (B714 r1181); the
+ * rules and web pages have no such diagrams. */
+export function useDocWorld(m: ProjectModel | null, slug: string, d: Doc | undefined): InlineWorld {
+  const { diagrams } = useApp()
+  const world = useItemWorld(m, slug)
+  const blocks = d && d.fmt !== 'html' && d.kind !== 'rules' ? d.blocks : null
+  const dn = d?.d ?? 0
+  const v = d?.versions ?? 0
+  return useMemo(() => {
+    const draw = world.diagram
+    if (!draw || !blocks) return world
+    return {
+      ...world,
+      diagram: (src: string, dark: boolean, id: string) =>
+        draw(src, dark, id).catch((e: unknown) => {
+          const b = blocks.find((x) => {
+            const c = x.kind === 'code' ? codeBlock(x.text) : null
+            return c?.kind === 'code' && c.text === src
+          })
+          if (b) diagrams.failed(slug, { d: dn, v, key: b.key }, e)
+          throw e
+        }),
+    }
+  }, [world, blocks, dn, v, slug, diagrams])
 }

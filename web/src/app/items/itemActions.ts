@@ -3,7 +3,7 @@
 // same), and the row you acted on holds still so the next row never slides under a second click.
 
 import type { Command } from '../../api/taska'
-import { closed, ranksFor } from '../../model/items'
+import { closed, lastAgentMessage, ranksFor } from '../../model/items'
 import { codeOf, type ItemPatch, type ProjectModel } from '../../model/project'
 import { decidedWord } from '../../model/talk'
 import { laterDay } from '../../model/time'
@@ -224,4 +224,4 @@ export class ItemActions {
   }
 }
 
-const lastAgentId = (it: Item) => [...it.thread].reverse().find((m) => !(m.by === 'you' || (m.by === 'org' && ['say', 'decide', 'propose'].includes(m.kind) && !!m.src)))?.id ?? null
+const lastAgentId = (it: Item) => lastAgentMessage(it)?.id ?? null

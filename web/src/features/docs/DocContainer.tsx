@@ -16,7 +16,7 @@ import { codeOf, liveN } from '../../model/project'
 import { factsOf, webFacts } from './docFacts'
 import { notSent, type NotSent } from '../../model/voiceComments'
 import { Sheet, SheetLayout } from '../../ui/Sheet'
-import { useItemWorld } from '../../app/hooks'
+import { useDocWorld } from '../../app/hooks'
 import { PaneFrame } from '../../ui/PaneFrame'
 import { DocPaneActs, DocPaneHead, DocPaneNav } from './DocPane'
 import { DocEditContainer } from './DocEditContainer'
@@ -38,8 +38,8 @@ export function useDoc(slug: string, dn: number) {
   const v = useStoreValue(stores.docView, (s) => s)
   const asked = useStoreValue(stores.sheet, (s) => s.asked)
   const ticks = useStoreValue(stores.docTicks, (s) => s)
-  const world = useItemWorld(m, slug)
   const d = m?.docs.find((x) => x.d === dn)
+  const world = useDocWorld(m, slug, d)
   const seen = app.seen.of(slug)
   // the paragraph whose own mic records a comment about it
   // (read as one word, so the document is not drawn again at every moment of sound)

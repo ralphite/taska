@@ -202,6 +202,11 @@ export class TaskaApi {
     return this.http.json<LogRow[]>(P(slug) + `activity?n=${n}` + (before ? `&before=${before}` : ''))
   }
 
+  /** A document's diagram that did not draw (B714 r1181): Taska tells the agent that wrote it, once. */
+  diagramFailed(slug: string, body: { d: number; v: number; key: string; error: string }): Promise<{ ok: boolean; result: string }> {
+    return this.http.json(P(slug) + 'diagram-failed', { method: 'POST', body })
+  }
+
   pageLog(slug: string, list: Record<string, unknown>[]): Promise<unknown> {
     return this.http.json(P(slug) + 'page-log', { method: 'POST', body: { list } })
   }

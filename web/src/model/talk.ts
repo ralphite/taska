@@ -2,7 +2,7 @@
 // answered a question with, the versions of something you edited, the questions taken back, who read your words.
 // Pure: from the item (and an answer still on its way, when there is one).
 
-import { lastAgentMessage, userWord } from './items'
+import { lastAgentMessage, taskaNote, userWord } from './items'
 import { hasChoices, ticks } from './markdown'
 import type { Item, Message } from './types'
 
@@ -117,7 +117,7 @@ export function withdrawn(thread: readonly Message[]): Set<number> {
 export function readMark(it: Item): { id: number; names: string[]; t: number } | null {
   const th = it.thread
   const mine = th.findLastIndex((x) => x.by === 'you')
-  const theirs = th.findLastIndex((x) => x.by !== 'you' && x.by !== 'org')
+  const theirs = th.findLastIndex((x) => x.by !== 'you' && x.by !== 'org' && !taskaNote(x))
   if (mine < 0 || mine <= theirs || !it.readBy) return null
   const t = Date.parse(th[mine].t)
   const readers = Object.entries(it.readBy)

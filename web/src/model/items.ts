@@ -31,7 +31,10 @@ export const shownStatus = (it: Item): { s: string; label: string } =>
 export const userWord = (m: Message) =>
   m.by === 'you' || (m.by === 'org' && ['say', 'decide', 'propose'].includes(m.kind) && !!m.src)
 
-export const lastAgentMessage = (it: Item) => [...it.thread].reverse().find((m) => !userWord(m))
+/** Taska's own note to an agent (a diagram that does not draw, B714 r1181): no agent's word, nothing for you to read. */
+export const taskaNote = (m: Message) => m.by === 'taska'
+
+export const lastAgentMessage = (it: Item) => [...it.thread].reverse().find((m) => !userWord(m) && !taskaNote(m))
 
 /** An hour without news from the agent on work in progress: its row says how long in amber (D115 #30). */
 export const QUIET_WORK_MS = 3600e3
@@ -39,7 +42,7 @@ export const QUIET_WORK_MS = 3600e3
 /** The latest news on work in progress (D115 #30): the start of what an agent last said there (not the organizer,
  * not a hidden or taken-back message), how long ago, and whether that is over an hour; null when none has spoken. */
 export function workNews(it: Item, now: number): { text: string; age: string; quiet: boolean } | null {
-  const m = [...it.thread].reverse().find((x) => !userWord(x) && x.by !== 'org' && x.kind !== 'withdraw' && !x.hidden)
+  const m = [...it.thread].reverse().find((x) => !userWord(x) && x.by !== 'org' && !taskaNote(x) && x.kind !== 'withdraw' && !x.hidden)
   const text = m ? oneLine(m.text) : ''
   if (!m || !text) return null
   const ms = Math.max(0, now - Date.parse(m.t))
