@@ -169,3 +169,15 @@ describe('what became of an input, in one set of words (B629)', () => {
     expect(madeFrom({ ...r, touched: [12] }, made)).toEqual([])
   })
 })
+
+describe('the agents\' queue, as /next hands out work (T728 #4)', () => {
+  test('a proposal you replied on, or work in review, is not queued; an item with an open subitem waits for it', () => {
+    const items = [
+      item({ n: 1, status: 'proposed', pri: 'P0' }),
+      item({ n: 2, status: 'review', pri: 'P0' }),
+      item({ n: 3, pri: 'P1' }),
+      item({ n: 4, pri: 'P2', parent: 3 }),
+    ]
+    expect(queueHead(items)).toBe(4)
+  })
+})

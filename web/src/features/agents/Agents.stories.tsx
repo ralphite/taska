@@ -6,14 +6,14 @@ import { SEEN, shopWithHistory } from '../../stories/settingsFixtures'
 import type { AgentSeen } from '../../model/types'
 import { agentsSheet } from './Agents'
 import { agentsFacts } from './agentsFacts'
-import { inQueue } from '../../model/items'
+import { waitsInQueue, withOpenKids } from '../../model/items'
 import { PROJECT } from '../../stories/listFixtures'
 
 export default { title: 'UI/List pane/Top bar/Agent pill/Who works here' } satisfies Meta
 type Story = StoryObj
 
 /** the project with nothing in its queue now (what waits is for later, or in progress) */
-const IDLE = PROJECT.filter((it) => !(inQueue(it) && it.when === 'now' && it.status !== 'doing'))
+const IDLE = PROJECT.filter((it) => !waitsInQueue(it, withOpenKids(PROJECT)))
 const sheet = (f: ReturnType<typeof agentsFacts>, open = false): Story => ({ render: () => <SheetFrames look={{ tall: true, wide: true }} height={820} parts={() => agentsSheet(f, acts('Agents', ['copy', 'help'], { help: 'Help › Topics › Connect an agent' }), open)} /> })
 
 /** One around and one that was here earlier. */

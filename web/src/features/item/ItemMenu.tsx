@@ -4,7 +4,7 @@
 // or S, P, T). Props only.
 
 import type { ReactNode } from 'react'
-import { closed, inQueue, statusChoices } from '../../model/items'
+import { closed, statusChoices, waitsInQueue } from '../../model/items'
 import type { Item, Pri, Status } from '../../model/types'
 import { priOpts, SegCtl, typeOpts } from '../../ui/Segments'
 import { StateIcon, Icon } from '../../ui/Icon'
@@ -98,7 +98,7 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
       </span>
     </button>
   )
-  const next = inQueue(it) && it.when === 'now' && it.status !== 'doing' ? tile('next', it.rank == null ? 'totop' : 'undo', it.rank == null ? 'Do this next' : 'Back in order', on.doNext, it.rank == null ? `first ${it.pri} in queue` : 'where it was, by age') : null
+  const next = waitsInQueue(it) ? tile('next', it.rank == null ? 'totop' : 'undo', it.rank == null ? 'Do this next' : 'Back in order', on.doNext, it.rank == null ? `first ${it.pri} in queue` : 'where it was, by age') : null
   const state = it.archived
     ? [tile('unarchive', 'unarchive', 'Unarchive', () => on.archive(false))]
     : closed(it.status)
@@ -217,7 +217,7 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
     }
   }
   // in progress it is first already: nothing to move
-  const next = inQueue(it) && it.when === 'now' && it.status !== 'doing' ? row('next', it.rank == null ? 'totop' : 'undo', it.rank == null ? 'Do this next' : 'Back in order', '', on.doNext, it.rank == null ? `first ${it.pri} in queue` : 'where it was, by age') : null
+  const next = waitsInQueue(it) ? row('next', it.rank == null ? 'totop' : 'undo', it.rank == null ? 'Do this next' : 'Back in order', '', on.doNext, it.rank == null ? `first ${it.pri} in queue` : 'where it was, by age') : null
   const state = it.archived
     ? [row('unarchive', 'unarchive', 'Unarchive', keys.archive, () => on.archive(false))]
     : closed(it.status)

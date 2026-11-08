@@ -76,7 +76,9 @@ export const canDone = (it: Item) =>
   !closed(it.status) && it.status !== 'proposed' && it.status !== 'review'
 
 /** In the agents' queue: not waiting on you, not finished, not archived. */
-export const inQueue = (it: Item) => !it.mergedInto && !it.archived && !needsYou(it) && !closed(it.status)
+/** In the agents' queue to be done now, by the server's own rule (agent_text/work.py next_work; T728 #4): to do now,
+ * open or in progress, not waiting on you. A proposal, work in review, or an item you replied on is not in it. */
+export const queuedNow = (it: Item) => !it.mergedInto && !it.archived && it.when === 'now' && (it.status === 'open' || it.status === 'doing') && !it.wait
 
 /** The order agents take the work: now before later, in progress first; then the user's own order (rank) before
  * priority: what they never placed goes in by priority, just before the first ranked item of a lower priority. */
@@ -97,9 +99,18 @@ export function queueOrder(items: Item[]): Item[] {
   return out
 }
 
+/** The items with open subitems: /next does not hand those out (their subitems come first). */
+export const withOpenKids = (items: readonly Item[]) => new Set(items.filter((it) => it.parent != null && !it.mergedInto && !closed(it.status)).map((it) => it.parent as number))
+
+/** Waiting in the agents' queue: what /next hands out and no one is on yet: queued now, not in progress, no open
+ * subitems (`kids`: withOpenKids of its project). */
+export const waitsInQueue = (it: Item, kids: ReadonlySet<number> = new Set()) => queuedNow(it) && it.status === 'open' && !kids.has(it.n)
+
 /** The item an agent takes next. */
-export const queueHead = (items: Item[]) =>
-  queueOrder(items.filter((it) => inQueue(it) && it.when === 'now' && it.status !== 'doing'))[0]?.n
+export const queueHead = (items: Item[]) => {
+  const kids = withOpenKids(items)
+  return queueOrder(items.filter((it) => waitsInQueue(it, kids)))[0]?.n
+}
 
 /** What needs you, the latest change first, the Later ones under the rest. */
 export const needsOrder = (a: Item, b: Item) =>
@@ -112,9 +123,6 @@ export const workOrder = (all: Item[]) => [
   ...queueOrder(all.filter((it) => !closed(it.status))),
   ...all.filter((it) => closed(it.status)).sort(latestFirst),
 ]
-
-/** In the agents' queue to be done now. */
-export const queuedNow = (it: Item) => inQueue(it) && it.when === 'now'
 
 export type DropHow = 'before' | 'after' | 'into' | 'out'
 
