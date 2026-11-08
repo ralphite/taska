@@ -25,7 +25,13 @@ idle() { curl -s -m 3 "$URL/api/idle" | /usr/bin/python3 -c 'import json,sys; pr
 serving() { lsof -tiTCP:${URL##*:} -sTCP:LISTEN 2>/dev/null | head -n 1; }
 # the page goes live with the server that answers it: a new page talking to the old server for the minute this may wait
 # breaks on what changed between them (r1125)
-golive() { rsync -a --delete --delete-excluded --exclude /storybook/ web/dist/ web/live/; }  # Storybook is its own server
+# the page's built files of earlier versions stay two weeks: a page still open (or kept by the phone app) loads parts
+# of itself later (a diagram's drawing code); gone, that part fails to load (B714 r1179)
+golive() {
+  rsync -a --delete --exclude /storybook/ --exclude /assets/ web/dist/ web/live/  # Storybook is its own server
+  rsync -a web/dist/assets/ web/live/assets/
+  find web/live/assets -type f -mtime +14 -delete
+}
 restart() {
   golive
   launchctl kickstart -k gui/$(id -u)/com.taska.app

@@ -21,7 +21,11 @@ export class Diagrams {
     if (hit) return Promise.resolve(isolateSvg(hit, id))
     // initialize() changes Mermaid's global settings: drawings go one at a time so a theme can't change mid-draw
     const job = this.queue.then(async () => {
-      this.loading ??= import('mermaid').then((m) => m.default)
+      // a failed load is not kept: the next diagram tries again (B714 r1179)
+      this.loading ??= import('mermaid').then((m) => m.default).catch((e: unknown) => {
+        this.loading = null
+        throw e
+      })
       const mermaid = await this.loading
       if (this.configured !== theme) {
         // as Nota: classic shapes with ELK routing, pinned so an upgrade can't rearrange a diagram; words that are
