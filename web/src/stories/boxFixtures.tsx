@@ -4,6 +4,7 @@
 // the page keeps for it. Used by the input box's stories.
 import { useEffect, useState, type ReactNode } from 'react'
 import { Composer, Feedback, type ComposerProps } from '../features/composer/Composer'
+import { Toast } from '../features/feedback/Toast'
 import { DraftFiles, type DraftFile } from '../features/composer/DraftFiles'
 import { BOX_WORDS_LOOK, Doubts, DraftWords, doubtsViewOf } from '../features/composer/Doubts'
 import { openDoubts, pickSide, spotsIn, type HeardFile } from '../model/doubts'
@@ -206,3 +207,11 @@ function LiveLine({ f, desk }: { f: SentFacts; desk: boolean }) {
 
 /** Something you sent, on its way. */
 export const out = (f: Partial<Outgoing> = {}): Outgoing => ({ q: 'q1', slug: 'demo', text: 'Make the export button bigger', scope: null, files: [], t: 0, state: 'sending', tries: 0, ...f })
+
+/** A toast over the box, as the page shows one there (what happened to a voice note), drawn in place: `action` its
+ * button (Undo), which needs the page. */
+export const toastOver = (text: string, action?: string) => (
+  <div className="bg-zinc-50 px-3 pt-3 dark:bg-zinc-950">
+    <Toast toast={{ text, error: false, sticky: false, action: action ? { label: action } : null }} place="relative! z-auto! mx-auto" onAction={() => {}} onClose={() => {}} />
+  </div>
+)
