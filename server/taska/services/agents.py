@@ -17,7 +17,7 @@ from ..domain.model import Input, Item, Message
 from ..domain.state import ProjectState, ident
 from ..domain.text import first_line, seconds
 from ..domain.vocab import CLAIM_TTL, PEOPLE
-from ..infra.agent_sessions import Blocked
+from ..infra.agent_sessions import SID, Session
 from ..infra.project_db import ProjectDb
 
 
@@ -40,6 +40,7 @@ class AgentRecord:
     session: str = ""  # what it said about itself last (its session's name, the machine, the folder)
     sessions: Dict[str, float] = field(default_factory=dict)  # each session's last call (the latest 5)
     next_at: Optional[float] = None  # when it last read /next
+    sids: Dict[str, str] = field(default_factory=dict)  # per session name: the id its app gave it (sid=, the latest 5)
 
 
 class AgentActivity:
@@ -67,12 +68,13 @@ class AgentActivity:
             {str(k): {int(n): int(m) for n, m in v.items()} for k, v in heard.items()} if isinstance(heard, dict) else {})
         self.told: Dict[str, Set[int]] = {}  # per session: messages for it that a /do reply named already
         self.rule_marks: Dict[str, int] = {}  # per session: how much of the log it has been told rules from
-        self.blocked: Dict[str, List[Blocked]] = {}  # per agent: its sessions that wait on the user now (T711)
+        self.blocked: Dict[str, List[Dict[str, object]]] = {}  # per agent: its sessions waiting on the user (T711)
 
     # -- calls ------------------------------------------------------------------
 
-    def saw(self, name: object, waiting: int = 0, session: str = "") -> None:
-        """An agent called (waiting: +1 when it starts holding /next?wait, -1 when that returns)."""
+    def saw(self, name: object, waiting: int = 0, session: str = "", sid: str = "") -> None:
+        """An agent called (waiting: +1 when it starts holding /next?wait, -1 when that returns), from the session
+        its app knows by `sid` (T711 #10568: its status is read by that id)."""
         a = self.agents.setdefault(agent_name(name), AgentRecord())
         now = time.time()
         if session:
@@ -80,6 +82,12 @@ class AgentActivity:
             a.sessions[a.session] = now
             for old in sorted(a.sessions, key=lambda s: a.sessions[s])[:-5]:
                 del a.sessions[old]
+        if SID.fullmatch(sid):
+            key = a.session if session else ""
+            a.sids.pop(key, None)
+            a.sids[key] = sid
+            for old in list(a.sids)[:-5]:
+                del a.sids[old]
         before = (a.waiting > 0, now - a.t < 600)
         a.t, a.waiting = now, max(0, a.waiting + waiting)
         if (a.waiting > 0, True) != before:
@@ -262,16 +270,20 @@ class AgentActivity:
 
     # -- sessions waiting on the user ----------------------------------------------
 
-    def see_blocked(self, found: List[Blocked]) -> None:
-        """The sessions on this machine that wait on the user (T711): those whose title is a session name an agent
-        gave here are this project's. A change wakes the pages."""
-        mine: Dict[str, List[Blocked]] = {}
-        for b in found:
-            key = " ".join(b.name.split())[:160]
-            for k, v in self.agents.items():
-                if key and (key == v.session or key in v.sessions):
-                    mine.setdefault(k, []).append(b)
-                    break
+    def sids(self) -> List[str]:
+        """The session ids agents gave here."""
+        return sorted({sid for a in self.agents.values() for sid in a.sids.values()})
+
+    def see_blocked(self, found: Dict[str, Session]) -> None:
+        """The sessions by id (T711 #10568): those waiting on the user are shown under the agent that gave the id,
+        by the session name it gave (else the app's title). A change wakes the pages."""
+        mine: Dict[str, List[Dict[str, object]]] = {}
+        for k, a in self.agents.items():
+            for ses, sid in a.sids.items():
+                s = found.get(sid)
+                if s and s.status == "waiting":
+                    mine.setdefault(k, []).append({"session": ses or s.name or sid[:8], "waitingFor": s.waiting_for,
+                                                   "since": s.since})
         if mine != self.blocked:
             self.blocked = mine
             self.version += 1
@@ -290,7 +302,6 @@ class AgentActivity:
                 row["sessions"] = [{"name": n, "t": int(t * 1000)}
                                    for n, t in sorted(v.sessions.items(), key=lambda x: -x[1]) if t > day]
             if self.blocked.get(k):
-                row["blocked"] = [{"session": b.name, "waitingFor": b.waiting_for, "since": b.since}
-                                  for b in self.blocked[k]]
+                row["blocked"] = self.blocked[k]
             out.append(row)
         return out

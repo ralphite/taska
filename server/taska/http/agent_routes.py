@@ -17,7 +17,7 @@ from ..agent_text.work import Asker, Work, next_work
 from ..domain import rules
 from ..domain.rules import item_at
 from ..domain.vocab import MAX_FILE, PEOPLE, Refused
-from ..infra.agent_sessions import blocked_sessions
+from ..infra.agent_sessions import lookup
 from ..infra.audio import leveled
 from ..services.project import Project
 from .messages import NOT_FOUND, Request, Response, as_json, text
@@ -48,8 +48,11 @@ def work_for(p: Project, req: Request, who: Optional[str], session: str) -> Work
 
 
 def see_blocked(p: Project) -> None:
-    """Which of this project's agent sessions wait on the user now (T711): a few small files, read out of the lock."""
-    found = blocked_sessions()
+    """Which of this project's agent sessions wait on the user now (T711): each looked up by the id its agent gave,
+    out of the lock (a few small reads)."""
+    with p.lock:
+        sids = p.agents.sids()
+    found = {sid: s for sid, s in ((sid, lookup(sid)) for sid in sids) if s}
     with p.lock:
         p.agents.see_blocked(found)
 
@@ -70,7 +73,7 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
     agent_call = (sub in AGENT_READS or ITEM_PATH.fullmatch(sub)) and "ui" not in q
     if agent_call:
         with p.lock:
-            p.agents.saw(by, 1 if sub == "/next" and q.get("wait") else 0, req.session())
+            p.agents.saw(by, 1 if sub == "/next" and q.get("wait") else 0, req.session(), req.arg("sid"))
     if sub == "/agent":
         with p.lock:
             head = render.rules_head(p.state)
@@ -164,7 +167,7 @@ def do(req: Request, p: Project) -> Response:
     session = req.session() if agent else ""
     with p.lock:
         if agent:
-            p.agents.saw(by, 0, session)
+            p.agents.saw(by, 0, session, req.arg("sid"))
         calls: List[str] = p.agents.call_news(p.state, by, session) if agent else []  # what others wrote before
     lines, _ = p.run(parse(body), by, session=session)
     with p.lock:
