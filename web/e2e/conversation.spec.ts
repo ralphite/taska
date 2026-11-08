@@ -189,6 +189,9 @@ test('T529 B640: on an input moved to another project, its voice note\'s origina
     data: Buffer.from('not really sound'),
   })
   const f = (await up.json()) as { f: string }
+  // A sent note has already gone through transcription; only then does its play button carry the words to the
+  // tip. Finish that step for the silent fixture, as voice.spec.ts does.
+  await request.post(`${p.url}api/words?f=${encodeURIComponent(f.f)}`)
   const rid = (
     await op(request, p, {
       op: 'input',
