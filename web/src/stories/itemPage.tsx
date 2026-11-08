@@ -97,6 +97,8 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
   const [addingSub, setAddingSub] = useState(start.addingSub)
   const [full, setFull] = useState(!!o.full)
   const [sizes, setSizes] = useState({ top: 0, duo: 0 })
+  // its talk, for the pane's button to its end (F716), as the page has it
+  const [talk, setTalk] = useState<HTMLElement | null>(null)
   const media = useMedia(e0.url)
   const menu = usePop<{ arm: ItemMenuFacts['arm']; asking: boolean } | { msg: number } | { times: true }>(desk)
   const inputMenu = usePop<InputMenuAt>(desk)
@@ -168,7 +170,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
         {tip}
       </div>
     )
-  const page = <ItemPage it={it} f={facts} env={env} facts={tf} on={on} duo={o.duo} left={o.left} bare={o.bare} />
+  const page = <ItemPage it={it} f={facts} env={env} facts={tf} on={on} talkRef={setTalk} duo={o.duo} left={o.left} bare={o.bare} />
   if (o.doc)
     return (
       <div className="flex h-full flex-col" style={sized}>
@@ -177,6 +179,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
           desk={desk}
           split
           duo
+          toEnd={talk}
           head={<DocPaneHead d={o.doc} editing={false} />}
           acts={<DocPaneActs web={o.doc.fmt === 'html'} inspect={false} whole={false} deleting={false} on={docPaneActs} />}
           lead={<DocPaneNav to={facts.code(it.n)} onBack={docBack} />}
@@ -198,6 +201,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
         split
         menu
         duo={o.duo}
+        toEnd={talk}
         head={<ItemHead it={it} code={facts.code(it.n)} titled={o.titled} />}
         acts={<ItemActs it={it} on={on} />}
         nav={<ItemNav full={full} on={{ prev: paneActs.prev, next: paneActs.next, full: () => setFull(!full) }} />}

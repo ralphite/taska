@@ -112,11 +112,12 @@ export function Hold<T>({ start, children }: { start: T; children(value: T, set:
 }
 
 /** Something done to the page once it is drawn, as you would have done it: a pointer over a part (its mousemove),
- * the contents opened, words selected, words typed into a field, a key pressed in it. */
-export function After({ run, children }: { run(root: HTMLElement): void; children: ReactNode }) {
+ * the contents opened, words selected, words typed into a field, a key pressed in it, the talk scrolled up (`ms`
+ * later: once the page has settled). */
+export function After({ run, ms = 50, children }: { run(root: HTMLElement): void; ms?: number; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
-    const t = setTimeout(() => ref.current && run(ref.current), 50)
+    const t = setTimeout(() => ref.current && run(ref.current), ms)
     return () => clearTimeout(t)
   })
   return (

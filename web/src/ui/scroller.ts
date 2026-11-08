@@ -12,6 +12,9 @@ export function scrollerOf(el: HTMLElement): HTMLElement | null {
 /** Whether the part that scrolls `sc` shows its end. */
 export const atEnd = (sc: HTMLElement) => sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4
 
+/** Whether the button to the end shows: while what scrolls `sc` does not show its end (F716 r1171). */
+export const toEndShown = (sc: HTMLElement) => !atEnd(sc)
+
 /** Whether the talk keeps to its end after `sc` scrolled from `was`: it shows its end, or it kept to it and nothing
  * scrolled it up (the page's own scroll to the end can come after the talk grew again). */
 export const keepsEnd = (sc: HTMLElement, was: number, end: boolean) => atEnd(sc) || (end && sc.scrollTop >= was)

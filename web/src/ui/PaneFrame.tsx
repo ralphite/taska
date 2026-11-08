@@ -1,7 +1,9 @@
-// The pane's frame: its bar (Back on the phone, what it shows, its actions) and its body, which scrolls. Props only.
+// The pane's frame: its bar (Back on the phone, what it shows, its actions) and its body, which scrolls; over the
+// body's bottom, just above the box, the button to the talk's end (F716). Props only.
 
 import type { ReactNode, Ref } from 'react'
 import { Icon } from './Icon'
+import { ToEnd } from './ToEnd'
 import { PULL } from './tones'
 
 export function PaneFrame({
@@ -21,6 +23,7 @@ export function PaneFrame({
   bodyRef,
   duo = false,
   notice,
+  toEnd = null,
   children,
 }: {
   place: string
@@ -46,6 +49,8 @@ export function PaneFrame({
   duo?: boolean
   /** the phone's line under the bar (Out of reach, retrying while Taska does not answer) */
   notice?: ReactNode
+  /** the talk it shows: the button to its end floats above the box while it is not at its end (F716 r1171) */
+  toEnd?: HTMLElement | null
   children?: ReactNode
 }) {
   return (
@@ -81,6 +86,12 @@ export function PaneFrame({
       >
         {children}
       </div>
+      {/* at the body's bottom (its top is the box's), over the talk's column; it takes no room */}
+      {toEnd ? (
+        <div className={`relative z-20 h-0 shrink-0 ${duo ? 'lg:ml-[var(--duo-w,55%)]' : ''}`}>
+          <ToEnd of={toEnd} />
+        </div>
+      ) : null}
     </section>
   )
 }
