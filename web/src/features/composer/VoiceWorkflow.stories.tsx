@@ -1,5 +1,5 @@
 // A voice message from start to end, on one page (T722, D127): how its words are worked out (two models at once:
-// fast words first, the strong model's words replace them), then each state as a row in four places: the New input
+// fast words first, the strong model's words replace them), then each state of model/voiceStates (T726) as a row in four places: the New input
 // and an item, each on the desktop and the phone. The normal ways first, the other outcomes and branches after. Every
 // cell is drawn as the state's own story draws it (the box, the New input page's list, the line over the phone's box,
 // the item's talk), with the same fixtures; where a state shows nothing, the cell says so.
@@ -17,6 +17,7 @@ import { T, input, item, message, record, shown, waiting } from '../../stories/f
 import { later, mine, out, r4, voice } from '../../stories/fromYouFixtures'
 import { ONE, cardOf, saidOf, type Said } from '../../stories/inputFixtures'
 import { talkOf } from '../../stories/itemPage'
+import { VOICE_STATE_LIST, VOICE_STATES, VOICE_STEPS, notesState, sayIn, type VoiceEvent, type VoiceState } from '../../model/voiceStates'
 import { DraftCard, DRAFT_WORDS, type DraftHint } from './DraftCard'
 import type { DraftFile } from './DraftFiles'
 
@@ -57,6 +58,7 @@ const early = (r: Partial<Input> & { id: string }, note: FileRef, fast: string):
 const GOING = outgoing({ text: '', files: [NOTE], words: { [NOTE.f]: N1 } })
 const ORGANIZING = voiced({ id: 'r25' }, NOTE, N1, N1_HEARD)
 const MADE = voiced({ id: 'r25', acked: true, touched: [14], org: org(true, 'Created B014') }, NOTE, N1, N1_HEARD)
+const SENT_BARE = shown(input({ id: 'r26', text: '', files: [NOTE2] }), waiting(NOTE2.f))
 const EARLY = early({ id: 'r26' }, NOTE2, N2_FAST)
 const SWAPPED = voiced({ id: 'r26' }, NOTE2, N2, N2_FAST)
 const ADDED = voiced({ id: 'r26', acked: true, touched: [12], org: org(true, 'Noted on F012') }, NOTE2, N2, N2_FAST)
@@ -91,7 +93,7 @@ function inBox(at: '' | 'F012', note: Partial<DraftFile>, text = '', heard?: Hea
     const open = heard ? new Set(spotsIn(text, heard).filter((p) => !p.x.pick).map((p) => `${p.fk} ${p.k}`)).size : 0
     const hint: DraftHint = open ? { kind: 'check', n: open } : text ? { kind: 'fix' } : null
     const words = text ? <LiveWords text={text} heard={heard ?? [{ key: VOICE.key, trAdded: text, doubts: [] }]} className={DRAFT_WORDS} /> : null
-    const card = <DraftCard voice={1} ms={VOICE.ms ?? 0} files={0} transcribing={!!note.transcribing} words={words} hint={hint} />
+    const card = <DraftCard voice={1} ms={VOICE.ms ?? 0} files={0} state={notesState(files)} words={words} hint={hint} />
     return (
       <>
         {top}
@@ -137,132 +139,137 @@ const none = (why: string): Two => [{ none: why }, { none: why }]
 
 // ---------------------------------------------------------------- the rows
 
+/** The sections, the normal ways first (T722). */
+const SECTIONS = {
+  normal: { title: 'Normal: the words are final before you send', where: 'In the box first; once sent, the New input list (desktop), the line over the box (phone), the talk (item).' },
+  early: { title: 'Normal: sent before the words were final', where: 'Sent with the fast words: the New input list (desktop), the line over the box (phone), the talk (item).' },
+  outcomes: { title: 'Other outcomes', where: 'The New input list (desktop), the line over the box (phone), the talk (item).' },
+  words: { title: 'Word branches', where: 'In the box, before sending.' },
+  sending: { title: 'Sending and organizing branches', where: 'The New input list (desktop), the line over the box (phone), the talk (item).' },
+  later: { title: 'Later changes', where: 'The New input list (desktop), the box and the Inputs tab (phone), the box and the talk (item).' },
+} as const
+
 interface Row {
-  label: string
+  section: keyof typeof SECTIONS
+  /** the state's own name (model/voiceStates) when not given */
+  label?: string
   /** how long, or what else to know, in a few words */
   note?: string
   /** New input · desktop, New input · phone, In an item · desktop, In an item · phone */
   cells: [...Two, ...Two]
 }
-interface Section {
-  title: string
-  where: string
-  rows: Row[]
-}
 
-const SECTIONS: Section[] = [
-  {
-    title: 'Normal: the words are final before you send',
-    where: 'In the box first; once sent, the New input list (desktop), the line over the box (phone), the talk (item).',
-    rows: [
-      {
-        label: 'Recording',
-        cells: [
-          { where: 'the box, the list under it', node: <>{boxAt({ rec: true }, true)}<div className="px-3 pb-3">{saidOf({ inputs: [], recording: REC.time })}</div></> },
-          { where: 'the box', node: boxAt({ rec: true }, false) },
-          ...itemBox({ rec: true }),
-        ],
-      },
-      { label: 'Transcribing', note: 'both models start', cells: [...inBox('', { tr: '', transcribing: true }), ...inBox('F012', { tr: '', transcribing: true })] },
-      { label: 'Fast words', note: 'about 2 s', cells: [...inBox('', { tr: N1_FAST, more: true }, N1_FAST), ...inBox('F012', { tr: I1_FAST, more: true }, I1_FAST)] },
-      {
-        label: 'Strong words replace them',
-        note: 'with a toast',
-        cells: [...inBox('', { tr: N1 }, N1, undefined, 'More complete transcription added'), ...inBox('F012', { tr: I1 }, I1, undefined, 'More complete transcription added')],
-      },
-      { label: 'Sending', cells: [...sentNew({ mine: [GOING] }), ...replyGoing('Sending…', I1)] },
-      { label: 'Organizing', cells: [...sentNew({ sent: ORGANIZING, busy: true }), ...none('Not shown here: the talk stays as sent')] },
-      { label: 'Created an item', cells: [...sentNew({ sent: MADE }), ...inTalk([ASKED, you(I1)], { inputs: [MADE_HERE], others: [PHONE_BUG] })] },
-    ],
-  },
-  {
-    title: 'Normal: sent before the words were final',
-    where: 'Sent with the fast words: the New input list (desktop), the line over the box (phone), the talk (item).',
-    rows: [
-      {
-        label: 'Sent with the fast words',
-        note: 'strong model still working',
-        cells: [...sentNew({ sent: EARLY }), ...inTalk([ASKED, you(I2_FAST)], { inputs: [r4({ text: '', files: [{ ...NOTE_R4, voice: waiting(NOTE_R4.f, I2_FAST) }] })] })],
-      },
-      {
-        label: 'Strong words swap in, organizing',
-        note: 'silently',
-        cells: [...sentNew({ sent: SWAPPED, busy: true }), ...inTalk([ASKED, you(I2)], { inputs: [r4Said(I2, voice.heard)] })],
-      },
-      { label: 'Added to an item', cells: [...sentNew({ sent: ADDED }), ...none('Nothing more: said here, it is in this item')] },
-    ],
-  },
-  {
-    title: 'Other outcomes',
-    where: 'The New input list (desktop), the line over the box (phone), the talk (item).',
-    rows: [
-      { label: 'For an agent', cells: [...sentNew({ sent: LEFT }), ...none('Not shown here: the talk stays as sent')] },
-      {
-        label: 'Handled by an agent',
-        cells: [...sentNew({ sent: HANDLED }), ...inTalk([ASKED, you(I2)], { inputs: [r4Said(I2, voice.heard)] }, { readBy: { 'claude-code': Date.parse(later(0)) + 30_000 } })],
-      },
-    ],
-  },
-  {
-    title: 'Word branches',
-    where: 'In the box, before sending.',
-    rows: [
-      { label: 'Maybe misheard', note: 'first words final', cells: [...inBox('', { tr: HEARD_TEXT }, HEARD_TEXT, HEARD), ...inBox('F012', { tr: AGAIN }, AGAIN, AGAIN_HEARD)] },
-      { label: 'Strong model failed', note: 'fast words kept', cells: [...inBox('', { tr: N1_FAST }, N1_FAST), ...inBox('F012', { tr: I1_FAST }, I1_FAST)] },
-      {
-        label: 'No words heard',
-        cells: [...inBox('', { tr: '' }, '', undefined, 'No words heard. Audio is ready to send'), ...inBox('F012', { tr: '' }, '', undefined, 'No words heard. Audio is ready to send')],
-      },
-      {
-        label: 'Writing it out failed',
-        cells: [
-          ...inBox('', { tr: '', trError: 'Gemini HTTP 503' }, '', undefined, 'Transcription failed. Audio is ready to send'),
-          ...inBox('F012', { tr: '', trError: 'Gemini HTTP 503' }, '', undefined, 'Transcription failed. Audio is ready to send'),
-        ],
-      },
-      { label: 'Upload failed', cells: [...inBox('', { f: '', tr: '', failed: true }, '', undefined, 'Recording upload failed'), ...inBox('F012', { f: '', tr: '', failed: true }, '', undefined, 'Recording upload failed')] },
-    ],
-  },
-  {
-    title: 'Sending and organizing branches',
-    where: 'The New input list (desktop), the line over the box (phone), the talk (item).',
-    rows: [
-      { label: 'Waiting for Taska', note: 'offline', cells: [...sentNew({ mine: [{ ...GOING, state: 'failed', net: true }] }), ...replyGoing('Waiting for Taska…', I1)] },
-      { label: 'Not sent', cells: [...sentNew({ mine: [{ ...GOING, state: 'failed' }] }), ...replyGoing('Not sent', I1)] },
-      { label: "Couldn't organize", cells: [...sentNew({ sent: NOT_ORGANIZED }), ...none('Not shown here: the talk stays as sent')] },
-      {
-        label: 'Recording cancelled',
-        note: 'Esc',
-        cells: [
-          ...newBoxAnd({ at: '' }, { inputs: [{ ...ONE.cancelled, t: T }] }, 'Recording cancelled · kept in New input').map((c, i) => (i ? { where: 'the box', node: <>{toastOver('Recording cancelled · kept in Inputs')}{boxAt({ at: '' }, false)}</> } : c)),
-          ...itemBox({}, { text: 'Recording discarded', action: 'Undo' }),
-        ] as [...Two, ...Two],
-      },
-    ],
-  },
-  {
-    title: 'Later changes',
-    where: 'The New input list (desktop), the box and the Inputs tab (phone), the box and the talk (item).',
-    rows: [
-      {
-        label: 'More voice added',
-        cells: [
-          { where: 'its row in the list', node: <>{boxAt({ at: '' }, true)}<div className="px-3 pb-6">{saidOf({ inputs: [MADE], adding: { id: MADE.id, clock: '0:04' } })}</div></> },
-          { where: 'the box', node: boxAt({ at: '', mode: { kind: 'amend', id: MADE.id, mode: 'append', v: 0 }, inputs: [MADE], rec: true }, false) },
-          ...itemBox({ mode: { kind: 'amend', id: 'r4', mode: 'append', v: 0 }, inputs: [r4Said(I2, voice.heard, { scope: 12 })], rec: true }),
-        ],
-      },
-      {
-        label: 'Edited after sending',
-        cells: [
-          ...sentNew({ sent: EDITED }).slice(0, 1),
-          { where: 'the Inputs tab', node: cardOf(EDITED) },
-          ...inTalk([ASKED, you(I2_EDITED, { edited: later(3) })], { inputs: [r4Said(I2_EDITED, voice.heard, { history: [{ text: I2, t: T, mode: 'edit' }], updated: later(3) })] }),
-        ] as [...Two, ...Two],
-      },
-    ],
-  },
-]
+/** The toast the page shows when a message in `from` goes on `on` (model/voiceStates). */
+const toast = (from: VoiceState, on: VoiceEvent) => VOICE_STEPS.find((x) => x.from === from && x.on === on)?.toast
+
+/** Each state of a voice message (model/voiceStates) drawn in the four places: one row, or one per way into it that
+ * looks different. A new state has no row here until it is drawn: the types say so. */
+const ROWS: Record<VoiceState, Row[]> = {
+  recording: [
+    {
+      section: 'normal',
+      cells: [
+        { where: 'the box, the list under it', node: <>{boxAt({ rec: true }, true)}<div className="px-3 pb-3">{saidOf({ inputs: [], recording: REC.time })}</div></> },
+        { where: 'the box', node: boxAt({ rec: true }, false) },
+        ...itemBox({ rec: true }),
+      ],
+    },
+  ],
+  uploading: [{ section: 'normal', note: 'shows as transcribing', cells: [...inBox('', { f: '', uploading: true, transcript: 'wait' }), ...inBox('F012', { f: '', uploading: true, transcript: 'wait' })] }],
+  transcribing: [{ section: 'normal', note: 'both models start', cells: [...inBox('', { transcript: 'wait' }), ...inBox('F012', { transcript: 'wait' })] }],
+  fastWords: [{ section: 'normal', note: 'about 2 s', cells: [...inBox('', { transcript: 'fast' }, N1_FAST), ...inBox('F012', { transcript: 'fast' }, I1_FAST)] }],
+  words: [
+    {
+      section: 'normal',
+      label: 'Strong words replace them',
+      note: 'with a toast',
+      cells: [...inBox('', {}, N1, undefined, toast('fastWords', 'strong')), ...inBox('F012', {}, I1, undefined, toast('fastWords', 'strong'))],
+    },
+    { section: 'words', label: 'Maybe misheard', note: 'first words final', cells: [...inBox('', {}, HEARD_TEXT, HEARD), ...inBox('F012', {}, AGAIN, AGAIN_HEARD)] },
+    { section: 'words', label: 'Strong model failed', note: 'fast words kept', cells: [...inBox('', {}, N1_FAST), ...inBox('F012', {}, I1_FAST)] },
+  ],
+  noWords: [
+    {
+      section: 'words',
+      cells: [...inBox('', { transcript: 'none' }, '', undefined, toast('transcribing', 'nothing')), ...inBox('F012', { transcript: 'none' }, '', undefined, toast('transcribing', 'nothing'))],
+    },
+  ],
+  wordsFailed: [
+    {
+      section: 'words',
+      cells: [...inBox('', { transcript: 'failed' }, '', undefined, toast('transcribing', 'failed')), ...inBox('F012', { transcript: 'failed' }, '', undefined, toast('transcribing', 'failed'))],
+    },
+  ],
+  uploadFailed: [
+    {
+      section: 'words',
+      cells: [...inBox('', { f: '', failed: true }, '', undefined, toast('uploading', 'uploadRefused')), ...inBox('F012', { f: '', failed: true }, '', undefined, toast('uploading', 'uploadRefused'))],
+    },
+  ],
+  sending: [{ section: 'normal', cells: [...sentNew({ mine: [GOING] }), ...replyGoing('Sending…', I1)] }],
+  offline: [{ section: 'sending', note: 'offline', cells: [...sentNew({ mine: [{ ...GOING, state: 'failed', net: true }] }), ...replyGoing('Waiting for Taska…', I1)] }],
+  notSent: [{ section: 'sending', cells: [...sentNew({ mine: [{ ...GOING, state: 'failed' }] }), ...replyGoing('Not sent', I1)] }],
+  sentTranscribing: [
+    {
+      section: 'early',
+      note: 'sent while both models work',
+      cells: [...sentNew({ sent: SENT_BARE }), ...inTalk([ASKED, you('')], { inputs: [r4({ text: '', files: [{ ...NOTE_R4, voice: waiting(NOTE_R4.f) }] })] })],
+    },
+  ],
+  sentFastWords: [
+    {
+      section: 'early',
+      note: 'strong model still working',
+      cells: [...sentNew({ sent: EARLY }), ...inTalk([ASKED, you(I2_FAST)], { inputs: [r4({ text: '', files: [{ ...NOTE_R4, voice: waiting(NOTE_R4.f, I2_FAST) }] })] })],
+    },
+  ],
+  organizing: [
+    { section: 'normal', cells: [...sentNew({ sent: ORGANIZING, busy: true }), ...none('Not shown here: the talk stays as sent')] },
+    { section: 'early', label: 'Strong words swap in, organizing', note: 'silently', cells: [...sentNew({ sent: SWAPPED, busy: true }), ...inTalk([ASKED, you(I2)], { inputs: [r4Said(I2, voice.heard)] })] },
+  ],
+  created: [
+    { section: 'normal', cells: [...sentNew({ sent: MADE }), ...inTalk([ASKED, you(I1)], { inputs: [MADE_HERE], others: [PHONE_BUG] })] },
+    {
+      section: 'later',
+      label: 'Edited after sending',
+      note: 'read again, then as before',
+      cells: [
+        ...sentNew({ sent: EDITED }).slice(0, 1),
+        { where: 'the Inputs tab', node: cardOf(EDITED) },
+        ...inTalk([ASKED, you(I2_EDITED, { edited: later(3) })], { inputs: [r4Said(I2_EDITED, voice.heard, { history: [{ text: I2, t: T, mode: 'edit' }], updated: later(3) })] }),
+      ] as [...Two, ...Two],
+    },
+  ],
+  added: [{ section: 'early', cells: [...sentNew({ sent: ADDED }), ...none('Nothing more: said here, it is in this item')] }],
+  forAgent: [{ section: 'outcomes', cells: [...sentNew({ sent: LEFT }), ...none('Not shown here: the talk stays as sent')] }],
+  handled: [
+    {
+      section: 'outcomes',
+      cells: [...sentNew({ sent: HANDLED }), ...inTalk([ASKED, you(I2)], { inputs: [r4Said(I2, voice.heard)] }, { readBy: { 'claude-code': Date.parse(later(0)) + 30_000 } })],
+    },
+  ],
+  organizeFailed: [{ section: 'sending', cells: [...sentNew({ sent: NOT_ORGANIZED }), ...none('Not shown here: the talk stays as sent')] }],
+  cancelled: [
+    {
+      section: 'sending',
+      note: 'Esc',
+      cells: [
+        ...newBoxAnd({ at: '' }, { inputs: [{ ...ONE.cancelled, t: T }] }, 'Recording cancelled · kept in New input').map((c, i) => (i ? { where: 'the box', node: <>{toastOver('Recording cancelled · kept in Inputs')}{boxAt({ at: '' }, false)}</> } : c)),
+        ...itemBox({}, { text: 'Recording discarded', action: 'Undo' }),
+      ] as [...Two, ...Two],
+    },
+  ],
+  adding: [
+    {
+      section: 'later',
+      cells: [
+        { where: 'its row in the list', node: <>{boxAt({ at: '' }, true)}<div className="px-3 pb-6">{saidOf({ inputs: [MADE], adding: { id: MADE.id, clock: '0:04' } })}</div></> },
+        { where: 'the box', node: boxAt({ at: '', mode: { kind: 'amend', id: MADE.id, mode: 'append', v: 0 }, inputs: [MADE], rec: true }, false) },
+        ...itemBox({ mode: { kind: 'amend', id: 'r4', mode: 'append', v: 0 }, inputs: [r4Said(I2, voice.heard, { scope: 12 })], rec: true }),
+      ],
+    },
+  ],
+}
 
 // ---------------------------------------------------------------- the page
 
@@ -311,7 +318,7 @@ function Flow() {
       <Arrow />
       <div className="flex flex-col gap-2">
         <Step head="Fast model" tone="amber">
-          First words in about 2 s: “Partial · more coming”
+          First words in about 2 s: “{sayIn('fastWords', 'chip')?.say}”
         </Step>
         <Step head="Strong model" tone="emerald">
           At the same time; up to 3 tries × 30 s
@@ -351,20 +358,21 @@ export const WholeWorkflow: Story = {
             </h2>
           ))}
         </div>
-        {SECTIONS.map((s, k) => (
-          <section key={s.title} aria-label={s.title} className="flex flex-col gap-3">
+        {(Object.keys(SECTIONS) as (keyof typeof SECTIONS)[]).map((key, k) => (
+          <section key={key} aria-label={SECTIONS[key].title} className="flex flex-col gap-3">
             <header className="font-sans">
               <h2 className="m-0 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                {k + 1}. {s.title}
+                {k + 1}. {SECTIONS[key].title}
               </h2>
-              <p className="m-0 mt-0.5 text-sm text-zinc-600 dark:text-zinc-300">{s.where}</p>
+              <p className="m-0 mt-0.5 text-sm text-zinc-600 dark:text-zinc-300">{SECTIONS[key].where}</p>
             </header>
-            {s.rows.map((r) => (
-              <div key={r.label} aria-label={r.label} className="flex items-start gap-6 rounded-xl bg-zinc-100 p-4 dark:bg-zinc-900">
+            {VOICE_STATE_LIST.flatMap((state) => ROWS[state].filter((r) => r.section === key).map((r) => ({ state, r }))).map(({ state, r }) => (
+              <div key={`${state} ${r.label ?? ''}`} aria-label={r.label ?? VOICE_STATES[state].label} className="flex items-start gap-6 rounded-xl bg-zinc-100 p-4 dark:bg-zinc-900">
                 <h3 className={`${LABEL} m-0 font-sans text-sm font-semibold text-zinc-700 dark:text-zinc-200`}>
                   <span className="mr-1.5 text-zinc-400 tabular-nums">{++n}</span>
-                  {r.label}
+                  {r.label ?? VOICE_STATES[state].label}
                   {r.note ? <span className="mt-0.5 block text-xs font-normal text-zinc-500 dark:text-zinc-400">{r.note}</span> : null}
+                  <code className="mt-1 block text-[11px] font-normal text-zinc-400">{state}</code>
                 </h3>
                 {r.cells.map((c, i) => (
                   <div key={COLUMNS[i].title} className={i === 2 ? 'ml-6' : ''}>

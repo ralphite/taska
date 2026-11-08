@@ -8,6 +8,7 @@ import { sameText, type Thread as DocThread } from '../../model/docs'
 import { when } from '../../model/time'
 import type { Comment, FileRef } from '../../model/types'
 import { plural, whoName } from '../../model/words'
+import { sayIn } from '../../model/voiceStates'
 import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
 import { BUSY, COMMENT_CARD, COMMENT_WHO, DC_BTN, DC_DANGER, HIT, MUTED, SEP_V } from '../../ui/tones'
@@ -194,7 +195,7 @@ export function DraftCard({ words, voice, transcribing }: { words: string; voice
     <div className="space-y-1 rounded-xl border border-dashed border-amber-400 bg-amber-50/70 p-3 text-sm dark:border-amber-500/60 dark:bg-amber-400/10">
       <div className="text-[11px] font-semibold tracking-wide text-amber-800 uppercase dark:text-amber-300">Not sent</div>
       {words ? <div className="whitespace-pre-wrap">{words}</div> : null}
-      {voice ? <div className={`text-xs ${transcribing ? BUSY : 'text-zinc-500 dark:text-zinc-400'}`}>{transcribing ? 'Transcribing…' : plural(voice, 'voice note')}</div> : null}
+      {voice ? <div className={`text-xs ${transcribing ? BUSY : 'text-zinc-500 dark:text-zinc-400'}`}>{transcribing ? sayIn('transcribing', 'card')?.say : plural(voice, 'voice note')}</div> : null}
     </div>
   )
 }

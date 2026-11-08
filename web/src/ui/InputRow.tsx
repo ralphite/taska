@@ -11,6 +11,7 @@
 import type { ReactNode, Ref } from 'react'
 import { BECAME_WORD as W, type Became, type InputLine, type ItemRef } from '../model/became'
 import { voiceMark } from '../model/inputs'
+import { sayIn } from '../model/voiceStates'
 import { Icon, Spinner, StateIcon } from './Icon'
 import { PLACE_BUTTON, PlaceVoice } from './PlaceVoice'
 import { TYPE_TEXT } from './tones'
@@ -112,7 +113,7 @@ export function BecameLine({ b, id, on }: { b: Became; id: string; on: Pick<Inpu
       return (
         <div className={`${SHELF} ${BUSY}`}>
           <Spinner c="size-3 text-blue-600 dark:text-blue-400" />
-          <span>{W[b.k]}</span>
+          <span>{b.k === 'transcribing' ? sayIn(b.state, 'row')?.say : W.organizing}</span>
         </div>
       )
     case 'failed':

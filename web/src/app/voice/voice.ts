@@ -22,6 +22,8 @@ import { Pauses } from '../inputs/pauses'
 import type { Toasts } from '../page/toasts'
 import { draftKey, draftName, draftTarget, keyOf, NEW_DRAFT, type DraftKey } from '../../model/draftTarget'
 import type { Outgoing } from '../../model/outgoing'
+import type { Doubt } from '../../model/types'
+import { NOTE_STOPPED, heardEvent, noteState, noteStep, type VoiceEvent } from '../../model/voiceStates'
 
 export interface VoiceDeps {
   api: TaskaApi
@@ -232,8 +234,7 @@ export class Voice {
       mime: blob.type || 'audio/webm',
       size: blob.size,
       ms,
-      uploading: true,
-      transcribing: true,
+      ...NOTE_STOPPED,
       at,
       t: Date.now(),
       rid: this.d.keep(blob),
@@ -244,6 +245,22 @@ export class Voice {
   private patch(fk: string, p: Partial<DraftFile>): void {
     this.d.boxStore.getState().updateFile(fk, p)
     this.d.outbox.getState().updateFile(fk, p)
+  }
+
+  /** What is kept of a note now (in its draft, or on its way), `f` once neither holds it. */
+  private now(f: DraftFile): DraftFile {
+    return this.draftOf(f.key)?.f ?? (this.d.outbox.getState().list.flatMap((o) => o.files).find((x) => x.key === f.key) as DraftFile | undefined) ?? f
+  }
+
+  /** The note moved on by `on` (model/voiceStates: the one way its state changes), with `also` (its words), and the
+   * toast that says so; false when it cannot go that way from where it is. `cancelled`: a note kept as cancelled. */
+  private step(f: DraftFile, on: VoiceEvent, cancelled: boolean, also: Partial<DraftFile> = {}): boolean {
+    const at = cancelled ? 'cancelled' : this.draftOf(f.key) ? 'draft' : 'sent'
+    const s = noteStep(this.now(f), at, on)
+    if (!s) return false
+    this.patch(f.key, { ...s.change, ...also })
+    if (s.toast) this.d.toasts.show(s.toast)
+    return true
   }
 
   /** Still in a draft or on its way (not taken off meanwhile). */
@@ -261,15 +278,15 @@ export class Voice {
       try {
         const up = await this.d.api.upload(slug, blob, f.name, { voice: true, scope })
         fid = up.f
-        this.patch(f.key, { f: up.f, size: up.size, uploading: false, failed: false })
+        this.step(f, 'uploaded', cancelled, { f: up.f, size: up.size })
         this.d.flush()
       } catch (ex) {
         if (!this.wanted(f.key)) return // taken off its draft meanwhile
         if (ex instanceof Refused) {
-          this.patch(f.key, { uploading: false, failed: true, transcribing: false })
-          this.d.flush()
-          return this.d.toasts.show('Recording upload failed')
+          this.step(f, 'uploadRefused', cancelled)
+          return this.d.flush()
         }
+        this.step(f, 'uploadOffline', cancelled)
         await wait(n)
       }
     }
@@ -277,8 +294,8 @@ export class Voice {
     for (let n = 0, tries = 0, waits = 0; n < 40; n++) {
       try {
         d = await this.d.api.words(slug, fid, true, { scope, again: tries > 0 })
-        if (!d.done && ++waits < 20) continue // still working: the server answers after 45 s for another ask
-        if (d.done && d.tr_error && ++tries < 4) {
+        if (!heardEvent(d) && ++waits < 20) continue // still working: the server answers after 45 s for another ask
+        if (d.state === 'failed' && ++tries < 4) {
           // the models had trouble: a few more tries, with growing pauses
           await wait(n)
           continue
@@ -288,14 +305,13 @@ export class Voice {
         await wait(n)
       }
     }
-    const tr = d?.tr || ''
-    const err = d?.tr_error || (d?.done ? '' : 'no answer')
-    this.patch(f.key, { transcribing: false, tr, doubts: d?.doubts || [], more: !!d?.more, trError: err })
+    // no answer in all that time: it failed
+    const on = (d && heardEvent(d)) || 'failed'
+    const tr = on === 'failed' || on === 'nothing' ? '' : d?.tr || ''
+    if (!this.step(f, on, cancelled, { tr, doubts: d?.doubts || [] })) return
     if (!cancelled && !this.d.desk() && d?.doubts?.some((x) => x.alt)) this.d.boxStore.getState().setShowWords(true) // the words to check show in the box on the phone
-    if (cancelled) {
-      if (!tr) this.d.toasts.show(err ? 'Transcription failed. The cancelled recording is kept as is' : 'No words heard. The cancelled recording is kept as is')
-    } else this.place(slug, key, f.key, tr, err)
-    if (d?.more) void this.hearMore(slug, f.key, fid)
+    if (!cancelled && tr) this.place(slug, key, f.key, tr)
+    if (on === 'fast') void this.hearMore(slug, f.key, fid)
   }
 
   private draftOf(fk: string): { key: DraftKey; f: DraftFile } | null {
@@ -306,9 +322,13 @@ export class Voice {
     return null
   }
 
-  /** The note's first words came early (T687): its final words follow. */
+  /** The note's fast words came (T687): the strong model's words follow, while it is in its draft. */
   private async hearMore(slug: string, fk: string, fid: string): Promise<void> {
-    for (let n = 0, t0 = Date.now(); Date.now() - t0 < 5 * 60000 && this.draftOf(fk)?.f.more; n++) {
+    const fast = () => {
+      const at = this.draftOf(fk)
+      return at && noteState(at.f) === 'fastWords' ? at : null
+    }
+    for (let n = 0, t0 = Date.now(); Date.now() - t0 < 5 * 60000 && fast(); n++) {
       let d: Awaited<ReturnType<TaskaApi['words']>>
       try {
         d = await this.d.api.words(slug, fid, true, { more: true })
@@ -317,21 +337,25 @@ export class Voice {
         continue
       }
       if (d.more) continue
-      const at = this.draftOf(fk)
-      this.patch(fk, { more: false })
-      if (at && d.tr && d.tr !== at.f.tr) this.fuller(slug, at.key, at.f, d.tr)
+      const at = fast()
+      if (!at) return
+      // the strong model's own words, or (it failed, or said the same) the fast words stay
+      const strong = d.state === 'done' && !!d.tr && d.tr !== at.f.tr
+      if (this.step(at.f, strong ? 'strong' : 'fastKept', false) && strong) this.fuller(slug, at.key, at.f, d.tr, d.doubts || [])
       return
     }
-    this.patch(fk, { more: false })
+    const at = fast()
+    if (at) this.step(at.f, 'fastKept', false)
   }
 
-  /** The final words take the place of the first ones in the draft (or go after it). */
-  private fuller(slug: string, key: DraftKey, f: DraftFile, words: string): void {
+  /** The final words take the place of the first ones in the draft (or go after it), with what may be misheard in
+   * them (B724): on the phone the words to check show in the box, as for first words. */
+  private fuller(slug: string, key: DraftKey, f: DraftFile, words: string, doubts: Doubt[]): void {
     const was = f.trAdded || f.tr
     const v = this.d.box.text(slug, key)
     this.d.box.write(slug, key, was && v.includes(was) ? v.replace(was, words) : (v.trim() ? v.trimEnd() + '\n' : '') + words)
-    this.d.boxStore.getState().updateFile(f.key, { tr: words, trAdded: words, doubts: [] })
-    this.d.toasts.show('More complete transcription added')
+    this.d.boxStore.getState().updateFile(f.key, { tr: words, trAdded: words, doubts })
+    if (!this.d.desk() && doubts.some((x) => x.alt)) this.d.boxStore.getState().setShowWords(true)
   }
 
   /** A kept note from before a reload: up, if it was not, then its words. */
@@ -341,17 +365,14 @@ export class Voice {
 
   /** A kept note's words, worked out before the reload, into its draft. */
   placeKept(slug: string, key: DraftKey, f: DraftFile): void {
-    this.place(slug, key, f.key, f.tr || '', f.trError || '')
+    if (f.tr) this.place(slug, key, f.key, f.tr)
   }
 
-  /** Its words go where it was recorded in its draft, around what was typed since; none: it says so. */
-  private place(slug: string, key: DraftKey, fk: string, tr: string, err: string): void {
+  /** Its words go where it was recorded in its draft, around what was typed since (sent meanwhile: they are the
+   * note's, nothing to put). */
+  private place(slug: string, key: DraftKey, fk: string, tr: string): void {
     const inDraft = (this.d.boxStore.getState().files[key] || []).find((x) => x.key === fk)
-    if (!inDraft) {
-      if (!tr) this.d.toasts.show(err ? 'Transcription failed. Audio sent as is' : 'No words heard. Audio sent as is')
-      return
-    }
-    if (!tr) return this.d.toasts.show(err ? 'Transcription failed. Audio is ready to send' : 'No words heard. Audio is ready to send')
+    if (!inDraft) return
     const text = this.d.box.text(slug, key)
     const q = inDraft.vc ? vcLineEnd(text, inDraft.vc) : -1 // a voice comment's words: under its quote, wherever that is now
     const at = q >= 0 ? q : Math.min(inDraft.at ?? text.length, text.length)

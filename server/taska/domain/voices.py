@@ -9,6 +9,7 @@ from typing import Iterable, List, Optional
 
 from .model import FileRef, Voice
 from .state import ProjectState
+from .voice_states import FAILED, WAIT
 
 AUDIO = re.compile(r"\.(webm|ogg|m4a|mp4|mp3|wav|aac|flac)$", re.I)
 LENGTH = re.compile(r"(\d+)-(\d+)\.\w+$")
@@ -46,9 +47,9 @@ def said(st: ProjectState, text: str, files: Iterable[FileRef]) -> str:
 
 def lacking(v: Optional[Voice]) -> str:
     """Why a voice note has no words to read: being worked out, nobody heard, failed."""
-    if v is None or v.state == "wait":
+    if v is None or v.state == WAIT:
         return "(transcribing…)"
-    return "(transcription failed)" if v.state == "failed" else "(no words heard)"
+    return "(transcription failed)" if v.state == FAILED else "(no words heard)"
 
 
 AS_SAID = "word for word"
@@ -62,7 +63,7 @@ def voice_line(st: ProjectState, f: FileRef, as_said: bool = False, said_as: str
     head = f"voice {n}:" if n else "voice:"
     words = v.words if v else ""
     out = f"{head} {' '.join(words.split()) if words else lacking(v)}"
-    if v and v.state == "wait" and words:
+    if v and v.state == WAIT and words:
         out += " (first words; more coming)"
     if v and v.fixed:
         out += " (corrected by the user)"

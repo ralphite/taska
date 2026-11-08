@@ -7,5 +7,5 @@ export default { title: 'UI/Input box/Commenting on a document/Speaking a commen
 type Story = StoryObj
 
 export const PickedRecording: Story = { ...at({ ...one, rec: true }), name: 'Recording' }
-export const PickedTranscribing: Story = { ...at({ ...one, files: [{ ...VOICE, tr: '', transcribing: true }] }), name: 'Being written out' }
-export const PickedVoiceWords: Story = { ...at({ ...one, text: 'Keep the sort too.', files: [{ ...VOICE, tr: 'Keep the sort too.' }] }), name: "Picked, its voice note's words in the box" }
+export const PickedTranscribing: Story = { ...at({ ...one, files: [{ ...VOICE, transcript: 'wait' }] }), name: 'Being written out' }
+export const PickedVoiceWords: Story = { ...at({ ...one, text: 'Keep the sort too.', files: [VOICE] }), name: "Picked, its voice note's words in the box" }

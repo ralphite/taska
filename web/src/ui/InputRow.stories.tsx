@@ -27,7 +27,7 @@ const BECAME: [string, Became][] = [
   ['left for an agent, which changed an item', { k: 'filed', items: [{ did: '', item: F012 }], note: null }],
   ['an answer', { k: 'answer', item: T007 }],
   ["the organizer's note, no item", { k: 'note', text: 'No changes needed' }],
-  ['transcribing', { k: 'transcribing' }],
+  ['transcribing', { k: 'transcribing', state: 'sentTranscribing' }],
   ['organizing', { k: 'organizing' }],
   ["couldn't organize: Try again", { k: 'failed', why: failWhy(FAILED), retry: true }],
   ["couldn't organize, the organizer off", { k: 'failed', why: failWhy(FAILED), retry: false }],

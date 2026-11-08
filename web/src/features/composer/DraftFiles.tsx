@@ -2,35 +2,33 @@
 // faded until it is up; each with a way to take it out. Props only.
 
 import { clock } from '../../model/time'
+import { noteState, sayIn, type NoteFields, type VoiceTone } from '../../model/voiceStates'
 import { FileName } from '../../ui/Files'
 import { Icon } from '../../ui/Icon'
 
-export interface DraftFile {
+export interface DraftFile extends NoteFields {
   key: string
   f: string
   name: string
-  mime?: string
   preview?: string
   /** a voice note's length, ms */
   ms?: number
-  tr?: string
-  transcribing?: boolean
-  more?: boolean
-  trError?: string
-  /** Taska refused its upload: it was not sent up (B725) */
-  failed?: boolean
 }
 
-const voiceWord = (f: DraftFile) =>
-  f.failed ? 'Upload failed'
-  : f.transcribing ? 'Transcribing…'
-    : f.more
-      ? 'Partial · more coming'
-      : f.tr
-        ? 'Transcribed'
-        : f.trError
-          ? 'No transcript · audio only'
-          : 'No words heard · audio only'
+/** how each tone of a voice note's words looks in its chip */
+const TONE: Record<VoiceTone, string> = {
+  busy: 'animate-pulse text-blue-600 dark:text-blue-400',
+  partial: 'max-w-40 leading-snug text-amber-700 dark:text-amber-400',
+  done: 'text-emerald-600 dark:text-emerald-400',
+  quiet: 'text-zinc-500',
+  failed: 'text-red-600 dark:text-red-400',
+}
+
+/** a voice note's words, as its state says them in the chip (model/voiceStates) */
+function NoteWord({ f }: { f: DraftFile }) {
+  const s = sayIn(noteState(f), 'chip')
+  return s ? <span className={`font-semibold ${TONE[s.tone]}`}>{s.say}</span> : null
+}
 
 export function DraftFiles({ files, url, onRemove, onView }: { files: readonly DraftFile[]; url(f: string): string; onRemove(key: string): void; onView(key: string): void }) {
   return (
@@ -41,11 +39,7 @@ export function DraftFiles({ files, url, onRemove, onView }: { files: readonly D
             <div className="flex h-16 items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
               <Icon n="mic" c="size-4" />
               <span className="font-mono tabular-nums">{clock(f.ms || 0)}</span>
-              <span
-                className={`font-semibold ${f.failed ? 'text-red-600 dark:text-red-400' : f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.more ? 'max-w-40 leading-snug text-amber-700 dark:text-amber-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}`}
-              >
-                {voiceWord(f)}
-              </span>
+              <NoteWord f={f} />
             </div>
           ) : (f.mime || '').startsWith('image/') ? (
             <button onClick={() => onView(f.key)} aria-label={`Look at ${f.name}`} className="block cursor-zoom-in rounded-xl hover:brightness-95 dark:hover:brightness-110">

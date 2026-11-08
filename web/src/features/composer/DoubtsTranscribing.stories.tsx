@@ -5,5 +5,5 @@ import { voice } from '../../stories/doubtsFixtures'
 export default { title: 'UI/Input box/Voice/Writing it out' } satisfies Meta
 type Story = StoryObj
 
-export const Transcribing = voice({ tr: '', transcribing: true })
-export const TranscribedItsWordsInTheBox: Story = { ...voice({ tr: 'Keep the sort too.' }, 'Keep the sort too.'), name: 'Transcribed, its words in the box' }
+export const Transcribing = voice({ transcript: 'wait' })
+export const TranscribedItsWordsInTheBox: Story = { ...voice({}, 'Keep the sort too.'), name: 'Transcribed, its words in the box' }

@@ -7,6 +7,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { OutFile } from '../model/outgoing'
 import type { Doubt } from '../model/types'
 import type { VcMark } from '../model/voiceComments'
+import type { Transcript } from '../model/voiceStates'
 import type { KeyValueStore } from './storage'
 import { NEW_DRAFT, type DraftKey } from '../model/draftTarget'
 
@@ -15,8 +16,9 @@ export interface DraftFile extends OutFile {
   key: string
   /** a voice note's length, ms */
   ms?: number
-  /** a voice note whose words are still being worked out */
-  transcribing?: boolean
+  /** where a voice note's words are (with `uploading` and `failed`, its state: model/voiceStates `noteState`; changed
+   * only by `noteStep`) */
+  transcript?: Transcript
   /** where in the draft's words it was recorded (its words go there) */
   at?: number
   /** its words as put in the draft (they are looked for there, to swap a misheard word, and taken out when it is
@@ -26,10 +28,6 @@ export interface DraftFile extends OutFile {
   around?: [string, string]
   /** words that may be misheard */
   doubts?: Doubt[]
-  /** its first words: the final ones follow (T687) */
-  more?: boolean
-  /** why its words did not come */
-  trError?: string
   /** when it was made (ms) */
   t?: number
   /** a picture or another file kept until it is up: no words to wait for */

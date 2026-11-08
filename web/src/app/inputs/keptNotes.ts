@@ -12,6 +12,7 @@ import type { OutboxStore } from '../../stores/outbox'
 import type { OutFile } from '../../model/outgoing'
 import type { KeyValueStore } from '../../stores/storage'
 import { plural } from '../../model/words'
+import { fromKept, keptTranscript, noteState } from '../../model/voiceStates'
 import type { InputSender } from './inputSender'
 import type { Toasts } from '../page/toasts'
 import { draftKey, draftTarget, NEW_DRAFT, replyDraft, scopeDraft, type DraftKey } from '../../model/draftTarget'
@@ -97,8 +98,7 @@ export class KeptNotes {
       ms: d.ms || 0,
       t: d.t || 0,
       f: f.f || null,
-      tr: d.transcribing ? null : d.tr || '',
-      tr_error: d.trError || '',
+      ...(d.plain ? { tr: d.tr || '', tr_error: '' } : keptTranscript(d)),
       doubts: [...(d.doubts || [])],
       added: d.trAdded || null,
       job,
@@ -237,9 +237,8 @@ export class KeptNotes {
         ms: r.ms,
         t: r.t,
         uploading: !r.f,
-        transcribing: !r.plain && r.tr == null && !r.tr_error,
+        ...(r.plain ? {} : { transcript: fromKept(r) }),
         tr: r.tr || '',
-        trError: r.tr_error || '',
         doubts: r.doubts || [],
         ...(r.added ? { trAdded: r.added } : {}),
         ...(r.plain ? { plain: true } : {}),
@@ -263,7 +262,7 @@ export class KeptNotes {
     }
     for (const { key, f } of back) {
       this.d.box.getState().addFile(key, f)
-      if (f.transcribing || !f.f) this.d.resume(slug, key, f, this.blobs.get(f.rid as string) as Blob, (() => { const t = draftTarget(key); return t.kind === 'reply' ? t.code : null })())
+      if (!f.f || (!f.plain && noteState(f) === 'transcribing')) this.d.resume(slug, key, f, this.blobs.get(f.rid as string) as Blob, (() => { const t = draftTarget(key); return t.kind === 'reply' ? t.code : null })())
       else if (!f.plain && f.tr && !f.trAdded) this.d.place(slug, key, f)
     }
     this.soon()

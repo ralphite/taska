@@ -1,6 +1,8 @@
 // What the server sends: a project's view (GET /p/<project>/api/view) and the workspace's answers. The shapes are
 // the server's page_api/views.py.
 
+import type { RecordState } from './voiceStates'
+
 export type ItemType = 'feature' | 'bug' | 'idea' | 'task'
 export type Status = 'proposed' | 'open' | 'doing' | 'review' | 'done' | 'dropped'
 export type Pri = 'P0' | 'P1' | 'P2' | 'P3'
@@ -22,7 +24,7 @@ export interface FileRef {
  * worked out (state wait); none: nobody was heard; failed: `err` says why. */
 export interface Voice {
   f: string
-  state: 'wait' | 'done' | 'none' | 'failed'
+  state: RecordState
   said: string
   tidied: string
   early?: string
@@ -224,6 +226,8 @@ export interface Doubt {
 /** What the server says of a voice note's words. */
 export interface WordsAnswer {
   f: string
+  /** its record's state (model/voiceStates): the truth of where its words are; wait with `more`: its fast words */
+  state: RecordState
   done: boolean
   tr: string
   tr_error: string

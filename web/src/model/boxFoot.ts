@@ -11,7 +11,7 @@ import { plainQuote } from './markdown'
 import { codeOf, liveN, type ProjectModel } from './project'
 import type { Route } from './route'
 import type { Input } from './types'
-import { transcribing } from './voices'
+import { sentNotes } from './voiceStates'
 import { vcCount } from './voiceComments'
 import { inputCode, plural } from './words'
 import { outgoingLine, type Outgoing } from './outgoing'
@@ -181,7 +181,8 @@ export type FeedbackLine =
   | { kind: 'waiting'; q: string; text: string; more: number }
   | { kind: 'not-sent'; q: string; text: string; more: number }
   | { kind: 'organizing' }
-  | { kind: 'transcribing' }
+  /** its voice notes' words still to come: what the line says is the voice state's (model/voiceStates) */
+  | { kind: 'transcribing'; state: 'sentTranscribing' | 'sentFastWords' }
   /** why in plain words; `raw`: the words as they came; `retry`: trying again could help (not with its key refused) */
   | { kind: 'org-failed'; msg: string; raw: string; retry: boolean }
   | { kind: 'undone'; code: string }
@@ -212,8 +213,9 @@ export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; scope: 
   const org = a.m.facts.organizer
   const move = a.others && !r.scope
   let line: FeedbackLine
+  const hearing = sentNotes(r.files)
   if (r.moved) line = { kind: 'moved', code: inputCode(r.id), to: r.moved.to, as: r.moved.as ? inputCode(r.moved.as) : '', href: `/p/${encodeURIComponent(r.moved.to)}/` }
-  else if (transcribing(r.files)) line = { kind: 'transcribing' }
+  else if (hearing) line = { kind: 'transcribing', state: hearing }
   else if (org.busy.includes(r.id) || (!r.acked && org.on && !r.org)) line = { kind: 'organizing' }
   else if (r.org && !r.org.ok) line = { kind: 'org-failed', msg: failWhy(r.org.msg), raw: r.org.msg, retry: true }
   else if (r.org?.undone) line = { kind: 'undone', code: inputCode(r.id) }

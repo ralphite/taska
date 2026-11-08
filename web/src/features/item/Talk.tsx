@@ -16,7 +16,7 @@ import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
 import { BUSY, DC_BTN, DC_LINK, MUTED } from '../../ui/tones'
 import { FileRows, VoiceBubble, isAudio } from '../../ui/Files'
-import { transcribing, voiceLacks } from '../../model/voices'
+import { sayIn, sentNotes, voiceLacks } from '../../model/voiceStates'
 import { MsgText } from './MsgText'
 import { Answered, type CardEvents } from './NeedsCard'
 import type { TalkEnv } from './talkEnv'
@@ -139,6 +139,9 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
     const made = src && !ver?.old && !src.moved ? facts.made(src.id) : []
     // your voice notes inside your bubble, under your words (T668); an earlier version shows its words only
     const voices = ver?.old ? [] : (src?.files || []).filter(isAudio)
+    // its voice notes' words still to come: the talk's mark for that state
+    const hearing = sentNotes(src?.files)
+    const mark = hearing ? sayIn(hearing, 'talk')?.say : null
     return (
       <div className={`group group/msg flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl ${ver?.old ? 'opacity-60' : ''}`}>
         {voices.length ? (
@@ -149,7 +152,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
             play={env.play}
             tidy={env.tidy}
             top={y.text ? <MsgText x={y} env={env} on={on} /> : null}
-            hearing={transcribing(src?.files)}
+            hearing={mark}
             attrs={voiceMark(src)}
             on={on}
           />
@@ -201,10 +204,10 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
                 </a>
               </>
             ) : null}
-            {transcribing(src?.files) && !voices.length ? (
+            {mark && !voices.length ? (
               <>
                 {' · '}
-                <span className="animate-pulse text-blue-600 dark:text-blue-400">transcribing…</span>
+                <span className="animate-pulse text-blue-600 dark:text-blue-400">{mark}…</span>
               </>
             ) : null}
             {read ? (
@@ -378,7 +381,8 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents)
     // what was said: its typed words and its voice notes' words (their records, B682); a note with none yet says why
     const said = c.text.trim()
     const note = (c.files || []).find(isAudio)
-    const hearing = !said && transcribing(c.files)
+    const notes = sentNotes(c.files)
+    const hearing = !said && notes ? sayIn(notes, 'talk')?.say : null
     const words = said ? <Rich text={said} world={env.world} onRef={on.ref} onPicture={on.picture} /> : note && !(you && hearing) ? <span className={you ? 'text-white/70' : MUTED}>{voiceLacks(note.voice)}</span> : null
     // its pictures and files as a message's: thumbnails to open (yours under the bubble, an agent's in its card)
     const pics = (c.files || []).filter((f) => !isAudio(f))

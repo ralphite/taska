@@ -3,6 +3,7 @@
 
 import { plainQuote } from './markdown'
 import type { Doc } from './types'
+import { waitsForWords, type NoteFields } from './voiceStates'
 
 export const VC_MARK = /^> “(.+)”[ \t]*$/
 
@@ -73,7 +74,7 @@ export interface NotSent {
 }
 
 /** The voice comments on document `d` the box still holds (its words or its voice notes); emptied, they are gone. */
-export function notSent(text: string, files: readonly { vc?: string; transcribing?: boolean }[], marks: readonly VcMark[], d: number): NotSent[] {
+export function notSent(text: string, files: readonly (NoteFields & { vc?: string })[], marks: readonly VcMark[], d: number): NotSent[] {
   const lines = text.split('\n')
   return marks
     .filter((m) => m.d === d)
@@ -85,7 +86,7 @@ export function notSent(text: string, files: readonly { vc?: string; transcribin
         words.push(l)
       }
       const voice = files.filter((f) => f.vc === m.label)
-      return { label: m.label, key: m.key, words: words.join('\n').trim(), voice: voice.length, transcribing: voice.some((f) => f.transcribing), live: at >= 0 || voice.length > 0 }
+      return { label: m.label, key: m.key, words: words.join('\n').trim(), voice: voice.length, transcribing: voice.some(waitsForWords), live: at >= 0 || voice.length > 0 }
     })
     .filter((x) => x.live)
     .map(({ label, key, words, voice, transcribing }) => ({ label, key, words, voice, transcribing }))

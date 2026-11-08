@@ -3615,6 +3615,7 @@
    "status": 200,
    "json": {
     "f": "f8-voice_0-05.webm",
+    "state": "wait",
     "done": true,
     "tr": "日期格式用设置里选的那个，不要 ISO 格式，财务那边看不惯。",
     "tr_error": "",

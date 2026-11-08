@@ -21,7 +21,7 @@ describe('voice comments', () => {
   })
   it('lists what is not sent while the box holds it', () => {
     const marks = [{ label: 'First part', d: 4, key: 'a', quote: 'First part' }, { label: 'Second part', d: 4, key: 'b', quote: 'x' }]
-    expect(notSent('> “First part”\nhi', [{ vc: 'Second part', transcribing: true }], marks, 4)).toEqual([
+    expect(notSent('> “First part”\nhi', [{ vc: 'Second part', mime: 'audio/webm', transcript: 'wait' }], marks, 4)).toEqual([
       { label: 'First part', key: 'a', words: 'hi', voice: 0, transcribing: false },
       { label: 'Second part', key: 'b', words: '', voice: 1, transcribing: true },
     ])

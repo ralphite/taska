@@ -88,6 +88,7 @@ import { ProjectSession } from './project/projectSession'
 import { Delivered } from './inputs/delivered'
 import { DraftSender } from './inputs/draftSender'
 import { Arrival } from './page/arrival'
+import { waitsForWords } from '../model/voiceStates'
 
 export interface AppEnv {
   http?: Http
@@ -360,7 +361,7 @@ export function createApp(env: AppEnv): App {
   const updates = new Updates({
     toasts,
     session: env.session ?? memoryStore(),
-    busy: () => recordingNow() || Object.values(boxStore.getState().files).some((fs) => fs.some((f) => f.uploading || f.transcribing)) || outbox.getState().list.some((o) => o.state === 'sending'),
+    busy: () => recordingNow() || Object.values(boxStore.getState().files).some((fs) => fs.some((f) => f.uploading || waitsForWords(f))) || outbox.getState().list.some((o) => o.state === 'sending'),
     reload: () => location.reload(),
     mine: env.pageScript ?? '',
   })

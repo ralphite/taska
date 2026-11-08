@@ -16,6 +16,7 @@ import type { Fields } from '../page/fields'
 import type { Sheets } from '../page/sheets'
 import type { Toasts } from '../page/toasts'
 import { docHere, docSend, type DocPlace } from './shared'
+import { waitsForWords } from '../../model/voiceStates'
 
 export interface DocCommentsDeps extends DocPlace {
   runner: ChangeRunner
@@ -88,7 +89,7 @@ export class DocComments {
     if (!this.d.desk()) v.setTyping(false)
     if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
     if (this.d.desk()) this.d.fields.get('box')?.focus({ preventScroll: true })
-    for (let i = 0; live().some((f) => f.uploading || f.transcribing) && i < 240; i++) await new Promise((ok) => setTimeout(ok, 500))
+    for (let i = 0; live().some((f) => f.uploading || waitsForWords(f)) && i < 240; i++) await new Promise((ok) => setTimeout(ok, 500))
     const held = files.length ? this.d.boxStore.getState().takeFiles(hold) : []
     const sent = held.filter((f) => f.f && !f.failed)
     // what was typed is the comment's words; each voice note's words, as you left them, go to the note (B682)

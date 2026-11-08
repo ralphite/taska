@@ -1,7 +1,7 @@
 // A voice note's words (B682): one record per note (Voice), named by its file wherever the note is: an input, a
-// message, a comment. What was typed and each note's words together are what was said, as every place shows it; a
-// note still being worked out says so, one with no words says why. Sending, the words of each note are taken out of
-// what was typed and go to the note (changed by you: they are yours from then on).
+// message, a comment. What was typed and each note's words together are what was said, as every place shows it
+// (what a note says while its words are worked out, or why it has none: model/voiceStates). Sending, the words of
+// each note are taken out of what was typed and go to the note (changed by you: they are yours from then on).
 
 import type { FileRef, Voice } from './types'
 
@@ -9,13 +9,6 @@ export const isVoice = (f: { mime?: string }) => (f.mime || '').startsWith('audi
 
 /** What a note says now: its tidied words (yours, once you changed them), its first words while worked out. */
 export const voiceWords = (v: Voice | null | undefined): string => (v ? v.tidied || (v.state === 'wait' ? v.early || '' : '') : '')
-
-/** Why a note has no words to show: being worked out, nobody was heard, or it failed. */
-export const voiceLacks = (v: Voice | null | undefined): string =>
-  !v || v.state === 'wait' ? 'Transcribing…' : v.state === 'failed' ? 'Transcription failed' : 'No words heard'
-
-/** Whether a voice note of these files is still being worked out (its record waits for its words). */
-export const transcribing = (files: readonly FileRef[] | undefined) => !!files?.some((f) => isVoice(f) && f.voice?.state === 'wait')
 
 /** A file with the words of its note (read from the note's record): what the parts that draw it take. */
 export const withVoice = (f: FileRef, voices: ReadonlyMap<string, Voice>): FileRef => {

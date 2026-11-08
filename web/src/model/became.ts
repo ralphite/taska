@@ -9,7 +9,7 @@ import { when } from './time'
 import { shownStatus } from './items'
 import { codeOf, inputDraft, type ProjectModel } from './project'
 import type { Input, ItemType } from './types'
-import { transcribing } from './voices'
+import { sentNotes } from './voiceStates'
 import { inputCode } from './words'
 
 export interface ItemRef {
@@ -21,7 +21,9 @@ export interface ItemRef {
 }
 
 export type Became =
-  | { k: 'transcribing' }
+  /** its voice notes' words still to come (model/voiceStates says how each place shows it), or more said into it on
+   * its way (`adding`) */
+  | { k: 'transcribing'; state: 'sentTranscribing' | 'sentFastWords' | 'adding' }
   | { k: 'organizing' }
   /** the organizer is on and will take it, after the ones before it */
   /** `retry`: the organizer is on, so it can try again */
@@ -42,7 +44,6 @@ export type Became =
 
 /** The words for each state, the same in every list. */
 export const BECAME_WORD = {
-  transcribing: 'Transcribing…',
   organizing: 'Organizing…',
   failed: "Couldn't organize",
   undone: 'Undone',
@@ -135,7 +136,8 @@ export function becameOf(r: Input, m: ProjectModel, title: (slug: string) => str
   const organizer = m.facts.organizer
   if (r.moved) return movedOf(r.moved, title)
   if (canSend(r)) return { k: 'cancelled' }
-  if (transcribing(r.files)) return { k: 'transcribing' }
+  const hearing = sentNotes(r.files)
+  if (hearing) return { k: 'transcribing', state: hearing }
   // one word for every input the organizer has not finished: whether it is on it now, next in line or asking Gemini
   // again after a busy answer, it is being organized; no "Queued" to fall back to (B684: it jumped back and forth)
   if (organizing(r, organizer)) return { k: 'organizing' }

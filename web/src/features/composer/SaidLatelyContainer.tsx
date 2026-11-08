@@ -13,6 +13,7 @@ import { codeOf, findRef } from '../../model/project'
 import { inputWords } from '../../ui/Markdown'
 import { saidOutgoing, saidRows } from '../../model/saidLately'
 import { showsOnItsWay } from '../../model/outgoing'
+import { notesState } from '../../model/voiceStates'
 import { RecMeter } from '../../app/RecMeter'
 import { FileChips } from '../../ui/Files'
 import { PLACE_LEVELS } from '../../ui/PlaceVoice'
@@ -150,5 +151,5 @@ export function DraftCardContainer({ route, boxKey, scope, fixing, setFixing }: 
       }}
     />
   ) : null
-  return <DraftCard voice={voice.length} ms={voice.reduce((a, f) => a + (f.ms || 0), 0)} files={files.length - voice.length} transcribing={files.some((f) => f.transcribing)} words={words} hint={hint} />
+  return <DraftCard voice={voice.length} ms={voice.reduce((a, f) => a + (f.ms || 0), 0)} files={files.length - voice.length} state={notesState(files)} words={words} hint={hint} />
 }

@@ -8,6 +8,7 @@ from typing import List
 from .. import events as ev
 from ..model import Input, InputVersion, Voice
 from ..state import ProjectState
+from ..voice_states import DONE, WAIT, after
 from ..voices import said
 from .core import reduces
 from .steps import changed_words, show_edit
@@ -26,22 +27,20 @@ def heard(state: ProjectState, f: str, e: ev.Event, kind: str, said_: str = "", 
     kept as what was heard (word for word, and as it tidied them) but not shown in their place."""
     v = record(state, f)
     v.t = e.t
-    if kind == "wait":
-        if not v.tidied:  # words already in stay until new ones come
-            v.state = "wait"
+    had_words = bool(v.tidied)
+    v.state = after(v.state, kind, had_words)  # voice_states: the one rule of the record's states
+    if kind == WAIT:
         v.early = early or v.early
         return
     v.early = ""
-    if v.fixed and kind == "done":
+    if v.fixed and kind == DONE:
         v.said = said_ or tidied or v.said
         v.was = tidied or v.was
-        v.state = "done"
         return
-    if kind != "done" and v.tidied:  # words in before stay its words
-        v.state = "done"
+    if had_words and kind != DONE:  # words in before stay its words
         return
-    v.state, v.err = kind, err
-    if kind == "done":
+    v.err = err
+    if kind == DONE:
         v.tidied, v.said = tidied, said_ or tidied
 
 
@@ -75,8 +74,8 @@ def _fixed(state: ProjectState, e: ev.Event) -> None:
     if not v.said:
         v.said = v.tidied or e.tidied
     v.tidied, v.fixed, v.t, v.early = e.tidied, e.t, e.t, ""
-    if v.state != "done" and e.tidied:
-        v.state = "done"
+    if v.state != DONE and e.tidied:
+        v.state = DONE
 
 
 @reduces(ev.VoicesSplit)

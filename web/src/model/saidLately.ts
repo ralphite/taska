@@ -28,7 +28,7 @@ export function saidRows(m: ProjectModel, a: { upTo: number; lit?: string | null
   const writing = a.mode?.kind === 'amend' ? { id: a.mode.id, mode: a.mode.mode } : null
   const rows = all.slice(0, Math.max(a.upTo, all.findIndex((r) => r.id === a.lit) + 1)).map((r) => {
     const x = inputLine(m, r, { title: a.title, opened: a.opened, drafts: a.drafts, writing })
-    return a.adding?.has(r.id) && x.became.k !== 'moved' ? { ...x, became: { k: 'transcribing' as const } } : x
+    return a.adding?.has(r.id) && x.became.k !== 'moved' ? { ...x, became: { k: 'transcribing' as const, state: 'adding' as const } } : x
   })
   return { all, rows }
 }

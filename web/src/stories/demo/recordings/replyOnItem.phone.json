@@ -4818,6 +4818,7 @@
    "status": 200,
    "json": {
     "f": "f8-voice_0-03.webm",
+    "state": "wait",
     "done": true,
     "tr": "安卓上也看一下，别只测 iPhone。",
     "tr_error": "",

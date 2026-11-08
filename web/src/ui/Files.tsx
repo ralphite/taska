@@ -276,11 +276,11 @@ export function FileRows({ files, cls = '', ...rest }: { files: FileRef[]; cls?:
 }
 
 const DELAYS = [0, 200, 400]
-/** words still being written out: a quiet mark in the bubble where they will be */
-function Transcribing() {
+/** words still being written out: a quiet mark in the bubble where they will be (`say`: its words) */
+function Transcribing({ say }: { say: string }) {
   return (
     <span role="status" className="flex items-center gap-1.5 py-0.5 text-[13px] text-white/70">
-      transcribing
+      {say}
       <span className="inline-flex items-center gap-1" aria-hidden="true">
         {DELAYS.map((d) => (
           <span key={d} className="size-1.5 animate-pulse rounded-full bg-white/70" style={{ animationDelay: `${d}ms` }} />
@@ -293,7 +293,7 @@ function Transcribing() {
 /** Your blue bubble with your voice notes inside it (T668): what you said on top (`top`: a comment's quote, the
  * words), each note's chip under it, the chip every place draws (r1165), in white on blue; with nothing on top, the
  * bubble holds the chips alone. */
-export function VoiceBubble({ cls, files, url, play, tidy, top, hearing = false, busy = false, attrs, on }: {
+export function VoiceBubble({ cls, files, url, play, tidy, top, hearing = null, busy = false, attrs, on }: {
   /** the blue bubble's own classes */
   cls: string
   files: FileRef[]
@@ -301,7 +301,8 @@ export function VoiceBubble({ cls, files, url, play, tidy, top, hearing = false,
   play(src: string): PlayState
   tidy: boolean
   top?: ReactNode
-  hearing?: boolean
+  /** its words still to come: what the mark says (model/voiceStates, the talk's), none when they are in */
+  hearing?: string | null
   busy?: boolean
   attrs?: Record<string, string>
   on: Pick<FileEvents, 'play' | 'words'>
@@ -310,7 +311,7 @@ export function VoiceBubble({ cls, files, url, play, tidy, top, hearing = false,
   return (
     <div {...attrs} className={`${cls} ${alone ? 'p-1.5!' : ''} ${busy ? 'opacity-70' : ''}`}>
       {top}
-      {hearing ? <Transcribing /> : null}
+      {hearing ? <Transcribing say={hearing} /> : null}
       <div className={`flex flex-wrap items-center gap-2 ${alone ? '' : 'mt-2.5'}`}>
         {files.map((f, i) => {
           const src = url(f.f)

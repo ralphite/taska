@@ -52,7 +52,7 @@ function boxOf(kind: Kind, step: Step, desk: boolean): ReactNode {
   const at = kind === 'md' ? 'D1' : 'D2'
   const quote = { key: KEY[kind], text: QUOTE[kind] }
   if (!desk) return step === 'typing' ? boxAt({ at, quote }, false) : null
-  if (step === 'checked') return boxAt({ at, quote, text: SAID[kind], files: [{ ...VOICE, ms: 3000, tr: SAID[kind] }] }, true)
+  if (step === 'checked') return boxAt({ at, quote, text: SAID[kind], files: [{ ...VOICE, ms: 3000 }] }, true)
   if (step === 'typing') return boxAt({ at, quote }, true)
   return boxAt({ at }, true)
 }

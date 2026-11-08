@@ -20,6 +20,7 @@ from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 from ..domain import events as ev
 from ..domain.model import FileRef, Input, Voice
 from ..domain.vocab import VOICE_HOLD
+from ..domain.voice_states import DONE, FAILED, NONE, STATES, WAIT, answer_state
 from ..domain.voice_split import SplitReport, copies_in, plan
 from .news import News
 
@@ -130,10 +131,10 @@ class VoiceJobs:
             self.jobs[fid] = job
             if saved:
                 v = self._p.state.voices.get(fid)
-                if v is None or v.state == "wait":
+                if v is None or v.state == WAIT:
                     self.record_job(fid, job, late=self._late(fid))
                 return
-            self.record(fid, "wait")
+            self.record(fid, WAIT)
         hold = self.hold_timer(job)
         threading.Thread(target=self._work, args=(fid, data, mime, scope, job, hold), daemon=True).start()
 
@@ -165,13 +166,15 @@ class VoiceJobs:
             if job.done:
                 return
             job.early = words
-            self.record(fid, "wait", early=words)
+            self.record(fid, WAIT, early=words)
 
     # -- the note's one record (B682) ---------------------------------------------------
 
     def record(self, fid: str, state: str, said: str = "", tidied: str = "", early: str = "", err: str = "",
                late: bool = False) -> None:
-        """A step of working out a note's words, into its record (one change)."""
+        """A step of working out a note's words, into its record (one change): one of its states (voice_states)."""
+        if state not in STATES:
+            raise ValueError(f"no such voice state: {state}")
         inp = self._input_with(fid)
         self._p.emit(ev.VoiceHeard(f=fid, state=state, said=said, tidied=tidied, early=early, err=err[:300],
                                    late=late, src=inp.id if inp else None, by="taska"))
@@ -179,11 +182,11 @@ class VoiceJobs:
     def record_job(self, fid: str, job: Job, late: bool = False) -> None:
         """A finished job's words into the note's record: its words, nobody heard, or why it failed."""
         if job.err:
-            self.record(fid, "failed", err=job.err, late=late)
+            self.record(fid, FAILED, err=job.err, late=late)
         elif job.tr:
-            self.record(fid, "done", said=str(job.res.get("heard") or job.tr), tidied=job.tr, late=late)
+            self.record(fid, DONE, said=str(job.res.get("heard") or job.tr), tidied=job.tr, late=late)
         else:
-            self.record(fid, "none", late=late)
+            self.record(fid, NONE, late=late)
 
     def hold_timer(self, job: Job) -> threading.Timer:
         """When an input's hold for its words runs out, whoever waits for work hears it."""
@@ -233,7 +236,7 @@ class VoiceJobs:
         for kind, owner, files in _files_everywhere(st):
             for f in files:
                 v = st.voices.get(f.f)
-                if v and v.state == "wait" and f.f not in self.jobs and all(x[0] != f.f for x in out):
+                if v and v.state == WAIT and f.f not in self.jobs and all(x[0] != f.f for x in out):
                     out.append((f.f, f.mime or "", owner.scope if kind == "input" else None))
         return out
 
@@ -263,15 +266,17 @@ def _files_everywhere(st: Any) -> List[Tuple[str, Any, List[FileRef]]]:
 
 def answer(fid: str, job: Optional[Job], voice: Optional[Voice] = None) -> Dict[str, Any]:
     """What a page gets for a voice note: its words once they are in, whose they are, what may be misheard, and every
-    step that worked them out (T697 r(D121)). Words you changed are the note's words (its record), with nothing left
-    to check."""
+    step that worked them out (T697 r(D121)), with `state`, the state of its words (voice_states: the page's truth;
+    wait with `more`: its fast words, the strong model's to follow). Words you changed are the note's words (its
+    record), with nothing left to check."""
     res = job.res if job else {}
     if job and not job.done and job.early:  # the first words, better ones to follow (T687)
-        return {"f": fid, "done": True, "tr": job.early, "tr_error": "", "tr_by": "asr", "more": True}
+        return {"f": fid, "state": WAIT, "done": True, "tr": job.early, "tr_error": "", "tr_by": "asr", "more": True}
     steps = {"steps": res["steps"]} if res.get("steps") else {}
     if voice and voice.fixed:
-        return {"f": fid, "done": True, "tr": voice.tidied, "tr_error": "", "doubts": [], "heard": voice.said, **steps}
-    return {"f": fid, "done": not job or job.done, "tr": job.tr if job else "",
-            "tr_error": (job.err if job else "no such voice note") or "",
+        return {"f": fid, "state": DONE, "done": True, "tr": voice.tidied, "tr_error": "", "doubts": [],
+                "heard": voice.said, **steps}
+    done, tr, err = not job or job.done, job.tr if job else "", (job.err if job else "no such voice note") or ""
+    return {"f": fid, "state": answer_state(done, tr, err), "done": done, "tr": tr, "tr_error": err,
             **{k: res[k] for k in ("tr_by", "doubts", "gated", "main_error", "asr_error", "times", "heard", "steps")
                if k in res}}

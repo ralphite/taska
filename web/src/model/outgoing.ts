@@ -1,7 +1,8 @@
 // What you sent that Taska does not have yet: each input on its way, with its files, and how the lists say it.
 
 import type { FileRef, Input, Message, Voice } from './types'
-import { voiceLacks, voiceWords } from './voices'
+import { voiceWords } from './voices'
+import { voiceLacks } from './voiceStates'
 
 export interface OutFile extends FileRef {
   /** still being uploaded */

@@ -31,7 +31,7 @@ function page() {
   })
   store.getState().show('p')
   const sender = new DraftSender({ box, boxStore: store, inputs: { push: (o: unknown) => pushed.push(o) } as never, docVoice: () => ({}) as never, model: () => model })
-  const note = (uploading: boolean) => store.getState().addFile(ADD, { key: 'v1', f: uploading ? '' : 'f9.webm', name: 'voice 0-04.webm', mime: 'audio/webm', size: 9, ms: 4000, uploading, transcribing: true })
+  const note = (uploading: boolean) => store.getState().addFile(ADD, { key: 'v1', f: uploading ? '' : 'f9.webm', name: 'voice 0-04.webm', mime: 'audio/webm', size: 9, ms: 4000, uploading, transcript: 'wait' })
   return { store, box, sender, sent, pushed, toasts, note }
 }
 

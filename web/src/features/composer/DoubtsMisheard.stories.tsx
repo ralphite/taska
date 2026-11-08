@@ -16,7 +16,7 @@ export const MaybeMisheard: Story = {
   name: 'Maybe misheard',
   render: () => (
     <Frames phoneWidth={393} deskWidth={640}>
-      {(layout) => boxAt({ text: HEARD_TEXT, files: HEARD.map((h) => ({ ...VOICE, ...h, tr: HEARD_TEXT })), heard: {} }, layout === 'desk')}
+      {(layout) => boxAt({ text: HEARD_TEXT, files: HEARD.map((h) => ({ ...VOICE, ...h })), heard: {} }, layout === 'desk')}
     </Frames>
   ),
 }
@@ -27,9 +27,9 @@ export const MaybeMisheardOnTheNewInputPage: Story = {
     <Frames phone={false} deskWidth={640}>
       {() => (
         <>
-          {boxAt({ text: HEARD_TEXT, files: HEARD.map((h) => ({ ...VOICE, ...h, tr: HEARD_TEXT })), heard: {} }, true)}
+          {boxAt({ text: HEARD_TEXT, files: HEARD.map((h) => ({ ...VOICE, ...h })), heard: {} }, true)}
           <div className="px-3 pb-3">
-            <DraftCard voice={1} ms={14000} files={0} transcribing={false} words={<LiveWords text={HEARD_TEXT} heard={HEARD} className={DRAFT_WORDS} />} hint={{ kind: 'check', n: 1 }} />
+            <DraftCard voice={1} ms={14000} files={0} state="words" words={<LiveWords text={HEARD_TEXT} heard={HEARD} className={DRAFT_WORDS} />} hint={{ kind: 'check', n: 1 }} />
           </div>
         </>
       )}
@@ -46,11 +46,11 @@ export const AWordOneModelWasUnsureOf: Story = { name: 'A word one model was uns
  * two versions side by side in the box, to pick from. */
 export const MisheardInSeveralPlaces: Story = {
   name: 'Misheard in several places',
-  render: () => <Frames phone={false} deskWidth={640}>{() => boxAt({ at: 'F012', text: AGAIN, files: AGAIN_HEARD.map((h) => ({ ...VOICE, ...h, tr: AGAIN })), heard: { showing: true } }, true)}</Frames>,
+  render: () => <Frames phone={false} deskWidth={640}>{() => boxAt({ at: 'F012', text: AGAIN, files: AGAIN_HEARD.map((h) => ({ ...VOICE, ...h })), heard: { showing: true } }, true)}</Frames>,
 }
 export const MisheardWordsAllPickedPhone: Story = {
   name: 'Phone: Misheard words all picked',
-  render: () => <Frames desk={false} phoneWidth={393}>{() => boxAt({ text: PICKED_TEXT, files: PICKED.map((h) => ({ ...VOICE, ...h, tr: PICKED_TEXT })), heard: {} }, false)}</Frames>,
+  render: () => <Frames desk={false} phoneWidth={393}>{() => boxAt({ text: PICKED_TEXT, files: PICKED.map((h) => ({ ...VOICE, ...h })), heard: {} }, false)}</Frames>,
 }
 /** The phone, Show the words pressed: the box shows its words in place of its field, the misheard ones to pick from. */
 export const MaybeMisheardWordsShownPhone: Story = {
@@ -58,7 +58,7 @@ export const MaybeMisheardWordsShownPhone: Story = {
   render: () => (
     <Frames desk={false} phoneWidth={393}>
       {() =>
-        boxAt({ text: HEARD_TEXT, files: HEARD.map((h) => ({ ...VOICE, ...h, tr: HEARD_TEXT })), heard: { showing: true } }, false)
+        boxAt({ text: HEARD_TEXT, files: HEARD.map((h) => ({ ...VOICE, ...h })), heard: { showing: true } }, false)
       }
     </Frames>
   ),

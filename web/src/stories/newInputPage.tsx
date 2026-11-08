@@ -126,7 +126,7 @@ const draftCard = (
     voice={1}
     ms={42_000}
     files={0}
-    transcribing={false}
+    state="words"
     hint={{ kind: 'check', n: 2 }}
     words={<LiveWords text={DRAFT_TEXT} heard={DRAFT_HEARD} className={DRAFT_WORDS} />}
   />

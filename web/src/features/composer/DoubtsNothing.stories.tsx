@@ -4,7 +4,7 @@ import { voice } from '../../stories/doubtsFixtures'
 
 export default { title: 'UI/Input box/Voice/Cut short or nothing heard' } satisfies Meta
 
-export const MayBeCutShort: StoryObj = { ...voice({ tr: 'Keep the sort', more: true }, 'Keep the sort'), name: 'More words coming' }
-export const NoWordsHeard: StoryObj = { ...voice({ tr: '' }), name: 'No words heard' }
-export const NoTranscript: StoryObj = { ...voice({ tr: '', trError: 'Gemini HTTP 503' }), name: 'Writing it out failed' }
-export const UploadFailed: StoryObj = { ...voice({ f: '', tr: '', failed: true }), name: 'Upload failed' }
+export const MayBeCutShort: StoryObj = { ...voice({ transcript: 'fast' }, 'Keep the sort'), name: 'More words coming' }
+export const NoWordsHeard: StoryObj = { ...voice({ transcript: 'none' }), name: 'No words heard' }
+export const NoTranscript: StoryObj = { ...voice({ transcript: 'failed' }), name: 'Writing it out failed' }
+export const UploadFailed: StoryObj = { ...voice({ f: '', failed: true }), name: 'Upload failed' }

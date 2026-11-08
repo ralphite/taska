@@ -2,7 +2,8 @@
 
 An input is one thing the user says: typed words, a voice note, pictures and files, or several of them together. This
 is where it goes from the moment it is sent to the items it lands on. Each rule names where it was decided, so it can
-be checked one by one. How a voice note is written out: D121. Taska's own copy of this page in Chinese: D126 (B714).
+be checked one by one. How a voice note is written out: D121; every state of a voice message and what each place shows
+in it: [voice.md](voice.md). Taska's own copy of this page in Chinese: D126 (B714).
 
 ```mermaid
 flowchart TD

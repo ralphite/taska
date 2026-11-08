@@ -5,6 +5,7 @@
 import { useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
 import type { BoxLine, BoxRight, FeedbackLine } from '../../model/boxFoot'
 import { VC_MARK } from '../../model/voiceComments'
+import { sayIn } from '../../model/voiceStates'
 import { Icon, type IconName } from '../../ui/Icon'
 import { RecBar } from '../../ui/PlaceVoice'
 import { HIT, MUTED } from '../../ui/tones'
@@ -392,7 +393,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
         node = (
           <>
             <Pulse />
-            <span className="min-w-0 flex-1 truncate">Sent · transcribing…</span>
+            <span className="min-w-0 flex-1 truncate">{sayIn(line.state, 'line')?.say}</span>
             <Dismiss onClick={on.dismiss} />
           </>
         )
