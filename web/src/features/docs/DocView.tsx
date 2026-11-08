@@ -13,7 +13,7 @@ import type { SheetLook } from '../../ui/Sheet'
 import { MUTED, NEEDS_PILL, PRIMARY } from '../../ui/tones'
 import { BlockActs, type CountInfo } from './BlockActs'
 import { DocBlock } from './DocBlock'
-import { PlaceVoiceFloat } from '../../ui/PlaceVoice'
+import { PlaceVoiceFloat, itemWords, listItemOf } from '../../ui/PlaceVoice'
 import { DraftCard, NewDot, Thread, type DocEnv, type ThreadEvents } from './Thread'
 import type { NotSent } from '../../model/voiceComments'
 
@@ -188,8 +188,9 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
     for (const li of el.querySelectorAll('li[data-q]')) li.removeAttribute('data-q')
     const r = rows.find((x) => x.quote)
     if (!r) return
-    const li = [...el.querySelectorAll<HTMLElement>(`section[data-key="${CSS.escape(r.b.key)}"] li`)].find((l) => l.innerText.trim() === r.quote)
-    li?.setAttribute('data-q', '')
+    // found as its buttons find it, so they sit by the item lit (B715 r1176)
+    const sec = el.querySelector(`section[data-key="${CSS.escape(r.b.key)}"]`)
+    if (sec && r.quote) listItemOf(sec, r.quote)?.setAttribute('data-q', '')
   })
   const thread = (s: ShownThread, blockText?: string, rail = false) => (
     <Thread key={s.t.tk} t={s.t} blockText={blockText} rail={rail} isNew={s.isNew} done={s.done} doneAt={s.doneAt} replying={facts.replying === s.t.tk} asking={facts.asking} env={env} on={on} />
@@ -259,7 +260,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
                   if (t.closest('button, a, [data-ref]')) return
                   // on the phone a tap on one item of a list picks that item, as pointing at it does on the desktop
                   const li = desk ? null : t.closest<HTMLElement>('li')
-                  on.pick(r.b.key, li ? li.innerText.trim().slice(0, 500) : null, 'tap')
+                  on.pick(r.b.key, li ? itemWords(li) : null, 'tap')
                 }}
                 {...(r.picked || r.speaking ? { 'data-picked': '' } : {})}
                 className="group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 has-[li[data-hov]]:bg-transparent data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 lg:cursor-text lg:after:absolute lg:after:inset-y-0 lg:after:left-full lg:after:w-18 dark:hover:bg-zinc-800/50 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600 lg:[&_li[data-hov]]:rounded-md lg:[&_li[data-hov]]:bg-zinc-100 dark:lg:[&_li[data-hov]]:bg-zinc-800/70 [&_li[data-q]]:-mx-1 [&_li[data-q]]:rounded-md [&_li[data-q]]:bg-amber-50 [&_li[data-q]]:px-1 [&_li[data-q]]:ring-2 [&_li[data-q]]:ring-amber-300 dark:[&_li[data-q]]:bg-amber-950/40 dark:[&_li[data-q]]:ring-amber-600"
@@ -285,6 +286,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
                   // has no room under it): it never moves the words (B715 r1169); speaking, its recording strip (B498)
                   <PlaceVoiceFloat
                     rec={r.speaking}
+                    item={r.quote}
                     meter={meter}
                     say={{ 'data-part-say': '', 'data-key': r.b.key, 'data-quote': r.quote ?? '' }}
                     on={{ say: () => on.say(r.b.key, r.quote), comment: on.type, cancel: on.sayCancel, check: on.sayCheck }}
