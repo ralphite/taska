@@ -202,8 +202,9 @@ export function Thumbs({
 /** A file's size as a list says it: 34 KB, 1.2 MB. */
 export const sizeWord = (n: number) => (n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${Math.round(n / 1024)} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`)
 
+// as tall as a voice note's chip (h-9), so a row of files lines up (B733)
 const CHIP =
-  'inline-flex max-w-full min-w-0 items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-100/90 p-1.5 pr-3 shadow-2xs transition-colors hover:bg-zinc-200/80 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800'
+  'inline-flex h-9 max-w-full min-w-0 items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-100/90 p-0.5 pr-3 shadow-2xs transition-colors hover:bg-zinc-200/80 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800'
 
 /** An input's files as the lists of inputs draw them (T661): a voice note its chip (VoiceChip, r1165), a picture a chip with a small view of it, its name and size,
  * any other file a chip with its mark, name and size. */
@@ -211,8 +212,8 @@ export function FileChips({ files, url, play, tidy, on }: { files: FileRef[]; ur
   const pictures = files.filter(isImage).map((f) => f.f)
   const label = (f: FileRef) => (
     <span className="min-w-0 text-left font-mono">
-      <span className="block truncate text-xs font-medium text-zinc-800 dark:text-zinc-200">{f.name}</span>
-      {f.size ? <span className="block text-[10px] text-zinc-400">{sizeWord(f.size)}</span> : null}
+      <span className="block truncate text-xs leading-4 font-medium text-zinc-800 dark:text-zinc-200">{f.name}</span>
+      {f.size ? <span className="block text-[10px] leading-3 text-zinc-400">{sizeWord(f.size)}</span> : null}
     </span>
   )
   return (
@@ -225,7 +226,7 @@ export function FileChips({ files, url, play, tidy, on }: { files: FileRef[]; ur
         if (isImage(f))
           return (
             <button key={f.f} title={f.name} onClick={(e) => (e.stopPropagation(), on.view(f.f, pictures))} className={CHIP}>
-              <span className="h-8 w-11 shrink-0 overflow-hidden rounded border border-zinc-300 bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800">
+              <span className="h-full w-11 shrink-0 overflow-hidden rounded-md border border-zinc-300 bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800">
                 <Pic src={url(f.f)} alt={f.name} cls="size-full object-cover" />
               </span>
               {label(f)}
@@ -233,7 +234,7 @@ export function FileChips({ files, url, play, tidy, on }: { files: FileRef[]; ur
           )
         return (
           <a key={f.f} href={url(f.f)} target="_blank" rel="noopener" title={f.name} className={`${CHIP} gap-2.5`}>
-            <span className="grid size-8 shrink-0 place-items-center rounded border border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-900 dark:bg-teal-950/80 dark:text-teal-400">
+            <span className="grid aspect-square h-full shrink-0 place-items-center rounded-md border border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-900 dark:bg-teal-950/80 dark:text-teal-400">
               <Icon n="file" c="size-4" sw="2" />
             </span>
             {label(f)}
