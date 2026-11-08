@@ -41,7 +41,7 @@ export function AgentPill({ tone, label, offline }: { tone: AgentTone; label: st
   return offline ? (
     <OfflinePill />
   ) : (
-    <span className={`flex h-8 max-w-44 items-center gap-2 rounded-full px-3 text-[13px] font-medium ring-1 ring-inset ${PILL[tone][0]}`}>
+    <span className={`flex h-8 max-w-52 items-center gap-2 rounded-full px-3 text-[13px] font-medium ring-1 ring-inset ${PILL[tone][0]}`}>
       <span className={`size-2 shrink-0 rounded-full ${PILL[tone][1]}`} />
       <span className="truncate">{label}</span>
     </span>
