@@ -32,7 +32,7 @@ const LEVELS = [0.3, 0.75, 0.5, 0.95, 0.4, 0.65, 0.2, 0.85, 0.55, 0.35, 0.9, 0.6
 export const recMeter = (desk: boolean) => <RecBar time={clock(2000)} levels={LEVELS.slice(-(desk ? PLACE_LEVELS.desk : PLACE_LEVELS.phone))} />
 
 /** A document's handlers, each in the Actions panel (stories that draw a document's part alone). */
-export const docOn: DocEvents = acts('Document', ['copyDoc', 'ref', 'picture', 'play', 'words', 'view', 'edit', 'move', 'takeOff', 'remove', 'menu', 'resolve', 'reply', 'goItem', 'toggle', 'away', 'pick', 'say', 'sayCancel', 'sayCheck', 'saySend', 'type', 'moveDoc', 'deleteDoc', 'circle', 'editDoc', 'whole', 'tick', 'modifyTicks', 'sendTicks'] as const)
+export const docOn: DocEvents = acts('Document', ['copyDoc', 'ref', 'picture', 'play', 'words', 'view', 'edit', 'move', 'takeOff', 'remove', 'menu', 'resolve', 'reply', 'goItem', 'toggle', 'away', 'pick', 'say', 'sayCancel', 'sayCheck', 'saySend', 'type', 'moveDoc', 'deleteDoc', 'circle', 'editDoc', 'tick', 'modifyTicks', 'sendTicks'] as const)
 
 /** How you have the document open, and what is going on around it. */
 export interface DocHere {
@@ -45,8 +45,6 @@ export interface DocHere {
   typing?: boolean
   /** a web page's Comment mode (the desktop) */
   inspect?: boolean
-  /** the page's box under it comments on it (the rules page) */
-  boxBelow?: boolean
   /** Delete pressed once; a file's Take off asking ("unfile 12 <id> <file>") */
   asked?: Record<string, number>
   /** a paragraph's own mic records a comment about it (`bar`: from the bar over selected words) */
@@ -103,7 +101,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
   const env = { ...env0, play: media.play }
   const facts = factsOf(m, d, v, seen, desk, asked, speaking, ticks, h.notSent ?? [])
   const web = d.fmt === 'html'
-  // the page's docs.pick, toggle, away, reply, whole and type
+  // the page's docs.pick, toggle, away, reply and type
   const pick = (key: string, quote: string | null, by: 'button' | 'tap') => {
     if (v.circle) return
     if (desk && by === 'tap' && !v.sel.size) return
@@ -137,7 +135,6 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
     sayCheck: stopSaying(docActs.sayCheck),
     saySend: stopSaying(docActs.saySend),
     type: () => setV({ ...v, typing: true }),
-    whole: () => setV({ ...v, sel: new Set(), quote: { key: 'doc', text: '' }, reply: null, typing: true }),
     circle: () => setV({ ...v, circle: !v.circle, ...(!v.circle ? { quote: null } : {}) }),
     tick: (tk, i) => {
       const b = d.blocks[blockKeys(d).indexOf(tk)]
@@ -216,7 +213,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
       }}
     />
   )
-  const view = <DocView facts={facts} boxBelow={h.boxBelow} env={env} on={on} page={page} meter={recMeter(desk)} lasso={v.circle ? <Lasso onDrawn={(keys) => setV({ ...v, circle: false, sel: new Set(keys), quote: null })} /> : null} />
+  const view = <DocView facts={facts} env={env} on={on} page={page} meter={recMeter(desk)} lasso={v.circle ? <Lasso onDrawn={(keys) => setV({ ...v, circle: false, sel: new Set(keys), quote: null })} /> : null} />
   if (h.viewOnly)
     return (
       <>
@@ -231,7 +228,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
         place=""
         desk
         head={<DocPaneHead d={d} editing={false} />}
-        acts={<DocPaneActs web={web} inspect={inspect} whole={v.quote?.key === 'doc'} deleting={!!asked[deleting]} on={{ inspect: () => setInspect(!inspect), whole: () => (v.quote?.key === 'doc' ? setV({ ...v, quote: null }) : on.whole()), copy: paneActs.copy, edit: paneActs.edit, move: paneActs.move, remove: on.deleteDoc }} />}
+        acts={<DocPaneActs web={web} inspect={inspect} whole={v.quote?.key === 'doc'} deleting={!!asked[deleting]} on={{ inspect: () => setInspect(!inspect), whole: () => setV(v.quote?.key === 'doc' ? { ...v, quote: null } : { ...v, sel: new Set(), quote: { key: 'doc', text: '' }, reply: null, typing: true }), copy: paneActs.copy, edit: paneActs.edit, move: paneActs.move, remove: on.deleteDoc }} />}
         lead={<DocPaneNav to={facts.itemCode} onBack={paneActs.back} />}
         onBack={paneActs.back}
       >

@@ -18,6 +18,8 @@ const REMOVED: { why: string; gone: RegExp }[] = [
   { why: 'I693, r1118: no rule items: no rule type, no R code, no rule in force read from items (the rules are one document)', gone: /type: 'rule'|type [!=]== 'rule'|rule: 'R'|"rule": "R"|RULE_STATUS_WORD|rules_in_force|is_rule_in_force|type [!=]= "rule"/ },
   { why: 'B712: one voice note chip everywhere (VoiceChip): no pill in your bubble, no line in a thread, no pill in the input lists', gone: /\bVoicePill\b|\bVoiceLine\b|Pause the voice note/ },
   { why: 'I693, r1118: no rule list, rule rows or rule item page (Active, Retired, Retire, Reactivate)', gone: /['"]Retire['"]|['"]Reactivate['"]|No matching rules|['"]no-rules['"]|zone: 'rules'|ItemRowSwipeRules|ItemPageRules|label: 'Active'|label: 'Retired'/ },
+  { why: 'B715 r1169: no hint at the end of a document on the phone ("Tap, select or circle to comment", a web page\'s "Tap a part to comment")', gone: /Tap, select or circle to comment|Tap a part to comment/ },
+  { why: 'B715 r1169: no "Comment on the whole document" at the end of a document on the phone, nor its spoken comment on the whole document', gone: /Comment on the whole document|wholeButton|wholeRec/ },
   { why: 'B682: a voice note shows its words (or that they are coming, or that none were heard), never "Voice note" in their place', gone: /(isAudio|audio\/)[^\n]*['"]Voice note['"]/ },
 ]
 

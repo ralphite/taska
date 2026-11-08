@@ -493,15 +493,15 @@ test('r562: a resolved thread on a web page looks done, as beside a paragraph (B
   await expect.poll(async () => (await bg('r1')) !== (await bg('r3'))).toBe(true) // the open one stays amber
 })
 
-test('r687: on the phone the line under a web page asks for a tap on a part: words selected there are only selected (B502)', async ({
+test('B715 r1169: on the phone no line under a web page tells how to comment (r687 B502 asked one; Yadong deleted it)', async ({
   page,
   request,
 }) => {
-  test.skip(isDesk(page), 'the line is under the page on the phone')
+  test.skip(isDesk(page), 'the line was under the page on the phone')
   const p = await project(request, { ...LOOP, then: ROWS })
   await open(page, p, 'D1')
   await expect(page1(page).getByText('Write CSV')).toBeVisible()
-  await expect(page.getByText('Tap a part to comment')).toBeVisible()
+  await expect(page.getByText('Tap a part to comment')).toHaveCount(0)
   await expect(page.getByText(/select text or circle/)).toHaveCount(0)
 })
 

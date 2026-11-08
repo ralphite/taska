@@ -75,10 +75,6 @@ export interface DocFacts {
   circle: boolean
   replying: string | null
   asking: string | null
-  /** the phone shows Comment on the whole document */
-  wholeButton: boolean
-  /** the phone's comment on the whole document is being spoken */
-  wholeRec: boolean
 }
 
 export interface DocEvents extends ThreadEvents {
@@ -100,7 +96,6 @@ export interface DocEvents extends ThreadEvents {
   copyDoc(): void
   circle(): void
   editDoc(): void
-  whole(): void
   tick(tk: string, i: number): void
   modifyTicks(tk: string): void
   /** the phone's Send choices, in the document's own line (it has no box over a document, B643) */
@@ -159,7 +154,7 @@ function Outline({ heads, onJump }: { heads: DocFacts['outline']; onJump(key: st
   )
 }
 
-export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAimed, boxBelow = false }: {
+export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAimed }: {
   facts: DocFacts
   env: DocEnv
   on: DocEvents
@@ -173,8 +168,6 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
   page?: ReactNode
   /** the recording's time and level, for the strip of the place it is about (B498) */
   meter?: ReactNode
-  /** the page's box under it comments on the whole document (the rules): no Comment on the whole document (F706) */
-  boxBelow?: boolean
 }) {
   const { d, rows, desk } = { ...facts, desk: env.desk }
   const web = d.fmt === 'html'
@@ -352,22 +345,6 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
             ))}
           </div>
         ) : null}
-        {desk ? null : (
-          <>
-            <p className={`mt-6 text-center text-xs ${MUTED}`}>{web ? 'Tap a part to comment' : 'Tap, select or circle to comment'}</p>
-            {boxBelow ? null : facts.wholeRec ? (
-              // speaking about the whole document: its button is the recording strip (B498)
-              <div className="mx-auto mt-1 w-full max-w-sm">
-                <PlaceVoiceRow rec meter={meter} on={{ say: on.whole, comment: on.type, cancel: on.sayCancel, check: on.sayCheck }} />
-              </div>
-            ) : facts.wholeButton ? (
-              <button onClick={on.whole} className="mx-auto mt-1 flex h-11 items-center gap-1.5 px-3 text-sm font-semibold text-blue-600 dark:text-blue-400">
-                <Icon n="mic" c="size-4" />
-                Comment on the whole document
-              </button>
-            ) : null}
-          </>
-        )}
       </div>
     </div>
   )

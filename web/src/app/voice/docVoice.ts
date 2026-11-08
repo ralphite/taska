@@ -54,7 +54,7 @@ export class DocVoice {
     return doc && m && m.byN.has(liveN(m, doc.n)) ? codeOf(m, liveN(m, doc.n)) : null
   }
 
-  /** A place's Voice (a paragraph, a part of a web page, the whole document): speak about it; it turns into the
+  /** A place's Voice (a paragraph, a part of a web page): speak about it; it turns into the
    * recording strip there, whose ✓, ↑ and ✕ stop it (B498). Pressed while it records, it is ✓. */
   async say(slug: string, dn: number, key: string, quote: string): Promise<void> {
     if (this.d.recording.getState().rec) return this.check()

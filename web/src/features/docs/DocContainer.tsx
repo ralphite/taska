@@ -95,8 +95,6 @@ export function useDoc(slug: string, dn: number) {
     copyDoc: () => app.docs.copy(dn),
     circle: () => stores.docView.getState().setCircle(!v.circle),
     editDoc: () => app.docEditor.edit(dn),
-    // the phone has no box over a document (B643): a comment on the whole of it is spoken
-    whole: () => (desk ? docs.whole() : void app.docVoice.say(slug, dn, 'doc', '')),
     tick: (tk, i) => app.docChoices.tick(dn, tk, i),
     modifyTicks: (tk) => app.docChoices.modifyTicks(dn, tk),
     // the box line's Send choices, from the document's own line (the phone's): the draft the box would write now

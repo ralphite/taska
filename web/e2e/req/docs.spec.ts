@@ -213,12 +213,11 @@ test('r736 #6754: what is written in the box goes with Send choices as their not
   await expect.poll(() => p.read('D1')).toMatch(/\[x\] Pears/i)
 })
 
-test('r280 B340 B643: on the phone a comment needs no place picked: it is on the whole document, spoken', async ({
+test('B643 B715 r1169: on the phone a document opens with no box, and nothing at its end to comment on the whole of it', async ({
   page,
   request,
 }) => {
-  // on the desktop, Yadong decided later (B340, D24 #6): nothing picked, the box replies to the item the document is on
-  test.skip(isDesk(page), 'the desktop replies to the item when nothing is picked (B340)')
+  test.skip(isDesk(page), "the desktop's bar has Comment for the whole document (r1095)")
   const p = await project(request, {
     ...LOOP,
     then: `${LOOP.then}T4 doc The plan
@@ -228,15 +227,11 @@ test('r280 B340 B643: on the phone a comment needs no place picked: it is on the
 `,
   })
   await open(page, p, 'D1')
-  // B643 (r955): no box over a document on the phone; nothing picked, its comment is on the whole of it, spoken
+  await expect(docBlock(page, 'Second part')).toBeVisible()
+  // B643 (r955): no box over a document on the phone; B715 (r1169): no hint and no Comment on the whole document
   await expect(page.locator('#composer')).toBeHidden()
-  await page.getByRole('button', { name: 'Comment on the whole document', exact: true }).click()
-  // recording (B498): its button is the recording strip: ✕, the time and ✓, which posts it; no ↑ (r1062)
-  await expect(placeRec(page)).toHaveCount(1)
-  await expect(sayCheck(page)).toHaveCount(1)
-  await expect(saySend(page)).toHaveCount(0)
-  await sayCancel(page).click()
-  await expect(placeRec(page)).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Comment on the whole document' })).toHaveCount(0)
+  await expect(page.getByText('Tap, select or circle to comment')).toHaveCount(0)
 })
 
 test("r292 r298: any comment on a document can be deleted, yours and an agent's", async ({ page, request }) => {

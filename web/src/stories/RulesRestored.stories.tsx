@@ -26,7 +26,7 @@ export const RestoredWithUndo: StoryObj = {
         const x = RESTORED.at(-1) as RuleVersion
         return (
           <div className="flex h-full flex-col">
-            <RulesReading f={{ desk, place: '' }} sub={`v${x.v} · ${ruleWho(x.by)} · ${when(x.t, envOf(modelOf([]), desk).now)}`} proposals={[]} doc={docAt(rulesDocOf(RESTORED, []), desk, { viewOnly: true, boxBelow: true })} on={on} />
+            <RulesReading f={{ desk, place: '' }} sub={`v${x.v} · ${ruleWho(x.by)} · ${when(x.t, envOf(modelOf([]), desk).now)}`} proposals={[]} doc={docAt(rulesDocOf(RESTORED, []), desk, { viewOnly: true })} on={on} />
             <Toast toast={{ text: 'Restored v4', error: false, sticky: true, action: { label: 'Undo' } }} place="bottom-6 left-1/2 w-max -translate-x-1/2" onAction={on.undo} onClose={on.close} />
           </div>
         )

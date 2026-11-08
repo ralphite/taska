@@ -75,9 +75,6 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
     circle: v.circle,
     replying: v.reply,
     asking: Object.keys(asked).find((k) => k.startsWith(`unfile ${d.d} `))?.slice(`unfile ${d.d} `.length) ?? null,
-    wholeButton: !(v.typing && !v.sel.size && !v.quote && !v.reply),
-    // the phone's comment on the whole document is spoken: its button is the recording strip meanwhile
-    wholeRec: !desk && speaking != null && !speaking.bar && speaking.key === 'doc',
   }
 }
 
