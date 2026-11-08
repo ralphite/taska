@@ -180,7 +180,10 @@ test('r485 r497 B640: pointing at a voice note shows its original words at once,
     const [t, c] = [await tip.boundingBox(), await chip.boundingBox()]
     if (!t || !c) throw new Error('not drawn')
     expect(t.y + t.height <= c.y + 1 || t.y >= c.y + c.height - 1, 'above or below the note, not over it').toBe(true)
-    expect(asked).toEqual([])
+    // T697: the words are in the tip at once; one read of the note's record (a GET) may follow for the steps that
+    // worked them out, and nothing writes the note down again (no POST: that took seconds, r485, B363)
+    expect(asked.length).toBeLessThanOrEqual(1)
+    expect(asked.filter((m) => m !== 'GET')).toEqual([])
     return
   }
   // the phone, with no pointing: a small icon at the end of the note, no words in a line of their own
