@@ -196,3 +196,45 @@ test('B719 r1178: replying keeps the talk at its end and it never jumps: the box
   await page.waitForTimeout(500)
   expect(await reply(), 'the reply: at its end all along, never up, shown once').toEqual({ off: 0, up: 0, shown: 1 })
 })
+
+test('B721 r1183: scrolled up right after an item opens, the talk stays where you scrolled it, never pulled back to its end; the phone (a finger) as the desktop (the wheel)', async ({
+  page,
+  request,
+}) => {
+  const steps = Array.from({ length: 8 }, (_, i) => `T1 say Step ${i + 1} done\n${lines(6, `Step ${i + 1}`)}`).join('\n')
+  const p = await project(request, {
+    agent: `new task P1 now Notes from the call\n${lines(30, 'Body')}\n`,
+    approve: ['T1'],
+    then: `${steps}\nT1 say The last word so far\n`,
+  })
+  // how far what scrolls the talk is from its end
+  const away = () =>
+    page.evaluate(() => {
+      const talk = [...document.querySelectorAll<HTMLElement>('[data-item-talk]')].find((e) => e.getClientRects().length)
+      let sc: HTMLElement | null = talk ?? null
+      while (sc && !/auto|scroll/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement
+      return sc ? Math.round(sc.scrollHeight - sc.clientHeight - sc.scrollTop) : -1
+    })
+  for (const wait of [150, 500]) {
+    await open(page, p, 'T1')
+    await expect(page.getByText('The last word so far', { exact: true }).filter({ visible: true }).last()).toBeInViewport()
+    await page.waitForTimeout(wait) // still settling: its own scrolls to the end on opening not all done
+    if (isDesk(page)) {
+      const at = await page.locator('[data-item-talk]').filter({ visible: true }).first().boundingBox()
+      await page.mouse.move(at!.x + at!.width / 2, at!.y + at!.height / 2)
+      await page.mouse.wheel(0, -300)
+    } else {
+      const cdp = await page.context().newCDPSession(page)
+      await cdp.send('Input.synthesizeScrollGesture', { x: 196, y: 300, yDistance: 300, speed: 1500, gestureSourceType: 'touch' })
+      await cdp.detach()
+    }
+    await expect.poll(away).toBeGreaterThan(100)
+    const left = await away()
+    const seen: number[] = []
+    for (let i = 0; i < 50; i++) {
+      seen.push(await away())
+      await page.waitForTimeout(30)
+    }
+    expect(Math.min(...seen), `opened ${wait} ms before: stays scrolled up (${seen.join(',')})`).toBeGreaterThanOrEqual(left - 20)
+  }
+})
