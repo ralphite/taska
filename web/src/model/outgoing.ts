@@ -1,6 +1,6 @@
 // What you sent that Taska does not have yet: each input on its way, with its files, and how the lists say it.
 
-import type { FileRef, Voice } from './types'
+import type { FileRef, Input, Message, Voice } from './types'
 import { voiceLacks, voiceWords } from './voices'
 
 export interface OutFile extends FileRef {
@@ -45,6 +45,17 @@ export interface Outgoing {
 /** Whether it shows as on its way: one sent before a reload whose file goes up again shows once it is up, as the page
  * always has (it is sent all the same). */
 export const showsOnItsWay = (o: Pick<Outgoing, 'back' | 'files'>) => !(o.back && o.files.some((f) => f.uploading))
+
+/** What you sent that a talk has already, by the page's own id for it: Taska's news of it can come before its answer
+ * to the send, and then it shows there, not a second time on its way (B719 r1178: shown twice a moment, then one went
+ * and the talk jumped). */
+export const inTalk = (thread: readonly Pick<Message, 'by' | 'src'>[], inputs: ReadonlyMap<string, Pick<Input, 'q'>>): ReadonlySet<string> =>
+  new Set(
+    thread.flatMap((x) => {
+      const q = x.by === 'you' && x.src ? inputs.get(x.src)?.q : undefined
+      return q ? [q] : []
+    }),
+  )
 
 /** A voice note on its way, its words: those it had in the box, else its record's (`voices`), else the words Taska
  * gave for it; '' while there are none. */

@@ -112,6 +112,8 @@ export interface Input {
   v: number
   /** answer: a form sent on its item; cancelled: a recording cancelled with Esc, kept, not sent (B627) */
   kind?: 'answer' | 'cancelled'
+  /** the page's own id for it, as it was sent (its outbox entry's): one still on its way that Taska has shows once */
+  q?: string
   history?: { text: string; t: string; mode: string }[]
   updated?: string
   moved?: { to: string; as: string }

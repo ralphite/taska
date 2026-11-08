@@ -14,7 +14,7 @@ import { answerOf, latestMessage } from '../../model/talk'
 import type { Item } from '../../model/types'
 import { inTab, tabOf } from '../../model/visible'
 import type { Tab } from '../../model/words'
-import { outgoingLine, outgoingState, outgoingText, showsOnItsWay } from '../../model/outgoing'
+import { inTalk, outgoingLine, outgoingState, outgoingText, showsOnItsWay } from '../../model/outgoing'
 import { withVoice } from '../../model/voices'
 import { isAudio } from '../../ui/Files'
 import { ItemPage, type ItemEvents, type ItemFacts } from './ItemPage'
@@ -72,7 +72,8 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   const picked = app.answers.picked(it)
   const choosing = { picked, pick: (i: number, multi: boolean) => app.answers.pick(it, i, multi) }
 
-  const mine = outbox.filter((o) => o.slug === slug && o.scope === ref && showsOnItsWay(o))
+  const shown = inTalk(it.thread, m.byId)
+  const mine = outbox.filter((o) => o.slug === slug && o.scope === ref && showsOnItsWay(o) && !shown.has(o.q))
   const answering = mine.filter((o) => o.kind === 'answer').at(-1)
   const outgoing: Outgoing[] = mine
     .filter((o) => !(o.kind === 'answer' && !o.files.length))
