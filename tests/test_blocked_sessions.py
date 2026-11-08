@@ -171,6 +171,7 @@ class OverHttp(unittest.TestCase):
                 except OSError:
                     time.sleep(0.03)
             p = "/p/" + json.loads(call("/api/projects", {"title": "Sessions"}))["name"]
+            self.assertIn(b'"&sid=$CLAUDE_CODE_SESSION_ID$CODEX_THREAD_ID"', call(p + "/agent"))
             call(p + f"/next?by=claude-code&session=Fix%20export&sid={CC}")
             call(p + f"/do?by=codex&session=Docs&sid={CX}", b"ack r999\n")
             rows = {r["name"]: r for r in json.loads(call(p + "/api/view"))["project"]["agents"]}

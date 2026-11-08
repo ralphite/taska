@@ -60,7 +60,9 @@ AGENT = (
     "  curl -s BASE/D1           a document: numbered paragraphs (¶) with the user's comments under each\n"
     '  curl -s BASE/log?n=30     recent changes\n'
     '  optional on any call: &session=<the title your app shows for this session> (or the header X-Taska-Session), so\n'
-    '                            the user can tell your sessions apart\n'
+    '                            the user can tell your sessions apart; and "&sid=$CLAUDE_CODE_SESSION_ID$CODEX_THREAD_ID"\n'
+    '                            (the shell fills in your session\'s id; keep the URL in double quotes), so the user\n'
+    '                            sees when the session waits on them\n'
     '\n'
     '{grammar}\n'
     "  curl -s BASE/do --data-binary @- <<'EOF'\n"
