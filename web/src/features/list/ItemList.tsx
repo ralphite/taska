@@ -68,6 +68,18 @@ export interface ItemListProps {
 
 const NO_SWIPE: RowSwipe = { right: () => null, blocked: () => true }
 
+/** What the rows show, as one string: it changes when the list is drawn anew (a row comes, goes or moves, its item
+ * changes: Done, Later, Won't do, a subitem done), not each time the page draws it the same (T589 #10486). */
+export function drawingKey(rows: DrawnRow[]): string {
+  return rows
+    .map((r) => {
+      if (r.kind !== 'item' && r.kind !== 'needs') return JSON.stringify(r)
+      const it = r.it
+      return [r.key, it.status, it.when, it.later_until ?? '', it.archived ? 1 : 0, it.wait ? 1 : 0, it.t1, r.facts.openKids, r.said ?? ''].join(':')
+    })
+    .join(',')
+}
+
 export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemList(props, ref) {
   const { loading, views, ownViews, rows, empty, top, viewsLead, viewsMore, on, dragging = null, desk = false, swipe, openN = null, itemShown = false, listKey = '' } = props
   const own = useRef<HTMLDivElement | null>(null)
@@ -93,7 +105,7 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
     if (!was || was.loading || openN === was.n || listKey !== was.list) return
     row?.scrollIntoView({ block: 'nearest' })
   }, [openN, desk, listKey, loading, itemShown, rows])
-  useRowSwipe(own, !desk && !!swipe, swipe ?? NO_SWIPE, rows)
+  useRowSwipe(own, !desk && !!swipe, swipe ?? NO_SWIPE, drawingKey(rows))
   const rowOf = (t: EventTarget) => (t as Element).closest?.<HTMLElement>('article[data-n]') ?? null
   return (
     <div

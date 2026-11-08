@@ -1,5 +1,7 @@
 // The phone's swipe on a row (the item list's, the Inputs tab's: D115 #42). Right: its way forward (Done, Approve,
-// Accept, Archive; an answer opens its card; an input opens the item it became); the row slides out first. Left: the ways back sit under the row and stay open until a tap anywhere else. Nothing new
+// Accept, Archive; an answer opens its card; an input opens the item it became); the row slides out first. Left: the
+// ways back sit under the row until a tap anywhere else, one of them is tapped, another row is swiped or the rows are
+// drawn anew (T589 #10486: a row left open over a list that changed under it showed its layer there). Nothing new
 // shows until the finger really moves sideways (iPhone Safari takes a tap that reveals content as a hover and never
 // sends the click); a sideways swipe keeps the list still; the screen's left edge is the phone's own Back. The row
 // only moves with a transform while you swipe. A row whose list says so opens its menu on a long press (held still for
@@ -42,6 +44,16 @@ export function showSwiped(el: HTMLElement, dx: number): void {
   slideTo(el, dx)
 }
 
+/** Every row of `list` slid back closed, but `but` (the one under the finger). */
+export function closeRows(list: HTMLElement, but: HTMLElement | null = null): void {
+  list.querySelectorAll<HTMLElement>('[data-swipe]').forEach((el) => {
+    if (el === but) return
+    const shown = [layer(el, 'left'), layer(el, 'right')].some((l) => l && !l.hidden)
+    if (el.style.transform || shown) slideTo(el, 0)
+  })
+}
+
+/** `rowsKey` changes when the rows are drawn anew (what they show, or which rows they are): each is then closed. */
 export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boolean, opts: RowSwipe, rowsKey: unknown): void {
   const told = useRef(opts)
   useEffect(() => {
@@ -49,9 +61,13 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
   })
   const s = useRef({ el: null as HTMLElement | null, open: null as HTMLElement | null, swallow: 0, x0: 0, y0: 0, mode: null as null | 'h' | 'v', dx: 0, reveal: 0, base: 0, hold: 0, held: null as HTMLElement | null })
   useEffect(() => {
-    // rows drawn again are drawn closed: a stale one would swallow the next tap
-    s.current.open = s.current.el = null
-  }, [rowsKey])
+    // rows drawn again are drawn closed (a stale one would swallow the next tap and show its layer over the list); a
+    // row under the finger goes on with its swipe
+    const w = s.current
+    if (w.el && !w.el.isConnected) w.el = null
+    w.open = null
+    if (listRef.current) closeRows(listRef.current, w.el)
+  }, [rowsKey, listRef])
   useEffect(() => {
     const list = listRef.current
     if (!list || !enabled) return
@@ -142,7 +158,8 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
       w.el.style.transition = ''
       w.el = null
     }
-    // a tap right after a swipe is not a tap; a tap anywhere but the open row's buttons closes it
+    // a tap right after a swipe is not a tap; a tap anywhere but the open row's buttons closes it; one of its
+    // buttons does what it says and closes it too
     const click = (e: MouseEvent) => {
       const held = w.held
       w.held = null
@@ -151,11 +168,12 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
         e.stopPropagation()
         return
       }
-      if (w.open && !(e.target as Element).closest('[data-swipe-right]')) {
-        close()
-        e.preventDefault()
-        e.stopPropagation()
-      }
+      if (!w.open) return
+      const its = (e.target as Element).closest('[data-swipe-right]')
+      close()
+      if (its) return
+      e.preventDefault()
+      e.stopPropagation()
     }
     list.addEventListener('touchstart', start, { passive: true })
     list.addEventListener('touchmove', move, { passive: false })
