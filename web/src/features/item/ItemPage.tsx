@@ -345,10 +345,10 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     sc.addEventListener('scroll', seen, { passive: true })
     for (const part of [el, el.firstElementChild]) if (part) ro.observe(part)
     ro.observe(sc, { box: 'border-box' }) // what scrolls it resized: the box grew as you wrote, shrank as you sent (B719)
-    // the item opens at its latest message, again a moment later as the page settles (pictures, the parts above)
+    // the item opens at its latest message, again a moment later as the page settles (pictures, the parts above),
+    // unless you scrolled away from it by then: your first scroll is never pulled back (B721 r1183)
     const toLast = () => {
-      sc.scrollTop = sc.scrollHeight
-      end = true
+      if (end) sc.scrollTop = sc.scrollHeight
     }
     const timers = go ? [120, 400, 1000].map((ms) => setTimeout(toLast, ms)) : []
     return () => {
