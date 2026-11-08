@@ -5,7 +5,7 @@
 import { becameOf, failWhy } from './became'
 import { allComments, docTarget, type DocTarget } from './docs'
 import { ticksNotSent, type TickState } from './docTicks'
-import { draftName } from './draftTarget'
+import { draftName, draftTarget } from './draftTarget'
 import { oneLine } from './items'
 import { plainQuote } from './markdown'
 import { codeOf, liveN, type ProjectModel } from './project'
@@ -145,6 +145,17 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
   if (open && m) return { ...none, scope: codeOf(m, open.n), doc: docOf ? docOf.d : null, line: null, placeholder: `Reply to ${codeOf(m, open.n)}…`, send: 'Send' }
   // a new input: no line, the New input page's head says what it is (Yadong, r583 and r1092: that line is gone)
   return { ...none, scope: null, doc: null, line: null, placeholder: m ? `Write to ${title}…` : 'Write anything…', send: 'Send' }
+}
+
+/** Whether the box shows a recording (its time and level, and where it goes when that is another draft): not one
+ * whose own strip is in sight, where the box stays as it was and the page under it never moves (B498): a voice
+ * comment from the bar on a selection or about a document in view, or more said into an input from its row in the
+ * list under the box (the desktop's New input page, B720). `list`: that list is shown; `key`: the box's own draft. */
+export function boxShowsRecording(rec: { key: string; about?: { d: number | null; bar: boolean } | null }, here: { place: ProjectPlace['place']; list: boolean; key: string }): boolean {
+  const a = rec.about
+  if (a && (a.bar || (here.place.kind === 'doc' && here.place.d === a.d))) return false
+  const t = draftTarget(rec.key)
+  return !(here.list && t.kind === 'amend' && t.mode === 'append' && rec.key !== here.key)
 }
 
 /** What the box shows with what it holds: voice comments in a document's box (Send posts each beside its paragraph),

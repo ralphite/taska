@@ -3,9 +3,10 @@
 import { describe, expect, it as test } from 'vitest'
 import { doc } from '../stories/docFixtures'
 import { input, item, modelOf } from '../stories/fixtures'
-import { boxRole, feedbackLine, shownBox } from './boxFoot'
+import { boxRole, boxShowsRecording, feedbackLine, shownBox } from './boxFoot'
 import type { TickState } from './docTicks'
 import type { Outgoing } from './outgoing'
+import { draftKey } from './draftTarget'
 import { codeOf } from './project'
 import { NO_FILTERS, type Route } from './route'
 
@@ -69,6 +70,24 @@ describe('what the box writes to', () => {
     expect(shownBox(role, { mode: { kind: 'correct', id: 'r7', wrong: 'filtre', v: 1 }, text: 'filter', key: 'correct r7', recordingFor: null }).line?.label).toBe('Correct “filtre”')
     const plain = boxRole(m, at({ kind: 'tab' }), true, 'taska', null, nothing, noTicks)
     expect(shownBox(plain, { mode: null, text: '', key: 'new', recordingFor: code }).line?.label).toBe(`Recording for ${code}`)
+  })
+})
+
+describe('a recording in the box', () => {
+  const row = draftKey({ kind: 'amend', mode: 'append', id: 'r7' })
+  const list = { place: at({ kind: 'tab' }).place, list: true, key: 'new' }
+  test('more said into an input from its row: its strip there says it, the box adds nothing and the list never moves (B720, B498)', () => {
+    expect(boxShowsRecording({ key: row }, list)).toBe(false)
+    // no list in sight (another page): the box says where it goes
+    expect(boxShowsRecording({ key: row }, { ...list, list: false })).toBe(true)
+    // the box's own Add to #7 recording: the box's
+    expect(boxShowsRecording({ key: row }, { ...list, key: row })).toBe(true)
+    expect(boxShowsRecording({ key: 'new' }, list)).toBe(true)
+  })
+  test('a voice comment about a place in sight: its strip there', () => {
+    expect(boxShowsRecording({ key: 'new', about: { d: 1, bar: true } }, list)).toBe(false)
+    expect(boxShowsRecording({ key: 'new', about: { d: 1, bar: false } }, { ...list, place: at({ kind: 'doc', d: 1 }).place })).toBe(false)
+    expect(boxShowsRecording({ key: 'new', about: { d: 1, bar: false } }, list)).toBe(true)
   })
 })
 
