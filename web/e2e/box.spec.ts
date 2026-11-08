@@ -232,8 +232,9 @@ test('F657: a line\u2019s Voice records right there and adds the note to that in
   await expect(stop).toBeVisible()
   await expect(row.getByRole('status', { name: 'Recording' })).toContainText('0:01')
   await stop.click()
-  await expect.poll(() => p.read(id), { timeout: 15000 }).toMatch(/files: \S*voice_0-\d\d\.webm/)
-  expect((await p.read(id)).match(/voice_/g)).toHaveLength(1) // the note let go with Esc is not there
+  // each voice note as agents read it (B682): "voice 0:01: <its words>"
+  await expect.poll(() => p.read(id), { timeout: 15000 }).toMatch(/^\s*voice 0:\d\d: /m)
+  expect((await p.read(id)).match(/^\s*voice /gm)).toHaveLength(1) // the note let go with Esc is not there
   await expect(stop).toHaveCount(0)
   await expect(field(page)).toHaveValue('')
 })
