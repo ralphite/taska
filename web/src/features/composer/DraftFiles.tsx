@@ -17,10 +17,13 @@ export interface DraftFile {
   transcribing?: boolean
   more?: boolean
   trError?: string
+  /** Taska refused its upload: it was not sent up (B725) */
+  failed?: boolean
 }
 
 const voiceWord = (f: DraftFile) =>
-  f.transcribing ? 'Transcribing…'
+  f.failed ? 'Upload failed'
+  : f.transcribing ? 'Transcribing…'
     : f.more
       ? 'Partial · more coming'
       : f.tr
@@ -39,7 +42,7 @@ export function DraftFiles({ files, url, onRemove, onView }: { files: readonly D
               <Icon n="mic" c="size-4" />
               <span className="font-mono tabular-nums">{clock(f.ms || 0)}</span>
               <span
-                className={`font-semibold ${f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.more ? 'max-w-40 leading-snug text-amber-700 dark:text-amber-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}`}
+                className={`font-semibold ${f.failed ? 'text-red-600 dark:text-red-400' : f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.more ? 'max-w-40 leading-snug text-amber-700 dark:text-amber-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}`}
               >
                 {voiceWord(f)}
               </span>
