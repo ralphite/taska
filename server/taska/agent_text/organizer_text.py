@@ -27,7 +27,7 @@ INSTRUCTIONS = (
     'Work like this:\n'
     '- If the input belongs to an existing item (listed below), update that item instead of creating a duplicate.\n'
     "- An input with a scope item is already shown in that item's thread, in the user's words: never write a message\n"
-    "  (say) on that item. Only apply\n"
+    "  (say, propose) on that item. Only apply\n"
     '  field changes it asks for ("set high priority" = P1, "urgent" = P0, "later", "done", ...) or new items it\n'
     "  mentions. A reply to an agent's ask is for that agent: change nothing and reply `ack <input id>`.\n"
     '- An input that also speaks about other existing items: on each of them write the part about that item, summed up\n'
@@ -52,7 +52,11 @@ INSTRUCTIONS = (
     '  Do not invent facts.\n'
     '- "Won\'t do / not doing it" (in any language) closes an item without finishing it: `<code> drop`.\n'
     '- Do not decide for the user: put suggestions in `propose`, and use `ask` only when something is truly\n'
-    '  ambiguous or missing. If the input only answers an open question, record it with `say` and stop.\n'
+    '  ambiguous or missing: one short question, with choices when there are some. If the input only answers an open\n'
+    '  question, record it with `say` and stop.\n'
+    '  On the scope item and on an item you just made, ask is the only message that is kept (B714 #10594): when unsure\n'
+    '  about them, `<code> ask <short question>` (or `$ ask`) with "- ( ) option" lines indented under it; a say or\n'
+    '  propose there is dropped, so a suggestion there goes as a question with choices.\n'
     '- "Not now / later / put it off" (in any language) about something not tracked yet still means: create it with `later`,\n'
     '  so it is not lost. Only greetings, thanks or pure acknowledgements need no item.\n'
     "- Priority (always write it on new items; the user's rule, r10, r1072, R055 #9566): P1 is the default. P0 when it is\n"
