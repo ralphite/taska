@@ -5,6 +5,8 @@ import { useState, type ReactNode } from 'react'
 import { AVATAR_LETTER, plural } from '../model/words'
 import { Icon, StateIcon, type IconName } from './Icon'
 import { MUTED } from './tones'
+import CLAUDE_CODE from './agent-icons/claude-code.png'
+import CODEX from './agent-icons/codex.png'
 
 const BONE = 'rounded-md bg-zinc-200 dark:bg-zinc-800'
 const WIDE = ['w-3/4', 'w-1/2', 'w-2/3', 'w-5/12', 'w-7/12']
@@ -56,11 +58,27 @@ export function ProjTile({ title, tone, cls = 'size-5 rounded-md text-[11px]' }:
   )
 }
 
-/** An agent's mark. */
-export function Avatar({ by }: { by: string }) {
-  return (
+/** The agents drawn by their app's own icon (64 px copies of the apps' icons); the others keep their letter. */
+const AGENT_ICON: Record<string, string> = { 'claude-code': CLAUDE_CODE, codex: CODEX }
+
+/** An agent's mark: its app's icon, else its letter; `dot` (a dot's colour) sits on its corner. */
+export function Avatar({ by, dot }: { by: string; dot?: string }) {
+  const src = AGENT_ICON[by]
+  const mark = src ? (
+    // Codex's tile is near black: a faint edge keeps it apart from a dark page
+    <img src={src} alt="" draggable={false} className={`size-5 shrink-0 rounded-md select-none ${by === 'codex' ? 'dark:ring-1 dark:ring-white/15' : ''}`} />
+  ) : (
     <span className="grid size-5 shrink-0 place-items-center rounded-md bg-zinc-900 text-[10px] font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
       {AVATAR_LETTER[by] || String(by || '?')[0].toUpperCase()}
+    </span>
+  )
+  if (!dot) return mark
+  return (
+    <span className="relative flex shrink-0">
+      {mark}
+      <span className="absolute -top-1 -right-1 rounded-full bg-white p-0.5 dark:bg-zinc-950">
+        <span className={`block size-2 rounded-full ${dot}`} />
+      </span>
     </span>
   )
 }

@@ -34,7 +34,7 @@ export const AGENT_NAME: Record<string, string> = {
   antigravity: 'Antigravity',
   agent: 'Agent',
 }
-/** An agent's mark: one letter of its own (A is any agent's). */
+/** An agent's mark where it has no app icon (ui/bits Avatar): one letter of its own (A is any agent's). */
 export const AVATAR_LETTER: Record<string, string> = { 'claude-code': 'C', codex: 'X', antigravity: 'V', org: 'O', agent: 'A' }
 
 

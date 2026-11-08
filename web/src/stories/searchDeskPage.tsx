@@ -14,7 +14,7 @@ import { codeOf, type ProjectModel } from '../model/project'
 import { NO_FILTERS, parseRoute } from '../model/route'
 import { latestMessage } from '../model/talk'
 import type { Item, ProjectRow } from '../model/types'
-import { ProjectBar } from '../pages/Header'
+import { ProjectBar, type AgentInfo } from '../pages/Header'
 import { agentInfo, deskTabs, tabCounts } from '../pages/headFacts'
 import { toneOf } from '../ui/tones'
 import { pageOf } from './itemPage'
@@ -61,9 +61,11 @@ function DeskBox({ m, n }: { m: ProjectModel; n: number }) {
   )
 }
 
-/** The desktop's project page: the sidebar (or its rail), the project's bar, the list, the item open in its pane. */
-export function DeskPage({ slug, n, rail, onSearch }: { slug: string; n: number; rail: boolean; onSearch(): void }) {
-  const m = modelFor(slug)
+/** The desktop's project page: the sidebar (or its rail), the project's bar, the list, the item open in its pane.
+ * `model`: the project's data in place of the demo's; `pill`: what a proposal changes in the agent pill (T711);
+ * `onAgents`: what the agent pill opens. */
+export function DeskPage({ slug, n, rail, onSearch, model, pill, onAgents }: { slug: string; n: number; rail: boolean; onSearch(): void; model?: ProjectModel; pill?: Partial<AgentInfo>; onAgents?(): void }) {
+  const m = model ?? modelFor(slug)
   const projects = sideProjects(ROWS, m, slug).list
   const sOn: SidebarEvents = { ...sideOn, search: onSearch }
   const it = m.byN.get(n) as Item
@@ -79,10 +81,10 @@ export function DeskPage({ slug, n, rail, onSearch }: { slug: string; n: number;
           title={m.facts.title}
           tone={toneOf(TONES, slug)}
           tabs={deskTabs(tabCounts(m, 'items', NO_FILTERS, true), 'items', false)}
-          agent={agentInfo(m, 0)}
+          agent={{ ...agentInfo(m, 0), ...pill }}
           notSaved={0}
           place="col-span-2"
-          on={{ tab() {}, agents() {}, notSaved() {} }}
+          on={{ tab() {}, agents: onAgents ?? (() => {}), notSaved() {} }}
         />
         <section className="flex min-h-0 flex-col border-r border-zinc-200 dark:border-zinc-800">{listOf(m.items, 'items', {}, true, { open: n })}</section>
         <div className="flex min-h-0 min-w-0 flex-col">

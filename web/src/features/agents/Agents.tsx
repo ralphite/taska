@@ -22,6 +22,9 @@ export interface AgentsFacts {
   far: string
   ask: string
   guide: string | null
+  /** T711 proposal: a blocked agent's row says it by an amber dot alone, at the row's end or on its icon's corner, and
+   * its session by its name alone */
+  dot?: 'end' | 'corner'
 }
 
 const CARD_LOOK = {
@@ -32,6 +35,7 @@ const CARD_LOOK = {
 } as const
 
 const AMBER = 'text-amber-700 dark:text-amber-400'
+const AMBER_DOT = 'bg-amber-500 dark:bg-amber-400'
 
 const CARD = 'rounded-2xl border border-zinc-200 dark:border-zinc-800'
 const CODE = 'rounded bg-zinc-100 px-1 font-mono text-[12.5px] dark:bg-zinc-800'
@@ -76,14 +80,18 @@ function AgentsBody({ f, on, guideOpen }: { f: AgentsFacts; on: { copy(text: str
               {f.seen.map((a) => (
                 <li key={a.name} className={`text-sm ${a.known ? '' : 'opacity-55'}`}>
                   <div className="flex h-9 items-center gap-2.5">
-                    <Avatar by={a.name} />
+                    <Avatar by={a.name} dot={f.dot === 'corner' && a.blocked.length ? AMBER_DOT : undefined} />
                     <span className="min-w-0 flex-1 truncate">{a.who}</span>
-                    <span className={`text-xs tabular-nums ${a.blocked.length ? `font-medium ${AMBER}` : 'text-zinc-500 dark:text-zinc-400'}`}>{a.when}</span>
+                    {f.dot && a.blocked.length ? (
+                      f.dot === 'end' ? <span className={`size-2 shrink-0 rounded-full ${AMBER_DOT}`} /> : null
+                    ) : (
+                      <span className={`text-xs tabular-nums ${a.blocked.length ? `font-medium ${AMBER}` : 'text-zinc-500 dark:text-zinc-400'}`}>{a.when}</span>
+                    )}
                   </div>
                   {a.blocked.map((b) => (
                     <div key={b.session} className="pb-1.5 pl-7.5">
                       <p className="truncate text-[13px]">{b.session}</p>
-                      {b.waitingFor ? <p className={`text-xs leading-snug break-words ${AMBER}`}>{b.waitingFor}</p> : null}
+                      {b.waitingFor && !f.dot ? <p className={`text-xs leading-snug break-words ${AMBER}`}>{b.waitingFor}</p> : null}
                     </div>
                   ))}
                 </li>

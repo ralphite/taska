@@ -4,7 +4,7 @@
 // phoneTabs) and filtersSet, with the item list's demo project. Used by the stories of the top bar and the list head.
 import { useState } from 'react'
 import { DeskFilters, FilterStrip, type FilterEvents } from '../features/list/Filters'
-import { ListHead, PhoneTabs, ProjectBar } from '../pages/Header'
+import { ListHead, PhoneTabs, ProjectBar, type AgentInfo } from '../pages/Header'
 import { agentInfo, deskTabs, phoneTabs, tabCounts } from '../pages/headFacts'
 import { NO_FILTERS, type ListKey, type ListQuery } from '../model/route'
 import type { AgentSeen } from '../model/types'
@@ -54,6 +54,10 @@ export interface HeadHere {
   awayTab?: boolean
   /** the phone's menu and Search pressed */
   pressed?: boolean
+  /** what a proposal changes in the agent pill (T711) */
+  pill?: Partial<AgentInfo>
+  /** the agent pill opens what the story shows (the page's Agents sheet); else its click shows in the Actions panel */
+  onAgents?(): void
 }
 
 const INPUTS = [input({ id: 'r3' }), input({ id: 'r2' }), input({ id: 'r1', acked: true })]
@@ -71,7 +75,7 @@ function LiveHead({ desk, h }: { desk: boolean; h: HeadHere }) {
   const [list, setList] = useState<ListQuery>({ ...NO_FILTERS, ...h.list })
   const [filtersOpen, setFiltersOpen] = useState(!!h.filtersOpen)
   const counts = h.loading ? null : tabCounts(m, tab, list, desk)
-  const agent = h.loading ? null : agentInfo(m, h.away ?? 0)
+  const agent = h.loading ? null : { ...agentInfo(m, h.away ?? 0), ...h.pill }
   const set = filtersSet(tab, list)
   const toTab = (t: Tab) => {
     setTab(t)
@@ -87,7 +91,7 @@ function LiveHead({ desk, h }: { desk: boolean; h: HeadHere }) {
   if (desk)
     return (
       <div className="grid grid-cols-[420px_minmax(0,1fr)]">
-        <ProjectBar title="Shop" tone={PROJECT_TONES[4]} tabs={deskTabs(counts, tab, awayTab)} agent={agent} notSaved={h.notSaved ?? 0} place="col-span-2" on={{ tab: toTab, agents: on.agents, notSaved: on.notSaved }} />
+        <ProjectBar title="Shop" tone={PROJECT_TONES[4]} tabs={deskTabs(counts, tab, awayTab)} agent={agent} notSaved={h.notSaved ?? 0} place="col-span-2" on={{ tab: toTab, agents: h.onAgents ?? on.agents, notSaved: on.notSaved }} />
         <DeskFilters tab={tab} list={list} set={set} open={filtersOpen} place="col-start-1" hidden={!(filtersOpen || set.length)} on={{ ...filterOn, toggle: () => setFiltersOpen(!filtersOpen) }} />
       </div>
     )
@@ -100,7 +104,7 @@ function LiveHead({ desk, h }: { desk: boolean; h: HeadHere }) {
         notSaved={h.notSaved ?? 0}
         on={{
           menu: on.menu,
-          agents: on.agents,
+          agents: h.onAgents ?? on.agents,
           notSaved: on.notSaved,
           // Search opens the phone's search (its own stories)
           search: on.search,
