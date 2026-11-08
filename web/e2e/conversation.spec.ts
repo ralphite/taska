@@ -227,6 +227,13 @@ test('T529 B640: on an input moved to another project, its voice note\'s origina
   if (!b || !w) throw new Error('not drawn')
   const apart = b.y >= w.y + w.height || b.y + b.height <= w.y || b.x >= w.x + w.width || b.x + b.width <= w.x
   expect(apart, `the words ${JSON.stringify(b)} are clear of yours ${JSON.stringify(w)}`).toBe(true)
+  // B729: pressing in the tip and dragging selects its words; the tip stays open
+  await page.mouse.move(b.x + 12, b.y + 14)
+  await page.mouse.down()
+  await page.mouse.move(b.x + b.width - 12, b.y + 40, { steps: 5 })
+  await page.mouse.up()
+  await expect(tip).toBeVisible()
+  expect(await page.evaluate(() => getSelection()?.toString().length ?? 0)).toBeGreaterThan(0)
 })
 
 test('D115 #5: while a new answer is on its way the card shows no Edit; it is back once Taska has the answer', async ({

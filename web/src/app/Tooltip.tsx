@@ -86,6 +86,9 @@ export function Tooltip({ card, steps }: { card(ref: string): RefCard | null; st
     let current: HTMLElement | null = null
     let closedAt = 0
     let hush: Element | null = null
+    // a press that began inside the tip (selecting its words, B729): the tip stays until the press ends
+    let pressedIn = false
+    const inTip = (n: EventTarget | Node | null) => !!n && !!tip.current?.contains(n as Node)
     const show = (el: HTMLElement) => {
       const c = el.dataset.ref ? told.current(el.dataset.ref) : null
       const said = el.dataset.heard !== undefined ? { heard: el.dataset.heard, tidied: el.dataset.tidied ?? '' } : null
@@ -108,7 +111,7 @@ export function Tooltip({ card, steps }: { card(ref: string): RefCard | null; st
     }
     const target = (t: EventTarget | null) => (t as Element | null)?.closest?.<HTMLElement>(TARGET) || null
     const over = (e: PointerEvent) => {
-      if (!fine.matches || e.pointerType === 'touch') return
+      if (!fine.matches || e.pointerType === 'touch' || pressedIn) return
       const t = e.target as Element
       if (tip.current?.contains(t)) return clearTimeout(timer)
       const el = target(t)
@@ -131,7 +134,7 @@ export function Tooltip({ card, steps }: { card(ref: string): RefCard | null; st
     const out = (e: PointerEvent) => {
       const to = e.relatedTarget as Element | null
       if (hush && !hush.contains(to)) hush = null
-      if (to && (tip.current?.contains(to) || (current && current.contains(to)))) return
+      if (pressedIn || (to && (tip.current?.contains(to) || (current && current.contains(to))))) return
       clearTimeout(timer)
       if (current) timer = window.setTimeout(hide, 100)
     }
@@ -143,19 +146,29 @@ export function Tooltip({ card, steps }: { card(ref: string): RefCard | null; st
       }
     }
     const down = (e: PointerEvent) => {
+      if (inTip(e.target)) {
+        pressedIn = true
+        return clearTimeout(timer)
+      }
       if (current || timer) {
         hush = target(e.target)
         hide()
       }
     }
-    const key = () => hide()
+    const blur = () => !pressedIn && hide()
+    const up = () => {
+      pressedIn = false
+    }
+    // keys close it, but not while its words are selected (to copy them), only Escape then
+    const key = (e: KeyboardEvent) => (e.key === 'Escape' || !inTip(getSelection()?.anchorNode ?? null)) && hide()
     // a long voice note's words scroll inside the tip: that does not close it
     const scroll = (e: Event) => !tip.current?.contains(e.target as Node) && hide()
     document.addEventListener('pointerover', over)
     document.addEventListener('pointerout', out)
     document.addEventListener('focusin', focus)
-    document.addEventListener('focusout', hide)
+    document.addEventListener('focusout', blur)
     document.addEventListener('pointerdown', down, true)
+    document.addEventListener('pointerup', up, true)
     document.addEventListener('scroll', scroll, true)
     document.addEventListener('keydown', key, true)
     addEventListener('resize', hide)
@@ -163,8 +176,9 @@ export function Tooltip({ card, steps }: { card(ref: string): RefCard | null; st
       document.removeEventListener('pointerover', over)
       document.removeEventListener('pointerout', out)
       document.removeEventListener('focusin', focus)
-      document.removeEventListener('focusout', hide)
+      document.removeEventListener('focusout', blur)
       document.removeEventListener('pointerdown', down, true)
+      document.removeEventListener('pointerup', up, true)
       document.removeEventListener('scroll', scroll, true)
       document.removeEventListener('keydown', key, true)
       removeEventListener('resize', hide)
