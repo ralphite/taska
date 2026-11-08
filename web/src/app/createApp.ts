@@ -353,15 +353,25 @@ export function createApp(env: AppEnv): App {
   const draftPlaces: DraftPlaces = new DraftPlaces({ route, nav, box, docs, comments: docComments, fields, toasts, slug, model })
   // a merged item gives way to the one it went into; what you wrote for it goes along
   const merges = new Merges({ route, data, drafts, box: boxStore, toasts, model, showItem: (code, tab) => nav.openItemHere(code, tab), goDraft })
-  // leaving while a voice note or dictation records asks first
-  const leaveGuard = new LeaveGuard(() => recordingNow() || !!dictationStore.getState().rec)
+  // something being said into the page now: a voice note, a dictation, or search listening (T728 #6: one rule)
+  const sayingNow = () => recordingNow() || !!dictationStore.getState().rec || find.getState().phase === 'listening'
+  // what a reload now would lose: something being said, or words and files still on their way (an update waits for
+  // it to end; T728 #6: dictation's notes waiting for words and search's listening were missed)
+  const pageBusy = () =>
+    sayingNow() ||
+    dictationStore.getState().waiting.length > 0 ||
+    find.getState().phase === 'writing' ||
+    Object.values(boxStore.getState().files).some((fs) => fs.some((f) => f.uploading || waitsForWords(f))) ||
+    outbox.getState().list.some((o) => o.state === 'sending' || o.files.some((f) => f.uploading))
+  // leaving while something is being said asks first
+  const leaveGuard = new LeaveGuard(sayingNow)
   const arrival = new Arrival({ route, fields, data, model, desk: env.desk, session: env.session ?? memoryStore() })
   const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }), { api, toasts, data, slug, desk: env.desk, go: goUrl })
   const access = new Access({ api, sheets, toasts, refresh: () => void session().refresh() })
   const updates = new Updates({
     toasts,
     session: env.session ?? memoryStore(),
-    busy: () => recordingNow() || Object.values(boxStore.getState().files).some((fs) => fs.some((f) => f.uploading || waitsForWords(f))) || outbox.getState().list.some((o) => o.state === 'sending'),
+    busy: pageBusy,
     reload: () => location.reload(),
     mine: env.pageScript ?? '',
   })
