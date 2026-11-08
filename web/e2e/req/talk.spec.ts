@@ -1,9 +1,9 @@
 // Yadong's requirements on an item's talk (D29, "Lists and items"; T475, D45): each check is named by the codes of his
 // inputs, so a change that breaks one is stopped before it ships with his own words.
-// guards: src/features/item/ src/ui/Markdown.tsx src/app/Tooltip.tsx src/app/actions.ts
+// guards: src/features/item/ src/ui/scroller.ts src/app/inputs/delivered.ts src/ui/Markdown.tsx src/app/Tooltip.tsx src/app/actions.ts
 import { expect, test, type Locator } from '@playwright/test'
 import { isDesk, open, project } from '../seed'
-import { pane, talk as talkOf, tip } from '../ui'
+import { box, boxMain, pane, talk as talkOf, tip } from '../ui'
 
 const lines = (n: number, what: string) => Array.from({ length: n }, (_, i) => `  ${what} line ${i + 1}`).join('\n')
 
@@ -96,4 +96,26 @@ new task P2 now Still waits
   const waits = card('Finished too.')
   await expect(waits.getByRole('button', { name: /^Accept/ })).toBeVisible()
   for (const before of ['Started.', 'Go ahead']) await above(words(before), waits, `T4: ${before} above the card`)
+})
+
+test('T589 #10486: an item opens at its latest message, and what you send and the reply to it show; the phone as the desktop', async ({
+  page,
+  request,
+}) => {
+  const steps = Array.from({ length: 8 }, (_, i) => `T1 say Step ${i + 1} done\n${lines(6, `Step ${i + 1}`)}`).join('\n')
+  const p = await project(request, {
+    agent: `new task P1 now Notes from the call\n${lines(30, 'Body')}\n`,
+    approve: ['T1'],
+    then: `${steps}\nT1 say The last word so far\n`,
+  })
+  await open(page, p, 'T1')
+  const seen = (text: string) => expect(page.getByText(text, { exact: true }).filter({ visible: true }).last()).toBeInViewport()
+  await seen('The last word so far')
+  // opened at its end, not its top: in one column the title is scrolled out of sight
+  if (!isDesk(page)) await expect(page.locator('[data-part=item-title]')).not.toBeInViewport()
+  await box(page).fill('Friday then')
+  await boxMain(page).click()
+  await seen('Friday then')
+  await p.doAs('T1 say Friday it is\n')
+  await seen('Friday it is')
 })
