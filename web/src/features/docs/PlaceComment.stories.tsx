@@ -15,7 +15,7 @@ const STEPS: { step: Step; title: string; note(desk: boolean): string; phone?: b
   {
     step: 'picked',
     title: '1 · Picked: voice and comment',
-    note: (desk) => (desk ? 'A place picked (amber) has two buttons beside it: speak and comment.' : 'A tap picks the place (amber). Under it: speak (the round black button) or comment.'),
+    note: (desk) => (desk ? 'A place picked (amber) has two buttons beside it: speak and comment.' : 'A tap picks the place (amber). Floating under it, over the page: speak or comment.'),
   },
   {
     step: 'recording',

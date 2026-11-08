@@ -136,8 +136,16 @@ export function PlaceVoiceFloat({ place, x, ...row }: Parameters<typeof PlaceVoi
   })
   return (
     // a tap on it is not a tap on what is under it
-    <div ref={el} data-place-row onClick={(e) => e.stopPropagation()} className={`absolute z-20 rounded-full bg-white px-1 shadow-lg ring-1 ring-zinc-900/10 dark:bg-zinc-900 dark:ring-white/10 ${x ?? (row.rec ? 'inset-x-0' : 'right-0')}`}>
-      <PlaceVoiceRow {...row} />
+    <div ref={el} data-place-row onClick={(e) => e.stopPropagation()} className={`absolute z-20 ${row.rec ? 'rounded-full bg-white px-1 shadow-lg ring-1 ring-zinc-900/10 dark:bg-zinc-900 dark:ring-white/10' : ''} ${x ?? (row.rec ? 'inset-x-0' : 'right-0')}`}>
+      {row.rec ? (
+        <PlaceVoiceRow {...row} />
+      ) : (
+        // the same small white buttons as beside a paragraph and over selected words (B708 r1153), made for a thumb
+        <div className="flex gap-1">
+          <B icon="mic" label="Voice comment" cls={PLACE_BUTTON.replace('size-7', 'size-10')} on={row.on.say} marks={row.say} big />
+          <B icon="comment" label="Comment" cls={PLACE_BUTTON.replace('size-7', 'size-10')} on={row.on.comment} marks={row.comment} big />
+        </div>
+      )}
     </div>
   )
 }
