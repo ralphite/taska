@@ -23,17 +23,34 @@ export interface AgentLine {
   tip: string | undefined
 }
 
+/** An agent counts as around for this long after it was last heard of (T728 #5: one rule for the pill, the Agents
+ * sheet and the home page; the server's is the same 600 s). */
+export const AROUND_MS = 10 * 60e3
+/** A session shows on a row's agent mark while it was heard of within this. */
+export const SESSION_MS = 3600e3
+
+/** Where a project's agents are (T728 #5), worked out once: a session blocked on the user comes first, then one
+ * waiting for work, then the latest heard of within AROUND_MS; else away (or none ever). */
+export type Presence = { k: 'blocked' | 'ready' | 'recent' | 'away'; a: AgentSeen } | { k: 'none' }
+export function presenceOf(agents: readonly AgentSeen[] | undefined, now: number): Presence {
+  const list = [...(agents || [])].sort((a, b) => b.t - a.t)
+  const stuck = list.find((x) => x.blocked?.length)
+  if (stuck) return { k: 'blocked', a: stuck }
+  const a = list.find((x) => x.waiting) || list[0]
+  if (!a) return { k: 'none' }
+  return { k: a.waiting ? 'ready' : now - a.t < AROUND_MS ? 'recent' : 'away', a }
+}
+
 /** [tone, the pill's words, a longer sentence] */
 /** `queued`: items in the queue now (the sentence never says nothing waits while some do). */
 /** A session waiting on the user comes first (T711 #10443): `Claude Code · blocked`. */
 export function agentState(agents: readonly AgentSeen[] | undefined, work: boolean | undefined, now = Date.now(), queued = 0): ['ok' | 'bad' | 'idle' | 'blocked', string, string] {
-  const list = [...(agents || [])].sort((a, b) => b.t - a.t)
-  const stuck = list.find((x) => x.blocked?.length)
-  if (stuck) return ['blocked', `${whoName(stuck.name)} · blocked`, `${whoName(stuck.name)} is blocked, waiting on you.`]
-  const a = list.find((x) => x.waiting) || list[0]
+  const p = presenceOf(agents, now)
+  const a = p.k === 'none' ? undefined : p.a
   const name = a ? whoName(a.name) : ''
-  if (a?.waiting) return ['ok', `${name} ready`, `${name} is ready for work.`]
-  if (a && now - a.t < 10 * 60e3) return ['ok', `${name} · ${agoShort(a.t, now)}`, `${name} was here ${agoLong(a.t, now)}.`]
+  if (p.k === 'blocked') return ['blocked', `${name} · blocked`, `${name} is blocked, waiting on you.`]
+  if (p.k === 'ready') return ['ok', `${name} ready`, `${name} is ready for work.`]
+  if (p.k === 'recent' && a) return ['ok', `${name} · ${agoShort(a.t, now)}`, `${name} was here ${agoLong(a.t, now)}.`]
   const last = a ? `The last agent (${name}) was here ${agoLong(a.t, now)}.` : 'No agent yet.'
   return work
     ? ['bad', a ? `No agent · ${agoShort(a.t, now)}` : 'No agent', `Work is waiting. ${last}`]
@@ -64,8 +81,8 @@ export function blockedOn(a: AgentSeen, session: string): string | undefined {
   return b ? (b.waitingFor ? `blocked: ${b.waitingFor}` : 'blocked') : undefined
 }
 
-/** The home page's agent cell: the agent last heard of, around while it waits for work or was here in 10 minutes. */
-export function lastAgent(agents: readonly AgentSeen[] | undefined, now: number): { name: string; on: boolean } | null {
-  const a = [...(agents || [])].sort((x, y) => y.t - x.t)[0]
-  return a ? { name: whoName(a.name), on: a.waiting || now - a.t < 10 * 60e3 } : null
+/** The home page's agent cell, by the pill's own rule (presenceOf): who, and whether it is around or blocked. */
+export function lastAgent(agents: readonly AgentSeen[] | undefined, now: number): { name: string; on: boolean; blocked: boolean } | null {
+  const p = presenceOf(agents, now)
+  return p.k === 'none' ? null : { name: whoName(p.a.name), on: p.k !== 'away', blocked: p.k === 'blocked' }
 }

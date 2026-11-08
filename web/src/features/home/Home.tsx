@@ -18,7 +18,7 @@ export interface HomeRow {
   open: number
   needs: number
   /** the agent last heard of, and whether it is around */
-  agent: { name: string; on: boolean } | null
+  agent: { name: string; on: boolean; blocked: boolean } | null
   /** the first of what needs you there */
   next: { code: string; title: string } | null
 }
@@ -61,8 +61,8 @@ const NOTICE_X = 'relative grid size-9 shrink-0 place-items-center rounded-lg af
 function AgentCell({ agent }: { agent: HomeRow['agent'] }) {
   return (
     <span className="flex min-w-0 items-center gap-1.5 text-zinc-600 dark:text-zinc-300">
-      <span className={`size-1.5 shrink-0 rounded-full ${agent?.on ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
-      <span className="truncate">{!agent ? 'No agent' : agent.on ? agent.name : agent.name + ' · idle'}</span>
+      <span className={`size-1.5 shrink-0 rounded-full ${agent?.blocked ? 'bg-amber-500' : agent?.on ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
+      <span className="truncate">{!agent ? 'No agent' : agent.blocked ? agent.name + ' · blocked' : agent.on ? agent.name : agent.name + ' · idle'}</span>
     </span>
   )
 }

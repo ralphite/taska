@@ -1,6 +1,6 @@
 // T711 #10443: the pill says when an agent session waits on the user, before anything else it could say.
-import { expect, test } from 'vitest'
-import { agentLine, agentState } from './agents'
+import { describe, expect, test } from 'vitest'
+import { agentLine, agentState, lastAgent } from './agents'
 import type { AgentSeen } from './types'
 
 const now = 1_800_000_000_000
@@ -19,4 +19,16 @@ test('a blocked session: the pill says Claude Code · blocked, amber, even while
 
 test('no session blocked: as before', () => {
   expect(agentLine([{ ...blocked[1], blocked: undefined }], false, now).label).toBe('Claude Code · 20m')
+})
+
+describe('presence, one rule for the pill and the home page (T728 #5)', () => {
+  test('a blocked session shows on the home page as on the pill, even when another agent was here later', () => {
+    const now = Date.parse('2026-11-08T10:00:00Z')
+    const agents = [
+      { name: 'codex', t: now - 60e3, waiting: false },
+      { name: 'claude-code', t: now - 30 * 60e3, waiting: false, blocked: [{ session: 'Shop project work' }] },
+    ] as never
+    expect(agentState(agents, false, now)[0]).toBe('blocked')
+    expect(lastAgent(agents, now)).toMatchObject({ blocked: true, on: true })
+  })
 })
