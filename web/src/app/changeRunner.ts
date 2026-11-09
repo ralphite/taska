@@ -4,10 +4,14 @@
 
 import { Refused, Unreachable } from '../api/http'
 import type { CommandAnswer, TaskaApi } from '../api/taska'
+import type { Command } from '../model/commands'
+import { preview, type Shown } from '../model/optimistic'
+import type { ProjectModel } from '../model/project'
 import type { ViewAnswer } from '../model/types'
-import type { ChangesStore, PendingChange } from '../stores/changes'
+import type { ChangeMode, ChangesStore, PendingChange } from '../stores/changes'
 
 const PAUSES = [1000, 2000, 4000, 8000, 15000]
+const NOTHING: Shown = { patches: [], inputPatches: [], docPatches: [] }
 
 export interface RunnerEvents {
   /** the server's answer brought what changed: into the project's copy */
@@ -18,6 +22,8 @@ export interface RunnerEvents {
   /** it could not reach the server (it goes on trying) */
   unreachable(c: PendingChange): void
   cursor(slug: string): string | null
+  /** the project as the page shows it now: what a change's preview is made over */
+  model(slug: string): ProjectModel | null
 }
 
 export class ChangeRunner {
@@ -40,7 +46,31 @@ export class ChangeRunner {
     for (const go of [...this.waiting]) go()
   }
 
-  /** Show it now, send it behind you. -> true once saved, false if the server said no. */
+  /** A change you make: shown at once as the server will make it (model/optimistic), sent behind you. `needed`: asked
+   * when its turn comes (false: it goes nowhere, as saved). -> true once saved, false if the server said no. */
+  change(slug: string, commands: Command | readonly Command[], said: string, o: { mode?: ChangeMode; needed?: () => boolean } = {}): Promise<boolean> {
+    const list = [commands].flat()
+    const t = Date.now()
+    const m = this.on.model(slug)
+    const shown = m ? preview(m, list, t) : NOTHING
+    return this.send({ id: newId(), slug, commands: list, ...shown, said, t, ...(o.mode ? { mode: o.mode } : {}) }, o.needed)
+  }
+
+  /** Shown only, until taken away (-> what takes it away): what a change will show while it cannot go yet (its files
+   * going up), or what a call that is no command does (a move to another project). */
+  show(slug: string, shown: Shown): () => void {
+    const id = 'show-' + newId()
+    this.store.getState().add({ id, slug, commands: [], ...shown, said: '', t: Date.now(), mode: 'show' })
+    return () => this.store.getState().remove(id)
+  }
+
+  /** What these commands would show now: a stand-in while what it stands for waits. */
+  preview(slug: string, commands: readonly Command[]): Shown {
+    const m = this.on.model(slug)
+    return m ? preview(m, commands, Date.now()) : NOTHING
+  }
+
+  /** Show it now, send it behind you (a change kept from before a reload; any other goes through change()). */
   send(c: PendingChange, needed: () => boolean = () => true): Promise<boolean> {
     this.store.getState().add(c)
     const done = this.queue.then(async () => {

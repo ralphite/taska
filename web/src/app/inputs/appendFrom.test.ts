@@ -26,7 +26,7 @@ function page() {
     drafts,
     outbox: createOutboxStore(memoryStore()),
     inputs: { push: (o: unknown) => (pushed.push(o), { q: 'q1' }), flush: async () => {} } as never,
-    runner: { send: async (c: { commands: unknown[] }) => (sent.push(...c.commands), true) } as never,
+    runner: { change: async (_slug: string, c: unknown) => (sent.push(...[c].flat()), true) } as never,
     toasts: { show: (t: string) => toasts.push(t) } as never,
   })
   store.getState().show('p')

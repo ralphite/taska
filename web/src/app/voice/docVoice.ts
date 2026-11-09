@@ -7,11 +7,9 @@
 
 import { allComments } from '../../model/docs'
 import { codeOf, liveN, type ProjectModel } from '../../model/project'
-import type { Comment } from '../../model/types'
 import { vcCount, vcSegments } from '../../model/voiceComments'
 import { draftNotes, splitVoices, wordsByFile } from '../../model/voices'
 import type { BoxStore, DraftFile } from '../../stores/box'
-import type { ChangesStore } from '../../stores/changes'
 import type { DocViewStore } from '../../stores/docView'
 import type { RecordingStore } from '../../stores/recording'
 import type { Box } from '../inputs/box'
@@ -33,7 +31,6 @@ export interface DocVoiceDeps {
   recording: RecordingStore
   view: DocViewStore
   runner: ChangeRunner
-  changes: ChangesStore
   toasts: Toasts
   model(slug: string): ProjectModel | null
   desk(): boolean
@@ -135,16 +132,14 @@ export class DocVoice {
     const live = () => [...(this.d.boxStore.getState().files[hold] || [])]
     this.d.boxStore.getState().setMarks(marks.filter((x) => x.d !== dn))
     const before = new Set(allComments(doc).map((c) => c.id))
-    const stands = posts.map(({ s }, i): Comment => ({ id: -(Date.now() + i), key: s.key, th: 0, quote: s.quote, text: s.text || '…', by: 'you', t: new Date().toISOString(), files: [] }))
-    const docPatches = stands.map((comment) => ({ d: dn, comment }))
     const v = this.d.view.getState()
     for (const { s } of posts) v.openThread(s.key)
     v.unpick()
     if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
-    const showing = { id: 'show-' + newId(), slug, commands: [], patches: [], docPatches, said: '', t: Date.now(), mode: 'show' as const }
-    this.d.changes.getState().add(showing)
+    // shown at once, each in its thread, with what was typed (the notes' words come once they are worked out)
+    const showing = this.d.runner.show(slug, this.d.runner.preview(slug, posts.map(({ s }) => ({ op: 'dc', d: dn, key: s.key, quote: s.quote, text: s.text || '…' }))))
     const back = () => {
-      this.d.changes.getState().remove(showing.id)
+      showing()
       this.d.box.putBack(slug, key, typed.trim(), this.d.boxStore.getState().takeFiles(hold))
       this.d.boxStore.getState().setMarks([...this.d.boxStore.getState().marks, ...marks.filter((x) => x.d === dn)])
       return false
@@ -161,8 +156,8 @@ export class DocVoice {
       })
       .filter((o) => o.text || o.files.length)
     if (!ops.length) return back()
-    this.d.changes.getState().remove(showing.id)
-    const ok = await this.d.runner.send({ id: newId(), slug, commands: ops, patches: [], docPatches, said: `commenting on D${dn}`, t: Date.now() })
+    showing()
+    const ok = await this.d.runner.change(slug, ops, `commenting on D${dn}`)
     if (!ok) return back()
     this.d.boxStore.getState().takeFiles(hold) // Taska has them: this browser lets them go
     const after = this.d.model(slug)?.docs.find((x) => x.d === dn)
@@ -172,7 +167,7 @@ export class DocVoice {
       `Posted ${n} on D${dn}${made.length && !this.d.desk() ? ' · Edit is under it' : ''}`,
       made.length
         ? async () => {
-            for (const id of made) await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'dcdel', d: dn, id }], patches: [], docPatches: [{ d: dn, commentGone: id }], said: `taking back a comment on D${dn}`, t: Date.now() })
+            for (const id of made) await this.d.runner.change(slug, { op: 'dcdel', d: dn, id }, `taking back a comment on D${dn}`)
             this.d.toasts.show('Taken back')
           }
         : null,

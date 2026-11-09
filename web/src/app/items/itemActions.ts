@@ -3,18 +3,16 @@
 // same), and the row you acted on holds still so the next row never slides under a second click.
 
 import { field, type Command } from '../../model/commands'
-import { closed, lastAgentMessage, ranksFor } from '../../model/items'
-import { codeOf, type ItemPatch, type ProjectModel } from '../../model/project'
+import { closed, ranksFor } from '../../model/items'
+import { decision } from '../../model/optimistic'
+import { codeOf, type ProjectModel } from '../../model/project'
 import { decidedWord } from '../../model/needStates'
 import { laterDay } from '../../model/time'
 import type { Item, Status } from '../../model/types'
 import { DID, LETTER, STATUS_WORD, plural } from '../../model/words'
 import type { UiStore } from '../../stores/ui'
 import type { ChangeRunner } from '../changeRunner'
-import { newId } from '../changeRunner'
 import type { Toasts } from '../page/toasts'
-
-const DECISIONS: Record<string, string[]> = { proposed: ['open', 'dropped'], review: ['done', 'open'] }
 
 export interface ItemActionsDeps {
   slug(): string
@@ -68,15 +66,7 @@ export class ItemActions {
     const ref = codeOf(m, n)
     const job = { saved: false, undone: false }
     // deciding on a proposal or finished work keeps what you chose on the item
-    const decWas = it.decided ?? null
-    const dec: Partial<Item> =
-      f === 'status' && (before === 'proposed' || before === 'review')
-        ? { decided: { from: String(before), to: String(v), msg: lastAgentId(it), t: '' } }
-        : f === 'status' && decWas?.from === v
-          ? { decided: null }
-          : f === 'status' && decWas && decWas.to === before && DECISIONS[decWas.from]?.includes(String(v))
-            ? { decided: { ...decWas, to: String(v) } }
-            : {}
+    const dec = f === 'status' ? decision(it, String(v)) : null
     const words =
       opts.said ||
       saidOf(m, f, v, before, ref)
@@ -91,14 +81,12 @@ export class ItemActions {
       this.d.toasts.show(`${ref} put back`)
       const seq = this.d.undoSeq(n, f)
       const back: Command = seq ? { op: 'revert', seq } : { op: 'set', ref, f: field(f, before) }
-      return this.d.runner.send(
-        { id: newId(), slug, commands: [back], patches: [{ n, f: { [f]: before, ...('decided' in dec ? { decided: decWas } : {}) } as Partial<Item> }], said: `putting ${ref} back`, t: Date.now() },
-        () => job.saved, // a change that never reached the server has nothing to put back there
-      )
+      // a change that never reached the server has nothing to put back there
+      return this.d.runner.change(slug, back, `putting ${ref} back`, { needed: () => job.saved })
     })
     if (n !== this.d.openItem() || this.d.desk()) {
       // a decision is said as on its card: Approved, Accepted, Declined, Sent back (D115 #8)
-      const said = dec.decided ? decidedWord(dec.decided) : heldWord(f, v, words)
+      const said = dec?.decided ? decidedWord(dec.decided) : heldWord(f, v, words)
       this.d.ui.getState().hold(n, { said, f, v }, this.d.listKey())
       this.d.held()
     }
@@ -108,8 +96,7 @@ export class ItemActions {
       `${ref} ${words}${noted ? ', with your note' : ''}${left ? ` · ${plural(left, 'subitem')} still open` : ''}`,
       undo,
     )
-    const patch: ItemPatch = { n, f: { [f]: v, ...dec } as Partial<Item> }
-    const saved = this.d.runner.send({ id: newId(), slug, commands: [{ op: 'set', ref, f: field(f, v) }], patches: [patch], said: `${ref} ${words}`, t: Date.now() })
+    const saved = this.d.runner.change(slug, { op: 'set', ref, f: field(f, v) }, `${ref} ${words}`)
     void saved.then((ok) => {
       job.saved = ok
       if (!ok) {
@@ -136,14 +123,14 @@ export class ItemActions {
     const undo = this.d.toasts.undoable(`${ref} ${words}`, async () => {
       this.d.ui.getState().dropHeld(n)
       this.d.toasts.show(`${ref} put back`)
-      return this.d.runner.send({ id: newId(), slug, commands: [{ op: 'set', ref, f: was }], patches: [{ n, f: was }], said: `putting ${ref} back`, t: Date.now() }, () => job.saved)
+      return this.d.runner.change(slug, { op: 'set', ref, f: was }, `putting ${ref} back`, { needed: () => job.saved })
     })
     if (n !== this.d.openItem() || this.d.desk()) {
       this.d.ui.getState().hold(n, { said: day ? `Later · ${laterDay(day, m.at)}` : 'Moved to Later', f: 'when', v: 'later' }, this.d.listKey())
       this.d.held()
     }
     this.d.toasts.show(`${ref} ${words}`, undo)
-    const saved = this.d.runner.send({ id: newId(), slug, commands: [{ op: 'set', ref, f }], patches: [{ n, f }], said: `${ref} ${words}`, t: Date.now() })
+    const saved = this.d.runner.change(slug, { op: 'set', ref, f }, `${ref} ${words}`)
     void saved.then((ok) => {
       job.saved = ok
       if (!ok) {
@@ -160,11 +147,9 @@ export class ItemActions {
     if (!m || !m.byN.has(n)) return Promise.resolve(false)
     const slug = this.d.slug()
     const ref = codeOf(m, n)
-    const tree: number[] = []
-    for (let k = [n]; k.length; k = k.flatMap((x) => (m.kids.get(x) || []).map((it) => it.n))) tree.push(...k)
-    const saved = this.d.runner.send({ id: newId(), slug, commands: [{ op: 'idel', ref }], patches: tree.map((k) => ({ n: k, f: {}, gone: true })), said: `deleting ${ref}`, t: Date.now() })
+    const saved = this.d.runner.change(slug, { op: 'idel', ref }, `deleting ${ref}`)
     const undo = this.d.toasts.undoable(`${ref} deleted`, async () => {
-      const ok = await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'iundel', ref }], patches: [], said: `restoring ${ref}`, t: Date.now() })
+      const ok = await this.d.runner.change(slug, { op: 'iundel', ref }, `restoring ${ref}`)
       if (ok) this.d.toasts.show(`${ref} is back`)
       return ok
     })
@@ -177,14 +162,14 @@ export class ItemActions {
     const m = this.d.model()
     if (!m || !m.byN.has(n)) return Promise.resolve(false)
     const ref = codeOf(m, n)
-    return this.d.runner.send({ id: newId(), slug: this.d.slug(), commands: [{ op: 'hide', ref, id, on: true }], patches: [], said: `hiding a message on ${ref}`, t: Date.now() })
+    return this.d.runner.change(this.d.slug(), { op: 'hide', ref, id, on: true }, `hiding a message on ${ref}`)
   }
 
   /** Every finished item the list shows, to Archive at once; Undo for 10 seconds (then Z). */
   archiveAll(ns: number[]): void {
     const m = this.d.model()
     if (!m || !ns.length) return
-    const put = (on: boolean) => this.d.runner.send({ id: newId(), slug: this.d.slug(), commands: [{ op: 'archive', refs: ns.map((n) => codeOf(m, n)), on }], patches: ns.map((n) => ({ n, f: { archived: on } })), said: on ? `archiving ${plural(ns.length, 'item')}` : `unarchiving ${plural(ns.length, 'item')}`, t: Date.now() })
+    const put = (on: boolean) => this.d.runner.change(this.d.slug(), { op: 'archive', refs: ns.map((n) => codeOf(m, n)), on }, on ? `archiving ${plural(ns.length, 'item')}` : `unarchiving ${plural(ns.length, 'item')}`)
     void put(true)
     this.d.toasts.show(
       `Archived ${plural(ns.length, 'item')}`,
@@ -205,7 +190,7 @@ export class ItemActions {
     const ref = codeOf(m, n)
     const ranks = ranksFor(m.items, m.byN, n, t, after)
     const send = (list: { n: number; rank: number | null }[]) =>
-      this.d.runner.send({ id: newId(), slug: this.d.slug(), commands: list.map((p) => ({ op: 'set', ref: codeOf(m, p.n), f: { rank: p.rank } })), patches: list.map((p) => ({ n: p.n, f: { rank: p.rank } })), said: `moving ${ref}`, t: Date.now() })
+      this.d.runner.change(this.d.slug(), list.map((p): Command => ({ op: 'set', ref: codeOf(m, p.n), f: { rank: p.rank } })), `moving ${ref}`)
     this.d.toasts.show(`${ref} ${after ? 'after' : 'before'} ${codeOf(m, t)}${it.pri !== to.pri ? `, now ${to.pri}` : ''}`, async () => {
       this.d.toasts.show(`${ref} put back`)
       return send(ranks.map((p) => ({ n: p.n, rank: p.was })))
@@ -220,5 +205,3 @@ export class ItemActions {
     return this.change(n, 'rank', it.rank == null ? -Math.round(Date.now() / 1000) : null)
   }
 }
-
-const lastAgentId = (it: Item) => lastAgentMessage(it)?.id ?? null

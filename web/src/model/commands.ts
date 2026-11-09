@@ -147,8 +147,8 @@ export const OPS = {
   cfg: true,
 } as const satisfies Record<Op, true>
 
-/** One command of the union, by its op. */
-export type CommandOf<K extends Op> = Extract<Command, { op: K }>
+/** One command of the union, by its op (a member for several ops, as this one). */
+export type CommandOf<K extends Op> = Command extends infer C ? (C extends { op: infer O } ? (K extends O ? C & { op: K } : never) : never) : never
 
 /** One field of an item as the page holds it -> as `set` sends it: a parent goes as its number's text, or 'none'. */
 export function field(f: string, v: unknown): SetFields {

@@ -31,8 +31,8 @@ describe("the copy of the server's data", () => {
     expect(c.items.get(1)?.wait).toBeNull()
   })
 
-  test('reopening an archived item brings it back; your pending change shows over the copy', () => {
-    expect(patched(item({ n: 1, status: 'done', archived: true }), { status: 'open' }).archived).toBe(false)
+  test('a closed item asks nothing; your pending change shows over the copy', () => {
+    expect(patched(item({ n: 1, status: 'open', wait: { id: 1, kind: 'ask', text: '?', by: 'codex', files: [] } }), { status: 'done' }).wait).toBe(null)
     const c = merge(null, answer({ full: true, items: [item({ n: 1 })] }), 1)
     expect(project(c, [{ n: 1, f: { status: 'done' } }]).byN.get(1)?.status).toBe('done')
   })

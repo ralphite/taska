@@ -18,7 +18,7 @@ import type { SentFile } from '../../model/commands'
 import type { DraftsStore } from '../../stores/drafts'
 import type { OutboxStore } from '../../stores/outbox'
 import type { KeyValueStore } from '../../stores/storage'
-import { newId, type ChangeRunner } from '../changeRunner'
+import type { ChangeRunner } from '../changeRunner'
 import type { InputSender } from './inputSender'
 import { Pauses } from './pauses'
 import type { Toasts } from '../page/toasts'
@@ -239,7 +239,6 @@ export class Box {
     // the box was writing this (it may write something else by now: it goes on with that)
     if (st.mode?.kind === 'amend' && st.mode.id === mode.id && st.mode.mode === mode.mode) st.setMode(null)
     const r = m?.byId.get(mode.id)
-    const now = r ? (mode.mode === 'edit' ? text : r.text.endsWith(text) ? r.text : [r.text, text].filter(Boolean).join('\n\n')) : text
     this.d.toasts.show(mode.mode === 'edit' ? `${inputCode(mode.id)} updated` : `Added to ${inputCode(mode.id)}`)
     const up = drafts.filter(isUp)
     const files = up.map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size }))
@@ -250,16 +249,7 @@ export class Box {
     text = said.text
     const what = mode.mode === 'edit' ? `editing ${inputCode(mode.id)}` : `adding to ${inputCode(mode.id)}`
     void (async () => {
-      const ok = await this.d.runner.send({
-        id: newId(),
-        slug,
-        commands: [{ op: 'amend', id: mode.id, mode: mode.mode, v: mode.v, text, files, ...(Object.keys(words).length ? { words } : {}) }],
-        patches: [],
-        inputPatches: now ? [{ id: mode.id, f: { text: now } }] : [],
-        said: what,
-        t: Date.now(),
-        mode: 'own',
-      })
+      const ok = await this.d.runner.change(slug, { op: 'amend', id: mode.id, mode: mode.mode, v: mode.v, text, files, ...(Object.keys(words).length ? { words } : {}) }, what, { mode: 'own' })
       if (!ok) await this.editedElsewhere(slug, mode, key, text, files, drafts, what, words)
     })()
     return true
@@ -276,7 +266,7 @@ export class Box {
     if (!r) return
     const code = inputCode(mode.id)
     const v = r.v || 0
-    const again = (t: string) => this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: mode.mode, v, text: t, files, ...(Object.keys(words).length ? { words } : {}) }], patches: [], inputPatches: t ? [{ id: mode.id, f: { text: mode.mode === 'edit' ? t : [r.text, t].filter(Boolean).join('\n\n') } }] : [], said, t: Date.now() })
+    const again = (t: string) => this.d.runner.change(slug, { op: 'amend', id: mode.id, mode: mode.mode, v, text: t, files, ...(Object.keys(words).length ? { words } : {}) }, said)
     if (v !== mode.v) {
       if (mode.mode === 'append') {
         if (await again(text)) return
@@ -364,15 +354,7 @@ export class Box {
     // the spelling there was before (for Undo) is asked for meanwhile: the correction goes out at once (B645)
     const hadAsked = this.d.api.corrections().then((l) => l.find((x) => x.wrong === mode.wrong), () => undefined)
     void (async () => {
-      const ok = await this.d.runner.send({
-        id: newId(),
-        slug,
-        commands: [{ op: 'correct', id: mode.id, wrong: mode.wrong, right, v: mode.v }],
-        patches: [],
-        inputPatches: r ? [{ id: mode.id, f: { text: r.text.split(mode.wrong).join(right) } }] : [],
-        said: `correcting ${inputCode(mode.id)}`,
-        t: Date.now(),
-      })
+      const ok = await this.d.runner.change(slug, { op: 'correct', id: mode.id, wrong: mode.wrong, right, v: mode.v }, `correcting ${inputCode(mode.id)}`)
       if (!ok) {
         this.d.store.getState().setMode(mode)
         this.putBack(slug, key, right)
@@ -382,7 +364,7 @@ export class Box {
         const had = await hadAsked
         // the words come back, and the spelling is forgotten (or the one before comes back)
         const now = this.d.model?.(slug)?.byId.get(mode.id)
-        if (now && was && before != null && now.text !== before) await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: 'edit', v: now.v || 0, text: was.text, words: was.words }], patches: [], inputPatches: [{ id: mode.id, f: { text: before } }], said: `putting back ${inputCode(mode.id)}`, t: Date.now() })
+        if (now && was && before != null && now.text !== before) await this.d.runner.change(slug, { op: 'amend', id: mode.id, mode: 'edit', v: now.v || 0, text: was.text, words: was.words }, `putting back ${inputCode(mode.id)}`)
         await this.d.api.setCorrection(had?.wrong ? { wrong: mode.wrong, right: had.right, undo: true } : { wrong: mode.wrong }).catch(() => {})
         this.d.toasts.show(`Put back \u201c${mode.wrong}\u201d in ${inputCode(mode.id)}${had ? '' : ', and forgot the spelling'}`)
       })

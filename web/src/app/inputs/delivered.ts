@@ -12,7 +12,7 @@ import type { BoxStore } from '../../stores/box'
 import type { Outgoing } from '../../model/outgoing'
 import type { RouteStore } from '../../stores/route'
 import type { UiStore } from '../../stores/ui'
-import { newId, type ChangeRunner } from '../changeRunner'
+import type { ChangeRunner } from '../changeRunner'
 import type { Toasts } from '../page/toasts'
 import type { Fields } from '../page/fields'
 
@@ -46,7 +46,7 @@ export class Delivered {
       const m = d.model(o.slug)
       const r = m?.byId.get(rid)
       if (m && r && reached(r, m.facts.organizer)) d.toasts.show(`${inputCode(rid)} already reached ${r.org ? 'the organizer' : 'your agent'}; delete it from Inputs`)
-      else void d.runner.send({ id: newId(), slug: o.slug, commands: [{ op: 'delete', id: rid }], patches: [], said: `taking back ${rid}`, t: Date.now() })
+      else void d.runner.change(o.slug, { op: 'delete', id: rid }, `taking back ${rid}`)
     }
     const here = o.slug === d.slug()
     if (here) d.ui.getState().setLastSent(o.quiet || o.unsent ? null : { slug: o.slug, rid })

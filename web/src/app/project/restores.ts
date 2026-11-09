@@ -4,7 +4,7 @@
 import type { Command } from '../../model/commands'
 import type { ProjectModel } from '../../model/project'
 import { undoLabel } from '../../model/activity'
-import { newId, type ChangeRunner } from '../changeRunner'
+import type { ChangeRunner } from '../changeRunner'
 import type { InputActions } from '../inputs/inputActions'
 import type { Toasts } from '../page/toasts'
 
@@ -23,7 +23,7 @@ export class Restores {
   }
 
   private send(slug: string, command: Command, said: string) {
-    return this.d.runner.send({ id: newId(), slug, commands: [command], patches: [], said, t: Date.now() })
+    return this.d.runner.change(slug, command, said)
   }
 
   async item(slug: string, ref: string): Promise<void> {

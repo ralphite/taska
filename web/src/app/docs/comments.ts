@@ -2,13 +2,11 @@
 // first), edited, resolved and opened again, moved to another paragraph, deleted, a file taken off. Each change shows
 // at once and is saved behind you, with Undo.
 
-import { allComments, resolved, sameText, splitThread, threadsOf, type DocTarget } from '../../model/docs'
+import { allComments, resolved, splitThread, threadsOf, type DocTarget } from '../../model/docs'
 import { draftKey, type DraftKey } from '../../model/draftTarget'
-import type { DocPatch } from '../../model/project'
 import type { Comment } from '../../model/types'
 import { draftNotes, shownNotes, splitVoices, wordsByFile } from '../../model/voices'
 import type { BoxStore } from '../../stores/box'
-import type { ChangesStore } from '../../stores/changes'
 import type { DocViewStore } from '../../stores/docView'
 import type { Box } from '../inputs/box'
 import { newId, type ChangeRunner } from '../changeRunner'
@@ -21,8 +19,6 @@ import { isUp } from '../../model/fileStates'
 
 export interface DocCommentsDeps extends DocPlace {
   runner: ChangeRunner
-  /** a stand-in shown while what it stands for waits (its files going up) */
-  changes: ChangesStore
   view: DocViewStore
   box: Box
   boxStore: BoxStore
@@ -42,7 +38,7 @@ export class DocComments {
     const h = docHere(this.d)
     if (!h) return
     const { key, th } = splitThread(tk)
-    const put = (v: boolean) => docSend(this.d, h.slug, { op: 'dcres', d: dn, key, on: v, ...(th ? { th } : {}) }, v ? 'resolving a thread' : 'reopening a thread', [{ d: dn, resolved: { tk, on: v } }])
+    const put = (v: boolean) => docSend(this.d, h.slug, { op: 'dcres', d: dn, key, on: v, ...(th ? { th } : {}) }, v ? 'resolving a thread' : 'reopening a thread')
     void put(on)
     if (on) this.fold(h.slug, dn, tk)
     else this.d.view.getState().openThread(tk)
@@ -76,11 +72,9 @@ export class DocComments {
     if (files.length) this.d.boxStore.getState().putFiles(hold, files)
     const live = () => this.d.boxStore.getState().files[hold] || []
     const quote = t.reply ? '' : t.quote
-    const same = t.key === 'doc' ? doc.whole : doc.blocks.find((b) => b.key === t.key)?.comments || []
-    const th = t.th ?? same.find((x) => x.th === x.id && sameText(x.quote, quote))?.th
-    const stand: Comment = { id: -Date.now(), key: t.key, th: th ?? 0, quote, text: typed || '…', by: 'you', t: new Date().toISOString(), files: [] }
-    const showing = { id: 'show-' + newId(), slug, commands: [], patches: [], docPatches: [{ d: dn, comment: stand }], said: '', t: Date.now(), mode: 'show' as const }
-    this.d.changes.getState().add(showing)
+    const at = { d: dn, key: t.key, ...(t.reply ? {} : { quote }), ...(t.th ? { th: t.th } : {}) }
+    // shown in its thread at once, with what was typed (its files and notes' words come once they are up)
+    const showing = this.d.runner.show(slug, this.d.runner.preview(slug, [{ op: 'dc', ...at, text: typed || '…' }]))
     const v = this.d.view.getState()
     const picked = { sel: v.sel, quote: v.quote, reply: v.reply }
     v.openThread(t.th ? `${t.key}#${t.th}` : t.key)
@@ -97,21 +91,13 @@ export class DocComments {
     const said = splitVoices(typed, draftNotes(held))
     const text = said.text
     const words = wordsByFile(said.words, sent)
-    this.d.changes.getState().remove(showing.id)
+    showing()
     if (!text && !sent.length) {
       this.d.box.putBack(slug, key, typed, held)
       if (typing) this.d.view.getState().setTyping(true)
       return false
     }
-    const ok = await this.d.runner.send({
-      id: newId(),
-      slug,
-      commands: [{ op: 'dc', d: dn, key: t.key, text, files: sent.map(({ f, name, mime, size }) => ({ f, name, mime, size })), words, ...(t.reply ? {} : { quote }), ...(t.th ? { th: t.th } : {}) }],
-      patches: [],
-      docPatches: [{ d: dn, comment: stand }],
-      said: `commenting on D${dn}`,
-      t: Date.now(),
-    })
+    const ok = await this.d.runner.change(slug, { op: 'dc', ...at, text, files: sent.map(({ f, name, mime, size }) => ({ f, name, mime, size })), words }, `commenting on D${dn}`)
     if (!ok) {
       this.d.box.putBack(slug, key, typed, held)
       // what it was on is picked again, so Send comments there again (D83 #3), unless you picked something else since
@@ -146,16 +132,7 @@ export class DocComments {
       return false
     }
     this.d.boxStore.getState().setMode(null)
-    const patch: DocPatch[] = c && shown ? [{ d: dn, commentGone: id }, { d: dn, comment: { ...c, text: shown } }] : []
-    const ok = await this.d.runner.send({
-      id: newId(),
-      slug,
-      commands: [{ op: 'dcedit', d: dn, id, text, words, ...(sent.length ? { files: sent.map(({ f, name, mime, size }) => ({ f, name, mime, size })) } : {}) }],
-      patches: [],
-      docPatches: patch,
-      said: `editing a comment on D${dn}`,
-      t: Date.now(),
-    })
+    const ok = await this.d.runner.change(slug, { op: 'dcedit', d: dn, id, text, words, ...(sent.length ? { files: sent.map(({ f, name, mime, size }) => ({ f, name, mime, size })) } : {}) }, `editing a comment on D${dn}`)
     if (!ok) {
       this.d.boxStore.getState().setMode({ kind: 'comment', d: dn, id, was: c?.text || '' })
       this.d.box.putBack(slug, key, shown, files)
@@ -181,7 +158,7 @@ export class DocComments {
   deleteComment(dn: number, id: number): void {
     const h = docHere(this.d)
     if (!h) return
-    void docSend(this.d, h.slug, { op: 'dcdel', d: dn, id }, `deleting a comment on D${dn}`, [{ d: dn, commentGone: id }])
+    void docSend(this.d, h.slug, { op: 'dcdel', d: dn, id }, `deleting a comment on D${dn}`)
     this.d.toasts.show(
       'Comment deleted',
       this.d.toasts.undoable(`Delete a comment on D${dn}`, async () => {

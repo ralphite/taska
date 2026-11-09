@@ -254,6 +254,7 @@ export function createApp(env: AppEnv): App {
     cursor: (s) => session().cursor(s),
     unreachable: () => {},
     refused: (c, why) => toasts.changeRefused(c, why),
+    model: (s) => model(s),
   })
   const delivered = new Delivered({ box: boxStore, ui, route, runner, toasts, fields, model, slug })
   const inputs = new InputSender(api, outbox, {
@@ -277,7 +278,7 @@ export function createApp(env: AppEnv): App {
     undoSeq: (n, f) => here()?.facts.undo.find((u) => u.n === n && f in u.f)?.seq ?? null,
     noteWith: () => false,
   })
-  const inputActions = new InputActions({ runner, changes, toasts, api, model, refresh: (s) => session().stale(s), title, go: goUrl })
+  const inputActions = new InputActions({ runner, toasts, api, model, refresh: (s) => session().stale(s), title, go: goUrl })
   // the other tabs of this browser: their drafts show here too
   const otherTabs = new OtherTabs({ kv: env.kv, drafts, box: boxStore, toasts, slug, recording: recordingNow })
   const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep, recording: recordingNow, goDraft, model, kv: env.kv, sent: (s, key) => otherTabs.sent(s, key), refresh: (s) => session().refresh(s), replied: (s, scope) => delivered.replied(s, scope), pauses: uploadPauses })
@@ -286,7 +287,7 @@ export function createApp(env: AppEnv): App {
   const docs = new Docs({ route, model, view: docView, nav, fields, toasts, desk: env.desk, leaveEditor: () => docEditor.keep() })
   const docEditor: DocEditor = new DocEditor({ route, model, runner, view: docView, sheets, toasts, kv: env.kv, desk: env.desk, open: (dn) => docs.open(dn), close: () => docs.close(), mic: { discard: (key) => dictation.discard(key), settled: () => dictation.settled() } })
   const rules = new Rules({ route, model, runner, view: docView, nav, sheets, toasts, kv: env.kv })
-  const docComments = new DocComments({ route, model, runner, changes, view: docView, box, boxStore, fields, sheets, toasts, desk: env.desk })
+  const docComments = new DocComments({ route, model, runner, view: docView, box, boxStore, fields, sheets, toasts, desk: env.desk })
   const docChoices = new DocChoices({ route, model, runner, ticks: docTicks, view: docView, box, inputs, toasts, desk: env.desk })
   const projects = new Projects({ api, data, kv: env.kv, toasts, home: () => route.getState().route.page === 'home' })
   const refreshProjects = () => projects.refresh()
@@ -311,10 +312,10 @@ export function createApp(env: AppEnv): App {
     about: (a) => docVoice.about(a.d, a.key, a.quote),
     pauses: uploadPauses,
   })
-  const docVoice = new DocVoice({ voice, docs, comments: docComments, box, boxStore, recording, view: docView, runner, changes, toasts, model, desk: env.desk, reply: (s, key, scope) => void box.send(s, model(s), scope, key) })
+  const docVoice = new DocVoice({ voice, docs, comments: docComments, box, boxStore, recording, view: docView, runner, toasts, model, desk: env.desk, reply: (s, key, scope) => void box.send(s, model(s), scope, key) })
   const dictation: Dictation = new Dictation({ api, store: dictationStore, view: docView, route, editor: docEditor, fields, toasts, model, recording: recordingNow, desk: env.desk })
   const views = new SavedViews({ api, store: viewsStore, nav, toasts, list: () => { const r = route.getState().route; return r.page === 'project' ? r.list : null } })
-  const moves = new Moves({ api, changes, toasts, model, title, go: goUrl, refresh: (s) => session().stale(s) })
+  const moves = new Moves({ api, runner, toasts, model, title, go: goUrl, refresh: (s) => session().stale(s) })
   const selection = new Selection({ ui, order: listOrder, runner, toasts, slug, model: here, open: () => openItemN(route.getState().route) })
   const itemDrag = new ItemDrag({ store: dragStore, items, moves, slug, model: here })
   const fileWords = (s: string, f: string) => model(s)?.voices.get(f) ?? null

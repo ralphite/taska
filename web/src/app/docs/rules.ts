@@ -95,8 +95,7 @@ export class Rules {
     v.edit(false)
     this.setDraft(h.slug, null)
     if (md === (h.doc?.md ?? '').trim()) return
-    const patch = h.doc ? [{ d: h.doc.d, f: { md } }] : []
-    const ok = await docSend(this.d, h.slug, { op: 'rules', md, why: why.trim() }, 'saving the rules', patch)
+    const ok = await docSend(this.d, h.slug, { op: 'rules', md, why: why.trim() }, 'saving the rules')
     if (!ok) return void this.d.view.getState().edit(true, md)
     this.d.toasts.show('Saved')
   }
@@ -110,8 +109,7 @@ export class Rules {
     const h = this.here()
     this.d.sheets.close()
     if (!h?.doc) return
-    const was = h.doc.history?.find((x) => x.v === v)
-    const ok = await docSend(this.d, h.slug, { op: 'rrestore', v }, `restoring v${v}`, was ? [{ d: h.doc.d, f: { md: was.md } }] : [])
+    const ok = await docSend(this.d, h.slug, { op: 'rrestore', v }, `restoring v${v}`)
     if (!ok) return
     this.go({ kind: 'read' })
     this.d.toasts.show(

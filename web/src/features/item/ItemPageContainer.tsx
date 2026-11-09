@@ -4,11 +4,11 @@
 import { useCallback, useEffect, type ReactNode } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useAway, useFiles, useItemWorld } from '../../app/hooks'
-import { newId } from '../../app/changeRunner'
 import { CHOICE } from '../../model/markdown'
 import { becameOf, madeFrom } from '../../model/became'
 import { laterOn } from '../../model/time'
-import { codeOf, docsOf, filesOf, findRef, liveN, sourceCount, STAND, type ProjectModel } from '../../model/project'
+import type { Command } from '../../model/commands'
+import { codeOf, docsOf, filesOf, findRef, liveN, sourceCount, type ProjectModel } from '../../model/project'
 import { ticksNotSent } from '../../model/docTicks'
 import { lastAgentMessage } from '../../model/items'
 import { answerOf, latestMessage } from '../../model/talk'
@@ -139,8 +139,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     const to = m.byN.get(liveN(m, k))
     if (to) app.nav.openItem(code(to.n), inTab(to, tab) ? undefined : tabOf(to))
   }
-  const send = (commands: Parameters<typeof app.runner.send>[0]['commands'], said: string, patches: Parameters<typeof app.runner.send>[0]['patches'] = []) =>
-    app.runner.send({ id: newId(), slug, commands, patches, said, t: Date.now() })
+  const send = (command: Command, said: string) => app.runner.change(slug, command, said)
   const on: ItemEvents = {
     decide: (k, status) => {
       iv().setRemodify(null)
@@ -192,20 +191,16 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     subTyped: (title) => app.itemEdits.subTyped(n, title),
     subAdd: (title) => {
       // same kind, priority and now/later as the parent; it shows under its parent at once (its code "…")
-      const type = it.type
-      const tmp = STAND + (Date.now() % 1e11)
-      const now = new Date().toISOString()
-      const stand: Item = { ...it, n: tmp, code: '…', type, title, body: '', status: 'open', parent: n, next: '', thread: [], srcs: [], wait: null, talked: false, archived: false, rank: null, t0: now, t1: now, agent: undefined, readBy: undefined, by: 'you', decided: null }
-      void send([{ op: 'new', title, parent: ref, type, pri: it.pri, when: it.when }], `adding “${title}” under ${ref}`, [{ n: tmp, f: {}, add: stand }])
+      void send({ op: 'new', title, parent: ref, type: it.type, pri: it.pri, when: it.when }, `adding “${title}” under ${ref}`)
       app.itemEdits.subAdded(n)
       stores.ui.getState().unfold(n)
     },
     editSave: (fields) => {
       const was = { title: it.title, body: it.body, next: it.next }
-      void send([{ op: 'set', ref, f: fields }], `${ref} edited`, [{ n, f: fields }]).then((ok) => {
+      void send({ op: 'set', ref, f: fields }, `${ref} edited`).then((ok) => {
         if (!ok) return
         app.itemEdits.saved(n)
-        const back = app.toasts.undoable(`${ref} edited`, () => send([{ op: 'set', ref, f: was }], `putting ${ref} back`, [{ n, f: was }]).then((done) => (done && app.toasts.show(`${ref} put back`), done)))
+        const back = app.toasts.undoable(`${ref} edited`, () => send({ op: 'set', ref, f: was }, `putting ${ref} back`).then((done) => (done && app.toasts.show(`${ref} put back`), done)))
         app.toasts.show('Saved', back)
       })
     },
@@ -217,7 +212,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     moved: (href) => app.nav.to(href),
     msgMenu: (id, from) => (desk ? app.sheets.openFrom(from, { kind: 'message-menu', n, id }, { focus: false }) : app.sheets.open({ kind: 'message-menu', n, id }, { focus: false })),
     peek: (id) => iv().peek(id),
-    unhide: (id) => void send([{ op: 'hide', ref, id, on: false }], `showing a message on ${ref} again`),
+    unhide: (id) => void send({ op: 'hide', ref, id, on: false }, `showing a message on ${ref} again`),
     docAt: (d, key) => app.docs.openAt(d, key),
     cancel: (q) => app.box.cancel(q),
     outboxRetry: (q) => app.inputs.retry(q),

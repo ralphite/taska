@@ -65,7 +65,9 @@ then fix what the type check and the tests say.
 | --- | --- | --- | --- |
 | `web/src/api/samples.gen.ts` | `python3 tools/api_samples.py` | one real answer per call in `api/taska.ts` (`Answers`), recorded on a fresh Taska with a fixed clock, voice words and organizer answer; each command op the server handles with the fields its handler reads | `satisfies` (a field the server sends that a type lacks, a required one it leaves out); `web/scripts/check-api.mjs` (a type's field no answer shows; the few a fresh Taska cannot show are listed there with why); `web/src/api/commands.test.ts` (the `Command` union in `model/commands.ts` has the server's ops and no field a handler never reads); `tests/test_api_contract.py` (records again: the same shapes, the same reads) |
 
-Regenerate `samples.gen.ts` after changing what the server sends, what a command handler reads, or what the tool
+| `web/src/model/ruleCases.gen.ts` | `python3 tools/rule_cases.py` | cases the server's own code ran on fresh projects: `EFFECTS`, a project before, the commands you send, the project after | `web/src/model/optimistic.test.ts` (each change's preview shows what the server made of it); `tests/test_rule_cases.py` (writes it again: the same text) |
+
+Regenerate `ruleCases.gen.ts` after changing a rule the page copies, or a case. Regenerate `samples.gen.ts` after changing what the server sends, what a command handler reads, or what the tool
 records (a new call: add it to `Answers` and to `record()`).
 
 Install browser binaries once with `cd web && npx playwright install chromium`. Browser checks must respect the

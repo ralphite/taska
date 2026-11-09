@@ -131,7 +131,9 @@ servers; `tests/check_data.py` validates a copied data root without a second imp
   a tab in the background asks less often and lets go (many tabs must not fill the browser's connections).
 - A change you make is a command in the outbox store: shown at once as an overlay on the server data (a pure
   function of server data + pending commands), sent in order with an id (the server runs it once), kept in
-  localStorage until the server has it, sent again when the server is back.
+  localStorage until the server has it, sent again when the server is back. What it shows is its preview
+  (`model/optimistic.ts`: one per command, as the server's handler will make it, held to the server's own cases);
+  a sender only says the command (`runner.change(slug, command, said)`), never what it shows.
 - Whether the server is out of reach is one rule, `model/reach.ts` (T728 #8): every place counts its tries without an
   answer the same way (one that timed out counts twice), says so from the same threshold and in the same words.
 - Derived things (sections of the list, counts, needs you) are selectors over that overlay, computed with the same

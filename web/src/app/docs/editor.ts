@@ -130,7 +130,7 @@ export class DocEditor {
   remove(dn: number): void {
     const h = docHere(this.d)
     if (!h || !this.d.sheets.confirm('doc-delete ' + dn)) return
-    void docSend(this.d, h.slug, { op: 'ddel', d: dn }, `deleting D${dn}`, [{ d: dn, gone: true }])
+    void docSend(this.d, h.slug, { op: 'ddel', d: dn }, `deleting D${dn}`)
     this.d.close()
     this.d.toasts.show(
       `Deleted D${dn}`,
@@ -149,12 +149,12 @@ export class DocEditor {
     if (!h || !doc) return
     const was = { code: codeOf(h.m, doc.n), n: doc.n }
     // on its new item at once
-    const put = (ref: string, n: number) => docSend(this.d, h.slug, { op: 'dmove', d: dn, to: ref }, `moving D${dn} to ${ref}`, [{ d: dn, f: { n } }])
-    void put(to, Number(/\d+/.exec(to)?.[0]) || doc.n)
+    const put = (ref: string) => docSend(this.d, h.slug, { op: 'dmove', d: dn, to: ref }, `moving D${dn} to ${ref}`)
+    void put(to)
     this.d.toasts.show(
       `D${dn} is now on ${to}`,
       this.d.toasts.undoable(`D${dn} moved`, async () => {
-        const ok = await put(was.code, was.n)
+        const ok = await put(was.code)
         if (ok) this.d.toasts.show(`D${dn} is back on ${was.code}`)
         return ok
       }),

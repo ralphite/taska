@@ -2,11 +2,10 @@
 // picked; the open item counts as picked when you start. The bar over the list changes them all at once, with Undo.
 
 import { codeOf, type ProjectModel } from '../../model/project'
-import { field } from '../../model/commands'
-import type { Item } from '../../model/types'
+import { field, type Command } from '../../model/commands'
 import { plural } from '../../model/words'
 import type { UiStore } from '../../stores/ui'
-import { newId, type ChangeRunner } from '../changeRunner'
+import type { ChangeRunner } from '../changeRunner'
 import type { ListOrder } from './listOrder'
 import type { Toasts } from '../page/toasts'
 
@@ -58,14 +57,11 @@ export class Selection {
     if (!m || !ns.length) return this.d.toasts.show('Nothing to change')
     const before = new Map(ns.map((n) => [n, (m.byN.get(n) as unknown as Record<string, unknown>)[f]]))
     const send = (to: (n: number) => unknown) =>
-      this.d.runner.send({
-        id: newId(),
-        slug: this.d.slug(),
-        commands: ns.map((n) => ({ op: 'set', ref: codeOf(m, n), f: field(f, to(n)) })),
-        patches: ns.map((n) => ({ n, f: { [f]: to(n) } as Partial<Item> })),
-        said: `changing ${plural(ns.length, 'item')}`,
-        t: Date.now(),
-      })
+      this.d.runner.change(
+        this.d.slug(),
+        ns.map((n): Command => ({ op: 'set', ref: codeOf(m, n), f: field(f, to(n)) })),
+        `changing ${plural(ns.length, 'item')}`,
+      )
     this.d.toasts.show(`${plural(ns.length, 'item')} ${said}`, async () => {
       this.d.toasts.show(`Put back ${plural(ns.length, 'item')}`)
       return send((n) => before.get(n))

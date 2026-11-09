@@ -6,12 +6,12 @@ import { Unreachable } from '../../api/http'
 import type { TaskaApi } from '../../api/taska'
 import { codeOf, type ProjectModel } from '../../model/project'
 import { plural } from '../../model/words'
-import type { ChangesStore } from '../../stores/changes'
-import { newId } from '../changeRunner'
+import { movedItem } from '../../model/optimistic'
+import { newId, type ChangeRunner } from '../changeRunner'
 import type { Toasts } from '../page/toasts'
 
 export class Moves {
-  private readonly d: { api: TaskaApi; changes: ChangesStore; toasts: Toasts; model(slug: string): ProjectModel | null; title(slug: string): string; go(url: string): void; refresh(slug: string): void }
+  private readonly d: { api: TaskaApi; runner: ChangeRunner; toasts: Toasts; model(slug: string): ProjectModel | null; title(slug: string): string; go(url: string): void; refresh(slug: string): void }
   constructor(d: Moves['d']) {
     this.d = d
   }
@@ -20,11 +20,10 @@ export class Moves {
     const m = this.d.model(slug)
     if (!m) return false
     const ref = codeOf(m, n)
-    const tree: number[] = []
-    for (let k = [n]; k.length; k = k.flatMap((x) => (m.kids.get(x) || []).map((it) => it.n))) tree.push(...k)
     const id = newId()
     // shown at once: here they are finished and archived
-    this.d.changes.getState().add({ id, slug, commands: [], patches: tree.map((k) => ({ n: k, f: { status: 'dropped', archived: true } })), said: `moving ${ref}`, t: Date.now(), mode: 'show' as const })
+    const moved = movedItem(m, n)
+    const shown = { patches: moved.patches, remove: this.d.runner.show(slug, moved) }
     const got = { as: '' }
     const done = (async () => {
       for (let i = 0; ; i++) {
@@ -43,8 +42,9 @@ export class Moves {
         }
       }
     })()
-    void done.finally(() => this.d.changes.getState().remove(id))
-    this.d.toasts.show(`Moved ${ref} to ${this.d.title(to)}` + (tree.length > 1 ? ` with its ${plural(tree.length - 1, 'subitem')}` : ''), async () => {
+    void done.finally(shown.remove)
+    const more = shown.patches.length - 1
+    this.d.toasts.show(`Moved ${ref} to ${this.d.title(to)}` + (more > 0 ? ` with its ${plural(more, 'subitem')}` : ''), async () => {
       if (await done) this.d.go(`/p/${encodeURIComponent(to)}/${got.as}`)
     }, { label: 'Open' })
     return done

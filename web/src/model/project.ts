@@ -114,11 +114,9 @@ export interface ItemPatch {
 /** Stand-in numbers start here, above any real one, growing with time: a stand-in sorts after its older siblings. */
 export const STAND = 1e12
 
-/** The fields of a patch over an item, as the server will make them: reopening brings an archived item back. */
+/** The fields of a patch over an item (model/optimistic makes them as the server will); a closed item asks nothing. */
 export function patched(it: Item, f: Partial<Item>): Item {
-  const back = 'status' in f && !closed(String(f.status)) && it.archived && !('archived' in f)
   const out: Item = { ...it, ...f }
-  if (back) out.archived = false
   if (closed(out.status)) out.wait = null
   return out
 }
@@ -150,13 +148,14 @@ export interface InputPatch {
   gone?: boolean
 }
 
-/** A change to a document shown before the server has it: deleted, a thread resolved or open again, a comment gone
- * or (shown while it is saved) there, its text edited. */
+/** A change to a document shown before the server has it: deleted, a thread resolved or open again, a comment gone,
+ * there (shown while it is saved) or changed where it is, its text edited. */
 export type DocPatch =
   | { d: number; gone: true }
   | { d: number; resolved: { tk: string; on: boolean } }
   | { d: number; commentGone: number }
   | { d: number; comment: Comment }
+  | { d: number; edited: Comment }
   | { d: number; f: Partial<Pick<Doc, 'md' | 'title' | 'n'>> }
 
 function patchedDoc(doc: Doc, p: DocPatch): Doc {
@@ -166,8 +165,8 @@ function patchedDoc(doc: Doc, p: DocPatch): Doc {
     else delete resolved[p.resolved.tk]
     return { ...doc, resolved }
   }
-  if ('commentGone' in p) {
-    const keep = (cs: Comment[]) => cs.filter((c) => c.id !== p.commentGone)
+  if ('commentGone' in p || 'edited' in p) {
+    const keep = (cs: Comment[]) => ('edited' in p ? cs.map((c) => (c.id === p.edited.id ? p.edited : c)) : cs.filter((c) => c.id !== p.commentGone))
     return { ...doc, whole: keep(doc.whole), blocks: doc.blocks.map((b) => ({ ...b, comments: keep(b.comments) })), detached: doc.detached.map((t) => ({ ...t, comments: keep(t.comments) })) }
   }
   if ('comment' in p) {

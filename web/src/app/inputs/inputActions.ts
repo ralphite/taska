@@ -5,22 +5,22 @@
 
 import type { TaskaApi } from '../../api/taska'
 import type { Command } from '../../model/commands'
-import type { InputPatch, ProjectModel } from '../../model/project'
+import { movedInput } from '../../model/optimistic'
+import type { ProjectModel } from '../../model/project'
 import type { DeletedInput } from '../../model/types'
 import { inputCode } from '../../model/words'
-import { newId, type ChangeRunner } from '../changeRunner'
+import type { ChangeRunner } from '../changeRunner'
 import type { Toasts } from '../page/toasts'
-import type { ChangesStore } from '../../stores/changes'
 
 export class InputActions {
-  private readonly d: { runner: ChangeRunner; changes: ChangesStore; toasts: Toasts; api: TaskaApi; model(slug: string): ProjectModel | null; refresh(slug: string): void; title(slug: string): string; go(url: string): void }
+  private readonly d: { runner: ChangeRunner; toasts: Toasts; api: TaskaApi; model(slug: string): ProjectModel | null; refresh(slug: string): void; title(slug: string): string; go(url: string): void }
   constructor(d: InputActions['d']) {
     this.d = d
   }
 
   /** `refusedSay`: a refusal is said in red (in Taska's words, or these), not listed as not saved */
-  private send(slug: string, op: Command, said: string, inputPatches: InputPatch[] = [], refusedSay?: string) {
-    return this.d.runner.send({ id: newId(), slug, commands: [op], patches: [], inputPatches, said, t: Date.now(), ...(refusedSay ? { mode: { say: refusedSay } } : {}) })
+  private send(slug: string, op: Command, said: string, refusedSay?: string) {
+    return this.d.runner.change(slug, op, said, refusedSay ? { mode: { say: refusedSay } } : {})
   }
 
   organizeAgain(slug: string, id: string): void {
@@ -28,7 +28,7 @@ export class InputActions {
   }
 
   remove(slug: string, id: string): void {
-    void this.send(slug, { op: 'delete', id }, `deleting ${inputCode(id)}`, [{ id, f: {}, gone: true }])
+    void this.send(slug, { op: 'delete', id }, `deleting ${inputCode(id)}`)
     const undo = this.d.toasts.undoable(`${inputCode(id)} deleted`, async () => {
       const ok = await this.send(slug, { op: 'restore', id }, `restoring ${inputCode(id)}`)
       if (!ok) return false
@@ -44,7 +44,7 @@ export class InputActions {
     const x = this.d.model(slug)?.facts.deletedInputs.find((y) => y.id === id)
     if (!(await this.send(slug, { op: 'restore', id }, `restoring ${inputCode(id)}`))) return
     const undo = this.d.toasts.undoable(`${inputCode(id)} restored`, async () => {
-      const ok = await this.send(slug, { op: 'delete', id }, `deleting ${inputCode(id)}`, [{ id, f: {}, gone: true }])
+      const ok = await this.send(slug, { op: 'delete', id }, `deleting ${inputCode(id)}`)
       if (ok) this.d.toasts.show(deletedSaid(this.d.model(slug)?.facts.deletedInputs.find((y) => y.id === id), id))
       return ok
     })
@@ -53,10 +53,10 @@ export class InputActions {
 
   undoFiling(slug: string, id: string): void {
     const what = this.d.model(slug)?.byId.get(id)?.filing?.what
-    void this.send(slug, { op: 'filing-undo', id }, `undoing the filing of ${inputCode(id)}`, [], 'Could not undo').then((ok) => {
+    void this.send(slug, { op: 'filing-undo', id }, `undoing the filing of ${inputCode(id)}`, 'Could not undo').then((ok) => {
       if (!ok) return
       const back = this.d.toasts.undoable(`Filing of ${inputCode(id)} undone`, async () => {
-        const done = await this.send(slug, { op: 'filing-redo', id }, `restoring the filing of ${inputCode(id)}`, [], 'Could not restore')
+        const done = await this.send(slug, { op: 'filing-redo', id }, `restoring the filing of ${inputCode(id)}`, 'Could not restore')
         if (done) this.d.toasts.show(`Restored ${inputCode(id)}’s filing`)
         return done
       })
@@ -65,8 +65,7 @@ export class InputActions {
   }
 
   rescope(slug: string, id: string, to: string, was: string | null): void {
-    const n = Number(/\d+/.exec(to)?.[0])
-    void this.send(slug, { op: 'rescope', id, to }, `putting ${inputCode(id)} with ${to}`, [{ id, f: { scope: n } }])
+    void this.send(slug, { op: 'rescope', id, to }, `putting ${inputCode(id)} with ${to}`)
     const undo = was
       ? this.d.toasts.undoable(`${inputCode(id)} moved`, async () => {
           const ok = await this.send(slug, { op: 'rescope', id, to: was }, `putting ${inputCode(id)} back with ${was}`)
@@ -79,20 +78,18 @@ export class InputActions {
 
   /** A recording kept as cancelled goes to the organizer and the agents after all; it shows sent at once (B645). */
   sendCancelled(slug: string, id: string): void {
-    void this.send(slug, { op: 'send', id }, `sending ${inputCode(id)}`, [{ id, f: { kind: undefined } }])
+    void this.send(slug, { op: 'send', id }, `sending ${inputCode(id)}`)
     this.d.toasts.show(`Sent ${inputCode(id)}`)
   }
 
   takeOff(slug: string, id: string, f: string): void {
-    const files = this.d.model(slug)?.byId.get(id)?.files.filter((x) => x.f !== f)
-    void this.send(slug, { op: 'unfile', id, f }, 'taking a file off', files ? [{ id, f: { files } }] : [])
+    void this.send(slug, { op: 'unfile', id, f }, 'taking a file off')
     this.d.toasts.show('File taken off')
   }
 
   /** It shows moved at once (B645: nothing waits on Taska); its new number comes with Taska's answer. */
   async move(slug: string, id: string, to: string): Promise<boolean> {
-    const show = 'show-' + newId()
-    this.d.changes.getState().add({ id: show, slug, commands: [], patches: [], inputPatches: [{ id, f: { moved: { to, as: '' } } }], said: `moving ${inputCode(id)}`, t: Date.now(), mode: 'show' as const })
+    const shown = this.d.runner.show(slug, movedInput(id, to))
     try {
       const r = await this.d.api.moveInput(slug, to, id)
       if (!r.ok) {
@@ -106,7 +103,7 @@ export class InputActions {
       this.d.toasts.show((ex as Error).message || 'Could not move it', null, { error: true })
       return false
     } finally {
-      this.d.changes.getState().remove(show)
+      shown()
     }
   }
 }
