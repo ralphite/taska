@@ -4,9 +4,12 @@ import { Frames } from '../../stories/Frames'
 import { HEARD, HEARD_TEXT, PICKED, PICKED_TEXT } from '../../stories/doubtFixtures'
 import { DraftCard, DRAFT_WORDS } from './DraftCard'
 import { VOICE, boxAt } from '../../stories/boxFixtures'
+import { spotsIn, toCheckOf } from '../../model/doubts'
 import { AGAIN, AGAIN_HEARD, LiveWords, Picking } from '../../stories/doubtsFixtures'
 
 export default { title: 'UI/Input box/Voice/Maybe misheard' } satisfies Meta
+
+const HEARD_FILES = HEARD.map((h) => ({ ...VOICE, ...h }))
 type Story = StoryObj
 
 /** only the word the main model was unsure of */
@@ -27,9 +30,10 @@ export const MaybeMisheardOnTheNewInputPage: Story = {
     <Frames phone={false} deskWidth={640}>
       {() => (
         <>
-          {boxAt({ text: HEARD_TEXT, files: HEARD.map((h) => ({ ...VOICE, ...h })), heard: {} }, true)}
+          {boxAt({ text: HEARD_TEXT, files: HEARD_FILES, heard: {} }, true)}
           <div className="px-3 pb-3">
-            <DraftCard voice={1} ms={14000} files={0} state="words" words={<LiveWords text={HEARD_TEXT} heard={HEARD} className={DRAFT_WORDS} />} hint={{ kind: 'check', n: 1 }} />
+            {/* the card counts the words to check as the box does, from the same note (B723) */}
+            <DraftCard voice={1} ms={VOICE.ms ?? 0} files={0} state="words" words={<LiveWords text={HEARD_TEXT} heard={HEARD} className={DRAFT_WORDS} />} hint={{ kind: 'check', n: toCheckOf(spotsIn(HEARD_TEXT, HEARD_FILES)) }} />
           </div>
         </>
       )}

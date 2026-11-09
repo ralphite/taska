@@ -7,7 +7,7 @@ import { Composer, Feedback, type ComposerProps } from '../features/composer/Com
 import { Toast } from '../features/feedback/Toast'
 import { DraftFiles, type DraftFile } from '../features/composer/DraftFiles'
 import { BOX_WORDS_LOOK, Doubts, DraftWords, doubtsViewOf } from '../features/composer/Doubts'
-import { openDoubts, pickSide, spotsIn, type HeardFile } from '../model/doubts'
+import { pickSide, spotsIn, toCheckOf, type HeardFile } from '../model/doubts'
 import { boxRole, boxShowsRecording, feedbackLine, shownBox, type BoxMode } from '../model/boxFoot'
 import { blockKeys } from '../model/docs'
 import type { Outgoing } from '../model/outgoing'
@@ -108,8 +108,7 @@ function LiveBox({ h, desk, extra }: { h: Here; desk: boolean; extra: Partial<Co
   // a version picked swaps the words as voiceWords.pick does (the model's pickSide)
   const heardFiles = files.map((f) => ({ ...f, key: f.key }))
   const spots = spotsIn(text, heardFiles)
-  const open = openDoubts(text, heardFiles)
-  const altOpen = open.filter((d) => d.x.alt).length
+  const toCheck = toCheckOf(spots)
   const pickable = spots.some((p) => p.x.alt)
   const pickWord = (fk: string, k: number, side: 'was' | 'alt') => {
     const f = files.find((x) => x.key === fk)
@@ -119,7 +118,7 @@ function LiveBox({ h, desk, extra }: { h: Here; desk: boolean; extra: Partial<Co
     setFiles(files.map((x) => (x.key === fk ? { ...x, doubts: r.doubts, trAdded: r.trAdded } : x)))
   }
   const viewWords = !compose && pickable && showing && !rec
-  const doubtsView = h.heard ? doubtsViewOf({ compose, pickable, altOpen, showing: viewWords }) : null
+  const doubtsView = h.heard ? doubtsViewOf({ compose, pickable, toCheck, showing: viewWords }) : null
   const doubts = doubtsView ? <Doubts view={doubtsView} on={{ show: () => setShowing(true) }} /> : h.doubts
   const words = viewWords ? <DraftWords text={text} spots={spots} className={BOX_WORDS_LOOK} on={{ pick: pickWord, escape: () => {}, plain: () => setShowing(false) }} /> : undefined
   const recShown = rec ? (rec.t0 == null ? { ...REC, from: rec.from } : { ...REC, from: rec.from, time: clock(Math.max(0, now - rec.t0)) }) : null

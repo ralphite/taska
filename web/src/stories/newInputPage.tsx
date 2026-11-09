@@ -12,7 +12,7 @@ import { InputsView } from '../features/inputs/InputsView'
 import { inputRows, outgoingRows } from '../features/inputs/inputRows'
 import { Sidebar } from '../features/sidebar/Sidebar'
 import { SIDE_KEYS, sideLinks } from '../features/sidebar/sideLinks'
-import type { HeardFile } from '../model/doubts'
+import { spotsIn, toCheckOf, type HeardFile } from '../model/doubts'
 import { draftKey } from '../model/draftTarget'
 import { saidOutgoing, saidRows } from '../model/saidLately'
 import type { FileRef, Input, OrgNote, ProjectRow } from '../model/types'
@@ -128,7 +128,7 @@ const draftCard = (
     ms={42_000}
     files={0}
     state="words"
-    hint={{ kind: 'check', n: 2 }}
+    hint={{ kind: 'check', n: toCheckOf(spotsIn(DRAFT_TEXT, DRAFT_HEARD)) }}
     words={<LiveWords text={DRAFT_TEXT} heard={DRAFT_HEARD} className={DRAFT_WORDS} />}
   />
 )

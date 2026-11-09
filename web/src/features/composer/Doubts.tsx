@@ -18,9 +18,9 @@ export type DoubtsView =
 
 /** Which way the box shows words that may be misheard: the desktop's New input page in its draft card, every other box
  * how many and its words to pick from (`showing`: its words are shown in the box now). */
-export function doubtsViewOf(a: { compose: boolean; pickable: boolean; altOpen: number; showing: boolean }): DoubtsView | null {
-  if (a.compose) return a.altOpen ? { kind: 'card', toCheck: a.altOpen } : null
-  return a.pickable ? { kind: 'box', toCheck: a.altOpen, showing: a.showing } : null
+export function doubtsViewOf(a: { compose: boolean; pickable: boolean; toCheck: number; showing: boolean }): DoubtsView | null {
+  if (a.compose) return a.toCheck ? { kind: 'card', toCheck: a.toCheck } : null
+  return a.pickable ? { kind: 'box', toCheck: a.toCheck, showing: a.showing } : null
 }
 
 export function Doubts({ view, on }: { view: DoubtsView; on: { show(): void } }) {

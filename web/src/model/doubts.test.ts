@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fixIn, fixRange, openDoubts, pickSide, spotsIn, unmarked, voiceStretches } from './doubts'
+import { fixIn, fixRange, openDoubts, pickSide, spotsIn, toCheckOf, unmarked, voiceStretches } from './doubts'
 
 const text = 'Before. Put it in the side bar, the side bar stays. After.'
 const f = { key: 'v', trAdded: 'Put it in the side bar, the side bar stays.', doubts: [{ was: 'side bar', alt: 'sidebar', why: '' }] }
@@ -26,4 +26,14 @@ describe('misheard words', () => {
     expect(voiceStretches(text, [f])).toEqual([[8, 8 + f.trAdded.length]])
   })
   it('takes the model mark out', () => expect(unmarked('colours (?)')).toBe('colours'))
+})
+
+it('the box and the Draft card count the words to check one way: picked ones out, unsure ones in (B723)', () => {
+  const spots = [
+    { fk: 'v', k: 0, x: { was: 'filter', alt: 'filters' } },
+    { fk: 'v', k: 1, x: { was: 'sort', why: 'unsure' } },
+    { fk: 'v', k: 2, x: { was: 'page', alt: 'pages', pick: 'alt' } },
+    { fk: 'v', k: 0, x: { was: 'filter', alt: 'filters' } },
+  ] as never
+  expect(toCheckOf(spots)).toBe(2)
 })

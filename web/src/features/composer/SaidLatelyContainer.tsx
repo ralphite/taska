@@ -122,8 +122,7 @@ export function DraftCardContainer({ route, boxKey, scope, fixing, setFixing }: 
   const files = draftFiles || []
   const voice = files.filter((f) => (f.mime || '').startsWith('audio/'))
   if ((!text.trim() && !files.length) || (!voice.length && !heard.pickable)) return null
-  // every word still to check: two versions to pick from, or one a model was unsure of
-  const open = new Set(heard.spots.filter((p) => !p.x.pick).map((p) => `${p.fk} ${p.k}`)).size
+  const open = heard.toCheck
   const hint: DraftHint = open ? { kind: 'check', n: open } : files.some((f) => f.trAdded && text.includes(f.trAdded)) ? { kind: 'fix' } : null
   const words = text.trim() ? (
     <DraftWords
