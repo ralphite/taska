@@ -67,12 +67,14 @@ const AGENT_ICON: Record<(typeof ICON_AGENTS)[number], string> = { 'claude-code'
 const edge = (by: string) => (by === 'codex' ? 'dark:ring-1 dark:ring-white/15' : '')
 
 /** An agent's mark: its app's icon, else its letter; `dot` (a dot's colour) sits on its corner. `named`: the icon
- * stands for the agent's name, none beside it (T711), so its tip and what a screen reader reads say the name. */
-export function Avatar({ by, dot, named = false }: { by: string; dot?: string; named?: boolean }) {
+ * stands for the agent's name, none beside it (T711), so its tip and what a screen reader reads say the name. `big`:
+ * the size the blocked bar shows it at (T711). */
+export function Avatar({ by, dot, named = false, big = false }: { by: string; dot?: string; named?: boolean; big?: boolean }) {
+  const size = big ? 'size-8 rounded-lg' : 'size-5 rounded-md'
   const mark = hasIcon(by) ? (
-    <img src={AGENT_ICON[by]} alt={named ? whoName(by) : ''} title={named ? whoName(by) : undefined} draggable={false} className={`size-5 shrink-0 rounded-md select-none ${edge(by)}`} />
+    <img src={AGENT_ICON[by]} alt={named ? whoName(by) : ''} title={named ? whoName(by) : undefined} draggable={false} className={`shrink-0 select-none ${size} ${edge(by)}`} />
   ) : (
-    <span className="grid size-5 shrink-0 place-items-center rounded-md bg-zinc-900 text-[10px] font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
+    <span className={`grid shrink-0 place-items-center bg-zinc-900 font-bold text-white dark:bg-zinc-100 dark:text-zinc-900 ${size} ${big ? 'text-sm' : 'text-[10px]'}`}>
       {AVATAR_LETTER[by] || String(by || '?')[0].toUpperCase()}
     </span>
   )

@@ -41,6 +41,13 @@ export function presenceOf(agents: readonly AgentSeen[] | undefined, now: number
   return { k: a.waiting ? 'ready' : now - a.t < AROUND_MS ? 'recent' : 'away', a }
 }
 
+/** The agent whose session waits on the user, by presenceOf's rule; null while none does. The page's blocked bar
+ * shows while there is one and goes as soon as there is none (T711). */
+export function blockedAgent(agents: readonly AgentSeen[] | undefined, now: number): string | null {
+  const p = presenceOf(agents, now)
+  return p.k === 'blocked' ? p.a.name : null
+}
+
 /** [tone, the pill's words, a longer sentence] */
 /** `queued`: items in the queue now (the sentence never says nothing waits while some do). */
 /** A session waiting on the user comes first (T711 #10443): `Claude Code · blocked`. */

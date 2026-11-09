@@ -142,7 +142,7 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
         on.drop()
       }}
       onDragEnd={() => on.dragEnd()}
-      className={`${PULL} min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain pb-6 data-drop-out:bg-blue-50/60 phone:-mb-(--foot-h) phone:pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-thin lg:scrollbar-gutter-stable lg:hover:scrollbar-thumb-zinc-500/80 dark:data-drop-out:bg-blue-400/5 dark:lg:hover:scrollbar-thumb-zinc-400/70`}
+      className={`${PULL} min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain pb-6 data-drop-out:bg-blue-50/60 phone:-mb-(--foot-h) phone:pb-[calc(var(--foot-h,0px)+var(--float-h,0px)+1.5rem)] lg:scrollbar-thin lg:scrollbar-gutter-stable lg:hover:scrollbar-thumb-zinc-500/80 dark:data-drop-out:bg-blue-400/5 dark:lg:hover:scrollbar-thumb-zinc-400/70`}
     >
       {loading ? (
         <Skeleton shape="item" n={6} />

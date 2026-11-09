@@ -88,7 +88,7 @@ export function PaneFrame({
         ref={bodyRef}
         {...(split ? { 'data-split': '' } : {})}
         data-vc-area
-        className={`${PULL} -mb-(--foot-h) min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-gutter-both lg:mask-b-from-[calc(100%-2rem)] lg:group-data-duo/app:pb-0 lg:group-data-duo/app:mask-none lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 lg:data-split:mask-none dark:lg:hover:scrollbar-thumb-zinc-400/70 ${duo ? '' : 'lg:data-split:pb-(--foot-h) dark:lg:data-split:pb-[calc(var(--foot-h,0px)+1.5rem)]'}`}
+        className={`${PULL} -mb-(--foot-h) min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain pb-[calc(var(--foot-h,0px)+var(--float-h,0px)+1.5rem)] lg:scrollbar-gutter-both lg:mask-b-from-[calc(100%-2rem)] lg:group-data-duo/app:pb-0 lg:group-data-duo/app:mask-none lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 lg:data-split:mask-none dark:lg:hover:scrollbar-thumb-zinc-400/70 ${duo ? '' : 'lg:data-split:pb-[calc(var(--foot-h,0px)+var(--float-h,0px))] dark:lg:data-split:pb-[calc(var(--foot-h,0px)+var(--float-h,0px)+1.5rem)]'}`}
       >
         {children}
       </div>

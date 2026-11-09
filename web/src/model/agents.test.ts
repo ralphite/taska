@@ -1,6 +1,6 @@
 // T711 #10443: the pill says when an agent session waits on the user, before anything else it could say.
 import { describe, expect, test } from 'vitest'
-import { agentLine, agentState, lastAgent } from './agents'
+import { agentLine, agentState, blockedAgent, lastAgent } from './agents'
 import type { AgentSeen } from './types'
 
 const now = 1_800_000_000_000
@@ -52,4 +52,15 @@ describe('presence, one rule for the pill and the home page (T728 #5)', () => {
     expect(agentState(agents, false, now)[0]).toBe('blocked')
     expect(lastAgent(agents, now)).toMatchObject({ blocked: true, on: true })
   })
+})
+
+// T711 (Yadong chose the floating orange bar): the page's blocked bar shows only while a session waits on the user.
+test('the blocked bar: only while presence says blocked, gone as soon as it does not', () => {
+  expect(blockedAgent(blocked, now)).toBe('claude-code')
+  expect(blockedAgent([{ ...blocked[1], blocked: [] }], now)).toBeNull()
+  expect(blockedAgent([{ name: 'codex', t: now - 30_000, waiting: true }], now)).toBeNull() // ready
+  expect(blockedAgent([{ name: 'codex', t: now - 60_000, waiting: false }], now)).toBeNull() // at work
+  expect(blockedAgent([{ name: 'codex', t: now - 3600_000, waiting: false }], now)).toBeNull() // away
+  expect(blockedAgent([], now)).toBeNull()
+  expect(blockedAgent(undefined, now)).toBeNull()
 })

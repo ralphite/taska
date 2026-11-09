@@ -36,18 +36,22 @@ export function ToastContainer() {
       setCentered(!!r)
       setStyle(r ? { left: `${r.left + r.width / 2}px`, top: '8rem', bottom: 'auto' } : { top: layout === 'desk' ? '8rem' : 'calc(env(safe-area-inset-top) + 0.75rem)', bottom: 'auto' })
     } else if (layout === 'desk') {
-      const last = panes.last === 'drawer' ? null : panes.last ? panes.get(panes.last) : null
+      const last = panes.last === 'drawer' || panes.last === 'blocked' ? null : panes.last ? panes.get(panes.last) : null
       const pane = last || panes.get('detail') || panes.get('inputs') || panes.get('settings')
       const r = pane?.getBoundingClientRect()
       const f = foot?.getBoundingClientRect()
       const above = r && f && f.height < 300 && f.left < r.right && f.right > r.left
+      // the blocked bar floating over the pane's bottom (T711): above it
+      const b = panes.get('blocked')?.getBoundingClientRect()
+      const lift = r && b && b.left < r.right && b.right > r.left ? innerHeight - b.top + 12 : 0
       // placed by measuring the panes before the browser paints (React's useLayoutEffect measuring pattern)
       setCentered(!!r)
-      setStyle(r ? { left: `${r.left + r.width / 2}px`, bottom: `${above && f ? innerHeight - f.top + 12 : 20}px` } : undefined)
+      setStyle(r ? { left: `${r.left + r.width / 2}px`, bottom: `${lift || (above && f ? innerHeight - f.top + 12 : 20)}px` } : undefined)
     } else {
-      // just above what you act on (the box, the drawer's foot, a sheet's foot), never on it; else near the top
+      // just above what you act on (the box, the drawer's foot, a sheet's foot), never on it, nor on the blocked bar
+      // over the box (T711); else near the top
       setCentered(false)
-      const bar = drawer ? panes.get('drawerFoot') : !over ? (foot && !foot.hidden ? foot : null) : panes.get('sheetFoot')
+      const bar = drawer ? panes.get('drawerFoot') : !over ? panes.get('blocked') || (foot && !foot.hidden ? foot : null) : panes.get('sheetFoot')
       setStyle(bar && bar.offsetHeight ? { bottom: `${Math.round(innerHeight - bar.getBoundingClientRect().top + 8)}px` } : over ? { top: 'calc(env(safe-area-inset-top) + 0.75rem)', bottom: 'auto' } : undefined)
     }
   }, [t, layout, panes, onPage, moved, drawer, over, full, folded])

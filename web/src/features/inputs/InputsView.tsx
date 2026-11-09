@@ -120,7 +120,7 @@ export function InputsView({ hidden, rows, more, outgoing, world, files, on }: {
       ref={ref}
       hidden={hidden}
       data-vc-area
-      className={`${PULL} -mb-(--foot-h) min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)]`}
+      className={`${PULL} -mb-(--foot-h) min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain pb-[calc(var(--foot-h,0px)+var(--float-h,0px)+1.5rem)]`}
     >
       {hidden ? null : (
         <div className="mb-6 space-y-2 px-4 pt-4 empty:hidden">

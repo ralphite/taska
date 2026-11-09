@@ -109,8 +109,12 @@ class Taska:
 
     def __init__(self) -> None:
         self.root = tempfile.mkdtemp(prefix="taska-e2e-")
+        # the agent sessions it reads are its own (T711): none of this Mac's; a check writes one to fake a session
+        self.sessions = os.path.join(self.root, "claude-sessions")
+        os.makedirs(self.sessions)
         env = {k: v for k, v in os.environ.items() if k not in KEYS}
-        env["TZ"] = "America/Los_Angeles"
+        env.update(TZ="America/Los_Angeles", TASKA_CLAUDE_SESSIONS=self.sessions,
+                   TASKA_CODEX_HOME=os.path.join(self.root, "codex"))
         self.log = open(os.path.join(self.root, "server.log"), "w")
         with _STARTING:
             self.port = free_port()
@@ -245,7 +249,7 @@ def one(spec: str, layout: Optional[str], rest: List[str], run_dir: str) -> Tupl
         return Outcome(broken=str(ex)), "", int(time.monotonic() - t0)
     try:
         env = {k: v for k, v in os.environ.items() if k not in KEYS}
-        env.update(TASKA_URL=t.base, PLAYWRIGHT_JSON_OUTPUT_FILE=report_file)
+        env.update(TASKA_URL=t.base, TASKA_E2E_SESSIONS=t.sessions, PLAYWRIGHT_JSON_OUTPUT_FILE=report_file)
         r = subprocess.run(["npx", "playwright", "test", "--reporter=list,json", "--output=" + out_dir,
                             *([f"--project={layout}"] if layout else []), *rest, spec],
                            cwd=WEB, env=env, capture_output=True, text=True)

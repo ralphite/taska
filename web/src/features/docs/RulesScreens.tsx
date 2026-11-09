@@ -88,7 +88,7 @@ export function RulesReading({ f, sub, proposals, doc, on }: { f: RulesFrame; su
         {sub ? <BarBtn icon="copy" label="Copy" onClick={on.copy} /> : null}
         {edit}
       </div>
-      <div className={`${PULL} min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-[calc(var(--foot-h,0px)+1.5rem)]`}>{reading}</div>
+      <div className={`${PULL} min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-[calc(var(--foot-h,0px)+var(--float-h,0px)+1.5rem)]`}>{reading}</div>
     </section>
   )
 }

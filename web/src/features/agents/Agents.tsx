@@ -25,9 +25,6 @@ export interface AgentsFacts {
   far: string
   ask: string
   guide: string | null
-  /** T711 proposal: a blocked agent's row says it by an amber dot alone, at the row's end or on its icon's corner, and
-   * its session by its name alone */
-  dot?: 'end' | 'corner'
 }
 
 const CARD_LOOK = {
@@ -38,7 +35,6 @@ const CARD_LOOK = {
 } as const
 
 const AMBER = 'text-amber-700 dark:text-amber-400'
-const AMBER_DOT = 'bg-amber-500 dark:bg-amber-400'
 
 /** A sentence that names an agent: the name drawn by the agent's app icon where it has one (T711). */
 function Said({ text, by }: { text: string; by?: string }) {
@@ -101,26 +97,20 @@ function AgentsBody({ f, on, guideOpen }: { f: AgentsFacts; on: { copy(text: str
                 // the agent's row names its first session (a blocked one first); the others under it, each with how
                 // long ago it was heard of; one blocked on you says on what (T711)
                 const [first, ...rest] = a.sessions
-                const waits = (s: (typeof a.sessions)[number]) => (s.waitingFor && !f.dot ? <p className={`pb-1.5 pl-7.5 text-xs leading-snug break-words ${AMBER}`}>{s.waitingFor}</p> : null)
+                const waits = (s: (typeof a.sessions)[number]) => (s.waitingFor ? <p className={`pb-1.5 pl-7.5 text-xs leading-snug break-words ${AMBER}`}>{s.waitingFor}</p> : null)
                 return (
                   <li key={a.name} className={`text-sm ${a.known ? '' : 'opacity-55'}`}>
                     <div className="flex h-9 items-center gap-2.5">
-                      <Avatar by={a.name} named dot={f.dot === 'corner' && blocked ? AMBER_DOT : undefined} />
+                      <Avatar by={a.name} named />
                       <span className="min-w-0 flex-1 truncate">{[hasIcon(a.name) ? '' : a.who, first?.name].filter(Boolean).join(' · ')}</span>
-                      {f.dot && blocked ? (
-                        f.dot === 'end' ? <span className={`size-2 shrink-0 rounded-full ${AMBER_DOT}`} /> : null
-                      ) : (
-                        <span className={`shrink-0 text-xs tabular-nums ${blocked ? `font-medium ${AMBER}` : 'text-zinc-500 dark:text-zinc-400'}`}>{a.when}</span>
-                      )}
+                      <span className={`shrink-0 text-xs tabular-nums ${blocked ? `font-medium ${AMBER}` : 'text-zinc-500 dark:text-zinc-400'}`}>{a.when}</span>
                     </div>
                     {first ? waits(first) : null}
                     {rest.map((s) => (
                       <div key={s.name}>
                         <div className="flex h-7 items-center gap-2.5 pl-7.5">
                           <p className="min-w-0 flex-1 truncate">{s.name}</p>
-                          {s.blocked && f.dot ? null : (
-                            <span className={`shrink-0 text-xs tabular-nums ${s.blocked ? `font-medium ${AMBER}` : 'text-zinc-500 dark:text-zinc-400'}`}>{s.blocked ? 'Blocked' : s.when}</span>
-                          )}
+                          <span className={`shrink-0 text-xs tabular-nums ${s.blocked ? `font-medium ${AMBER}` : 'text-zinc-500 dark:text-zinc-400'}`}>{s.blocked ? 'Blocked' : s.when}</span>
                         </div>
                         {waits(s)}
                       </div>

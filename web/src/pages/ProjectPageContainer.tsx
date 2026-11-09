@@ -7,6 +7,8 @@ import { useBackSwipe, useDrawerPull } from './phoneGestures'
 import { gripVars } from '../stores/grips'
 import { useLayout, useServices, useStores, useStoreValue } from '../app/context'
 import { useAway, useProjectModel, type ProjectRoute } from '../app/hooks'
+import { usePaneRef } from '../app/panes'
+import { blockedAgent } from '../model/agents'
 import { needsYou } from '../model/needStates'
 import { needsCount } from '../model/rules'
 import { filtersSet } from '../model/visible'
@@ -15,6 +17,7 @@ import { toneOf } from '../ui/tones'
 import { FootContainer } from '../features/composer/FootContainer'
 import { BoxContainer } from '../features/composer/BoxContainer'
 import { ToastContainer } from '../features/feedback/ToastContainer'
+import { BlockedBar } from '../features/agents/BlockedBar'
 import { ItemListContainer } from '../features/list/ItemListContainer'
 import { SidebarContainer } from '../features/sidebar/SidebarContainer'
 import { useSideProjects } from '../app/projectLists'
@@ -40,8 +43,10 @@ function useHeadFacts(route: ProjectRoute, desk: boolean) {
   const title = m?.facts.title || rows?.find((p) => p.name === route.slug)?.title || route.slug
   const otherNeeds = (rows || []).some((p) => p.name !== route.slug && p.needs > 0)
   const agent = m ? agentInfo(m, away) : null
+  // the agent whose session waits on the user: the bar floating at the bottom says so until it does not (T711)
+  const blocked = m ? blockedAgent(m.facts.agents, m.at) : null
   const counts = useMemo(() => (m ? tabCounts(m, route.tab, route.list, desk) : null), [m, route.tab, route.list, desk])
-  return { m, title, agent, counts, notSaved, away, otherNeeds }
+  return { m, title, agent, blocked, counts, notSaved, away, otherNeeds }
 }
 
 export function ProjectPageContainer({ route }: { route: ProjectRoute }) {
@@ -66,7 +71,8 @@ export function ProjectPageContainer({ route }: { route: ProjectRoute }) {
 function DeskLayout({ route }: { route: ProjectRoute }) {
   const app = useServices('fields', 'listOrder', 'model', 'nav', 'sheets', 'views')
   const stores = useStores('docView', 'grips', 'route', 'ui')
-  const { title, agent, counts, notSaved } = useHeadFacts(route, true)
+  const { title, agent, blocked, counts, notSaved } = useHeadFacts(route, true)
+  const blockedRef = usePaneRef('blocked')
   const { tones } = useSideProjects(route.slug)
   const sideHidden = useStoreValue(stores.ui, (s) => s.sideHidden)
   const help = route.place.kind === 'help'
@@ -92,7 +98,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
       <div
         {...(compose ? { 'data-compose': '' } : {})}
         {...(duo ? { 'data-duo': '' } : {})}
-        style={{ '--foot-h': footH + 'px' } as CSSProperties}
+        style={{ '--foot-h': footH + 'px', '--float-h': blocked ? FLOAT_H : undefined } as CSSProperties}
         className="group/app relative z-10 grid h-full min-w-0 flex-1 grid-cols-[var(--list-w,360px)_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] bg-white pt-[env(safe-area-inset-top)] wide:grid-cols-[var(--list-w,420px)_minmax(0,1fr)] huge:grid-cols-[var(--list-w,460px)_minmax(0,1fr)] dark:bg-zinc-950"
       >
         <ProjectBar
@@ -103,7 +109,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           notSaved={notSaved}
           place="col-span-2 col-start-1 row-start-1"
           hidden={settings}
-          on={{ tab: (t) => app.nav.tab(t), agents: () => app.sheets.open({ kind: 'agents' }, { tall: true, wide: true }), notSaved: (from) => app.sheets.openFrom(from, { kind: 'not-saved' }, { focus: false }) }}
+          on={{ tab: (t) => app.nav.tab(t), agents: () => app.sheets.open(...AGENTS_SHEET), notSaved: (from) => app.sheets.openFrom(from, { kind: 'not-saved' }, { focus: false }) }}
         />
         {/* two columns under the bar, each laid out by itself: nothing the pane shows moves the list, or the other way
             round (B663) */}
@@ -151,10 +157,29 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
             onReset={() => stores.grips.getState().keep('list', 0)}
           />
         )}
+        {/* the session blocked on you: over the pane's column at its bottom, above the box (on the New input page,
+            whose box is at its top, at the bottom); over both columns where the pane takes them */}
+        <BlockedBar
+          by={blocked}
+          barRef={blockedRef}
+          place={`absolute inset-x-6 z-30 row-start-2 ${ABOVE_FOOT} group-data-[compose]/app:bottom-5 ${settings || full || rulesTab ? 'col-span-2 col-start-1' : 'col-start-2'}`}
+          onOpen={() => app.sheets.open(...AGENTS_SHEET)}
+        />
       </div>
     </div>
   )
 }
+
+/** The Agents sheet, from the head's agent button and the blocked bar's Open. */
+const AGENTS_SHEET = [{ kind: 'agents' }, { tall: true, wide: true }] as const
+
+/** The blocked bar's height from the bottom: just above the box (its height, the phone's safe area in it), else above
+ * the screen's bottom edge (T711). */
+const ABOVE_FOOT = 'bottom-[calc(max(var(--foot-h,0px),env(safe-area-inset-bottom),0.5rem)+0.75rem)]'
+
+/** The room the blocked bar takes over the box (its 4rem and its 0.75rem gap): what scrolls under it ends that much
+ * higher, so nothing stays under it (--float-h). */
+const FLOAT_H = '4.75rem'
 
 /** The drawer: over the page from the left, the page pushed aside. */
 const DRAWER_PLACE = 'fixed top-0 left-0 w-80 max-w-[85vw] bg-zinc-100 pb-[max(1rem,env(safe-area-inset-bottom))]'
@@ -163,7 +188,8 @@ const DRAWER_W = 'min(85vw, 320px)'
 function PhoneLayout({ route }: { route: ProjectRoute }) {
   const app = useServices('actions', 'fields', 'finder', 'nav', 'sheets', 'views')
   const stores = useStores('box', 'docView', 'route', 'sheet')
-  const { title, agent, counts, notSaved, otherNeeds } = useHeadFacts(route, false)
+  const { title, agent, blocked, counts, notSaved, otherNeeds } = useHeadFacts(route, false)
+  const blockedRef = usePaneRef('blocked')
   const layers = useStoreValue(stores.route, (s) => s.layers)
   const searching = layers.includes('search')
   const drawer = layers.includes('drawer')
@@ -207,6 +233,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
   const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
   const frame: CSSProperties = {
     '--foot-h': footH + 'px',
+    '--float-h': blocked ? FLOAT_H : undefined,
     transition: reduce || drawerPull.pull != null ? 'none' : 'transform 220ms ease-out',
     ...(drawerPull.pull != null ? { transform: `translateX(${drawerPull.pull}px)` } : drawer ? { transform: `translateX(${DRAWER_W})` } : {}),
   } as unknown as CSSProperties
@@ -228,7 +255,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
           hidden={!under}
           on={{
             menu: () => app.nav.drawer(true),
-            agents: () => app.sheets.open({ kind: 'agents' }, { tall: true, wide: true }),
+            agents: () => app.sheets.open(...AGENTS_SHEET),
             notSaved: () => app.sheets.open({ kind: 'not-saved' }, { focus: false }),
             search: () => app.finder.open(),
           }}
@@ -253,6 +280,15 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
         {settings && !help ? <SettingsContainer route={route} place="" prefsBox={null} /> : null}
         <FootContainer route={route} composePage={false} place="" hidden={(settings && !prefsEditing) || docNoBox || rulesEditing || (searching && !open)} onHeight={setFootH} />
       </div>
+      {/* the session blocked on you: over the page and a document's sheet, just above the box; under the drawer, a
+          sheet and the search page, which have their own feet */}
+      <BlockedBar
+        by={drawer || sheet || (searching && !open) ? null : blocked}
+        barRef={blockedRef}
+        style={{ '--foot-h': footH + 'px' } as CSSProperties}
+        place={`fixed inset-x-4 z-45 ${ABOVE_FOOT}`}
+        onOpen={() => app.sheets.open(...AGENTS_SHEET)}
+      />
     </>
   )
 }

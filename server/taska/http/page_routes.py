@@ -64,6 +64,23 @@ def _changed(p: Project, since: Optional[Cursor]) -> bool:
     return since is None or since.boot != p.news.boot or since.rev != p.news.rev or since.agents != p.agents.version
 
 
+BLOCKED_LOOK = 2.0  # seconds: how often a waiting page has the agent sessions looked at (T711)
+
+
+def _wait_news(p: Project, since: Optional[Cursor], wait: float) -> bool:
+    """Wait up to `wait` seconds for news; whether there is. While a page waits, the agent sessions are looked at
+    every BLOCKED_LOOK seconds (a few small reads), so one that comes to wait on the user, or stops, shows within that
+    (T711); with no page waiting, nobody looks."""
+    end = time.monotonic() + wait
+    while True:
+        see_blocked(p)  # a change bumps the agents' version: news
+        left = end - time.monotonic()
+        if left <= 0:
+            return _changed(p, since)
+        if p.news.wait_for(lambda: _changed(p, since), timeout=min(BLOCKED_LOOK, left)):
+            return True
+
+
 def get(ctx: "AppContext", req: Request, p: Project, sub: str) -> Optional[Response]:
     if sub == "/api/codex-notifications":
         return as_json(p.codex_notifications.status())
@@ -72,12 +89,7 @@ def get(ctx: "AppContext", req: Request, p: Project, sub: str) -> Optional[Respo
     if sub == "/api/changes":  # a long wait for news: a page in the background asks with wait=0 and lets go
         since = Cursor.parse(req.arg("cursor"))
         wait = max(0, min(25, int(req.arg("wait", "25") or 25)))
-        see_blocked(p)  # sessions waiting on the user are looked at on each ask and when its wait ends (T711)
-        news = p.news.wait_for(lambda: _changed(p, since), timeout=wait)
-        if not news:
-            see_blocked(p)
-            news = _changed(p, since)
-        if not news:
+        if not _wait_news(p, since, wait):
             return as_json({"cursor": req.arg("cursor"), "same": True,
                             "server": {"page": ctx.page.version(), "update": ctx.status.update_ready()}})
         return as_json(_view(ctx, req, p, since))

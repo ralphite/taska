@@ -39,15 +39,9 @@ export function OfflinePill() {
 
 /** Whether an agent is around; "Out of reach, retrying…" while the server is away. The agent by its app's icon where
  * it has one, else by name, then its session and what it does (T711): "[icon] Fix export · 5m"; a long session's
- * name is cut, what follows it never. `iconOnly`: the agent's icon alone, the dot on its corner (T711 proposal b). */
-export function AgentPill({ tone, label, who, offline, iconOnly }: { tone: AgentTone; label: string; who?: AgentWho; offline: boolean; iconOnly?: boolean }) {
+ * name is cut, what follows it never. */
+export function AgentPill({ tone, label, who, offline }: { tone: AgentTone; label: string; who?: AgentWho; offline: boolean }) {
   if (offline) return <OfflinePill />
-  if (iconOnly && who)
-    return (
-      <span className="grid size-8 place-items-center">
-        <Avatar by={who.by} dot={PILL[tone][1]} />
-      </span>
-    )
   const words = who ? [hasIcon(who.by) ? '' : whoName(who.by), who.session].filter(Boolean) : []
   return (
     <span className={`flex h-8 max-w-52 items-center gap-2 rounded-full px-3 text-[13px] font-medium ring-1 ring-inset lg:max-w-80 ${PILL[tone][0]}`}>
@@ -94,8 +88,6 @@ export interface AgentInfo {
   who?: AgentWho
   tip?: string
   offline: boolean
-  /** the agent's icon alone in place of the words (T711 proposal b) */
-  iconOnly?: boolean
 }
 
 export function ProjectBar({

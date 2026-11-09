@@ -14,7 +14,7 @@ import { codeOf, type ProjectModel } from '../model/project'
 import { NO_FILTERS, parseRoute } from '../model/route'
 import { latestMessage } from '../model/talk'
 import type { Item, ProjectRow } from '../model/types'
-import { ProjectBar, type AgentInfo } from '../pages/Header'
+import { ProjectBar } from '../pages/Header'
 import { agentInfo, deskTabs, tabCounts } from '../pages/headFacts'
 import { toneOf } from '../ui/tones'
 import { pageOf } from './itemPage'
@@ -48,23 +48,24 @@ export function previewOf(x: Found): ReactNode {
 
 // ---------------------------------------------------------------- the page
 
-/** The box under the pane, as the desktop draws it: a reply to the item open. */
-function DeskBox({ m, n }: { m: ProjectModel; n: number }) {
-  const route = parseRoute(`/p/shop/${codeOf(m, n)}`, '')
+/** The box at the foot, as the page draws it: a reply to the item open (`n`), else a new input; the desktop's under
+ * the pane, the phone's at the screen's foot. */
+export function PageBox({ m, n, desk = true }: { m: ProjectModel; n: number | null; desk?: boolean }) {
+  const route = parseRoute(`/p/shop/${n == null ? '' : codeOf(m, n)}`, '')
   if (route.page !== 'project') throw new Error('not a project')
   const role = boxRole(m, route, false, m.facts.title, null, { reply: null, quote: null, sel: new Set() }, { mine: {}, going: {}, open: new Set() })
   const shown = shownBox(role, { mode: null, text: '', key: 'here', recordingFor: null })
   return (
-    <footer className="relative z-20 shrink-0 border-t border-zinc-200 bg-zinc-50 px-8 pt-3 pb-5 dark:border-transparent dark:bg-transparent dark:pt-1">
-      <Composer line={shown.line} waiting={shown.waiting} placeholder={shown.placeholder} sendWord={shown.send} text="" desk composePage={false} micTip="Voice note · ⌥V" on={{ text() {}, send() {}, attach() {}, mic() {} }} />
+    <footer className={`relative z-20 shrink-0 border-t border-zinc-200 bg-zinc-50 pt-3 dark:border-transparent dark:bg-transparent dark:pt-1 ${desk ? 'px-8 pb-5' : 'px-3 pb-5'}`}>
+      <Composer line={shown.line} waiting={shown.waiting} placeholder={shown.placeholder} sendWord={shown.send} text="" desk={desk} composePage={false} micTip="Voice note · ⌥V" on={{ text() {}, send() {}, attach() {}, mic() {} }} />
     </footer>
   )
 }
 
 /** The desktop's project page: the sidebar (or its rail), the project's bar, the list, the item open in its pane.
- * `model`: the project's data in place of the demo's; `pill`: what a proposal changes in the agent pill (T711);
- * `onAgents`: what the agent pill opens. */
-export function DeskPage({ slug, n, rail, onSearch, model, pill, onAgents }: { slug: string; n: number; rail: boolean; onSearch(): void; model?: ProjectModel; pill?: Partial<AgentInfo>; onAgents?(): void }) {
+ * `model`: the project's data in place of the demo's; `onAgents`: what the agent pill opens; `float`: what floats
+ * just above the box (the blocked bar, T711). */
+export function DeskPage({ slug, n, rail, onSearch, model, onAgents, float }: { slug: string; n: number; rail: boolean; onSearch(): void; model?: ProjectModel; onAgents?(): void; float?: ReactNode }) {
   const m = model ?? modelFor(slug)
   const projects = sideProjects(ROWS, m, slug).list
   const sOn: SidebarEvents = { ...sideOn, search: onSearch }
@@ -81,7 +82,7 @@ export function DeskPage({ slug, n, rail, onSearch, model, pill, onAgents }: { s
           title={m.facts.title}
           tone={toneOf(TONES, slug)}
           tabs={deskTabs(tabCounts(m, 'items', NO_FILTERS, true), 'items', false)}
-          agent={{ ...agentInfo(m, 0), ...pill }}
+          agent={agentInfo(m, 0)}
           notSaved={0}
           place="col-span-2"
           on={{ tab() {}, agents: onAgents ?? (() => {}), notSaved() {} }}
@@ -89,7 +90,10 @@ export function DeskPage({ slug, n, rail, onSearch, model, pill, onAgents }: { s
         <section className="flex min-h-0 flex-col border-r border-zinc-200 dark:border-zinc-800">{listOf(m.items, 'items', {}, true, { open: n })}</section>
         <div className="flex min-h-0 min-w-0 flex-col">
           <div className="min-h-0 flex-1">{pageOf(it, true, { docs: n === 1 && slug === 'shop' ? [D1] : [] })}</div>
-          <DeskBox m={m} n={n} />
+          <div className="relative">
+            {float}
+            <PageBox m={m} n={n} />
+          </div>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@
 // outcome, one on its way and one waiting, a voice note being recorded and a draft to check. Every part is the page's
 // own: the Sidebar, ComposeHead, Composer, the Draft card, SaidLately on the desktop and InputsView on the phone, with
 // their rows from saidRows and inputRows.
+import type { ReactNode } from 'react'
 import { sideProjects } from '../app/sideProjects'
 import { ComposeHead } from '../features/composer/ComposeHead'
 import { DraftCard, DRAFT_WORDS } from '../features/composer/DraftCard'
@@ -155,10 +156,12 @@ const ROWS: ProjectRow[] = [
 const SIDE = sideProjects(ROWS, M, 'taska')
 
 /** The desktop at 1440: the sidebar, and the New input page as the page's foot draws it there (the project's name,
- * the box, what you said). */
-export function DeskPage() {
+ * the box, what you said). `float`: what floats at the window's bottom (the blocked bar, T711), the window then
+ * `height` high. */
+export function DeskPage({ float, height }: { float?: ReactNode; height?: number } = {}) {
   return (
-    <Frame layout="desk" width={1440}>
+    <Frame layout="desk" width={1440} height={height}>
+      {float}
       <div data-compose className="group/app flex min-h-full bg-zinc-50 dark:bg-zinc-950">
         <div className="w-60 shrink-0 border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
           <Sidebar phone={false} keys={SIDE_KEYS} projects={SIDE.list} composing links={sideLinks('taska', null)} place="" on={sideOn} />
@@ -174,8 +177,9 @@ export function DeskPage() {
   )
 }
 
-/** The phone at 393: its Inputs tab, the box at its foot. */
-export function PhonePage() {
+/** The phone at 393: its Inputs tab, the box at its foot; `float`: what floats just above the box (the blocked bar,
+ * T711). */
+export function PhonePage({ float }: { float?: ReactNode } = {}) {
   const live = useInputs(M, false, {})
   const { rows, total } = inputRows(M, { title, opened: live.opened, drafts: DRAFTS, writing: null, lit: null, litStill: false, upTo: 40 })
   return (
@@ -185,7 +189,10 @@ export function PhonePage() {
           <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(live.going(OUTBOX), 'taska', 0)} world={talkEnv(M, false).world} files={live.chips} on={live.inputOn} />
         </div>
         {live.node}
-        <div className="shrink-0 border-t border-zinc-200 dark:border-zinc-800">{boxAt({ at: '' }, false, { placeholder: 'Write to taska…' })}</div>
+        <div className="relative shrink-0 border-t border-zinc-200 dark:border-zinc-800">
+          {float}
+          {boxAt({ at: '' }, false, { placeholder: 'Write to taska…' })}
+        </div>
       </div>
     </Frame>
   )

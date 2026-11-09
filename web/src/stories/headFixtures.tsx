@@ -4,7 +4,7 @@
 // phoneTabs) and filtersSet, with the item list's demo project. Used by the stories of the top bar and the list head.
 import { useState } from 'react'
 import { DeskFilters, FilterStrip, type FilterEvents } from '../features/list/Filters'
-import { ListHead, PhoneTabs, ProjectBar, type AgentInfo } from '../pages/Header'
+import { ListHead, PhoneTabs, ProjectBar } from '../pages/Header'
 import { agentInfo, deskTabs, phoneTabs, tabCounts } from '../pages/headFacts'
 import { NO_FILTERS, type ListKey, type ListQuery } from '../model/route'
 import type { AgentSeen } from '../model/types'
@@ -66,8 +66,6 @@ export interface HeadHere {
   awayTab?: boolean
   /** the phone's menu and Search pressed */
   pressed?: boolean
-  /** what a proposal changes in the agent pill (T711) */
-  pill?: Partial<AgentInfo>
   /** the agent pill opens what the story shows (the page's Agents sheet); else its click shows in the Actions panel */
   onAgents?(): void
 }
@@ -87,7 +85,7 @@ function LiveHead({ desk, h }: { desk: boolean; h: HeadHere }) {
   const [list, setList] = useState<ListQuery>({ ...NO_FILTERS, ...h.list })
   const [filtersOpen, setFiltersOpen] = useState(!!h.filtersOpen)
   const counts = h.loading ? null : tabCounts(m, tab, list, desk)
-  const agent = h.loading ? null : { ...agentInfo(m, h.away ?? 0), ...h.pill }
+  const agent = h.loading ? null : agentInfo(m, h.away ?? 0)
   const set = filtersSet(tab, list)
   const toTab = (t: Tab) => {
     setTab(t)

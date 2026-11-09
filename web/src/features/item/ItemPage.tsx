@@ -252,7 +252,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
         onScroll={(e) => marks(e.currentTarget)}
         // in two columns they run to the bottom of the screen and the talk ends clear above the box; in one the talk
         // runs on under the box, its own padding keeping its end where it was
-        className={`lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto outline-none lg:data-up:mask-t-from-[calc(100%-2rem)] ${duo ? 'lg:h-full lg:min-w-0 lg:pb-[calc(var(--foot-h,0px)+1.5rem)]' : 'lg:-mb-(--foot-h) lg:pb-(--foot-h) dark:lg:-mb-[calc(var(--foot-h,0px)+1.5rem)] dark:lg:pb-[calc(var(--foot-h,0px)+1.5rem)]'}`}
+        className={`lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto outline-none lg:data-up:mask-t-from-[calc(100%-2rem)] ${duo ? 'lg:h-full lg:min-w-0 lg:pb-[calc(var(--foot-h,0px)+var(--float-h,0px)+1.5rem)]' : 'lg:-mb-(--foot-h) lg:pb-[calc(var(--foot-h,0px)+var(--float-h,0px))] dark:lg:-mb-[calc(var(--foot-h,0px)+1.5rem)] dark:lg:pb-[calc(var(--foot-h,0px)+var(--float-h,0px)+1.5rem)]'}`}
       >
         <div inert={readOnly} className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:py-6">
           <ItemTalk it={it} f={f} env={env} facts={facts} on={on} />
