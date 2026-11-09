@@ -35,8 +35,9 @@ describe('the phone search', () => {
   })
 
   it('says when an input was said and what it became, and opens what it became', () => {
-    const now = Date.parse('2026-11-02T18:00:00-08:00')
-    const said = f('shop', 'inputs', 'r12', { t: '2026-11-02T09:12:00-08:00', became: 'B018', n: 18 })
+    // the same day wherever the test runs (CI is UTC): local times, not a fixed offset
+    const now = new Date(2026, 10, 2, 18, 0).getTime()
+    const said = f('shop', 'inputs', 'r12', { t: new Date(2026, 10, 2, 9, 12).toISOString(), became: 'B018', n: 18 })
     expect(foundMeta(said, now)).toMatch(/^\d\d:\d\d · became B018$/)
     expect(foundMeta(f('shop', 'docs', 'd1', { on: 'F001' }), now)).toBe('On F001')
     expect(foundPath(said)).toBe('/p/shop/B018')
