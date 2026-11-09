@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # Python 3.9 (the minimum supported) is not available on newer runners
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
