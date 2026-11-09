@@ -170,7 +170,7 @@ export function ListHead({
 }) {
   return (
     <header data-part="list-head" data-tip-side="bottom" hidden={hidden} className="flex h-14 shrink-0 items-center gap-1 px-2">
-      <button onClick={on.menu} aria-label="Projects and settings" {...pressedMark(pressed)} className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 text-left data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-800">
+      <button onClick={on.menu} aria-label="Projects and settings" {...pressedMark(pressed)} className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 text-left data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-800">
         <span className="relative text-zinc-700 dark:text-zinc-300">
           <Icon n="menu" c="size-6" />
           <span hidden={!otherNeeds} title="Another project needs you" className="absolute -top-1 -right-1 rounded-full bg-white dark:bg-zinc-950">
