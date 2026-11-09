@@ -97,7 +97,7 @@ describe('the states', () => {
     const { f, toasts } = walk(['uploaded', 'fast', 'strong'])
     expect(noteState(f)).toBe('words')
     expect(toasts).toEqual(['More complete transcription added'])
-    expect(sayIn('fastWords', 'chip')).toEqual({ say: 'Partial · more coming', tone: 'partial' })
+    expect(sayIn('fastWords', 'chip')).toEqual({ say: 'Confirming…', tone: 'partial' })
     expect(sayIn('words', 'chip')).toEqual({ say: 'Transcribed', tone: 'done' })
     // the strong model failed or said the same: the fast words stay, nothing said
     expect(walk(['uploaded', 'fast', 'fastKept']).toasts).toEqual([])
@@ -152,9 +152,11 @@ describe('sent with its fast words: the strong words come after', () => {
   })
 
   test('where it shows while its words come, and that they swap in silently', () => {
-    expect(sayIn('sentFastWords', 'row')?.say).toBe('Transcribing…')
-    expect(sayIn('sentFastWords', 'line')?.say).toBe('Sent · transcribing…')
-    expect(sayIn('sentFastWords', 'talk')?.say).toBe('transcribing')
+    // its words are in: the strong model is confirming them, not transcribing (r1217)
+    expect(sayIn('sentFastWords', 'row')?.say).toBe('Confirming…')
+    expect(sayIn('sentFastWords', 'line')?.say).toBe('Sent · confirming…')
+    expect(sayIn('sentFastWords', 'talk')?.say).toBe('confirming')
+    expect(sayIn('sentTranscribing', 'row')?.say).toBe('Transcribing…')
     expect(noteStep({ ...NOTE, transcript: 'fast' }, 'sent', 'strong')).toEqual({ change: { transcript: 'done' } })
     // sent before any words: nobody heard says so once
     expect(noteStep({ ...NOTE, transcript: 'wait' }, 'sent', 'nothing')?.toast).toBe('No words heard. Audio sent as is')

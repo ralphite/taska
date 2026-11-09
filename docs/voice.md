@@ -27,7 +27,7 @@ flowchart TD
     recording["Recording"]
     uploading["Uploading"]
     transcribing["Transcribing"]
-    fastWords["Fast words"]
+    fastWords["Fast words, confirming"]
     words["Words final"]
     noWords["No words heard"]
     wordsFailed["Writing it out failed"]
@@ -36,7 +36,7 @@ flowchart TD
     offline["Waiting for Taska"]
     notSent["Not sent"]
     sentTranscribing["Sent, words to come"]
-    sentFastWords["Sent with the fast words"]
+    sentFastWords["Sent with the fast words, confirming"]
     organizing["Organizing"]
     created["Created an item"]
     added["Added to an item"]
@@ -114,7 +114,7 @@ is the colour: busy blue and pulsing, partial amber, done green, quiet grey, fai
 | Recording (`recording`) | — | — | — | — | — |
 | Uploading (`uploading`) | Transcribing… (busy) | Transcribing… (busy) | — | — | — |
 | Transcribing (`transcribing`) | Transcribing… (busy) | Transcribing… (busy) | — | — | — |
-| Fast words (`fastWords`) | Partial · more coming (partial) | its words | — | — | — |
+| Fast words, confirming (`fastWords`) | Confirming… (partial) | its words | — | — | — |
 | Words final (`words`) | Transcribed (done) | its words | — | — | — |
 | No words heard (`noWords`) | No words heard · audio only (quiet) | No words (quiet) | — | — | — |
 | Writing it out failed (`wordsFailed`) | No transcript · audio only (quiet) | No words (quiet) | — | — | — |
@@ -123,7 +123,7 @@ is the colour: busy blue and pulsing, partial amber, done green, quiet grey, fai
 | Waiting for Taska (`offline`) | — | — | where it is on its way | where it is on its way | where it is on its way |
 | Not sent (`notSent`) | — | — | where it is on its way | where it is on its way | where it is on its way |
 | Sent, words to come (`sentTranscribing`) | — | — | Transcribing… (busy) | Sent · transcribing… (busy) | transcribing (busy) |
-| Sent with the fast words (`sentFastWords`) | — | — | Transcribing… (busy) | Sent · transcribing… (busy) | transcribing (busy) |
+| Sent with the fast words, confirming (`sentFastWords`) | — | — | Confirming… (busy) | Sent · confirming… (busy) | confirming (busy) |
 | Organizing (`organizing`) | — | — | what became of it | what became of it | — |
 | Created an item (`created`) | — | — | what became of it | what became of it | what became of it |
 | Added to an item (`added`) | — | — | what became of it | what became of it | — |

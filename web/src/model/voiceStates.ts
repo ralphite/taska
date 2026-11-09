@@ -62,6 +62,9 @@ const IN_BOX = { row: null, line: null, talk: null } as const
 const GOING = { chip: null, card: null, row: 'going', line: 'going', talk: 'going' } as const
 /** sent, its words still to come */
 const SENT_HEARING = { chip: null, card: null, row: TRANSCRIBING, line: { say: 'Sent · transcribing…', tone: 'busy' }, talk: { say: 'transcribing', tone: 'busy' } } as const
+/** the first words are in, the strong model is still confirming them: no longer "transcribing" (r1217) */
+const CONFIRMING: Show = { say: 'Confirming…', tone: 'busy' }
+const SENT_CONFIRMING = { ...SENT_HEARING, row: CONFIRMING, line: { say: 'Sent · confirming…', tone: 'busy' }, talk: { say: 'confirming', tone: 'busy' } } as const
 /** what became of it: the input's line says it; the item's talk stays as sent */
 const BECAME = { chip: null, card: null, row: 'became', line: 'became', talk: null } as const
 
@@ -71,7 +74,7 @@ export const VOICE_STATES = {
   recording: { phase: 'draft', label: 'Recording', show: NOTHING },
   uploading: { phase: 'draft', label: 'Uploading', show: { chip: TRANSCRIBING, card: TRANSCRIBING, ...IN_BOX } },
   transcribing: { phase: 'draft', label: 'Transcribing', show: { chip: TRANSCRIBING, card: TRANSCRIBING, ...IN_BOX } },
-  fastWords: { phase: 'draft', label: 'Fast words', show: { chip: { say: 'Partial · more coming', tone: 'partial' }, card: 'words', ...IN_BOX } },
+  fastWords: { phase: 'draft', label: 'Fast words, confirming', show: { chip: { say: 'Confirming…', tone: 'partial' }, card: 'words', ...IN_BOX } },
   words: { phase: 'draft', label: 'Words final', show: { chip: { say: 'Transcribed', tone: 'done' }, card: 'words', ...IN_BOX } },
   noWords: { phase: 'draft', label: 'No words heard', show: { chip: { say: 'No words heard · audio only', tone: 'quiet' }, card: { say: 'No words', tone: 'quiet' }, ...IN_BOX } },
   wordsFailed: { phase: 'draft', label: 'Writing it out failed', show: { chip: { say: 'No transcript · audio only', tone: 'quiet' }, card: { say: 'No words', tone: 'quiet' }, ...IN_BOX } },
@@ -82,7 +85,7 @@ export const VOICE_STATES = {
   notSent: { phase: 'going', label: 'Not sent', show: GOING },
   // Taska has it: its words as Taska's record has them, then what its input became
   sentTranscribing: { phase: 'sent', label: 'Sent, words to come', show: SENT_HEARING },
-  sentFastWords: { phase: 'sent', label: 'Sent with the fast words', show: SENT_HEARING },
+  sentFastWords: { phase: 'sent', label: 'Sent with the fast words, confirming', show: SENT_CONFIRMING },
   organizing: { phase: 'sent', label: 'Organizing', show: BECAME },
   created: { phase: 'sent', label: 'Created an item', show: { ...BECAME, talk: 'became' } },
   added: { phase: 'sent', label: 'Added to an item', show: BECAME },
