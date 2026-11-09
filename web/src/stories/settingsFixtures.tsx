@@ -5,7 +5,7 @@
 import { navWord } from '../app/project/notices'
 import { useState, type ReactNode } from 'react'
 import { sideProjects } from '../app/sideProjects'
-import { DeletedBody, DocsBody, LogBody, PhoneProjectsBody } from '../features/settings/PhoneSections'
+import { DeletedBody, DocsBody, LogBody } from '../features/settings/PhoneSections'
 import { Loading } from '../features/settings/SettingsParts'
 import { boxAt } from './boxFixtures'
 import { NotificationsBody, OrganizerBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody, type ProjectsEvents } from '../features/settings/Sections'
@@ -143,7 +143,7 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
   const navOn = { open: setSec, back, keys: setActs.keys, href: () => '#' }
   const toggles = (set: (on: boolean) => void) => ({ turnOn: () => set(true), turnOff: () => set(false) })
   const bodies: Record<SectionKey, () => ReactNode> = {
-    projects: () => (desk ? <ProjectsBody f={projectsOf(rows, side, st, asked, '~/.taska/shop/shop.db')} on={pOn} /> : <PhoneProjectsBody f={projectsOf(rows, side, st, asked, '')} on={pOn} />),
+    projects: () => <ProjectsBody f={projectsOf(rows, side, st, asked, desk ? '~/.taska/shop/shop.db' : '')} on={pOn} desk={desk} />,
     phone: () => <PhoneBody link={h.noRemote ? '' : m.facts.remote + '/'} lan={h.noRemote && !h.noLan ? 'http://192.168.1.20:7340/p/shop/' : ''} keyText={m.facts.key} asking={!!asked['new-key']} desk={desk} on={{ copy: setActs.copy, newKey: () => ask('new-key', setActs.newKey) }} />,
     notifications: () =>
       desk ? (

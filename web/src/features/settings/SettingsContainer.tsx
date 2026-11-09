@@ -9,7 +9,7 @@ import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { codeOf } from '../../model/project'
 import { useSideProjects } from '../../app/projectLists'
-import { DeletedBody, DocsBody, LogBody, PhoneProjectsBody } from './PhoneSections'
+import { DeletedBody, DocsBody, LogBody } from './PhoneSections'
 import { NotificationsBody, OrganizerBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody, type ProjectsEvents } from './Sections'
 import { SECTIONS, sectionOf, type SectionKey } from './sectionList'
 import { DeskNav, PhoneIndex } from './SettingsNav'
@@ -81,7 +81,7 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
     if (!m) return <Loading />
     switch (k) {
       case 'projects':
-        return desk ? <ProjectsBody f={projectsFacts} on={projectsOn} /> : <PhoneProjectsBody f={projectsFacts} on={projectsOn} />
+        return <ProjectsBody f={projectsFacts} on={projectsOn} desk={desk} />
       case 'phone':
         return <PhoneBody link={m.facts.remote ? m.facts.remote + '/' : ''} lan={m.facts.lan ? m.facts.lan + '/' : ''} keyText={m.facts.key} asking={!!asked['new-key']} desk={desk} on={{ copy: (t) => s.copy(t), newKey: () => void s.newKey(route.slug) }} />
       case 'notifications':

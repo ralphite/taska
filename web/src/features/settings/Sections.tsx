@@ -5,10 +5,10 @@
 import { useState, type ReactNode } from 'react'
 import type { Spelling, VoicePrefs } from '../../model/types'
 import { plural } from '../../model/words'
-import { Kbd, ProjTile } from '../../ui/bits'
+import { Kbd, ProjTile, Skeleton } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { DISABLED, FIELD, MUTED, P_BTN, PRIMARY, SECOND } from '../../ui/tones'
-import { CopyBtn, Loading, Part, QuietHoursSetting, Setting, TextBox, Toggle } from './SettingsParts'
+import { CopyBtn, Loading, Part, PH_GROUP, PhLabel, QuietHoursSetting, Setting, TextBox, Toggle } from './SettingsParts'
 
 // ---- Projects
 
@@ -90,17 +90,156 @@ const goneTile = (title: string) => (
 /** A row's buttons on the desktop: under the pointer or the keys, as a list's rows (always there on the phone). */
 const ROW_ACT = 'lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100'
 
-export function ProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }) {
-  if (!f.live) return <Loading />
-  const add = (
-    <button onClick={(e) => on.newProject(e.currentTarget)} className={`${SECOND} shrink-0`}>
-      <Icon n="plus" c="size-4" sw="2" />
-      New project
-    </button>
-  )
+/** A project's name, and whether it is the one open. */
+function ProjectName({ p }: { p: ProjectRowFacts }) {
   return (
     <>
-      <section className="flex items-center gap-4 border-t border-zinc-200 py-5 dark:border-zinc-800">{add}</section>
+      <span className="truncate">{p.title}</span>
+      {p.here ? <span className="shrink-0 rounded-md bg-zinc-100 px-1.5 py-0.5 text-[11px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">This project</span> : null}
+    </>
+  )
+}
+
+/** A project to open (⌘ or Ctrl: in a new tab). */
+function ProjectLink({ p, on, cls, children }: { p: ProjectRowFacts; on: ProjectsEvents; cls: string; children: ReactNode }) {
+  return (
+    <a
+      href={`/p/${encodeURIComponent(p.name)}/`}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey) return
+        e.preventDefault()
+        on.open(p.name)
+      }}
+      className={cls}
+    >
+      {children}
+    </a>
+  )
+}
+
+/** A project's new name being typed: Enter saves and Esc cancels; the phone, with no keys, has Save and Cancel. */
+function Renaming({ p, desk, on }: { p: ProjectRowFacts; desk: boolean; on: ProjectsEvents }) {
+  const [typed, setTyped] = useState('')
+  const field = (cls: string) => <NameField value={p.title} label={`New name for ${p.title}`} cls={cls} select onValue={setTyped} onEnter={(v) => on.saveRename(p.name, v, p.title)} onEsc={() => on.rename(null)} />
+  if (desk)
+    return (
+      <>
+        {field('h-10 max-w-[22rem] py-1.5 text-[15px] font-medium')}
+        <p className="mt-1.5 flex items-center gap-1 px-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+          <Kbd k="↵" />
+          <span>save ·</span>
+          <Kbd k="Esc" />
+          <span>
+            cancel · the address stays <code className="font-mono">/p/{p.name}</code>
+          </span>
+        </p>
+      </>
+    )
+  return (
+    <>
+      {field('h-11 py-2 font-medium')}
+      <div className="mt-2 flex gap-2">
+        <button onClick={() => on.saveRename(p.name, typed || p.title, p.title)} className="h-11 shrink-0 rounded-xl bg-zinc-900 px-4 text-[15px] font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">
+          Save
+        </button>
+        <button onClick={() => on.rename(null)} className="h-11 shrink-0 rounded-xl px-4 text-[15px] font-medium text-zinc-600 dark:text-zinc-300">
+          Cancel
+        </button>
+      </div>
+      <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+        The address stays <span className="font-mono">/p/{p.name}</span>
+      </p>
+    </>
+  )
+}
+
+/** A row's ⋯ on the phone: its actions in a sheet. */
+function PhoneMore({ k, title, on }: { k: string; title: string; on: ProjectsEvents }) {
+  return (
+    <button onClick={() => on.menu(k)} aria-label={`More for ${title}`} className={`grid size-11 shrink-0 place-items-center rounded-full data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-800 ${MUTED}`}>
+      <Icon n="more" c="size-5" />
+    </button>
+  )
+}
+
+/** Projects: new, renamed, deleted, the deleted ones restored or deleted for good. One body for both layouts, each
+ * in its own look: the desktop's a list whose rows show Rename and Delete under the pointer; the phone's grouped rows,
+ * each row's actions under its ⋯. */
+export function ProjectsBody({ f, on, desk }: { f: ProjectsFacts; on: ProjectsEvents; desk: boolean }) {
+  if (!f.live) return desk ? <Loading /> : <Skeleton shape="tile" cls="px-2 py-3" />
+  const deleted = (d: GoneProject) => `Deleted ${d.when} · ${plural(d.items, 'item')}`
+  if (!desk)
+    return (
+      <>
+        <div className={`${PH_GROUP} mt-4`}>
+          <button onClick={(e) => on.newProject(e.currentTarget)} className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] font-medium text-blue-600 dark:text-blue-400">
+            <Icon n="plus" c="size-5" />
+            New project
+          </button>
+        </div>
+        <PhLabel>Projects</PhLabel>
+        <div className={PH_GROUP}>
+          {f.live.map((p) =>
+            f.renaming === p.name ? (
+              <div key={p.name} className="flex items-start gap-3 px-3.5 py-3">
+                <ProjTile title={p.title} tone={p.tone} cls="mt-1.5 size-8 rounded-lg text-sm" />
+                <div className="min-w-0 flex-1">
+                  <Renaming p={p} desk={false} on={on} />
+                </div>
+              </div>
+            ) : (
+              <div key={p.name}>
+                <div className="flex min-h-14 items-center gap-3 py-2 pr-1.5 pl-3.5">
+                  <ProjectLink p={p} on={on} cls="flex min-w-0 flex-1 items-center gap-3">
+                    <ProjTile title={p.title} tone={p.tone} cls="size-8 rounded-lg text-sm" />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex min-w-0 items-center gap-2 text-[15px] font-semibold">
+                        <ProjectName p={p} />
+                      </span>
+                      <span className="mt-0.5 block truncate text-xs text-zinc-500 dark:text-zinc-400">
+                        <span className="font-mono">/p/{p.name}</span> · {p.open} open
+                      </span>
+                    </span>
+                  </ProjectLink>
+                  <PhoneMore k={p.name} title={p.title} on={on} />
+                </div>
+              </div>
+            ),
+          )}
+        </div>
+        {f.gone.length ? (
+          <>
+            <PhLabel>Deleted</PhLabel>
+            <div className={PH_GROUP}>
+              {f.gone.map((d) => (
+                <div key={d.name}>
+                  <div className="flex min-h-14 items-center gap-3 py-2 pr-1.5 pl-3.5">
+                    {goneTile(d.title)}
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[15px] font-medium break-words text-zinc-500 dark:text-zinc-400">{d.title}</span>
+                      <span className={`mt-0.5 block truncate text-xs ${MUTED}`}>{deleted(d)}</span>
+                    </span>
+                    <button onClick={() => on.restore(d.name)} className="flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-blue-50 px-3 text-sm font-semibold text-blue-700 dark:bg-blue-400/10 dark:text-blue-300">
+                      <Icon n="undo" c="size-4" sw="2" />
+                      Restore
+                    </button>
+                    <PhoneMore k={'gone:' + d.name} title={d.title} on={on} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : null}
+      </>
+    )
+  return (
+    <>
+      <section className="flex items-center gap-4 border-t border-zinc-200 py-5 dark:border-zinc-800">
+        <button onClick={(e) => on.newProject(e.currentTarget)} className={`${SECOND} shrink-0`}>
+          <Icon n="plus" c="size-4" sw="2" />
+          New project
+        </button>
+      </section>
       <ul className="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
         {f.live.map((p) => {
           const ren = f.renaming === p.name
@@ -109,35 +248,16 @@ export function ProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }
               <ProjTile title={p.title} tone={p.tone} cls="size-8 rounded-lg text-sm" />
               <div className="min-w-0 flex-1">
                 {ren ? (
-                  <>
-                    <NameField value={p.title} label={`New name for ${p.title}`} cls="h-10 max-w-[22rem] py-1.5 text-[15px] font-medium" select onEnter={(v) => on.saveRename(p.name, v, p.title)} onEsc={() => on.rename(null)} />
-                    <p className="mt-1.5 flex items-center gap-1 px-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                      <Kbd k="↵" />
-                      <span>save ·</span>
-                      <Kbd k="Esc" />
-                      <span>
-                        cancel · the address stays <code className="font-mono">/p/{p.name}</code>
-                      </span>
-                    </p>
-                  </>
+                  <Renaming p={p} desk on={on} />
                 ) : (
-                  <a
-                    href={`/p/${encodeURIComponent(p.name)}/`}
-                    onClick={(e) => {
-                      if (e.metaKey || e.ctrlKey) return
-                      e.preventDefault()
-                      on.open(p.name)
-                    }}
-                    className="block rounded-lg hover:opacity-80"
-                  >
-                    <p className="flex min-w-0 items-center gap-2">
-                      <span className="truncate text-[15px] font-semibold">{p.title}</span>
-                      {p.here ? <span className="shrink-0 rounded-md bg-zinc-100 px-1.5 py-0.5 text-[11px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">This project</span> : null}
+                  <ProjectLink p={p} on={on} cls="block rounded-lg hover:opacity-80">
+                    <p className="flex min-w-0 items-center gap-2 text-[15px] font-semibold">
+                      <ProjectName p={p} />
                     </p>
                     <p className="mt-0.5 truncate font-mono text-xs text-zinc-500 dark:text-zinc-400">
                       /p/{p.name} · {p.open} open{p.here && f.file ? ` · ${f.file}` : ''}
                     </p>
-                  </a>
+                  </ProjectLink>
                 )}
               </div>
               {ren ? null : (
@@ -169,7 +289,7 @@ export function ProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }
                 <div className="min-w-0 flex-1">
                   <p className="text-[15px] font-medium break-words text-zinc-600 dark:text-zinc-300">{d.title}</p>
                   <p className="text-xs break-words text-zinc-500 dark:text-zinc-400">
-                    Deleted {d.when} · {plural(d.items, 'item')} · <span className="font-mono">/p/{d.name}</span>
+                    {deleted(d)} · <span className="font-mono">/p/{d.name}</span>
                   </p>
                 </div>
                 <button onClick={() => on.restore(d.name)} className={P_BTN}>

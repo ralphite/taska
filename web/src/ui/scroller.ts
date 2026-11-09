@@ -9,6 +9,9 @@ export function scrollerOf(el: HTMLElement): HTMLElement | null {
   return null
 }
 
+/** Whether more of what `el` scrolls is below what it shows. */
+export const overflows = (el: HTMLElement) => el.scrollTop + el.clientHeight < el.scrollHeight - 2
+
 /** Whether the part that scrolls `sc` shows its end. */
 export const atEnd = (sc: HTMLElement) => sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4
 

@@ -65,7 +65,8 @@ Each project stores its event log, projected state and agent metadata in SQLite,
 
 ```
 web/src/
-  app/          composition root (createApp: makes the stores and services, only assembling them), the hooks
+  app/          composition root (createApp: only assembling; app/core.ts makes the stores and the parts every
+                area uses, and each area's services are made by its own factory, app/<area>/area.ts), the hooks
                 containers share (the route, a project's model, the projects listed, search hints), the table of
                 actions, page-wide behaviours (keys, tooltip, panes), and the services more than one feature uses,
                 by area: page/ (navigation, sheets, toasts, fields, media), project/ (the project open, its sync,

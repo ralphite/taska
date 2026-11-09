@@ -5,21 +5,21 @@
 import { Fragment, type ReactNode } from 'react'
 import { oneLine } from '../../model/items'
 import { voiceMark } from '../../model/inputs'
-import { hasChoices, plainQuote } from '../../model/markdown'
+import { hasChoices } from '../../model/markdown'
 import type { Became, ItemRef } from '../../model/became'
 import { MADE_WORD, becameText, showsIn } from '../../model/inputStates'
-import { answerOf, readMark, versions, withdrawn, type Version } from '../../model/talk'
+import { answerOf, readMark, versions, withdrawn, type DocNote, type Version } from '../../model/talk'
 import { when } from '../../model/time'
-import type { Comment, Doc, FileRef, Input, Item, Message } from '../../model/types'
+import type { Doc, FileRef, Input, Item, Message } from '../../model/types'
 import { KIND_WORD, inputCode, whoName } from '../../model/words'
 import { Avatar } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
-import { BUSY, DC_BTN, DC_LINK, MUTED } from '../../ui/tones'
+import { DC_BTN, DC_LINK, MUTED, YOU_BUBBLE } from '../../ui/tones'
 import { FileRows, VoiceBubble, isAudio } from '../../ui/Files'
-import { sayIn, sentNotes, voiceLacks } from '../../model/voiceStates'
 import { OUT_ACT_WORD, type OutShow, type OutTone } from '../../model/outgoingStates'
 import { MsgText } from './MsgText'
+import { DocComment } from './TalkDocComment'
 import { Answered, type CardEvents } from './NeedsCard'
 import type { TalkEnv } from './talkEnv'
 
@@ -72,9 +72,6 @@ export interface TalkFacts {
   made(id: string): readonly ItemRef[]
 }
 
-const YOU_BUBBLE =
-  'max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_[data-ref]]:text-white [&_[data-ref]]:underline [&_[data-ref]]:decoration-white/60 [&_[data-ref]]:underline-offset-2 [&_a]:text-white [&_a]:decoration-white/60 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_button[data-more]]:text-white [&_code]:bg-white/15 [&_code]:text-white [&_mark]:text-zinc-900 [&_pre]:bg-white/15 [&_pre]:text-white'
-
 function KindTag({ x }: { x: Message }) {
   const w = KIND_WORD[x.kind || '']
   if (!w) return null
@@ -116,6 +113,8 @@ function FromInput({ r, n, code, on }: { r: Input | undefined; n: number; code(n
   )
 }
 
+/** A message in the talk, drawn as what it is: yours, an agent taking back its question, a question taken back, one
+ * hidden, a question answered (its card), or an agent's. */
 function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
   it: Item
   x: Message
@@ -129,169 +128,10 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
   gone: boolean
   read: { names: string[]; t: number } | null
 }) {
-  const you = x.by === 'you'
-  const src = you && x.src ? facts.inputs.get(x.src) : undefined
-  const y = ver ? { ...x, text: ver.text } : x
-  const strip = (files: FileRef[] | undefined, size?: string) =>
-    files?.length ? (
-      <FileRows files={files} url={env.url} size={size} play={env.play} tidy={env.tidy} on={on} cls={you ? 'items-end max-w-full [&>div]:max-w-full' : 'mt-3'} />
-    ) : null
-  if (you && y.text && y.text.trim().split('\n').every((l) => /^\s*✓/.test(l)) && !src?.files?.length) return null // an answer's ticks show on its card
-  if (you) {
-    // what became of the input it came from, as the talk shows it (model/inputStates): moved, what it made, its words
-    // still to come
-    const b = src ? facts.became(src.id) : null
-    const shown = b && showsIn(b, 'talk') ? b : null
-    const moved = shown?.k === 'moved' && !ver?.old ? shown : null
-    // B714 #10594: what your words here made, as one line under them; the same on the phone and the desktop
-    const made = src && shown?.k === 'filed' && !ver?.old ? facts.made(src.id) : []
-    // your voice notes inside your bubble, under your words (T668); an earlier version shows its words only
-    const voices = ver?.old ? [] : (src?.files || []).filter(isAudio)
-    const mark = shown?.k === 'transcribing' ? becameText(shown, 'talk') : null
-    return (
-      <div className={`group group/msg flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl ${ver?.old ? 'opacity-60' : ''}`}>
-        {voices.length ? (
-          <VoiceBubble
-            cls={YOU_BUBBLE}
-            files={voices}
-            url={env.url}
-            play={env.play}
-            tidy={env.tidy}
-            top={y.text ? <MsgText x={y} env={env} on={on} /> : null}
-            hearing={mark}
-            attrs={voiceMark(src)}
-            on={on}
-          />
-        ) : y.text ? (
-          <div {...voiceMark(src)} className={YOU_BUBBLE}>
-            {ver?.old ? (
-              <div className="line-clamp-2">
-                <MsgText x={y} env={env} on={on} />
-              </div>
-            ) : (
-              <MsgText x={y} env={env} on={on} />
-            )}
-          </div>
-        ) : null}
-        {ver?.old ? null : strip(src?.files?.filter((f) => !isAudio(f)))}
-        {/* one line under what you wrote: when, and ⋯ with Edit, Add more and the rest */}
-        <div className="flex flex-wrap items-center justify-end gap-x-1">
-          <span className={`px-1 text-[11px] ${MUTED}`}>
-            {ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}
-            {when(x.t, env.now)}
-            {x.edited && !ver?.old ? (
-              <>
-                {' · '}
-                {src?.history?.length ? (
-                  <button
-                    onClick={() => on.inputHistory(src.id)}
-                    className="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300"
-                  >
-                    edited {when(x.edited, env.now)}
-                  </button>
-                ) : (
-                  `edited ${when(x.edited, env.now)}`
-                )}
-              </>
-            ) : null}
-            {moved ? (
-              <>
-                {' · '}
-                <a
-                  href={moved.href}
-                  onClick={(e) => {
-                    if (e.metaKey || e.ctrlKey) return
-                    e.preventDefault()
-                    on.moved(moved.href)
-                  }}
-                  className="relative font-medium text-zinc-500 underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
-                >
-                  {becameText(moved, 'talk')}
-                </a>
-              </>
-            ) : null}
-            {mark && !voices.length ? (
-              <>
-                {' · '}
-                <span className="animate-pulse text-blue-600 dark:text-blue-400">{mark}…</span>
-              </>
-            ) : null}
-            {read ? (
-              <>
-                {' · '}
-                <span title={`${read.names.join(', ')} read it ${when(new Date(read.t).toISOString(), env.now)}`} className="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">
-                  <Icon n="check" c="size-3" sw="2.5" />
-                  Read by {read.names.join(', ')}
-                </span>
-              </>
-            ) : null}
-          </span>
-          {src && !ver?.old && !src.moved ? (
-            <button aria-label={`More for ${inputCode(src.id)}`} onClick={(e) => on.inputMore(src.id, e.currentTarget)} className={`${DC_BTN} min-w-11 justify-center order-first lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
-              <Icon n="more" c="size-3.5" />
-            </button>
-          ) : null}
-        </div>
-        {made.length ? (
-          <div className={`px-1 text-[11px] ${MUTED}`}>
-            → {MADE_WORD}{' '}
-            {made.map((y, i) => (
-              <Fragment key={y.n}>
-                {i ? ', ' : ''}
-                <button onClick={() => on.ref(y.code)} title={y.title} className="relative font-mono font-medium text-blue-600 after:absolute after:-inset-2 hover:underline dark:text-blue-400">
-                  {y.code}
-                </button>
-              </Fragment>
-            ))}
-          </div>
-        ) : null}
-      </div>
-    )
-  }
-  if (x.kind === 'withdraw')
-    return (
-      <div className="flex items-start gap-2 px-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">
-        <Icon n="undo" c="mt-0.5 size-3.5 shrink-0" />
-        <div className="min-w-0 flex-1">
-          <span className="font-medium text-zinc-600 dark:text-zinc-300">{whoName(x.by)} took back its question</span> <span className={`text-[11px] ${MUTED}`}>{when(x.t, env.now)}</span>
-          {x.text.trim() ? <Rich text={x.text} world={env.world} cls="mt-0.5" onRef={on.ref} onPicture={on.picture} /> : null}
-        </div>
-      </div>
-    )
-  // on the phone the message's More sits at the header's far right, where your own messages and the question cards
-  // have theirs; the time stays beside the name (D115 #4)
-  const head = (tag: ReactNode, end?: ReactNode) => (
-    <div className={`flex items-center gap-2 self-stretch px-1 text-[11px] ${MUTED}`}>
-      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 whitespace-nowrap phone:flex-1">
-        <Avatar by={x.by} />
-        <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(x.by)}</span>
-        {x.ses ? <span className="-ml-1 text-xs text-zinc-500 dark:text-zinc-400">· {x.ses}</span> : null}
-        {x.to?.length ? <span className="text-xs text-zinc-500 dark:text-zinc-400">→ {x.to.join(', ')}</span> : null}
-        {tag}
-      </div>
-      {end}
-    </div>
-  )
-  if (gone)
-    return (
-      <div className="flex flex-col items-start gap-1.5 opacity-60">
-        {head(
-          <>
-            <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:bg-zinc-800 dark:text-zinc-400">Withdrawn</span>
-            <span>{when(x.t, env.now)}</span>
-          </>,
-        )}
-        <div className="w-full rounded-2xl rounded-tl-md border border-dashed border-zinc-300 px-4 py-3 text-[15px] leading-relaxed text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-          <div className="line-clamp-2 line-through decoration-zinc-400 dark:decoration-zinc-500">{oneLine(x.text)}</div>
-        </div>
-      </div>
-    )
-  if (x.hidden && !facts.peeking.has(x.id))
-    return (
-      <button onClick={() => on.peek(x.id)} className={`relative flex items-center gap-1.5 self-start px-1 after:absolute after:inset-x-0 after:-inset-y-3.5 text-[12px] hover:text-zinc-600 dark:hover:text-zinc-300 ${MUTED}`}>
-        {whoName(x.by)} · hidden message · {when(x.t, env.now)} · Show
-      </button>
-    )
+  if (x.by === 'you') return <YourMessage x={x} env={env} on={on} facts={facts} ver={ver} read={read} />
+  if (x.kind === 'withdraw') return <TookBack x={x} env={env} on={on} />
+  if (gone) return <Withdrawn x={x} env={env} />
+  if (x.hidden && !facts.peeking.has(x.id)) return <Hidden x={x} env={env} on={on} />
   // an answered question is its own card, the one it was asked in
   if (done && hasChoices(x.text) && x.kind === 'ask')
     return (
@@ -305,152 +145,217 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
         going={facts.going && it.thread.filter((m) => m.kind === 'ask').at(-1)?.id === x.id ? facts.going.card : null}
       />
     )
+  return <AgentMessage it={it} x={x} env={env} on={on} facts={facts} docs={docs} code={code} done={done} />
+}
+
+/** Your words: in blue on the right, with what became of the input they came from. */
+function YourMessage({ x, env, on, facts, ver, read }: { x: Message; env: TalkEnv; on: TalkLineEvents; facts: TalkFacts; ver?: Version; read: { names: string[]; t: number } | null }) {
+  const src = x.src ? facts.inputs.get(x.src) : undefined
+  const y = ver ? { ...x, text: ver.text } : x
+  const strip = (files: FileRef[] | undefined) => (files?.length ? <FileRows files={files} url={env.url} play={env.play} tidy={env.tidy} on={on} cls="items-end max-w-full [&>div]:max-w-full" /> : null)
+  if (y.text && y.text.trim().split('\n').every((l) => /^\s*✓/.test(l)) && !src?.files?.length) return null // an answer's ticks show on its card
+  // what became of the input it came from, as the talk shows it (model/inputStates): moved, what it made, its words
+  // still to come
+  const b = src ? facts.became(src.id) : null
+  const shown = b && showsIn(b, 'talk') ? b : null
+  const moved = shown?.k === 'moved' && !ver?.old ? shown : null
+  // B714 #10594: what your words here made, as one line under them; the same on the phone and the desktop
+  const made = src && shown?.k === 'filed' && !ver?.old ? facts.made(src.id) : []
+  // your voice notes inside your bubble, under your words (T668); an earlier version shows its words only
+  const voices = ver?.old ? [] : (src?.files || []).filter(isAudio)
+  const mark = shown?.k === 'transcribing' ? becameText(shown, 'talk') : null
   return (
-    <div className="group/msg flex flex-col items-start gap-1.5">
-      {head(
-        <>
-          {x.by === 'org' && x.src ? <FromInput r={facts.inputs.get(x.src)} n={it.n} code={code} on={on} /> : null}
-          {done ? (
-            // answered by your words: as the cards say it (Replied; Skipped where the choices were in a document)
-            <span className="flex items-center gap-0.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-              <Icon n="reply" c="size-3" sw="2.5" />
-              {pickInDoc(x, docs) ? 'Skipped · you replied' : 'Replied'}
-            </span>
+    <div className={`group group/msg flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl ${ver?.old ? 'opacity-60' : ''}`}>
+      {voices.length ? (
+        <VoiceBubble
+          cls={YOU_BUBBLE}
+          files={voices}
+          url={env.url}
+          play={env.play}
+          tidy={env.tidy}
+          top={y.text ? <MsgText x={y} env={env} on={on} /> : null}
+          hearing={mark}
+          attrs={voiceMark(src)}
+          on={on}
+        />
+      ) : y.text ? (
+        <div {...voiceMark(src)} className={YOU_BUBBLE}>
+          {ver?.old ? (
+            <div className="line-clamp-2">
+              <MsgText x={y} env={env} on={on} />
+            </div>
           ) : (
-            <KindTag x={x} />
+            <MsgText x={y} env={env} on={on} />
           )}
-          <span className="-ml-1 flex items-center gap-2">
-            · {when(x.t, env.now)}
-            {x.hidden ? (
-              <button onClick={() => on.unhide(x.id)} className={DC_LINK}>
-                Unhide
+        </div>
+      ) : null}
+      {ver?.old ? null : strip(src?.files?.filter((f) => !isAudio(f)))}
+      {/* one line under what you wrote: when, and ⋯ with Edit, Add more and the rest */}
+      <div className="flex flex-wrap items-center justify-end gap-x-1">
+        <span className={`px-1 text-[11px] ${MUTED}`}>
+          {ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}
+          {when(x.t, env.now)}
+          {x.edited && !ver?.old ? (
+            <>
+              {' · '}
+              {src?.history?.length ? (
+                <button
+                  onClick={() => on.inputHistory(src.id)}
+                  className="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  edited {when(x.edited, env.now)}
+                </button>
+              ) : (
+                `edited ${when(x.edited, env.now)}`
+              )}
+            </>
+          ) : null}
+          {moved ? (
+            <>
+              {' · '}
+              <a
+                href={moved.href}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey) return
+                  e.preventDefault()
+                  on.moved(moved.href)
+                }}
+                className="relative font-medium text-zinc-500 underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+              >
+                {becameText(moved, 'talk')}
+              </a>
+            </>
+          ) : null}
+          {mark && !voices.length ? (
+            <>
+              {' · '}
+              <span className="animate-pulse text-blue-600 dark:text-blue-400">{mark}…</span>
+            </>
+          ) : null}
+          {read ? (
+            <>
+              {' · '}
+              <span title={`${read.names.join(', ')} read it ${when(new Date(read.t).toISOString(), env.now)}`} className="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">
+                <Icon n="check" c="size-3" sw="2.5" />
+                Read by {read.names.join(', ')}
+              </span>
+            </>
+          ) : null}
+        </span>
+        {src && !ver?.old && !src.moved ? (
+          <button aria-label={`More for ${inputCode(src.id)}`} onClick={(e) => on.inputMore(src.id, e.currentTarget)} className={`${DC_BTN} min-w-11 justify-center order-first lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
+            <Icon n="more" c="size-3.5" />
+          </button>
+        ) : null}
+      </div>
+      {made.length ? (
+        <div className={`px-1 text-[11px] ${MUTED}`}>
+          → {MADE_WORD}{' '}
+          {made.map((y, i) => (
+            <Fragment key={y.n}>
+              {i ? ', ' : ''}
+              <button onClick={() => on.ref(y.code)} title={y.title} className="relative font-mono font-medium text-blue-600 after:absolute after:-inset-2 hover:underline dark:text-blue-400">
+                {y.code}
               </button>
-            ) : null}
-          </span>
-        </>,
-        <button aria-label="More for this message" onClick={(e) => on.msgMenu(x.id, e.currentTarget)} className={`${DC_BTN} min-w-9 shrink-0 justify-center lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
-          <Icon n="more" c="size-3.5" />
-        </button>,
-      )}
-      <div className="w-full rounded-2xl rounded-tl-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-[15px] leading-relaxed text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
-        <MsgText x={x} env={env} on={on} done={done} />
-        {strip(x.files, 'h-48 w-24')}
+            </Fragment>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+/** An agent took back its question. */
+function TookBack({ x, env, on }: { x: Message; env: TalkEnv; on: TalkLineEvents }) {
+  return (
+    <div className="flex items-start gap-2 px-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">
+      <Icon n="undo" c="mt-0.5 size-3.5 shrink-0" />
+      <div className="min-w-0 flex-1">
+        <span className="font-medium text-zinc-600 dark:text-zinc-300">{whoName(x.by)} took back its question</span> <span className={`text-[11px] ${MUTED}`}>{when(x.t, env.now)}</span>
+        {x.text.trim() ? <Rich text={x.text} world={env.world} cls="mt-0.5" onRef={on.ref} onPicture={on.picture} /> : null}
       </div>
     </div>
   )
 }
 
-export interface Note {
-  t: string
-  node: ReactNode
+// on the phone the message's More sits at the header's far right, where your own messages and the question cards
+// have theirs; the time stays beside the name (D115 #4)
+function AgentHead({ x, end, children }: { x: Message; end?: ReactNode; children: ReactNode }) {
+  return (
+    <div className={`flex items-center gap-2 self-stretch px-1 text-[11px] ${MUTED}`}>
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 whitespace-nowrap phone:flex-1">
+        <Avatar by={x.by} />
+        <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(x.by)}</span>
+        {x.ses ? <span className="-ml-1 text-xs text-zinc-500 dark:text-zinc-400">· {x.ses}</span> : null}
+        {x.to?.length ? <span className="text-xs text-zinc-500 dark:text-zinc-400">→ {x.to.join(', ')}</span> : null}
+        {children}
+      </div>
+      {end}
+    </div>
+  )
 }
 
-/** What a comment quoting no words is on: the start of its part, a table by its columns. */
-function partStart(d: Doc, key: string): string {
-  const b = d.blocks.find((x) => x.key === key)
-  if (!b) return ''
-  if (b.kind === 'table') return `Table: ${b.text.split('\n')[0].split('|').map((s) => s.trim()).filter(Boolean).join(' · ')}`
-  const words = plainQuote(b.text).replace(/\s+/g, ' ').trim()
-  return `“${words.length > 120 ? words.slice(0, 120) + '…' : words}”`
+/** A question the agent took back: struck through, faded. */
+function Withdrawn({ x, env }: { x: Message; env: TalkEnv }) {
+  return (
+    <div className="flex flex-col items-start gap-1.5 opacity-60">
+      <AgentHead x={x}>
+        <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:bg-zinc-800 dark:text-zinc-400">Withdrawn</span>
+        <span>{when(x.t, env.now)}</span>
+      </AgentHead>
+      <div className="w-full rounded-2xl rounded-tl-md border border-dashed border-zinc-300 px-4 py-3 text-[15px] leading-relaxed text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+        <div className="line-clamp-2 line-through decoration-zinc-400 dark:decoration-zinc-500">{oneLine(x.text)}</div>
+      </div>
+    </div>
+  )
 }
 
-/** The comments on the item's documents, as messages, in time. */
-export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents): Note[] {
-  const all = docs
-    .flatMap((d) => [
-      ...d.blocks.flatMap((b) => b.comments.map((c) => ({ c, d, key: b.key, changed: false }))),
-      ...(d.whole || []).map((c) => ({ c, d, key: 'doc', changed: false })),
-      ...d.detached.flatMap((t) => t.comments.map((c) => ({ c, d, key: t.key, changed: true }))),
-    ])
-    .filter(({ c }) => c.t)
-    .sort((a, b) => a.c.t.localeCompare(b.c.t))
-  return all.map(({ c, d, key, changed }: { c: Comment; d: Doc; key: string; changed: boolean }) => {
-    const you = c.by === 'you'
-    // the words it is about were changed in the document since: the quote struck through, and said
-    const gone = changed ? <span className="shrink-0">· Original text changed</span> : null
-    const where = (
-      <button onClick={() => on.docAt(d.d, key)} className="-mx-1 rounded px-1 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">
-        on <span className="font-mono">D{d.d}</span>
-      </button>
-    )
-    const about = c.quote ? `“${plainQuote(c.quote)}”` : key !== 'doc' ? partStart(d, key) : ''
-    const quote = about ? (
-      <button
-        onClick={() => on.docAt(d.d, key)}
-        className={`mb-1.5 line-clamp-3 block w-full border-l-2 pl-2 text-left text-[13px] leading-snug hover:underline ${changed ? 'line-through' : ''} ${you ? 'border-white/50 text-white/85 hover:text-white' : 'border-zinc-300 text-zinc-500 hover:text-zinc-700 dark:border-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
+/** A hidden message: one line, to show it. */
+function Hidden({ x, env, on }: { x: Message; env: TalkEnv; on: TalkLineEvents }) {
+  return (
+    <button onClick={() => on.peek(x.id)} className={`relative flex items-center gap-1.5 self-start px-1 after:absolute after:inset-x-0 after:-inset-y-3.5 text-[12px] hover:text-zinc-600 dark:hover:text-zinc-300 ${MUTED}`}>
+      {whoName(x.by)} · hidden message · {when(x.t, env.now)} · Show
+    </button>
+  )
+}
+
+/** An agent's (or the organizer's) message: a card under its name. */
+function AgentMessage({ it, x, env, on, facts, docs, code, done }: { it: Item; x: Message; env: TalkEnv; on: TalkLineEvents; facts: TalkFacts; docs: readonly Doc[]; code(n: number | null): string; done: string[] | null }) {
+  return (
+    <div className="group/msg flex flex-col items-start gap-1.5">
+      <AgentHead
+        x={x}
+        end={
+          <button aria-label="More for this message" onClick={(e) => on.msgMenu(x.id, e.currentTarget)} className={`${DC_BTN} min-w-9 shrink-0 justify-center lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
+            <Icon n="more" c="size-3.5" />
+          </button>
+        }
       >
-        {about}
-      </button>
-    ) : null
-    // your voice notes inside your bubble, under its words (T668)
-    const voices = you ? (c.files || []).filter(isAudio) : []
-    // what was said: its typed words and its voice notes' words (their records, B682); a note with none yet says why
-    const said = c.text.trim()
-    const note = (c.files || []).find(isAudio)
-    const notes = sentNotes(c.files)
-    const hearing = !said && notes ? sayIn(notes, 'talk')?.say : null
-    const words = said ? <Rich text={said} world={env.world} onRef={on.ref} onPicture={on.picture} /> : note && !(you && hearing) ? <span className={you ? 'text-white/70' : MUTED}>{voiceLacks(note.voice)}</span> : null
-    // its pictures and files as a message's: thumbnails to open (yours under the bubble, an agent's in its card)
-    const pics = (c.files || []).filter((f) => !isAudio(f))
-    const strip = (cls: string) => (pics.length ? <FileRows files={pics} url={env.url} play={env.play} tidy={env.tidy} on={on} cls={cls} /> : null)
-    return {
-      t: c.t,
-      node: you ? (
-        <div key={`dn${d.d}-${c.id}`} className="flex flex-col items-end gap-1">
-          {voices.length ? (
-            <VoiceBubble
-              cls={YOU_BUBBLE}
-              files={voices}
-              url={env.url}
-              play={env.play}
-              tidy={env.tidy}
-              top={
-                quote || words ? (
-                  <>
-                    {quote}
-                    {words}
-                  </>
-                ) : null
-              }
-              busy={c.id <= 0}
-              hearing={hearing}
-              on={on}
-            />
-          ) : quote || words ? (
-            <div className={YOU_BUBBLE}>
-              {quote}
-              {words}
-            </div>
+        {x.by === 'org' && x.src ? <FromInput r={facts.inputs.get(x.src)} n={it.n} code={code} on={on} /> : null}
+        {done ? (
+          // answered by your words: as the cards say it (Replied; Skipped where the choices were in a document)
+          <span className="flex items-center gap-0.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+            <Icon n="reply" c="size-3" sw="2.5" />
+            {pickInDoc(x, docs) ? 'Skipped · you replied' : 'Replied'}
+          </span>
+        ) : (
+          <KindTag x={x} />
+        )}
+        <span className="-ml-1 flex items-center gap-2">
+          · {when(x.t, env.now)}
+          {x.hidden ? (
+            <button onClick={() => on.unhide(x.id)} className={DC_LINK}>
+              Unhide
+            </button>
           ) : null}
-          {strip('items-end max-w-full [&>div]:max-w-full')}
-          <div className={`flex max-w-full flex-wrap items-center justify-end gap-x-1 text-[11px] ${MUTED}`}>
-            <span className="flex max-w-full min-w-0 items-center gap-0.5 px-1">
-              <Icon n="comment" c="size-3 shrink-0" />
-              <span className="min-w-0 truncate">
-                {where} · {c.id > 0 ? when(c.t, env.now) : <span className={BUSY}>Sending…</span>} {gone}
-              </span>
-            </span>
-          </div>
-        </div>
-      ) : (
-        <div key={`dn${d.d}-${c.id}`} className="flex flex-col items-start gap-1.5">
-          <div className={`flex max-w-full min-w-0 items-center gap-2 px-1 text-[11px] ${MUTED}`}>
-            <Avatar by={c.by} />
-            <span className="shrink-0 text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(c.by)}</span>
-            <Icon n="comment" c="size-3 shrink-0" />
-            {where}
-            <span className="-ml-1 shrink-0">· {when(c.t, env.now)}</span>
-            {gone}
-          </div>
-          <div className="w-full rounded-2xl rounded-tl-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-[15px] leading-relaxed text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
-            {quote}
-            {words}
-            {strip(words ? 'mt-3' : '')}
-          </div>
-        </div>
-      ),
-    }
-  })
+        </span>
+      </AgentHead>
+      <div className="w-full rounded-2xl rounded-tl-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-[15px] leading-relaxed text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
+        <MsgText x={x} env={env} on={on} done={done} />
+        {x.files?.length ? <FileRows files={x.files} url={env.url} size="h-48 w-24" play={env.play} tidy={env.tidy} on={on} cls="mt-3" /> : null}
+      </div>
+    </div>
+  )
 }
 
 const PENDING_TONE: Record<OutTone, string> = {
@@ -514,7 +419,7 @@ function Pending({ list, env, on }: { list: Outgoing[]; env: TalkEnv; on: TalkLi
 export function Talk({ it, list, notes, card, env, on, facts, docs, code }: {
   it: Item
   list: readonly Message[]
-  notes: Note[]
+  notes: readonly DocNote[]
   card?: { id: number; node: ReactNode }
   env: TalkEnv
   on: TalkLineEvents
@@ -529,7 +434,10 @@ export function Talk({ it, list, notes, card, env, on, facts, docs, code }: {
   const out: ReactNode[] = []
   let k = 0
   const before = (t: string) => {
-    while (k < notes.length && (!t || notes[k].t < t)) out.push(notes[k++].node)
+    for (; k < notes.length && (!t || notes[k].c.t < t); k++) {
+      const n = notes[k]
+      out.push(<DocComment key={`dn${n.d}-${n.c.id}`} n={n} env={env} on={on} />)
+    }
   }
   for (const x of list) {
     before(x.t)

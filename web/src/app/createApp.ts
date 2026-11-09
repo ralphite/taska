@@ -1,94 +1,64 @@
 // The composition root: the page's services, made once and handed to the components through React context. It only
-// assembles: each piece gets what it needs and watches what it follows itself; nothing reaches for a global. Stories
-// and tests make their own with fakes.
+// assembles: each area of the page (app/<area>/area.ts: inputs, docs, voice, items, the page, the project) is made by
+// its own factory from the core (app/core.ts: the API, the delivery, the stores, the page's own parts); what an area
+// reaches in one made after it, it reaches by a function. The services a feature keeps for itself are made here.
+// Stories and tests make their own with fakes.
 
-import { Delivery } from '../api/delivery'
-import { Http } from '../api/http'
-import { TaskaApi } from '../api/taska'
+import type { Http } from '../api/http'
+import type { TaskaApi } from '../api/taska'
 import type { ProjectModel } from '../model/project'
-import { holdKey, openItemN, routeSlug } from '../model/route'
-import { createChangesStore, keptChanges, type ChangesStore } from '../stores/changes'
-import { createDataStore, type DataStore } from '../stores/data'
-import { createFeedbackStore, type FeedbackStore } from '../stores/feedback'
-import { createOutboxStore, keptOutgoing, type OutboxStore } from '../stores/outbox'
-import { createRouteStore, type History, type RouteStore } from '../stores/route'
-import { memoryStore, type KeyValueStore } from '../stores/storage'
-import { createBoxStore, type BoxStore } from '../stores/box'
-import { createDraftsStore, type DraftsStore } from '../stores/drafts'
-import { createItemViewStore, type ItemViewStore } from '../stores/itemView'
-import { createFindStore, type FindStore } from '../stores/find'
-import { createRecentStore, type RecentStore } from '../stores/recent'
-import { Finder } from './search/finder'
-import { createSheetStore, type SheetStore } from '../stores/sheet'
-import { createUiStore, type UiStore } from '../stores/ui'
-import { noCache, type CopyCache } from '../sync/cache'
+import { keptChanges } from '../stores/changes'
+import { keptOutgoing } from '../stores/outbox'
+import type { History } from '../stores/route'
+import type { KeyValueStore } from '../stores/storage'
+import type { NoteVault } from '../stores/noteVault'
+import type { CopyCache } from '../sync/cache'
 import type { Presence } from '../sync/projectSync'
-import { ChangeRunner } from './changeRunner'
-import { InputActions } from './inputs/inputActions'
-import { InputSender } from './inputs/inputSender'
-import { ItemActions } from './items/itemActions'
-import { Navigation } from './page/navigation'
-import { ListHold } from '../features/list/listHold'
-import { Answers } from './items/answers'
-import { Box } from './inputs/box'
-import { Projects } from './project/projects'
-import { KeyArm } from './page/keyArm'
-import { PictureSizes } from './project/pictureSizes'
-import { Activity } from './project/activity'
-import { Restores } from './project/restores'
-import { Docs } from './docs/docs'
-import { Rules } from './docs/rules'
-import { DocComments } from './docs/comments'
-import { DocChoices } from './docs/choices'
-import { DocEditor } from './docs/editor'
-import { Settings } from './project/settings'
-import { Notices } from './project/notices'
-import { Voice } from './voice/voice'
-import { VoiceWords } from '../features/composer/voiceWords'
-import { KeptNotes } from './inputs/keptNotes'
-import { LeaveGuard } from './page/leaveGuard'
-import { DocVoice } from './voice/docVoice'
-import { Dictation } from './voice/dictation'
-import { Media } from './page/media'
-import { Diagrams } from './page/diagrams'
-import { PageErrors } from './page/pageErrors'
-import { SavedViews } from '../features/list/views'
-import { createGripsStore, type GripsStore } from '../stores/grips'
-import { createDragStore, type DragStore } from '../stores/drag'
-import { ItemDrag } from './items/itemDrag'
-import { Selection } from './items/selection'
-import { Updates } from './project/updates'
-import { Merges } from './items/merges'
-import { DraftPlaces } from './inputs/draftPlaces'
-import { draftName, type DraftKey } from '../model/draftTarget'
-import { Actions } from './actions'
-import { OtherTabs } from './inputs/otherTabs'
-import { ItemEdits } from './items/itemEdits'
-import { createKeptEditsStore, type KeptEditsStore } from '../stores/keptEdits'
-import { Access } from '../features/project/access'
-import { createViewsStore, type ViewsStore } from '../stores/views'
-import { createMediaStore, type MediaStore } from '../stores/media'
-import { createDictationStore, type DictationStore } from '../stores/dictation'
-import { memoryVault, type NoteVault } from '../stores/noteVault'
-import { createRecordingStore, type RecordingStore } from '../stores/recording'
-import { createSettingsStore, type SettingsStore } from '../stores/settings'
-import { createDocViewStore, type DocViewStore } from '../stores/docView'
-import { createDocTicksStore, type DocTicksStore } from '../stores/docTicks'
-import { createActivityStore, type ActivityStore } from '../stores/activity'
-import { Fields } from './page/fields'
-import { ListOrder } from './items/listOrder'
-import { Moves } from './items/moves'
-import { Sheets } from './page/sheets'
 import { Seen } from '../stores/seen'
-import { Toasts } from './page/toasts'
-import { ProjectModels } from './project/projectModels'
-import { ProjectSession } from './project/projectSession'
-import { Delivered } from './inputs/delivered'
-import { DraftSender } from './inputs/draftSender'
-import { Arrival } from './page/arrival'
-import { stillComing } from '../model/voiceStates'
-import { goingUp } from '../model/fileStates'
-import { inFlight } from '../model/outgoingStates'
+import { ListHold } from '../features/list/listHold'
+import { VoiceWords } from '../features/composer/voiceWords'
+import { SavedViews } from '../features/list/views'
+import { Access } from '../features/project/access'
+import { Actions } from './actions'
+import type { ChangeRunner } from './changeRunner'
+import { makeCore, type Stores } from './core'
+import { makeDocs } from './docs/area'
+import type { DocChoices } from './docs/choices'
+import type { DocComments } from './docs/comments'
+import type { Docs } from './docs/docs'
+import type { DocEditor } from './docs/editor'
+import type { Rules } from './docs/rules'
+import { makeInputs } from './inputs/area'
+import type { Box } from './inputs/box'
+import type { InputActions } from './inputs/inputActions'
+import type { InputSender } from './inputs/inputSender'
+import { makeItems } from './items/area'
+import type { Answers } from './items/answers'
+import type { ItemActions } from './items/itemActions'
+import type { ItemDrag } from './items/itemDrag'
+import type { ItemEdits } from './items/itemEdits'
+import type { ListOrder } from './items/listOrder'
+import type { Moves } from './items/moves'
+import type { Selection } from './items/selection'
+import { makePage } from './page/area'
+import type { Diagrams } from './page/diagrams'
+import type { Fields } from './page/fields'
+import type { KeyArm } from './page/keyArm'
+import type { Media } from './page/media'
+import type { Navigation } from './page/navigation'
+import type { Sheets } from './page/sheets'
+import type { Toasts } from './page/toasts'
+import { makeProject } from './project/area'
+import type { Activity } from './project/activity'
+import type { Notices } from './project/notices'
+import type { Projects } from './project/projects'
+import type { Restores } from './project/restores'
+import type { Settings } from './project/settings'
+import { Finder } from './search/finder'
+import { makeVoice } from './voice/area'
+import type { Dictation } from './voice/dictation'
+import type { DocVoice } from './voice/docVoice'
+import type { Voice } from './voice/voice'
 
 export interface AppEnv {
   http?: Http
@@ -108,32 +78,7 @@ export interface AppEnv {
 
 export interface App {
   api: TaskaApi
-  stores: {
-    data: DataStore
-    changes: ChangesStore
-    outbox: OutboxStore
-    feedback: FeedbackStore
-    ui: UiStore
-    itemView: ItemViewStore
-    /** the search (F479): Home's field, the desktop's dialog, the phone's page */
-    find: FindStore
-    recent: RecentStore
-    drafts: DraftsStore
-    box: BoxStore
-    sheet: SheetStore
-    route: RouteStore
-    activity: ActivityStore
-    docView: DocViewStore
-    docTicks: DocTicksStore
-    settings: SettingsStore
-    recording: RecordingStore
-    dictation: DictationStore
-    media: MediaStore
-    views: ViewsStore
-    grips: GripsStore
-    drag: DragStore
-    keptEdits: KeptEditsStore
-  }
+  stores: Stores
   toasts: Toasts
   items: ItemActions
   inputs: InputSender
@@ -198,208 +143,58 @@ export interface App {
 }
 
 export function createApp(env: AppEnv): App {
-  const api = new TaskaApi(env.http)
-  const kept = Projects.kept(env.kv)
-  const data = createDataStore(kept.rows, kept.needs, Date.now())
-  const changes = createChangesStore(env.kv)
-  const outbox = createOutboxStore(env.kv)
-  const feedback = createFeedbackStore(env.kv)
-  const ui = createUiStore(env.kv)
-  const route = createRouteStore(env.history)
-  const unlisten = env.history.listen(() => route.getState().read()) // Back and Forward
-  const toasts = new Toasts(feedback)
-  const nav = new Navigation(route, env.desk, (id, still) => ui.getState().setLit(id, still))
-  const listHold = new ListHold(ui, env.desk)
+  const c = makeCore(env, () => project.projectSession)
+  const { api, s, toasts, nav, sheets, fields, runner, model } = c
+  const unlisten = env.history.listen(() => s.route.getState().read()) // Back and Forward
+  const listHold = new ListHold(s.ui, env.desk)
   const seen = new Seen(env.kv)
-  const listOrder = new ListOrder()
-  const itemView = createItemViewStore(env.kv)
-  const keptEdits = createKeptEditsStore(env.kv)
-  const find = createFindStore()
-  const recent = createRecentStore(env.kv)
-  const activityStore = createActivityStore()
-  const docView = createDocViewStore()
-  const docTicks = createDocTicksStore(env.kv)
-  const settingsStore = createSettingsStore()
-  const recording = createRecordingStore()
-  const dictationStore = createDictationStore()
-  const mediaStore = createMediaStore()
-  const viewsStore = createViewsStore()
-  const gripsStore = createGripsStore(env.kv)
-  const dragStore = createDragStore()
-  const drafts = createDraftsStore(env.kv)
-  const boxStore = createBoxStore(env.session ?? memoryStore())
-  const sheetStore = createSheetStore()
 
-  const slug = () => routeSlug(route.getState().route)
-  const pageErrors = new PageErrors({ api, slug })
-  const models = new ProjectModels({ data, changes })
-  const model = models.of
-  const here = () => model(slug())
-  const title = (s: string) => data.getState().projects?.find((p) => p.name === s)?.title || s
-  const goUrl = (url: string) => route.getState().go(url, true)
-  const recordingNow = () => !!recording.getState().rec
-  // what has to reach Taska is asked until it answers; its pauses end at once when Taska may be back
-  const delivery = new Delivery()
-  // the project open in the page (made last: what it needs is made below)
-  const session = (): ProjectSession => projectSession
-  const keep = (blob: Blob) => keptNotes.keep(blob)
-  const goDraft = (key: DraftKey) => draftPlaces.go(key)
+  const inputs = makeInputs(c, { voice: () => voice.voice, docVoice: () => voice.docVoice, docs: () => docs.docs, docComments: () => docs.docComments, vault: env.vault })
+  const docs = makeDocs(c, inputs, () => voice.dictation)
+  const voice = makeVoice(c, inputs, docs)
+  const items = makeItems(c, inputs, () => listHold.started())
+  const page = makePage(c)
+  const access = new Access({ api, sheets, toasts, refresh: () => void c.project().refresh() })
+  const project = makeProject(c, inputs, { presence: env.presence, cache: env.cache, pageScript: env.pageScript, keyNeeded: () => access.ask(), busy: page.busy })
 
-  const pictureSizes = new PictureSizes({ api, data, model })
-  const fields = new Fields()
-  const sheets = new Sheets(sheetStore, route, env.desk)
-  const runner = new ChangeRunner(api, delivery, changes, {
-    changes: (s, a) => session().take(s, a),
-    stale: (s) => session().stale(s),
-    cursor: (s) => session().cursor(s),
-    refused: (c, why) => toasts.changeRefused(c, why),
-    model: (s) => model(s),
-  })
-  const delivered = new Delivered({ box: boxStore, ui, route, runner, toasts, fields, model, slug })
-  const inputs = new InputSender(runner, outbox, {
-    sent: (o, rid) => delivered.sent(o, rid),
-    refused: (_o, why) => toasts.show(why ? `err: ${why}` : 'Not saved', null),
-    log: () => {},
-  })
-  const items = new ItemActions({
-    slug,
-    model: here,
-    runner,
-    toasts,
-    ui,
-    held: () => listHold.started(),
-    listKey: () => holdKey(route.getState().route, env.desk()),
-    openItem: () => openItemN(route.getState().route),
-    desk: env.desk,
-    undoSeq: (n, f) => here()?.facts.undo.find((u) => u.n === n && f in u.f)?.seq ?? null,
-    noteWith: () => false,
-  })
-  const inputActions = new InputActions({ runner, toasts, api, model, refresh: (s) => session().stale(s), title, go: goUrl })
-  // the other tabs of this browser: their drafts show here too
-  const otherTabs = new OtherTabs({ kv: env.kv, drafts, box: boxStore, toasts, slug, recording: recordingNow })
-  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep, recording: recordingNow, goDraft, model, kv: env.kv, sent: (s, key) => otherTabs.sent(s, key), refresh: (s) => session().refresh(s), replied: (s, scope) => delivered.replied(s, scope), delivery })
-  const activity = new Activity({ api, store: activityStore, toasts })
-  const restores = new Restores({ runner, toasts, inputs: inputActions, model })
-  const docs = new Docs({ route, model, view: docView, nav, fields, toasts, desk: env.desk, leaveEditor: () => docEditor.keep() })
-  const docEditor: DocEditor = new DocEditor({ route, model, runner, view: docView, sheets, toasts, kv: env.kv, desk: env.desk, open: (dn) => docs.open(dn), close: () => docs.close(), mic: { discard: (key) => dictation.discard(key), settled: () => dictation.settled() } })
-  const rules = new Rules({ route, model, runner, view: docView, nav, sheets, toasts, kv: env.kv })
-  const docComments = new DocComments({ route, model, runner, view: docView, box, boxStore, fields, sheets, toasts, desk: env.desk })
-  const docChoices = new DocChoices({ route, model, runner, ticks: docTicks, view: docView, box, inputs, toasts, desk: env.desk })
-  const projects = new Projects({ api, delivery, data, kv: env.kv, toasts, home: () => route.getState().route.page === 'home' })
-  const refreshProjects = () => projects.refresh()
-  const settings = new Settings({ api, delivery, store: settingsStore, data, projects, route, sheets, toasts, box, boxStore, fields, refresh: (s) => session().stale(s) })
-  const voiceWords = new VoiceWords({ api, delivery, box, store: boxStore, toasts, fields })
-  const draftSender = new DraftSender({ box, boxStore, inputs, docVoice: () => docVoice, model })
-  const voice = new Voice({
+  // the services a feature keeps for itself
+  const voiceWords = new VoiceWords({ api, delivery: c.delivery, box: inputs.box, store: s.box, toasts, fields })
+  const views = new SavedViews({
     api,
-    store: recording,
-    box,
-    boxStore,
-    outbox,
+    delivery: c.delivery,
+    store: s.views,
+    nav,
     toasts,
-    fields,
-    desk: env.desk,
-    send: (s, key) => draftSender.send(s, key),
-    boxKey: () => boxStore.getState().shown.key,
-    flush: () => void inputs.flush(),
-    push: (o) => void inputs.push(o),
-    keep,
-    goDraft,
-    about: (a) => docVoice.about(a.d, a.key, a.quote),
-    delivery,
+    list: () => {
+      const r = s.route.getState().route
+      return r.page === 'project' ? r.list : null
+    },
   })
-  const docVoice = new DocVoice({ voice, docs, comments: docComments, box, boxStore, recording, view: docView, runner, toasts, model, desk: env.desk, reply: (s, key, scope) => void box.send(s, model(s), scope, key) })
-  const dictation: Dictation = new Dictation({ api, delivery, store: dictationStore, view: docView, route, editor: docEditor, fields, toasts, model, recording: recordingNow, desk: env.desk })
-  const views = new SavedViews({ api, delivery, store: viewsStore, nav, toasts, list: () => { const r = route.getState().route; return r.page === 'project' ? r.list : null } })
-  const moves = new Moves({ api, delivery, runner, toasts, model, title, go: goUrl, refresh: (s) => session().stale(s) })
-  const selection = new Selection({ ui, order: listOrder, runner, toasts, slug, model: here, open: () => openItemN(route.getState().route) })
-  const itemDrag = new ItemDrag({ store: dragStore, items, moves, slug, model: here })
-  const fileWords = (s: string, f: string) => model(s)?.voices.get(f) ?? null
-  const media = new Media({ api, store: mediaStore, route, sheets, toasts, desk: env.desk, kept: fileWords })
-  const itemEdits = new ItemEdits({ view: itemView, kept: keptEdits, route, toasts, desk: env.desk, model: here })
-  const keyArm = new KeyArm()
-  const answers = new Answers({ inputs, view: itemView, outbox })
   const finder = new Finder({
     api,
-    store: find,
-    slug,
+    store: s.find,
+    slug: c.slug,
     layer: (on) => nav.search(on),
-    dialog: (on) => (on ? sheets.open({ kind: 'search' }, { search: true, focus: false }) : sheetStore.getState().spec?.req.kind === 'search' && sheets.close()),
-    voiceSlug: () => slug() || data.getState().projects?.[0]?.name || '',
-    delivery,
+    dialog: (on) => (on ? sheets.open({ kind: 'search' }, { search: true, focus: false }) : s.sheet.getState().spec?.req.kind === 'search' && sheets.close()),
+    voiceSlug: () => c.slug() || s.data.getState().projects?.[0]?.name || '',
+    delivery: c.delivery,
   })
-  const actions = new Actions({ finder, items, itemEdits, keyArm, answers, toasts, nav, fields, sheets, docs, docEditor, rules, box, voice, media, selection, listOrder, route, ui, feedback, sheet: sheetStore, itemView, docView, boxStore, desk: env.desk, model })
-  const keptNotes: KeptNotes = new KeptNotes({
-    vault: env.vault ?? memoryVault(),
-    kv: env.kv,
-    box: boxStore,
-    outbox,
-    inputs,
-    toasts,
-    resume: (s, key, f, blob, scope) => (f.plain ? box.resume(s, f.key, blob, f.name) : voice.resume(s, key, f, blob, scope)),
-    place: (s, key, f) => voice.placeKept(s, key, f),
-    draftName,
-    goDraft,
-    boxKey: () => boxStore.getState().shown.key,
-  })
-  // where a draft belongs, to go there
-  const draftPlaces: DraftPlaces = new DraftPlaces({ route, nav, box, docs, comments: docComments, fields, toasts, slug, model })
-  // a merged item gives way to the one it went into; what you wrote for it goes along
-  const merges = new Merges({ route, data, drafts, box: boxStore, toasts, model, showItem: (code, tab) => nav.openItemHere(code, tab), goDraft })
-  // something being said into the page now: a voice note, a dictation, or search listening (T728 #6: one rule)
-  const sayingNow = () => recordingNow() || !!dictationStore.getState().rec || find.getState().phase === 'listening'
-  // what a reload now would lose: something being said, or words and files still on their way (an update waits for
-  // it to end; T728 #6: dictation's notes waiting for words and search's listening were missed)
-  const pageBusy = () =>
-    sayingNow() ||
-    dictationStore.getState().waiting.length > 0 ||
-    find.getState().phase === 'writing' ||
-    Object.values(boxStore.getState().files).some((fs) => fs.some(stillComing)) ||
-    outbox.getState().list.some((o) => inFlight(o) || o.files.some(goingUp))
-  // leaving while something is being said asks first
-  const leaveGuard = new LeaveGuard(sayingNow)
-  const arrival = new Arrival({ route, fields, data, model, desk: env.desk, session: env.session ?? memoryStore() })
-  const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }), { api, toasts, data, slug, desk: env.desk, go: goUrl })
-  const access = new Access({ api, sheets, toasts, refresh: () => void session().refresh() })
-  const updates = new Updates({
-    toasts,
-    session: env.session ?? memoryStore(),
-    busy: pageBusy,
-    reload: () => location.reload(),
-    mine: env.pageScript ?? '',
-  })
-  const projectSession = new ProjectSession({
-    api,
-    data,
-    route,
-    cache: env.cache ?? noCache,
-    presence: env.presence,
-    model,
-    fresh: { ui, itemView, keptEdits, docTicks, box: boxStore, drafts, pictureSizes, keptNotes, notices },
-    server: (v) => updates.seen(v),
-    back: {
-      window: () => delivery.back(),
-      reached: () => {
-        delivery.back()
-        activity.back()
-      },
-      online: () => delivery.back(),
-    },
-    keyNeeded: () => access.ask(),
-    projects: refreshProjects,
-  })
+  const { box } = inputs
+  const { docs: docsOpen, docEditor, rules } = docs
+  const { items: itemActions, itemEdits, answers, selection, listOrder } = items
+  const actions = new Actions({ finder, items: itemActions, itemEdits, keyArm: page.keyArm, answers, toasts, nav, fields, sheets, docs: docsOpen, docEditor, rules, box, voice: voice.voice, media: page.media, selection, listOrder, route: s.route, ui: s.ui, feedback: s.feedback, sheet: s.sheet, itemView: s.itemView, docView: s.docView, boxStore: s.box, desk: env.desk, model })
 
   // what did not go out before a reload goes now, in the order it was made
-  for (const c of keptChanges(env.kv)) void runner.send(c)
-  for (const o of keptOutgoing(env.kv)) outbox.getState().push(o)
-  if (outbox.getState().list.length) void inputs.flush()
+  for (const k of keptChanges(env.kv)) void runner.send(k)
+  for (const o of keptOutgoing(env.kv)) s.outbox.getState().push(o)
+  if (s.outbox.getState().list.length) void inputs.inputs.flush()
 
-  const app: App = {
+  return {
     api,
-    stores: { data, changes, outbox, feedback, ui, itemView, find, recent, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore, media: mediaStore, views: viewsStore, grips: gripsStore, drag: dragStore, keptEdits },
+    stores: s,
     toasts,
-    items,
-    inputs,
+    items: itemActions,
+    inputs: inputs.inputs,
     nav,
     listHold,
     seen,
@@ -408,41 +203,40 @@ export function createApp(env: AppEnv): App {
     answers,
     itemEdits,
     fields,
-    inputActions,
+    inputActions: inputs.inputActions,
     box,
     sheets,
-    moves,
+    moves: items.moves,
     desk: env.desk,
     runner,
     model,
-    showProject: (s) => projectSession.show(s),
-    projects,
-    keyArm,
-    activity,
-    restores,
-    docs,
-    docComments,
-    docChoices,
+    showProject: (sl) => project.projectSession.show(sl),
+    projects: project.projects,
+    keyArm: page.keyArm,
+    activity: project.activity,
+    restores: project.restores,
+    docs: docsOpen,
+    docComments: docs.docComments,
+    docChoices: docs.docChoices,
     docEditor,
     rules,
-    settings,
-    notices,
-    voice,
+    settings: project.settings,
+    notices: project.notices,
+    voice: voice.voice,
     voiceWords,
-    docVoice,
-    dictation,
-    media,
-    diagrams: new Diagrams((slug, f) => api.diagramFailed(slug, f)),
+    docVoice: voice.docVoice,
+    dictation: voice.dictation,
+    media: page.media,
+    diagrams: page.diagrams,
     views,
-    itemDrag,
+    itemDrag: items.itemDrag,
     selection,
     access,
-    refreshProjects,
+    refreshProjects: project.refreshProjects,
     stop: () => {
-      for (const s of [projects, projectSession, pictureSizes, sheets, docs, docEditor, merges, arrival, notices, pageErrors, leaveGuard]) s.stop()
+      for (const x of [project.projects, project.projectSession, project.pictureSizes, sheets, docsOpen, docEditor, items.merges, page.arrival, project.notices, page.pageErrors, page.leaveGuard]) x.stop()
       unlisten()
     },
     actions,
   }
-  return app
 }

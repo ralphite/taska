@@ -18,8 +18,9 @@ export interface DraftPlacesDeps {
   route: RouteStore
   nav: Navigation
   box: Box
-  docs: Docs
-  comments: DocComments
+  /** the documents and their comments (made after the box) */
+  docs(): Docs
+  comments(): DocComments
   fields: Fields
   toasts: Toasts
   slug(): string
@@ -40,7 +41,7 @@ export class DraftPlaces {
       case 'new':
         return this.d.nav.newInput()
       case 'doc':
-        if (m?.docs.some((x) => x.d === t.d)) return this.d.docs.open(t.d)
+        if (m?.docs.some((x) => x.d === t.d)) return this.d.docs().open(t.d)
         break
       case 'amend':
         if (!m?.byId.has(t.id)) return this.d.toasts.show('Input no longer exists', null, { error: true })
@@ -64,8 +65,8 @@ export class DraftPlaces {
       case 'comment': {
         const doc = m?.docs.find((x) => (t.d == null || x.d === t.d) && allComments(x).some((c) => c.id === t.id))
         if (!doc) break
-        this.d.docs.open(doc.d)
-        return this.d.comments.editComment(slug, doc.d, t.id)
+        this.d.docs().open(doc.d)
+        return this.d.comments().editComment(slug, doc.d, t.id)
       }
     }
     this.d.toasts.show(`${draftName(key).replace(/^the /, 'The ')} is gone`, null, { error: true })
