@@ -146,7 +146,8 @@ What it does:
 - checks for Python 3.9+, and tells you your distribution's install command if it is missing;
 - downloads `taska.pyz` from the latest release and checks it against the release's `taska.pyz.sha256`;
 - puts it in `~/.local/share/taska/`, with a launcher at `~/.local/bin/taska`;
-- starts Taska on http://127.0.0.1:7340: as the systemd user service `taska.service` where systemd runs your
+- starts Taska on port 7340, reachable at http://127.0.0.1:7340 and from other machines on your local network
+  (it prints their addresses): as the systemd user service `taska.service` where systemd runs your
   session, otherwise in the background, logging to `~/.local/share/taska/taska.log`;
 - waits until Taska answers, then prints the address and the commands below.
 
@@ -156,7 +157,8 @@ Your data stays in `~/.taska`. Options go in front of `sh`, e.g. `... | TASKA_VE
 | --- | --- |
 | `TASKA_VERSION=v3.0.0` | Install that release instead of the latest |
 | `TASKA_NO_START=1` | Install or update only; do not start or restart Taska |
-| `TASKA_PORT=7340` | The port Taska listens on (on 127.0.0.1) |
+| `TASKA_PORT=7340` | The port Taska listens on |
+| `TASKA_LOCAL_ONLY=1` | Listen on this machine only (127.0.0.1): not reachable from the local network |
 | `TASKA_LINGER=1` | Also run `loginctl enable-linger`, so the service runs without a login session and starts at boot |
 
 Settings for the server, such as `GEMINI_API_KEY` or `TASKA_PUBLIC`, go in `~/.config/taska/env`, one
@@ -169,8 +171,13 @@ Settings for the server, such as `GEMINI_API_KEY` or `TASKA_PUBLIC`, go in `~/.c
 | Update it | Run the install command again | Run the install command again |
 | Uninstall it | `systemctl --user disable --now taska`, then `rm -rf ~/.local/share/taska ~/.local/bin/taska ~/.config/systemd/user/taska.service` | Stop it, then `rm -rf ~/.local/share/taska ~/.local/bin/taska` |
 
-Uninstalling leaves your data in `~/.taska`. Taska listens only on this machine; from another computer, use
-`ssh -L 7340:127.0.0.1:7340 <host>` or a proxy such as Tailscale Serve (see [Use it on your phone](#use-it-on-your-phone)).
+Uninstalling leaves your data in `~/.taska`.
+
+**From other machines.** Installed this way, Taska listens on every address of the machine. Computers on your
+local network (private addresses such as 192.168.x.x or 10.x.x.x) open `http://<this machine's address>:7340` as
+they are; from anywhere else Taska asks for its key (in `~/.taska/key`). To keep it on this machine only, install
+with `TASKA_LOCAL_ONLY=1`. Running `taska.pyz` yourself, add `--host 0.0.0.0` to do the same. From outside your
+network, prefer a proxy such as Tailscale Serve (see [Use it on your phone](#use-it-on-your-phone)).
 
 ## Quick start
 

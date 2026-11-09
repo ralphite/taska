@@ -8,13 +8,15 @@
 #   2. downloads taska.pyz from the release and checks it against taska.pyz.sha256;
 #   3. puts it in ~/.local/share/taska/ with a launcher, ~/.local/bin/taska;
 #   4. starts it: a systemd user service (taska.service) where there is one, otherwise in the background;
-#   5. waits for http://127.0.0.1:7340/ to answer.
+#   5. waits for http://127.0.0.1:7340/ to answer; other machines on your local network reach it too (TASKA_LOCAL_ONLY=1:
+#      this machine only).
 # Running it again updates Taska in place and restarts it. Your data stays in ~/.taska.
 #
 # Settings (environment variables):
 #   TASKA_VERSION=v3.0.0   install that release instead of the latest
 #   TASKA_NO_START=1       install or update only; do not start or restart
-#   TASKA_PORT=7340        the port Taska listens on (on 127.0.0.1)
+#   TASKA_PORT=7340        the port Taska listens on
+#   TASKA_LOCAL_ONLY=1     listen on 127.0.0.1 only: not reachable from other machines on the local network
 #   TASKA_LINGER=1         also run `loginctl enable-linger` so the service runs without a login session
 #   TASKA_BASE_URL=...     download from here instead of GitHub (for testing a release)
 #
@@ -26,6 +28,9 @@ set -eu
 REPO="ralphite/taska"
 VERSION="${TASKA_VERSION:-}"
 PORT="${TASKA_PORT:-7340}"
+# every address of this machine, so the local network reaches it (Taska lets in private addresses without the key;
+# from anywhere else the key is needed), or this machine only
+if [ -n "${TASKA_LOCAL_ONLY:-}" ]; then HOST=127.0.0.1; else HOST=0.0.0.0; fi
 APP_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/taska"
 BIN_DIR="$HOME/.local/bin"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/taska"
@@ -124,9 +129,9 @@ cat > "$LAUNCHER.tmp" <<EOF
 [ -f "$CONFIG_DIR/env" ] && { set -a; . "$CONFIG_DIR/env"; set +a; }
 PUBLIC="\${TASKA_PUBLIC:-\$(head -n 1 "\$HOME/.taska/public-url" 2>/dev/null || true)}"
 if [ -n "\$PUBLIC" ]; then
-    exec "$PY" "$APP_DIR/taska.pyz" --port "$PORT" --public "\$PUBLIC" "\$@"
+    exec "$PY" "$APP_DIR/taska.pyz" --host "$HOST" --port "$PORT" --public "\$PUBLIC" "\$@"
 fi
-exec "$PY" "$APP_DIR/taska.pyz" --port "$PORT" "\$@"
+exec "$PY" "$APP_DIR/taska.pyz" --host "$HOST" --port "$PORT" "\$@"
 EOF
 chmod 755 "$LAUNCHER.tmp"
 mv -f "$LAUNCHER.tmp" "$LAUNCHER"
@@ -223,6 +228,12 @@ fi
 
 say ""
 say "Taska is running: $URL"
+if [ "$HOST" = 0.0.0.0 ]; then
+    lan=$(hostname -I 2>/dev/null || true)
+    for ip in $lan; do
+        case "$ip" in *:*) ;; *) say "  on your local network: http://$ip:$PORT/" ;; esac
+    done
+fi
 say ""
 if [ "$MODE" = systemd ]; then
     say "It runs as the systemd user service taska.service and starts when you log in."
@@ -240,4 +251,6 @@ else
 fi
 say "  update     run the same install command again"
 say "Your data is in ~/.taska (uninstalling leaves it). Settings such as GEMINI_API_KEY go in $CONFIG_DIR/env."
-say "From another machine: ssh -L $PORT:127.0.0.1:$PORT <this host>, then open $URL there."
+if [ "$HOST" = 127.0.0.1 ]; then
+    say "From another machine: ssh -L $PORT:127.0.0.1:$PORT <this host>, then open $URL there."
+fi
