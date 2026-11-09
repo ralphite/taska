@@ -2,7 +2,8 @@
 // amber bar, what the agent said, its one action on the thumb side), a row you just acted on (one quiet line), and the
 // group heads. Props only: the list container works out what each row says.
 
-import type { ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
+import { useSwiped } from '../../ui/rowSwipe'
 import { deskSlots, forward, backward, type Slot } from '../../model/actions'
 import { ITEM_ACTS, actTip } from '../../model/itemActs'
 import { closed, statusWord } from '../../model/items'
@@ -53,6 +54,8 @@ export interface RowLook {
   desk: boolean
   /** being dragged, or where the dragged one would go: before, after or under it */
   drag?: 'dragging' | 'before' | 'after' | 'into'
+  /** drawn swiped this far (the phone; right: mid-swipe forward, left: the ways back left open) */
+  swiped?: number
 }
 
 /** A row's marks while an item is dragged. */
@@ -130,7 +133,9 @@ function RowActs({ it, needs, on }: { it: Item; needs: boolean; on: RowEvents })
 }
 
 /** The phone's swipe layers under a row: right, the step forward; left, the way back. */
-function SwipeLayers({ it, openKids, on, children }: { it: Item; openKids: number; on: RowEvents; children: ReactNode }) {
+function SwipeLayers({ it, openKids, swiped, on, children }: { it: Item; openKids: number; swiped?: number; on: RowEvents; children: ReactNode }) {
+  const row = useRef<HTMLDivElement>(null)
+  useSwiped(row, swiped)
   const fwd = forward(it)
   const back = backward(it)
   const left = fwd?.[1] === 'done' ? openKids : 0
@@ -164,7 +169,7 @@ function SwipeLayers({ it, openKids, on, children }: { it: Item; openKids: numbe
           </button>
         ))}
       </div>
-      <div data-swipe={it.n} className="relative touch-pan-y bg-white transition-transform duration-200 select-none [-webkit-touch-callout:none] dark:bg-zinc-950">
+      <div ref={row} data-swipe={it.n} className="relative touch-pan-y bg-white transition-transform duration-200 select-none [-webkit-touch-callout:none] dark:bg-zinc-950">
         {children}
       </div>
     </div>
@@ -174,7 +179,7 @@ function SwipeLayers({ it, openKids, on, children }: { it: Item; openKids: numbe
 function Shell({ it, look, facts, on, children }: { it: Item; look: RowLook; facts: RowFacts; on: RowEvents; children: ReactNode }) {
   return (
     <article data-n={it.n} {...dragMarks(look)} className={ARTICLE}>
-      <SwipeLayers it={it} openKids={facts.openKids} on={on}>
+      <SwipeLayers it={it} openKids={facts.openKids} swiped={look.swiped} on={on}>
         {children}
       </SwipeLayers>
     </article>

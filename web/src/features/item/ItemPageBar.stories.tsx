@@ -1,7 +1,7 @@
 // The bar over an item's pane: its buttons under the pointer, from the keys and pressed; the way back to an item; no bar
 // beside a side list; the phone's Back and ⋯ pressed.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { After, Frame, Frames } from '../../stories/Frames'
+import { Frame, Frames } from '../../stories/Frames'
 import { PARENT, pageOf } from '../../stories/itemPage'
 import { frame, it, newInputHead } from '../../stories/itemPageLayoutFixtures'
 import { BackTo, NoSelection } from './ItemPage'
@@ -30,7 +30,7 @@ export const PhonePressed: Story = {
   name: 'Phone: Back and ⋯ pressed',
   render: () => (
     <Frames desk={false} phoneWidth={393}>
-      {() => <After run={(root) => root.querySelectorAll('header button').forEach((b) => b.setAttribute('data-pressed', ''))}>{frame({ head: <span className="font-mono text-sm font-bold">F012</span>, menu: true, onMenu: act('Pane: menu → Menus and sheets › Item menu') }, false)}</After>}
+      {() => frame({ head: <span className="font-mono text-sm font-bold">F012</span>, menu: true, pressed: true, onMenu: act('Pane: menu → Menus and sheets › Item menu') }, false)}
     </Frames>
   ),
 }

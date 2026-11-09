@@ -8,7 +8,8 @@
 // after sending). What is still on its way (its × cancels it), and a voice note being recorded, are lines of their own
 // over the list. Props only.
 
-import { Fragment, type ReactNode, type Ref } from 'react'
+import { Fragment, useRef, type ReactNode, type Ref } from 'react'
+import { useSwiped } from './rowSwipe'
 import type { Became, InputLine, ItemRef } from '../model/became'
 import { INPUT_ACT_WORD, INPUT_STATES, actsIn, becameText, type InputAct, type InputTone } from '../model/inputStates'
 import { voiceMark } from '../model/inputs'
@@ -189,7 +190,7 @@ function RowButtons({ x, rec, on }: { x: InputLine; rec: ReactNode | null; on: I
   )
 }
 
-export function InputRow({ x, text, files, place = 'row', lit = false, rec = null, rowRef, swipe = null, on }: {
+export function InputRow({ x, text, files, place = 'row', lit = false, rec = null, rowRef, swipe = null, swiped, on }: {
   x: InputLine
   /** the list it is in: the desktop's New input list, or the Inputs page (model/inputStates says what each shows) */
   place?: 'row' | 'inputs'
@@ -202,8 +203,12 @@ export function InputRow({ x, text, files, place = 'row', lit = false, rec = nul
   rowRef?: Ref<HTMLElement>
   /** the phone swipes it (its ⋯ goes: a long press opens its menu) */
   swipe?: InputSwipe | null
+  /** drawn swiped this far (right: opening its item; left: Move and Delete left open) */
+  swiped?: number
   on: InputRowEvents
 }) {
+  const swipeRow = useRef<HTMLDivElement>(null)
+  useSwiped(swipeRow, swiped)
   const r = x.r
   const edited = r.history?.some((h) => h.mode === 'edit')
   const voiceOnly = r.files.every((f) => (f.mime || '').startsWith('audio/'))
@@ -261,7 +266,7 @@ export function InputRow({ x, text, files, place = 'row', lit = false, rec = nul
           Delete
         </button>
       </div>
-      <div data-swipe={r.id} className="relative touch-pan-y bg-white transition-transform duration-200 select-none [-webkit-touch-callout:none] dark:bg-zinc-950">
+      <div ref={swipeRow} data-swipe={r.id} className="relative touch-pan-y bg-white transition-transform duration-200 select-none [-webkit-touch-callout:none] dark:bg-zinc-950">
         {row}
       </div>
     </div>

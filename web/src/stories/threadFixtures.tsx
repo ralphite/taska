@@ -15,11 +15,6 @@ export const VOICE = { f: 'f8-voice_0-07.webm', name: 'voice_0-07.webm', mime: '
 export const SHOT = { f: 'f9-filter.png', name: 'filter.png', mime: 'image/png' }
 export const withFiles = doc({ blocks: PLAN.blocks.map((b) => (b.key === 'p1' ? { ...b, comments: [...b.comments, comment({ id: 7, key: 'p1', th: 1, quote: 'stays in use', text: 'Like this, with the filter kept.', by: 'you', t: at(5), files: [SHOT, VOICE] })] } : b)) })
 
-/** The words it was on were changed since: under Original text changed, the old words struck through (the phone's
- * sheet scrolled to its end, where they are). */
-export const toEnd = (root: HTMLElement) => {
-  for (const el of root.querySelectorAll<HTMLElement>('*')) if (el.scrollHeight > el.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(el).overflowY)) el.scrollTop = el.scrollHeight
-}
 // ---- more states (B636)
 export const mapP1 = (f: (c: ReturnType<typeof comment>[]) => ReturnType<typeof comment>[]) => doc({ blocks: PLAN.blocks.map((b) => (b.key === 'p1' ? { ...b, comments: f(b.comments) } : b)) })
 export const edited = mapP1((cs) => cs.map((c, i) => (i === 0 ? { ...c, edited: at(20) } : c)))

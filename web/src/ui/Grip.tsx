@@ -4,7 +4,7 @@
 
 import { useRef, useState } from 'react'
 
-export function Grip({ name, axis, place, measure, onSize, onDone, onReset }: {
+export function Grip({ name, axis, place, measure, onSize, onDone, onReset, dragged = false }: {
   /** which line it is (side, list, top, duo): its mark on the page */
   name: string
   axis: 'x' | 'y'
@@ -15,8 +15,10 @@ export function Grip({ name, axis, place, measure, onSize, onDone, onReset }: {
   onSize(px: number): void
   onDone(px: number): void
   onReset?(): void
+  /** being dragged when it is drawn */
+  dragged?: boolean
 }) {
-  const [drag, setDrag] = useState(false)
+  const [drag, setDrag] = useState(dragged)
   const at = useRef({ from: 0, most: 0, px: 0 })
   const dragging = useRef(false) // ended once: the release and the lost capture that follows it are one end
   const end = () => {

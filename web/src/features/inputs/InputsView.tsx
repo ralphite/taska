@@ -20,6 +20,8 @@ export interface InputFacts extends InputLine {
   lit?: 'shown' | 'still'
   /** it can go to another project (Move, a swipe left) */
   movable?: boolean
+  /** drawn swiped this far (the phone; right: opening its item, left: Move and Delete left open) */
+  swiped?: number
 }
 
 
@@ -63,6 +65,7 @@ export function InputCard({ x, world, files, on }: { x: InputFacts; world: Inlin
       text={(cut) => inputWords(world, on)(r.text, cut)}
       files={r.files.length ? files(r.files) : null}
       swipe={x.became.k === 'moved' ? null : { open: to?.code ?? null, move: !!x.movable, on: { move: on.moveInput, remove: on.remove } }}
+      swiped={x.swiped}
       on={{ ...on, menu: (id) => on.menu(id) }}
     />
   )

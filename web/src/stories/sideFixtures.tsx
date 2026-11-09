@@ -6,7 +6,7 @@
 // the sidebar's stories.
 import { useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { sideProjects } from '../app/sideProjects'
-import { Rail, Sidebar, type SidebarEvents } from '../features/sidebar/Sidebar'
+import { Rail, Sidebar, type SideProject, type SidebarEvents } from '../features/sidebar/Sidebar'
 import { SIDE_KEYS, sideLinks } from '../features/sidebar/sideLinks'
 import type { ProjectRow } from '../model/types'
 import { gripVars } from '../stores/grips'
@@ -34,11 +34,11 @@ const DEV = [
   { label: 'Storybook', href: '#', icon: 'book' as const },
   { label: 'Dashboard', href: '#', icon: 'chart' as const },
 ]
-const projects = (drop?: string) => {
+const projects = (drop?: string, look?: SideFacts['look']) => {
   const list = sideProjects(ROWS, modelOf(PROJECT, [], { title: 'Shop' }), 'shop', AT).list
-  return list && drop ? list.map((p) => (p.slug === drop ? { ...p, drop: true } : p)) : list
+  return list?.map((p) => ({ ...p, ...(p.slug === drop ? { drop: true } : {}), ...(look && p.slug === look.slug ? { look: look.as } : {}) })) ?? null
 }
-type SideFacts = { side?: 'docs' | 'log' | 'deleted'; undo?: string; composing?: boolean; drop?: string; naming?: string; namingValue?: string; width?: number; loading?: boolean; settings?: boolean; noLinks?: boolean }
+type SideFacts = { look?: { slug: string; as: NonNullable<SideProject['look']> }; brandPressed?: boolean; side?: 'docs' | 'log' | 'deleted'; undo?: string; composing?: boolean; drop?: string; naming?: string; namingValue?: string; width?: number; loading?: boolean; settings?: boolean; noLinks?: boolean }
 // naming: New project being named (and why it was not made: '' none yet); noLinks: no project open, so no Documents, Activity, Deleted
 
 /** The sidebar with the state the page keeps for it (stores.ui's sideHidden and naming, stores.grips' side width),
@@ -59,7 +59,7 @@ function LiveSidebar({ phone, f, folded = false }: { phone: boolean; f: SideFact
   }
   // New project: a popover at its button (the desktop), a sheet (the phone), over the sidebar (D115 #7)
   const naming_ = (under: ReactNode) => (naming ? withNewProject(under, !phone, { beside: hidden, value: f.namingValue, error: naming.error, onDone: () => setNaming(null) }) : under)
-  const list = f.loading ? null : projects(f.drop)
+  const list = f.loading ? null : projects(f.drop, f.look)
   const links = f.noLinks ? [] : sideLinks('shop', f.side ?? null)
   if (hidden) return naming_(<Rail keys={SIDE_KEYS} projects={list} links={links} composing={f.composing ?? true} settingsOpen={!!f.settings} on={on} />)
   const edge = phone ? null : (
@@ -85,7 +85,7 @@ function LiveSidebar({ phone, f, folded = false }: { phone: boolean; f: SideFact
   const sized = width ? 'relative w-[var(--side-w,15rem)] shrink-0 border-r border-zinc-200 dark:border-zinc-800' : 'relative w-full'
   return naming_(
     <div className="flex h-full" style={gripVars({ side: width, list: 0, top: 0, duo: 0 }) as CSSProperties}>
-      <Sidebar phone={phone} keys={SIDE_KEYS} projects={list} composing={!!f.composing} links={links} undoLabel={f.undo ?? null} devLinks={phone ? [] : DEV} edge={edge} place={phone ? 'h-full w-full bg-zinc-100' : `h-full bg-zinc-50 ${sized}`} on={on} />
+      <Sidebar phone={phone} keys={SIDE_KEYS} projects={list} composing={!!f.composing} links={links} undoLabel={f.undo ?? null} devLinks={phone ? [] : DEV} edge={edge} brandPressed={f.brandPressed} place={phone ? 'h-full w-full bg-zinc-100' : `h-full bg-zinc-50 ${sized}`} on={on} />
     </div>
   )
 }
@@ -93,17 +93,3 @@ function LiveSidebar({ phone, f, folded = false }: { phone: boolean; f: SideFact
 export const side = (phone: boolean, f: SideFacts = {}) => <LiveSidebar phone={phone} f={f} />
 /** the sidebar folded to icons; `settings`: Settings open (its icon lit), `composing`: New input lit, `loading`: projects never listed yet. Show sidebar unfolds it. */
 export const rail = (f: Omit<SideFacts, 'undo' | 'drop'> = {}) => <LiveSidebar phone={false} folded f={f} />
-/** A mouse comes onto a project (its row in the sidebar, or its icon on the rail, by its name), as the page hears it. */
-export const pointTo = (title: string) => (root: HTMLElement) => {
-  const a = [...root.querySelectorAll<HTMLElement>('nav a')].find((x) => x.getAttribute('aria-label') === title || x.dataset.slug === title)
-  a?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }))
-}
-/** Then the mouse moves off the project and into its card (r1066), as the page hears it: it stays open. */
-export const pointIntoCard = (title: string) => (root: HTMLElement) => {
-  pointTo(title)(root)
-  setTimeout(() => {
-    const a = [...root.querySelectorAll<HTMLElement>('nav a')].find((x) => x.getAttribute('aria-label') === title || x.dataset.slug === title)
-    const card = root.ownerDocument.querySelector('[data-project-card]')
-    a?.dispatchEvent(new PointerEvent('pointerout', { bubbles: true, pointerType: 'mouse', relatedTarget: card }))
-  }, 50)
-}

@@ -13,6 +13,9 @@ const WIDE = ['w-3/4', 'w-1/2', 'w-2/3', 'w-5/12', 'w-7/12']
 
 /** What is still coming, as pale rows shaped like it, so nothing jumps when it comes: a list's items (a mark and two
  * lines), rows with a tile (projects), or lines of words. Read out as Loading. */
+/** Pressed, as the page's press feedback marks what a finger is on (app/press.ts): a part drawn pressed. */
+export const pressedMark = (on: boolean | undefined) => (on ? { 'data-pressed': '' } : {})
+
 export function Skeleton({ shape, n = 3, cls = '' }: { shape: 'item' | 'tile' | 'text'; n?: number; cls?: string }) {
   return (
     <div role="status" aria-label="Loading" className={`animate-pulse ${cls}`}>

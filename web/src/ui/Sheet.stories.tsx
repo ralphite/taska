@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { After, Frames } from '../stories/Frames'
+import { Frames } from '../stories/Frames'
 import { act } from '../stories/menuFixtures'
 import { PRIMARY } from './tones'
 import { Sheet, SheetLayout } from './Sheet'
@@ -35,11 +35,7 @@ export const DraggedDown: Story = {
   name: 'Phone: Dragged down by its handle',
   render: () => (
     <Frames desk={false} height={520}>
-      {() => (
-        <After run={(root) => root.querySelector<HTMLElement>('[role="dialog"]')?.style.setProperty('transform', 'translateY(90px)')}>
-          <Sheet open look={{}} desk={false} onClose={act('Sheet: close')}><SheetLayout {...parts} /></Sheet>
-        </After>
-      )}
+      {() => <Sheet open look={{}} desk={false} dragged={90} onClose={act('Sheet: close')}><SheetLayout {...parts} /></Sheet>}
     </Frames>
   ),
 }

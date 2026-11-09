@@ -128,7 +128,12 @@ export function useProjectCard(off = false) {
           onPointerLeave: leave,
           onPointerDown: hide,
         }
-  return { hovered: off ? null : hovered, rowProps, card: { onPointerEnter: stay, onPointerLeave: leave }, hide }
+  /** the pointer on a row when it is drawn (a story's state) */
+  const point = (slug: string, el: Element) => {
+    const r = el.getBoundingClientRect()
+    setHovered({ slug, left: r.right + 4, top: r.top })
+  }
+  return { hovered: off ? null : hovered, rowProps, card: { onPointerEnter: stay, onPointerLeave: leave }, hide, point }
 }
 
 /** The card where the pointer is: over the page (not clipped by the sidebar), kept inside the window. */

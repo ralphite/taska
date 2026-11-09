@@ -1,6 +1,7 @@
 // The pane's frame: its bar (Back on the phone, what it shows, its actions) and its body, which scrolls; over the
 // body's bottom, just above the box, the button to the talk's end (F716). Props only.
 
+import { pressedMark } from './bits'
 import type { ReactNode, Ref } from 'react'
 import { Icon } from './Icon'
 import { ToEnd } from './ToEnd'
@@ -24,6 +25,7 @@ export function PaneFrame({
   duo = false,
   notice,
   toEnd = null,
+  pressed = false,
   children,
 }: {
   place: string
@@ -51,6 +53,8 @@ export function PaneFrame({
   notice?: ReactNode
   /** the talk it shows: the button to its end floats above the box while it is not at its end (F716 r1171) */
   toEnd?: HTMLElement | null
+  /** its bar's Back and ⋯ pressed (a finger on them) */
+  pressed?: boolean
   children?: ReactNode
 }) {
   return (
@@ -59,6 +63,7 @@ export function PaneFrame({
         <button
           aria-label="Back"
           onClick={onBack}
+          {...pressedMark(pressed)}
           className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 data-pressed:bg-zinc-100 lg:hidden dark:text-zinc-400 dark:data-pressed:bg-zinc-800"
         >
           <Icon n="left" c="size-6" sw="2" />
@@ -70,6 +75,7 @@ export function PaneFrame({
           hidden={!menu}
           aria-label="Item actions"
           title="All actions · ."
+          {...pressedMark(pressed)}
           onClick={(e) => onMenu?.(e.currentTarget)}
           className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 focus-visible:outline-2 focus-visible:outline-blue-500 data-pressed:bg-zinc-100 lg:size-9 lg:rounded-lg lg:hover:bg-zinc-100 lg:active:bg-zinc-200 dark:text-zinc-400 dark:focus-visible:outline-blue-400 dark:data-pressed:bg-zinc-800 dark:lg:hover:bg-zinc-800 dark:lg:active:bg-zinc-700"
         >

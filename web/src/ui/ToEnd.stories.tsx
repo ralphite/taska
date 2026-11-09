@@ -3,12 +3,11 @@
 // The page's own item pane (PaneFrame, ItemPage) and box, with an item's real talk.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { boxAt } from '../stories/boxFixtures'
-import { After, Frames } from '../stories/Frames'
+import { Frames } from '../stories/Frames'
 import { message } from '../stories/fixtures'
 import { pageOf, you } from '../stories/itemPage'
 import { it } from '../stories/itemPageLayoutFixtures'
 import { LONG, later } from '../stories/talkFromAgentFixtures'
-import { scrollerOf } from './scroller'
 
 export default { title: 'UI/Item pane/Button to the end' } satisfies Meta
 type Story = StoryObj
@@ -29,19 +28,10 @@ const page = (up: boolean): Story => ({
   render: () => (
     <Frames phoneWidth={393} deskWidth={900} height={760}>
       {(layout) => (
-        <After
-          ms={1200}
-          run={(root) => {
-            const el = root.querySelector<HTMLElement>('[data-item-talk]')
-            const sc = el && scrollerOf(el)
-            if (up && sc) sc.scrollTop = Math.max(0, sc.scrollHeight - sc.clientHeight - 600)
-          }}
-        >
-          <div className="flex h-full flex-col">
-            <div className="flex min-h-0 flex-1 flex-col">{pageOf(it({ thread: talk }), layout === 'desk')}</div>
-            {boxAt({ at: 'F012' }, layout === 'desk')}
-          </div>
-        </After>
+        <div className="flex h-full flex-col">
+          <div className="flex min-h-0 flex-1 flex-col">{pageOf(it({ thread: talk }), layout === 'desk', up ? { scrolledUp: 600 } : {})}</div>
+          {boxAt({ at: 'F012' }, layout === 'desk')}
+        </div>
       )}
     </Frames>
   ),

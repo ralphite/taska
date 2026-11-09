@@ -47,9 +47,11 @@ function SaidWords({ heard, tidied, steps = [] }: { heard: string; tidied: strin
 }
 
 /** `card`: what a code names, as its card (read when it shows); `steps`: the steps that worked out a voice note's
- * words, by its file (asked when its tip shows). */
-export function Tooltip({ card, steps }: { card(ref: string): RefCard | null; steps?(f: string): Promise<VoiceStep[]> }) {
+ * words, by its file (asked when its tip shows); `at`: an element whose tip shows now, as if the pointer were on it (a
+ * story's state). */
+export function Tooltip({ card, steps, at = null }: { card(ref: string): RefCard | null; steps?(f: string): Promise<VoiceStep[]>; at?: HTMLElement | null }) {
   const [shown, setShown] = useState<Shown | null>(null)
+  const showAt = useRef<((el: HTMLElement) => void) | null>(null)
   const tip = useRef<HTMLDivElement>(null)
   const arrow = useRef<HTMLSpanElement>(null)
   const told = useRef(card)
@@ -145,6 +147,7 @@ export function Tooltip({ card, steps }: { card(ref: string): RefCard | null; st
     }
     // a long voice note's words scroll inside the tip: that does not close it
     const scroll = (e: Event) => !tip.current?.contains(e.target as Node) && hide()
+    showAt.current = show
     document.addEventListener('pointerover', over)
     document.addEventListener('pointerout', out)
     document.addEventListener('focusin', focus)
@@ -164,8 +167,12 @@ export function Tooltip({ card, steps }: { card(ref: string): RefCard | null; st
       document.removeEventListener('scroll', scroll, true)
       document.removeEventListener('keydown', key, true)
       removeEventListener('resize', hide)
+      showAt.current = null
     }
   }, [])
+  useEffect(() => {
+    if (at) showAt.current?.(at)
+  }, [at])
   useLayoutEffect(() => {
     const t = tip.current
     const a = arrow.current

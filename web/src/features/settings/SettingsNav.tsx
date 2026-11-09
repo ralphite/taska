@@ -2,7 +2,7 @@
 // grey), with the way back, and Keyboard shortcuts at its foot; on the phone an index of rows, each saying how it is
 // set now. Props only.
 
-import { Kbd } from '../../ui/bits'
+import { Kbd, pressedMark } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { ALL_PROJECTS, SECTIONS, type SectionKey } from './sectionList'
 import { PH_GROUP, PhHead } from './SettingsParts'
@@ -13,7 +13,7 @@ export interface NavFacts {
   right: Partial<Record<SectionKey, string | number>>
 }
 
-export function DeskNav({ current, back, f, on }: { current: SectionKey; back: string; f: NavFacts; on: { open(k: SectionKey): void; back(): void; keys(): void; href(k: SectionKey): string } }) {
+export function DeskNav({ current, back, f, pressed = null, on }: { current: SectionKey; back: string; f: NavFacts; /** a section's row pressed (a finger on it) */ pressed?: SectionKey | null; on: { open(k: SectionKey): void; back(): void; keys(): void; href(k: SectionKey): string } }) {
   const row = (k: SectionKey) => (
     <a
       key={k}
@@ -24,6 +24,7 @@ export function DeskNav({ current, back, f, on }: { current: SectionKey; back: s
         on.open(k)
       }}
       {...(k === current ? { 'aria-current': 'page' as const } : {})}
+      {...pressedMark(k === pressed)}
       className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-900 aria-[current=page]:bg-blue-50 aria-[current=page]:font-semibold aria-[current=page]:text-blue-700 data-pressed:bg-zinc-200/80 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:text-blue-200"
     >
       <Icon n={SECTIONS[k].icon} c="size-4 opacity-70" />

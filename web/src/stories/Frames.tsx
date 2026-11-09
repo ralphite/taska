@@ -110,31 +110,3 @@ export function Hold<T>({ start, children }: { start: T; children(value: T, set:
   const [value, set] = useState(start)
   return <>{children(value, set)}</>
 }
-
-/** Something done to the page once it is drawn, as you would have done it: a pointer over a part (its mousemove),
- * the contents opened, words selected, words typed into a field, a key pressed in it, the talk scrolled up (`ms`
- * later: once the page has settled). */
-export function After({ run, ms = 50, children }: { run(root: HTMLElement): void; ms?: number; children: ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null)
-  useLayoutEffect(() => {
-    const t = setTimeout(() => ref.current && run(ref.current), ms)
-    return () => clearTimeout(t)
-  })
-  return (
-    <div ref={ref} className="contents">
-      {children}
-    </div>
-  )
-}
-
-/** Types `text` into the field, as the keyboard would (the page hears its input event). */
-export function typeInto(field: HTMLInputElement | null, text: string) {
-  if (!field || field.value === text) return
-  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(field, text)
-  field.dispatchEvent(new Event('input', { bubbles: true }))
-}
-
-/** Presses `key` in the field `n` times. */
-export function press(field: HTMLElement | null, key: string, n = 1) {
-  for (let i = 0; i < n; i++) field?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
-}

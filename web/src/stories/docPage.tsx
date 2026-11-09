@@ -2,7 +2,7 @@
 // actions, the way back), on the phone in a sheet over its item. What it shows comes from the page's own factsOf and
 // webFacts with a demo project, and the page's DocView, WebPage, Thread and DocEdit draw it, with the state the page
 // keeps for it. Used by the document's stories.
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { SelectionBar } from '../features/composer/SelectionBar'
 import { selected, useSelectedWords } from '../features/composer/selectedWords'
 import { DocEdit } from '../features/docs/DocEdit'
@@ -60,6 +60,15 @@ export interface DocHere {
   item?: Partial<Item>
   /** only the document's words, for a column beside its item's talk (as the desktop's two columns show it) */
   viewOnly?: boolean
+  /** its contents opened */
+  contentsOpen?: boolean
+  /** the pointer on an item of a list (the desktop) */
+  pointing?: { key: string; li: number }
+  /** a passage brought into view ('doc': its end) */
+  aim?: string
+  /** the browser's selection on some words of a paragraph, as a drag over them leaves it (`recording`: the bar's mic
+   * pressed: it records a comment about them) */
+  selected?: { key: string; words: string; recording?: boolean }
 }
 
 export const envOf = (m: ReturnType<typeof modelOf>, desk: boolean): DocEnv => {
@@ -92,12 +101,35 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
   const [inspect, setInspect] = useState(!!h.inspect)
   const [ticks, setTicks] = useState<TickState>({ mine: {}, going: {}, open: new Set(), ...h.ticks })
   const [asked, setAsked] = useState(h.asked ?? {})
-  const [speaking, setSpeaking] = useState(h.speaking ?? (h.spoken ? { key: h.spoken.key, bar: false, quote: h.spoken.text } : null))
+  const [speaking, setSpeaking] = useState(h.speaking ?? (h.spoken ? { key: h.spoken.key, bar: false, quote: h.spoken.text } : h.selected?.recording ? { key: h.selected.key, bar: true, quote: h.selected.words } : null))
   const seen = h.seen ?? { since: T }
   const env0 = envOf(m, desk)
   const media = useMedia(env0.url)
   // the browser's selection, followed as the page's SelectionBarContainer follows it (B708 r1149)
   const words = useSelectedWords(d.d, v.circle, !!speaking, !!speaking?.bar)
+  // the words selected when it is drawn: the browser's selection on them (and the bar's mic pressed)
+  const box = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    // after the page's own listener for the selection is set (useSelectedWords), so it hears it
+    const w = h.selected
+    const sec = w && box.current?.querySelector(`section[data-key="${w.key}"] [data-block]`)
+    const walk = sec && document.createTreeWalker(sec, NodeFilter.SHOW_TEXT)
+    while (w && walk?.nextNode()) {
+      const t = walk.currentNode as Text
+      const i = t.data.indexOf(w.words)
+      if (i < 0) continue
+      const r = document.createRange()
+      r.setStart(t, i)
+      r.setEnd(t, i + w.words.length)
+      getSelection()?.removeAllRanges()
+      getSelection()?.addRange(r)
+      // the bar's mic pressed: it records about these words, its strip where they are
+      const p = w.recording ? selected(d.d, false) : null
+      if (p) words.start(p)
+      return
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- what is selected when it is drawn, once
+  }, [])
   const env = { ...env0, play: media.play }
   const facts = factsOf(m, d, v, seen, desk, asked, speaking, ticks, h.notSent ?? [])
   const web = d.fmt === 'html'
@@ -213,7 +245,11 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
       }}
     />
   )
-  const view = <DocView facts={facts} env={env} on={on} page={page} meter={recMeter(desk)} lasso={v.circle ? <Lasso onDrawn={(keys) => setV({ ...v, circle: false, sel: new Set(keys), quote: null })} /> : null} />
+  const view = (
+    <div ref={box} className="contents">
+      <DocView facts={facts} env={env} on={on} page={page} meter={recMeter(desk)} contentsOpen={h.contentsOpen} pointing={h.pointing} aim={h.aim ?? null} lasso={v.circle ? <Lasso onDrawn={(keys) => setV({ ...v, circle: false, sel: new Set(keys), quote: null })} /> : null} />
+    </div>
+  )
   if (h.viewOnly)
     return (
       <>

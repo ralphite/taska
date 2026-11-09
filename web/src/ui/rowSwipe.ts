@@ -7,7 +7,7 @@
 // only moves with a transform while you swipe. A row whose list says so opens its menu on a long press (held still for
 // half a second). Each row is marked data-swipe="its key", its layers data-swipe-left and data-swipe-right beside it.
 
-import { useEffect, useRef, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react'
 
 export const EDGE_W = 24
 /** how long a finger stays still on a row for its menu */
@@ -44,6 +44,18 @@ export function showSwiped(el: HTMLElement, dx: number): void {
   slideTo(el, dx)
 }
 
+/** A row drawn swiped when it is drawn (`dx` right: mid-swipe forward; left: the ways back left open, as wide as
+ * their buttons, as a finger leaves them); none: as it is. */
+export function useSwiped(row: RefObject<HTMLElement | null>, dx: number | undefined): void {
+  useLayoutEffect(() => {
+    const el = row.current
+    if (!el || dx == null) return
+    if (dx >= 0) return showSwiped(el, dx)
+    showSwiped(el, -1)
+    showSwiped(el, -(layer(el, 'right')?.offsetWidth || -dx))
+  }, [row, dx])
+}
+
 /** Every row of `list` slid back closed, but `but` (the one under the finger). */
 export function closeRows(list: HTMLElement, but: HTMLElement | null = null): void {
   list.querySelectorAll<HTMLElement>('[data-swipe]').forEach((el) => {
@@ -60,9 +72,11 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
     told.current = opts
   })
   const s = useRef({ el: null as HTMLElement | null, open: null as HTMLElement | null, swallow: 0, x0: 0, y0: 0, mode: null as null | 'h' | 'v', dx: 0, reveal: 0, base: 0, hold: 0, held: null as HTMLElement | null })
+  const first = useRef(true)
   useEffect(() => {
     // rows drawn again are drawn closed (a stale one would swallow the next tap and show its layer over the list); a
-    // row under the finger goes on with its swipe
+    // row under the finger goes on with its swipe. Drawn the first time, they are as they were drawn.
+    if (first.current) return void (first.current = false)
     const w = s.current
     if (w.el && !w.el.isConnected) w.el = null
     w.open = null

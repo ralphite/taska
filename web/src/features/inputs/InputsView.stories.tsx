@@ -2,8 +2,7 @@
 // page's own rows (inputRows, outgoingRows) and InputsView with a demo project's inputs. The desktop has no Inputs tab:
 // what you said is under New input there.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { After, Frames } from '../../stories/Frames'
-import { showSwiped } from '../../ui/rowSwipe'
+import { Frames } from '../../stories/Frames'
 import { out } from '../../stories/boxFixtures'
 import { inputsOf, type Said } from '../../stories/inputFixtures'
 
@@ -24,26 +23,7 @@ export const EmptyOneOnItsWay: Story = { name: 'Empty, one on its way', render: 
 // ---- the swipe (D115 #42), drawn by the swipe's own code, mid-swipe: right on the first row that became an item (only
 // such a row opens one), left on the first row
 /** `dx` right: opening the item it became, mid-swipe; left: Move and Delete left open, as wide as their buttons */
-const swiped = (dx: number): Story => ({
-  render: () => (
-    <Frames desk={false} phoneWidth={393} height={852}>
-      {() => (
-        <After
-          run={(root) => {
-            const rows = [...root.querySelectorAll<HTMLElement>('[data-swipe]')]
-            const el = dx >= 0 ? rows.find((x) => x.parentElement?.querySelector('[data-swipe-left]')?.textContent?.trim()) : rows[0]
-            if (!el) return
-            if (dx >= 0) return showSwiped(el, dx)
-            showSwiped(el, -1)
-            showSwiped(el, -(el.parentElement?.querySelector<HTMLElement>('[data-swipe-right]')?.offsetWidth || -dx))
-          }}
-        >
-          {inputsOf({})}
-        </After>
-      )}
-    </Frames>
-  ),
-})
+const swiped = (dx: number): Story => ({ render: () => <Frames desk={false} phoneWidth={393} height={852}>{() => inputsOf({ swiped: dx })}</Frames> })
 /** swiped left: Move and Delete under it (Delete: Undo puts it back) */
 export const SwipedLeft: Story = { ...swiped(-1), name: 'Swiped left: Move, Delete' }
 /** swiped right: the item it became opens */

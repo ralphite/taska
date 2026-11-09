@@ -58,6 +58,8 @@ export interface SettingsHere {
   noBadge?: boolean
   /** Use on your phone: New key pressed once */
   newKeyAsking?: boolean
+  /** a section's row in the desktop's column pressed */
+  navPressed?: SectionKey
   /** Voice spellings: none yet */
   noSpellings?: boolean
   organizerOff?: boolean
@@ -181,7 +183,7 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
         desk={desk}
         sec={sec}
         place=""
-        nav={desk ? <DeskNav current={sec ?? 'projects'} back="New input" f={nav} on={navOn} /> : sec ? null : <PhoneIndex f={nav} on={navOn} />}
+        nav={desk ? <DeskNav current={sec ?? 'projects'} back="New input" f={nav} pressed={h.navPressed ?? null} on={navOn} /> : sec ? null : <PhoneIndex f={nav} on={navOn} />}
         prefs={editing && desk}
         body={bodies[sec ?? 'projects']()}
         onBack={back}

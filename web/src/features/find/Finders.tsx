@@ -51,8 +51,8 @@ export interface SwitchRow {
   here: boolean
 }
 
-export function Switcher({ rows, loading, onOpen }: { rows: SwitchRow[]; loading: boolean; onOpen(slug: string): void }) {
-  const [q, setQ] = useState('')
+export function Switcher({ rows, loading, query = '', onOpen }: { rows: SwitchRow[]; loading: boolean; /** the words in its field when it opens */ query?: string; onOpen(slug: string): void }) {
+  const [q, setQ] = useState(query)
   const [i, setI] = useState(-1)
   const list = useRef<HTMLDivElement>(null)
   const shown = rows.filter((p) => (p.title + ' ' + p.slug).toLowerCase().includes(q.trim().toLowerCase()))

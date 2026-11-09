@@ -1,7 +1,7 @@
 // F479: the desktop's search (pages/SearchDialog): the Search button in the sidebar's head, and each state of
 // finding by typing. The journeys: stories/searchDesk.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { After } from '../stories/Frames'
+import { Pointed } from '../stories/tipFixtures'
 import { DeskFrame, SearchDesk, deskStory } from '../stories/searchDesk'
 
 export default { title: 'UI/Search/Desktop dialog/Type and find' } satisfies Meta
@@ -14,9 +14,9 @@ export const UnderThePointer: StoryObj = {
   parameters: { pseudo: { hover: ['#drawer button[aria-label="Search"]'] } },
   render: () => (
     <DeskFrame>
-      <After run={(root) => root.querySelector('#drawer button[aria-label="Search"]')?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }))}>
+      <Pointed find={'#drawer button[aria-label="Search"]'} card={() => null}>
         <SearchDesk still />
-      </After>
+      </Pointed>
     </DeskFrame>
   ),
 }

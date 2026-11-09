@@ -50,7 +50,7 @@ function quoteTop(sec: HTMLElement, quote: string): number {
   return 0
 }
 
-export function BlockActs({ counts, open, rec, picked = false, meter, children, on }: {
+export function BlockActs({ counts, open, rec, picked = false, meter, pointing = null, children, on }: {
   counts: CountInfo[]
   /** the thread whose comments are open over the text */
   open: string | null
@@ -60,6 +60,8 @@ export function BlockActs({ counts, open, rec, picked = false, meter, children, 
   picked?: boolean
   /** the recording's time and level */
   meter?: ReactNode
+  /** the item of a list the pointer is on when it opens (its place in the list) */
+  pointing?: number | null
   /** the open comments */
   children?: ReactNode
   on: BlockActsEvents
@@ -99,11 +101,17 @@ export function BlockActs({ counts, open, rec, picked = false, meter, children, 
     }
     sec.addEventListener('mousemove', move)
     sec.addEventListener('mouseleave', leave)
+    const li = pointing == null ? null : sec.querySelectorAll<HTMLElement>('li')[pointing]
+    if (li) {
+      light(li)
+      setAt({ top: Math.round(li.getBoundingClientRect().top - sec.getBoundingClientRect().top), quote: li.innerText.trim().slice(0, 500) })
+    }
     return () => {
       sec.removeEventListener('mousemove', move)
       sec.removeEventListener('mouseleave', leave)
       light(null)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- where the pointer starts, once
   }, [])
   useLayoutEffect(() => {
     // each count level with its words, the next at least a row lower; the buttons where you point, never on a count

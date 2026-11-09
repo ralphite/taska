@@ -10,6 +10,11 @@
       "kind": "height",
       "match": "div.flex h-9 items-center gap-1 rounded-full bg-white p-0.5 shadow-sm",
       "why": "an input row's recording strip (web/src/ui/PlaceVoice.tsx, 36 px) beside its 28 px More button: the strip is a larger pill on purpose, its level meter needs the room; at 28 px the bars reach its edge"
+    },
+    {
+      "kind": "cut",
+      "match": "whitespace-pre-wrap in div.relative overflow-hidden",
+      "why": "a phone row drawn swiped left (Move and Delete under it, web/src/ui/InputRow.tsx): its words slide under the buttons, cut by the row's own box as the finger leaves them"
     }
   ]
 }

@@ -13,13 +13,13 @@ type Story = StoryObj
 
 /** A code in some words: a card about what it names. */
 export const OnCode: Story = {
-  ...one(() => talkOf(item({ n: 1, thread: [message({ id: 1, text: 'The sort is in F005, the file name in F003.' })] }), true, { others: PROJECT.filter((it) => it.n !== 1) }), '[data-ref="F005"]', { height: 420, pageTip: true }),
+  ...one(() => talkOf(item({ n: 1, thread: [message({ id: 1, text: 'The sort is in F005, the file name in F003.' })] }), true, { others: PROJECT.filter((it) => it.n !== 1) }), '[data-ref="F005"]', { height: 420 }),
   name: "On an item's code: what it names",
 }
 const mi = modelOf(PROJECT, [input({ id: 'r12', text: 'The export should keep the filter I set, and the sort.' })], {}, [doc({ d: 4, n: 1, title: 'The export plan' })])
 /** a code for something you said, and for a document: the card says who and when and its words, or the document's title */
 export const OnInputCode: Story = {
-  ...one(() => talkOf(item({ n: 1, thread: [message({ id: 1, text: 'From #12, the plan is in D4.' })] }), true, { others: PROJECT.filter((it) => it.n !== 1), inputs: mi.inputs, docs: mi.docs }), '[data-ref="#12"]', { height: 420, model: mi, pageTip: true }),
+  ...one(() => talkOf(item({ n: 1, thread: [message({ id: 1, text: 'From #12, the plan is in D4.' })] }), true, { others: PROJECT.filter((it) => it.n !== 1), inputs: mi.inputs, docs: mi.docs }), '[data-ref="#12"]', { height: 420, model: mi }),
   name: 'On a code for something you said',
 }
 const TIDIED = 'Move Settings out into its own dialog; the instructions show as Markdown, in Chinese.'
@@ -36,11 +36,11 @@ export const OnVoiceNote: Story = {
         steps: steps(SAID, TIDIED, ASR),
       }),
     '[data-heard]',
-    { height: 720, pageTip: true },
+    { height: 720, steps: steps(SAID, TIDIED, ASR) },
   ),
   name: 'On a voice note: its original words',
 }
 export const OnDocCode: Story = {
-  ...one(() => talkOf(item({ n: 1, thread: [message({ id: 1, text: 'From #12, the plan is in D4.' })] }), true, { others: PROJECT.filter((it) => it.n !== 1), inputs: mi.inputs, docs: mi.docs }), '[data-ref="D4"]', { height: 420, model: mi, pageTip: true }),
+  ...one(() => talkOf(item({ n: 1, thread: [message({ id: 1, text: 'From #12, the plan is in D4.' })] }), true, { others: PROJECT.filter((it) => it.n !== 1), inputs: mi.inputs, docs: mi.docs }), '[data-ref="D4"]', { height: 420, model: mi }),
   name: "On a document's code",
 }

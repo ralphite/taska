@@ -2,7 +2,7 @@
 // the phone's sheet. The pointer on its parts and its bar are in DocViewPointer.stories.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Doc } from '../../model/types'
-import { After, Frames } from '../../stories/Frames'
+import { Frames } from '../../stories/Frames'
 import { LONG, comment, doc } from '../../stories/docFixtures'
 import { docAt, type DocHere } from '../../stories/docPage'
 
@@ -21,7 +21,7 @@ export const LongWithOutline: Story = { ...both(LONG), name: 'Long, with content
 export const ContentsOpen: Story = {
   ...both(LONG),
   name: 'Contents opened',
-  render: () => <Frames height={900} deskWidth={900} phoneWidth={393}>{(layout) => <After run={(r) => r.querySelector('details')?.setAttribute('open', '')}>{docAt(LONG, layout === 'desk')}</After>}</Frames>,
+  render: () => <Frames height={900} deskWidth={900} phoneWidth={393}>{(layout) => docAt(LONG, layout === 'desk', { contentsOpen: true })}</Frames>,
 }
 const untitledBlocks = PLAN.blocks.slice(1)
 /** a document whose words have no title heading: its title drawn large above them */

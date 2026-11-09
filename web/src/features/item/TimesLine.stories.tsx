@@ -3,7 +3,8 @@
 // on the desktop the pointer shows them in the page's tip. "Updated" is its last change of any kind (a field, a
 // message, a document); none when it has not changed since it was made. TimesLine, in the page's own pane and ItemPage.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { After, Frames, States } from '../../stories/Frames'
+import { Frames, States } from '../../stories/Frames'
+import { Pointed } from '../../stories/tipFixtures'
 import { T, input, message } from '../../stories/fixtures'
 import { PARENT, pageOf } from '../../stories/itemPage'
 import { base, said } from '../../stories/itemPageFixtures'
@@ -41,7 +42,7 @@ export const PhoneTapped: Story = {
   name: 'Phone: tapped, both in a sheet',
   render: () => (
     <Frames desk={false} phoneWidth={393} height={760}>
-      {() => <After run={(root) => root.querySelector<HTMLElement>(LINE)?.click()}>{pageOf(CHANGED, false, o)}</After>}
+      {() => pageOf(CHANGED, false, { ...o, timesOpen: true })}
     </Frames>
   ),
 }
@@ -51,7 +52,11 @@ export const DesktopPointerOnIt: Story = {
   name: 'Desktop: pointer on it, both in the tip',
   render: () => (
     <Frames phone={false} deskWidth={1440} height={560}>
-      {() => <After run={(root) => root.querySelector(LINE)?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }))}>{pageOf(CHANGED, true, o)}</After>}
+      {() => (
+        <Pointed find={LINE} card={() => null}>
+          {pageOf(CHANGED, true, o)}
+        </Pointed>
+      )}
     </Frames>
   ),
 }

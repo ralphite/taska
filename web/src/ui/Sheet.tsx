@@ -73,7 +73,7 @@ export function SheetLayout({ menu, title, head, extra, sub, foot, body }: Sheet
   )
 }
 
-export function Sheet({ open, look, children, desk, footRoom = 0, focus = false, bodyRef, footRef, onClose }: {
+export function Sheet({ open, look, children, desk, footRoom = 0, focus = false, bodyRef, footRef, dragged = 0, onClose }: {
   open: boolean
   look: SheetLook
   /** what it holds, laid out with SheetLayout */
@@ -86,6 +86,8 @@ export function Sheet({ open, look, children, desk, footRoom = 0, focus = false,
   bodyRef?: Ref<HTMLDivElement>
   /** its fixed foot (the phone's toast sits above it) */
   footRef?: Ref<HTMLDivElement>
+  /** the phone's sheet dragged down by its handle this far (px) when it opens */
+  dragged?: number
   onClose(): void
 }) {
   const overlay = useRef<HTMLDivElement>(null)
@@ -153,6 +155,7 @@ export function Sheet({ open, look, children, desk, footRoom = 0, focus = false,
         aria-modal="true"
         aria-labelledby="dlgTitle"
         className={dCls}
+        style={dragged ? { transform: `translateY(${dragged}px)` } : undefined}
         onPointerDown={(e) => {
           const t = e.target as Element
           if (e.pointerType === 'mouse' || !t.closest('[data-handle], header') || t.closest('button')) return

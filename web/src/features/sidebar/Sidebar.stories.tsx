@@ -1,9 +1,8 @@
 // The sidebar and the phone's drawer: its projects, under the pointer, from the keys, pressed; loading; a project not
 // listed yet. Its foot is in SidebarBottomLinks.stories.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { After, Frame, Frames } from '../../stories/Frames'
+import { Frame, Frames } from '../../stories/Frames'
 import { side } from '../../stories/sideFixtures'
-import { mark } from '../../stories/sidebarFixtures'
 
 export default { title: 'UI/Left sidebar/Whole' } satisfies Meta
 type Story = StoryObj
@@ -34,7 +33,7 @@ export const SidebarLooks: Story = {
       ).map(([label, look, f]) => (
         <Frame key={look} layout="desk" width={240} height={720} label={label}>
           <div data-look={look} className="h-full">
-            <After run={look === 'pressed' ? mark('home', 'data-pressed') : look === 'dragged' ? mark('home', 'data-dragging') : () => {}}>{side(false, f)}</After>
+            {side(false, look === 'pressed' ? { ...f, look: { slug: 'home', as: 'pressed' } } : look === 'dragged' ? { ...f, look: { slug: 'home', as: 'dragging' } } : f)}
           </div>
         </Frame>
       ))}

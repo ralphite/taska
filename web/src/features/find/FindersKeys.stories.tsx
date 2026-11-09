@@ -9,4 +9,4 @@ export default { title: 'UI/Floating/Keyboard shortcuts' } satisfies Meta
 type Story = StoryObj
 
 /** ?: every key. */
-export const Keys: Story = { ...one((desk) => opened(keysSheet(keyHelp()), desk), undefined, 900), name: 'Every shortcut' }
+export const Keys: Story = { ...one((desk) => opened(keysSheet(keyHelp()), desk), 900), name: 'Every shortcut' }

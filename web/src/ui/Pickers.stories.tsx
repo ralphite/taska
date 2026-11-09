@@ -4,24 +4,23 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { codeOf } from '../model/project'
 import { inputCode } from '../model/words'
-import { After, Frames, typeInto } from '../stories/Frames'
+import { Frames } from '../stories/Frames'
 import { AT_BUTTON, act, menuModel, opened, underList } from '../stories/menuFixtures'
 import { moveParentSheet, pickSheet } from './Pickers'
 
 export default { title: 'Base components/Menus/Move and pick' } satisfies Meta
 type Story = StoryObj
 
-const putUnder = (desk: boolean, n = 14) => {
+const putUnder = (desk: boolean, n = 14, query?: string) => {
   const m = menuModel()
-  return opened(moveParentSheet({ it: m.byN.get(n)!, items: m.items, kids: m.kids, code: (c) => codeOf(m, c), desk }, act('Put under: pick')), desk, { under: underList(desk), look: desk ? { pop: true, at: AT_BUTTON } : {} })
+  return opened(moveParentSheet({ it: m.byN.get(n)!, items: m.items, kids: m.kids, code: (c) => codeOf(m, c), desk, query }, act('Put under: pick')), desk, { under: underList(desk), look: desk ? { pop: true, at: AT_BUTTON } : {} })
 }
-const typed = (text: string) => (root: HTMLElement) => typeInto(root.querySelector<HTMLInputElement>('[role="dialog"] input'), text)
 
 /** The items it can go under (its parent now marked), and No parent. */
 export const MoveItem: Story = { name: 'Put under', render: () => <Frames height={640} deskWidth={900} phoneWidth={393}>{(layout) => putUnder(layout === 'desk')}</Frames> }
 export const MoveItemNothingMatches: Story = {
   name: 'Put under: nothing matches',
-  render: () => <Frames height={480} deskWidth={900} phoneWidth={393}>{(layout) => <After run={typed('invoices')}>{putUnder(layout === 'desk')}</After>}</Frames>,
+  render: () => <Frames height={480} deskWidth={900} phoneWidth={393}>{(layout) => putUnder(layout === 'desk', 14, 'invoices')}</Frames>,
 }
 /** What you said, put with an item (its talk): any item but the one it is with now. */
 export const PickAnItem: Story = {

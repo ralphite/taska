@@ -1,15 +1,13 @@
 // The sidebar's brand area (T701): Taska (it opens all projects), Search and Hide sidebar on the desktop, Taska alone
 // in the phone's drawer; as it is, under the pointer, pressed. The page's own sidebar, its top.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { After, Frame } from '../../stories/Frames'
+import { Frame } from '../../stories/Frames'
 import { side } from '../../stories/sideFixtures'
 
 export default { title: 'UI/Left sidebar/Brand area' } satisfies Meta
 type Story = StoryObj
 
 const TASKA = 'a[title="All projects"]'
-/** Marks Taska as the page's own code does while you press it. */
-const press = (root: HTMLElement) => root.querySelector(TASKA)?.setAttribute('data-pressed', '')
 const LOOKS: [label: string, look: string, layout: 'desk' | 'phone'][] = [
   ['as it is', 'plain', 'desk'],
   ['pointer on Taska', 'pointer-taska', 'desk'],
@@ -34,7 +32,7 @@ export const BrandArea: Story = {
       {LOOKS.map(([label, look, layout]) => (
         <Frame key={look} layout={layout} width={layout === 'phone' ? 320 : 240} height={96} label={label}>
           <div data-look={look} className="h-full">
-            <After run={look.endsWith('pressed') ? press : () => {}}>{side(layout === 'phone')}</After>
+            {side(layout === 'phone', { brandPressed: look.endsWith('pressed') })}
           </div>
         </Frame>
       ))}

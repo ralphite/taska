@@ -134,10 +134,10 @@ function useMarkQuotes(root: React.RefObject<HTMLDivElement | null>, rows: DocRo
   })
 }
 
-function Outline({ heads, onJump }: { heads: DocFacts['outline']; onJump(key: string): void }) {
+function Outline({ heads, open, onJump }: { heads: DocFacts['outline']; open: boolean; onJump(key: string): void }) {
   if (!heads.length) return null
   return (
-    <details className="mt-3 rounded-xl border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800">
+    <details open={open || undefined} className="mt-3 rounded-xl border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800">
       <summary className="cursor-pointer text-xs font-semibold text-zinc-500 dark:text-zinc-400">Contents · {heads.length}</summary>
       <div className="mt-1 flex flex-col">
         {heads.map((h) => (
@@ -154,7 +154,7 @@ function Outline({ heads, onJump }: { heads: DocFacts['outline']; onJump(key: st
   )
 }
 
-export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAimed }: {
+export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAimed, contentsOpen = false, pointing = null }: {
   facts: DocFacts
   env: DocEnv
   on: DocEvents
@@ -168,6 +168,10 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
   page?: ReactNode
   /** the recording's time and level, for the strip of the place it is about (B498) */
   meter?: ReactNode
+  /** its contents opened when it opens */
+  contentsOpen?: boolean
+  /** the pointer on an item of a list when it opens: the list's key and the item's place in it (the desktop) */
+  pointing?: { key: string; li: number } | null
 }) {
   const { d, rows, desk } = { ...facts, desk: env.desk }
   const web = d.fmt === 'html'
@@ -243,7 +247,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
         ) : null}
         {facts.showTitle ? <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div> : null}
         {web ? page : null}
-        {web ? null : <Outline heads={facts.outline} onJump={(key) => root.current?.querySelector(`section[data-key="${CSS.escape(key)}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' })} />}
+        {web ? null : <Outline heads={facts.outline} open={contentsOpen} onJump={(key) => root.current?.querySelector(`section[data-key="${CSS.escape(key)}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' })} />}
         <div hidden={web} data-doc-blocks={facts.d.d} className={`relative mt-3 space-y-3 text-[15px] ${facts.circle ? 'select-none' : ''}`}>
           {(web ? [] : rows).map((r) => {
             const lv = (r.b.text.match(/^#+/) || ['#'])[0].length
@@ -313,6 +317,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
                     rec={r.speaking}
                     picked={r.picked || r.quote != null}
                     meter={meter}
+                    pointing={pointing?.key === r.b.key ? pointing.li : null}
                     on={{ say: (q) => on.say(r.b.key, q), comment: (q) => on.pick(r.b.key, q, 'button'), cancel: on.sayCancel, check: on.sayCheck, send: on.saySend, toggle: on.toggle, away: on.away }}
                   >
                     {r.open ? (

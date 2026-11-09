@@ -81,7 +81,7 @@ const marks = (el: HTMLElement) => {
   el.toggleAttribute('data-up', el.scrollTop > 2)
 }
 
-export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = null, bare = false, readOnly = false }: {
+export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = null, bare = false, readOnly = false, dragging = null, scrolledUp = null }: {
   it: Item
   f: ItemFacts
   env: TalkEnv
@@ -96,6 +96,10 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
   bare?: boolean
   /** the search's preview: to look at only (its code before its title, nothing to press: ↵ opens it) */
   readOnly?: boolean
+  /** a line between its parts being dragged when it is drawn */
+  dragging?: 'duo' | 'top' | null
+  /** the talk scrolled up this far (px) from its end when it opens */
+  scrolledUp?: number | null
 }) {
   const clip = useRef<HTMLDivElement>(null)
   const editingAtOpen = useRef(f.editing)
@@ -119,7 +123,8 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     const el = talk.current
     const sc = el && scrollerOf(el)
     if (!el || !sc || typeof ResizeObserver === 'undefined') return
-    const go = !readOnly && (sc === el || !editingAtOpen.current)
+    const up = scrolledUp
+    const go = !readOnly && up == null && (sc === el || !editingAtOpen.current)
     let end = go
     // it leaves its end only as you scroll up: the scroll this page made comes after the talk may have grown again
     let was = sc.scrollTop
@@ -129,6 +134,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     }
     const ro = new ResizeObserver(() => {
       if (end) sc.scrollTop = sc.scrollHeight
+      else if (up != null) sc.scrollTop = Math.max(0, sc.scrollHeight - sc.clientHeight - up)
       marks(el)
     })
     sc.addEventListener('scroll', seen, { passive: true })
@@ -145,7 +151,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
       sc.removeEventListener('scroll', seen)
       timers.forEach(clearTimeout)
     }
-  }, [readOnly])
+  }, [readOnly, scrolledUp])
   const asks = needsYou(it)
   const asked = useRef({ n: it.n, on: asks })
   useLayoutEffect(() => {
@@ -219,6 +225,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
           onSize={(px) => on.duoSize(px, false)}
           onDone={(px) => on.duoSize(px, true)}
           onReset={() => on.duoSize(0, true)}
+          dragged={dragging === 'duo'}
         />
       ) : (
       /* the line between the item and its talk (above it: what the item holds, to 60%); dragged anywhere, a double-click leaves it */
@@ -233,6 +240,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
         }}
         onSize={(px) => on.topSize(px, false)}
         onDone={(px) => on.topSize(px, true)}
+        dragged={dragging === 'top'}
       />
       )}
       <div

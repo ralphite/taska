@@ -12,7 +12,7 @@ import type { SheetParts } from './Sheet'
 import { FIELD, TYPE_TEXT } from './tones'
 import { noMatches } from '../model/words'
 
-export function Picker({ items, code, placeholder, skip, sort, current, desk, extra, onPick }: {
+export function Picker({ items, code, placeholder, skip, sort, current, desk, extra, query = '', onPick }: {
   items: readonly Item[]
   code(n: number): string
   placeholder: string
@@ -21,9 +21,11 @@ export function Picker({ items, code, placeholder, skip, sort, current, desk, ex
   current?: number | null
   desk: boolean
   extra?: ReactNode
+  /** the words in its field when it opens */
+  query?: string
   onPick(n: number): void
 }) {
-  const [q, setQ] = useState('')
+  const [q, setQ] = useState(query)
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
   const cands = items.filter((c) => !skip.has(c.n) && !c.mergedInto && !c.archived && words.every((w) => hay(c).includes(w))).sort(sort).slice(0, 40)
   return (
@@ -56,7 +58,7 @@ export function Picker({ items, code, placeholder, skip, sort, current, desk, ex
 const closedLast = (a: Item, b: Item) => Number(closed(a.status)) - Number(closed(b.status))
 
 /** Put an item under another (not under itself or what is under it), or on its own. */
-export function moveParentSheet({ it, items, kids, code, desk }: { it: Item; items: readonly Item[]; kids: ReadonlyMap<number, Item[]>; code(n: number): string; desk: boolean }, onPick: (to: number | null) => void): SheetParts {
+export function moveParentSheet({ it, items, kids, code, desk, query }: { it: Item; items: readonly Item[]; kids: ReadonlyMap<number, Item[]>; code(n: number): string; desk: boolean; query?: string }, onPick: (to: number | null) => void): SheetParts {
   const below = new Set([it.n])
   const walk = (k: number) => {
     for (const c of kids.get(k) || [])
@@ -77,6 +79,7 @@ export function moveParentSheet({ it, items, kids, code, desk }: { it: Item; ite
         sort={(a, b) => closedLast(a, b) || a.n - b.n}
         current={it.parent}
         desk={desk}
+        query={query}
         onPick={onPick}
         extra={
           <button

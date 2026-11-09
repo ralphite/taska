@@ -7,7 +7,6 @@ import { NewProjectForm } from '../ui/NewProjectForm'
 import { Sheet, SheetLayout } from '../ui/Sheet'
 import { newProjectTone } from '../ui/tones'
 import { acts } from './acts'
-import { After, typeInto } from './Frames'
 
 const npActs = acts('New project', ['create', 'cancel'] as const)
 /** the projects there are (their addresses), for the tile's colour */
@@ -40,15 +39,14 @@ function Over({ under, desk, o }: { under: ReactNode; desk: boolean; o: Paramete
           title="New project"
           body={
             <div className="pb-1">
-              {/* words already typed: typed into its field, as you would */}
-              <After run={(root) => o.value && typeInto(root.querySelector('input'), o.value)}>
-                <NewProjectForm
-                  error={o.error ?? ''}
-                  tone={(n) => newProjectTone(NAMES, n)}
-                  onCreate={(t) => (npActs.create(t), o.onDone?.())}
-                  onCancel={() => (npActs.cancel(), o.onDone?.())}
-                />
-              </After>
+              {/* words already typed in its field */}
+              <NewProjectForm
+                error={o.error ?? ''}
+                tone={(n) => newProjectTone(NAMES, n)}
+                typed={o.value ?? ''}
+                onCreate={(t) => (npActs.create(t), o.onDone?.())}
+                onCancel={() => (npActs.cancel(), o.onDone?.())}
+              />
             </div>
           }
         />

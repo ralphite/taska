@@ -5,7 +5,7 @@
 import type { AgentTone } from '../model/agents'
 import { TAB_WORD, type Tab } from '../model/words'
 import { REACH_WORDS } from '../model/reach'
-import { Avatar, ProjTile } from '../ui/bits'
+import { Avatar, ProjTile, pressedMark } from '../ui/bits'
 import { Icon, StateIcon } from '../ui/Icon'
 import { FilterDot } from '../features/list/Filters'
 import { MUTED } from '../ui/tones'
@@ -146,6 +146,7 @@ export function ListHead({
   agent,
   notSaved,
   hidden,
+  pressed = false,
   on,
 }: {
   title: string
@@ -153,6 +154,8 @@ export function ListHead({
   agent: AgentInfo | null
   notSaved: number
   hidden?: boolean
+  /** its menu and Search pressed (a finger on them) */
+  pressed?: boolean
   on: {
     menu(): void
     agents(): void
@@ -162,7 +165,7 @@ export function ListHead({
 }) {
   return (
     <header data-part="list-head" data-tip-side="bottom" hidden={hidden} className="flex h-14 shrink-0 items-center gap-1 px-2">
-      <button onClick={on.menu} aria-label="Projects and settings" className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 text-left data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-800">
+      <button onClick={on.menu} aria-label="Projects and settings" {...pressedMark(pressed)} className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 text-left data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-800">
         <span className="relative text-zinc-700 dark:text-zinc-300">
           <Icon n="menu" c="size-6" />
           <span hidden={!otherNeeds} title="Another project needs you" className="absolute -top-1 -right-1 rounded-full bg-white dark:bg-zinc-950">
@@ -175,7 +178,7 @@ export function ListHead({
       <button onClick={on.agents} aria-label="Agents" title={agent?.tip} className="flex h-11 shrink-0 items-center px-1">
         {agent ? <AgentPill tone={agent.tone} label={agent.label} offline={agent.offline} by={agent.by} /> : null}
       </button>
-      <button onClick={on.search} aria-label="Search" className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 data-pressed:bg-zinc-100 dark:text-zinc-400 dark:data-pressed:bg-zinc-800">
+      <button onClick={on.search} aria-label="Search" {...pressedMark(pressed)} className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 data-pressed:bg-zinc-100 dark:text-zinc-400 dark:data-pressed:bg-zinc-800">
         <Icon n="search" c="size-5.5" />
       </button>
     </header>

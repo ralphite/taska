@@ -11,8 +11,8 @@ import { act } from './acts'
 /** A menu or sheet the part opens, with what it is about (`T`): `open(what, from)` shows it where the page shows it
  * (under the button on the desktop, its frame the window; a sheet from the bottom on the phone), `close()` closes it,
  * `draw(parts)` draws it with the parts made from `what`. */
-export function usePop<T>(desk: boolean) {
-  const [pop, setPop] = useState<{ what: T; look: SheetLook } | null>(null)
+export function usePop<T>(desk: boolean, start?: T) {
+  const [pop, setPop] = useState<{ what: T; look: SheetLook } | null>(start === undefined ? null : { what: start, look: { pop: true, at: null } })
   const open = (what: T, from?: Element | null, look: SheetLook = {}) => {
     const r = from?.getBoundingClientRect()
     const fr = from?.closest('[data-layout]')?.getBoundingClientRect() ?? { left: 0, top: 0 }

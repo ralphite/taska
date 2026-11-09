@@ -99,6 +99,7 @@ function LiveHead({ desk, h }: { desk: boolean; h: HeadHere }) {
     <div className="flex flex-col">
       <ListHead
         title="Shop"
+        pressed={!!h.pressed}
         otherNeeds={!!h.otherNeeds}
         agent={agent}
         notSaved={h.notSaved ?? 0}

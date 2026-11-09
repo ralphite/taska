@@ -2,9 +2,8 @@
 // (the page shows them when it is opened from localhost); the phone drawer's foot and a project in it pressed. The
 // page's own sidebar.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { After, Frames } from '../../stories/Frames'
+import { Frames } from '../../stories/Frames'
 import { side } from '../../stories/sideFixtures'
-import { mark } from '../../stories/sidebarFixtures'
 
 export default { title: 'UI/Left sidebar/Bottom links' } satisfies Meta
 type Story = StoryObj
@@ -16,5 +15,5 @@ export const DrawerFoot: Story = { name: 'Phone: Drawer foot', render: () => <Fr
 /** a project in the phone's drawer pressed (a finger on it) */
 export const DrawerProjectPressed: Story = {
   name: 'Phone drawer: a project pressed',
-  render: () => <Frames desk={false} phoneWidth={320} height={560}>{() => <After run={mark('home', 'data-pressed')}>{side(true)}</After>}</Frames>,
+  render: () => <Frames desk={false} phoneWidth={320} height={560}>{() => side(true, { look: { slug: 'home', as: 'pressed' } })}</Frames>,
 }

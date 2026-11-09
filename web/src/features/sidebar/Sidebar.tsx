@@ -3,11 +3,11 @@
 // project's Documents, Activity, Deleted, and Settings; on the desktop a project's card beside it while the pointer is
 // on it (F667). Props only.
 
-import { useLayoutEffect, useRef, type MouseEvent, type ReactNode, type Ref } from 'react'
+import { useLayoutEffect, useRef, type MouseEvent, type ReactNode, type Ref, type RefObject } from 'react'
 import type { ProjectCardFacts } from '../../model/projects'
 import { useOrderDrag } from './orderDrag'
 import { FloatingProjectCard, useProjectCard } from './ProjectCard'
-import { Kbd, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
+import { Kbd, NeedsCount, ProjTile, Skeleton, pressedMark } from '../../ui/bits'
 import { Icon, type IconName } from '../../ui/Icon'
 import { PULL } from '../../ui/tones'
 
@@ -21,6 +21,8 @@ export interface SideProject {
   href: string
   /** an item dragged from the list would move here */
   drop?: boolean
+  /** pressed (a finger on it), being dragged to a new place, or under the pointer (its card beside it) when drawn */
+  look?: 'pressed' | 'dragging' | 'pointed'
   /** what its card under the pointer says */
   card: ProjectCardFacts
 }
@@ -86,6 +88,8 @@ export interface SidebarProps {
   hidden?: boolean
   /** its right edge, to drag wider or narrower (the desktop) */
   edge?: ReactNode
+  /** Taska, at its top, pressed (a finger on it) */
+  brandPressed?: boolean
   on: SidebarEvents
 }
 
@@ -95,6 +99,24 @@ const DESK_ROW =
   'flex items-center gap-2.5 rounded-xl px-2.5 py-2 select-none [-webkit-touch-callout:none] hover:bg-zinc-200/60 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 aria-[current=page]:hover:bg-blue-100 data-dragging:bg-zinc-200/70 data-dragging:ring-0 data-drop:bg-blue-100 data-drop:ring-2 data-drop:ring-blue-500 data-pressed:bg-zinc-200/80 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:aria-[current=page]:hover:bg-blue-400/20 dark:data-dragging:bg-zinc-800/70 dark:data-drop:bg-blue-400/15 dark:data-drop:ring-blue-400 dark:data-pressed:bg-zinc-800 data-dragging:[&>*]:invisible'
 
 type CardOn = ReturnType<typeof useProjectCard>
+
+/** A row drawn pressed or being dragged, as the page marks it while a finger is on it or drags it. */
+const rowLook = (p: SideProject) => (p.look === 'pressed' ? { 'data-pressed': '' } : p.look === 'dragging' ? { 'data-dragging': '' } : {})
+
+/** The project drawn under the pointer: its card shows beside its row, as when a mouse comes onto it. */
+function usePointed(projects: SideProject[] | null, rows: RefObject<HTMLElement | null>, point: CardOn['point']) {
+  const slug = projects?.find((p) => p.look === 'pointed')?.slug
+  useLayoutEffect(() => {
+    const el = slug ? rows.current?.querySelector(`a[data-slug="${CSS.escape(slug)}"]`) : null
+    if (!slug || !el) return
+    // again once what is round it is laid out (a story's frame says its width above it once it is drawn)
+    const again = () => el.isConnected && point(slug, el)
+    let frame = requestAnimationFrame(() => (frame = requestAnimationFrame(again)))
+    void document.fonts?.ready.then(again)
+    return () => cancelAnimationFrame(frame)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- where the pointer is when drawn, once
+  }, [slug])
+}
 
 /** the card of the project under the pointer, if it is still listed; its name opens the project as the row does */
 function HoverCard({ hover, projects, on }: { hover: CardOn; projects: SideProject[] | null; on: SidebarEvents }) {
@@ -116,7 +138,7 @@ function ProjectRows({ phone, projects, hover, on }: { phone: boolean; projects:
     <>
       {projects.map((p) =>
         phone ? (
-          <a key={p.slug} href={p.href} data-slug={p.slug} aria-current={p.current ? 'page' : undefined} onClick={(e) => on.go(p.href, e)} className={PHONE_ROW}>
+          <a key={p.slug} href={p.href} data-slug={p.slug} {...rowLook(p)} aria-current={p.current ? 'page' : undefined} onClick={(e) => on.go(p.href, e)} className={PHONE_ROW}>
             <ProjTile title={p.title} tone={p.tone} cls="size-8 rounded-lg text-sm" />
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
@@ -132,6 +154,7 @@ function ProjectRows({ phone, projects, hover, on }: { phone: boolean; projects:
             href={p.href}
             data-slug={p.slug}
             {...(p.drop ? { 'data-drop': '' } : {})}
+            {...rowLook(p)}
             {...hover.rowProps(p.slug)}
             onContextMenu={(e) => {
               e.preventDefault()
@@ -177,9 +200,10 @@ function SideLink({ link, phone, on }: { link: SideLinkInfo; phone: boolean; on:
 }
 
 export function Sidebar(props: SidebarProps) {
-  const { phone, keys, projects, composing, links, undoLabel, devLinks, place, hidden, edge, footRef, on } = props
+  const { phone, keys, projects, composing, links, undoLabel, devLinks, place, hidden, edge, footRef, brandPressed, on } = props
   const rows = useRef<HTMLDivElement>(null)
   const hover = useProjectCard(phone || !!hidden)
+  usePointed(projects, rows, hover.point)
   useOrderDrag(rows, (names, moved) => on.order(names, moved))
   return (
     <nav id="drawer" data-tip-side="right" hidden={hidden} aria-label="Projects" className={`flex h-full flex-col pt-[env(safe-area-inset-top)] dark:bg-zinc-900 ${place}`}>
@@ -189,6 +213,7 @@ export function Sidebar(props: SidebarProps) {
           href="/"
           onClick={(e) => on.go('/', e)}
           title="All projects"
+          {...pressedMark(brandPressed)}
           className="-mx-1.5 flex h-11 items-center gap-2 rounded-lg px-1.5 hover:bg-zinc-200/60 lg:h-9 dark:hover:bg-zinc-800"
         >
           <span className="text-blue-600 dark:text-blue-400">
@@ -351,6 +376,7 @@ export function Rail({ keys, projects, links, composing, settingsOpen, hidden, o
   const hover = useProjectCard(!!hidden)
   // the projects more than it holds: its edges fade where more of them are above or below (no scrollbar on the rail)
   const list = useRef<HTMLDivElement>(null)
+  usePointed(projects, list, hover.point)
   const edges = () => {
     const el = list.current
     if (!el) return
@@ -395,6 +421,7 @@ export function Rail({ keys, projects, links, composing, settingsOpen, hidden, o
           <a
             key={p.slug}
             href={p.href}
+            data-slug={p.slug}
             {...hover.rowProps(p.slug)}
             aria-current={p.current ? 'page' : undefined}
             onClick={(e) => (p.current ? (e.preventDefault(), on.newInput()) : on.go(p.href, e))}

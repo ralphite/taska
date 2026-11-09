@@ -59,6 +59,12 @@ export interface PageOpts {
   doc?: Doc
   /** the steps that worked out its voice notes' words, for the tooltip (T697) */
   steps?: VoiceStep[]
+  /** its times in full, open (the phone's sheet, F704) */
+  timesOpen?: boolean
+  /** the line between the two columns being dragged, the left one this wide ("40%") */
+  duoDragged?: string
+  /** the talk scrolled up this far (px) from its end */
+  scrolledUp?: number
 }
 
 export const pageOf = (it: Item, desk: boolean, o: PageOpts = {}) => <LiveItem it={it} desk={desk} o={o} />
@@ -102,7 +108,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
   // its talk, for the pane's button to its end (F716), as the page has it
   const [talk, setTalk] = useState<HTMLElement | null>(null)
   const media = useMedia(e0.url)
-  const menu = usePop<{ arm: ItemMenuFacts['arm']; asking: boolean } | { msg: number } | { times: true }>(desk)
+  const menu = usePop<{ arm: ItemMenuFacts['arm']; asking: boolean } | { msg: number } | { times: true }>(desk, o.timesOpen ? { times: true } : undefined)
   const inputMenu = usePop<InputMenuAt>(desk)
   // the page's one tooltip (a voice note's words, icon buttons' names), over the whole window as the page has it; the
   // phone has none
@@ -161,7 +167,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
     const mf = itemMenuFacts(m, it, w.asking, w.arm)
     return desk ? itemMenuPop(mf, mOn) : itemMenuSheet(mf, mOn)
   }
-  const sized = gripVars({ side: 0, list: 0, top: sizes.top, duo: sizes.duo }) as CSSProperties
+  const sized = { ...gripVars({ side: 0, list: 0, top: sizes.top, duo: sizes.duo }), ...(o.duoDragged ? { '--duo-w': o.duoDragged } : {}) } as CSSProperties
   if (talkOnly)
     return (
       <div className="flex flex-col gap-6 p-4">
@@ -172,7 +178,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
         {tip}
       </div>
     )
-  const page = <ItemPage it={it} f={facts} env={env} facts={tf} on={on} talkRef={setTalk} duo={o.duo} left={o.left} bare={o.bare} />
+  const page = <ItemPage it={it} f={facts} env={env} facts={tf} on={on} talkRef={setTalk} duo={o.duo} left={o.left} bare={o.bare} dragging={o.duoDragged ? 'duo' : null} scrolledUp={o.scrolledUp ?? null} />
   if (o.doc)
     return (
       <div className="flex h-full flex-col" style={sized}>

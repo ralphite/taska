@@ -80,6 +80,8 @@ export const DAY: Input[] = [ONE.waiting, ONE.voice, ONE.made, ONE.added, ONE.fa
 
 export interface Said {
   inputs?: Input[]
+  /** the phone's swipe, drawn: right this far on the first row that opens an item; left, the first row's Move and Delete left open */
+  swiped?: number
   /** the organizer is on (the default, as Taska is normally used; false: the story is the organizer off) and which
    * input it is on now */
   organizer?: boolean
@@ -190,7 +192,10 @@ function rowsOf(s: Said, opened: ReadonlySet<string>) {
 export const inputsOf = (s: Said = {}) => <LiveInputs s={s} />
 function LiveInputs({ s }: { s: Said }) {
   const live = useInputs(project(s), false, s)
-  const { m, rows, total } = rowsOf(s, live.opened)
+  const { m, rows: all, total } = rowsOf(s, live.opened)
+  // the row drawn swiped: right, the first that became an item (it opens it); left, the first
+  const pick = s.swiped == null ? -1 : all.findIndex((x) => (s.swiped! >= 0 ? x.became.k === 'filed' || x.became.k === 'answer' : x.became.k !== 'moved'))
+  const rows = all.map((x, i) => (i === pick ? { ...x, swiped: s.swiped } : x))
   return (
     <div className="flex h-full flex-col">
       <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(live.going(s.outbox), 'demo', s.away ?? 0)} world={talkEnv(m, false).world} files={live.chips} on={live.inputOn} />

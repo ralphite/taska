@@ -29,6 +29,7 @@ export function ViewBar({
   onOwnMenu,
   onRename,
   onRenameStop,
+  slid = false,
 }: {
   views: ViewChip[]
   own?: OwnViewChip[]
@@ -42,6 +43,8 @@ export function ViewBar({
   onOwnMenu?(i: number, x: number, y: number): void
   onRename?(i: number, name: string): void
   onRenameStop?(): void
+  /** slid to its end when it is drawn (the phone's swipe along it) */
+  slid?: boolean
 }) {
   const hold = useRef(0)
   const row = useRef<HTMLDivElement>(null)
@@ -77,6 +80,10 @@ export function ViewBar({
     if (el.scrollLeft > l) el.scrollLeft = Math.max(0, l)
     else if (el.scrollLeft < r) el.scrollLeft = r
   }, [on])
+  useEffect(() => {
+    const el = row.current
+    if (slid && el) el.scrollLeft = el.scrollWidth
+  }, [slid])
   // an arrow brings in what is past its edge: the row is the first thing in the bar the arrow is on
   const go = (bar: Element | null, dir: number) => {
     const el = bar?.firstElementChild as HTMLElement | null

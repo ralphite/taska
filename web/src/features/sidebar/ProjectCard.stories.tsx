@@ -2,8 +2,8 @@
 // the mouse moved into it; the same beside its icon on the folded rail; one with nothing open; dark; and the card alone
 // in each of its states.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { After, Frame } from '../../stories/Frames'
-import { pointIntoCard, pointTo, rail, side } from '../../stories/sideFixtures'
+import { Frame } from '../../stories/Frames'
+import { rail, side } from '../../stories/sideFixtures'
 import { projectCard } from '../../model/projects'
 import { PROJECT_TONES } from '../../ui/tones'
 import { ProjectCard } from './ProjectCard'
@@ -17,7 +17,7 @@ const sidebarOn = (slug: string, into = false): Story => ({
   render: () => (
     <div className="h-[760px] bg-zinc-200 p-6 dark:bg-zinc-800">
       <Frame layout="desk" width={240} height={700}>
-        <After run={(into ? pointIntoCard : pointTo)(slug)}>{side(false)}</After>
+        {side(false, { look: { slug, as: 'pointed' } })}
       </Frame>
     </div>
   ),
@@ -37,7 +37,7 @@ export const OnTheRail: Story = {
   render: () => (
     <div className="h-[720px] bg-zinc-200 p-6 dark:bg-zinc-800">
       <Frame layout="desk" width={56} height={660}>
-        <After run={pointTo('Home')}>{rail()}</After>
+        {rail({ look: { slug: 'home', as: 'pointed' } })}
       </Frame>
     </div>
   ),
