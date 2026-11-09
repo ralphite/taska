@@ -65,13 +65,13 @@ describe('T728: one priority order for the row, A and the way forward', () => {
     const it = item({ n: 1, status: 'proposed', thread: [proposal, ask], wait: waitOf(ask) })
     expect(needRow(it)?.act).toBe('answer')
     expect(yourStep(it)).toEqual({ answer: 'choices' })
-    expect(forward(it)?.slice(0, 3)).toEqual(['need', 'answer', 'Answer'])
+    expect(forward(it)?.slice(0, 3)).toEqual(['need', 'answer', 'answer'])
   })
   test('finished work: Accept everywhere; you replied instead: off the list, A still accepts', () => {
     expect(needRow(OF.accept)).toMatchObject({ act: 'accept', word: 'Accept', line: 'Finished' })
-    expect(yourStep(OF.accept)).toEqual({ set: ['status', 'done', 'Accept', 'accepted'] })
+    expect(yourStep(OF.accept)).toEqual({ set: ['status', 'done', 'accept', 'accepted'] })
     expect(needRow({ ...OF.replied, status: 'review' })).toBeNull()
-    expect(yourStep({ ...OF.replied, status: 'review' })).toEqual({ set: ['status', 'done', 'Accept', 'accepted'] })
+    expect(yourStep({ ...OF.replied, status: 'review' })).toEqual({ set: ['status', 'done', 'accept', 'accepted'] })
   })
   test('decided: nothing for A, the card faded where it was', () => {
     expect(yourStep(OF.decided)).toBeNull()

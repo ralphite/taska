@@ -8,7 +8,7 @@ import type { ListQuery } from '../../model/route'
 import { rulesDoc, waitingProposals } from '../../model/rules'
 import type { Item, RuleProposal } from '../../model/types'
 import { filtered, visible } from '../../model/visible'
-import type { Tab } from '../../model/words'
+import { STATUS_FILTER_WORD, TAB_WORD, type Tab } from '../../model/words'
 
 export type Row =
   /** `said`: what you just did to it, while the list holds still (it is no longer in the list, or no longer waits on you) */
@@ -137,14 +137,11 @@ export function listBody(m: ProjectModel | null, tab: Tab, list: ListQuery, st: 
 
 /** The preset views of Items, in their order (Active is the one shown first: its value is "all"). */
 export const VIEWS: [string, string][] = [
-  ['wait', 'Needs you'],
+  ['wait', STATUS_FILTER_WORD.wait],
   ['all', 'Active'],
   ['every', 'All'],
-  ['archive', 'Archive'],
-  ['open', 'Open'],
-  ['later', 'Later'],
-  ['done', 'Done'],
-  ['dropped', "Won't do"],
+  ['archive', TAB_WORD.archive],
+  ...(['open', 'later', 'done', 'dropped'] as const).map((v): [string, string] => [v, STATUS_FILTER_WORD[v]]),
 ]
 
 export interface ViewChip {

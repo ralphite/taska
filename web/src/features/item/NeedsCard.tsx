@@ -5,7 +5,8 @@
 import type { ReactNode } from 'react'
 import { lastAgentMessage } from '../../model/items'
 import { hasChoices } from '../../model/markdown'
-import { chosenWord, DECISION, NEED_STATES, needOf, PAST, type Need } from '../../model/needStates'
+import { ITEM_ACTS, pastOf, type ItemActId } from '../../model/itemActs'
+import { chosenAct, DECISION, NEED_STATES, needOf, type Need } from '../../model/needStates'
 import { when } from '../../model/time'
 import type { Item, Message } from '../../model/types'
 import { whoName } from '../../model/words'
@@ -13,7 +14,7 @@ import { Kbd } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import { Rich } from '../../ui/Markdown'
-import { ACT_ICON, CHOSEN_TONE, DECIDED_OFF, DECIDED_ON, MODIFY_LINK, MUTED, NEED, NEEDS_CARD, PRIMARY_BASE, SECOND } from '../../ui/tones'
+import { DECIDED_OFF, DECIDED_ON, MODIFY_LINK, MUTED, NEED, NEEDS_CARD, PRIMARY_BASE, SECOND, actIcon, chosenTone } from '../../ui/tones'
 import { Thumbs } from '../../ui/Files'
 import { MsgText } from './MsgText'
 import type { OutShow, OutTone } from '../../model/outgoingStates'
@@ -106,20 +107,23 @@ const Word = ({ shown, all }: { shown: string; all: readonly string[] }) => (
   </span>
 )
 /** a choice's words: now and done */
-const both = (label: string) => [label, PAST[label] ?? label]
+const both = (act: ItemActId) => [ITEM_ACTS[act].label, pastOf(act)]
 /** Approve or Accept beside an answered question: its words, and what deciding may make it say */
-const KEEP_WORDS: Record<string, readonly string[]> = { proposed: ['Approve', 'Approved', 'Declined'], review: ['Accept', 'Accepted', 'Sent back'] }
+const keepWords = (from: string): readonly string[] => {
+  const x = DECISION[from === 'proposed' ? 'proposal' : 'work']
+  return [ITEM_ACTS[x.yes.act].label, pastOf(x.yes.act), pastOf(x.no.act)]
+}
 
 /** Approve or Accept as well as answering (a button like any other while it can be pressed); decided, it says what you
  * chose (`need`: what the item needs from you, model/needStates). */
 export function KeepBtn({ it, need, on }: { it: Item; need: Need; on: CardEvents }) {
   if (need.keep === 'decided' && need.dec) {
     // decided: the same button where it was, disabled, its word said as done in its colour (D106 #4.3, r1003)
-    const w = chosenWord(need.dec)
+    const w = chosenAct(need.dec)
     return (
-      <button disabled aria-pressed className={DECIDED_ON(CHOSEN_TONE[w] ?? CHOSEN_TONE.Reply)}>
-        <Icon n={ACT_ICON[w]} c="size-4" sw="2.25" />
-        <Word shown={PAST[w] ?? w} all={KEEP_WORDS[need.dec.from] ?? [PAST[w] ?? w]} />
+      <button disabled aria-pressed className={DECIDED_ON(chosenTone(w))}>
+        <Icon n={actIcon(w, true)} c="size-4" sw="2.25" />
+        <Word shown={pastOf(w)} all={keepWords(need.dec.from)} />
       </button>
     )
   }
@@ -128,8 +132,8 @@ export function KeepBtn({ it, need, on }: { it: Item; need: Need; on: CardEvents
   const { status, yes } = DECISION[need.of]
   return (
     <button onClick={() => on.decide(it.n, yes.to)} className={SECOND}>
-      {need.of === 'proposal' ? <Icon n="thumb" c="size-4" /> : <Icon n="check" c="size-4" sw="2.25" />}
-      <Word shown={yes.word} all={KEEP_WORDS[status]} />
+      <Icon n={actIcon(yes.act, true)} c="size-4" sw="2.25" />
+      <Word shown={ITEM_ACTS[yes.act].label} all={keepWords(status)} />
     </button>
   )
 }
@@ -141,15 +145,26 @@ export const SendAnswerBtn = ({ n, picked, cls, keyHint = false, on }: { n: numb
   </button>
 )
 
-type Pair = readonly [status: string, icon: IconName, label: string, key: string]
-const PROPOSED: readonly Pair[] = [
-  ['dropped', 'ban', "Won't do", 'W'],
-  ['open', 'thumb', 'Approve', 'A'],
-]
-const FINISHED: readonly Pair[] = [
-  ['open', 'reopen', 'Not yet', 'N'],
-  ['done', 'check', 'Accept', 'A'],
-]
+/** A decision's two buttons, in their order: no, then yes (the status each sets, its action). */
+const pairsOf = (from: string): readonly (readonly [status: string, act: ItemActId])[] => {
+  const x = DECISION[from === 'proposed' ? 'proposal' : 'work']
+  return [
+    [x.no.to, x.no.act],
+    [x.yes.to, x.yes.act],
+  ]
+}
+
+/** A decision's two buttons to press: no, a quieter one; yes, in what it needs from you's colour. */
+function DecideBtns({ from, press }: { from: string; press(status: string): void }) {
+  const tone = NEED[from === 'proposed' ? 'approve' : 'accept'].btn
+  return pairsOf(from).map(([v, act], i) => (
+    <button key={v} onClick={() => press(v)} className={`${i ? `${PRIMARY_BASE} ${tone} flex-[1.4]` : `${SECOND} flex-1`} lg:flex-none`}>
+      <Icon n={actIcon(act, true)} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
+      <Word shown={ITEM_ACTS[act].label} all={both(act)} />
+      <Kbd k={ITEM_ACTS[act].key ?? ''} />
+    </button>
+  ))
+}
 
 export function NeedsCard({ it, env, on, remodify, going = null }: {
   it: Item
@@ -201,8 +216,7 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
   if (kind === 'decided' && need.dec) {
     const dec = need.dec
     const x = need.msg ?? undefined
-    const pairs = dec.from === 'proposed' ? PROPOSED : FINISHED
-    const tone = NEED[dec.from === 'proposed' ? 'approve' : 'accept'].btn
+    const pairs = pairsOf(dec.from)
     const title = `${msgName(x || { by: it.by && it.by !== 'you' ? it.by : 'agent' })} ${dec.from === 'proposed' ? 'proposed this' : 'finished this'}`
     const chose = (v: string) => dec.to === v || (v === 'open' && dec.from === 'proposed' && dec.to !== 'dropped')
     if (remodify)
@@ -218,17 +232,7 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
             </button>
           }
           body={x ? text(x) : null}
-          foot={pairs.map(([v, icon, label, k], i) => (
-            <button
-              key={v}
-              onClick={() => (chose(v) ? on.cancelModify() : v === 'open' && dec.from === 'review' ? on.notYet(n) : on.decide(n, v as 'open' | 'dropped' | 'done'))}
-              className={`${i ? `${PRIMARY_BASE} ${tone} flex-[1.4]` : `${SECOND} flex-1`} lg:flex-none`}
-            >
-              <Icon n={icon} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
-              <Word shown={label} all={both(label)} />
-              <Kbd k={k} />
-            </button>
-          ))}
+          foot={<DecideBtns from={dec.from} press={(v) => (chose(v) ? on.cancelModify() : v === 'open' && dec.from === 'review' ? on.notYet(n) : on.decide(n, v as 'open' | 'dropped' | 'done'))} />}
         />
       )
     // decided: the card keeps its look and its buttons where they were (r1003), done like a sent form (r1007): both
@@ -247,13 +251,13 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
           </button>
         }
         body={x ? text(x) : null}
-        foot={pairs.map(([v, icon, label, k], i) => (
-          <button key={v} disabled aria-pressed={chose(v)} className={`${chose(v) ? DECIDED_ON(CHOSEN_TONE[label]) : DECIDED_OFF} ${i ? 'flex-[1.4]' : 'flex-1'} lg:flex-none`}>
-            <Icon n={icon} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
-            <Word shown={chose(v) ? (PAST[label] ?? label) : label} all={both(label)} />
+        foot={pairs.map(([v, act], i) => (
+          <button key={v} disabled aria-pressed={chose(v)} className={`${chose(v) ? DECIDED_ON(chosenTone(act)) : DECIDED_OFF} ${i ? 'flex-[1.4]' : 'flex-1'} lg:flex-none`}>
+            <Icon n={actIcon(act, true)} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
+            <Word shown={chose(v) ? pastOf(act) : ITEM_ACTS[act].label} all={both(act)} />
             {/* decided: no key does anything now, so none shows (its place kept, as on an answered card) */}
             <span className="invisible">
-              <Kbd k={k} />
+              <Kbd k={ITEM_ACTS[act].key ?? ''} />
             </span>
           </button>
         ))}
@@ -268,7 +272,7 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
       m ? text(m) : null,
       <>
         {/* what you did (you replied), done; Approve / Accept still to be pressed */}
-        <button disabled aria-pressed className={`${DECIDED_ON(CHOSEN_TONE.Reply)} flex-1 lg:flex-none`}>
+        <button disabled aria-pressed className={`${DECIDED_ON(chosenTone('reply'))} flex-1 lg:flex-none`}>
           <Icon n="reply" c="size-4" sw="2.25" />
           Skipped · you replied
         </button>
@@ -280,36 +284,14 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
       'propose',
       `${name} proposed this`,
       m ? text(m) : null,
-      <>
-        <button onClick={() => on.decide(n, 'dropped')} className={`${SECOND} flex-1 lg:flex-none`}>
-          <Icon n="ban" c="size-4" />
-          <Word shown="Won't do" all={both("Won't do")} />
-          <Kbd k="W" />
-        </button>
-        <button onClick={() => on.decide(n, 'open')} className={`${PRIMARY_BASE} ${NEED.approve.btn} flex-[1.4] lg:flex-none`}>
-          <Icon n="thumb" c="size-4.5" />
-          <Word shown="Approve" all={both("Approve")} />
-          <Kbd k="A" />
-        </button>
-      </>,
+      <DecideBtns from="proposed" press={(v) => on.decide(n, v as 'open' | 'dropped')} />,
     )
   if (kind === 'decide' && need.of === 'work')
     return card(
       'done',
       `${name} finished this`,
       m ? text(m) : null,
-      <>
-        <button onClick={() => on.notYet(n)} className={`${SECOND} flex-1 lg:flex-none`}>
-          <Icon n="reopen" c="size-4" />
-          <Word shown="Not yet" all={both("Not yet")} />
-          <Kbd k="N" />
-        </button>
-        <button onClick={() => on.decide(n, 'done')} className={`${PRIMARY_BASE} ${NEED.accept.btn} flex-[1.4] lg:flex-none`}>
-          <Icon n="check" c="size-4.5" sw="2.25" />
-          <Word shown="Accept" all={both("Accept")} />
-          <Kbd k="A" />
-        </button>
-      </>,
+      <DecideBtns from="review" press={(v) => (v === 'done' ? on.decide(n, 'done') : on.notYet(n))} />,
     )
   return null
 }
@@ -385,7 +367,7 @@ export function Answered({ it, x, done, env, on, reasking, going = null }: {
               </span>
             </button>
           ) : (
-            <button disabled aria-pressed className={`${DECIDED_ON(CHOSEN_TONE.Answer)} flex-[1.4] lg:flex-none`}>
+            <button disabled aria-pressed className={`${DECIDED_ON(chosenTone('answer'))} flex-[1.4] lg:flex-none`}>
               <Icon n={done.length ? 'check' : 'reply'} c="size-4" sw="2.25" />
               {done.length ? 'Sent' : 'Replied'}
               <span className="invisible">

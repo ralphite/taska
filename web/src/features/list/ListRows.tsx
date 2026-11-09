@@ -3,14 +3,15 @@
 // group heads. Props only: the list container works out what each row says.
 
 import type { ReactNode } from 'react'
-import { deskSlots, forward, backward, ACT_KEY, type Slot } from '../../model/actions'
+import { deskSlots, forward, backward, type Slot } from '../../model/actions'
+import { ITEM_ACTS, actTip } from '../../model/itemActs'
 import { closed, statusWord } from '../../model/items'
-import { NEED_ACT_WORD, needRow, shownStatus, type NeedAct } from '../../model/needStates'
+import { needRow, shownStatus, type NeedAct } from '../../model/needStates'
 import type { Item, RuleProposal } from '../../model/types'
 import { plural, whoName } from '../../model/words'
 import { Avatar, Count, DraftMark, Hit, Pic, Soft } from '../../ui/bits'
 import { Icon, StateIcon } from '../../ui/Icon'
-import { ACT_BG, ACT_ICON, ACT_TONE, ACTION_PILL, FORWARD_NEED, MUTED, NEED, PRI_TEXT, TYPE_TEXT } from '../../ui/tones'
+import { ACTION_PILL, MUTED, NEED, PRI_TEXT, TYPE_TEXT, actBg, actIcon, actText, needOfAct } from '../../ui/tones'
 
 /** What a row needs to know beyond its item. */
 export interface RowFacts {
@@ -112,29 +113,17 @@ function RowActs({ it, needs, on }: { it: Item; needs: boolean; on: RowEvents })
   return (
     <div className="relative hidden shrink-0 self-stretch bg-inherit lg:block">
       <div data-row-acts className="absolute inset-y-0 right-0 hidden items-center gap-0.5 bg-inherit [mask-image:linear-gradient(to_right,transparent,black_1.5rem)] pl-6 group-hover:flex">
-        {acts.map(([f, v, label]) =>
-          f === 'reopen' ? (
-            <button
-              key={label}
-              title="Not yet · N"
-              aria-label="Not yet"
-              onClick={(e) => (e.stopPropagation(), on.reopen(it.n))}
-              className="grid size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-900/7 dark:text-zinc-400 dark:hover:bg-white/10"
-            >
-              <Icon n="reopen" c="size-[18px]" />
-            </button>
-          ) : (
-            <button
-              key={label}
-              title={`${label}${ACT_KEY[label] ? ' · ' + ACT_KEY[label] : ''}`}
-              aria-label={label}
-              onClick={(e) => (e.stopPropagation(), on.act(it.n, f, v, label, e.currentTarget))}
-              className={`grid size-8 place-items-center rounded-lg hover:bg-zinc-900/7 dark:hover:bg-white/10 ${ACT_TONE[label] || 'text-zinc-500 dark:text-zinc-400'}`}
-            >
-              <Icon n={ACT_ICON[label]} c="size-[18px]" />
-            </button>
-          ),
-        )}
+        {acts.map(([f, v, act]) => (
+          <button
+            key={act}
+            title={actTip(act)}
+            aria-label={ITEM_ACTS[act].label}
+            onClick={(e) => (e.stopPropagation(), f === 'reopen' ? on.reopen(it.n) : on.act(it.n, f, v, ITEM_ACTS[act].label, e.currentTarget))}
+            className={`grid size-8 place-items-center rounded-lg hover:bg-zinc-900/7 dark:hover:bg-white/10 ${actText(act)}`}
+          >
+            <Icon n={actIcon(act)} c="size-[18px]" />
+          </button>
+        ))}
       </div>
     </div>
   )
@@ -145,7 +134,7 @@ function SwipeLayers({ it, openKids, on, children }: { it: Item; openKids: numbe
   const fwd = forward(it)
   const back = backward(it)
   const left = fwd?.[1] === 'done' ? openKids : 0
-  const need = fwd && FORWARD_NEED[fwd[2]]
+  const need = fwd && needOfAct(fwd[2])
   return (
     <div className="relative overflow-hidden">
       <div
@@ -155,23 +144,23 @@ function SwipeLayers({ it, openKids, on, children }: { it: Item; openKids: numbe
       >
         {fwd ? (
           <>
-            <Icon n={ACT_ICON[fwd[2]]} c="size-5" />
+            <Icon n={actIcon(fwd[2])} c="size-5" />
             <span className="flex flex-col leading-tight">
-              {fwd[2]}
+              {ITEM_ACTS[fwd[2]].label}
               {left ? <span className="text-xs font-normal">{left} open</span> : null}
             </span>
           </>
         ) : null}
       </div>
       <div data-swipe-right hidden className="absolute inset-y-0 right-0 flex">
-        {back.map(([f, v, label], i) => (
+        {back.map(([f, v, act], i) => (
           <button
-            key={label}
-            onClick={() => (label === 'Not yet' ? on.reopen(it.n) : on.act(it.n, f, v, label))}
-            className={`flex w-19 flex-col items-center justify-center gap-1 text-xs font-semibold text-white ${ACT_BG[label] || (i % 2 ? 'bg-zinc-500 dark:bg-zinc-600' : 'bg-zinc-600 dark:bg-zinc-700')}`}
+            key={act}
+            onClick={() => (act === 'not-yet' ? on.reopen(it.n) : on.act(it.n, f, v, ITEM_ACTS[act].label))}
+            className={`flex w-19 flex-col items-center justify-center gap-1 text-xs font-semibold text-white ${actBg(act) || (i % 2 ? 'bg-zinc-500 dark:bg-zinc-600' : 'bg-zinc-600 dark:bg-zinc-700')}`}
           >
-            <Icon n={ACT_ICON[label]} c="size-5" />
-            {label}
+            <Icon n={actIcon(act)} c="size-5" />
+            {ITEM_ACTS[act].label}
           </button>
         ))}
       </div>
@@ -296,7 +285,7 @@ export function ItemRow(props: {
 export function NeedsRow({ it, depth, facts, look, excerpt, said, act, on }: { it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; act?: NeedAct; on: RowEvents }) {
   // its pill: what it needs from you (model/needStates); held after you acted, as it was
   const v = act ?? needRow(it)?.act ?? 'accept'
-  const label = said ?? NEED_ACT_WORD[v]
+  const label = said ?? ITEM_ACTS[v].label
   return (
     <Shell it={it} look={look} facts={facts} on={on}>
       <div

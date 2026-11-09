@@ -6,7 +6,8 @@
 import { closed } from '../model/items'
 import { visible } from '../model/visible'
 import { choiceMulti } from '../model/markdown'
-import { armedSet, doneTo, dropTo, pageStatuses, whyNot } from '../model/actions'
+import { armHint, armedSet, doneTo, dropTo, pageStatuses, whyNot } from '../model/actions'
+import { ITEM_ACTS, type ItemActId } from '../model/itemActs'
 import { yourStep } from '../model/needStates'
 import { codeOf, liveN, type ProjectModel } from '../model/project'
 import type { Item } from '../model/types'
@@ -113,10 +114,12 @@ type Action = PageAction | ItemAction
 const item = <K extends Uses = never>(uses: readonly K[], a: Omit<ItemAction<K>, 'item' | 'uses'>): ItemAction<K> => ({ ...a, uses, item: true })
 const page = <K extends Uses = never>(uses: readonly K[], a: Omit<PageAction<K>, 'uses'>): PageAction<K> => ({ ...a, uses })
 const set = (w: Pick<ActionWorld, 'items'>, h: OnItem, f: string, v: unknown, o: { said?: string } = {}) => void w.items.change(h.it.n, f, v, o)
-const arm = (k: 's' | 'p' | 't', hint: string) => (w: Pick<ActionWorld, 'keyArm' | 'toasts'>, h: OnItem) => {
+const arm = (k: 's' | 'p' | 't') => (w: Pick<ActionWorld, 'keyArm' | 'toasts'>, h: OnItem) => {
   w.keyArm.set(k, h.it.n)
-  w.toasts.show(hint)
+  w.toasts.show(armHint(k, h.it))
 }
+/** an item action's words and key (model/itemActs) */
+const named = (id: ItemActId) => ({ label: ITEM_ACTS[id].label, keys: (ITEM_ACTS[id].key ?? '').toLowerCase() })
 const tab = (t: Tab) => (w: Pick<ActionWorld, 'nav'>) => w.nav.tab(t)
 const steps = (d: 1 | -1) => (w: Pick<ActionWorld, 'nav' | 'listOrder' | 'toasts'>, h: Here) => {
   const m = h.m
@@ -148,14 +151,13 @@ export const ACTIONS = {
       else w.fields.get('talk')?.querySelector<HTMLElement>('button[data-choice]')?.focus()
     },
   }),
-  reply: item(['fields'], { label: 'Reply', keys: 'r', listed: true, run: (w) => w.fields.focus('box') }),
-  'not-yet': item(['items'], { label: 'Not yet', keys: 'n', listed: true, why: (_, h) => whyNot.notYet(h.it), run: (w, h) => set(w, h, 'status', 'open', { said: 'is back to open' }) }),
-  done: item(['items'], { label: 'Done', keys: 'd', listed: true, why: (_, h) => whyNot.done(h.it, h.code), run: (w, h) => set(w, h, 'status', doneTo(h.it)) }),
+  reply: item(['fields'], { label: ITEM_ACTS.reply.label, keys: 'r', listed: true, run: (w) => w.fields.focus('box') }),
+  'not-yet': item(['items'], { ...named('not-yet'), listed: true, why: (_, h) => whyNot.notYet(h.it), run: (w, h) => set(w, h, 'status', 'open', { said: 'is back to open' }) }),
+  done: item(['items'], { ...named('done'), listed: true, why: (_, h) => whyNot.done(h.it, h.code), run: (w, h) => set(w, h, 'status', doneTo(h.it)) }),
   // Later asks until when: Tomorrow, Next week, a day picked, or none (D115 #21); back to now at once
-  later: item(['items', 'sheets'], { label: 'Later', keys: 'l', listed: 'Later or back to now', why: (_, h) => whyNot.later(h.it), run: (w, h) => (h.it.when === 'now' ? w.sheets.open({ kind: 'later', n: h.it.n }, { focus: false }) : set(w, h, 'when', 'now')) }),
+  later: item(['items', 'sheets'], { ...named('later'), listed: 'Later or back to now', why: (_, h) => whyNot.later(h.it), run: (w, h) => (h.it.when === 'now' ? w.sheets.open({ kind: 'later', n: h.it.n }, { focus: false }) : set(w, h, 'when', 'now')) }),
   archive: item(['items', 'nav'], {
-    label: 'Archive',
-    keys: 'e',
+    ...named('archive'),
     listed: true,
     run: (w, h) => {
       const on = !h.it.archived
@@ -163,11 +165,11 @@ export const ACTIONS = {
       if (on && h.r.place.kind === 'item') w.nav.closeItem()
     },
   }),
-  drop: item(['items'], { label: "Won't do", keys: 'w', listed: true, why: (_, h) => whyNot.drop(h.it, h.code), run: (w, h) => set(w, h, 'status', dropTo()) }),
+  drop: item(['items'], { ...named('drop'), listed: true, why: (_, h) => whyNot.drop(h.it, h.code), run: (w, h) => set(w, h, 'status', dropTo()) }),
   edit: item(['itemEdits'], { label: 'Edit', keys: 'i', listed: true, run: (w, h) => w.itemEdits.start(h.it.n) }),
-  status: item(['keyArm', 'toasts'], { label: 'Status…', keys: 's', listed: true, run: arm('s', 'Status: 1–6') }),
-  priority: item(['keyArm', 'toasts'], { label: 'Priority…', keys: 'p', listed: true, run: arm('p', 'Priority: 0–3') }),
-  type: item(['keyArm', 'toasts'], { label: 'Type…', keys: 't', listed: true, run: arm('t', 'Type: F B I T R') }),
+  status: item(['keyArm', 'toasts'], { label: 'Status…', keys: 's', listed: true, run: arm('s') }),
+  priority: item(['keyArm', 'toasts'], { label: 'Priority…', keys: 'p', listed: true, run: arm('p') }),
+  type: item(['keyArm', 'toasts'], { label: 'Type…', keys: 't', listed: true, run: arm('t') }),
   'put-under': item(['sheets'], { label: 'Put under…', keys: 'm', listed: true, run: (w, h) => w.sheets.open({ kind: 'item-move-parent', n: h.it.n }, { pop: true, focus: false }) }),
   'add-sub': item(['itemEdits'], { label: 'Add subitem', keys: 'A', listed: true, run: (w, h) => w.itemEdits.subStart(h.it.n) }),
   'new-doc': item(['docEditor'], { label: 'New doc', keys: 'D', listed: true, run: (w, h) => w.docEditor.create(h.it.n) }),
@@ -446,7 +448,7 @@ const HELP: [string, HelpRow[]][] = [
       { ids: ['reply'], sep: '', text: 'Reply or add to it' },
       { ids: ['not-yet'], sep: '', text: 'Not yet: back to in progress at once' },
       { keys: '1–9, ⌘↵', text: 'Pick a choice, send the answer' },
-      { ids: ['done', 'drop', 'later'], sep: ' · ', text: "Done · Won't do · Later / Now" },
+      { ids: ['done', 'drop', 'later'], sep: ' · ', text: `${ITEM_ACTS.done.label} · ${ITEM_ACTS.drop.label} · ${ITEM_ACTS.later.label} / Now` },
       { ids: ['archive', 'archive-all'], sep: ' / ', text: 'Archive or unarchive / archive every finished item' },
       { ids: ['status', 'priority', 'type'], sep: ' · ', text: "Status, priority, type (then the menu's digit)" },
       { ids: ['put-under', 'copy'], sep: ' · ', text: 'Put under… · Copy for agent' },

@@ -13,6 +13,7 @@
 import { closed, lastAgentMessage, oneLine } from './items'
 import { hasChoices } from './markdown'
 import { answerOf } from './talk'
+import { ITEM_ACTS, pastOf, type ItemActId } from './itemActs'
 import type { Item, Message } from './types'
 import { PLACE_WORD, STATUS_WORD } from './words'
 
@@ -29,15 +30,14 @@ export type NeedPlace = keyof typeof NEED_PLACES
 /** What a decision is on: a proposal (Approve or Won't do) or finished work (Accept or Not yet). */
 export type NeedOf = 'proposal' | 'work'
 
-/** A decision's two choices and how they are said, on a proposal and on finished work. */
+/** A decision's two choices (actions, model/itemActs) and how they are said, on a proposal and on finished work. */
 export const DECISION = {
-  proposal: { status: 'proposed', yes: { to: 'open', word: 'Approve', said: 'approved' }, no: { to: 'dropped', word: "Won't do" }, did: 'proposed this' },
-  work: { status: 'review', yes: { to: 'done', word: 'Accept', said: 'accepted' }, no: { to: 'open', word: 'Not yet' }, did: 'finished this' },
-} as const
+  proposal: { status: 'proposed', yes: { to: 'open', act: 'approve', said: 'approved' }, no: { to: 'dropped', act: 'drop' }, did: 'proposed this' },
+  work: { status: 'review', yes: { to: 'done', act: 'accept', said: 'accepted' }, no: { to: 'open', act: 'not-yet' }, did: 'finished this' },
+} as const satisfies Record<NeedOf, { status: string; yes: { to: string; act: ItemActId; said: string }; no: { to: string; act: ItemActId }; did: string }>
 
-/** The row's pill in Needs you: what it does. */
+/** The row's pill in Needs you: what it does (an action, model/itemActs). */
 export type NeedAct = 'answer' | 'approve' | 'accept'
-export const NEED_ACT_WORD: Record<NeedAct, string> = { answer: 'Answer', approve: 'Approve', accept: 'Accept' }
 
 /** The card in the item's talk: the question (its choices, or ↓ Answer below; Approve or Accept beside it on a
  * proposal or finished work); a decision's two buttons; Skipped · you replied with Approve or Accept still to press;
@@ -151,12 +151,12 @@ export function needRow(it: Item): { act: NeedAct; word: string; line: string } 
   const act = NEED_STATES[n.state].row
   if (!act) return null
   const line = n.state === 'answer' ? it.wait?.text : n.state === 'approve' ? n.msg?.text || it.body : n.msg?.text
-  return { act, word: NEED_ACT_WORD[act], line: oneLine(line) }
+  return { act, word: ITEM_ACTS[act].label, line: oneLine(line) }
 }
 
 /** A: the item's next step for you: answer what waits (on its first choice, or in the box), or take the decision's
  * yes (the status it sets, the button's word, how it is said done). */
-export type YourStep = { set: readonly [field: 'status', value: string, label: string, said: string] } | { answer: 'choices' | 'words' } | null
+export type YourStep = { set: readonly [field: 'status', value: string, act: ItemActId, said: string] } | { answer: 'choices' | 'words' } | null
 
 export function yourStep(it: Item): YourStep {
   const n = needOf(it)
@@ -164,7 +164,7 @@ export function yourStep(it: Item): YourStep {
   if (key === 'answer') return { answer: it.wait && it.wait.kind === 'ask' && hasChoices(it.wait.text) ? 'choices' : 'words' }
   if (key === 'decide' && n.of) {
     const { yes } = DECISION[n.of]
-    return { set: ['status', yes.to, yes.word, yes.said] }
+    return { set: ['status', yes.to, yes.act, yes.said] }
   }
   return null
 }
@@ -182,15 +182,14 @@ export function talkPlan(it: Item, opts: { going?: string | null } = {}) {
   return { cardId, thread, first, inline: at >= 0 }
 }
 
-/** What you chose, in the words of its button. */
-export const chosenWord = (d: Decided) =>
-  d.from === 'proposed' ? (d.to === 'dropped' ? "Won't do" : 'Approve') : d.to === 'done' ? 'Accept' : 'Not yet'
-
-/** A decision's button word once it is made: said so on the decided card and on the row you just decided on (D115 #8). */
-export const PAST: Record<string, string> = { Approve: 'Approved', Accept: 'Accepted', "Won't do": 'Declined', 'Not yet': 'Sent back' }
+/** What you chose: its button's action. */
+export function chosenAct(d: Decided): ItemActId {
+  const x = DECISION[d.from === 'proposed' ? 'proposal' : 'work']
+  return d.to === x.yes.to ? x.yes.act : x.no.act
+}
 
 /** What you chose, said as done: Approved, Accepted, Declined, Sent back. */
-export const decidedWord = (d: Decided) => PAST[chosenWord(d)]
+export const decidedWord = (d: Decided) => pastOf(chosenAct(d))
 
 // ---------------------------------------------------------------- the table (docs/item-states.md)
 
@@ -207,10 +206,13 @@ export function needPlacesTable(): string {
   const cell = (s: NeedState, place: NeedPlace) => {
     const d: StateDef = NEED_STATES[s]
     if (place === 'list') return d.listed ? 'yes' : '—'
-    if (place === 'row') return d.row ? NEED_ACT_WORD[d.row] : '—'
+    if (place === 'row') return d.row ? ITEM_ACTS[d.row].label : '—'
     if (place === 'mark') return d.mark ? 'Needs you' : '—'
-    if (place === 'key') return d.key === 'answer' ? 'Answer' : d.key === 'decide' ? (d.row ? NEED_ACT_WORD[d.row] : 'Approve / Accept') : '—'
-    if (d.card === 'decide') return s === 'approve' ? "Won't do · Approve" : 'Not yet · Accept'
+    if (place === 'key') return d.key === 'answer' ? ITEM_ACTS.answer.label : d.key === 'decide' ? (d.row ? ITEM_ACTS[d.row].label : 'Approve / Accept') : '—'
+    if (d.card === 'decide') {
+      const x = DECISION[s === 'approve' ? 'proposal' : 'work']
+      return `${ITEM_ACTS[x.no.act].label} · ${ITEM_ACTS[x.yes.act].label}`
+    }
     return d.card ? CARD_CELL[d.card] : '—'
   }
   const places = Object.keys(NEED_PLACES) as NeedPlace[]

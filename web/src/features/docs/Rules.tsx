@@ -13,7 +13,7 @@ import type { IconName } from '../../ui/icon-paths'
 import { Rich } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
 import type { SheetParts } from '../../ui/Sheet'
-import { CHOSEN_TONE, DECIDED_OFF, DECIDED_ON, DISABLED, MUTED, NEEDS_CARD, PRIMARY, PRIMARY_BASE, SECOND } from '../../ui/tones'
+import { DECIDED_OFF, DECIDED_ON, DISABLED, MUTED, NEEDS_CARD, PRIMARY, PRIMARY_BASE, SECOND, chosenTone } from '../../ui/tones'
 import { DocBlock } from './DocBlock'
 
 /** the document's column, as DocView's */
@@ -70,7 +70,7 @@ export function ProposalCard({ f, open = false, on }: { f: ProposalFacts; open?:
   const past: Record<string, string> = { Approve: 'Approved', 'Not now': 'Not now' }
   const btn = (label: 'Approve' | 'Not now', run: () => void, primary: boolean) =>
     decided || p.state === 'stale' ? (
-      <button disabled className={decided === label ? DECIDED_ON(CHOSEN_TONE.Approve) : DECIDED_OFF}>
+      <button disabled className={decided === label ? DECIDED_ON(chosenTone('approve')) : DECIDED_OFF}>
         {decided === label ? <Icon n="check" c="size-4" sw="2.5" /> : null}
         {decided === label ? past[label] : label}
       </button>

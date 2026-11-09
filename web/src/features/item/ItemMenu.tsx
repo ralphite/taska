@@ -4,13 +4,14 @@
 // or S, P, T). Props only.
 
 import type { ReactNode } from 'react'
+import { ITEM_ACTS, type ItemActId } from '../../model/itemActs'
 import { closed, statusChoices, waitsInQueue } from '../../model/items'
 import type { Item, Pri, Status } from '../../model/types'
 import { priOpts, SegCtl, typeOpts } from '../../ui/Segments'
 import { StateIcon, Icon } from '../../ui/Icon'
 import { STATE_ICON, type IconName } from '../../ui/icon-paths'
 import type { SheetParts } from '../../ui/Sheet'
-import { DANGER, MENU_SEP, MUTED, STATE_ON, TYPE_TEXT } from '../../ui/tones'
+import { DANGER, MENU_SEP, MUTED, STATE_ON, TYPE_TEXT, actIcon } from '../../ui/tones'
 
 export interface ItemMenuEvents {
   edit(): void
@@ -99,11 +100,12 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
     </button>
   )
   const next = waitsInQueue(it) ? tile('next', it.rank == null ? 'totop' : 'undo', it.rank == null ? 'Do this next' : 'Back in order', on.doNext, it.rank == null ? `first ${it.pri} in queue` : 'where it was, by age') : null
+  const act = (id: ItemActId, run: () => void) => tile(id, actIcon(id), ITEM_ACTS[id].label, run)
   const state = it.archived
-    ? [tile('unarchive', 'unarchive', 'Unarchive', () => on.archive(false))]
+    ? [act('unarchive', () => on.archive(false))]
     : closed(it.status)
-      ? [tile('archive', 'archive', 'Archive', () => on.archive(true))]
-      : [tile('later', 'clock', it.when === 'now' ? 'Later' : 'Back to now', on.later), tile('archive', 'archive', 'Archive', () => on.archive(true))]
+      ? [act('archive', () => on.archive(true))]
+      : [tile('later', actIcon('later'), ITEM_ACTS[it.when === 'now' ? 'later' : 'now'].label, on.later), act('archive', () => on.archive(true))]
   const lab = (t: string) => <div className="px-1 pb-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">{t}</div>
   const type = (
     <div>
@@ -218,11 +220,12 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
   }
   // in progress it is first already: nothing to move
   const next = waitsInQueue(it) ? row('next', it.rank == null ? 'totop' : 'undo', it.rank == null ? 'Do this next' : 'Back in order', '', on.doNext, it.rank == null ? `first ${it.pri} in queue` : 'where it was, by age') : null
+  const act = (id: ItemActId, k: string, run: () => void) => row(id, actIcon(id), ITEM_ACTS[id].label, k, run)
   const state = it.archived
-    ? [row('unarchive', 'unarchive', 'Unarchive', keys.archive, () => on.archive(false))]
+    ? [act('unarchive', keys.archive, () => on.archive(false))]
     : closed(it.status)
-      ? [row('archive', 'archive', 'Archive', keys.archive, () => on.archive(true))]
-      : [row('later', 'clock', it.when === 'now' ? 'Later' : 'Back to now', keys.later, on.later), row('archive', 'archive', 'Archive', keys.archive, () => on.archive(true))]
+      ? [act('archive', keys.archive, () => on.archive(true))]
+      : [row('later', actIcon('later'), ITEM_ACTS[it.when === 'now' ? 'later' : 'now'].label, keys.later, on.later), act('archive', keys.archive, () => on.archive(true))]
   return {
     menu: true,
     body: (

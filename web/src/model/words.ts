@@ -41,8 +41,15 @@ export const AVATAR_LETTER: Record<string, string> = { 'claude-code': 'C', codex
 /** What needs you, by its own name: an agent asks, or something waits for your approval or acceptance. */
 export const PLACE_WORD: Record<string, string> = { wait: 'Needs you' }
 /** The Status filter: what needs you, then the statuses by their own names (Open: now, not in progress; Later). */
-export const STATUS_FILTER_WORD: Record<string, string> = { wait: 'Needs you', open: 'Open', doing: 'In progress', later: 'Later', done: 'Done', dropped: "Won't do" }
-export const ARCHIVE_FILTER_WORD: Record<string, string> = { done: 'Done', dropped: "Won't do", active: 'Not finished' }
+export const STATUS_FILTER_WORD: Record<string, string> = {
+  wait: PLACE_WORD.wait,
+  open: STATUS_WORD.open,
+  doing: STATUS_WORD.doing,
+  later: WHEN_WORD.later,
+  done: STATUS_WORD.done,
+  dropped: STATUS_WORD.dropped,
+}
+export const ARCHIVE_FILTER_WORD: Record<string, string> = { done: STATUS_WORD.done, dropped: STATUS_WORD.dropped, active: 'Not finished' }
 export const SORT_WORDS: [string, string][] = [
   ['all', 'Priority'],
   ['new', 'Newest'],

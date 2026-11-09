@@ -4,7 +4,8 @@
 // there as more comes. Props only.
 
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
-import { ACT_KEY, deskSlots, type Slot } from '../../model/actions'
+import { deskSlots, type Slot } from '../../model/actions'
+import { ITEM_ACTS, actTip } from '../../model/itemActs'
 import { closed } from '../../model/items'
 import { needsYou, shownStatus, talkPlan } from '../../model/needStates'
 import { REACH_WORDS } from '../../model/reach'
@@ -16,7 +17,7 @@ import { keepsEnd, scrollerOf, toEnd } from '../../ui/scroller'
 import type { IconName } from '../../ui/icon-paths'
 import { Rich } from '../../ui/Markdown'
 import { clean, inlineHtml } from '../../ui/markdown/inline'
-import { ACT_ICON, CHIP, FIELD, NEED, PRIMARY, SECOND, TYPE_TEXT } from '../../ui/tones'
+import { CHIP, FIELD, NEED, PRIMARY, SECOND, TYPE_TEXT, actIcon } from '../../ui/tones'
 import { FileRows } from '../../ui/Files'
 import { DocCard } from './DocCard'
 import { NeedsCard } from './NeedsCard'
@@ -546,12 +547,11 @@ export function ItemActs({ it, on }: { it: Item; on: Pick<ItemEvents, 'set' | 'l
   const slots = deskSlots(it, needsYou(it)).filter((a): a is Slot => a !== null)
   return (
     <>
-      {slots.map(([f, v, label]) => (
+      {slots.map(([f, v, act]) => (
         <BarText
-          key={label}
-          icon={ACT_ICON[label]}
-          label={label}
-          title={ACT_KEY[label] ? `${label} · ${ACT_KEY[label]}` : label}
+          key={act}
+          icon={actIcon(act)} label={ITEM_ACTS[act].label}
+          title={actTip(act)}
           onClick={(e) => (f === 'reopen' ? on.set('status', 'open') : f === 'when' && v === 'later' ? on.later(e.currentTarget) : on.set(f as 'when' | 'archived' | 'status', f === 'archived' ? v === 'true' : v))}
         />
       ))}

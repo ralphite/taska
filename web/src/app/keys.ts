@@ -4,8 +4,7 @@
 // The home page has one key: Cmd-K or / search (the phone: its search field).
 
 import { actionOfKeys, type ActionId } from './actions'
-import { armedSet } from '../model/actions'
-import { statusChoices } from '../model/items'
+import { armHint, armedSet, pageStatuses } from '../model/actions'
 import type { App } from './createApp'
 import type { Item } from '../model/types'
 
@@ -109,7 +108,7 @@ function menuKey(app: App, e: KeyboardEvent, it: Item | undefined, arm: 's' | 'p
     return true
   }
   if (k.length !== 1 || (e.shiftKey && k !== k.toLowerCase())) return false // C, D, A with Shift: the menu's own keys
-  const statuses = statusChoices(it).map(([v]) => v)
+  const statuses = pageStatuses(it)
   const to = arm ? armedSet(arm, k, statuses) : null
   if (to) {
     e.preventDefault()
@@ -126,7 +125,7 @@ function menuKey(app: App, e: KeyboardEvent, it: Item | undefined, arm: 's' | 'p
   }
   if (/^[0-9]$/.test(k)) {
     e.preventDefault()
-    app.toasts.show(arm === 'p' ? 'Priority: 0–3' : arm === 't' ? 'Type: F B I T R' : arm === 's' ? `Status: 1–${statuses.length}` : 'First S, P or T: then a digit')
+    app.toasts.show(armHint(arm, it))
     return true
   }
   return false
