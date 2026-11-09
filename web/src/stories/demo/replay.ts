@@ -91,7 +91,7 @@ export function replay(rec: Recording, Res: typeof Response = Response, clock: (
     log.answered += 1
     log.nothingNew += 1
     const cursor = new URLSearchParams(url.split('?')[1] ?? '').get('cursor')
-    return new Res(JSON.stringify({ cursor, same: true, server: template?.server ?? { page: '', update: false } }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    return new Res(JSON.stringify({ cursor, same: true, server: template?.server ?? { page: '', update: false, dev: false } }), { status: 200, headers: { 'Content-Type': 'application/json' } })
   }
   /** resolves when answer i may go; -> how to stop waiting */
   const whenDue = (i: number, asked: number, go: () => void): (() => void) => {

@@ -10,7 +10,7 @@ import { EFFECTS, type Seen } from './ruleCases.gen'
 import type { Comment, Doc } from './types'
 
 const modelOf = (s: Seen, at = 1): ProjectModel =>
-  project(merge(null, { cursor: 'c', full: true, items: s.items, inputs: s.inputs, docs: s.docs, voices: s.voices, project: projectFacts({ undo: s.undo, width: 1 }), server: { page: '', update: false } }, at))
+  project(merge(null, { cursor: 'c', full: true, items: s.items, inputs: s.inputs, docs: s.docs, voices: s.voices, project: projectFacts({ undo: s.undo, width: 1 }), server: { page: '', update: false, dev: false } }, at))
 
 /** What the page draws of an item, an input, a document (not its times, not the ids a stand-in has). */
 const itemSeen = (m: ProjectModel) =>
@@ -39,7 +39,7 @@ describe("a change shows at once what the server makes of it (the server's own c
   test.each(EFFECTS.map((c) => [c.name, c] as const))('%s', (_name, c) => {
     const before = modelOf(c.before)
     const shown = preview(before, c.commands, 2)
-    const copy = merge(null, { cursor: 'c', full: true, items: c.before.items, inputs: c.before.inputs, docs: c.before.docs, voices: c.before.voices, project: projectFacts({ undo: c.before.undo, width: 1 }), server: { page: '', update: false } }, 1)
+    const copy = merge(null, { cursor: 'c', full: true, items: c.before.items, inputs: c.before.inputs, docs: c.before.docs, voices: c.before.voices, project: projectFacts({ undo: c.before.undo, width: 1 }), server: { page: '', update: false, dev: false } }, 1)
     const now = project(copy, shown.patches, 2, shown.inputPatches, shown.docPatches)
     const after = modelOf(c.after)
     // a new item has its number from Taska: the stand-in is told by its title

@@ -49,7 +49,7 @@ export const SAMPLES = {
   ]
  },
  "view": {
-  "cursor": "1a1b1cd8aff.38.49.2",
+  "cursor": "1a1b1cd8afc.37.49.2",
   "full": true,
   "items": [
    {
@@ -151,7 +151,7 @@ export const SAMPLES = {
      "ses": "sample"
     },
     "readBy": {
-     "claude-code": 1793984400172
+     "claude-code": 1793984400189
     }
    },
    {
@@ -282,6 +282,29 @@ export const SAMPLES = {
     "parent": null,
     "next": "",
     "srcs": [
+     "r2"
+    ],
+    "mergedInto": null,
+    "archived": false,
+    "t0": "2026-11-06T09:00:00-08:00",
+    "t1": "2026-11-06T09:00:00-08:00",
+    "by": "org",
+    "thread": [],
+    "wait": null,
+    "talked": false
+   },
+   {
+    "n": 6,
+    "code": "T06",
+    "type": "task",
+    "title": "Sort the export by date",
+    "body": "",
+    "pri": "P2",
+    "when": "now",
+    "status": "open",
+    "parent": null,
+    "next": "",
+    "srcs": [
      "r1"
     ],
     "mergedInto": null,
@@ -303,29 +326,6 @@ export const SAMPLES = {
     ],
     "wait": null,
     "talked": true
-   },
-   {
-    "n": 6,
-    "code": "T06",
-    "type": "task",
-    "title": "Sort the export by date",
-    "body": "",
-    "pri": "P2",
-    "when": "now",
-    "status": "open",
-    "parent": null,
-    "next": "",
-    "srcs": [
-     "r2"
-    ],
-    "mergedInto": null,
-    "archived": false,
-    "t0": "2026-11-06T09:00:00-08:00",
-    "t1": "2026-11-06T09:00:00-08:00",
-    "by": "org",
-    "thread": [],
-    "wait": null,
-    "talked": false
    },
    {
     "n": 7,
@@ -418,7 +418,7 @@ export const SAMPLES = {
     "acked": false,
     "touched": [
      1,
-     5,
+     6,
      10,
      11
     ],
@@ -453,7 +453,7 @@ export const SAMPLES = {
     },
     "deletion": {
      "go": [
-      5,
+      6,
       10,
       11
      ],
@@ -476,11 +476,11 @@ export const SAMPLES = {
     ],
     "acked": true,
     "touched": [
-     6
+     5
     ],
     "org": {
      "ok": true,
-     "msg": "Created T6",
+     "msg": "Created T5",
      "t": "2026-11-06T09:00:00-08:00",
      "keep": false,
      "changed": true,
@@ -491,12 +491,12 @@ export const SAMPLES = {
     "q": "page-2",
     "filing": {
      "can": true,
-     "what": "removes T06",
+     "what": "removes T05",
      "why": ""
     },
     "deletion": {
      "go": [
-      6
+      5
      ],
      "keep": []
     }
@@ -744,17 +744,17 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400242,
+     "t": 1793984400197,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400242
+       "t": 1793984400197
       },
       {
        "name": "helper",
-       "t": 1793984400130
+       "t": 1793984400127
       }
      ]
     }
@@ -811,21 +811,23 @@ export const SAMPLES = {
    ],
    "phone": false,
    "base": "http://127.0.0.1:7340/p/shop",
-   "key": "nyqe-jsfp",
+   "key": "jruw-3shr",
    "remote": "",
    "lan": ""
   },
   "server": {
-   "page": "index-Brcdp7rh.js",
-   "update": false
+   "page": "index-R56EQRRO.js",
+   "update": false,
+   "dev": true
   }
  },
  "changes": {
-  "cursor": "1a1b1cd8aff.38.49.2",
+  "cursor": "1a1b1cd8afc.37.49.2",
   "same": true,
   "server": {
-   "page": "index-Brcdp7rh.js",
-   "update": false
+   "page": "index-R56EQRRO.js",
+   "update": false,
+   "dev": true
   }
  },
  "commands": {
@@ -834,7 +836,7 @@ export const SAMPLES = {
    "ok B01 pri=P0"
   ],
   "changes": {
-   "cursor": "1a1b1cd8aff.39.50.2",
+   "cursor": "1a1b1cd8afc.38.50.2",
    "full": false,
    "items": [
     {
@@ -936,7 +938,7 @@ export const SAMPLES = {
       "ses": "sample"
      },
      "readBy": {
-      "claude-code": 1793984400172
+      "claude-code": 1793984400189
      }
     }
    ],
@@ -962,17 +964,17 @@ export const SAMPLES = {
     "agents": [
      {
       "name": "claude-code",
-      "t": 1793984400242,
+      "t": 1793984400197,
       "waiting": false,
       "session": "sample",
       "sessions": [
        {
         "name": "sample",
-        "t": 1793984400242
+        "t": 1793984400197
        },
        {
         "name": "helper",
-        "t": 1793984400130
+        "t": 1793984400127
        }
       ]
      }
@@ -1040,13 +1042,14 @@ export const SAMPLES = {
     ],
     "phone": false,
     "base": "http://127.0.0.1:7340/p/shop",
-    "key": "nyqe-jsfp",
+    "key": "jruw-3shr",
     "remote": "",
     "lan": ""
    },
    "server": {
-    "page": "index-Brcdp7rh.js",
-    "update": false
+    "page": "index-R56EQRRO.js",
+    "update": false,
+    "dev": true
    }
   }
  },
@@ -1374,7 +1377,7 @@ export const SAMPLES = {
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
    "kind": "org",
-   "src": "r2",
+   "src": "r1",
    "ok": true,
    "msg": "Created T6"
   },
@@ -1388,7 +1391,7 @@ export const SAMPLES = {
    "pri": "P2",
    "when": "now",
    "title": "Sort the export by date",
-   "src": "r2",
+   "src": "r1",
    "codes": {
     "6": "T06"
    }
@@ -1398,7 +1401,7 @@ export const SAMPLES = {
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
    "kind": "org",
-   "src": "r1",
+   "src": "r2",
    "ok": true,
    "msg": "Created T5"
   },
@@ -1412,7 +1415,7 @@ export const SAMPLES = {
    "pri": "P2",
    "when": "now",
    "title": "Sort the export by date",
-   "src": "r1",
+   "src": "r2",
    "codes": {
     "5": "T05"
    }
@@ -1676,7 +1679,7 @@ export const SAMPLES = {
    "docs": 0,
    "agents": [],
    "work": false,
-   "t": 1794246133492
+   "t": 1794262266526
   },
   {
    "name": "garden",
@@ -1688,7 +1691,7 @@ export const SAMPLES = {
    "docs": 1,
    "agents": [],
    "work": true,
-   "t": 1794246133629
+   "t": 1794262266626
   },
   {
    "name": "shop",
@@ -1701,23 +1704,23 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400242,
+     "t": 1793984400197,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400242
+       "t": 1793984400197
       },
       {
        "name": "helper",
-       "t": 1793984400130
+       "t": 1793984400127
       }
      ]
     }
    ],
    "work": true,
-   "t": 1794246133629
+   "t": 1794262266626
   }
  ],
  "needs": [
@@ -1864,7 +1867,7 @@ export const SAMPLES = {
       "ses": "sample"
      },
      "readBy": {
-      "claude-code": 1793984400172
+      "claude-code": 1793984400189
      }
     },
     "parentCode": null,
@@ -1938,6 +1941,37 @@ export const SAMPLES = {
      "body": "",
      "pri": "P2",
      "when": "now",
+     "status": "dropped",
+     "parent": null,
+     "next": "",
+     "srcs": [
+      "r2"
+     ],
+     "mergedInto": null,
+     "archived": true,
+     "t0": "2026-11-06T09:00:00-08:00",
+     "t1": "2026-11-06T09:00:00-08:00",
+     "by": "org",
+     "thread": [],
+     "wait": null,
+     "talked": false
+    },
+    "parentCode": null,
+    "kids": null
+   },
+   {
+    "project": "shop",
+    "kind": "items",
+    "key": "i6",
+    "n": 6,
+    "item": {
+     "n": 6,
+     "code": "T06",
+     "type": "task",
+     "title": "Sort the export by date",
+     "body": "",
+     "pri": "P2",
+     "when": "now",
      "status": "open",
      "parent": null,
      "next": "",
@@ -1963,37 +1997,6 @@ export const SAMPLES = {
      ],
      "wait": null,
      "talked": true
-    },
-    "parentCode": null,
-    "kids": null
-   },
-   {
-    "project": "shop",
-    "kind": "items",
-    "key": "i6",
-    "n": 6,
-    "item": {
-     "n": 6,
-     "code": "T06",
-     "type": "task",
-     "title": "Sort the export by date",
-     "body": "",
-     "pri": "P2",
-     "when": "now",
-     "status": "dropped",
-     "parent": null,
-     "next": "",
-     "srcs": [
-      "r2"
-     ],
-     "mergedInto": null,
-     "archived": true,
-     "t0": "2026-11-06T09:00:00-08:00",
-     "t1": "2026-11-06T09:00:00-08:00",
-     "by": "org",
-     "thread": [],
-     "wait": null,
-     "talked": false
     },
     "parentCode": null,
     "kids": null
@@ -2288,7 +2291,7 @@ export const SAMPLES = {
   "tidy": true
  },
  "pushKey": {
-  "key": "BJTp-FPcnzYeghZy2N8ztt917O95_-b4UQjAQAxXF6gXFNycFS_0dXO3bfAZNef4soyZsG-YxhmQSCKBH1gzvLw",
+  "key": "BAd3sYCJOHiCPFT8rRL-8GbN_2G92nScvigu8UK5yOCEnUz4-R7ETXkU0HzI2bnPtT8WesRKriNnFMr8wBTPlXk",
   "on": false
  },
  "setPush": {
@@ -2338,7 +2341,7 @@ export const SAMPLES = {
  },
  "newKey": {
   "ok": true,
-  "key": "ht62-uvam"
+  "key": "sjdg-tryx"
  },
  "login": {
   "ok": true

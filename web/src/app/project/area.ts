@@ -46,7 +46,10 @@ export function makeProject(c: Core, i: Pick<InputsArea, 'box' | 'inputActions' 
     presence: l.presence,
     model: c.model,
     fresh: { ui: s.ui, itemView: s.itemView, keptEdits: s.keptEdits, docTicks: s.docTicks, box: s.box, drafts: s.drafts, pictureSizes, keptNotes: i.keptNotes, notices },
-    server: (v) => updates.seen(v),
+    server: (v) => {
+      updates.seen(v)
+      s.data.getState().setDev(v.dev)
+    },
     // Taska may be back: what waits for it goes now (and the activity loads again once it answers)
     back: {
       window: () => c.delivery.back(),

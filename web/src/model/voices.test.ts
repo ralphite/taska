@@ -15,7 +15,7 @@ const item = { n: 12, code: 'F12', type: 'feature', title: 'Export', body: '', p
 const comment: Comment = { id: 9, key: 'doc', th: 9, quote: '', text: 'About this:', by: 'you', t: '', files: [{ ...voiceFile, f: 'f5-voice_0-03.webm' }] }
 const doc = { d: 1, n: 12, title: 'D', md: '', t0: '', t1: '', by: 'codex', versions: 1, fmt: 'md', blocks: [], detached: [], whole: [comment], unanswered: 0, resolved: {} } as Doc
 const answer = (voices: Voice[]): ViewAnswer =>
-  ({ cursor: '1', full: true, items: [item], inputs: [input], docs: [doc], voices, project: { width: 2 }, server: { page: '', update: false } }) as unknown as ViewAnswer
+  ({ cursor: '1', full: true, items: [item], inputs: [input], docs: [doc], voices, project: { width: 2 }, server: { page: '', update: false, dev: false } }) as unknown as ViewAnswer
 
 describe('every place that shows a voice note shows its record’s words', () => {
   const m = project(merge(null, answer([rec(), rec({ f: 'f5-voice_0-03.webm', tidied: 'And the sort too?', said: 'And the sort too?' })]), 0))

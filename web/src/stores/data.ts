@@ -18,12 +18,15 @@ export interface DataState {
   /** how sure the page is that Taska is out of reach for the list of projects (model/reach `away`): the one shown is
    * the one kept from before */
   listAway: number
+  /** Taska runs from its source, not a release (B740): its development links show */
+  dev: boolean
   /** each project's pictures' sizes, by file */
   sizes: Readonly<Record<string, Readonly<Record<string, readonly [number, number]>>>>
   setSizes(slug: string, sizes: Record<string, [number, number]>): void
   setCopy(slug: string, copy: ServerCopy): void
   setAway(slug: string, away: number): void
   setProjects(rows: ProjectRow[], needs: Need[] | null, at: number): void
+  setDev(dev: boolean): void
   setListAway(away: number): void
 }
 
@@ -37,11 +40,13 @@ export function createDataStore(projects: ProjectRow[] | null = null, needs: Nee
     needs,
     listedAt: at,
     listAway: 0,
+    dev: false,
     sizes: {},
     setSizes: (slug, sizes) => set((s) => ({ sizes: { ...s.sizes, [slug]: { ...s.sizes[slug], ...sizes } } })),
     setCopy: (slug, copy) => set((s) => ({ copies: { ...s.copies, [slug]: copy } })),
     setAway: (slug, away) => set((s) => (s.away[slug] === away ? s : { away: { ...s.away, [slug]: away } })),
     setProjects: (rows, needs, at) => set((s) => ({ projects: rows, needs: needs ?? s.needs, listedAt: at, listAway: 0 })),
+    setDev: (dev) => set((s) => (s.dev === dev ? s : { dev })),
     setListAway: (away) => set((s) => (s.listAway === away ? s : { listAway: away })),
   }))
 }

@@ -375,6 +375,8 @@ export interface ProjectFacts {
 export interface ServerFacts {
   page: string
   update: boolean
+  /** Taska runs from its source (a checkout), not the released taska.pyz: the tools for making it show (B740) */
+  dev: boolean
 }
 
 /** GET view / changes: all of a project (full) or what changed since the cursor. */

@@ -56,7 +56,7 @@ def _view(ctx: "AppContext", req: Request, p: Project, since: Optional[Cursor]) 
     out["project"].update(base=f"{req.host()}{req.prefix}/p/{p.slug}", key=key,
                           remote=f"{ws.public}/k/{key}/p/{p.slug}" if ws.public else "",
                           lan=f"{ws.lan}/p/{p.slug}" if ws.lan else "")
-    out["server"] = {"page": ctx.page.version(), "update": ctx.status.update_ready()}
+    out["server"] = {"page": ctx.page.version(), "update": ctx.status.update_ready(), "dev": not ctx.page.bundled}
     return out
 
 
@@ -91,7 +91,8 @@ def get(ctx: "AppContext", req: Request, p: Project, sub: str) -> Optional[Respo
         wait = max(0, min(25, int(req.arg("wait", "25") or 25)))
         if not _wait_news(p, since, wait):
             return as_json({"cursor": req.arg("cursor"), "same": True,
-                            "server": {"page": ctx.page.version(), "update": ctx.status.update_ready()}})
+                            "server": {"page": ctx.page.version(), "update": ctx.status.update_ready(),
+                                       "dev": not ctx.page.bundled}})
         return as_json(_view(ctx, req, p, since))
     if sub == "/api/activity":
         n, before = min(int(req.arg("n", "300") or 300), 2000), int(req.arg("before", "0") or 0)

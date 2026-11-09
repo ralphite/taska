@@ -128,7 +128,7 @@ export function modelOf(items: Item[], inputs: Input[] = [], f: Partial<ProjectF
     docs: new Map(docs.map((d) => [d.d, d])),
     voices: new Map(voices.map((v) => [v.f, v])),
     facts: projectFacts(f),
-    server: { page: '', update: false },
+    server: { page: '', update: false, dev: false },
     at: Date.parse(T),
   })
 }

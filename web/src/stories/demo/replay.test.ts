@@ -6,7 +6,7 @@ const POLL = '/p/shop/api/changes?cursor=c1&wait=25'
 // after the input came, which answers the wait
 const xs: Exchange[] = [
   { method: 'GET', url: '/p/shop/api/view', status: 200, json: { cursor: 'c1', items: [] }, sent: 0, at: 20 },
-  { method: 'GET', url: POLL, status: 200, json: { cursor: 'c1', same: true, server: { page: 'x', update: false } }, sent: 30, at: 25030 },
+  { method: 'GET', url: POLL, status: 200, json: { cursor: 'c1', same: true, server: { page: 'x', update: false, dev: false } }, sent: 30, at: 25030 },
   { method: 'POST', url: '/p/shop/api/file?name=voice+0-03.webm', status: 200, json: { ok: true, f: 'f8' }, sent: 26000, at: 26100 },
   { method: 'POST', url: '/p/shop/api/commands?cursor=c1', status: 200, json: { ok: true }, sent: 26200, at: 26300 },
   { method: 'GET', url: POLL, status: 200, json: { cursor: 'c2', items: [{ n: 44 }] }, sent: 25040, at: 27700 },
