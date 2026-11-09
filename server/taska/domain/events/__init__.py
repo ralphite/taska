@@ -11,7 +11,7 @@ from typing import Dict
 
 from ..model import Row
 from . import docs, inputs, items, voices
-from .base import Event, Reader, Unknown, Unreadable, common
+from .base import Event, Folded, Reader, Unknown, Unreadable, common
 from .docs import DOC_EVENTS, CommentAdded, CommentDeleted, CommentEdited, CommentMoved, CommentRestored, DocDecided, \
     DocDeleted, DocMoved, DocProposed, DocWritten, RulesMoved, ThreadResolved
 from .inputs import FilingRedone, FilingUndone, InputAdded, InputAmended, InputDeleted, InputMoved, InputRescoped, \
@@ -20,7 +20,8 @@ from .items import BlocksAsked, FieldsSet, FileTakenOff, ItemAdded, ItemMerged, 
     MessageHidden, MessagePosted, ProjectRenamed
 from .voices import VoiceFixed, VoiceHeard, VoicesSplit
 
-READERS: Dict[str, Reader] = {**inputs.READERS, **items.READERS, **docs.READERS, **voices.READERS}
+READERS: Dict[str, Reader] = {**inputs.READERS, **items.READERS, **docs.READERS, **voices.READERS,
+                              "folded": lambda r: Folded(was=str(r.get("was") or ""), **common(r))}
 
 
 def decode(row: Row) -> Event:
@@ -35,7 +36,7 @@ def decode(row: Row) -> Event:
 
 
 __all__ = [
-    "Event", "Unknown", "Unreadable", "Row", "READERS", "DOC_EVENTS", "decode",
+    "Event", "Folded", "Unknown", "Unreadable", "Row", "READERS", "DOC_EVENTS", "decode",
     "ItemAdded", "FieldsSet", "MessagePosted", "ItemMerged", "ItemUnmerged", "ItemsArchived", "ItemsDeleted", "ItemsRestored", "LaterEnded",
     "MessageHidden", "BlocksAsked", "FileTakenOff", "ProjectRenamed",
     "InputAdded", "InputsAcked", "InputAmended", "WordsIn", "WordsKept", "FilingUndone", "FilingRedone", "InputDeleted",

@@ -54,6 +54,18 @@ class Unknown(Event):
         return dict(self.raw)
 
 
+@dataclass
+class Folded(Event):
+    """A change of an earlier format whose effect the log's migration folded into the changes it touched (format 2,
+    domain.migration): it keeps its place in the log, and changes nothing. `was`: its kind then."""
+
+    KIND: ClassVar[str] = "folded"
+    was: str = ""
+
+    def body(self) -> Row:
+        return {"was": self.was, "by": self.by}
+
+
 class Unreadable(Exception):
     """A stored row this version cannot read."""
 

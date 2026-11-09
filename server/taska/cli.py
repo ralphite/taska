@@ -81,6 +81,9 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
     from .services.voice import transcriber_for
 
     logs.setup(log_db, log_level)
+    from .services.migrate import migrate_all
+    for line in migrate_all(os.path.abspath(os.path.expanduser(root))):  # once: every log in today's format (Refactor 8)
+        print(f"taska: {line}", flush=True)
     organizers = Organizers(enabled=organizer)
 
     made = threading.Event()  # the workspace exists: notes resumed while it opens its projects wait for it

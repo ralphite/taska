@@ -37,7 +37,9 @@ python3 tools/copy_data.py ~/.taska /tmp/taska-data-copy
 PYTHONPATH=server python3 -m taska --port 7341 --root /tmp/taska-data-copy --organizer off
 ```
 
-The destination must not already exist. The source data is only read and symbolic links are excluded.
+The destination must not already exist. The source data is only read and symbolic links are excluded. A copy of data
+older than the log's format is brought to it with `python3 tools/migrate_data.py <copy>`, as Taska does once when it
+starts.
 
 ## Checks
 
