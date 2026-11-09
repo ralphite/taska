@@ -143,11 +143,11 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
         {settings && !help ? <SettingsContainer route={route} place="col-span-2 col-start-1 row-span-2 row-start-1" prefsBox={<BoxContainer route={route} composePage={false} bare />} /> : null}
         {settings || full || rulesTab ? null : (
           // the line between the list and the pane, from under the project's bar to the bottom: one line, drawn here only
-          // (B573), dragged sideways like the other lines
+          // (B573), dragged sideways like the other lines; grabbed only right of the line, never over the list's scrollbar (B739)
           <Grip
             name="list"
             axis="x"
-            place="relative z-30 col-start-1 row-start-2 block w-px justify-self-end bg-zinc-200 after:absolute after:-inset-x-1.5 after:inset-y-0 dark:bg-zinc-800"
+            place="relative z-30 col-start-1 row-start-2 block w-px justify-self-end bg-zinc-200 after:absolute after:inset-y-0 after:left-0 after:-right-1.5 dark:bg-zinc-800"
             measure={(el) => {
               const from = el.parentElement?.getBoundingClientRect().left ?? 0
               return { from, most: innerWidth - from }

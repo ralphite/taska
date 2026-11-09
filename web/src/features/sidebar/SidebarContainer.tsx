@@ -77,10 +77,11 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
       hidden={hidden}
       edge={
         layout === 'desk' ? (
+          // the edge to drag, wholly outside the sidebar: never over its scrollbar (B739)
           <Grip
             name="side"
             axis="x"
-            place="absolute inset-y-0 right-0 z-10 hidden w-3 translate-x-1/2 lg:block"
+            place="absolute inset-y-0 left-full z-10 hidden w-1.5 lg:block"
             measure={(el) => ({ from: el.parentElement?.getBoundingClientRect().left ?? 0, most: innerWidth })}
             onSize={(px) => stores.grips.getState().size('side', px)}
             onDone={(px) => stores.grips.getState().keep('side', px)}
