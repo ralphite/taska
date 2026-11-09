@@ -176,7 +176,8 @@ Uninstalling leaves your data in `~/.taska`.
 **From other machines.** Installed this way, Taska listens on every address of the machine. Computers on your
 local network (private addresses such as 192.168.x.x or 10.x.x.x) open `http://<this machine's address>:7340` as
 they are; from anywhere else Taska asks for its key (in `~/.taska/key`). To keep it on this machine only, install
-with `TASKA_LOCAL_ONLY=1`. Running `taska.pyz` yourself, add `--host 0.0.0.0` to do the same. From outside your
+with `TASKA_LOCAL_ONLY=1`. Running Taska yourself (`python3 taska.pyz`), it listens on every address too;
+`--host 127.0.0.1` keeps it on this machine. From outside your
 network, prefer a proxy such as Tailscale Serve (see [Use it on your phone](#use-it-on-your-phone)).
 
 ## Quick start

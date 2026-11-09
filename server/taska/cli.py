@@ -37,7 +37,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     ap.add_argument("command", nargs="?", default="serve", choices=("serve", "install-skill"),
                     help="install-skill: teach Claude Code, Codex and Antigravity how to use Taska")
     ap.add_argument("--port", type=int, default=7340)
-    ap.add_argument("--host", default="127.0.0.1")
+    ap.add_argument("--host", default="0.0.0.0", help="0.0.0.0 (default): this machine and the local network reach it (private addresses come in without the key, anywhere else needs it); 127.0.0.1: this machine only")
     ap.add_argument("--root", default="~/.taska", help="data folder, one subfolder per project (default ~/.taska)")
     ap.add_argument("--organizer", choices=("auto", "off"), default="auto", help="auto = use Gemini when a key is set")
     ap.add_argument("--public", default="", help="the public address behind a proxy, e.g. https://<machine>.<tailnet>.ts.net:7340")
