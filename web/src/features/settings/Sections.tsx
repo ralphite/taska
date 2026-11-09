@@ -330,8 +330,10 @@ export function PhoneBody({ link, lan, keyText, asking, desk, on }: { link: stri
         <Part title="Link" about={<>Taska listens on this computer only. Start it with {flag('--host 0.0.0.0')} for your network, or {flag('--public')} for anywhere.</>} />
       )}
       <Part title="On the Home Screen" about="iPhone: Share › Add to Home Screen. Android: Menu › Install app. Taska then runs full screen and can record voice notes." />
-      {link ? (
-        <Part title="Key" about="Or enter this key once on the device.">
+      {/* the key, wherever another machine can reach Taska: from outside this network it asks for it once (a new key
+          made on the local network showed nothing, r1228) */}
+      {link || lan ? (
+        <Part title="Key" about={link ? 'Or enter this key once on the device.' : 'From outside this network, enter it once on the device.'}>
           <div className="mt-3 flex items-center gap-4">
             <span className="font-mono text-2xl tracking-wider select-all">{keyText}</span>
             <button onClick={() => on.copy(keyText)} className={SECOND}>
@@ -341,6 +343,7 @@ export function PhoneBody({ link, lan, keyText, asking, desk, on }: { link: stri
           </div>
         </Part>
       ) : null}
+      {link || lan ? (
       <Setting
         title="New key"
         about={asking ? 'A new key signs out all other devices: each needs the new link or key.' : 'A new key signs out all other devices.'}
@@ -353,6 +356,7 @@ export function PhoneBody({ link, lan, keyText, asking, desk, on }: { link: stri
           </button>
         }
       />
+      ) : null}
     </>
   )
 }
