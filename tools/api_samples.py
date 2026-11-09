@@ -242,7 +242,9 @@ def record(base: str) -> Dict[str, Any]:
     agent(SEED)
     out["upload"] = c.json(p + "file?name=note.webm&transcribe=1&scope=B1", b"\x1aE\xdf\xa3 not really audio", "audio/webm")
     voice = out["upload"]
-    out["words"] = c.json(p + f"words?f={voice['f']}", b"")
+    # its final words, so the answer's shape never depends on whether the first words came early (B735: `more` is
+    # sent only while a note is worked out)
+    out["words"] = c.json(p + f"words?f={voice['f']}&more=1", b"")
     picture = c.json(p + "file?name=shot.png", PNG, "image/png")
     shot = c.json(p + "file?name=shot2.png", PNG, "image/png")
     agent(f"B1 say files={shot['f']} @helper the export as it is now\n"
