@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 import subprocess
 import uuid
 from typing import List
@@ -20,9 +21,23 @@ def thread_id(value: str) -> str:
         raise ValueError("a Codex session UUID is required") from ex
 
 
+MAC_APP_CODEX = "/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex"
+OPEN = "/usr/bin/open"  # macOS: hands the wake link to the Codex desktop app
+
+
+def codex_binary() -> str:
+    """$TASKA_CODEX_BIN, else the desktop app's CLI (macOS), else `codex` on the PATH (Linux)."""
+    named = os.environ.get("TASKA_CODEX_BIN")
+    if named:
+        return named
+    if os.path.exists(MAC_APP_CODEX):
+        return MAC_APP_CODEX
+    return shutil.which("codex") or MAC_APP_CODEX
+
+
 class CodexQueue:
     def __init__(self) -> None:
-        self.binary = os.environ.get("TASKA_CODEX_BIN", "/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex")
+        self.binary = codex_binary()
 
     def enqueue(self, target: str, message: str) -> str:
         target = thread_id(target)
@@ -33,7 +48,11 @@ class CodexQueue:
         return match[1]
 
     def wake(self, target: str) -> None:
-        self._run(["/usr/bin/open", "-g", "codex://threads/wake/" + thread_id(target)])
+        """Ask the desktop app to process the queue now. Without it (Linux), the queued message waits for the
+        thread's next turn."""
+        if not os.path.exists(OPEN):
+            return
+        self._run([OPEN, "-g", "codex://threads/wake/" + thread_id(target)])
 
     @staticmethod
     def _run(args: List[str]) -> str:

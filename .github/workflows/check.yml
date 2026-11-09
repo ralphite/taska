@@ -51,12 +51,21 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: taska.pyz
           path: dist
-      - name: Publish the release
+      - name: Publish the release (unless tools/release.py's command already did)
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh release create "$GITHUB_REF_NAME" dist/taska.pyz --title "Taska $GITHUB_REF_NAME" --notes "Run with python3 taska.pyz"
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "$GITHUB_REF_NAME is already released; its assets stay as published"
+            exit 0
+          fi
+          (cd dist && sha256sum taska.pyz > taska.pyz.sha256)
+          gh release create "$GITHUB_REF_NAME" dist/taska.pyz dist/taska.pyz.sha256 install.sh \
+            --title "Taska $GITHUB_REF_NAME" \
+            --notes "Install on Linux: curl -fsSL https://github.com/$GH_REPO/releases/latest/download/install.sh | sh"

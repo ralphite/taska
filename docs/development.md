@@ -157,6 +157,19 @@ python3 dist/taska.pyz --port 7341 --root /tmp/taska-release --organizer off
 The archive contains the Python package and frontend assets, and runs without Node.js. `--skip-web` packages an
 already-built `web/dist`. CI checks every change and publishes the archive for version tags.
 
+A GitHub release holds `taska.pyz`, `taska.pyz.sha256` and `install.sh` (the one-line Linux install in the
+README). Prepare one and prove the installer on Linux before publishing:
+
+```sh
+python3 tools/release.py                     # builds and checks dist/taska.pyz, writes its .sha256 and the notes
+bash tools/test_install_linux.sh /tmp/logs   # Docker: Ubuntu, Debian, Alpine, no Python, a bad checksum, systemd
+```
+
+`tools/release.py` publishes nothing; it prints the `gh release create` command to run once its commit is pushed.
+The version comes from `web/package.json` unless `--version` is given. The CI release job leaves a release made
+that way as it is. The Docker check serves `dist/` and `install.sh` from a container on a private network
+(`TASKA_BASE_URL`) and maps no port to the host.
+
 On the managed installation, `zsh tools/ship.sh` runs checks, builds the frontend, copies it to `web/live`, then
 restarts `com.taska.app` once Taska has been idle for a minute. An active page can request the restart itself.
 Development builds in `web/dist` do not replace the deployed assets.

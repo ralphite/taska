@@ -133,6 +133,45 @@ flowchart LR
   change. The full history comes with it, and every change can be traced back to what you said.
 - **Local first.** Taska runs on your machine. Reach it from your phone through a proxy such as Tailscale Serve, protected by a key.
 
+## Install on Linux
+
+One command, as your own user (no root). It needs only Python 3.9 or later:
+
+```sh
+curl -fsSL https://github.com/ralphite/taska/releases/latest/download/install.sh | sh
+```
+
+What it does:
+
+- checks for Python 3.9+, and tells you your distribution's install command if it is missing;
+- downloads `taska.pyz` from the latest release and checks it against the release's `taska.pyz.sha256`;
+- puts it in `~/.local/share/taska/`, with a launcher at `~/.local/bin/taska`;
+- starts Taska on http://127.0.0.1:7340: as the systemd user service `taska.service` where systemd runs your
+  session, otherwise in the background, logging to `~/.local/share/taska/taska.log`;
+- waits until Taska answers, then prints the address and the commands below.
+
+Your data stays in `~/.taska`. Options go in front of `sh`, e.g. `... | TASKA_VERSION=v3.0.0 sh`:
+
+| Variable | What it does |
+| --- | --- |
+| `TASKA_VERSION=v3.0.0` | Install that release instead of the latest |
+| `TASKA_NO_START=1` | Install or update only; do not start or restart Taska |
+| `TASKA_PORT=7340` | The port Taska listens on (on 127.0.0.1) |
+| `TASKA_LINGER=1` | Also run `loginctl enable-linger`, so the service runs without a login session and starts at boot |
+
+Settings for the server, such as `GEMINI_API_KEY` or `TASKA_PUBLIC`, go in `~/.config/taska/env`, one
+`NAME=value` per line; the launcher reads them.
+
+| To | With the systemd service | Started in the background |
+| --- | --- | --- |
+| See it | `systemctl --user status taska`, `journalctl --user -u taska` | `~/.local/share/taska/taska.log` |
+| Stop it | `systemctl --user stop taska` | `kill "$(cat ~/.local/share/taska/taska.pid)"` |
+| Update it | Run the install command again | Run the install command again |
+| Uninstall it | `systemctl --user disable --now taska`, then `rm -rf ~/.local/share/taska ~/.local/bin/taska ~/.config/systemd/user/taska.service` | Stop it, then `rm -rf ~/.local/share/taska ~/.local/bin/taska` |
+
+Uninstalling leaves your data in `~/.taska`. Taska listens only on this machine; from another computer, use
+`ssh -L 7340:127.0.0.1:7340 <host>` or a proxy such as Tailscale Serve (see [Use it on your phone](#use-it-on-your-phone)).
+
 ## Quick start
 
 ```sh
@@ -228,8 +267,9 @@ Taska is designed for the phone first. Open it in your phone's browser and add i
 | `TASKA_PRO_MODEL` | The strong model that also hears a phone's voice-processed notes (default `gemini-3.1-pro-preview`; needs macOS `afconvert` to tell such notes) |
 | `TASKA_VOTERS`, `TASKA_VOTE_WAIT`, `TASKA_VOTE_MODELS` | Where the two transcripts disagree on what was said, how many reviewers are asked (default 5; 3 after a recent rate limit; the first 3 answers count), how long they are waited for (default 25 s), and their models in turn (default the strong model) |
 
-To keep Taska running, start `tools/taska-service.sh` from a macOS LaunchAgent or a systemd unit (edit its
-Python path and data folder to match your machine). It reads the public address from `$TASKA_PUBLIC` or
+To keep Taska running on Linux, use the installer above; it sets up a systemd user service. From a source
+checkout, start `tools/taska-service.sh` from a macOS LaunchAgent or a systemd unit (edit its Python path and data
+folder to match your machine). It reads the public address from `$TASKA_PUBLIC` or
 `~/.taska/public-url`.
 
 ## Your data
