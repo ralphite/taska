@@ -2,7 +2,8 @@
 // reach on the home page, asked again by itself, more slowly each time, until it answers. Made, renamed, deleted and
 // restored by name.
 
-import { Refused, Unreachable, untilAnswered } from '../../api/http'
+import type { Delivery } from '../../api/delivery'
+import { Refused, Unreachable } from '../../api/http'
 import { awayAfter, REACH_WORDS } from '../../model/reach'
 import type { TaskaApi } from '../../api/taska'
 import type { KeyValueStore } from '../../stores/storage'
@@ -12,6 +13,7 @@ import type { Toasts } from '../page/toasts'
 
 export interface ProjectsDeps {
   api: TaskaApi
+  delivery: Delivery
   data: DataStore
   kv: KeyValueStore
   toasts?: Toasts
@@ -104,7 +106,7 @@ export class Projects {
   /** Asked until Taska answers (out of reach, it waits and asks again); only a refusal comes back as why. */
   private async done(ask: () => Promise<{ ok: boolean; name: string; title?: string }>, no: string): Promise<Made> {
     try {
-      const d = await untilAnswered(ask, () => this.d.toasts?.show(REACH_WORDS.waits))
+      const d = await this.d.delivery.until(ask, { waiting: () => this.d.toasts?.show(REACH_WORDS.waits) })
       if (!d.ok) return { error: no }
       void this.refresh()
       return { name: d.name, title: d.title || d.name }

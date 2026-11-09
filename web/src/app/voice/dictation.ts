@@ -2,6 +2,7 @@
 // while you speak and while the words are worked out; the words take the mark's place when they come (in the editor,
 // or in the draft it was left as). Save waits for them. Leaving the editor stops the microphone.
 
+import { Delivery } from '../../api/delivery'
 import type { TaskaApi } from '../../api/taska'
 import { clock } from '../../model/time'
 import { codeOf, liveN, type ProjectModel } from '../../model/project'
@@ -17,6 +18,8 @@ import { noteText } from '../../model/docs'
 
 export interface DictationDeps {
   api: TaskaApi
+  /** what has to reach Taska is asked until it answers (its pauses end at once when Taska may be back) */
+  delivery: Delivery
   store: DictationStore
   view: DocViewStore
   route: RouteStore
@@ -30,8 +33,6 @@ export interface DictationDeps {
   /** the desktop's layout (how to allow the microphone differs) */
   desk(): boolean
 }
-
-const wait = (ms: number) => new Promise((ok) => setTimeout(ok, ms))
 
 interface Note {
   key: string | null
@@ -151,26 +152,30 @@ export class Dictation {
     this.d.store.getState().drop(key)
   }
 
-  /** Up, then its words (tried again with growing pauses for up to ten minutes); none: null. */
+  /** Up, then its words (asked again while Taska is out of reach, api/delivery); none: null. */
   private async hear(slug: string, note: Note, blob: Blob): Promise<string | null> {
     const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm'
+    const delivery = this.d.delivery
     let f = ''
-    for (let n = 0, tries = 0, waits = 0, t0 = Date.now(); Date.now() - t0 < 10 * 60000; ) {
-      try {
-        if (!f) f = (await this.d.api.upload(slug, blob, `voice ${clock(note.ms).replace(':', '-')}.${ext}`, { voice: true, scope: note.scope })).f
-        const d = await this.d.api.words(slug, f, true, { scope: note.scope, again: tries > 0 })
+    try {
+      for (let tries = 0, waits = 0; ; ) {
+        if (!f) f = (await delivery.until(() => this.d.api.upload(slug, blob, `voice ${clock(note.ms).replace(':', '-')}.${ext}`, { voice: true, scope: note.scope }))).f
+        const d = await delivery.until(() => this.d.api.words(slug, f, true, { scope: note.scope, again: tries > 0 }))
         if (d.tr_error === 'no such voice note') {
           f = ''
-          throw new Error()
+          continue
         }
         if (!d.done && ++waits < 20) continue
-        if (d.done && d.tr_error && ++tries < 4) throw new Error()
+        if (d.done && d.tr_error && ++tries < 4) {
+          // the models had trouble: a few more tries, with growing pauses
+          await delivery.wait(Delivery.pause(tries))
+          continue
+        }
         return d.done ? d.tr || '' : null
-      } catch {
-        await wait(Math.min(30000, 2000 * 2 ** Math.min(n++, 4)))
       }
+    } catch {
+      return null // Taska said no
     }
-    return null
   }
 
   /** The words take the mark's place: in the editor, or in the draft it was left as. */

@@ -134,6 +134,10 @@ servers; `tests/check_data.py` validates a copied data root without a second imp
   localStorage until the server has it, sent again when the server is back. What it shows is its preview
   (`model/optimistic.ts`: one per command, as the server's handler will make it, held to the server's own cases);
   a sender only says the command (`runner.change(slug, command, said)`), never what it shows.
+- Whatever has to reach the server (a change, an input, a file or a voice note going up and its words, a move, a
+  search, a setting) goes through one `Delivery` (`api/delivery.ts`): asked again with growing pauses until the
+  server answers, never given up, every pause ended at once when the server may be back (it answered, the network
+  returned, the window shows again); only a refusal, or what it was for being gone, ends it.
 - Whether the server is out of reach is one rule, `model/reach.ts` (T728 #8): every place counts its tries without an
   answer the same way (one that timed out counts twice), says so from the same threshold and in the same words.
 - Derived things (sections of the list, counts, needs you, the agents' next item) are selectors over that overlay,

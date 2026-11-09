@@ -4,7 +4,8 @@
 // What is still on its way can be cancelled (its ×); once Taska has it, its ⋯ deletes it (B666: no Undo for a while
 // after sending). An edit or details added show at once and are saved behind you.
 
-import { Refused } from '../../api/http'
+import { Delivery } from '../../api/delivery'
+import { Abandoned } from '../../api/http'
 import type { TaskaApi } from '../../api/taska'
 import type { ProjectModel } from '../../model/project'
 import { inputCode } from '../../model/words'
@@ -20,7 +21,6 @@ import type { OutboxStore } from '../../stores/outbox'
 import type { KeyValueStore } from '../../stores/storage'
 import type { ChangeRunner } from '../changeRunner'
 import type { InputSender } from './inputSender'
-import { Pauses } from './pauses'
 import type { Toasts } from '../page/toasts'
 
 export interface BoxDeps {
@@ -47,8 +47,8 @@ export interface BoxDeps {
   sent?(slug: string, key: DraftKey): void
   /** a reply to the item open: its talk goes to its end, where the reply shows */
   replied?(slug: string, scope: string): void
-  /** the pauses between upload tries, which end at once when Taska may be back */
-  pauses?: Pauses
+  /** what has to reach Taska is asked until it answers (its pauses end at once when Taska may be back) */
+  delivery?: Delivery
 }
 
 export class Box {
@@ -129,25 +129,22 @@ export class Box {
     void this.upload(slug, fk, blob, name)
   }
 
-  /** Up to Taska, tried again with growing pauses for as long as it cannot be reached; refused (too big), it leaves
-   * the draft (what was sent goes without it) and says so. */
-  private async upload(slug: string, fk: string, file: Blob, name = (file as File).name || 'file', tries = 0): Promise<void> {
+  /** Up to Taska, tried again with growing pauses for as long as it cannot be reached (api/delivery); refused (too
+   * big), it leaves the draft (what was sent goes without it) and says so. */
+  private async upload(slug: string, fk: string, file: Blob, name = (file as File).name || 'file'): Promise<void> {
+    const st = () => this.d.store.getState()
+    const draft = () => Object.keys(st().files).find((k) => st().files[k].some((f) => f.key === fk))
+    const wanted = () => !!draft() || this.d.outbox.getState().list.some((o) => o.files.some((f) => f.key === fk))
     try {
-      const up = await this.d.api.upload(slug, file, name)
+      const up = await (this.d.delivery ?? new Delivery()).until(() => this.d.api.upload(slug, file, name), { again: wanted })
       const patch = { f: up.f, name: up.name, mime: up.mime, size: up.size, uploading: false, failed: false }
-      this.d.store.getState().updateFile(fk, patch)
+      st().updateFile(fk, patch)
       this.d.outbox.getState().updateFile(fk, patch)
       void this.d.inputs.flush()
     } catch (ex) {
-      const st = this.d.store.getState()
-      const key = Object.keys(st.files).find((k) => st.files[k].some((f) => f.key === fk))
-      const inOutbox = this.d.outbox.getState().list.some((o) => o.files.some((f) => f.key === fk))
-      if (!key && !inOutbox) return // taken off the draft meanwhile
-      if (!(ex instanceof Refused)) {
-        await (this.d.pauses ?? new Pauses()).wait(Pauses.after(tries))
-        return this.upload(slug, fk, file, name, tries + 1)
-      }
-      if (key) st.removeFile(keyOf(key), fk)
+      if (ex instanceof Abandoned || !wanted()) return // taken off the draft meanwhile
+      const key = draft()
+      if (key) st().removeFile(keyOf(key), fk)
       this.d.outbox.getState().updateFile(fk, { uploading: false, failed: true })
       void this.d.inputs.flush()
       this.d.toasts.show(`Failed to upload ${name}`)

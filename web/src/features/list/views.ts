@@ -2,7 +2,8 @@
 // after Active, All… in the view row and is the same in every project. Saved, renamed, given the filters shown now
 // or deleted: it changes at once and Taska keeps it, with Undo.
 
-import { Refused, untilAnswered } from '../../api/http'
+import type { Delivery } from '../../api/delivery'
+import { Refused } from '../../api/http'
 import { REACH_WORDS } from '../../model/reach'
 import type { TaskaApi } from '../../api/taska'
 import type { ListQuery } from '../../model/route'
@@ -13,6 +14,7 @@ import type { Toasts } from '../../app/page/toasts'
 
 export interface ViewsDeps {
   api: TaskaApi
+  delivery: Delivery
   store: ViewsStore
   nav: Navigation
   toasts: Toasts
@@ -40,7 +42,7 @@ export class SavedViews {
     const was = [...this.d.store.getState().list]
     this.d.store.getState().set(list)
     try {
-      const d = await untilAnswered(() => this.d.api.setViews(list), () => this.d.toasts.show(REACH_WORDS.waits))
+      const d = await this.d.delivery.until(() => this.d.api.setViews(list), { waiting: () => this.d.toasts.show(REACH_WORDS.waits) })
       this.d.store.getState().set(d.views || list)
       this.d.toasts.show(said, undo ? () => this.save(was, 'Put back', false) : null)
     } catch (ex) {

@@ -5,7 +5,8 @@
 // input's note keeps it in the inputs as cancelled, sent to no one, to listen to and send later (B627). An input's own
 // Voice records more to add to it, and stopped there it is added as Add more adds (F657).
 
-import { Refused } from '../../api/http'
+import { Delivery } from '../../api/delivery'
+import { Abandoned } from '../../api/http'
 import { canRecord, micTrouble, openMic } from './mic'
 import { CANT_RECORD, MUTED_BY_PHONE, TOO_SHORT, cancelledKept, noSound } from '../../model/micWords'
 import { clock } from '../../model/time'
@@ -18,7 +19,6 @@ import type { OutboxStore } from '../../stores/outbox'
 import type { RecordingStore } from '../../stores/recording'
 import type { Box } from '../inputs/box'
 import type { Fields } from '../page/fields'
-import { Pauses } from '../inputs/pauses'
 import type { Toasts } from '../page/toasts'
 import { draftKey, draftName, draftTarget, keyOf, NEW_DRAFT, type DraftKey } from '../../model/draftTarget'
 import type { Outgoing } from '../../model/outgoing'
@@ -48,8 +48,8 @@ export interface VoiceDeps {
   goDraft(key: DraftKey): void
   /** a voice comment stopped: what it is about is what the box comments on now (a document's passage) */
   about?(a: NonNullable<Recording['about']>): void
-  /** the pauses between tries, which end at once when Taska may be back */
-  pauses: Pauses
+  /** what has to reach Taska is asked until it answers (its pauses end at once when Taska may be back) */
+  delivery: Delivery
 }
 
 
@@ -272,38 +272,36 @@ export class Voice {
    * in this browser meanwhile, r512), at once when the network is back; refused, it says so (`cancelled`: a note
    * kept as cancelled, B627). */
   private async hear(slug: string, key: DraftKey, f: DraftFile, blob: Blob, scope: string | null, cancelled = false): Promise<void> {
-    const wait = (n: number) => this.d.pauses.wait(Pauses.after(n))
+    const delivery = this.d.delivery
     let fid = f.f
-    for (let n = 0; !fid; n++) {
+    if (!fid)
       try {
-        const up = await this.d.api.upload(slug, blob, f.name, { voice: true, scope })
+        const up = await delivery.until(() => this.d.api.upload(slug, blob, f.name, { voice: true, scope }), {
+          failed: () => void (this.wanted(f.key) && this.step(f, 'uploadOffline', cancelled)),
+          again: () => this.wanted(f.key), // taken off its draft meanwhile
+        })
         fid = up.f
         this.step(f, 'uploaded', cancelled, { f: up.f, size: up.size })
         this.d.flush()
       } catch (ex) {
-        if (!this.wanted(f.key)) return // taken off its draft meanwhile
-        if (ex instanceof Refused) {
-          this.step(f, 'uploadRefused', cancelled)
-          return this.d.flush()
-        }
-        this.step(f, 'uploadOffline', cancelled)
-        await wait(n)
+        if (ex instanceof Abandoned || !this.wanted(f.key)) return
+        this.step(f, 'uploadRefused', cancelled)
+        return this.d.flush()
       }
-    }
     let d: Awaited<ReturnType<TaskaApi['words']>> | null = null
     for (let n = 0, tries = 0, waits = 0; n < 40; n++) {
       try {
-        d = await this.d.api.words(slug, fid, true, { scope, again: tries > 0 })
-        if (!heardEvent(d) && ++waits < 20) continue // still working: the server answers after 45 s for another ask
-        if (d.state === 'failed' && ++tries < 4) {
-          // the models had trouble: a few more tries, with growing pauses
-          await wait(n)
-          continue
-        }
-        break
+        d = await delivery.until(() => this.d.api.words(slug, fid, true, { scope, again: tries > 0 }))
       } catch {
-        await wait(n)
+        break // Taska said no
       }
+      if (!heardEvent(d) && ++waits < 20) continue // still working: the server answers after 45 s for another ask
+      if (d.state === 'failed' && ++tries < 4) {
+        // the models had trouble: a few more tries, with growing pauses
+        await delivery.wait(Delivery.pause(tries))
+        continue
+      }
+      break
     }
     // no answer in all that time: it failed
     const on = (d && heardEvent(d)) || 'failed'
@@ -328,13 +326,12 @@ export class Voice {
       const at = this.draftOf(fk)
       return at && noteState(at.f) === 'fastWords' ? at : null
     }
-    for (let n = 0, t0 = Date.now(); Date.now() - t0 < 5 * 60000 && fast(); n++) {
+    for (let t0 = Date.now(); Date.now() - t0 < 5 * 60000 && fast(); ) {
       let d: Awaited<ReturnType<TaskaApi['words']>>
       try {
-        d = await this.d.api.words(slug, fid, true, { more: true })
+        d = await this.d.delivery.until(() => this.d.api.words(slug, fid, true, { more: true }), { again: () => !!fast() })
       } catch {
-        await this.d.pauses.wait(Pauses.after(n))
-        continue
+        break // out of its draft meanwhile, or Taska said no: the fast words stay
       }
       if (d.more) continue
       const at = fast()

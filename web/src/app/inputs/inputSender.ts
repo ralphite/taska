@@ -1,22 +1,19 @@
 // Sending what you said: sending never holds the box. Each input goes into the outbox, which sends in order as soon
-// as its files are up. One the server could not be reached for waits and goes again by itself (sooner when the
-// server is back); one the server refused stays, marked Not sent, until Retry sends it again. Every change of what is
-// on its way is a step of model/outgoingStates (`outStep`), which refuses a way it does not have.
+// as its files are up. One the server could not be reached for waits and goes again by itself, as a change does
+// (ChangeRunner.deliver: sooner when the server is back); one the server refused stays, marked Not sent, until Retry
+// sends it again. Every change of what is on its way is a step of model/outgoingStates (`outStep`), which refuses a
+// way it does not have.
 
-import { Refused, Unreachable } from '../../api/http'
-import type { TaskaApi } from '../../api/taska'
-import type { ViewAnswer } from '../../model/types'
+import { Abandoned, Refused } from '../../api/http'
 import type { CommandOf } from '../../model/commands'
 import type { OutboxStore } from '../../stores/outbox'
 import type { Outgoing } from '../../model/outgoing'
 import { outStep, type OutEvent } from '../../model/outgoingStates'
 import { wordsByFile } from '../../model/voices'
 import { goingUp, isUp } from '../../model/fileStates'
+import type { ChangeRunner } from '../changeRunner'
 
 export interface SenderEvents {
-  cursor(slug: string): string | null
-  changes(slug: string, a: ViewAnswer): void
-  stale(slug: string): void
   /** it is in, as this input */
   sent(o: Outgoing, rid: string): void
   refused(o: Outgoing, why: string): void
@@ -27,11 +24,11 @@ export const newQ = () => Date.now().toString(36) + Math.random().toString(36).s
 
 export class InputSender {
   private busy = false
-  private readonly api: TaskaApi
+  private readonly runner: ChangeRunner
   private readonly store: OutboxStore
   private readonly on: SenderEvents
-  constructor(api: TaskaApi, store: OutboxStore, on: SenderEvents) {
-    this.api = api
+  constructor(runner: ChangeRunner, store: OutboxStore, on: SenderEvents) {
+    this.runner = runner
     this.store = store
     this.on = on
   }
@@ -52,13 +49,6 @@ export class InputSender {
     if (change === 'remove') this.store.getState().remove(q)
     else this.store.getState().update(q, change)
     return true
-  }
-
-  /** The server answers again: what waited for it goes now. */
-  back(): void {
-    let again = false
-    for (const o of this.store.getState().list) if (o.state === 'failed' && o.net) again = this.step(o.q, 'again') || again
-    if (again) void this.flush()
   }
 
   /** One Taska said no to, sent again (its Retry). */
@@ -92,27 +82,33 @@ export class InputSender {
             files: files.map(({ f, name, mime, size }) => ({ f, name, mime, size })),
             ...(Object.keys(words).length ? { words } : {}),
           }
-          const a = await this.api.commands(o.slug, 'in-' + o.q, [command], this.on.cursor(o.slug))
-          const rid = (a.results[0] || '').split(' ')[1] || ''
-          if (o.tries || o.back)
-            this.on.log('sent late', `${o.q} (${o.slug}) in after ${Math.round((Date.now() - o.t) / 1000)} s, ${o.tries} failed tries${o.back ? ', after a reload' : ''}`)
-          const now = this.store.getState().list.find((x) => x.q === o.q) ?? o // taken back while on its way?
-          this.step(o.q, 'taken')
-          if (a.changes) this.on.changes(o.slug, a.changes)
-          else this.on.stale(o.slug)
-          this.on.sent(now, rid)
+          // out of reach, it shows it waits and goes again by itself, unless it was taken off meanwhile; Taska has it:
+          // it leaves the outbox as the project's copy takes it
+          const head = () => this.store.getState().list[0]?.q === o.q
+          let now = o
+          const a = await this.runner.deliver(
+            { id: 'in-' + o.q, slug: o.slug, commands: [command] },
+            {
+              failed: (tries) => {
+                this.step(o.q, 'unreachable')
+                this.on.log('unsent', `${o.q} (${o.slug}) no answer from Taska, try ${tries}`)
+              },
+              again: () => head() && this.step(o.q, 'again') && this.step(o.q, 'go'),
+              answered: () => {
+                now = this.store.getState().list.find((x) => x.q === o.q) ?? o // taken back while on its way?
+                if (now.tries || o.back)
+                  this.on.log('sent late', `${o.q} (${o.slug}) in after ${Math.round((Date.now() - o.t) / 1000)} s, ${now.tries} failed tries${o.back ? ', after a reload' : ''}`)
+                this.step(o.q, 'taken')
+              },
+            },
+          )
+          this.on.sent(now, (a.results[0] || '').split(' ')[1] || '')
         } catch (ex) {
-          const net = ex instanceof Unreachable
-          const tries = o.tries + 1
+          if (ex instanceof Abandoned) continue // taken off while it waited: the next goes
           // taken back while it went out, and Taska said no: it is gone (it can never reach Taska now)
-          this.step(o.q, net ? 'unreachable' : 'refused')
-          this.on.log('unsent', `${o.q} (${o.slug}) ${net ? 'no answer from Taska' : 'refused: ' + ((ex as Error).message || '')}, try ${tries}`)
+          this.step(o.q, 'refused')
+          this.on.log('unsent', `${o.q} (${o.slug}) refused: ${(ex as Error).message || ''}`)
           if (ex instanceof Refused) this.on.refused(o, ex.message)
-          if (net)
-            setTimeout(() => {
-              const now = this.store.getState().list[0]
-              if (now?.q === o.q && now.state === 'failed' && this.step(o.q, 'again')) void this.flush()
-            }, Math.min(30000, 2000 * 2 ** Math.min(tries, 4)))
           break
         }
       }

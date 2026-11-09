@@ -1,8 +1,9 @@
 // Sending your changes: one at a time and in order, each under its id so the server does it once however often it is
-// sent. A change that cannot reach the server is sent again by itself and never given up: the pauses grow to 30 s,
-// and the moment the server answers again it goes at once. Only the server saying no ends it.
+// sent. A change that cannot reach the server is sent again by itself and never given up (api/delivery): the pauses
+// grow to 30 s, and the moment the server answers again it goes at once. Only the server saying no ends it.
 
-import { Refused, Unreachable } from '../api/http'
+import type { Delivery, Tries } from '../api/delivery'
+import { Refused } from '../api/http'
 import type { CommandAnswer, TaskaApi } from '../api/taska'
 import type { Command } from '../model/commands'
 import { preview, type Shown } from '../model/optimistic'
@@ -10,7 +11,6 @@ import type { ProjectModel } from '../model/project'
 import type { ViewAnswer } from '../model/types'
 import type { ChangeMode, ChangesStore, PendingChange } from '../stores/changes'
 
-const PAUSES = [1000, 2000, 4000, 8000, 15000]
 const NOTHING: Shown = { patches: [], inputPatches: [], docPatches: [] }
 
 export interface RunnerEvents {
@@ -19,8 +19,6 @@ export interface RunnerEvents {
   /** the server has it but the answer had no changes (sent again after a lost answer): load the project */
   stale(slug: string): void
   refused(c: PendingChange, why: string): void
-  /** it could not reach the server (it goes on trying) */
-  unreachable(c: PendingChange): void
   cursor(slug: string): string | null
   /** the project as the page shows it now: what a change's preview is made over */
   model(slug: string): ProjectModel | null
@@ -28,22 +26,16 @@ export interface RunnerEvents {
 
 export class ChangeRunner {
   private queue: Promise<unknown> = Promise.resolve()
-  private waiting = new Set<() => void>()
-  private backAt = 0
   private readonly api: TaskaApi
+  private readonly delivery: Delivery
   private readonly store: ChangesStore
   private readonly on: RunnerEvents
 
-  constructor(api: TaskaApi, store: ChangesStore, on: RunnerEvents) {
+  constructor(api: TaskaApi, delivery: Delivery, store: ChangesStore, on: RunnerEvents) {
     this.api = api
+    this.delivery = delivery
     this.store = store
     this.on = on
-  }
-
-  /** The server answers again: what waits for it goes now. */
-  back(): void {
-    this.backAt = Date.now()
-    for (const go of [...this.waiting]) go()
   }
 
   /** A change you make: shown at once as the server will make it (model/optimistic), sent behind you. `needed`: asked
@@ -89,39 +81,17 @@ export class ChangeRunner {
     return done
   }
 
-  /** Commands for another purpose (more than one step), sent under one id, with the same retries. */
-  async deliver(c: Pick<PendingChange, 'id' | 'slug' | 'commands'>): Promise<CommandAnswer> {
-    let told = false
-    for (let i = 0; ; i++) {
-      const started = Date.now()
-      try {
-        const a = await this.api.commands(c.slug, c.id, c.commands, this.on.cursor(c.slug))
-        if (a.changes) this.on.changes(c.slug, a.changes)
-        else this.on.stale(c.slug)
-        return a
-      } catch (ex) {
-        if (!(ex instanceof Unreachable)) throw ex
-        if (!told && i >= 0) {
-          told = true
-          this.on.unreachable(c as PendingChange)
-        }
-        await this.pause(PAUSES[i] ?? 30000, started)
-      }
-    }
-  }
-
-  /** A pause that ends early once the server is back (or was back since the try began). */
-  private pause(ms: number, since: number): Promise<void> {
-    return new Promise((ok) => {
-      if (this.backAt > since) return ok()
-      const go = () => {
-        clearTimeout(t)
-        this.waiting.delete(go)
-        ok()
-      }
-      const t = setTimeout(go, ms)
-      this.waiting.add(go)
-    })
+  /** Commands sent under one id until the server answers (what they bring goes into the project's copy); `on`: what
+   * the tries tell along the way (an input on its way shows it), and `answered` hears the answer before the copy takes
+   * what it brings. */
+  deliver(c: Pick<PendingChange, 'id' | 'slug' | 'commands'>, on?: Tries & { answered?(a: CommandAnswer): void }): Promise<CommandAnswer> {
+    return this.delivery.until(async () => {
+      const a = await this.api.commands(c.slug, c.id, c.commands, this.on.cursor(c.slug))
+      on?.answered?.(a)
+      if (a.changes) this.on.changes(c.slug, a.changes)
+      else this.on.stale(c.slug)
+      return a
+    }, on)
   }
 }
 

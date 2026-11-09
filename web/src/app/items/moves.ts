@@ -1,9 +1,10 @@
 // An item going to another project: it leaves this one at once (with its subitems: here they show won't do and
-// archived), and Taska is told behind you, asked again while it cannot be reached; it comes back, with why, only
-// when the move finally cannot be done. The toast's Open goes to it there.
+// archived), and Taska is told behind you, asked again until it answers (api/delivery); it comes back, with why, only
+// when Taska says no. The toast's Open goes to it there.
 
-import { Unreachable } from '../../api/http'
+import type { Delivery } from '../../api/delivery'
 import type { TaskaApi } from '../../api/taska'
+import { REACH_WORDS } from '../../model/reach'
 import { codeOf, type ProjectModel } from '../../model/project'
 import { plural } from '../../model/words'
 import { movedItem } from '../../model/optimistic'
@@ -11,7 +12,7 @@ import { newId, type ChangeRunner } from '../changeRunner'
 import type { Toasts } from '../page/toasts'
 
 export class Moves {
-  private readonly d: { api: TaskaApi; runner: ChangeRunner; toasts: Toasts; model(slug: string): ProjectModel | null; title(slug: string): string; go(url: string): void; refresh(slug: string): void }
+  private readonly d: { api: TaskaApi; delivery: Delivery; runner: ChangeRunner; toasts: Toasts; model(slug: string): ProjectModel | null; title(slug: string): string; go(url: string): void; refresh(slug: string): void }
   constructor(d: Moves['d']) {
     this.d = d
   }
@@ -26,20 +27,15 @@ export class Moves {
     const shown = { patches: moved.patches, remove: this.d.runner.show(slug, moved) }
     const got = { as: '' }
     const done = (async () => {
-      for (let i = 0; ; i++) {
-        try {
-          const r = await this.d.api.moveItem(slug, to, ref, id)
-          if (!r.ok) throw new Error('Taska said no')
-          got.as = r.as
-          this.d.refresh(slug)
-          return true
-        } catch (ex) {
-          if (!(ex instanceof Unreachable) || i >= 20) {
-            this.d.toasts.show(`Couldn't move ${ref} to ${this.d.title(to)}: ${ex instanceof Unreachable ? 'Taska unreachable' : (ex as Error).message || 'Taska said no'}`, null, { error: true })
-            return false
-          }
-          await new Promise((ok) => setTimeout(ok, Math.min(30000, 1000 * 2 ** Math.min(i, 4))))
-        }
+      try {
+        const r = await this.d.delivery.until(() => this.d.api.moveItem(slug, to, ref, id), { waiting: () => this.d.toasts.show(REACH_WORDS.waits) })
+        if (!r.ok) throw new Error('Taska said no')
+        got.as = r.as
+        this.d.refresh(slug)
+        return true
+      } catch (ex) {
+        this.d.toasts.show(`Couldn't move ${ref} to ${this.d.title(to)}: ${(ex as Error).message || 'Taska said no'}`, null, { error: true })
+        return false
       }
     })()
     void done.finally(shown.remove)

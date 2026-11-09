@@ -2,6 +2,7 @@
 // assembles: each piece gets what it needs and watches what it follows itself; nothing reaches for a global. Stories
 // and tests make their own with fakes.
 
+import { Delivery } from '../api/delivery'
 import { Http } from '../api/http'
 import { TaskaApi } from '../api/taska'
 import type { ProjectModel } from '../model/project'
@@ -45,7 +46,6 @@ import { Notices } from './project/notices'
 import { Voice } from './voice/voice'
 import { VoiceWords } from '../features/composer/voiceWords'
 import { KeptNotes } from './inputs/keptNotes'
-import { Pauses } from './inputs/pauses'
 import { LeaveGuard } from './page/leaveGuard'
 import { DocVoice } from './voice/docVoice'
 import { Dictation } from './voice/dictation'
@@ -238,8 +238,8 @@ export function createApp(env: AppEnv): App {
   const title = (s: string) => data.getState().projects?.find((p) => p.name === s)?.title || s
   const goUrl = (url: string) => route.getState().go(url, true)
   const recordingNow = () => !!recording.getState().rec
-  // the pauses between tries of voice notes and files going up: they end at once when Taska may be back
-  const uploadPauses = new Pauses()
+  // what has to reach Taska is asked until it answers; its pauses end at once when Taska may be back
+  const delivery = new Delivery()
   // the project open in the page (made last: what it needs is made below)
   const session = (): ProjectSession => projectSession
   const keep = (blob: Blob) => keptNotes.keep(blob)
@@ -248,19 +248,15 @@ export function createApp(env: AppEnv): App {
   const pictureSizes = new PictureSizes({ api, data, model })
   const fields = new Fields()
   const sheets = new Sheets(sheetStore, route, env.desk)
-  const runner = new ChangeRunner(api, changes, {
+  const runner = new ChangeRunner(api, delivery, changes, {
     changes: (s, a) => session().take(s, a),
     stale: (s) => session().stale(s),
     cursor: (s) => session().cursor(s),
-    unreachable: () => {},
     refused: (c, why) => toasts.changeRefused(c, why),
     model: (s) => model(s),
   })
   const delivered = new Delivered({ box: boxStore, ui, route, runner, toasts, fields, model, slug })
-  const inputs = new InputSender(api, outbox, {
-    cursor: (s) => session().cursor(s),
-    changes: (s, a) => session().take(s, a),
-    stale: (s) => session().stale(s),
+  const inputs = new InputSender(runner, outbox, {
     sent: (o, rid) => delivered.sent(o, rid),
     refused: (_o, why) => toasts.show(why ? `err: ${why}` : 'Not saved', null),
     log: () => {},
@@ -281,7 +277,7 @@ export function createApp(env: AppEnv): App {
   const inputActions = new InputActions({ runner, toasts, api, model, refresh: (s) => session().stale(s), title, go: goUrl })
   // the other tabs of this browser: their drafts show here too
   const otherTabs = new OtherTabs({ kv: env.kv, drafts, box: boxStore, toasts, slug, recording: recordingNow })
-  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep, recording: recordingNow, goDraft, model, kv: env.kv, sent: (s, key) => otherTabs.sent(s, key), refresh: (s) => session().refresh(s), replied: (s, scope) => delivered.replied(s, scope), pauses: uploadPauses })
+  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep, recording: recordingNow, goDraft, model, kv: env.kv, sent: (s, key) => otherTabs.sent(s, key), refresh: (s) => session().refresh(s), replied: (s, scope) => delivered.replied(s, scope), delivery })
   const activity = new Activity({ api, store: activityStore, toasts })
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
   const docs = new Docs({ route, model, view: docView, nav, fields, toasts, desk: env.desk, leaveEditor: () => docEditor.keep() })
@@ -289,10 +285,10 @@ export function createApp(env: AppEnv): App {
   const rules = new Rules({ route, model, runner, view: docView, nav, sheets, toasts, kv: env.kv })
   const docComments = new DocComments({ route, model, runner, view: docView, box, boxStore, fields, sheets, toasts, desk: env.desk })
   const docChoices = new DocChoices({ route, model, runner, ticks: docTicks, view: docView, box, inputs, toasts, desk: env.desk })
-  const projects = new Projects({ api, data, kv: env.kv, toasts, home: () => route.getState().route.page === 'home' })
+  const projects = new Projects({ api, delivery, data, kv: env.kv, toasts, home: () => route.getState().route.page === 'home' })
   const refreshProjects = () => projects.refresh()
-  const settings = new Settings({ api, store: settingsStore, data, projects, route, sheets, toasts, box, boxStore, fields, refresh: (s) => session().stale(s) })
-  const voiceWords = new VoiceWords({ api, box, store: boxStore, toasts, fields })
+  const settings = new Settings({ api, delivery, store: settingsStore, data, projects, route, sheets, toasts, box, boxStore, fields, refresh: (s) => session().stale(s) })
+  const voiceWords = new VoiceWords({ api, delivery, box, store: boxStore, toasts, fields })
   const draftSender = new DraftSender({ box, boxStore, inputs, docVoice: () => docVoice, model })
   const voice = new Voice({
     api,
@@ -310,12 +306,12 @@ export function createApp(env: AppEnv): App {
     keep,
     goDraft,
     about: (a) => docVoice.about(a.d, a.key, a.quote),
-    pauses: uploadPauses,
+    delivery,
   })
   const docVoice = new DocVoice({ voice, docs, comments: docComments, box, boxStore, recording, view: docView, runner, toasts, model, desk: env.desk, reply: (s, key, scope) => void box.send(s, model(s), scope, key) })
-  const dictation: Dictation = new Dictation({ api, store: dictationStore, view: docView, route, editor: docEditor, fields, toasts, model, recording: recordingNow, desk: env.desk })
-  const views = new SavedViews({ api, store: viewsStore, nav, toasts, list: () => { const r = route.getState().route; return r.page === 'project' ? r.list : null } })
-  const moves = new Moves({ api, runner, toasts, model, title, go: goUrl, refresh: (s) => session().stale(s) })
+  const dictation: Dictation = new Dictation({ api, delivery, store: dictationStore, view: docView, route, editor: docEditor, fields, toasts, model, recording: recordingNow, desk: env.desk })
+  const views = new SavedViews({ api, delivery, store: viewsStore, nav, toasts, list: () => { const r = route.getState().route; return r.page === 'project' ? r.list : null } })
+  const moves = new Moves({ api, delivery, runner, toasts, model, title, go: goUrl, refresh: (s) => session().stale(s) })
   const selection = new Selection({ ui, order: listOrder, runner, toasts, slug, model: here, open: () => openItemN(route.getState().route) })
   const itemDrag = new ItemDrag({ store: dragStore, items, moves, slug, model: here })
   const fileWords = (s: string, f: string) => model(s)?.voices.get(f) ?? null
@@ -330,7 +326,7 @@ export function createApp(env: AppEnv): App {
     layer: (on) => nav.search(on),
     dialog: (on) => (on ? sheets.open({ kind: 'search' }, { search: true, focus: false }) : sheetStore.getState().spec?.req.kind === 'search' && sheets.close()),
     voiceSlug: () => slug() || data.getState().projects?.[0]?.name || '',
-    pauses: uploadPauses,
+    delivery,
   })
   const actions = new Actions({ finder, items, itemEdits, keyArm, answers, toasts, nav, fields, sheets, docs, docEditor, rules, box, voice, media, selection, listOrder, route, ui, feedback, sheet: sheetStore, itemView, docView, boxStore, desk: env.desk, model })
   const keptNotes: KeptNotes = new KeptNotes({
@@ -382,21 +378,12 @@ export function createApp(env: AppEnv): App {
     fresh: { ui, itemView, keptEdits, docTicks, box: boxStore, drafts, pictureSizes, keptNotes, notices },
     server: (v) => updates.seen(v),
     back: {
-      window: () => {
-        uploadPauses.wake()
-        inputs.back()
-      },
+      window: () => delivery.back(),
       reached: () => {
-        uploadPauses.wake()
-        runner.back()
-        inputs.back()
+        delivery.back()
         activity.back()
       },
-      online: () => {
-        uploadPauses.wake()
-        inputs.back()
-        runner.back()
-      },
+      online: () => delivery.back(),
     },
     keyNeeded: () => access.ask(),
     projects: refreshProjects,

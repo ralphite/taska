@@ -1,7 +1,7 @@
 // Whether Taska is out of reach for the page, in one place (T728 #8): how sure the page is (`away`: its tries without
 // an answer, one that timed out counting twice), the one threshold from which it says so, and the words it says it
-// in. A project's sync (sync/projectSync), the home page's list of projects, a search, a question asked until Taska
-// answers (api/http untilAnswered) all count the same way and say it in these words. Pure.
+// in. A project's sync (sync/projectSync), the home page's list of projects, a search, anything asked until Taska
+// answers (api/delivery) all count the same way and say it in these words. Pure.
 
 /** Taska is out of reach from this many: two tries without an answer, or one that timed out. */
 export const AWAY = 2

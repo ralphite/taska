@@ -2,7 +2,8 @@
 // projects) and changes it: projects made, renamed, deleted, restored or deleted for good; spellings added and
 // forgotten (with Undo); voice notes tidied or not; the transcription preferences edited in the box; a new key.
 
-import { Refused, untilAnswered } from '../../api/http'
+import type { Delivery } from '../../api/delivery'
+import { Refused } from '../../api/http'
 import { REACH_WORDS } from '../../model/reach'
 import type { TaskaApi } from '../../api/taska'
 import type { Spelling } from '../../model/types'
@@ -20,6 +21,7 @@ import { PREFS_DRAFT } from '../../model/draftTarget'
 
 export interface SettingsDeps {
   api: TaskaApi
+  delivery: Delivery
   store: SettingsStore
   data: DataStore
   projects: Projects
@@ -42,7 +44,7 @@ export class Settings {
 
   /** A change asked until Taska answers (T424); out of reach, it says so once and asks again. */
   private asked<T>(ask: () => Promise<T>): Promise<T> {
-    return untilAnswered(ask, () => this.d.toasts.show(REACH_WORDS.waits))
+    return this.d.delivery.until(ask, { waiting: () => this.d.toasts.show(REACH_WORDS.waits) })
   }
 
   private get s() {
