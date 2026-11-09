@@ -3,7 +3,7 @@
 // and the moment the server answers again it goes at once. Only the server saying no ends it.
 
 import { Refused, Unreachable } from '../api/http'
-import type { Command, CommandAnswer, TaskaApi } from '../api/taska'
+import type { CommandAnswer, TaskaApi } from '../api/taska'
 import type { ViewAnswer } from '../model/types'
 import type { ChangesStore, PendingChange } from '../stores/changes'
 
@@ -65,7 +65,7 @@ export class ChangeRunner {
     for (let i = 0; ; i++) {
       const started = Date.now()
       try {
-        const a = await this.api.commands(c.slug, c.id, c.commands as Command[], this.on.cursor(c.slug))
+        const a = await this.api.commands(c.slug, c.id, c.commands, this.on.cursor(c.slug))
         if (a.changes) this.on.changes(c.slug, a.changes)
         else this.on.stale(c.slug)
         return a

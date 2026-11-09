@@ -14,6 +14,7 @@ import { goingUp, isUp } from '../../model/fileStates'
 import { docDraft, draftKey, keyOf, NEW_DRAFT, PREFS_DRAFT, scopeDraft, type DraftKey } from '../../model/draftTarget'
 import type { BoxStore, DraftFile } from '../../stores/box'
 import type { BoxMode } from '../../model/boxFoot'
+import type { SentFile } from '../../model/commands'
 import type { DraftsStore } from '../../stores/drafts'
 import type { OutboxStore } from '../../stores/outbox'
 import type { KeyValueStore } from '../../stores/storage'
@@ -269,7 +270,7 @@ export class Box {
    * says now. An edit made while it changed elsewhere is saved over the newest version; the other version stays in
    * the input's history (only words added after yours are merged in). Refused with nothing changed: tried once
    * more; only if that fails too do your words come back in the box, with the reason. */
-  private async editedElsewhere(slug: string, mode: Extract<BoxMode, { kind: 'amend' }>, key: DraftKey, text: string, files: unknown[], drafts: DraftFile[], said: string, words: Record<string, string>): Promise<void> {
+  private async editedElsewhere(slug: string, mode: Extract<BoxMode, { kind: 'amend' }>, key: DraftKey, text: string, files: SentFile[], drafts: DraftFile[], said: string, words: Record<string, string>): Promise<void> {
     await this.d.refresh?.(slug)
     const r = this.d.model?.(slug)?.byId.get(mode.id)
     if (!r) return
@@ -366,7 +367,7 @@ export class Box {
       const ok = await this.d.runner.send({
         id: newId(),
         slug,
-        commands: [{ op: 'correct', id: mode.id, wrong: mode.wrong, right, v: mode.v } as never],
+        commands: [{ op: 'correct', id: mode.id, wrong: mode.wrong, right, v: mode.v }],
         patches: [],
         inputPatches: r ? [{ id: mode.id, f: { text: r.text.split(mode.wrong).join(right) } }] : [],
         said: `correcting ${inputCode(mode.id)}`,
@@ -381,7 +382,7 @@ export class Box {
         const had = await hadAsked
         // the words come back, and the spelling is forgotten (or the one before comes back)
         const now = this.d.model?.(slug)?.byId.get(mode.id)
-        if (now && was && before != null && now.text !== before) await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: 'edit', v: now.v || 0, text: was.text, words: was.words } as never], patches: [], inputPatches: [{ id: mode.id, f: { text: before } }], said: `putting back ${inputCode(mode.id)}`, t: Date.now() })
+        if (now && was && before != null && now.text !== before) await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: 'edit', v: now.v || 0, text: was.text, words: was.words }], patches: [], inputPatches: [{ id: mode.id, f: { text: before } }], said: `putting back ${inputCode(mode.id)}`, t: Date.now() })
         await this.d.api.setCorrection(had?.wrong ? { wrong: mode.wrong, right: had.right, undo: true } : { wrong: mode.wrong }).catch(() => {})
         this.d.toasts.show(`Put back \u201c${mode.wrong}\u201d in ${inputCode(mode.id)}${had ? '' : ', and forgot the spelling'}`)
       })

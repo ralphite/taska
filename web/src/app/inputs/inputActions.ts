@@ -4,6 +4,7 @@
 // it; a toast says what happened, with Undo where there is one.
 
 import type { TaskaApi } from '../../api/taska'
+import type { Command } from '../../model/commands'
 import type { InputPatch, ProjectModel } from '../../model/project'
 import type { DeletedInput } from '../../model/types'
 import { inputCode } from '../../model/words'
@@ -18,8 +19,8 @@ export class InputActions {
   }
 
   /** `refusedSay`: a refusal is said in red (in Taska's words, or these), not listed as not saved */
-  private send(slug: string, op: Record<string, unknown>, said: string, inputPatches: InputPatch[] = [], refusedSay?: string) {
-    return this.d.runner.send({ id: newId(), slug, commands: [op as never], patches: [], inputPatches, said, t: Date.now(), ...(refusedSay ? { mode: { say: refusedSay } } : {}) })
+  private send(slug: string, op: Command, said: string, inputPatches: InputPatch[] = [], refusedSay?: string) {
+    return this.d.runner.send({ id: newId(), slug, commands: [op], patches: [], inputPatches, said, t: Date.now(), ...(refusedSay ? { mode: { say: refusedSay } } : {}) })
   }
 
   organizeAgain(slug: string, id: string): void {

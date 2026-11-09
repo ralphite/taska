@@ -2,7 +2,7 @@
 // picked; the open item counts as picked when you start. The bar over the list changes them all at once, with Undo.
 
 import { codeOf, type ProjectModel } from '../../model/project'
-import type { Command } from '../../api/taska'
+import { field } from '../../model/commands'
 import type { Item } from '../../model/types'
 import { plural } from '../../model/words'
 import type { UiStore } from '../../stores/ui'
@@ -57,12 +57,11 @@ export class Selection {
     this.clear()
     if (!m || !ns.length) return this.d.toasts.show('Nothing to change')
     const before = new Map(ns.map((n) => [n, (m.byN.get(n) as unknown as Record<string, unknown>)[f]]))
-    const wire = (x: unknown) => (f === 'parent' ? (x ? String(x) : 'none') : x)
     const send = (to: (n: number) => unknown) =>
       this.d.runner.send({
         id: newId(),
         slug: this.d.slug(),
-        commands: ns.map((n) => ({ op: 'set', ref: codeOf(m, n), f: { [f]: wire(to(n)) } })) as Command[],
+        commands: ns.map((n) => ({ op: 'set', ref: codeOf(m, n), f: field(f, to(n)) })),
         patches: ns.map((n) => ({ n, f: { [f]: to(n) } as Partial<Item> })),
         said: `changing ${plural(ns.length, 'item')}`,
         t: Date.now(),

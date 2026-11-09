@@ -55,6 +55,19 @@ CI runs the representative core browser journeys in `box.spec.ts`, `counts.spec.
 intact. It includes [known product gaps](known-issues.md) found during the cleanup and is not currently all green.
 Those existing gaps are recorded separately from the source-layout cleanup, not hidden with skipped assertions.
 
+### Generated files
+
+The page holds itself to the server through files a tool writes from the server's own code (`*.gen.ts`, never
+edited by hand). `npm --prefix web run check` fails when one is stale or the page disagrees with it; regenerate,
+then fix what the type check and the tests say.
+
+| File | Written by | What it holds | Checked by |
+| --- | --- | --- | --- |
+| `web/src/api/samples.gen.ts` | `python3 tools/api_samples.py` | one real answer per call in `api/taska.ts` (`Answers`), recorded on a fresh Taska with a fixed clock, voice words and organizer answer; each command op the server handles with the fields its handler reads | `satisfies` (a field the server sends that a type lacks, a required one it leaves out); `web/scripts/check-api.mjs` (a type's field no answer shows; the few a fresh Taska cannot show are listed there with why); `web/src/api/commands.test.ts` (the `Command` union in `model/commands.ts` has the server's ops and no field a handler never reads); `tests/test_api_contract.py` (records again: the same shapes, the same reads) |
+
+Regenerate `samples.gen.ts` after changing what the server sends, what a command handler reads, or what the tool
+records (a new call: add it to `Answers` and to `record()`).
+
 Install browser binaries once with `cd web && npx playwright install chromium`. Browser checks must respect the
 machine's browser budget. Run potentially destructive journeys on copied data; inspect the actual live app after
 deployment to verify the service and existing records still work.

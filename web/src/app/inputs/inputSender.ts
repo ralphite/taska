@@ -6,6 +6,7 @@
 import { Refused, Unreachable } from '../../api/http'
 import type { TaskaApi } from '../../api/taska'
 import type { ViewAnswer } from '../../model/types'
+import type { CommandOf } from '../../model/commands'
 import type { OutboxStore } from '../../stores/outbox'
 import type { Outgoing } from '../../model/outgoing'
 import { outStep, type OutEvent } from '../../model/outgoingStates'
@@ -82,7 +83,7 @@ export class InputSender {
         }
         this.step(o.q, 'go')
         try {
-          const command = {
+          const command: CommandOf<'input'> = {
             op: 'input',
             text,
             scope: o.scope,

@@ -2,6 +2,7 @@
 // saved, or left without saving, which keeps the text as a draft that Edit (or New doc) brings back; a new one made
 // on an item; deleted and moved to another item, with Undo.
 
+import type { CommandOf } from '../../model/commands'
 import { noteText } from '../../model/docs'
 import { codeOf, type ProjectModel } from '../../model/project'
 import type { DocViewStore } from '../../stores/docView'
@@ -108,7 +109,7 @@ export class DocEditor {
     if (!e.md || (e.dn != null && e.md === e.was)) return
     const doc = e.dn != null ? e.m.docs.find((x) => x.d === e.dn) : undefined
     const before = new Set(e.m.docs.map((x) => x.d))
-    const command = doc ? { op: 'doc', d: doc.d, md: e.md, ...(doc.fmt === 'html' ? { fmt: 'html' } : {}) } : { op: 'doc', ref: codeOf(e.m, e.n as number), md: e.md }
+    const command: CommandOf<'doc'> = doc ? { op: 'doc', d: doc.d, md: e.md, ...(doc.fmt === 'html' ? { fmt: 'html' as const } : {}) } : { op: 'doc', ref: codeOf(e.m, e.n as number), md: e.md }
     const ok = await docSend(this.d, e.slug, command, doc ? `saving D${doc.d}` : 'creating a document')
     if (!ok) {
       this.d.view.getState().edit(true, e.md, e.n)

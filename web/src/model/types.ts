@@ -234,6 +234,10 @@ export interface WordsAnswer {
   done: boolean
   tr: string
   tr_error: string
+  /** whose words they are (pro, asr) */
+  tr_by?: string
+  /** how long each step took (s) */
+  times?: Record<string, number>
   doubts?: Doubt[]
   more?: boolean
   heard?: string
@@ -376,7 +380,7 @@ export interface ServerFacts {
 export interface ViewAnswer {
   cursor: string
   full: boolean
-  same?: boolean
+  same?: never
   items: Item[]
   inputs: Input[]
   docs: Doc[]
@@ -384,6 +388,13 @@ export interface ViewAnswer {
   voices?: Voice[]
   removed?: { items: number[]; inputs: string[]; docs: number[]; voices?: string[] }
   project: ProjectFacts
+  server: ServerFacts
+}
+
+/** GET changes when nothing changed while it waited. */
+export interface NoNews {
+  cursor: string
+  same: true
   server: ServerFacts
 }
 
@@ -412,6 +423,8 @@ export interface Need {
   kind: string
   pri: Pri
   t: string
+  /** a proposed change to the rules (kind rules, code Rules): its number */
+  p?: number
 }
 
 /** One of your views of the item list: the filters it sets, with a name (the same in every project). */

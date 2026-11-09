@@ -43,7 +43,7 @@ export function check(src, allow = readAllow(WEB)) {
     const r = rel(p)
     const story = r.endsWith('.stories.tsx')
     const lines = text.split('\n').length
-    if (lines > MAX_LINES) say(p, `${lines} lines (at most ${MAX_LINES})`)
+    if (lines > MAX_LINES && !r.endsWith('.gen.ts')) say(p, `${lines} lines (at most ${MAX_LINES})`) // a generated file (*.gen.ts) is its tool's
     if (/<style[\s>]/.test(text)) say(p, 'a <style> element (style with Tailwind classes)')
     const test = /\.test\.tsx?$/.test(r)
     if (!story && !test && !r.startsWith('stories/') && /(?<![\w&])#[0-9a-fA-F]{3,8}\b(?![\w-])/.test(text.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '')))

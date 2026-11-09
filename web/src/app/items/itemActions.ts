@@ -2,7 +2,7 @@
 // and are saved behind you, a toast says what happened and offers Undo (which puts the old value back; Z does the
 // same), and the row you acted on holds still so the next row never slides under a second click.
 
-import type { Command } from '../../api/taska'
+import { field, type Command } from '../../model/commands'
 import { closed, lastAgentMessage, ranksFor } from '../../model/items'
 import { codeOf, type ItemPatch, type ProjectModel } from '../../model/project'
 import { decidedWord } from '../../model/needStates'
@@ -53,9 +53,6 @@ export function heldWord(f: string, v: unknown, said: string): string {
   return w.replace(/^./, (c) => c.toUpperCase())
 }
 
-/** A field's value as the server takes it: a parent goes as an item reference. */
-export const wire = (f: string, v: unknown) => (f === 'parent' ? (v ? String(v) : 'none') : v)
-
 export class ItemActions {
   private readonly d: ItemActionsDeps
   constructor(deps: ItemActionsDeps) {
@@ -93,7 +90,7 @@ export class ItemActions {
       this.d.ui.getState().dropHeld(n)
       this.d.toasts.show(`${ref} put back`)
       const seq = this.d.undoSeq(n, f)
-      const back: Command = seq ? { op: 'revert', seq } : { op: 'set', ref, f: { [f]: wire(f, before) } }
+      const back: Command = seq ? { op: 'revert', seq } : { op: 'set', ref, f: field(f, before) }
       return this.d.runner.send(
         { id: newId(), slug, commands: [back], patches: [{ n, f: { [f]: before, ...('decided' in dec ? { decided: decWas } : {}) } as Partial<Item> }], said: `putting ${ref} back`, t: Date.now() },
         () => job.saved, // a change that never reached the server has nothing to put back there
@@ -112,7 +109,7 @@ export class ItemActions {
       undo,
     )
     const patch: ItemPatch = { n, f: { [f]: v, ...dec } as Partial<Item> }
-    const saved = this.d.runner.send({ id: newId(), slug, commands: [{ op: 'set', ref, f: { [f]: wire(f, v) } }], patches: [patch], said: `${ref} ${words}`, t: Date.now() })
+    const saved = this.d.runner.send({ id: newId(), slug, commands: [{ op: 'set', ref, f: field(f, v) }], patches: [patch], said: `${ref} ${words}`, t: Date.now() })
     void saved.then((ok) => {
       job.saved = ok
       if (!ok) {
@@ -187,7 +184,7 @@ export class ItemActions {
   archiveAll(ns: number[]): void {
     const m = this.d.model()
     if (!m || !ns.length) return
-    const put = (on: boolean) => this.d.runner.send({ id: newId(), slug: this.d.slug(), commands: [{ op: 'archive', refs: ns.map((n) => codeOf(m, n)), on } as unknown as Command], patches: ns.map((n) => ({ n, f: { archived: on } })), said: on ? `archiving ${plural(ns.length, 'item')}` : `unarchiving ${plural(ns.length, 'item')}`, t: Date.now() })
+    const put = (on: boolean) => this.d.runner.send({ id: newId(), slug: this.d.slug(), commands: [{ op: 'archive', refs: ns.map((n) => codeOf(m, n)), on }], patches: ns.map((n) => ({ n, f: { archived: on } })), said: on ? `archiving ${plural(ns.length, 'item')}` : `unarchiving ${plural(ns.length, 'item')}`, t: Date.now() })
     void put(true)
     this.d.toasts.show(
       `Archived ${plural(ns.length, 'item')}`,
@@ -208,7 +205,7 @@ export class ItemActions {
     const ref = codeOf(m, n)
     const ranks = ranksFor(m.items, m.byN, n, t, after)
     const send = (list: { n: number; rank: number | null }[]) =>
-      this.d.runner.send({ id: newId(), slug: this.d.slug(), commands: list.map((p) => ({ op: 'set', ref: codeOf(m, p.n), f: { rank: p.rank } })) as Command[], patches: list.map((p) => ({ n: p.n, f: { rank: p.rank } })), said: `moving ${ref}`, t: Date.now() })
+      this.d.runner.send({ id: newId(), slug: this.d.slug(), commands: list.map((p) => ({ op: 'set', ref: codeOf(m, p.n), f: { rank: p.rank } })), patches: list.map((p) => ({ n: p.n, f: { rank: p.rank } })), said: `moving ${ref}`, t: Date.now() })
     this.d.toasts.show(`${ref} ${after ? 'after' : 'before'} ${codeOf(m, t)}${it.pri !== to.pri ? `, now ${to.pri}` : ''}`, async () => {
       this.d.toasts.show(`${ref} put back`)
       return send(ranks.map((p) => ({ n: p.n, rank: p.was })))

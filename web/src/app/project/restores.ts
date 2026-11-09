@@ -1,6 +1,7 @@
 // Bringing back what was deleted (an item with its subitems, a document, an input), and undoing one of your older
 // changes from the change log. Each waits for Taska, then says so. A second press right after the first does nothing.
 
+import type { Command } from '../../model/commands'
 import type { ProjectModel } from '../../model/project'
 import { undoLabel } from '../../model/activity'
 import { newId, type ChangeRunner } from '../changeRunner'
@@ -21,8 +22,8 @@ export class Restores {
     return was
   }
 
-  private send(slug: string, command: Record<string, unknown>, said: string) {
-    return this.d.runner.send({ id: newId(), slug, commands: [command as never], patches: [], said, t: Date.now() })
+  private send(slug: string, command: Command, said: string) {
+    return this.d.runner.send({ id: newId(), slug, commands: [command], patches: [], said, t: Date.now() })
   }
 
   async item(slug: string, ref: string): Promise<void> {

@@ -2,6 +2,7 @@
 // shown at once and saved behind you.
 
 import { newId, type ChangeRunner } from '../changeRunner'
+import type { Command } from '../../model/commands'
 import type { DocPatch, ProjectModel } from '../../model/project'
 import type { RouteStore } from '../../stores/route'
 
@@ -19,6 +20,6 @@ export function docHere(d: DocPlace) {
 }
 
 /** a document's change, shown at once (`docPatches`) and saved behind you -> it was saved */
-export function docSend(d: { runner: ChangeRunner }, slug: string, command: Record<string, unknown>, said: string, docPatches: DocPatch[] = []): Promise<boolean> {
-  return d.runner.send({ id: newId(), slug, commands: [command as never], patches: [], docPatches, said, t: Date.now() })
+export function docSend(d: { runner: ChangeRunner }, slug: string, command: Command, said: string, docPatches: DocPatch[] = []): Promise<boolean> {
+  return d.runner.send({ id: newId(), slug, commands: [command], patches: [], docPatches, said, t: Date.now() })
 }

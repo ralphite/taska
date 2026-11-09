@@ -106,7 +106,7 @@ export class DocComments {
     const ok = await this.d.runner.send({
       id: newId(),
       slug,
-      commands: [{ op: 'dc', d: dn, key: t.key, text, files: sent.map(({ f, name, mime, size }) => ({ f, name, mime, size })), words, ...(t.reply ? {} : { quote }), ...(t.th ? { th: t.th } : {}) } as never],
+      commands: [{ op: 'dc', d: dn, key: t.key, text, files: sent.map(({ f, name, mime, size }) => ({ f, name, mime, size })), words, ...(t.reply ? {} : { quote }), ...(t.th ? { th: t.th } : {}) }],
       patches: [],
       docPatches: [{ d: dn, comment: stand }],
       said: `commenting on D${dn}`,
@@ -150,7 +150,7 @@ export class DocComments {
     const ok = await this.d.runner.send({
       id: newId(),
       slug,
-      commands: [{ op: 'dcedit', d: dn, id, text, words, ...(sent.length ? { files: sent.map(({ f, name, mime, size }) => ({ f, name, mime, size })) } : {}) } as never],
+      commands: [{ op: 'dcedit', d: dn, id, text, words, ...(sent.length ? { files: sent.map(({ f, name, mime, size }) => ({ f, name, mime, size })) } : {}) }],
       patches: [],
       docPatches: patch,
       said: `editing a comment on D${dn}`,

@@ -19,6 +19,8 @@ import urllib.request
 from check_data import inspect
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+import api_samples  # noqa: E402
 
 
 class ApiContractTest(unittest.TestCase):
@@ -162,6 +164,23 @@ class ApiContractTest(unittest.TestCase):
         self.stop()
         with closing(sqlite3.connect(db_path)) as db:
             self.assertEqual(db.execute("SELECT seq,data FROM events ORDER BY seq").fetchall(), stored)
+
+
+class SamplesAreCurrent(unittest.TestCase):
+    """The page's samples of the server's answers (web/src/api/samples.gen.ts) are this server's: recorded again, each
+    answer has the same shape (its fields and their kinds), and the commands' handlers read the same fields. When
+    this fails, run `python3 tools/api_samples.py` and look at what the type check says of the page's types."""
+
+    def test_samples_are_this_servers(self) -> None:
+        with api_samples.SampleServer() as base:
+            fresh = api_samples.normalized(api_samples.record(base))
+        samples, reads = api_samples.written()
+        self.assertEqual(sorted(fresh), sorted(samples), "the calls recorded")
+        for name in fresh:
+            now, kept = api_samples.shape(fresh[name], name), api_samples.shape(samples[name], name)
+            self.assertEqual(sorted(now - kept), [], f"{name}: the server sends these now, the samples do not have them")
+            self.assertEqual(sorted(kept - now), [], f"{name}: the samples have these, the server does not send them now")
+        self.assertEqual(api_samples.server_reads(), reads, "the commands' handlers read other fields now")
 
 
 if __name__ == "__main__":

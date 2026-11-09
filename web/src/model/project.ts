@@ -3,7 +3,7 @@
 // place.
 
 import { closed } from './items'
-import type { Comment, Doc, FileRef, Input, Item, Message, ProjectFacts, ServerFacts, ViewAnswer, Voice } from './types'
+import type { Comment, Doc, FileRef, Input, Item, Message, NoNews, ProjectFacts, ServerFacts, ViewAnswer, Voice } from './types'
 import { LETTER } from './words'
 import { draftKey, draftTarget } from './draftTarget'
 import { isVoice, saidText, withVoice } from './voices'
@@ -24,9 +24,12 @@ export interface ServerCopy {
 /** A question on a closed item is history, not a pending one. */
 const settled = (it: Item): Item => (closed(it.status) && it.wait ? { ...it, wait: null } : it)
 
-/** The server's answer, come at `at`, folded into the copy the page has (all of it, or what changed). */
-export function merge(prev: ServerCopy | null, a: ViewAnswer, at: number): ServerCopy {
-  if (a.same && prev) return { ...prev, cursor: a.cursor, server: a.server, at }
+/** The server's answer, come at `at`, folded into the copy the page has (all of it, or what changed; nothing changed
+ * comes only for a copy there is). */
+export function merge(prev: ServerCopy, a: ViewAnswer | NoNews, at: number): ServerCopy
+export function merge(prev: ServerCopy | null, a: ViewAnswer, at: number): ServerCopy
+export function merge(prev: ServerCopy | null, a: ViewAnswer | NoNews, at: number): ServerCopy {
+  if (a.same) return { ...(prev as ServerCopy), cursor: a.cursor, server: a.server, at }
   const full = a.full || !prev
   const items = new Map(full ? [] : prev.items)
   const inputs = new Map(full ? [] : prev.inputs)

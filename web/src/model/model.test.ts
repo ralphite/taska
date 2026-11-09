@@ -21,7 +21,7 @@ describe("the copy of the server's data", () => {
     const delta = merge(full, answer({ cursor: 'c2', items: [item({ n: 2, title: 'New title' })], removed: { items: [1], inputs: [], docs: [] } }), 2)
     expect([...delta.items.keys()]).toEqual([2])
     expect(delta.items.get(2)?.title).toBe('New title')
-    const same = merge(delta, answer({ cursor: 'c3', same: true }), 3)
+    const same = merge(delta, { cursor: 'c3', same: true, server: { page: '', update: false } }, 3)
     expect(same.items).toBe(delta.items)
     expect([same.cursor, same.at]).toEqual(['c3', 3])
   })

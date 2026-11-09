@@ -157,12 +157,12 @@ export class DocVoice {
     const ops = posts
       .map(({ s, fs }) => {
         const said = splitVoices(s.text, draftNotes(now(fs)))
-        return { op: 'dc', d: dn, key: s.key, quote: s.quote, text: said.text, files: ups(fs).map(({ f, name, mime, size }) => ({ f, name, mime, size })), words: wordsByFile(said.words, ups(fs)) }
+        return { op: 'dc' as const, d: dn, key: s.key, quote: s.quote, text: said.text, files: ups(fs).map(({ f, name, mime, size }) => ({ f, name, mime, size })), words: wordsByFile(said.words, ups(fs)) }
       })
       .filter((o) => o.text || o.files.length)
     if (!ops.length) return back()
     this.d.changes.getState().remove(showing.id)
-    const ok = await this.d.runner.send({ id: newId(), slug, commands: ops as never, patches: [], docPatches, said: `commenting on D${dn}`, t: Date.now() })
+    const ok = await this.d.runner.send({ id: newId(), slug, commands: ops, patches: [], docPatches, said: `commenting on D${dn}`, t: Date.now() })
     if (!ok) return back()
     this.d.boxStore.getState().takeFiles(hold) // Taska has them: this browser lets them go
     const after = this.d.model(slug)?.docs.find((x) => x.d === dn)
@@ -172,7 +172,7 @@ export class DocVoice {
       `Posted ${n} on D${dn}${made.length && !this.d.desk() ? ' · Edit is under it' : ''}`,
       made.length
         ? async () => {
-            for (const id of made) await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'dcdel', d: dn, id } as never], patches: [], docPatches: [{ d: dn, commentGone: id }], said: `taking back a comment on D${dn}`, t: Date.now() })
+            for (const id of made) await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'dcdel', d: dn, id }], patches: [], docPatches: [{ d: dn, commentGone: id }], said: `taking back a comment on D${dn}`, t: Date.now() })
             this.d.toasts.show('Taken back')
           }
         : null,
