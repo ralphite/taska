@@ -23,6 +23,7 @@ const REMOVED: { why: string; gone: RegExp }[] = [
   { why: 'B730: no "Recording 0:12" row in the list under the box (New input, the Inputs tab) while recording: the box shows it', gone: /\bRecordingRow\b/ },
   { why: 'Refactor 1 (T728): the change log reaches the page as facts; no log words parsed back, no log_entries/_said', gone: /\blog_entries\b|\b_said\(|\bsaid\(m, (e\.)?what\b/ },
   { why: 'Refactor 4 (T728): an item action is read by its id from one table (model/itemActs); no looks keyed by its words, no type R in a hint', gone: /\bACT_(TONE|ICON|BG|KEY)\b|\bCHOSEN_TONE\b|\bFORWARD_NEED\b|\bNEED_ACT_WORD\b|Type: F B I T R/ },
+  { why: 'Refactor 6 (T728): one search across the projects, the Finder\'s (/api/find); no /api/search, CrossSearch, search store or search hits', gone: /\/api\/search\b|\bCrossSearch\b|\bcrossSearch\b|createSearchStore|\bSearchHit\b|\bSearchPhase\b|\bhitWhere\b|\bhitPath\b|def search\(self, q/ },
   { why: 'B682: a voice note shows its words (or that they are coming, or that none were heard), never "Voice note" in their place', gone: /(isAudio|audio\/)[^\n]*['"]Voice note['"]/ },
 ]
 

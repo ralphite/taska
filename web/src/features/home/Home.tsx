@@ -3,10 +3,9 @@
 // (Restore), and so does a project that never was. Props only.
 
 import type { MouseEvent, Ref } from 'react'
-import { hitPath } from '../../model/find'
+import { foundLine, foundPath, type FindAnswer, type FindPhase } from '../../model/find'
 import { REACH_WORDS } from '../../model/reach'
-import type { SearchHit, SearchPhase } from '../../model/types'
-import { hitWhere, inputCode, noMatches, plural } from '../../model/words'
+import { noMatches, plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { Hit, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
 import { MUTED, PRIMARY } from '../../ui/tones'
@@ -34,8 +33,8 @@ export interface HomeFacts {
   /** a project that never was */
   none: string | null
   q: string
-  /** where the search is, and its last answer (faded while the next words are asked) */
-  search: { phase: SearchPhase; hits: SearchHit[] | null }
+  /** where the search is (the Finder's, app/search), and its last answer (faded while the next words are asked) */
+  search: { phase: FindPhase; answer: FindAnswer | null }
 }
 
 export interface HomeEvents {
@@ -69,7 +68,9 @@ function AgentCell({ agent }: { agent: HomeRow['agent'] }) {
 
 export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvents; searchRef?: Ref<HTMLInputElement> }) {
   const { rows, needs, away, gone, none, q, search } = facts
-  const { phase, hits } = search
+  const { phase, answer } = search
+  // what shows under the box: the results (faded while the next words are asked), nothing found, refused, out of reach
+  const card = !!q.trim() && (phase === 'searching' ? !!answer : phase === 'found' || phase === 'nothing' || phase === 'failed' || phase === 'offline')
   // a link opens in the page; with Cmd or Ctrl, in a new tab as links do
   const follow = (e: MouseEvent<HTMLAnchorElement>) => {
     if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
@@ -137,28 +138,31 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
         </div>
       ) : null}
       {away && rows ? <div className={NOTE}>{REACH_WORDS.out}</div> : null}
-      {q.trim() && phase !== 'idle' && (hits || phase !== 'asking') ? (
-        <div className={`mb-3 overflow-hidden rounded-xl ${phase === 'asking' ? 'opacity-60' : ''} bg-white ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10`}>
-          {phase === 'failed' || phase === 'retrying' ? (
+      {card ? (
+        <div className={`mb-3 overflow-hidden rounded-xl ${phase === 'searching' ? 'opacity-60' : ''} bg-white ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10`}>
+          {phase === 'failed' || phase === 'offline' ? (
             <p className="px-4 py-3 text-sm text-zinc-500">{phase === 'failed' ? 'Search failed' : REACH_WORDS.out}</p>
-          ) : hits?.length ? (
-            hits.slice(0, 12).map((x) => (
-              <a
-                key={x.project + x.code}
-                href={hitPath(x)}
-                onClick={follow}
-                className="flex items-center gap-2.5 border-b border-zinc-100 px-4 py-2.5 text-sm last:border-b-0 hover:bg-zinc-50 dark:border-zinc-700/60 dark:hover:bg-zinc-700/40"
-              >
-                <span className="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">{inputCode(x.code)}</span>
-                <span className="min-w-0 flex-1 truncate">
-                  <Hit text={x.title} words={q.toLowerCase().split(/\s+/).filter(Boolean)} />
-                </span>
-                <span className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
-                  {x.ptitle || x.project}
-                  {hitWhere(x)}
-                </span>
-              </a>
-            ))
+          ) : answer?.found.length ? (
+            answer.found.slice(0, 12).map((x) => {
+              const line = foundLine(x)
+              return (
+                <a
+                  key={x.project + x.key}
+                  href={foundPath(x)}
+                  onClick={follow}
+                  className="flex items-center gap-2.5 border-b border-zinc-100 px-4 py-2.5 text-sm last:border-b-0 hover:bg-zinc-50 dark:border-zinc-700/60 dark:hover:bg-zinc-700/40"
+                >
+                  <span className="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">{line.code}</span>
+                  <span className="min-w-0 flex-1 truncate">
+                    <Hit text={line.title} words={answer.marks} />
+                  </span>
+                  <span className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
+                    {answer.titles[x.project] || x.project}
+                    {line.where}
+                  </span>
+                </a>
+              )
+            })
           ) : (
             <p className="px-4 py-3 text-sm text-zinc-500">{noMatches(q)}</p>
           )}

@@ -130,7 +130,7 @@ class ApiContractTest(unittest.TestCase):
             self.assertEqual(status, 200, body)
         for path in ("/agent", "/connect", "/next?ui=1"):
             self.assertEqual(self.call(self.project + path)[0], 200)
-        for path in ("/skill", "/api/needs", "/api/search?q=Export", "/api/projects/deleted",
+        for path in ("/skill", "/api/needs", "/api/find?q=Export", "/api/projects/deleted",
                      "/api/views", "/api/corrections", "/api/voiceprefs"):
             self.assertEqual(self.call(path)[0], 200)
         self.stop()

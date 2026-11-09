@@ -15,7 +15,6 @@ import { memoryStore, type KeyValueStore } from '../stores/storage'
 import { createBoxStore, type BoxStore } from '../stores/box'
 import { createDraftsStore, type DraftsStore } from '../stores/drafts'
 import { createItemViewStore, type ItemViewStore } from '../stores/itemView'
-import { createSearchStore, type SearchStore } from '../stores/search'
 import { createFindStore, type FindStore } from '../stores/find'
 import { createRecentStore, type RecentStore } from '../stores/recent'
 import { Finder } from './search/finder'
@@ -31,7 +30,6 @@ import { Navigation } from './page/navigation'
 import { ListHold } from '../features/list/listHold'
 import { Answers } from './items/answers'
 import { Box } from './inputs/box'
-import { CrossSearch } from './project/crossSearch'
 import { Projects } from './project/projects'
 import { KeyArm } from './page/keyArm'
 import { PictureSizes } from './project/pictureSizes'
@@ -117,8 +115,7 @@ export interface App {
     feedback: FeedbackStore
     ui: UiStore
     itemView: ItemViewStore
-    search: SearchStore
-    /** the phone's search page (F479) */
+    /** the search (F479): Home's field, the desktop's dialog, the phone's page */
     find: FindStore
     recent: RecentStore
     drafts: DraftsStore
@@ -145,9 +142,7 @@ export interface App {
   seen: Seen
   /** the list's items in the order it shows them, for Previous and Next */
   listOrder: ListOrder
-  /** the list's search, in the other projects */
-  crossSearch: CrossSearch
-  /** the phone's search page: listening, writing out, searching every project (F479) */
+  /** the search: listening, writing out, searching every project (F479; Home's field, ⌘K, the phone's page) */
   finder: Finder
   /** answering an agent's question by its choices */
   answers: Answers
@@ -219,7 +214,6 @@ export function createApp(env: AppEnv): App {
   const listOrder = new ListOrder()
   const itemView = createItemViewStore(env.kv)
   const keptEdits = createKeptEditsStore(env.kv)
-  const search = createSearchStore()
   const find = createFindStore()
   const recent = createRecentStore(env.kv)
   const activityStore = createActivityStore()
@@ -414,7 +408,7 @@ export function createApp(env: AppEnv): App {
 
   const app: App = {
     api,
-    stores: { data, changes, outbox, feedback, ui, itemView, search, find, recent, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore, media: mediaStore, views: viewsStore, grips: gripsStore, drag: dragStore, keptEdits },
+    stores: { data, changes, outbox, feedback, ui, itemView, find, recent, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore, media: mediaStore, views: viewsStore, grips: gripsStore, drag: dragStore, keptEdits },
     toasts,
     items,
     inputs,
@@ -422,7 +416,6 @@ export function createApp(env: AppEnv): App {
     listHold,
     seen,
     listOrder,
-    crossSearch: new CrossSearch(api, search),
     finder,
     answers,
     itemEdits,

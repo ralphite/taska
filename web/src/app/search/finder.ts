@@ -103,7 +103,8 @@ export class Finder {
     if (busy) this.s.set({ phase: this.s.answer ? 'found' : 'ready' })
   }
 
-  /** Words typed in the dialog: what they find comes a moment after you stop (two letters at least; fewer: Recent). */
+  /** Words typed in the dialog (or in the home page's field): what they find comes a moment after you stop (two
+   * letters at least; fewer: Recent, or nothing on the home page). */
   typeLive(words: string): void {
     this.gen++
     clearTimeout(this.typing)
@@ -253,7 +254,7 @@ export class Finder {
         return this.s.set(a.found.length ? { phase: 'found', answer: a, sel: 0 } : { phase: 'nothing', answer: null })
       } catch (e) {
         if (gen !== this.gen) return
-        if (e instanceof Refused) return this.s.set({ phase: 'nothing', answer: null })
+        if (e instanceof Refused) return this.s.set({ phase: 'failed', answer: null })
         // out of reach once the page is sure (model/reach): until then it is still searching
         away = awayAfter(away, e instanceof Unreachable && e.timedOut)
         if (outOfReach(away)) this.s.set({ phase: 'offline', answer: null })

@@ -77,6 +77,7 @@ export const AT: Record<string, Partial<Desk>> = {
   opened: found(MORE.q, MORE, { open: false, pane: { slug: 'shop', n: 18 } }),
   reopened: found(MORE.q, MORE, { pane: { slug: 'shop', n: 18 }, replace: true }),
   nothing: { open: true, phase: 'nothing', words: 'the blue button on the invoice' },
+  failed: { open: true, phase: 'failed', words: TYPED },
   unheard: { open: true, phase: 'unheard', typing: false },
   nomic: { open: true, phase: 'nomic' },
   offline: { open: true, phase: 'offline', words: TYPED },

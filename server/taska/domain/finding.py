@@ -111,6 +111,14 @@ def rule_sections(st: ProjectState) -> List[Tuple[int, str, str]]:
     return [(k, x.title, text_of(d.md, x)) for k, x in enumerate(ss) if x.level == top]
 
 
+def item_text(st: ProjectState, i: Item) -> Tuple[str, str]:
+    """An item's words, to find it by, lower case: its title, and the rest (its code, text, next step, talk, and the
+    words of the voice notes it came from). The one place an item's words are gathered for finding it."""
+    talk = [m.text or "" for m in i.thread] + [words_of(st, f.f) for r in i.srcs if r in st.inputs
+                                               for f in voices_of(st.inputs[r].files)]
+    return i.title.lower(), " ".join([st.code(i.n), i.body, i.next or "", *talk]).lower()
+
+
 def by_words(st: ProjectState, q: str) -> List[Found]:
     """What `q`'s words find, closest first (the newer first when as close), at most TOP."""
     ws = terms(q)
@@ -118,11 +126,7 @@ def by_words(st: ProjectState, q: str) -> List[Found]:
         return []
     out: List[Tuple[float, str, Found]] = []
     for i in _items(st):
-        code = st.code(i.n).lower()
-        talk = [m.text or "" for m in i.thread] + [words_of(st, f.f) for r in i.srcs if r in st.inputs
-                                                   for f in voices_of(st.inputs[r].files)]
-        rest = " ".join([code, i.body, i.next or "", *talk]).lower()
-        s = _score(ws, i.title.lower(), rest)
+        s = _score(ws, *item_text(st, i))
         if s:
             out.append((s, i.t1 or i.t0 or "", Found("items", "i%d" % i.n, i.n, s)))
     for r in _inputs(st):

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { byKind, foundGroups, foundKinds, foundMeta, foundPath, hitPath, heardWords, saidMore, type FindAnswer, type Found } from './find'
+import { byKind, foundGroups, foundKinds, foundLine, foundMeta, foundPath, heardWords, saidMore, type FindAnswer, type Found } from './find'
 
 const f = (project: string, kind: Found['kind'], key: string, more: Partial<Found> = {}): Found => ({ project, kind, key, n: 1, ...more })
 const A: FindAnswer = {
@@ -45,8 +45,11 @@ describe('the phone search', () => {
 
   it('opens an input not yet filed as itself, where it is listed, with no words in the address (r1092, T689 #2)', () => {
     expect(foundPath(f('shop', 'inputs', 'r8', { title: 'The export should keep the filter', became: null }))).toBe('/p/shop/inputs#r8')
-    expect(hitPath({ project: 'shop', kind: 'input', code: 'r8' })).toBe('/p/shop/inputs#r8')
-    expect(hitPath({ project: 'shop', kind: 'item', code: 'B018' })).toBe('/p/shop/B018')
+  })
+
+  it("says each on one line for the home page: what it is after its project's name", () => {
+    expect(foundLine(f('shop', 'inputs', 'r8', { code: '#8', title: 'The export should keep the filter' }))).toEqual({ code: '#8', title: 'The export should keep the filter', where: ' · what you said' })
+    expect(foundLine(f('shop', 'docs', 'd2', { code: 'D2', title: 'Plan' })).where).toBe(' · a document')
   })
 })
 

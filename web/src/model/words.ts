@@ -1,6 +1,6 @@
 // The words the page uses for Taska's data: item types and their letters, statuses, priorities, agents' names.
 
-import type { ItemType, SearchHit, Status, When } from './types'
+import type { ItemType, Status, When } from './types'
 
 export const LETTER: Record<ItemType, string> = { feature: 'F', bug: 'B', idea: 'I', task: 'T' }
 export const WORK_TYPES: ItemType[] = ['feature', 'bug', 'idea', 'task']
@@ -14,10 +14,6 @@ export const STATUS_WORD: Record<Status, string> = {
   dropped: "Won't do",
 }
 
-/** What a search hit is, after its project's name: what you said, archived, or done / won't do (an open one says
- * nothing). Lowercase, as the rest of that line. */
-export const hitWhere = (x: Pick<SearchHit, 'kind' | 'archived' | 'status'>) =>
-  x.kind === 'input' ? ' · what you said' : x.archived ? ' · archived' : x.status === 'done' || x.status === 'dropped' ? ` · ${STATUS_WORD[x.status].toLowerCase()}` : ''
 export const WHEN_WORD: Record<When, string> = { now: 'Now', later: 'Later' }
 
 /** A message's kind, where it says something (progress, most messages, has no tag). */

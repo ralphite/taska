@@ -6,6 +6,8 @@ import { deskStory } from '../stories/searchDesk'
 export default { title: 'UI/Search/Desktop dialog/When it goes wrong, dark, narrower' } satisfies Meta
 
 export const NothingFound: StoryObj = { name: 'Nothing found', ...deskStory('nothing') }
+/** Taska refused the search: said so, not as nothing found (T728 #7). */
+export const SearchFailed: StoryObj = { name: 'Search failed', ...deskStory('failed') }
 export const DidntCatchThat: StoryObj = { name: "Didn't catch that", ...deskStory('unheard') }
 /** The field takes typing instead. */
 export const MicrophoneNotAllowed: StoryObj = { name: 'Microphone not allowed', ...deskStory('nomic') }

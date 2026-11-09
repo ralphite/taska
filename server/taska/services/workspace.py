@@ -248,31 +248,6 @@ class Workspace:
                                 "kind": "rules", "pri": "P1", "t": x.t, "p": x.id})
         return sorted(out, key=lambda x: x["t"], reverse=True)
 
-    def search(self, q: str, skip: str = "") -> List[Dict[str, Any]]:
-        """Words in every project but `skip`: items by code, title, text and talk, and what you said. Every word must
-        be there. Newest first, at most 30."""
-        words = [w for w in q.lower().split() if w][:8]
-        out: List[Dict[str, Any]] = []
-        if not words:
-            return out
-        for name, p in sorted(self.projects.items()):
-            if name == skip:
-                continue
-            with p.lock:
-                st = p.state
-                for i in st.items.values():
-                    if i.merged_into or i.deleted:
-                        continue
-                    hay = " ".join([st.code(i.n), i.title, i.body, i.next or "", *(x.text or "" for x in i.thread)]).lower()
-                    if all(w in hay for w in words):
-                        out.append({"project": name, "ptitle": p.title, "kind": "item", "code": st.code(i.n), "title": i.title,
-                                    "status": i.status, "archived": i.archived, "t": i.t1 or i.t0 or ""})
-                for r in st.inputs.values():
-                    if not r.deleted and all(w in (r.id + " " + r.text).lower() for w in words):
-                        out.append({"project": name, "ptitle": p.title, "kind": "input", "code": r.id, "title": r.text[:200],
-                                    "t": r.t})
-        return sorted(out, key=lambda x: x["t"], reverse=True)[:30]
-
     def find(self, q: str, here: str = "") -> Tuple[str, List[Tuple[str, finding.Found]]]:
         """F479: what `q` finds in every project, closest first, each with its project: by what it means when that is
         on (Meaning), then by its words (what the meaning did not find after it); -> (how: "meaning" or "words", it)."""

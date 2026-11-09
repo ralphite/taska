@@ -3,7 +3,7 @@
 import type { Dash } from '../model/dashboard'
 import { Http, TIME_LIMIT } from './http'
 import type { FindAnswer } from '../model/find'
-import type { FileRef, LogRow, Need, ProjectRow, SearchHit, Spelling, ViewAnswer, VoicePrefs, WordsAnswer, SavedView } from '../model/types'
+import type { FileRef, LogRow, Need, ProjectRow, Spelling, ViewAnswer, VoicePrefs, WordsAnswer, SavedView } from '../model/types'
 
 /** A change the page asks for: the same commands agents write, as data ({op: "set", ref: "B03", f: {...}}). */
 export type Command = Record<string, unknown> & { op: string }
@@ -117,14 +117,10 @@ export class TaskaApi {
     return this.http.json<Need[]>('/api/needs')
   }
 
-  /** The phone's search (F479): what the words find in every project, by meaning and by the words; `here`: the
-   * project you are in. */
+  /** The search (F479: Home's, ⌘K, the phone's): what the words find in every project, by meaning and by the words;
+   * `here`: the project you are in. */
   find(q: string, here: string): Promise<FindAnswer> {
     return this.http.json<FindAnswer>(`/api/find?q=${encodeURIComponent(q)}&here=${encodeURIComponent(here)}`, { timeout: 60000 })
-  }
-
-  search(q: string, skip: string): Promise<SearchHit[]> {
-    return this.http.json<SearchHit[]>(`/api/search?q=${encodeURIComponent(q)}&skip=${encodeURIComponent(skip)}`)
   }
 
   /** What a coding agent reads first (the guide), as the page shows it. */

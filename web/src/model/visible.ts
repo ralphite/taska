@@ -7,7 +7,8 @@ import type { ListKey, ListQuery } from './route'
 import type { Item } from './types'
 import { ARCHIVE_FILTER_WORD, LETTER, SORT_WORDS, STATUS_FILTER_WORD, STATUS_WORD, WHEN_WORD, type Tab } from './words'
 
-/** An item's words, for picking one by them: its code, title, text, next and talk. */
+/** An item's words, for picking one by them on the page: its code, title, text, next and talk (what the server finds
+ * an item by is gathered in one place too: domain/finding.item_text). */
 const HAY = new WeakMap<Item, string>()
 export function hay(it: Item): string {
   let h = HAY.get(it)

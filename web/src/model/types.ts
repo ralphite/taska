@@ -414,21 +414,6 @@ export interface Need {
   t: string
 }
 
-/** Where a search across the projects is (T728 #7): asking: sent, no answer yet; retrying: Taska out of reach, asked
- * again; failed: Taska refused it; answered. */
-export type SearchPhase = 'idle' | 'asking' | 'retrying' | 'failed' | 'answered'
-
-export interface SearchHit {
-  project: string
-  ptitle: string
-  kind: 'item' | 'input'
-  code: string
-  title: string
-  status?: Status
-  archived?: boolean
-  t: string
-}
-
 /** One of your views of the item list: the filters it sets, with a name (the same in every project). */
 export interface SavedView {
   name: string

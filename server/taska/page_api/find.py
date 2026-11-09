@@ -1,7 +1,7 @@
-"""The phone's search (F479) as the page draws it: what was found in every project, closest first, each with its
-project. An item comes as the list has it (item_view, with its parent's code and its subitems counted);
-an input with its words, when it was said and the item it became; a document with its title and its item; a section
-of the rules with its title."""
+"""The search (F479: Home's, ⌘K, the phone's) as the page draws it: what was found in every project, closest first,
+each with its project. An item comes as the list has it (item_view, with its parent's code and its subitems
+counted); an input with its words (a voice note's too), when it was said and the item it became; a document with its
+title and its item; a section of the rules with its title."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Tuple
 
 from ..domain.finding import Found, rule_sections, terms
 from ..domain.vocab import CLOSED
+from ..domain.voices import said
 from ..services.workspace import Workspace
 from .views import View, item_view
 
@@ -49,7 +50,7 @@ def find_view(ws: Workspace, q: str, here: str) -> Dict[str, Any]:
                     r = st.inputs.get(f.key)
                     if r is None:
                         continue
-                    row.update(code="#%d" % r.number, title=" ".join(r.text.split())[:200], t=r.t,
+                    row.update(code="#%d" % r.number, title=" ".join(said(st, r.text, r.files).split())[:200], t=r.t,
                                became=st.code(f.n) if f.n else None)
                 else:
                     d = st.docs.get(int(f.key[1:]))

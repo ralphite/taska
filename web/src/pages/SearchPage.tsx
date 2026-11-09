@@ -253,6 +253,7 @@ export function SearchBody({ v, on, desk = false }: { v: SearchView; on: SearchE
     )
   else if (v.phase === 'searching') body = <Middle title={<Icon n="spinner" c="mx-auto size-7 animate-spin text-zinc-400" sw="2" />}>Searching…</Middle>
   else if (v.phase === 'nothing') body = <Middle title={noMatches(v.words)} />
+  else if (v.phase === 'failed') body = <Middle title="Search failed" />
   else if (v.phase === 'unheard') body = <Middle title="Didn't catch that" />
   else if (v.phase === 'nomic') body = <Middle title="Microphone not allowed">{micAllow(desk)}</Middle>
   else if (v.phase === 'offline')

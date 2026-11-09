@@ -57,6 +57,7 @@ export const AT: Record<string, Partial<Flow>> = {
   typing: { at: 'search', phase: 'found', words: 'where the export loses my filter on the phone', answer: RIGHT, typed: true },
   cleared: { at: 'search', phase: 'ready' },
   nothing: { at: 'search', phase: 'nothing', words: 'the blue button in the settings' },
+  failed: { at: 'search', phase: 'failed', words: RIGHT.q },
   unheard: { at: 'search', phase: 'unheard' },
   nomic: { at: 'search', phase: 'nomic' },
   offline: { at: 'search', phase: 'offline', words: RIGHT.q },

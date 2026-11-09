@@ -1,10 +1,11 @@
-// The phone's search (F479): what the server found in every project (/api/find), and how the page puts it: grouped
-// by project (the one you are in first, then the others in the sidebar's order), closest first in each, a kind chip
-// showing only that kind. Pure.
+// The search (F479; Home's field, ⌘K, the phone's page): what the server found in every project (/api/find), and how
+// the page puts it: grouped by project (the one you are in first, then the others in the sidebar's order), closest
+// first in each, a kind chip showing only that kind; on the home page, one line each. Pure.
 
 import { inputPath } from './route'
 import { when } from './time'
-import type { Item, SearchHit } from './types'
+import type { Item } from './types'
+import { STATUS_WORD } from './words'
 
 export type FindPhase =
   /** nothing to search yet: the box waits for you to speak or type */
@@ -16,6 +17,8 @@ export type FindPhase =
   | 'searching'
   | 'found'
   | 'nothing'
+  /** Taska refused the search (not the same as nothing found, T728 #7) */
+  | 'failed'
   /** you stopped, but there were no words in it */
   | 'unheard'
   | 'nomic'
@@ -108,8 +111,17 @@ export function foundPath(x: Found): string {
   return base + encodeURIComponent(x.item?.code || String(x.n))
 }
 
-/** The address a hit of Home's search opens: an item its page, an input itself where it is listed. */
-export const hitPath = (x: Pick<SearchHit, 'project' | 'kind' | 'code'>): string => (x.kind === 'input' ? inputPath(x.project, x.code) : `/p/${encodeURIComponent(x.project)}/${encodeURIComponent(x.code)}`)
+/** A result as one line (the home page's): its code, its words, and what it is, said after its project's name (what
+ * you said, a document, the rules; an item archived, done or won't do; an open one: nothing). Lowercase, as the rest
+ * of that line. */
+export function foundLine(x: Found): { code: string; title: string; where: string } {
+  if (x.kind === 'items') {
+    const it = x.item
+    const s = it?.status
+    return { code: it?.code ?? '', title: it?.title ?? '', where: it?.archived ? ' · archived' : s === 'done' || s === 'dropped' ? ` · ${STATUS_WORD[s].toLowerCase()}` : '' }
+  }
+  return { code: x.code ?? '', title: x.title ?? '', where: x.kind === 'inputs' ? ' · what you said' : x.kind === 'docs' ? ' · a document' : ' · the rules' }
+}
 
 /** More words said after the ones in the box: put at their end, joined as a sentence goes on ("…, only on the
  * phone"; in Chinese with "，"). -> the words, and what was added (to light). */

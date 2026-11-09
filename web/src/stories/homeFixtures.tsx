@@ -1,7 +1,8 @@
 // The helpers Home's stories share: how each draws its part.
-import type { Need, ProjectRow, SearchHit } from '../model/types'
+import type { FindAnswer } from '../model/find'
+import type { Need, ProjectRow } from '../model/types'
 import { Frames } from './Frames'
-import { T } from './fixtures'
+import { T, item } from './fixtures'
 import { useState } from 'react'
 import { Home, type HomeEvents, type HomeFacts } from '../features/home/Home'
 import { acts } from './acts'
@@ -22,14 +23,22 @@ export const NEEDS: Need[] = [
   { project: 'home', ptitle: 'Home', n: 12, code: 'B012', title: 'The garden tap drips when it is turned off all the way', kind: 'review', pri: 'P2', t: '' },
 ]
 export const rows = homeRows(PROJECTS, NEEDS, now)
-export const facts: HomeFacts = { rows, needs: 13, away: false, gone: null, none: null, q: '', search: { phase: 'idle', hits: null } }
-export const hits: SearchHit[] = [
-  { project: 'taska', ptitle: 'taska', kind: 'item', code: 'F581', title: 'Rewrite Taska from scratch', status: 'doing', t: '' },
-  { project: 'home', ptitle: 'Home', kind: 'item', code: 'B3', title: 'Fix the rewrite of the shelf', status: 'done', t: '' },
-  { project: 'home', ptitle: 'Home', kind: 'item', code: 'T9', title: 'Rewrite the shopping list', status: 'dropped', t: '' },
-  { project: 'taska', ptitle: 'taska', kind: 'item', code: 'T40', title: 'Old rewrite notes', archived: true, t: '' },
-  { project: 'taska', ptitle: 'taska', kind: 'input', code: 'r315', title: 'the rewrite should keep every word the agents read', t: '' },
-]
+export const facts: HomeFacts = { rows, needs: 13, away: false, gone: null, none: null, q: '', search: { phase: 'ready', answer: null } }
+/** What the search (/api/find) found for "rewrite" in every project: an item, a done one, a won't do one, an archived
+ * one, what you said. */
+export const answer: FindAnswer = {
+  q: 'rewrite',
+  by: 'words',
+  marks: ['rewrite'],
+  titles: { taska: 'taska', home: 'Home' },
+  found: [
+    { project: 'taska', kind: 'items', key: 'i581', n: 581, item: item({ n: 581, code: 'F581', title: 'Rewrite Taska from scratch', status: 'doing' }) },
+    { project: 'home', kind: 'items', key: 'i3', n: 3, item: item({ n: 3, code: 'B3', type: 'bug', title: 'Fix the rewrite of the shelf', status: 'done' }) },
+    { project: 'home', kind: 'items', key: 'i9', n: 9, item: item({ n: 9, code: 'T9', type: 'task', title: 'Rewrite the shopping list', status: 'dropped' }) },
+    { project: 'taska', kind: 'items', key: 'i40', n: 40, item: item({ n: 40, code: 'T40', type: 'task', title: 'Old rewrite notes', archived: true }) },
+    { project: 'taska', kind: 'inputs', key: 'r315', n: null, code: '#315', title: 'the rewrite should keep every word the agents read', t: T, became: null },
+  ],
+}
 
 /** The home page with what the page's HomeContainer holds: the phone's search typed, New project named and
  * cancelled, a deleted or missing project's note closed (T662). Searching every project, Create, Restore and opening a
