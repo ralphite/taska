@@ -4,8 +4,7 @@
 // (a field, a message, a document, a merge). Told against `now` (ms), the model's time.
 
 import type { Item } from './types'
-import { agoShort } from './agents'
-import { when } from './time'
+import { ago, dateOf, timeOf, when } from './time'
 import { whoName } from './words'
 
 export interface ItemTimes {
@@ -21,24 +20,14 @@ export interface ItemTimes {
 
 const ofYear = (d: Date, now: number) => d.getFullYear() === new Date(now).getFullYear()
 
-/** A day: "Nov 3", another year's "Nov 3, 2025". */
-const day = (t: string, now: number) => {
-  const d = new Date(t)
-  return d.toLocaleDateString('en-US', ofYear(d, now) ? { month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' })
-}
-
 /** How long ago, within the week ("2h ago"); further back, its day. */
-const ago = (t: string, now: number) => {
-  const ms = now - Date.parse(t)
-  if (ms < 60e3) return 'just now'
-  return ms < 7 * 864e5 ? `${agoShort(Date.parse(t), now)} ago` : day(t, now)
-}
+const since = (t: string, now: number) => (now - Date.parse(t) < 7 * 864e5 ? ago(t, now, 'ago') : dateOf(t, now))
 
 /** The page's time words, today's said as such ("Today 14:38") and another year's with its time. */
 const exact = (t: string, now: number) => {
   const w = when(t, now)
   if (/^\d/.test(w)) return `Today ${w}`
-  return ofYear(new Date(t), now) ? w : `${w} ${new Date(t).toTimeString().slice(0, 5)}`
+  return ofYear(new Date(t), now) ? w : `${w} ${timeOf(t)}`
 }
 
 const byWho = (by: string | null) => (!by ? '' : by === 'you' ? 'by you' : `by ${whoName(by)}`)
@@ -50,8 +39,8 @@ export function itemTimes(it: Pick<Item, 't0' | 't1' | 'by'>, now: number): Item
   const created = { at: exact(it.t0, now), by }
   const last = changed ? exact(it.t1, now) : null
   return {
-    made: [day(it.t0, now), by].filter(Boolean).join(' '),
-    updated: changed ? `Updated ${ago(it.t1, now)}` : null,
+    made: [dateOf(it.t0, now), by].filter(Boolean).join(' '),
+    updated: changed ? `Updated ${since(it.t1, now)}` : null,
     created,
     last,
     tip: [['Created', created.at, by].filter(Boolean).join(' '), last ? `Updated ${last}` : ''].filter(Boolean).join('\n'),

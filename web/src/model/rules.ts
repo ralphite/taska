@@ -4,6 +4,7 @@
 
 import type { ProjectModel } from './project'
 import type { Doc, RuleProposal, RuleVersion } from './types'
+import { dayLabel, timeOf } from './time'
 import { whoName } from './words'
 
 export const rulesDoc = (m: ProjectModel | null | undefined): Doc | undefined => m?.docs.find((d) => d.kind === 'rules')
@@ -124,15 +125,6 @@ export function lineCounts(before: string, after: string): { add: number; del: n
 /** Who wrote a version or proposed a change, as the rules' pages say it. */
 export const ruleWho = (by: string) => (by === 'you' ? 'You' : by === 'taska' ? 'Taska' : whoName(by))
 
-/** A version's day as the history groups them: Today, Yesterday, Nov 5 (and the year when not this one). */
-export function dayLabel(t: string, now: number): string {
-  const d = new Date(t)
-  const today = new Date(now)
-  if (d.toDateString() === today.toDateString()) return 'Today'
-  if (new Date(now - 864e5).toDateString() === d.toDateString()) return 'Yesterday'
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(d.getFullYear() !== today.getFullYear() ? { year: 'numeric' } : {}) })
-}
-
 export interface VersionRow {
   v: number
   by: string
@@ -152,7 +144,7 @@ export function historyRows(d: Doc | undefined, now: number): VersionRow[] {
   return h
     .map((x, i) => {
       const c = lineCounts(i > 0 ? h[i - 1].md : '', x.md)
-      return { v: x.v, by: x.by, who: ruleWho(x.by), day: dayLabel(x.t, now), time: new Date(x.t).toTimeString().slice(0, 5), whys: x.whys, add: c.add, del: c.del, now: i === h.length - 1 }
+      return { v: x.v, by: x.by, who: ruleWho(x.by), day: dayLabel(x.t, now), time: timeOf(x.t), whys: x.whys, add: c.add, del: c.del, now: i === h.length - 1 }
     })
     .reverse()
 }

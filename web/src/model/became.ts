@@ -4,8 +4,7 @@
 // why it failed, where it went. And one input as a line of the lists draws it: its number, its day and time, what
 // became of it, a draft of yours on it, whether it is long. Pure.
 
-import { dayOf, timeOf } from './inputs'
-import { when } from './time'
+import { dayLabel, timeOf, when } from './time'
 import { shownStatus } from './needStates'
 import { codeOf, inputDraft, type ProjectModel } from './project'
 import type { Input, ItemType } from './types'
@@ -180,7 +179,7 @@ export const inputLine = (m: ProjectModel, r: Input, a: InputLineWith): InputLin
   r,
   code: inputCode(r.id),
   when: when(r.t, m.at),
-  day: dayOf(r.t, new Date(m.at)),
+  day: dayLabel(r.t, m.at),
   time: timeOf(r.t),
   became: becameOf(r, m, a.title),
   draft: inputDraft(r.id, a.drafts, a.writing),

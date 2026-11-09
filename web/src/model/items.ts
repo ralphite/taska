@@ -4,6 +4,7 @@
 
 import type { Input, Item, Message, Status } from './types'
 import { CLOSED, NOTES, TASKA, USER_KINDS, WORK_TYPES } from './vocab.gen'
+import { ago } from './time'
 import { STATUS_WORD } from './words'
 
 export const closed = (s: Status | string) => (CLOSED as readonly string[]).includes(s)
@@ -42,10 +43,7 @@ export function workNews(it: Item, now: number): { text: string; age: string; qu
   const m = [...it.thread].reverse().find((x) => !userWord(x) && x.by !== 'org' && !taskaNote(x) && x.kind !== 'withdraw' && !x.hidden)
   const text = m ? oneLine(m.text) : ''
   if (!m || !text) return null
-  const ms = Math.max(0, now - Date.parse(m.t))
-  const min = Math.round(ms / 60000)
-  const age = min < 1 ? 'now' : min < 60 ? `${min} min` : min < 1440 ? `${Math.round(min / 60)} h` : `${Math.round(min / 1440)} d`
-  return { text, age, quiet: ms > QUIET_WORK_MS }
+  return { text, age: ago(m.t, now, 'short'), quiet: now - Date.parse(m.t) > QUIET_WORK_MS }
 }
 
 /** The first line that says something, without Markdown marks. */

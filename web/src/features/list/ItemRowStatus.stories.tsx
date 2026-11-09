@@ -12,9 +12,9 @@ export const NextInTheQueue: Story = { ...one({ f: { next: true } }), name: 'Nex
 export const YourAgentsTurn: Story = { ...one({ it: { talked: true, thread: [message({ id: 3, by: 'you', kind: 'say' })] }, f: { talk: 1 } }), name: 'Open, you replied' }
 const worker = { by: 'claude-code', tip: 'Claude Code is on it' }
 /** its second line: what its agent last said, and how long ago (D115 #30) */
-export const InProgress: Story = { ...one({ it: { status: 'doing', agent }, f: { worker, talk: 4, news: { text: 'Testing with three filters', age: '12 min', quiet: false } } }), name: 'In progress' }
+export const InProgress: Story = { ...one({ it: { status: 'doing', agent }, f: { worker, talk: 4, news: { text: 'Testing with three filters', age: '12m', quiet: false } } }), name: 'In progress' }
 /** over an hour without news: the time in amber */
-export const InProgressQuiet: Story = { ...one({ it: { status: 'doing', agent }, f: { worker, talk: 4, news: { text: 'Testing with three filters, then the sort and the export of every column', age: '2 h', quiet: true } } }), name: 'In progress, no news for an hour' }
+export const InProgressQuiet: Story = { ...one({ it: { status: 'doing', agent }, f: { worker, talk: 4, news: { text: 'Testing with three filters, then the sort and the export of every column', age: '2h', quiet: true } } }), name: 'In progress, no news for an hour' }
 /** no agent has said anything on it yet */
 export const InProgressNothingSaid: Story = { ...one({ it: { status: 'doing', agent }, f: { worker } }), name: 'In progress, nothing said yet' }
 export const WaitsForReview: Story = { ...one({ it: { status: 'review' } }), name: 'Waits for review' }

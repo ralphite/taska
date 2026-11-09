@@ -1,7 +1,8 @@
 // What the Agents sheet shows, from the model: whether one is around, what waits for one, who was here, how to
 // connect. Pure: the container and the stories both use it.
 
-import { agentState, agoLong } from '../../model/agents'
+import { agentState } from '../../model/agents'
+import { ago } from '../../model/time'
 import { closed, waitsInQueue, withOpenKids } from '../../model/items'
 import type { ProjectModel } from '../../model/project'
 import { AGENT_NAME, whoName } from '../../model/words'
@@ -25,7 +26,7 @@ export function agentsFacts(m: ProjectModel, guide: string | null): AgentsFacts 
       .map((a) => ({
         name: a.name,
         who: whoName(a.name),
-        when: a.blocked?.length ? 'Blocked' : a.waiting ? 'waiting for work' : agoLong(a.t, m.at),
+        when: a.blocked?.length ? 'Blocked' : a.waiting ? 'waiting for work' : ago(a.t, m.at, 'long'),
         known: a.name in AGENT_NAME && a.name !== 'agent',
         blocked: (a.blocked || []).map((b) => ({ session: b.session, waitingFor: b.waitingFor })),
       })),

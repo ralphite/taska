@@ -1,7 +1,8 @@
 // The projects as the home page lists them: in your order (as dragged in the sidebar), the rest the latest first. And
 // a project's card in the sidebar (F667): its counts, the agent last heard of, when it last changed.
 
-import { agentLine, agoLong, type AgentTone } from './agents'
+import { agentLine, type AgentTone } from './agents'
+import { ago } from './time'
 import type { ProjectRow } from './types'
 
 export const homeOrder = (rows: readonly ProjectRow[]): ProjectRow[] => [...rows].sort((a, b) => (a.pos ?? 1e9) - (b.pos ?? 1e9) || (b.t || 0) - (a.t || 0))
@@ -30,7 +31,7 @@ export function projectCard(p: Pick<ProjectRow, 'needs' | 'closed' | 'inputs' | 
     inputs: p.inputs ?? null,
     docs: p.docs ?? null,
     agent: agent ? { tone: agent.tone, label: agent.label } : null,
-    changed: p.t && at ? agoLong(p.t, at) : '',
+    changed: p.t && at ? ago(p.t, at, 'long') : '',
   }
 }
 
