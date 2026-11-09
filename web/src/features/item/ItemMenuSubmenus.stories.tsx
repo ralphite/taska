@@ -14,5 +14,3 @@ export const Type: Story = { ...both({ n: 1, arm: 't' }), name: 'Type' }
 /** Delete pressed once: it asks for a second click. */
 export const DeleteAsks: Story = { ...both({ n: 1, asking: true }), name: 'Delete asks again' }
 // ---- more states (T639)
-/** Status on a rule: the rule's own words (Active, Retired; Proposed only while it is proposed) */
-export const StatusOfARule: Story = { ...both({ n: 11, arm: 's' }), name: 'Status of a rule' }

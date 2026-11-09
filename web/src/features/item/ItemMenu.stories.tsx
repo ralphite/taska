@@ -1,4 +1,4 @@
-// An item's menu for each kind of item: in progress, done, for later, a subitem, archived, a rule, placed first in the queue.
+// An item's menu for each kind of item: in progress, done, for later, a subitem, archived, placed first in the queue.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { both } from '../../stories/itemMenuFixtures'
 
@@ -22,7 +22,5 @@ export const ItemLater: Story = { ...both({ n: 7 }), name: 'For later' }
 /** Under another: Put under says which. */
 export const Subitem: Story = { ...both({ n: 14 }), name: 'A subitem' }
 export const ItemArchived: Story = { ...both({ n: 10 }), name: 'Archived' }
-/** A rule: no New doc, subitem, Put under, Later or priority. */
-export const Rule: Story = { ...both({ n: 11 }), name: 'A rule' }
 // ---- more states (B636)
 export const ItemPlacedFirstInTheQueue: Story = { ...both({ n: 5, rank: 0 }), name: 'Placed first in the queue: Back in order' }
