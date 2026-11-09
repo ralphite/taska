@@ -138,6 +138,8 @@ export interface Comment {
   t: string
   files: FileRef[]
   edited?: string
+  /** an agent's session, as the agent named it (T711) */
+  ses?: string
 }
 
 export interface Block {

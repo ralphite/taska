@@ -10,8 +10,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type Poi
 import { createPortal } from 'react-dom'
 import type { AgentTone } from '../../model/agents'
 import type { ProjectCardFacts } from '../../model/projects'
-import { plural } from '../../model/words'
-import { ProjTile } from '../../ui/bits'
+import { hasIcon, plural } from '../../model/words'
+import { ProjTile, Who } from '../../ui/bits'
 import { Icon, StateIcon } from '../../ui/Icon'
 import { MUTED } from '../../ui/tones'
 
@@ -28,6 +28,8 @@ export function ProjectCard({ title, tone, card, href, onOpen }: { title: string
   const open = typeof card.open === 'number' ? card.open : null
   const items = open != null && card.closed != null ? open + card.closed : null
   const any = items !== 0 || card.needs || card.inputs || card.docs || card.agent || card.changed
+  // the agent by its app's icon where it has one, then what it does (T711)
+  const drawn = hasIcon(card.agent?.who?.by) ? card.agent?.who : undefined
   return (
     <div data-project-card className="w-80 overflow-hidden rounded-xl bg-white text-sm shadow-lg ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10">
       <div className="flex items-start gap-2.5 px-4 pt-3.5 pb-3">
@@ -74,8 +76,8 @@ export function ProjectCard({ title, tone, card, href, onOpen }: { title: string
         ) : null}
         {card.agent ? (
           <span data-card-agent className={`inline-flex min-w-0 items-center gap-1 ${AGENT[card.agent.tone]}`}>
-            <Icon n="bot" c="size-3.5" sw="2" />
-            <span className="truncate">{card.agent.label}</span>
+            {drawn ? <Who by={drawn.by} /> : <Icon n="bot" c="size-3.5" sw="2" />}
+            <span className="truncate">{drawn ? drawn.state : card.agent.label}</span>
           </span>
         ) : null}
         {card.changed ? (

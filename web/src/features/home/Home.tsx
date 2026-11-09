@@ -5,9 +5,9 @@
 import type { MouseEvent, Ref } from 'react'
 import { foundLine, foundPath, type FindAnswer, type FindPhase } from '../../model/find'
 import { REACH_WORDS } from '../../model/reach'
-import { noMatches, plural } from '../../model/words'
+import { hasIcon, noMatches, plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
-import { Hit, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
+import { Hit, NeedsCount, ProjTile, Skeleton, Who } from '../../ui/bits'
 import { MUTED, PRIMARY } from '../../ui/tones'
 
 export interface HomeRow {
@@ -17,7 +17,7 @@ export interface HomeRow {
   open: number
   needs: number
   /** the agent last heard of, and whether it is around */
-  agent: { name: string; on: boolean; blocked: boolean } | null
+  agent: { by: string; on: boolean; blocked: boolean } | null
   /** the first of what needs you there */
   next: { code: string; title: string } | null
 }
@@ -61,7 +61,9 @@ function AgentCell({ agent }: { agent: HomeRow['agent'] }) {
   return (
     <span className="flex min-w-0 items-center gap-1.5 text-zinc-600 dark:text-zinc-300">
       <span className={`size-1.5 shrink-0 rounded-full ${agent?.blocked ? 'bg-amber-500' : agent?.on ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
-      <span className="truncate">{!agent ? 'No agent' : agent.blocked ? agent.name + ' · blocked' : agent.on ? agent.name : agent.name + ' · idle'}</span>
+      {/* the agent by its icon where it has one (T711), then whether it is blocked or idle */}
+      {agent ? <Who by={agent.by} cls="truncate" /> : null}
+      {!agent || agent.blocked || !agent.on ? <span className="truncate">{!agent ? 'No agent' : `${hasIcon(agent.by) ? '' : '· '}${agent.blocked ? 'blocked' : 'idle'}`}</span> : null}
     </span>
   )
 }

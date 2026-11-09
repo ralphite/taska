@@ -46,7 +46,7 @@ export interface ProposalShown {
 }
 
 /** The rules read: the version, who and when in the bar, History, Copy and Edit, the phone's as the desktop's; the proposals waiting above the document; none yet: what they are for and Write the rules. */
-export function RulesReading({ f, sub, proposals, doc, on }: { f: RulesFrame; sub: string; proposals: ProposalShown[]; doc: ReactNode | null; on: { history(): void; copy(): void; edit(): void } }) {
+export function RulesReading({ f, sub, proposals, doc, on }: { f: RulesFrame; sub: ReactNode; proposals: ProposalShown[]; doc: ReactNode | null; on: { history(): void; copy(): void; edit(): void } }) {
   const reading = (
     <>
       {proposals.map((p) => (
@@ -138,7 +138,7 @@ export function RulesHistory({ f, rows, on }: { f: RulesFrame; rows: readonly Ve
  * Restore (the phone: at the foot); the desktop lists the versions beside it (Nota's history). */
 export function RulesVersion({ f, sub, v, chunks, marks, now, current, rows, world, on }: {
   f: RulesFrame
-  sub: string
+  sub: ReactNode
   v: number
   chunks: readonly Chunk[]
   marks: boolean

@@ -5,13 +5,14 @@
 import { codeOf, type ProjectModel } from './project'
 import { when } from './time'
 import type { LogField, LogRow, UndoEntry } from './types'
-import { DID, STATUS_WORD, WHEN_WORD, inputCode, whoName } from './words'
+import { DID, STATUS_WORD, WHEN_WORD, inputCode } from './words'
 
 /** words, a code that opens its item or input, or (`faint`) an item's title after its code */
 export type LogPart = string | { n: number; code: string } | { id: string; code: string } | { faint: string }
 
 export interface LogSentence {
   key: string
+  /** who did it, by key (drawn by its app's icon where it has one, T711); '' for you */
   who: string
   session: string
   parts: LogPart[]
@@ -195,7 +196,7 @@ export function logSentence(m: World, e: LogRow): LogSentence {
   return {
     key: '#' + e.seq,
     // your own changes need no name (single user)
-    who: e.who === 'you' ? '' : whoName(e.who),
+    who: e.who === 'you' ? '' : e.who,
     session: e.ses || '',
     parts: joined(sentence(m, e)),
     time: when(e.t, m.at),

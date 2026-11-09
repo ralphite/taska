@@ -29,8 +29,17 @@ const now = Date.parse(T)
 const QUIET = { from: '22:00', to: '08:00' }
 const at = (min: number) => new Date(now - min * 60_000).toISOString()
 export const SEEN: AgentSeen[] = [
-  { name: 'claude-code', t: now - 60_000, waiting: true },
-  { name: 'codex', t: now - 3 * 3600_000, waiting: false },
+  {
+    name: 'claude-code',
+    t: now - 60_000,
+    waiting: true,
+    session: 'Shop project work',
+    sessions: [
+      { name: 'Shop project work', t: now - 60_000 },
+      { name: 'Export keeps the filter', t: now - 40 * 60_000 },
+    ],
+  },
+  { name: 'codex', t: now - 3 * 3600_000, waiting: false, session: 'Docs pass', sessions: [{ name: 'Docs pass', t: now - 3 * 3600_000 }] },
 ]
 const ROWS: ProjectRow[] = [
   { name: 'home', title: 'Home', open: 13, needs: 11, pos: 0 },

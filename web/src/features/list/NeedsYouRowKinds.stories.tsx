@@ -18,7 +18,7 @@ export const RulesProposed: StoryObj = {
   name: 'A change to the rules proposed',
   render: () => (
     <Frames height={120} deskWidth={460} phoneWidth={393}>
-      {() => <ProposalRow p={{ id: 7, by: 'claude-code', t: T, why: 'Run the unit tests before each commit', state: 'wait', on: 8, comments: [] }} who="Claude Code" onOpen={fn()} />}
+      {() => <ProposalRow p={{ id: 7, by: 'claude-code', t: T, why: 'Run the unit tests before each commit', state: 'wait', on: 8, comments: [] }} onOpen={fn()} />}
     </Frames>
   ),
 }

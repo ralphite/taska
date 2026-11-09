@@ -2,7 +2,7 @@
 // still coming.
 
 import { useState, type ReactNode } from 'react'
-import { AVATAR_LETTER, plural } from '../model/words'
+import { AVATAR_LETTER, ICON_AGENTS, hasIcon, plural, whoName } from '../model/words'
 import { Icon, StateIcon, type IconName } from './Icon'
 import { MUTED } from './tones'
 import CLAUDE_CODE from './agent-icons/claude-code.png'
@@ -62,14 +62,15 @@ export function ProjTile({ title, tone, cls = 'size-5 rounded-md text-[11px]' }:
 }
 
 /** The agents drawn by their app's own icon (64 px copies of the apps' icons); the others keep their letter. */
-const AGENT_ICON: Record<string, string> = { 'claude-code': CLAUDE_CODE, codex: CODEX }
+const AGENT_ICON: Record<(typeof ICON_AGENTS)[number], string> = { 'claude-code': CLAUDE_CODE, codex: CODEX }
+/** Codex's tile is near black: a faint edge keeps it apart from a dark page. */
+const edge = (by: string) => (by === 'codex' ? 'dark:ring-1 dark:ring-white/15' : '')
 
-/** An agent's mark: its app's icon, else its letter; `dot` (a dot's colour) sits on its corner. */
-export function Avatar({ by, dot }: { by: string; dot?: string }) {
-  const src = AGENT_ICON[by]
-  const mark = src ? (
-    // Codex's tile is near black: a faint edge keeps it apart from a dark page
-    <img src={src} alt="" draggable={false} className={`size-5 shrink-0 rounded-md select-none ${by === 'codex' ? 'dark:ring-1 dark:ring-white/15' : ''}`} />
+/** An agent's mark: its app's icon, else its letter; `dot` (a dot's colour) sits on its corner. `named`: the icon
+ * stands for the agent's name, none beside it (T711), so its tip and what a screen reader reads say the name. */
+export function Avatar({ by, dot, named = false }: { by: string; dot?: string; named?: boolean }) {
+  const mark = hasIcon(by) ? (
+    <img src={AGENT_ICON[by]} alt={named ? whoName(by) : ''} title={named ? whoName(by) : undefined} draggable={false} className={`size-5 shrink-0 rounded-md select-none ${edge(by)}`} />
   ) : (
     <span className="grid size-5 shrink-0 place-items-center rounded-md bg-zinc-900 text-[10px] font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
       {AVATAR_LETTER[by] || String(by || '?')[0].toUpperCase()}
@@ -83,6 +84,31 @@ export function Avatar({ by, dot }: { by: string; dot?: string }) {
         <span className={`block size-2 rounded-full ${dot}`} />
       </span>
     </span>
+  )
+}
+
+/** Who, where words name them (T711): an agent with an app icon by its icon alone, the size of the words around it
+ * (its name in its tip and to a screen reader); anyone else by name, in `cls`. */
+export function Who({ by, cls = '' }: { by: string; cls?: string }) {
+  if (!hasIcon(by)) return <span className={cls}>{whoName(by)}</span>
+  return (
+    <img
+      src={AGENT_ICON[by]}
+      alt={whoName(by)}
+      title={whoName(by)}
+      draggable={false}
+      className={`inline-block size-[1.15em] shrink-0 rounded-[0.25em] align-[-0.2em] select-none ${edge(by)}`}
+    />
+  )
+}
+
+/** An agent's mark, then its name where the mark is not its app's icon (an icon says who by itself, T711). */
+export function AgentName({ by, cls = '' }: { by: string; cls?: string }) {
+  return (
+    <>
+      <Avatar by={by} named />
+      {hasIcon(by) ? null : <span className={cls}>{whoName(by)}</span>}
+    </>
   )
 }
 

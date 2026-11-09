@@ -4,14 +4,15 @@
 import type { ReactNode } from 'react'
 import { when } from '../../model/time'
 import type { FileRef, Input } from '../../model/types'
-import { inputCode, whoName } from '../../model/words'
+import { inputCode } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
 import type { SheetParts } from '../../ui/Sheet'
 import type { ItemTimes } from '../../model/itemTimes'
 import { MENU_ROW, MUTED } from '../../ui/tones'
-import { Skeleton } from '../../ui/bits'
+import { Skeleton, Who } from '../../ui/bits'
+import { MadeBy } from './TimesLine'
 
 /** What an agent reading the item gets, word for word (F568); null while it comes. */
 /** Later (D115 #21): Tomorrow, Next week, a day picked (then back to Now by itself), or no day; Back to now when it is
@@ -105,7 +106,12 @@ export function sourcesSheet({ code, inputs, world, now, files }: { code: string
                   {inputCode(r.id)}
                 </button>{' '}
                 · {when(r.t, now)}
-                {r.by === 'you' ? '' : ` · ${whoName(r.by)}`}
+                {r.by === 'you' ? null : (
+                  <>
+                    {' · '}
+                    <Who by={r.by} />
+                  </>
+                )}
               </div>
               <div className="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed dark:bg-blue-400/10">
                 {r.text ? <Rich text={r.text} world={world} /> : null}
@@ -129,8 +135,8 @@ export function sourcesSheet({ code, inputs, world, now, files }: { code: string
 
 /** When an item was made (by whom) and last changed, in full (F704 r1157): the phone's sheet from the line under its
  * chips. */
-export function timesSheet(x: Pick<ItemTimes, 'created' | 'last'>): SheetParts {
-  const row = (label: string, at: string, who: string) => (
+export function timesSheet(x: Pick<ItemTimes, 'by' | 'created' | 'last'>): SheetParts {
+  const row = (label: string, at: string, who: ReactNode) => (
     <div className="flex items-baseline justify-between gap-4 py-3">
       <span className={MUTED}>{label}</span>
       <span className="text-right">
@@ -143,7 +149,7 @@ export function timesSheet(x: Pick<ItemTimes, 'created' | 'last'>): SheetParts {
     title: 'Times',
     body: (
       <div className="divide-y divide-zinc-100 pb-2 text-[15px] dark:divide-zinc-800">
-        {row('Created', x.created.at, x.created.by)}
+        {row('Created', x.created.at, x.by ? <MadeBy by={x.by} /> : null)}
         {x.last ? row('Last updated', x.last, '') : null}
       </div>
     ),

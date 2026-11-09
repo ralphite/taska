@@ -113,7 +113,7 @@ def _comment(state: ProjectState, e: ev.Event) -> None:
     th = thread_of(d, e.key, e.quote, e.by, e.th, e.seq)
     d.resolved.pop(f"{e.key}#{th}", None)  # a new word opens a resolved thread again
     d.comments.append(Comment(id=e.seq, key=e.key, th=th, quote=e.quote, text=e.text, by=e.by, t=e.t,
-                              files=list(e.files)))
+                              files=list(e.files), ses=e.ses))
 
 
 @reduces(ev.CommentEdited)

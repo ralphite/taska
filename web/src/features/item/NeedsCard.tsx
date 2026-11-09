@@ -9,8 +9,8 @@ import { ITEM_ACTS, pastOf, type ItemActId } from '../../model/itemActs'
 import { chosenAct, DECISION, NEED_STATES, needOf, type Need } from '../../model/needStates'
 import { when } from '../../model/time'
 import type { Item, Message } from '../../model/types'
-import { whoName } from '../../model/words'
-import { Kbd } from '../../ui/bits'
+import { hasIcon } from '../../model/words'
+import { Kbd, Who } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import { Rich } from '../../ui/Markdown'
@@ -34,7 +34,13 @@ export interface CardEvents extends TalkEvents {
   cancelReask(): void
 }
 
-const msgName = (x: { by: string; ses?: string | null }) => whoName(x.by) + (x.ses ? ` · ${x.ses}` : '')
+/** Who asks: the agent by its app's icon where it has one, then its session (T711). */
+const msgName = (x: { by: string; ses?: string | null }) => (
+  <>
+    <Who by={x.by} />
+    {x.ses ? `${hasIcon(x.by) ? ' ' : ' · '}${x.ses}` : ''}
+  </>
+)
 
 /** A question's words, the card's most prominent (T642 R9): its paragraphs a step larger and heavier than the rest. */
 const QUESTION = '[&>p]:text-[16px] [&>p]:font-medium'
@@ -43,7 +49,7 @@ const GOING_TONE: Record<OutTone, string> = { busy: 'animate-pulse text-blue-600
 
 export function NeedFrame({ icon, title, t, done = false, quiet = false, body, foot, hint = '', going = null, act = null, now }: {
   icon: IconName
-  title: string
+  title: ReactNode
   t?: string
   done?: boolean
   /** the title only says who asks: faint and plain, like the time beside it, so the question under it stands out */
@@ -182,7 +188,7 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
   const m = need.msg
   const name = msgName(m || it.wait || { by: it.by && it.by !== 'you' ? it.by : 'agent' })
   const text = (x: Message) => <MsgText x={x} env={env} on={on} whole />
-  const card = (icon: IconName, title: string, body: ReactNode, buttons: ReactNode, hint = '') => (
+  const card = (icon: IconName, title: ReactNode, body: ReactNode, buttons: ReactNode, hint = '') => (
     <NeedFrame icon={icon} title={title} t={m?.t} quiet={icon === 'ask'} body={body} foot={buttons} hint={hint} now={env.now} />
   )
   if (kind === 'question' && it.wait) {
@@ -202,7 +208,7 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
     const keep = need.keep != null
     return card(
       'ask',
-      `${msgName(w)} asks you`,
+      <>{msgName(w)} asks you</>,
       body,
       keep || choices ? (
         <>
@@ -217,7 +223,7 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
     const dec = need.dec
     const x = need.msg ?? undefined
     const pairs = pairsOf(dec.from)
-    const title = `${msgName(x || { by: it.by && it.by !== 'you' ? it.by : 'agent' })} ${dec.from === 'proposed' ? 'proposed this' : 'finished this'}`
+    const title = <>{msgName(x || { by: it.by && it.by !== 'you' ? it.by : 'agent' })} {dec.from === 'proposed' ? 'proposed this' : 'finished this'}</>
     const chose = (v: string) => dec.to === v || (v === 'open' && dec.from === 'proposed' && dec.to !== 'dropped')
     if (remodify)
       return (
@@ -268,7 +274,7 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
   if (kind === 'replied' && need.of)
     return card(
       need.of === 'proposal' ? 'propose' : 'done',
-      `${name} ${DECISION[need.of].did}`,
+      <>{name} {DECISION[need.of].did}</>,
       m ? text(m) : null,
       <>
         {/* what you did (you replied), done; Approve / Accept still to be pressed */}
@@ -282,14 +288,14 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
   if (kind === 'decide' && need.of === 'proposal')
     return card(
       'propose',
-      `${name} proposed this`,
+      <>{name} proposed this</>,
       m ? text(m) : null,
       <DecideBtns from="proposed" press={(v) => on.decide(n, v as 'open' | 'dropped')} />,
     )
   if (kind === 'decide' && need.of === 'work')
     return card(
       'done',
-      `${name} finished this`,
+      <>{name} finished this</>,
       m ? text(m) : null,
       <DecideBtns from="review" press={(v) => (v === 'done' ? on.decide(n, 'done') : on.notYet(n))} />,
     )
@@ -317,7 +323,7 @@ export function Answered({ it, x, done, env, on, reasking, going = null }: {
     return (
       <NeedFrame
         icon="ask"
-        title={`${msgName(x)} asks you`}
+        title={<>{msgName(x)} asks you</>}
         t={x.t}
         now={env.now}
         quiet
@@ -339,7 +345,7 @@ export function Answered({ it, x, done, env, on, reasking, going = null }: {
   return (
     <NeedFrame
       icon="ask"
-      title={`${msgName(x)} asks you`}
+      title={<>{msgName(x)} asks you</>}
       t={x.t}
       now={env.now}
       going={going}

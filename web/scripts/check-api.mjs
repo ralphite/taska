@@ -40,6 +40,7 @@ const UNSEEN = {
   'view.docs[].whole[].files[].voice': VOICE,
   'view.docs[].whole[].typed': TYPED,
   'view.docs[].whole[].edited': 'only a comment you edited',
+  'view.docs[].whole[].ses': "only an agent's comment (T711), and an agent answers by paragraph (D1 reply ¶2)",
   'view.docs[].detached[]*': 'only comments whose paragraph left the document',
   'view.docs[].proposals[]*': 'a proposal says only what its state has (decided, note, the text it would make)',
   'view.docs[].history[]*': 'a version says only what it was (restored, approved)',

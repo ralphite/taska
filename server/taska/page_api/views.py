@@ -110,6 +110,8 @@ def comment_view(c: Comment) -> View:
                  "files": [file_view(f) for f in c.files]}
     if c.edited:
         out["edited"] = c.edited
+    if c.ses:
+        out["ses"] = c.ses
     return out
 
 

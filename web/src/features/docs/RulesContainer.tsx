@@ -12,6 +12,7 @@ import { beforeOf, diffChunks, historyRows, nowVersion, readRulesView, ruleWho, 
 import { when } from '../../model/time'
 import type { Doc, RuleProposal } from '../../model/types'
 import { PLACE_LEVELS } from '../../ui/PlaceVoice'
+import { Who } from '../../ui/bits'
 import { useDoc } from './DocContainer'
 import { DocEdit } from './DocEdit'
 import { DocView } from './DocView'
@@ -47,7 +48,8 @@ export function RulesContainer({ route, place, hidden, footRoom = 0 }: { route: 
     },
   })
   const v = nowVersion(d)
-  const sub = (x = v) => (x ? `v${x.v} · ${ruleWho(x.by)} · ${when(x.t, now)}` : '')
+  // who by its app's icon where it has one (T711)
+  const sub = (x = v) => (x ? <>v{x.v} · <Who by={x.by} /> · {when(x.t, now)}</> : '')
   const world = doc.env.world
 
   if (editing) return <RulesEditor d={d} f={f} />

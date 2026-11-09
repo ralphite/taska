@@ -49,7 +49,7 @@ export const SAMPLES = {
   ]
  },
  "view": {
-  "cursor": "1a1b1cd8b70.38.49.2",
+  "cursor": "1a1b1cd8b61.37.49.2",
   "full": true,
   "items": [
    {
@@ -151,7 +151,7 @@ export const SAMPLES = {
      "ses": "sample"
     },
     "readBy": {
-     "claude-code": 1793984400303
+     "claude-code": 1793984400299
     }
    },
    {
@@ -282,29 +282,6 @@ export const SAMPLES = {
     "parent": null,
     "next": "",
     "srcs": [
-     "r2"
-    ],
-    "mergedInto": null,
-    "archived": false,
-    "t0": "2026-11-06T09:00:00-08:00",
-    "t1": "2026-11-06T09:00:00-08:00",
-    "by": "org",
-    "thread": [],
-    "wait": null,
-    "talked": false
-   },
-   {
-    "n": 6,
-    "code": "T06",
-    "type": "task",
-    "title": "Sort the export by date",
-    "body": "",
-    "pri": "P2",
-    "when": "now",
-    "status": "open",
-    "parent": null,
-    "next": "",
-    "srcs": [
      "r1"
     ],
     "mergedInto": null,
@@ -328,8 +305,31 @@ export const SAMPLES = {
     "talked": true
    },
    {
-    "n": 7,
-    "code": "T07",
+    "n": 6,
+    "code": "T06",
+    "type": "task",
+    "title": "Sort the export by date",
+    "body": "",
+    "pri": "P2",
+    "when": "now",
+    "status": "open",
+    "parent": null,
+    "next": "",
+    "srcs": [
+     "r2"
+    ],
+    "mergedInto": null,
+    "archived": false,
+    "t0": "2026-11-06T09:00:00-08:00",
+    "t1": "2026-11-06T09:00:00-08:00",
+    "by": "org",
+    "thread": [],
+    "wait": null,
+    "talked": false
+   },
+   {
+    "n": 8,
+    "code": "T08",
     "type": "task",
     "title": "Sort the export by date",
     "body": "",
@@ -418,7 +418,7 @@ export const SAMPLES = {
     "acked": false,
     "touched": [
      1,
-     6,
+     5,
      10,
      11
     ],
@@ -453,7 +453,7 @@ export const SAMPLES = {
     },
     "deletion": {
      "go": [
-      6,
+      5,
       10,
       11
      ],
@@ -476,11 +476,11 @@ export const SAMPLES = {
     ],
     "acked": true,
     "touched": [
-     5
+     6
     ],
     "org": {
      "ok": true,
-     "msg": "Created T5",
+     "msg": "Created T6",
      "t": "2026-11-06T09:00:00-08:00",
      "keep": false,
      "changed": true,
@@ -491,12 +491,12 @@ export const SAMPLES = {
     "q": "page-2",
     "filing": {
      "can": true,
-     "what": "removes T05",
+     "what": "removes T06",
      "why": ""
     },
     "deletion": {
      "go": [
-      5
+      6
      ],
      "keep": []
     }
@@ -517,7 +517,7 @@ export const SAMPLES = {
     ],
     "acked": false,
     "touched": [
-     7
+     8
     ],
     "org": {
      "ok": true,
@@ -532,7 +532,7 @@ export const SAMPLES = {
     "q": "page-3",
     "deletion": {
      "go": [
-      7
+      8
      ],
      "keep": []
     }
@@ -578,7 +578,8 @@ export const SAMPLES = {
         "text": "Checked the plan.",
         "by": "claude-code",
         "t": "2026-11-06T09:00:00-08:00",
-        "files": []
+        "files": [],
+        "ses": "sample"
        },
        {
         "id": 27,
@@ -743,17 +744,17 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400372,
+     "t": 1793984400311,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400372
+       "t": 1793984400311
       },
       {
        "name": "helper",
-       "t": 1793984400243
+       "t": 1793984400229
       }
      ]
     }
@@ -789,8 +790,8 @@ export const SAMPLES = {
      "scope": null,
      "items": [
       {
-       "n": 8,
-       "code": "T08",
+       "n": 7,
+       "code": "T07",
        "title": "Sort the export by date",
        "type": "task"
       }
@@ -810,20 +811,20 @@ export const SAMPLES = {
    ],
    "phone": false,
    "base": "http://127.0.0.1:7340/p/shop",
-   "key": "zrhg-w7z9",
+   "key": "d9cd-8czu",
    "remote": "",
    "lan": ""
   },
   "server": {
-   "page": "index-BHJ5skFE.js",
+   "page": "da39a3ee5e",
    "update": false
   }
  },
  "changes": {
-  "cursor": "1a1b1cd8b70.38.49.2",
+  "cursor": "1a1b1cd8b61.37.49.2",
   "same": true,
   "server": {
-   "page": "index-BHJ5skFE.js",
+   "page": "da39a3ee5e",
    "update": false
   }
  },
@@ -833,7 +834,7 @@ export const SAMPLES = {
    "ok B01 pri=P0"
   ],
   "changes": {
-   "cursor": "1a1b1cd8b70.39.50.2",
+   "cursor": "1a1b1cd8b61.38.50.2",
    "full": false,
    "items": [
     {
@@ -935,7 +936,7 @@ export const SAMPLES = {
       "ses": "sample"
      },
      "readBy": {
-      "claude-code": 1793984400303
+      "claude-code": 1793984400299
      }
     }
    ],
@@ -961,17 +962,17 @@ export const SAMPLES = {
     "agents": [
      {
       "name": "claude-code",
-      "t": 1793984400372,
+      "t": 1793984400311,
       "waiting": false,
       "session": "sample",
       "sessions": [
        {
         "name": "sample",
-        "t": 1793984400372
+        "t": 1793984400311
        },
        {
         "name": "helper",
-        "t": 1793984400243
+        "t": 1793984400229
        }
       ]
      }
@@ -1018,8 +1019,8 @@ export const SAMPLES = {
       "scope": null,
       "items": [
        {
-        "n": 8,
-        "code": "T08",
+        "n": 7,
+        "code": "T07",
         "title": "Sort the export by date",
         "type": "task"
        }
@@ -1039,12 +1040,12 @@ export const SAMPLES = {
     ],
     "phone": false,
     "base": "http://127.0.0.1:7340/p/shop",
-    "key": "zrhg-w7z9",
+    "key": "d9cd-8czu",
     "remote": "",
     "lan": ""
    },
    "server": {
-    "page": "index-BHJ5skFE.js",
+    "page": "da39a3ee5e",
     "update": false
    }
   }
@@ -1248,11 +1249,11 @@ export const SAMPLES = {
    "kind": "del",
    "src": "r5",
    "ns": [
-    8
+    7
    ],
    "kept": [],
    "codes": {
-    "8": "T08"
+    "7": "T07"
    }
   },
   {
@@ -1269,7 +1270,7 @@ export const SAMPLES = {
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
    "kind": "org",
-   "src": "r5",
+   "src": "r3",
    "ok": true,
    "msg": "Created T8"
   },
@@ -1283,7 +1284,7 @@ export const SAMPLES = {
    "pri": "P2",
    "when": "now",
    "title": "Sort the export by date",
-   "src": "r5",
+   "src": "r3",
    "codes": {
     "8": "T08"
    }
@@ -1293,7 +1294,7 @@ export const SAMPLES = {
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
    "kind": "org",
-   "src": "r3",
+   "src": "r5",
    "ok": true,
    "msg": "Created T7"
   },
@@ -1307,7 +1308,7 @@ export const SAMPLES = {
    "pri": "P2",
    "when": "now",
    "title": "Sort the export by date",
-   "src": "r3",
+   "src": "r5",
    "codes": {
     "7": "T07"
    }
@@ -1373,7 +1374,7 @@ export const SAMPLES = {
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
    "kind": "org",
-   "src": "r1",
+   "src": "r2",
    "ok": true,
    "msg": "Created T6"
   },
@@ -1387,7 +1388,7 @@ export const SAMPLES = {
    "pri": "P2",
    "when": "now",
    "title": "Sort the export by date",
-   "src": "r1",
+   "src": "r2",
    "codes": {
     "6": "T06"
    }
@@ -1397,7 +1398,7 @@ export const SAMPLES = {
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
    "kind": "org",
-   "src": "r2",
+   "src": "r1",
    "ok": true,
    "msg": "Created T5"
   },
@@ -1411,7 +1412,7 @@ export const SAMPLES = {
    "pri": "P2",
    "when": "now",
    "title": "Sort the export by date",
-   "src": "r2",
+   "src": "r1",
    "codes": {
     "5": "T05"
    }
@@ -1675,7 +1676,7 @@ export const SAMPLES = {
    "docs": 0,
    "agents": [],
    "work": false,
-   "t": 1794192065258
+   "t": 1794204933356
   },
   {
    "name": "garden",
@@ -1687,7 +1688,7 @@ export const SAMPLES = {
    "docs": 1,
    "agents": [],
    "work": true,
-   "t": 1794192065432
+   "t": 1794204933467
   },
   {
    "name": "shop",
@@ -1700,23 +1701,23 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400372,
+     "t": 1793984400311,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400372
+       "t": 1793984400311
       },
       {
        "name": "helper",
-       "t": 1793984400243
+       "t": 1793984400229
       }
      ]
     }
    ],
    "work": true,
-   "t": 1794192065432
+   "t": 1794204933467
   }
  ],
  "needs": [
@@ -1863,7 +1864,7 @@ export const SAMPLES = {
       "ses": "sample"
      },
      "readBy": {
-      "claude-code": 1793984400303
+      "claude-code": 1793984400299
      }
     },
     "parentCode": null,
@@ -1937,37 +1938,6 @@ export const SAMPLES = {
      "body": "",
      "pri": "P2",
      "when": "now",
-     "status": "dropped",
-     "parent": null,
-     "next": "",
-     "srcs": [
-      "r2"
-     ],
-     "mergedInto": null,
-     "archived": true,
-     "t0": "2026-11-06T09:00:00-08:00",
-     "t1": "2026-11-06T09:00:00-08:00",
-     "by": "org",
-     "thread": [],
-     "wait": null,
-     "talked": false
-    },
-    "parentCode": null,
-    "kids": null
-   },
-   {
-    "project": "shop",
-    "kind": "items",
-    "key": "i6",
-    "n": 6,
-    "item": {
-     "n": 6,
-     "code": "T06",
-     "type": "task",
-     "title": "Sort the export by date",
-     "body": "",
-     "pri": "P2",
-     "when": "now",
      "status": "open",
      "parent": null,
      "next": "",
@@ -2000,11 +1970,42 @@ export const SAMPLES = {
    {
     "project": "shop",
     "kind": "items",
-    "key": "i7",
-    "n": 7,
+    "key": "i6",
+    "n": 6,
     "item": {
-     "n": 7,
-     "code": "T07",
+     "n": 6,
+     "code": "T06",
+     "type": "task",
+     "title": "Sort the export by date",
+     "body": "",
+     "pri": "P2",
+     "when": "now",
+     "status": "dropped",
+     "parent": null,
+     "next": "",
+     "srcs": [
+      "r2"
+     ],
+     "mergedInto": null,
+     "archived": true,
+     "t0": "2026-11-06T09:00:00-08:00",
+     "t1": "2026-11-06T09:00:00-08:00",
+     "by": "org",
+     "thread": [],
+     "wait": null,
+     "talked": false
+    },
+    "parentCode": null,
+    "kids": null
+   },
+   {
+    "project": "shop",
+    "kind": "items",
+    "key": "i8",
+    "n": 8,
+    "item": {
+     "n": 8,
+     "code": "T08",
      "type": "task",
      "title": "Sort the export by date",
      "body": "",
@@ -2287,7 +2288,7 @@ export const SAMPLES = {
   "tidy": true
  },
  "pushKey": {
-  "key": "BOBulj2aui5ws0WwoReGM2WWKyjuv6s-1Dsp-Xy-aOeBVIN6IF85ANdIM7FURYZlNMQwzwSd30WCr8T8NDTqcsI",
+  "key": "BMsVZtpLyh4zkynwBCnsckaDseusjPvAzrKvfZx45mikCd9HYCOTSBqUo-UW2cnCMs-TYrWfYclhxi3fhhlqgG4",
   "on": false
  },
  "setPush": {
@@ -2337,7 +2338,7 @@ export const SAMPLES = {
  },
  "newKey": {
   "ok": true,
-  "key": "rjkh-hjs6"
+  "key": "pj3w-y4hn"
  },
  "login": {
   "ok": true

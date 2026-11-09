@@ -2,22 +2,32 @@
 
 import type { AgentSeen } from './types'
 import { ago } from './time'
-import { whoName } from './words'
+import { hasIcon, whoName } from './words'
 
 export type AgentTone = 'ready' | 'recent' | 'idle' | 'bad' | 'blocked'
 
+/** The agent a pill or a card names (T711): who (drawn by its app's icon where it has one), its session (the one
+ * blocked on the user, else the latest heard of; '' when it gave none) and what follows them: "ready", "blocked",
+ * or how long ago it was heard of ("5m"). */
+export interface AgentWho {
+  by: string
+  session: string
+  state: string
+}
+
 export interface AgentLine {
   tone: AgentTone
+  /** the line in words alone, the agent by name */
   label: string
-  /** the tip: each agent's sessions, the latest first (not the line the pill shows already) */
+  /** the agent it names; none when it names none (No agent) */
+  who?: AgentWho
+  /** the tip: each agent's sessions, the latest first (where the pill says the agent's name, not the line it shows) */
   tip: string | undefined
 }
 
 /** An agent counts as around for this long after it was last heard of (T728 #5: one rule for the pill, the Agents
  * sheet and the home page; the server's is the same 600 s). */
 export const AROUND_MS = 10 * 60e3
-/** A session shows on a row's agent mark while it was heard of within this. */
-export const SESSION_MS = 3600e3
 
 /** Where a project's agents are (T728 #5), worked out once: a session blocked on the user comes first, then one
  * waiting for work, then the latest heard of within AROUND_MS; else away (or none ever). */
@@ -49,6 +59,15 @@ export function agentState(agents: readonly AgentSeen[] | undefined, work: boole
 
 export function agentLine(agents: readonly AgentSeen[] | undefined, work: boolean | undefined, now: number): AgentLine {
   const [tone, label] = agentState(agents, work, now)
+  const p = presenceOf(agents, now)
+  const who: AgentWho | undefined =
+    p.k === 'none' || tone === 'bad'
+      ? undefined
+      : {
+          by: p.a.name,
+          session: (p.k === 'blocked' ? p.a.blocked?.[0]?.session : p.a.session || p.a.sessions?.[0]?.name) || '',
+          state: p.k === 'blocked' ? 'blocked' : p.k === 'ready' ? 'ready' : ago(p.a.t, now, 'short'),
+        }
   const ready = tone === 'ok' && (agents || []).some((a) => a.waiting)
   const lines = (agents || [])
     .flatMap((a) =>
@@ -61,7 +80,9 @@ export function agentLine(agents: readonly AgentSeen[] | undefined, work: boolea
   return {
     tone: tone === 'ok' ? (ready ? 'ready' : 'recent') : tone,
     label,
-    tip: lines.map((l) => l.text).filter((l) => l !== label).join('\n') || undefined,
+    who,
+    // an icon in the agent's name's place: the tip names it, so it keeps every line
+    tip: lines.map((l) => l.text).filter((l) => hasIcon(who?.by) || l !== label).join('\n') || undefined,
   }
 }
 
@@ -72,7 +93,7 @@ export function blockedOn(a: AgentSeen, session: string): string | undefined {
 }
 
 /** The home page's agent cell, by the pill's own rule (presenceOf): who, and whether it is around or blocked. */
-export function lastAgent(agents: readonly AgentSeen[] | undefined, now: number): { name: string; on: boolean; blocked: boolean } | null {
+export function lastAgent(agents: readonly AgentSeen[] | undefined, now: number): { by: string; on: boolean; blocked: boolean } | null {
   const p = presenceOf(agents, now)
-  return p.k === 'none' ? null : { name: whoName(p.a.name), on: p.k !== 'away', blocked: p.k === 'blocked' }
+  return p.k === 'none' ? null : { by: p.a.name, on: p.k !== 'away', blocked: p.k === 'blocked' }
 }

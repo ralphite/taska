@@ -7,6 +7,7 @@
 import { useState, type MouseEvent, type ReactNode } from 'react'
 import { foldRuns, type Chunk, type VersionRow } from '../../model/rules'
 import type { RuleProposal } from '../../model/types'
+import { hasIcon } from '../../model/words'
 import { Avatar, Empty } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
@@ -22,7 +23,7 @@ export const RULES_COLUMN = 'lg:mx-auto lg:w-full lg:max-w-[min(46rem,calc(100%-
 const APPROVE = `${PRIMARY_BASE} bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600`
 
 /** The bar's name: Rules, and what it shows (the version, who, when; Editing; a proposal). */
-export function RulesHead({ sub }: { sub: string }) {
+export function RulesHead({ sub }: { sub: ReactNode }) {
   return (
     <span className="flex min-w-0 items-center gap-2 overflow-hidden text-sm">
       <Icon n="book" c="size-[18px] shrink-0 text-zinc-500 dark:text-zinc-400" />
@@ -83,11 +84,11 @@ export function ProposalCard({ f, open = false, on }: { f: ProposalFacts; open?:
     <div data-proposal={p.id} className={`${NEEDS_CARD} p-3 lg:px-4`}>
       <div className="flex items-start gap-2 text-sm">
         <span className="mt-0.5">
-          <Avatar by={p.by} />
+          <Avatar by={p.by} named />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2">
-            <b className="font-semibold">{f.who} proposes a change</b>
+            <b className="font-semibold">{hasIcon(p.by) ? '' : `${f.who} `}proposes a change</b>
             <span className={`text-xs ${MUTED}`}>{f.when}</span>
           </div>
           <div className="text-amber-900 dark:text-amber-200">{p.why}</div>
@@ -168,11 +169,11 @@ export function VersionList({ rows, picked, on }: { rows: readonly VersionRow[];
         className="flex w-full items-start gap-2.5 px-4 py-2.5 text-left text-sm hover:bg-zinc-100 aria-current:bg-zinc-100 dark:hover:bg-zinc-800/70 dark:aria-current:bg-zinc-800"
       >
         <span className="mt-0.5">
-          <Avatar by={x.by === 'you' ? 'Y' : x.by} />
+          <Avatar by={x.by === 'you' ? 'Y' : x.by} named />
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
-            <b className="truncate font-semibold">{x.who}</b>
+            {hasIcon(x.by) ? null : <b className="truncate font-semibold">{x.who}</b>}
             <span className={`shrink-0 text-xs ${MUTED}`}>{x.time}</span>
             {x.now ? <span className="ml-auto shrink-0 rounded-md bg-zinc-200/70 px-1.5 text-[11px] font-semibold text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">Now</span> : null}
           </span>

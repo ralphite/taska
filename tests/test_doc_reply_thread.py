@@ -30,6 +30,16 @@ class DocReplyThread(ProjectCase):
         self.p.run(parse(f"D{d.d} reply ¶2 The CSV one.\n"), "claude-code")
         self.assertEqual(rules.doc_unanswered(self.p.state.docs[d.d]), 0)
 
+    def test_a_reply_names_its_session_as_a_message_does(self):
+        """T711: the page shows an agent's comment with its session's name, as it shows its messages."""
+        from taska.page_api.views import comment_view
+        d = next(iter(self.p.state.docs.values()))
+        self.p.run(parse(f"D{d.d} reply ¶2 Checked.\n"), "claude-code", session="Export  work")
+        self.p.run([(1, {"op": "dc", "d": str(d.d), "key": "doc", "text": "Thanks."})], "you")
+        said = {c.text: comment_view(c) for c in self.p.state.docs[d.d].comments}
+        self.assertEqual(said["Checked."]["ses"], "Export work")
+        self.assertNotIn("ses", said["Thanks."])
+
 
 if __name__ == "__main__":
     unittest.main()

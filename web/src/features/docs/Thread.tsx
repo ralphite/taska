@@ -7,9 +7,10 @@ import { plainQuote } from '../../model/markdown'
 import { sameText, type Thread as DocThread } from '../../model/docs'
 import { when } from '../../model/time'
 import type { Comment, FileRef } from '../../model/types'
-import { plural, whoName } from '../../model/words'
+import { hasIcon, plural } from '../../model/words'
 import { sayIn } from '../../model/voiceStates'
 import { Icon } from '../../ui/Icon'
+import { Who } from '../../ui/bits'
 import { Rich } from '../../ui/Markdown'
 import { BUSY, COMMENT_CARD, COMMENT_WHO, DC_BTN, DC_DANGER, HIT, MUTED, SEP_V } from '../../ui/tones'
 import { Thumbs, isAudio, type FileEvents, type PlayState } from '../../ui/Files'
@@ -154,7 +155,9 @@ export function Thread({ t, blockText, rail = false, isNew, done, doneAt, replyi
             <div className="mb-0.5 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-300">“{plainQuote(c.quote)}”</div>
           ) : null}
           <div className="flex min-h-6 flex-wrap items-center gap-1 lg:relative">
-            {c.by === 'you' ? null : <span className={COMMENT_WHO(c.by)}>{whoName(c.by)}</span>}{' '}
+            {/* who by its app's icon where it has one, then its session (T711) */}
+            {c.by === 'you' ? null : <Who by={c.by} cls={COMMENT_WHO(c.by)} />}
+            {c.by !== 'you' && c.ses ? <span className={`min-w-0 truncate ${COMMENT_WHO(c.by)}`}>{hasIcon(c.by) ? c.ses : `· ${c.ses}`}</span> : null}{' '}
             <span className={`text-xs ${MUTED}`}>
               {/* shown while it is being saved (D83 #1): it says so, as what you send in the talk does */}
               {c.id > 0 ? when(c.t, env.now) : <span className={BUSY}>Sending…</span>}

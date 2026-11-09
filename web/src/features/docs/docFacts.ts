@@ -5,7 +5,6 @@ import { blockKeys, outline, resolved, skipped, threadNew, threadsOf, titled, ti
 import { codeOf, liveN, type ProjectModel } from '../../model/project'
 import { clock, when } from '../../model/time'
 import type { Doc } from '../../model/types'
-import { whoName } from '../../model/words'
 import type { DocViewState } from '../../stores/docView'
 import { TICKED_LINE, tickText, ticksNotSent, type TickState } from '../../model/docTicks'
 import type { DocFacts, ShownThread } from './DocView'
@@ -63,7 +62,7 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
   return {
     d,
     itemCode: codeOf(m, d.n),
-    by: whoName(d.by),
+    by: d.by,
     when: when(d.t1, m.at),
     rows,
     showTitle: !isTitled && d.fmt !== 'html' && d.kind !== 'rules',

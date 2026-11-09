@@ -3,6 +3,8 @@
 
 import { useEffect, useRef } from 'react'
 import type { LogSentence } from '../model/activity'
+import { hasIcon } from '../model/words'
+import { Who } from './bits'
 import { MUTED } from './tones'
 
 export interface LogEvents {
@@ -21,11 +23,12 @@ export function LogLine({ s, withTime = false, on }: { s: LogSentence; withTime?
   }
   return (
     <>
-      <span className="font-medium text-zinc-800 dark:text-zinc-100">{s.who}</span>
+      {/* who by its app's icon where it has one, then its session (T711) */}
+      {s.who ? <Who by={s.who} cls="font-medium text-zinc-800 dark:text-zinc-100" /> : null}
       {s.session ? (
         <>
           {' '}
-          <span className="text-zinc-500 dark:text-zinc-400">{'· ' + s.session}</span>
+          <span className="text-zinc-500 dark:text-zinc-400">{hasIcon(s.who) ? s.session : '· ' + s.session}</span>
         </>
       ) : null}
       {parts.map((p, i) =>

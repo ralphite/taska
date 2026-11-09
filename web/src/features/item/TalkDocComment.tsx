@@ -5,8 +5,8 @@
 import type { DocNote } from '../../model/talk'
 import { when } from '../../model/time'
 import { sayIn, sentNotes, voiceLacks } from '../../model/voiceStates'
-import { whoName } from '../../model/words'
-import { Avatar } from '../../ui/bits'
+import { hasIcon } from '../../model/words'
+import { AgentName } from '../../ui/bits'
 import { FileRows, VoiceBubble, isAudio } from '../../ui/Files'
 import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
@@ -84,8 +84,9 @@ export function DocComment({ n, env, on }: { n: DocNote; env: TalkEnv; on: TalkL
   ) : (
     <div className="flex flex-col items-start gap-1.5">
       <div className={`flex max-w-full min-w-0 items-center gap-2 px-1 text-[11px] ${MUTED}`}>
-        <Avatar by={c.by} />
-        <span className="shrink-0 text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(c.by)}</span>
+        {/* who by its app's icon where it has one, then its session (T711) */}
+        <AgentName by={c.by} cls="shrink-0 text-xs font-semibold text-zinc-700 dark:text-zinc-300" />
+        {c.ses ? <span className={`min-w-0 truncate text-xs ${hasIcon(c.by) ? 'font-semibold text-zinc-700 dark:text-zinc-300' : '-ml-1 text-zinc-500 dark:text-zinc-400'}`}>{hasIcon(c.by) ? c.ses : `· ${c.ses}`}</span> : null}
         <Icon n="comment" c="size-3 shrink-0" />
         {where}
         <span className="-ml-1 shrink-0">· {when(c.t, env.now)}</span>

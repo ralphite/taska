@@ -18,9 +18,21 @@ import { acts } from './acts'
 const now = Date.parse(T)
 /** Agents as Taska last heard of them. */
 export const AGENTS = {
-  ready: [{ name: 'claude-code', t: now - 60_000, waiting: true }],
-  recent: [{ name: 'codex', t: now - 4 * 60_000, waiting: false }],
-  gone: [{ name: 'claude-code', t: now - 2 * 3600_000, waiting: false }],
+  ready: [{ name: 'claude-code', t: now - 60_000, waiting: true, session: 'Shop project work', sessions: [{ name: 'Shop project work', t: now - 60_000 }] }],
+  recent: [{ name: 'codex', t: now - 4 * 60_000, waiting: false, session: 'Docs pass', sessions: [{ name: 'Docs pass', t: now - 4 * 60_000 }] }],
+  gone: [{ name: 'claude-code', t: now - 2 * 3600_000, waiting: false, session: 'Shop project work', sessions: [{ name: 'Shop project work', t: now - 2 * 3600_000 }] }],
+  /** a session named at length, as an agent may name one (Taska keeps 60 characters) */
+  long: [
+    {
+      name: 'claude-code',
+      t: now - 60_000,
+      waiting: false,
+      session: 'Rewrite the export so it keeps the filter, the sort and t',
+      sessions: [{ name: 'Rewrite the export so it keeps the filter, the sort and t', t: now - 60_000 }],
+    },
+  ],
+  /** an agent with no app icon of its own: named in words */
+  other: [{ name: 'antigravity', t: now - 2 * 60_000, waiting: false, session: 'Docs pass', sessions: [{ name: 'Docs pass', t: now - 2 * 60_000 }] }],
   none: [],
   /** a Claude Code session waits on the user (T711): it asks to run a command */
   blocked: [

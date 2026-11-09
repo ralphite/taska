@@ -322,12 +322,15 @@ class Comment:
     t: str
     files: List[FileRef] = field(default_factory=list)
     edited: Optional[str] = None
+    ses: Optional[str] = None  # the agent's session: a comment names it as a message does (T711)
 
     def to_row(self) -> Row:
         out: Row = {"id": self.id, "key": self.key, "th": self.th, "quote": self.quote, "text": self.text,
                     "by": self.by, "t": self.t, "files": files_row(self.files)}
         if self.edited is not None:
             out["edited"] = self.edited
+        if self.ses:
+            out["ses"] = self.ses
         return out
 
 

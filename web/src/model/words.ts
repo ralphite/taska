@@ -29,6 +29,10 @@ export const AGENT_NAME: Record<string, string> = {
   antigravity: 'Antigravity',
   agent: 'Agent',
 }
+/** The agents the page draws by their app's icon (ui/bits): wherever it names one, the icon says who, its name only
+ * in its tip and to a screen reader (T711). The others are named in words. */
+export const ICON_AGENTS = ['claude-code', 'codex'] as const
+export const hasIcon = (by: string | null | undefined): by is (typeof ICON_AGENTS)[number] => (ICON_AGENTS as readonly string[]).includes(by || '')
 /** An agent's mark where it has no app icon (ui/bits Avatar): one letter of its own (A is any agent's). */
 export const AVATAR_LETTER: Record<string, string> = { 'claude-code': 'C', codex: 'X', antigravity: 'V', org: 'O', agent: 'A' }
 

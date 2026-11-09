@@ -8,12 +8,15 @@ import { ago, dateOf, timeOf, when } from './time'
 import { whoName } from './words'
 
 export interface ItemTimes {
-  /** the line's first part: the day it was made, and who made it ("Nov 3 by Organizer") */
+  /** the line's first part: the day it was made ("Nov 3"), then who made it ("by Organizer", an agent by its app's icon
+   * where it has one, T711) */
   made: string
+  /** who made it, by key: you, the organizer or an agent; null when not known */
+  by: string | null
   /** the line's second part ("Updated 2h ago"); none when it has not changed since */
   updated: string | null
-  /** both in full: the sheet's rows and the tip's lines */
-  created: { at: string; by: string }
+  /** both in full: the sheet's rows and the tip's lines (the tip says who in words) */
+  created: { at: string }
   last: string | null
   tip: string
 }
@@ -36,10 +39,11 @@ export function itemTimes(it: Pick<Item, 't0' | 't1' | 'by'>, now: number): Item
   const by = byWho(it.by)
   // changed within its first minute (the organizer filing it): not an update of its own
   const changed = !!it.t1 && Date.parse(it.t1) - Date.parse(it.t0) >= 60e3
-  const created = { at: exact(it.t0, now), by }
+  const created = { at: exact(it.t0, now) }
   const last = changed ? exact(it.t1, now) : null
   return {
-    made: [dateOf(it.t0, now), by].filter(Boolean).join(' '),
+    made: dateOf(it.t0, now),
+    by: it.by || null,
     updated: changed ? `Updated ${since(it.t1, now)}` : null,
     created,
     last,

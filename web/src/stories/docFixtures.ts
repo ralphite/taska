@@ -6,7 +6,8 @@ import { T } from './fixtures'
 
 const at = (min: number) => new Date(Date.parse(T) - min * 60_000).toISOString()
 
-export const comment = (f: Partial<Comment> & { id: number; key: string }): Comment => ({ th: 0, quote: '', text: 'Looks right to me.', by: 'claude-code', t: at(30), files: [], ...f })
+/** A comment: an agent's names its session, as a connected agent's does (T711). */
+export const comment = (f: Partial<Comment> & { id: number; key: string }): Comment => ({ th: 0, quote: '', text: 'Looks right to me.', by: 'claude-code', t: at(30), files: [], ...((f.by ?? 'claude-code') === 'you' ? {} : { ses: 'Plan review' }), ...f })
 
 export function doc(f: Partial<Doc> = {}): Doc {
   const blocks: Doc['blocks'] = [

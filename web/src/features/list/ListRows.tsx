@@ -10,7 +10,7 @@ import { closed, statusWord } from '../../model/items'
 import { needRow, shownStatus, type NeedAct } from '../../model/needStates'
 import type { Item, RuleProposal } from '../../model/types'
 import { plural, whoName } from '../../model/words'
-import { Avatar, Count, DraftMark, Hit, Pic, Soft } from '../../ui/bits'
+import { Avatar, Count, DraftMark, Hit, Pic, Soft, Who } from '../../ui/bits'
 import { Icon, StateIcon } from '../../ui/Icon'
 import { ACTION_PILL, MUTED, NEED, PRI_TEXT, TYPE_TEXT, actBg, actIcon, actText, needOfAct } from '../../ui/tones'
 
@@ -350,7 +350,7 @@ export function NeedsRow({ it, depth, facts, look, excerpt, said, act, on }: { i
 
 /** An agent's proposed change to the rules, waiting on you (I693): first in Needs you, as an item's proposal is; it
  * opens the proposal, where its changes are seen before Approve. */
-export function ProposalRow({ p, who, onOpen }: { p: RuleProposal; who: string; onOpen(): void }) {
+export function ProposalRow({ p, onOpen }: { p: RuleProposal; onOpen(): void }) {
   return (
     <article data-proposal={p.id} className={ARTICLE}>
       <div onClick={onOpen} className={`group relative flex cursor-pointer items-center gap-2.5 py-2.5 pr-3 pl-4 ${ROW_TINT}`}>
@@ -362,7 +362,9 @@ export function ProposalRow({ p, who, onOpen }: { p: RuleProposal; who: string; 
             <span className="mr-1.5 text-[13px] font-bold text-zinc-700 dark:text-zinc-300">Rules</span>
             {p.why}
           </p>
-          <div className="mt-1 truncate text-xs text-zinc-500 dark:text-zinc-400">{who} proposes a change</div>
+          <div className="mt-1 truncate text-xs text-zinc-500 dark:text-zinc-400">
+            <Who by={p.by} /> proposes a change
+          </div>
         </div>
         <button title="View changes" aria-label="View changes" onClick={(e) => (e.stopPropagation(), onOpen())} className="group/pill -my-1 grid h-11 shrink-0 place-items-center outline-none">
           <span className={`${ACTION_PILL('approve')} group-hover/pill:brightness-95 dark:group-hover/pill:brightness-125`}>
@@ -403,4 +405,5 @@ export function ArchiveAllLine({ n, onArchive }: { n: number; onArchive(): void 
   )
 }
 
-export const workerTip = (by: string, ses: string) => `${whoName(by) + (ses ? ` · ${ses}` : '')} is on it`
+/** An item row's agent mark says who is on it, never the session (a list names no session, T711). */
+export const workerTip = (by: string) => `${whoName(by)} is on it`

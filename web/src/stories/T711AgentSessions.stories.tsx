@@ -3,9 +3,9 @@
 // one piece under discussion, the agent pill in the head; its click opens the page's own Agents sheet, where the
 // active session's row is the other half of that piece. No state words and nothing about what the session waits on:
 // the dot alone says it (amber blocked; at work as today). Two ways for the pill:
-//   a. Pill: the pill as today, its label the agent's name alone, the amber dot
+//   a. Pill: the pill as today, the agent's icon and its session alone, the amber dot
 //   b. Icon: the agent's app icon alone, the dot on its corner
-// Blocked first, then at work.
+// Blocked first, then at work (b. only: a. at work is the page's own pill).
 import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { agentsSheet } from '../features/agents/Agents'
@@ -39,11 +39,12 @@ const AGENTS: Record<State, AgentSeen[]> = {
   blocked: [{ ...at, blocked: [{ session: SESSION, waitingFor: 'approve Bash: npm --prefix web run check', since: now - 2 * 60_000 }] }],
 }
 
-/** What each way changes in the pill; its tip names the agent and the session alone. */
+/** What each way changes in the pill (at work, a. is the page's own pill, its stories: Agent pill); its tip names the
+ * agent and the session alone. */
 const TIP = `Claude Code · ${SESSION}`
 const PILL: Record<Way, Record<State, Partial<AgentInfo>>> = {
-  a: { blocked: { label: 'Claude Code', tip: TIP }, working: {} },
-  b: { blocked: { by: 'claude-code', tip: TIP }, working: { by: 'claude-code' } },
+  a: { blocked: { who: { by: 'claude-code', session: SESSION, state: '' }, tip: TIP }, working: {} },
+  b: { blocked: { iconOnly: true, tip: TIP }, working: { iconOnly: true } },
 }
 
 const on = acts('Agents', ['copy', 'help'], { help: 'Help › Topics › Connect an agent' })
@@ -76,11 +77,10 @@ const story = (way: Way, state: State, name: string): Story => ({
   render: () => <Frames deskWidth={1280} height={760}>{(layout) => <Page way={way} state={state} desk={layout === 'desk'} />}</Frames>,
 })
 
-/** Blocked on Yadong: a. the pill says the agent's name with the amber dot; its row in Agents ends with the dot. */
+/** Blocked on Yadong: a. the pill says the agent's icon and its session with the amber dot; its row in Agents ends
+ * with the dot. */
 export const BlockedPill = story('a', 'blocked', 'Blocked · a. Pill')
 /** Blocked on Yadong: b. the agent's icon with the amber dot on its corner, in the pill and on its row in Agents. */
 export const BlockedIcon = story('b', 'blocked', 'Blocked · b. Icon')
-/** At work: a. the pill as today. */
-export const WorkingPill = story('a', 'working', 'At work · a. Pill')
-/** At work: b. the agent's icon with today's dot on its corner. */
+/** At work: b. the agent's icon with today's dot on its corner (a. is the page's own pill, its stories: Agent pill). */
 export const WorkingIcon = story('b', 'working', 'At work · b. Icon')

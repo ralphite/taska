@@ -8,6 +8,7 @@ import { sameText, type Thread as DocThread } from '../../model/docs'
 import type { Block, Doc } from '../../model/types'
 import { plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
+import { Who } from '../../ui/bits'
 import { RichFrame } from '../../ui/Markdown'
 import type { SheetLook } from '../../ui/Sheet'
 import { MUTED, NEEDS_PILL, PRIMARY } from '../../ui/tones'
@@ -60,6 +61,7 @@ export interface DocRow {
 export interface DocFacts {
   d: Doc
   itemCode: string
+  /** who wrote it, by its key (drawn by its app's icon where it has one, T711) */
   by: string
   when: string
   rows: DocRow[]
@@ -229,7 +231,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
             <button onClick={on.goItem} className="text-blue-600 hover:underline dark:text-blue-400">
               {facts.itemCode}
             </button>{' '}
-            · {facts.by} · {facts.when}
+            · <Who by={facts.by} /> · {facts.when}
           </span>
           {/* the phone's Copy, Move, Mark an area, Edit and Delete are in the ⋯ by its close button (D115 #41); the
               desktop's are in the pane's bar */}

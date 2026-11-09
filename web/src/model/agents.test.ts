@@ -21,6 +21,27 @@ test('no session blocked: as before', () => {
   expect(agentLine([{ ...blocked[1], blocked: undefined }], false, now).label).toBe('Claude Code · 20m')
 })
 
+// T711 (Yadong): the head's agent button names the agent by its icon, and its session; the tip names it in words.
+describe('who the pill names: the agent, its session, what it does (T711)', () => {
+  test('blocked: the session that waits on you', () => {
+    const line = agentLine(blocked, true, now)
+    expect(line.who).toEqual({ by: 'claude-code', session: 'Fix export', state: 'blocked' })
+    expect(line.tip).toContain('Claude Code · Fix export')
+  })
+  test('ready, and here lately: the latest session', () => {
+    const at = { name: 'codex', t: now - 4 * 60_000, session: 'Docs pass', sessions: [{ name: 'Docs pass', t: now - 4 * 60_000 }] }
+    expect(agentLine([{ ...at, waiting: true }], true, now).who).toEqual({ by: 'codex', session: 'Docs pass', state: 'ready' })
+    expect(agentLine([{ ...at, waiting: false }], true, now).who).toEqual({ by: 'codex', session: 'Docs pass', state: '4m' })
+    // drawn by its icon: the tip keeps the line, so hovering names the agent
+    expect(agentLine([{ ...at, waiting: false }], true, now).tip).toBe('Codex · Docs pass · 4m')
+  })
+  test('no session given: none; no agent around while work waits: no agent named', () => {
+    expect(agentLine([{ name: 'codex', t: now - 60_000, waiting: true }], true, now).who).toEqual({ by: 'codex', session: '', state: 'ready' })
+    expect(agentLine([{ name: 'codex', t: now - 3 * 3600e3, waiting: false }], true, now).who).toBeUndefined()
+    expect(agentLine([], true, now).who).toBeUndefined()
+  })
+})
+
 describe('presence, one rule for the pill and the home page (T728 #5)', () => {
   test('a blocked session shows on the home page as on the pill, even when another agent was here later', () => {
     const now = Date.parse('2026-11-08T10:00:00Z')

@@ -20,6 +20,10 @@ export const PillRecent: Story = { ...one({ agents: AGENTS.recent }), name: 'Her
 export const PillGone: Story = { ...one({ agents: AGENTS.gone, work: true }), name: 'Work waits, no agent' }
 /** A Claude Code session waits on the user (T711 #10443): amber, before anything else the pill could say. */
 export const PillBlocked: Story = { ...one({ agents: AGENTS.blocked }), name: 'Blocked, waiting on you' }
+/** A long session name is cut; what follows it (how long ago) stays (T711). */
+export const PillLongSession: Story = { ...one({ agents: AGENTS.long }), name: 'A long session name' }
+/** An agent with no app icon of its own: its name in words, then its session (T711). */
+export const PillNoIcon: Story = { ...one({ agents: AGENTS.other }), name: 'An agent without an icon' }
 /** No agent has ever come, nothing waits for one. */
 export const PillIdle: Story = { ...one({ agents: AGENTS.none, work: false }), name: 'No agent yet' }
 /** Taska does not answer: Offline, retrying. */

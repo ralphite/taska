@@ -11,8 +11,8 @@ import { MADE_WORD, becameText, showsIn } from '../../model/inputStates'
 import { answerOf, readMark, versions, withdrawn, type DocNote, type Version } from '../../model/talk'
 import { when } from '../../model/time'
 import type { Doc, FileRef, Input, Item, Message } from '../../model/types'
-import { KIND_WORD, inputCode, whoName } from '../../model/words'
-import { Avatar } from '../../ui/bits'
+import { KIND_WORD, hasIcon, inputCode, whoName } from '../../model/words'
+import { AgentName, Who } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
 import { DC_BTN, DC_LINK, MUTED, YOU_BUBBLE } from '../../ui/tones'
@@ -126,7 +126,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
   done: string[] | null
   ver?: Version
   gone: boolean
-  read: { names: string[]; t: number } | null
+  read: { by: string[]; t: number } | null
 }) {
   if (x.by === 'you') return <YourMessage x={x} env={env} on={on} facts={facts} ver={ver} read={read} />
   if (x.kind === 'withdraw') return <TookBack x={x} env={env} on={on} />
@@ -149,7 +149,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
 }
 
 /** Your words: in blue on the right, with what became of the input they came from. */
-function YourMessage({ x, env, on, facts, ver, read }: { x: Message; env: TalkEnv; on: TalkLineEvents; facts: TalkFacts; ver?: Version; read: { names: string[]; t: number } | null }) {
+function YourMessage({ x, env, on, facts, ver, read }: { x: Message; env: TalkEnv; on: TalkLineEvents; facts: TalkFacts; ver?: Version; read: { by: string[]; t: number } | null }) {
   const src = x.src ? facts.inputs.get(x.src) : undefined
   const y = ver ? { ...x, text: ver.text } : x
   const strip = (files: FileRef[] | undefined) => (files?.length ? <FileRows files={files} url={env.url} play={env.play} tidy={env.tidy} on={on} cls="items-end max-w-full [&>div]:max-w-full" /> : null)
@@ -235,9 +235,17 @@ function YourMessage({ x, env, on, facts, ver, read }: { x: Message; env: TalkEn
           {read ? (
             <>
               {' · '}
-              <span title={`${read.names.join(', ')} read it ${when(new Date(read.t).toISOString(), env.now)}`} className="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">
+              <span title={`${read.by.map(whoName).join(', ')} read it ${when(new Date(read.t).toISOString(), env.now)}`} className="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">
                 <Icon n="check" c="size-3" sw="2.5" />
-                Read by {read.names.join(', ')}
+                <span>
+                  Read by{' '}
+                  {read.by.map((b, i) => (
+                    <Fragment key={b}>
+                      {i ? ', ' : ''}
+                      <Who by={b} />
+                    </Fragment>
+                  ))}
+                </span>
               </span>
             </>
           ) : null}
@@ -271,7 +279,9 @@ function TookBack({ x, env, on }: { x: Message; env: TalkEnv; on: TalkLineEvents
     <div className="flex items-start gap-2 px-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">
       <Icon n="undo" c="mt-0.5 size-3.5 shrink-0" />
       <div className="min-w-0 flex-1">
-        <span className="font-medium text-zinc-600 dark:text-zinc-300">{whoName(x.by)} took back its question</span> <span className={`text-[11px] ${MUTED}`}>{when(x.t, env.now)}</span>
+        <span className="font-medium text-zinc-600 dark:text-zinc-300">
+          <Who by={x.by} /> took back its question
+        </span> <span className={`text-[11px] ${MUTED}`}>{when(x.t, env.now)}</span>
         {x.text.trim() ? <Rich text={x.text} world={env.world} cls="mt-0.5" onRef={on.ref} onPicture={on.picture} /> : null}
       </div>
     </div>
@@ -284,9 +294,9 @@ function AgentHead({ x, end, children }: { x: Message; end?: ReactNode; children
   return (
     <div className={`flex items-center gap-2 self-stretch px-1 text-[11px] ${MUTED}`}>
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 whitespace-nowrap phone:flex-1">
-        <Avatar by={x.by} />
-        <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(x.by)}</span>
-        {x.ses ? <span className="-ml-1 text-xs text-zinc-500 dark:text-zinc-400">· {x.ses}</span> : null}
+        {/* who by its app's icon where it has one, then its session (T711) */}
+        <AgentName by={x.by} cls="text-xs font-semibold text-zinc-700 dark:text-zinc-300" />
+        {x.ses ? <span className={`max-w-44 min-w-0 truncate text-xs lg:max-w-96 ${hasIcon(x.by) ? 'font-semibold text-zinc-700 dark:text-zinc-300' : '-ml-1 text-zinc-500 dark:text-zinc-400'}`}>{hasIcon(x.by) ? x.ses : `· ${x.ses}`}</span> : null}
         {x.to?.length ? <span className="text-xs text-zinc-500 dark:text-zinc-400">→ {x.to.join(', ')}</span> : null}
         {children}
       </div>
@@ -314,7 +324,7 @@ function Withdrawn({ x, env }: { x: Message; env: TalkEnv }) {
 function Hidden({ x, env, on }: { x: Message; env: TalkEnv; on: TalkLineEvents }) {
   return (
     <button onClick={() => on.peek(x.id)} className={`relative flex items-center gap-1.5 self-start px-1 after:absolute after:inset-x-0 after:-inset-y-3.5 text-[12px] hover:text-zinc-600 dark:hover:text-zinc-300 ${MUTED}`}>
-      {whoName(x.by)} · hidden message · {when(x.t, env.now)} · Show
+      <Who by={x.by} /> · hidden message · {when(x.t, env.now)} · Show
     </button>
   )
 }
@@ -458,7 +468,7 @@ export function Talk({ it, list, notes, card, env, on, facts, docs, code }: {
         done={gone.has(x.id) ? null : answerOf(th, x, facts.going?.text ?? null)}
         ver={vers.get(x.id)}
         gone={gone.has(x.id)}
-        read={read?.id === x.id ? { names: read.names.map(whoName), t: read.t } : null}
+        read={read?.id === x.id ? { by: read.names, t: read.t } : null}
       />,
     )
   }

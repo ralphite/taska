@@ -9,21 +9,22 @@ describe('when an item was made and last changed (F704 r1157)', () => {
 
   test('the line: its day and who made it, then how long ago it changed', () => {
     const x = itemTimes({ t0: t(10, 3, 9, 12), t1: t(10, 6, 14, 38), by: 'org' }, now)
-    expect([x.made, x.updated]).toEqual(['Nov 3 by Organizer', 'Updated 2h ago'])
+    expect([x.made, x.by, x.updated]).toEqual(['Nov 3', 'org', 'Updated 2h ago'])
   })
 
   test('both in full: today said as such, and who made it', () => {
     const x = itemTimes({ t0: t(10, 3, 9, 12), t1: t(10, 6, 14, 38), by: 'org' }, now)
-    expect(x.created).toEqual({ at: 'Nov 3 09:12', by: 'by Organizer' })
+    expect(x.created).toEqual({ at: 'Nov 3 09:12' })
     expect(x.last).toBe('Today 14:38')
     expect(x.tip).toBe('Created Nov 3 09:12 by Organizer\nUpdated Today 14:38')
   })
 
-  test('who: you, an agent by its name, nobody when not known', () => {
+  // the line draws who by key (an agent by its app's icon, T711); the tip says it in words
+  test('who: you, an agent by its name in the tip, nobody when not known', () => {
     const at = { t0: t(10, 3, 9, 12), t1: t(10, 3, 9, 12) }
-    expect(itemTimes({ ...at, by: 'you' }, now).made).toBe('Nov 3 by you')
-    expect(itemTimes({ ...at, by: 'claude-code' }, now).made).toBe('Nov 3 by Claude Code')
-    expect(itemTimes({ ...at, by: null }, now).made).toBe('Nov 3')
+    expect(itemTimes({ ...at, by: 'you' }, now)).toMatchObject({ made: 'Nov 3', by: 'you', tip: 'Created Nov 3 09:12 by you' })
+    expect(itemTimes({ ...at, by: 'claude-code' }, now)).toMatchObject({ by: 'claude-code', tip: 'Created Nov 3 09:12 by Claude Code' })
+    expect(itemTimes({ ...at, by: null }, now)).toMatchObject({ made: 'Nov 3', by: null })
     expect(itemTimes({ ...at, by: null }, now).tip).toBe('Created Nov 3 09:12')
   })
 
@@ -45,7 +46,7 @@ describe('when an item was made and last changed (F704 r1157)', () => {
 
   test('another year: its year, and in full its time too', () => {
     const x = itemTimes({ t0: t(9, 21, 14, 30, 2025), t1: t(9, 21, 14, 30, 2025), by: 'you' }, now)
-    expect(x.made).toBe('Oct 21, 2025 by you')
+    expect(x.made).toBe('Oct 21, 2025')
     expect(x.created.at).toBe('Oct 21, 2025 14:30')
   })
 })

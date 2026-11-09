@@ -2,11 +2,9 @@
 // talk, draft, whether it is next, new from an agent, who works on it, where a searched word was found) and how it
 // looks (open in the pane, picked, dragged). Pure: the container and the stories draw the same rows from the same data.
 
-import { SESSION_MS } from '../../model/agents'
 import { closed, lastAgentMessage, workNews, type DropHow } from '../../model/items'
 import { needRow } from '../../model/needStates'
 import { codeOf, filesOf, type ProjectModel } from '../../model/project'
-import { ruleWho } from '../../model/rules'
 import { laterOn } from '../../model/time'
 import type { Item, SavedView } from '../../model/types'
 import { showsView, visible } from '../../model/visible'
@@ -52,12 +50,7 @@ export function rowFacts(m: ProjectModel, it: Item, w: DrawWith): RowFacts {
   const kids = m.kids.get(it.n) || []
   const img = filesOf(m, it).find((f) => (f.mime || '').startsWith('image/'))
   const a = it.agent
-  let worker: RowFacts['worker'] = null
-  if (a) {
-    const only = (m.facts.agents.find((x) => x.name === a.by)?.sessions || []).filter((x) => m.at - x.t < SESSION_MS)
-    const ses = a.ses || (only.length === 1 ? only[0].name : '')
-    worker = { by: a.by, tip: workerTip(a.by, ses) }
-  }
+  const worker: RowFacts['worker'] = a ? { by: a.by, tip: workerTip(a.by) } : null
   return {
     code,
     parentCode: it.parent ? codeOf(m, it.parent) : null,
@@ -99,7 +92,7 @@ export function drawRows(m: ProjectModel, rows: Row[], w: DrawWith): DrawnRow[] 
       case 'archive-all':
         return { kind: 'archive-all', key: 'archive-all', n: r.n }
       case 'proposal':
-        return { kind: 'proposal', key: 'p' + r.p.id, p: r.p, who: ruleWho(r.p.by) }
+        return { kind: 'proposal', key: 'p' + r.p.id, p: r.p }
     }
   })
 }

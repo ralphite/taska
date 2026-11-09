@@ -4,8 +4,8 @@
 
 import type { ReactNode } from 'react'
 import { guideParts, type GuidePart } from '../../model/guide'
-import { plural } from '../../model/words'
-import { Avatar, Skeleton } from '../../ui/bits'
+import { hasIcon, plural, whoName } from '../../model/words'
+import { Avatar, Skeleton, Who } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import type { SheetParts } from '../../ui/Sheet'
@@ -14,10 +14,13 @@ import { CHIP } from '../../ui/tones'
 export interface AgentsFacts {
   tone: 'ok' | 'bad' | 'idle' | 'blocked'
   line: string
+  /** the agent the line names: its name there drawn by its app's icon where it has one (T711) */
+  lineBy?: string
   queue: number
   later: number
-  /** `blocked`: its sessions that wait on the user, each with what it waits on (T711) */
-  seen: { name: string; who: string; when: string; known: boolean; blocked: { session: string; waitingFor: string }[] }[]
+  /** `sessions`: the latest first, each by its name, how long ago it was heard of, whether it waits on the user and on
+   * what (T711) */
+  seen: { name: string; who: string; when: string; known: boolean; sessions: { name: string; when: string; blocked: boolean; waitingFor: string }[] }[]
   cmd: string
   far: string
   ask: string
@@ -36,6 +39,20 @@ const CARD_LOOK = {
 
 const AMBER = 'text-amber-700 dark:text-amber-400'
 const AMBER_DOT = 'bg-amber-500 dark:bg-amber-400'
+
+/** A sentence that names an agent: the name drawn by the agent's app icon where it has one (T711). */
+function Said({ text, by }: { text: string; by?: string }) {
+  const name = by && hasIcon(by) ? whoName(by) : ''
+  const at = name ? text.indexOf(name) : -1
+  if (!by || at < 0) return <>{text}</>
+  return (
+    <>
+      {text.slice(0, at)}
+      <Who by={by} />
+      {text.slice(at + name.length)}
+    </>
+  )
+}
 
 const CARD = 'rounded-2xl border border-zinc-200 dark:border-zinc-800'
 const CODE = 'rounded bg-zinc-100 px-1 font-mono text-[12.5px] dark:bg-zinc-800'
@@ -67,7 +84,9 @@ function AgentsBody({ f, on, guideOpen }: { f: AgentsFacts; on: { copy(text: str
         <div className={`flex gap-3 rounded-2xl p-4 ${look[0]}`}>
           <span className={`mt-1.5 size-2.5 shrink-0 rounded-full ${look[1]}`} />
           <div>
-            <p className={`text-[15px] leading-snug font-semibold ${look[2]}`}>{f.line}</p>
+            <p className={`text-[15px] leading-snug font-semibold ${look[2]}`}>
+              <Said text={f.line} by={f.lineBy} />
+            </p>
             <p className={`mt-1 text-[13px] leading-snug ${look[3]}`}>
               {plural(f.queue, 'item')} in the queue{f.later ? ` (${f.later} later)` : ''}
             </p>
@@ -77,25 +96,38 @@ function AgentsBody({ f, on, guideOpen }: { f: AgentsFacts; on: { copy(text: str
           <section className={`${CARD} px-4 py-3`}>
             <h3 className="text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">Seen in this project</h3>
             <ul className="mt-1">
-              {f.seen.map((a) => (
-                <li key={a.name} className={`text-sm ${a.known ? '' : 'opacity-55'}`}>
-                  <div className="flex h-9 items-center gap-2.5">
-                    <Avatar by={a.name} dot={f.dot === 'corner' && a.blocked.length ? AMBER_DOT : undefined} />
-                    <span className="min-w-0 flex-1 truncate">{a.who}</span>
-                    {f.dot && a.blocked.length ? (
-                      f.dot === 'end' ? <span className={`size-2 shrink-0 rounded-full ${AMBER_DOT}`} /> : null
-                    ) : (
-                      <span className={`text-xs tabular-nums ${a.blocked.length ? `font-medium ${AMBER}` : 'text-zinc-500 dark:text-zinc-400'}`}>{a.when}</span>
-                    )}
-                  </div>
-                  {a.blocked.map((b) => (
-                    <div key={b.session} className="pb-1.5 pl-7.5">
-                      <p className="truncate text-[13px]">{b.session}</p>
-                      {b.waitingFor && !f.dot ? <p className={`text-xs leading-snug break-words ${AMBER}`}>{b.waitingFor}</p> : null}
+              {f.seen.map((a) => {
+                const blocked = a.sessions.some((s) => s.blocked)
+                // the agent's row names its first session (a blocked one first); the others under it, each with how
+                // long ago it was heard of; one blocked on you says on what (T711)
+                const [first, ...rest] = a.sessions
+                const waits = (s: (typeof a.sessions)[number]) => (s.waitingFor && !f.dot ? <p className={`pb-1.5 pl-7.5 text-xs leading-snug break-words ${AMBER}`}>{s.waitingFor}</p> : null)
+                return (
+                  <li key={a.name} className={`text-sm ${a.known ? '' : 'opacity-55'}`}>
+                    <div className="flex h-9 items-center gap-2.5">
+                      <Avatar by={a.name} named dot={f.dot === 'corner' && blocked ? AMBER_DOT : undefined} />
+                      <span className="min-w-0 flex-1 truncate">{[hasIcon(a.name) ? '' : a.who, first?.name].filter(Boolean).join(' · ')}</span>
+                      {f.dot && blocked ? (
+                        f.dot === 'end' ? <span className={`size-2 shrink-0 rounded-full ${AMBER_DOT}`} /> : null
+                      ) : (
+                        <span className={`shrink-0 text-xs tabular-nums ${blocked ? `font-medium ${AMBER}` : 'text-zinc-500 dark:text-zinc-400'}`}>{a.when}</span>
+                      )}
                     </div>
-                  ))}
-                </li>
-              ))}
+                    {first ? waits(first) : null}
+                    {rest.map((s) => (
+                      <div key={s.name}>
+                        <div className="flex h-7 items-center gap-2.5 pl-7.5">
+                          <p className="min-w-0 flex-1 truncate">{s.name}</p>
+                          {s.blocked && f.dot ? null : (
+                            <span className={`shrink-0 text-xs tabular-nums ${s.blocked ? `font-medium ${AMBER}` : 'text-zinc-500 dark:text-zinc-400'}`}>{s.blocked ? 'Blocked' : s.when}</span>
+                          )}
+                        </div>
+                        {waits(s)}
+                      </div>
+                    ))}
+                  </li>
+                )
+              })}
             </ul>
           </section>
         ) : null}

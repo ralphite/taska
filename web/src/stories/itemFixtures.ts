@@ -68,7 +68,8 @@ export const noItemEvents: ItemEvents = acts('Item', [
   'menu', 'set', 'sources', 'times', 'goto', 'doc', 'subNew', 'subAdd', 'subCancel', 'subTyped', 'editSave', 'editCancel', 'editTyped',
 ] as const, { sources: 'Sheets › An item: what it came from', inputMore: 'What you said: its menu', inputHistory: 'Sheets › An input: its words and history' })
 
-export const comment = (f: Partial<Comment> & { id: number }): Comment => ({ key: 'k1', th: f.id, quote: 'The export keeps the filter', text: 'Yes, and its name says which filter.', by: 'you', t: T, files: [], ...f })
+/** A comment, yours unless said: an agent's names its session, as a connected agent's does (T711). */
+export const comment = (f: Partial<Comment> & { id: number }): Comment => ({ key: 'k1', th: f.id, quote: 'The export keeps the filter', text: 'Yes, and its name says which filter.', by: 'you', t: T, files: [], ...(!f.by || f.by === 'you' ? {} : { ses: 'Shop project work' }), ...f })
 
 export function doc(f: Partial<Doc> & { d: number; n: number }): Doc {
   return {

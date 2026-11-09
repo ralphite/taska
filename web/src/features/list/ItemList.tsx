@@ -17,7 +17,7 @@ export type DrawnRow =
   | { kind: 'needs'; key: string; it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; act?: NeedAct }
   | { kind: 'hidden-kids'; key: string; parent: number; depth: number; open: boolean; later: number }
   | { kind: 'archive-all'; key: string; n: number }
-  | { kind: 'proposal'; key: string; p: RuleProposal; who: string }
+  | { kind: 'proposal'; key: string; p: RuleProposal }
 
 export interface ListEvents extends RowEvents {
   view(value: string): void
@@ -168,7 +168,7 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
               case 'archive-all':
                 return <ArchiveAllLine key={r.key} n={r.n} onArchive={on.archiveAll} />
               case 'proposal':
-                return <ProposalRow key={r.key} p={r.p} who={r.who} onOpen={() => on.proposal(r.p.id)} />
+                return <ProposalRow key={r.key} p={r.p} onOpen={() => on.proposal(r.p.id)} />
             }
           })}
           {!rows.length ? empty : null}

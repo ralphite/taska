@@ -2,8 +2,8 @@
 // around) and the Filters button the list's views end with; on the phone one head (the menu with the project's name,
 // the agent pill, search) and the tabs under it. Props only.
 
-import type { AgentTone } from '../model/agents'
-import { TAB_WORD, type Tab } from '../model/words'
+import type { AgentTone, AgentWho } from '../model/agents'
+import { TAB_WORD, hasIcon, whoName, type Tab } from '../model/words'
 import { REACH_WORDS } from '../model/reach'
 import { Avatar, ProjTile, pressedMark } from '../ui/bits'
 import { Icon, StateIcon } from '../ui/Icon'
@@ -37,19 +37,30 @@ export function OfflinePill() {
   )
 }
 
-/** Whether an agent is around; "Out of reach, retrying…" while the server is away. `by`: the agent's icon alone, the
- * dot on its corner, in place of the words (T711 proposal b). */
-export function AgentPill({ tone, label, offline, by }: { tone: AgentTone; label: string; offline: boolean; by?: string }) {
-  return offline ? (
-    <OfflinePill />
-  ) : by ? (
-    <span className="grid size-8 place-items-center">
-      <Avatar by={by} dot={PILL[tone][1]} />
-    </span>
-  ) : (
-    <span className={`flex h-8 max-w-52 items-center gap-2 rounded-full px-3 text-[13px] font-medium ring-1 ring-inset ${PILL[tone][0]}`}>
+/** Whether an agent is around; "Out of reach, retrying…" while the server is away. The agent by its app's icon where
+ * it has one, else by name, then its session and what it does (T711): "[icon] Fix export · 5m"; a long session's
+ * name is cut, what follows it never. `iconOnly`: the agent's icon alone, the dot on its corner (T711 proposal b). */
+export function AgentPill({ tone, label, who, offline, iconOnly }: { tone: AgentTone; label: string; who?: AgentWho; offline: boolean; iconOnly?: boolean }) {
+  if (offline) return <OfflinePill />
+  if (iconOnly && who)
+    return (
+      <span className="grid size-8 place-items-center">
+        <Avatar by={who.by} dot={PILL[tone][1]} />
+      </span>
+    )
+  const words = who ? [hasIcon(who.by) ? '' : whoName(who.by), who.session].filter(Boolean) : []
+  return (
+    <span className={`flex h-8 max-w-52 items-center gap-2 rounded-full px-3 text-[13px] font-medium ring-1 ring-inset lg:max-w-80 ${PILL[tone][0]}`}>
       <span className={`size-2 shrink-0 rounded-full ${PILL[tone][1]}`} />
-      <span className="truncate">{label}</span>
+      {who ? (
+        <>
+          {hasIcon(who.by) ? <span className="-mx-0.5 flex shrink-0"><Avatar by={who.by} /></span> : null}
+          {words.length ? <span className="min-w-0 truncate">{words.join(' · ')}</span> : null}
+          {who.state ? <span className="-ml-1 shrink-0 whitespace-nowrap">{words.length ? `· ${who.state}` : who.state}</span> : null}
+        </>
+      ) : (
+        <span className="truncate">{label}</span>
+      )}
     </span>
   )
 }
@@ -79,10 +90,12 @@ export interface TabInfo {
 export interface AgentInfo {
   tone: AgentTone
   label: string
+  /** the agent it names, its session and what it does (model/agents) */
+  who?: AgentWho
   tip?: string
   offline: boolean
   /** the agent's icon alone in place of the words (T711 proposal b) */
-  by?: string
+  iconOnly?: boolean
 }
 
 export function ProjectBar({
@@ -130,7 +143,7 @@ export function ProjectBar({
         <NotSavedPill n={notSaved} onOpen={on.notSaved} />
         {agent ? (
           <button onClick={on.agents} aria-label="Agents" title={agent.offline ? undefined : agent.tip} className="flex rounded-full hover:brightness-95 dark:hover:brightness-125">
-            <AgentPill tone={agent.tone} label={agent.label} offline={agent.offline} by={agent.by} />
+            <AgentPill {...agent} />
           </button>
         ) : null}
       </div>
@@ -176,7 +189,7 @@ export function ListHead({
       </button>
       <NotSavedPill n={notSaved} onOpen={on.notSaved} />
       <button onClick={on.agents} aria-label="Agents" title={agent?.tip} className="flex h-11 shrink-0 items-center px-1">
-        {agent ? <AgentPill tone={agent.tone} label={agent.label} offline={agent.offline} by={agent.by} /> : null}
+        {agent ? <AgentPill {...agent} /> : null}
       </button>
       <button onClick={on.search} aria-label="Search" {...pressedMark(pressed)} className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 data-pressed:bg-zinc-100 dark:text-zinc-400 dark:data-pressed:bg-zinc-800">
         <Icon n="search" c="size-5.5" />

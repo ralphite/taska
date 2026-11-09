@@ -36,8 +36,10 @@ export function item(f: Partial<Item> & { n: number }): Item {
   }
 }
 
+/** An agent's message names its session, as a connected agent's does (T711); yours and the organizer's none. */
 export function message(f: Partial<Message> & { id: number }): Message {
-  return { by: 'claude-code', kind: 'progress', text: 'Reproduced it: the export reads the list before the filter.', t: T, src: null, files: [], ...f }
+  const by = f.by ?? 'claude-code'
+  return { by, kind: 'progress', text: 'Reproduced it: the export reads the list before the filter.', t: T, src: null, files: [], ...(by === 'you' || by === 'org' ? {} : { ses: 'Shop project work' }), ...f }
 }
 
 /** A voice note's words as Taska keeps them: its one record (B682). A story gives a note words only this way. */

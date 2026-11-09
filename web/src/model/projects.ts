@@ -16,7 +16,7 @@ export interface ProjectCardFacts {
   inputs: number | null
   docs: number | null
   /** the agent last heard of, as the project's bar says it (none: never one, and no work waits) */
-  agent: { tone: AgentTone; label: string } | null
+  agent: { tone: AgentTone; label: string; who?: { by: string; state: string } } | null
   /** when it last changed ("7 days ago"); '' when not known */
   changed: string
 }
@@ -30,7 +30,8 @@ export function projectCard(p: Pick<ProjectRow, 'needs' | 'closed' | 'inputs' | 
     needs: p.needs,
     inputs: p.inputs ?? null,
     docs: p.docs ?? null,
-    agent: agent ? { tone: agent.tone, label: agent.label } : null,
+    // a list's card: who and what it does, never its session (T711)
+    agent: agent ? { tone: agent.tone, label: agent.label, ...(agent.who ? { who: { by: agent.who.by, state: agent.who.state } } : {}) } : null,
     changed: p.t && at ? ago(p.t, at, 'long') : '',
   }
 }
