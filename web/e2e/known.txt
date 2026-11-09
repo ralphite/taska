@@ -1,0 +1,8 @@
+# The checks of the known product gaps (docs/known-issues.md), one a line: "<spec file> [<layout or *>] <the start of
+# its title>". `tools/e2e.py --gate` (what a ship runs) says when one of these fails and goes on: the gap is known and
+# its check keeps its assertions. Any other failure stops the ship. When a gap is fixed, take its line out here and
+# in docs/known-issues.md.
+e2e/nav.spec.ts [phone] D77 #1 #2, D82 #1-3:
+e2e/nav.spec.ts [phone] D82 #5:
+e2e/req/box.spec.ts [*] r121 r129 r389:
+e2e/req/docs.spec.ts [*] r736 r722:

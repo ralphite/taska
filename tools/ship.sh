@@ -2,8 +2,10 @@
 # Put new Taska code live without restarting it under Yadong's hands. Run it after committing:
 #   zsh tools/ship.sh
 # Every check runs first (npm run check in web: types, lint, the architecture check, the page's and
-# the server's tests), then the page is built; it is copied to web/live, which the service serves, as Taska restarts (a build made to
-# test something never goes live by itself). None of these opens a browser. If nobody used Taska in the last minute, it
+# the server's tests), then the page is built, then the browser checks guarding what changed since the last ship run on
+# Taskas of their own (tools/e2e.py --gate: headless, on empty data, never the live Taska; a known issue of
+# docs/known-issues.md failing does not stop it). The page is copied to web/live, which the service serves, as Taska
+# restarts (a build made to test something never goes live by itself). If nobody used Taska in the last minute, it
 # restarts now. Otherwise this waits and restarts it by itself once Taska has been left alone for a minute; the open
 # pages then reload by themselves at a good moment (B654).
 cd "$(dirname "$0")/.." || exit 1
@@ -20,6 +22,7 @@ fi
 }
 npm --prefix web run check >/tmp/taska-ship-check.log 2>&1 || { echo "ship: a check failed (see /tmp/taska-ship-check.log)"; exit 1; }
 npm --prefix web run build >/tmp/taska-ship-build.log 2>&1 || { echo "ship: the page did not build (see /tmp/taska-ship-build.log)"; exit 1; }
+python3 tools/e2e.py --gate >/tmp/taska-ship-e2e.log 2>&1 || { echo "ship: a browser check failed (see /tmp/taska-ship-e2e.log)"; exit 1; }
 idle() { curl -s -m 3 "$URL/api/idle" | /usr/bin/python3 -c 'import json,sys; print(json.load(sys.stdin)["idle"])' 2>/dev/null || echo 9999; }
 # which run of Taska answers: the process listening on its port (a restart, by this or from the page, is another)
 serving() { lsof -tiTCP:${URL##*:} -sTCP:LISTEN 2>/dev/null | head -n 1; }
@@ -31,6 +34,7 @@ golive() {
   rsync -a --delete --exclude /storybook/ --exclude /assets/ web/dist/ web/live/  # Storybook is its own server
   rsync -a web/dist/assets/ web/live/assets/
   find web/live/assets -type f -mtime +14 -delete
+  python3 tools/e2e.py --shipped  # the next ship runs the browser checks guarding what changed since this one
 }
 restart() {
   golive

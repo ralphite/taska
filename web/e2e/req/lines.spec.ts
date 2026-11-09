@@ -3,7 +3,7 @@
 // guards: src/ui/Grip.tsx src/features/item/ItemPage.tsx src/features/item/ItemPageContainer.tsx src/features/sidebar/SidebarContainer.tsx src/pages/ProjectPageContainer.tsx src/pages/Header.tsx src/features/list/Filters.tsx src/features/composer/FootContainer.tsx src/stores/grips.ts src/app/keys.ts
 import { expect, test } from '@playwright/test'
 import type { Locator, Page } from '@playwright/test'
-import { LOOP, isDesk, open, project } from '../seed'
+import { LOOP, isDesk, open, project, settled as pageSettled } from '../seed'
 import { pane } from '../ui'
 
 test.beforeEach(({ page }) => test.skip(!isDesk(page), 'the lines you drag are on the desktop'))
@@ -155,7 +155,7 @@ for (const scheme of ['light', 'dark'] as const)
     })
     for (const at of ['T1', 'D1', '']) {
       await open(page, p, at)
-      await page.waitForTimeout(300)
+      await pageSettled(page)
       const down = await downTheLine(page)
       const breaks = down.map((c, i) => [i, c] as const).filter(([, c]) => c !== down[0])
       expect(breaks.slice(0, 5), `${at || 'New input'}: one colour all the way down (${down[0]}), not broken where it is another`).toEqual([])

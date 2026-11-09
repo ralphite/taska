@@ -11,6 +11,7 @@ from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
+from support import ProjectCase
 from taska.domain import events as ev  # noqa: E402
 from taska.domain.vocab import Refused  # noqa: E402
 from taska.services import organizer as org  # noqa: E402
@@ -25,17 +26,12 @@ class Clock:
         return self.now
 
 
-class OrganizerRetry(unittest.TestCase):
+class OrganizerRetry(ProjectCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.p = Project(self.tmp.name, "demo")
+        super().setUp()
         self.p.emit(ev.InputAdded(by="you", id="r1", text="Export loses the filter"))
         self.clock = Clock()
         self.o = org.Organizer(self.p, clock=self.clock)
-
-    def tearDown(self):
-        self.p.close()
-        self.tmp.cleanup()
 
     def organize(self, answer):
         with mock.patch.object(org.gemini, "ask", side_effect=answer):

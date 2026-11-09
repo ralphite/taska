@@ -80,3 +80,14 @@ export async function drawn(page: Page) {
   // a document on the phone has no box over it (B643): its words say it is drawn, a web page's frame (F432) its own
   await page.locator('#list article[data-n], #list [data-zone], #composer textarea, [data-part="settings"], [data-part="help"], [data-part="items"] h2, [data-doc-blocks] section, iframe[srcdoc]').filter({ visible: true }).first().waitFor()
 }
+/** The page done moving: no transition or animation running (but those that never end, a pulse), and two frames drawn
+ * since (what a fixed pause after a resize or a click waited for). */
+export async function settled(page: Page) {
+  await page.waitForFunction(() =>
+    document.getAnimations().every((a) => a.playState !== 'running' || a.effect?.getComputedTiming().endTime === Infinity),
+  )
+  await page.evaluate(() => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok))))
+}
+/** What this browser keeps in localStorage under a key, as JSON (null: nothing). */
+export const kept = (page: Page, key: string) =>
+  page.evaluate((k) => JSON.parse(localStorage.getItem(k) || 'null') as unknown, key)

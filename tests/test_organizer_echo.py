@@ -7,28 +7,22 @@ user (ask, with its choices), so that when it is unsure the user sees the questi
 
 import os
 import sys
-import tempfile
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
+from support import ProjectCase
 from taska.agent_text.language import parse  # noqa: E402
 from taska.agent_text.organizer_text import INSTRUCTIONS  # noqa: E402
 from taska.services.organizer import echo  # noqa: E402
-from taska.services.project import Project  # noqa: E402
 
 
-class Echo(unittest.TestCase):
+class Echo(ProjectCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.p = Project(self.tmp.name, "demo")
+        super().setUp()
         self.p.run([(0, {"op": "new", "type": "task", "pri": "P1", "when": "now", "title": "Demo plan"})], "you")
         self.p.run([(0, {"op": "input", "text": "Update this task from the latest code.", "q": "q1", "scope": 1})], "you")
         self.inp = self.p.state.inputs["r1"]
-
-    def tearDown(self):
-        self.p.close()
-        self.tmp.cleanup()
 
     def say(self, ref, text, kind="say"):
         return {"op": "say", "ref": ref, "kind": kind, "text": text, "src": None, "files": []}

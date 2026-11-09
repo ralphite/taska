@@ -2,7 +2,7 @@
 // the codes of his inputs, so a change that breaks one is stopped before it ships with his own words.
 // guards: src/features/composer/ src/app/inputs/ src/app/voice/ src/stores/box.ts src/stores/outbox.ts src/stores/noteVault.ts src/sync/ src/api/ src/worker/
 import { expect, test } from '@playwright/test'
-import { LOOP, isDesk, open, project } from '../seed'
+import { LOOP, isDesk, kept, open, project } from '../seed'
 import { box, mic, recording, tab, voiceChip } from '../ui'
 
 test.use({ launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] } })
@@ -63,7 +63,7 @@ test('r382 r389: words not sent stay in the box after a reload, and leaving is n
     void d.accept()
   })
   await box(page).fill('Half a thought about the export')
-  await page.waitForTimeout(600) // a draft is kept as you type
+  await expect.poll(() => kept(page, 'taska.drafts.' + p.name)).toMatchObject({ new: 'Half a thought about the export' }) // kept as you type
   await page.reload()
   await expect(box(page)).toHaveValue('Half a thought about the export')
   expect(asked).toBe(false)

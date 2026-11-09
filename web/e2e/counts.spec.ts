@@ -48,7 +48,7 @@ T6 ask Anything else?
   await p.op({ op: 'set', ref: 'T4', f: { archived: true } })
   await p.op({ op: 'set', ref: 'T6', f: { status: 'done' } })
   await open(page, p)
-  const badge = page.locator(`a[data-slug="${p.name}"] [data-needs]`),
+  const badge = page.locator(`#drawer a[data-slug="${p.name}"] [data-needs]`),
     view = needsCount(page)
   // T1 asks, I2 is proposed, T3 is in review, T5 asks: 4
   await expect(view).toHaveText('4')
@@ -66,7 +66,7 @@ T6 ask Anything else?
 async function showsEverywhere(page: Page, p: Project, n: number) {
   await expect(needsCount(page), 'the Needs you view').toHaveText(String(n))
   if (isDesk(page))
-    await expect(page.locator(`a[data-slug="${p.name}"] [data-needs]`), 'the sidebar').toHaveAttribute('aria-label', needsSaid(n))
+    await expect(page.locator(`#drawer a[data-slug="${p.name}"] [data-needs]`), 'the sidebar').toHaveAttribute('aria-label', needsSaid(n))
   else {
     await page.getByRole('button', { name: 'Projects and settings', exact: true }).filter({ visible: true }).first().click()
     const row = page.locator(`a[data-slug="${p.name}"]`).filter({ visible: true }).first()

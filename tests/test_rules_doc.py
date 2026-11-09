@@ -10,17 +10,16 @@ from __future__ import annotations
 
 import os
 import sys
-import tempfile
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
+from support import ProjectCase
 from taska.agent_text import render  # noqa: E402
 from taska.agent_text.language import parse  # noqa: E402
 from taska.domain import rules_move, sections, versions  # noqa: E402
 from taska.domain.model import SectionEdit  # noqa: E402
 from taska.domain.projection import apply, replay  # noqa: E402
-from taska.services.project import Project  # noqa: E402
 
 T = "2026-11-06T10:%02d:00-08:00"
 RULES = "## Communication\n\n- Write in Taska.\n\n## Commits\n\n- Commit messages are in English."
@@ -67,15 +66,7 @@ class Sections(unittest.TestCase):
                          [("replace", "Commits", "- Short."), ("delete", "Communication", "")])
 
 
-class Commands(unittest.TestCase):
-    def setUp(self) -> None:
-        self.tmp = tempfile.TemporaryDirectory()
-        self.p = Project(self.tmp.name, "demo")
-
-    def tearDown(self) -> None:
-        self.p.close()
-        self.tmp.cleanup()
-
+class Commands(ProjectCase):
     def run_(self, text: str, by: str) -> str:
         return "\n".join(self.p.run(parse(text), by)[0])
 

@@ -17,6 +17,7 @@ from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
+from support import ProjectCase
 from taska.agent_text import render  # noqa: E402
 from taska.agent_text.organizer_text import INSTRUCTIONS  # noqa: E402
 from taska.domain import events as ev  # noqa: E402
@@ -138,18 +139,13 @@ class Simplified(unittest.TestCase):
             self.assertFalse(hasattr(tr, gone) or hasattr(voice_words, gone), gone)
 
 
-class OrganizerBody(unittest.TestCase):
+class OrganizerBody(ProjectCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.p = Project(self.tmp.name, "demo")
+        super().setUp()
         f = self.p.files.save("voice_0-08.webm", "audio/webm", b"audio")
         self.p.emit(ev.VoiceHeard(f=f.f, state="done", tidied=TIDIED, said=SAID, by="taska"))
         lines, _ = self.p.run([(0, {"op": "input", "text": "", "files": [{"f": f.f, "name": f.name, "mime": "audio/webm"}]})], "you")
         self.assertTrue(lines[0].startswith("ok"), lines)
-
-    def tearDown(self):
-        self.p.close()
-        self.tmp.cleanup()
 
     def test_the_word_for_word_line_is_only_to_check_for_misheard_words(self):
         with self.p.lock:

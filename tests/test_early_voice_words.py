@@ -5,13 +5,12 @@ B682: the words are the voice note's own record; the input keeps only what was t
 
 import os
 import sys
-import tempfile
 import threading
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
-from taska.services.project import Project  # noqa: E402
+from support import ProjectCase
 from taska.services.voice_jobs import answer  # noqa: E402
 
 FID = "f1-voice_0-08.webm"
@@ -19,10 +18,9 @@ FIRST = "导出的时候保留筛选"
 FINAL = "导出时要保留我设的筛选。"
 
 
-class EarlyVoiceWords(unittest.TestCase):
+class EarlyVoiceWords(ProjectCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.p = Project(self.tmp.name, "demo")
+        super().setUp()
         self.heard, self.go = threading.Event(), threading.Event()
 
         def transcriber(data, mime, scope, path, first):
@@ -40,8 +38,7 @@ class EarlyVoiceWords(unittest.TestCase):
         if job:
             with self.p.lock:
                 self.p.news.wait_for(lambda: job.done, timeout=5)
-        self.p.close()
-        self.tmp.cleanup()
+        super().tearDown()
 
     def start(self):
         self.p.voice.start(FID, b"audio", "audio/webm", None)

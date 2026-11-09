@@ -3,24 +3,18 @@ anything else stays the user's to delete."""
 
 import os
 import sys
-import tempfile
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
+from support import ProjectCase
 from taska.agent_text.language import parse  # noqa: E402
-from taska.services.project import Project  # noqa: E402
 
 
-class AgentDelete(unittest.TestCase):
+class AgentDelete(ProjectCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.p = Project(self.tmp.name, "demo")
+        super().setUp()
         self.p.run(parse("new bug P0 now The phone link is down\n"), "claude-code")  # B1, proposed by the agent
-
-    def tearDown(self):
-        self.p.close()
-        self.tmp.cleanup()
 
     def test_the_agent_deletes_its_own_untouched_proposal(self):
         lines, _ = self.p.run(parse("B1 delete\n"), "claude-code")

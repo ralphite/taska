@@ -45,15 +45,21 @@ The destination must not already exist. The source data is only read and symboli
 | --- | --- |
 | `npm --prefix web run check` | Types, lint, architecture, frontend unit tests and server regression tests |
 | `npm --prefix web run build` | Production frontend and service worker |
-| `python3 tools/e2e.py --all` | Browser journeys on isolated servers and empty data roots |
+| `python3 tools/e2e.py --all` | Browser journeys on isolated servers and empty data roots, six at once (`--jobs N`) |
+| `python3 tools/e2e.py --gate` | The journeys guarding what changed since the last ship; known issues do not fail it (`tools/ship.sh` runs it) |
 | `python3 tools/e2e.py e2e/req/needs.spec.ts` | One browser spec |
 | `python3 tests/check_data.py /tmp/taska-data-copy` | Existing data loads and replays consistently |
 | `node tools/smoke.mjs http://127.0.0.1:7341 taska --shots /tmp/task-shots` | Desktop and phone smoke check with screenshots |
 
-CI runs the representative core browser journeys in `box.spec.ts`, `counts.spec.ts`, `comments.spec.ts` and
-`docedit.spec.ts`. The complete sweep remains available through `python3 tools/e2e.py --all`; its assertions remain
-intact. It includes [known product gaps](known-issues.md) found during the cleanup and is not currently all green.
-Those existing gaps are recorded separately from the source-layout cleanup, not hidden with skipped assertions.
+Each spec file runs once per layout (phone, desktop), each run on a Taska server of its own with an empty data folder;
+six runs go at once, the longest first, and inside a run the checks go one after another (some count every project
+their Taska has). The whole sweep takes under two minutes on the development Mac (nine minutes one file at a time). `tools/ship.sh` runs the
+journeys guarding what changed since the last ship (every one when a file every page uses changed; each spec file names
+what it guards) and notes what it shipped; CI runs the core journeys in `box.spec.ts`, `counts.spec.ts`,
+`comments.spec.ts` and `docedit.spec.ts`. The checks of the [known product gaps](known-issues.md) are listed in
+`web/e2e/known.txt`: with `--gate` they are reported when they fail, and do not stop a ship; their assertions remain
+intact. Shared Python test setup (a project in a folder of its own, a server of its own with one project) is in
+`tests/support.py`.
 
 ### Generated files
 

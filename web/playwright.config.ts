@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
 // Yadong's requirements as browser checks (e2e/), run against a running Taska at TASKA_URL: tools/e2e.py starts
-// one on a fresh, empty data folder (never ~/.taska) and runs them, one page at a time.
+// one on a fresh, empty data folder (never ~/.taska) for each spec file in each layout, several at once; in one run the
+// checks go one at a time (some count everything their Taska has).
 export default defineConfig({
   testDir: './e2e',
   timeout: 60_000,

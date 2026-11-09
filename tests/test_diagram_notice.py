@@ -8,21 +8,14 @@ agent."""
 from __future__ import annotations
 
 import json
-import os
-import socket
-import subprocess
-import sys
-import tempfile
 import time
 import unittest
 import urllib.request
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "server"))
-
+from support import ServerCase
 from taska.agent_text.language import parse  # noqa: E402
 from taska.domain import rules  # noqa: E402
-from taska.services.project import Project  # noqa: E402
+from support import ProjectCase  # noqa: E402
 
 BROKEN = "```mermaid\ngraph TD\n  A[Start (now)] --> B\n```"
 WHY = "Parse error on line 2:\n...A[Start (now)] --> B\n-----------^\nExpecting 'SQE', got 'PS'"
@@ -32,37 +25,7 @@ def doc_lines(md: str) -> str:
     return "".join("  " + line + "\n" for line in md.split("\n"))
 
 
-class DiagramNotice(unittest.TestCase):
-    proc: "subprocess.Popen[bytes]"
-    base: str
-    p: str
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        s = socket.socket()
-        s.bind(("127.0.0.1", 0))
-        port = s.getsockname()[1]
-        s.close()
-        cls.base = f"http://127.0.0.1:{port}"
-        root = tempfile.mkdtemp(prefix="taska-diagram-")
-        env = {k: v for k, v in os.environ.items() if "KEY" not in k}
-        cls.proc = subprocess.Popen([sys.executable, "-m", "taska", "serve", "--host", "127.0.0.1", "--port", str(port), "--root",
-                                     os.path.join(root, "data"), "--organizer", "off", "--log-db", ""], cwd=os.path.join(ROOT, "server"),
-                                    env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        for _ in range(150):
-            try:
-                urllib.request.urlopen(cls.base + "/health", timeout=2)
-                break
-            except OSError:
-                time.sleep(0.1)
-        req = urllib.request.Request(cls.base + "/api/projects", data=b'{"title": "demo"}', headers={"Content-Type": "application/json"})
-        cls.p = cls.base + "/p/" + json.loads(urllib.request.urlopen(req, timeout=10).read())["name"]
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        cls.proc.terminate()
-        cls.proc.wait(10)
-
+class DiagramNotice(ServerCase):
     def do(self, text: str, session: str = "writer-1") -> str:
         url = self.p + f"/do?by=claude-code&session={session}"
         return urllib.request.urlopen(urllib.request.Request(url, data=text.encode()), timeout=10).read().decode()
@@ -126,15 +89,10 @@ class DiagramNotice(unittest.TestCase):
         self.assertEqual(self.notes(code), [])
 
 
-class TaskaNoteIsNoAgentsWord(unittest.TestCase):
+class TaskaNoteIsNoAgentsWord(ProjectCase):
     def setUp(self) -> None:
-        self.tmp = tempfile.TemporaryDirectory()
-        self.p = Project(self.tmp.name, "demo")
+        super().setUp()
         self.p.run(parse("new task P1 now Draw the flow\nT1 doc Flow\n" + doc_lines(f"# Flow\n\n{BROKEN}\n")), "claude-code", session="w")
-
-    def tearDown(self) -> None:
-        self.p.close()
-        self.tmp.cleanup()
 
     def test_a_reply_before_the_note_still_waits_for_an_agent(self) -> None:
         self.p.run(parse("T1 progress Drew the flow.\n"), "claude-code", session="w")

@@ -9,6 +9,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
+from support import ProjectCase
 from taska.agent_text.language import parse  # noqa: E402
 from taska.domain import events as ev, input_states as st, rules  # noqa: E402
 from taska.domain.model import Input, OrgNote  # noqa: E402
@@ -102,15 +103,10 @@ class WhoAsksThem(unittest.TestCase):
         self.assertNotIn("again", input_view(inp(org=note()), None, None)["org"])
 
 
-class UndoOfAFiling(unittest.TestCase):
+class UndoOfAFiling(ProjectCase):
     def setUp(self) -> None:
-        self.tmp = tempfile.TemporaryDirectory()
-        self.p = Project(self.tmp.name, "demo")
+        super().setUp()
         self.p.emit(ev.InputAdded(by="you", id="r1", text="The export ignores the filter"))
-
-    def tearDown(self) -> None:
-        self.p.close()
-        self.tmp.cleanup()
 
     def undo(self) -> str:
         return "\n".join(self.p.run([(0, {"op": "filing-undo", "id": "r1"})], "you")[0])

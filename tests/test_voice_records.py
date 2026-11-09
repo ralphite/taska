@@ -4,17 +4,16 @@ words taken out of the texts that held them, made from what was kept before."""
 
 import os
 import sys
-import tempfile
 import threading
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
+from support import ProjectCase
 from taska.domain import events as ev  # noqa: E402
 from taska.domain.model import FileRef  # noqa: E402
 from taska.domain.projection import apply, replay  # noqa: E402
 from taska.domain.voice_split import copies_in, plan, take_out  # noqa: E402
-from taska.services.project import Project  # noqa: E402
 
 FID = "f1-voice_0-08.webm"
 FIRST = "导出的时候保留筛选"
@@ -28,10 +27,9 @@ def voice_file(**more):
     return FileRef(f=FID, name="voice 0-08.webm", mime="audio/webm", **more)
 
 
-class JobsWriteTheRecord(unittest.TestCase):
+class JobsWriteTheRecord(ProjectCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.p = Project(self.tmp.name, "demo")
+        super().setUp()
         self.heard, self.go = threading.Event(), threading.Event()
 
         def transcriber(data, mime, scope, path, first):
@@ -44,8 +42,7 @@ class JobsWriteTheRecord(unittest.TestCase):
 
     def tearDown(self):
         self.go.set()
-        self.p.close()
-        self.tmp.cleanup()
+        super().tearDown()
 
     def test_each_step_of_the_words_is_in_the_one_record(self):
         self.p.voice.start(FID, b"audio", "audio/webm", None)

@@ -5,25 +5,19 @@ from __future__ import annotations
 
 import os
 import sys
-import tempfile
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
+from support import ProjectCase
 from taska.agent_text.language import parse  # noqa: E402
 from taska.domain import rules  # noqa: E402
-from taska.services.project import Project  # noqa: E402
 
 
-class DocReplyThread(unittest.TestCase):
+class DocReplyThread(ProjectCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.p = Project(self.tmp.name, "demo")
+        super().setUp()
         self.p.run(parse("new task P1 now Ship the export\nT1 doc Plan\n  # Plan\n  \n  Ship the export as CSV.\n"), "claude-code")
-
-    def tearDown(self):
-        self.p.close()
-        self.tmp.cleanup()
 
     def test_each_thread_on_a_paragraph_gets_its_answer(self):
         d = next(iter(self.p.state.docs.values()))

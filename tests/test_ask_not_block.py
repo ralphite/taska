@@ -5,26 +5,21 @@ from __future__ import annotations
 
 import os
 import sys
-import tempfile
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
+from support import ProjectCase
 from taska.agent_text.language import parse  # noqa: E402
 from taska.agent_text import log as change_log  # noqa: E402
 from taska.domain import events as ev, rules  # noqa: E402
 from taska.services.project import Project  # noqa: E402
 
 
-class AskNotBlock(unittest.TestCase):
+class AskNotBlock(ProjectCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.p = Project(self.tmp.name, "demo")
+        super().setUp()
         self.p.run(parse("new task P1 now Ship the export\n"), "you")
-
-    def tearDown(self):
-        self.p.close()
-        self.tmp.cleanup()
 
     def test_block_from_an_agent_lands_as_an_ask(self):
         lines, _ = self.p.run(parse("T1 block I need the export key\n"), "claude-code")

@@ -5,26 +5,20 @@ from __future__ import annotations
 import json
 import os
 import sys
-import tempfile
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
+from support import ProjectCase
 from taska.agent_text import log as change_log  # noqa: E402
 from taska.agent_text.language import parse  # noqa: E402
 from taska.domain import events as ev  # noqa: E402
-from taska.services.project import Project  # noqa: E402
 
 
-class ChangeLog(unittest.TestCase):
+class ChangeLog(ProjectCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.p = Project(self.tmp.name, "demo")
+        super().setUp()
         self.p.run(parse("new bug P1 now Export loses the filter\n"), "you")
-
-    def tearDown(self):
-        self.p.close()
-        self.tmp.cleanup()
 
     def test_a_change_is_facts_not_words(self):
         self.p.emit(ev.FieldsSet(n=1, by="you", f={"title": "A → B, it's", "archived": True},

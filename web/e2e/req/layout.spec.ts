@@ -2,7 +2,7 @@
 // change that breaks one is stopped before it ships with his own words.
 // guards: src/pages/ src/ui/PaneFrame.tsx src/ui/Sheet.tsx src/features/sidebar/ src/features/item/ItemPage.tsx src/features/docs/ src/stores/ui.ts src/app/page/navigation.ts src/app/panes.tsx src/index.css
 import { expect, test, type Page } from '@playwright/test'
-import { LOOP, isDesk, open, project } from '../seed'
+import { LOOP, isDesk, open, project, settled } from '../seed'
 import { FOOT, TALK, duo, pane, row } from '../ui'
 
 const DOC = {
@@ -19,7 +19,7 @@ const SHEET = '[data-part="sheet"]'
 const sheet = (page: Page) => page.locator(SHEET).first()
 const width = async (page: Page, w: number) => {
   await page.setViewportSize({ width: w, height: 900 })
-  await page.waitForTimeout(150)
+  await settled(page)
 }
 
 test('r683: the window made narrow and wide again closes nothing: the document stays open, the sidebar stays (B496)', async ({
@@ -44,7 +44,7 @@ test('r683: the window made narrow and wide again closes nothing: the document s
   await expect(sheet(page).getByText('Second part of the plan.')).toBeVisible()
   // Drag back through the breakpoint without settling at each width; delayed phone cleanup must not hide the sidebar.
   for (const w of [800, 1023, 1024, 1100, 1440]) await page.setViewportSize({ width: w, height: 900 })
-  await page.waitForTimeout(500) // beyond the phone drawer's 240 ms closing transition
+  await page.waitForTimeout(500) // beyond the phone drawer's 240 ms closing timer: its delayed cleanup must not hide the sidebar
   await expect(page).toHaveURL(/\/D1$/)
   await expect(text).toBeVisible()
   await expect(sheet(page)).toBeHidden()
@@ -73,7 +73,7 @@ test('r683: the desktop sidebar and phone drawer keep their own state across wid
   await page.keyboard.press('Escape')
   await expect(shade).toHaveCount(0)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.waitForTimeout(500)
+  await page.waitForTimeout(500) // beyond the phone drawer's 240 ms closing timer
   await expect(sidebar(page)).toBeHidden()
   await expect(page.locator('#rail')).toBeVisible()
   await page.keyboard.press('[')
@@ -92,7 +92,7 @@ test('r683: the desktop sidebar and phone drawer keep their own state across wid
   await page.keyboard.press('Escape')
   await expect(shade).toHaveCount(0)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.waitForTimeout(500)
+  await page.waitForTimeout(500) // beyond the phone drawer's 240 ms closing timer
   await expect(sidebar(page)).toBeVisible()
   await expect(page.locator('#rail')).toBeHidden()
 })
@@ -112,7 +112,7 @@ test('r743: once an item is in two columns it stays so: another item that would 
   // a short item, which alone would be one column
   await row(page, 'Pick the export format').click()
   await expect(pane(page).locator('h1')).toContainText('Pick the export format')
-  await page.waitForTimeout(300)
+  await settled(page)
   await expect(duo(page)).toHaveCount(1)
   // only a pane too narrow for two columns makes it one; the same width again is two columns again (r749)
   await width(page, 1100)
@@ -178,16 +178,15 @@ for (const [name, path, fold] of [
         }
       }, fold)
       await open(page, p, path)
-      await page.waitForTimeout(400)
+      await settled(page)
       want[w] = await shape(page)
     }
     // the same widths walked to, down across the phone's and up again: the same page at each
     await page.setViewportSize({ width: WALK[0], height: 900 })
     await open(page, p, path)
-    await page.waitForTimeout(400)
+    await settled(page)
     for (const w of WALK) {
       await width(page, w)
-      await page.waitForTimeout(250)
       expect(await shape(page), `at ${w}px`).toEqual(want[w])
     }
   })
@@ -204,7 +203,7 @@ test('B669 r1065: the list\'s views row and the pane\'s bar are one height, thei
     const bar = page.locator('[data-part="pane-column"] header').filter({ visible: true }).first()
     await expect(viewsRow).toBeVisible()
     await expect(bar).toBeVisible()
-    await page.waitForTimeout(200)
+    await settled(page)
     const v = await viewsRow.boundingBox()
     const b = await bar.boundingBox()
     if (!v || !b) throw new Error('not drawn')
@@ -257,7 +256,7 @@ test('r1052: what the pane shows never moves the list: on the New input page the
     await open(page, p, path)
     const viewsRow = page.locator('#list [data-views]').filter({ visible: true }).first()
     await expect(viewsRow).toBeVisible()
-    await page.waitForTimeout(200)
+    await settled(page)
     const bar = await page.locator('nav[aria-label="This project"]').filter({ visible: true }).first().boundingBox()
     const views = await viewsRow.boundingBox()
     if (!bar || !views) throw new Error('not drawn')

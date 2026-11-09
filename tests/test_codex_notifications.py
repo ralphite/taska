@@ -10,6 +10,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "server"))
 
+from support import ProjectCase
 from taska.domain import events as ev
 from taska.infra.codex_queue import DeliveryError
 from taska.services.codex_notifications import CodexNotifications, KEY, MESSAGE
@@ -37,16 +38,11 @@ class Transport:
         self.wakes.append(target)
 
 
-class Notifications(unittest.TestCase):
+class Notifications(ProjectCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.p = Project(self.tmp.name, "demo")
+        super().setUp()
         self.transport = Transport()
         self.p.codex_notifications = self.n = CodexNotifications(self.p, self.transport)
-
-    def tearDown(self):
-        self.p.close()
-        self.tmp.cleanup()
 
     def event(self, by="you", text="new work"):
         e = ev.InputAdded(by=by, id="r" + str(self.p.store.count + 1), text=text)

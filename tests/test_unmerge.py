@@ -4,51 +4,15 @@ as its own item, and the one it went into says it was taken out."""
 from __future__ import annotations
 
 import json
-import os
-import socket
-import subprocess
-import sys
-import tempfile
 import time
 import unittest
 import urllib.error
 import urllib.request
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from support import ServerCase
 
 
-class TakeOutOfAMerge(unittest.TestCase):
-    proc: "subprocess.Popen[bytes]"
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        s = socket.socket()
-        s.bind(("127.0.0.1", 0))
-        port = s.getsockname()[1]
-        s.close()
-        base = f"http://127.0.0.1:{port}"
-        root = tempfile.mkdtemp(prefix="taska-unmerge-")
-        env = {k: v for k, v in os.environ.items() if "KEY" not in k}
-        cls.proc = subprocess.Popen([sys.executable, "-m", "taska", "serve", "--host", "127.0.0.1", "--port", str(port), "--root",
-                                     os.path.join(root, "data"), "--organizer", "off", "--log-db", ""], cwd=os.path.join(ROOT, "server"),
-                                    env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        for _ in range(150):
-            try:
-                urllib.request.urlopen(base + "/health", timeout=2)
-                break
-            except OSError:
-                time.sleep(0.1)
-        req = urllib.request.Request(base + "/api/projects", data=b'{"title": "demo"}', headers={"Content-Type": "application/json"})
-        cls.p = base + "/p/" + json.loads(urllib.request.urlopen(req, timeout=10).read())["name"]
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        cls.proc.terminate()
-        cls.proc.wait(10)
-
-    def do(self, text: str) -> str:
-        return urllib.request.urlopen(urllib.request.Request(self.p + "/do?by=claude-code", data=text.encode()), timeout=10).read().decode()
-
+class TakeOutOfAMerge(ServerCase):
     def page(self, *commands: dict) -> dict:
         body = json.dumps({"id": f"t-{time.time()}", "commands": list(commands)}).encode()
         req = urllib.request.Request(self.p + "/api/commands", data=body, headers={"Content-Type": "application/json"})
