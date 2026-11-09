@@ -9,6 +9,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
+from taska.agent_text import log as change_log  # noqa: E402
 from taska.agent_text import render  # noqa: E402
 from taska.domain import events as ev  # noqa: E402
 from taska.domain.finding import by_words  # noqa: E402
@@ -53,7 +54,7 @@ class VoiceEverywhere(unittest.TestCase):
         self.assertIn("voice 0:08: " + WORDS, card)
         self.assertIn("word for word: " + SAID, card)
         self.assertNotIn(".webm", card)  # its words, not an empty text and a path
-        self.assertIn(WORDS, render.log(st, 5))  # the change log says what was said
+        self.assertIn(WORDS, change_log.text(st, 5))  # the change log says what was said
         self.assertEqual([f.key for f in by_words(st, "保留我设的筛选")], ["r1"])
 
     def test_a_reply_by_voice_is_read_with_its_words_on_the_item(self):
@@ -70,7 +71,7 @@ class VoiceEverywhere(unittest.TestCase):
         self.assertEqual(st.docs[1].comments[0].text, "")
         self.assertIn("you", render.doc_text(self.p.reading(), st.docs[1]))
         self.assertIn("voice 0:08: " + WORDS, render.doc_text(self.p.reading(), st.docs[1]))
-        self.assertIn(f"D1 comment {WORDS!r}", render.log(st, 3))
+        self.assertIn(f"D1 comment {WORDS!r}", change_log.text(st, 3))
         self.assertIn("d1", [f.key for f in by_words(st, "保留我设的筛选")])
         self.assertEqual(n, 1)
 

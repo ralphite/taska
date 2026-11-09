@@ -10,6 +10,7 @@ import time
 from typing import Callable, List, Optional
 from urllib.parse import quote
 
+from ..agent_text import log as change_log
 from ..agent_text import render
 from ..agent_text.guide_text import AGENT, CONNECT, GRAMMAR
 from ..agent_text.language import parse
@@ -96,7 +97,7 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
             return text(200, render.listing(p.state, q))
     if sub == "/log":
         with p.lock:
-            return text(200, render.log(p.state, int(req.arg("n", "30"))))
+            return text(200, change_log.text(p.state, int(req.arg("n", "30"))))
     if ITEM_PATH.fullmatch(sub):
         return _card(req, p, sub[1:], by)
     return None

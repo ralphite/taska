@@ -1,10 +1,10 @@
-// The project's change log as the page says it: each change as a sentence (who, then what it did), the codes of
-// items and inputs in it that are here as links, and the time. Also what a line is about (its item, else its
-// document, else its input), and what an Undo of one of your changes says.
+// The project's change log as the page says it: each change, from its facts, as a sentence (who, then what it did),
+// the items and inputs in it that are here as links, and the time. Also what a line is about (its document, else its
+// item, else its input), and what an Undo of one of your changes says.
 
 import { codeOf, type ProjectModel } from './project'
 import { when } from './time'
-import type { LogRow, UndoEntry } from './types'
+import type { LogField, LogRow, UndoEntry } from './types'
 import { DID, STATUS_WORD, WHEN_WORD, inputCode, whoName } from './words'
 
 /** words, a code that opens its item or input, or (`faint`) an item's title after its code */
@@ -21,7 +21,7 @@ export interface LogSentence {
 
 type World = Pick<ProjectModel, 'byN' | 'byId' | 'docs' | 'width' | 'at'>
 
-const FLD = 'status|when|pri|type|archived|parent|title|body|next'
+/** What a message of each kind says it did. */
 const SAYS: Record<string, string> = {
   say: 'said',
   ask: 'asked',
@@ -30,42 +30,23 @@ const SAYS: Record<string, string> = {
   decide: 'decided',
   withdraw: 'took back the question:',
 }
+/** The changes to an item that name its title after its code, so what Undo would undo is plain (D115 r1079 #2). */
+const TITLED: readonly string[] = ['status', 'when', 'pri', 'archived']
 const cap = (s: string) => s.replace(/^./, (c) => c.toUpperCase())
-const word = (map: Record<string, string>, v: string) => (Object.hasOwn(map, v) ? map[v] : v)
-
-function setPart(m: World, f: string, a: string, b: string): string {
-  if (f === 'status') return `${word(STATUS_WORD, a)} → ${word(STATUS_WORD, b)}`
-  if (f === 'when') return `${word(WHEN_WORD, a)} → ${word(WHEN_WORD, b)}`
-  if (f === 'archived') return b === 'True' ? 'archived' : 'unarchived'
-  if (f === 'pri') return `priority ${a} → ${b}`
-  if (f === 'type') return `type ${cap(a)} → ${cap(b)}`
-  if (f === 'parent') return /^\d+$/.test(b) ? `moved under ${codeOf(m, Number(b))}` : /^\d+$/.test(a) ? `taken out from under ${codeOf(m, Number(a))}` : 'parent changed'
-  if (f === 'title') return `renamed “${b}”`
-  return f === 'body' ? 'description edited' : 'next step edited'
+const word = (map: Record<string, string>, v: unknown) => {
+  const s = v == null ? '' : String(v)
+  return Object.hasOwn(map, s) ? map[s] : s
 }
+const an = (s: string) => (/^[aeiou]/.test(s) ? 'an' : 'a')
 
-/** What a change did, in words. */
-function said(m: World, what: string): string {
-  return what
+/** Words someone wrote, plain: no Markdown marks, no source tags, no checkboxes. */
+const plain = (s: string) =>
+  s
     .replace(/\*\*|__|`/g, '')
     .replace(/\[src=[^\]]*\]/g, '')
     .replace(/(^|\s)- (?:\( \)|\[ \]) /g, '$1')
-    .replace(/ ''$/, ' a voice note')
-    .replace(/^in (r\d+)(?: →([A-Z]\d+))? /, (_, r: string, c?: string) => (c ? `wrote ${r} to ${c} ` : `wrote ${r} `))
-    .replace(/^new ([A-Z]\d+) (\w+) (P\d) (now|later) (.*?)(?: ←(r\d+))?$/s, (_, c: string, t: string, p: string, w: string, title: string, r?: string) => `made ${c}, ${/^[aeiou]/.test(t) ? 'an' : 'a'} ${t} (${p}${w === 'later' ? ', later' : ''}): ${title}${r ? ` from ${r}` : ''}`)
-    .replace(new RegExp(`\\b(${FLD}) (.*?)→(.*?)(?=, (?:${FLD}) |$| \\(undo #)`, 'gs'), (_, f: string, a: string, b: string) => setPart(m, f, a, b))
-    .replace(/ \(undo #(\d+)\)$/, ' (undoing #$1)')
-    .replace(/^ack (.+)$/, (_, rs: string) => `saw ${rs.split(' ').join(', ')}`)
-    .replace(/^doc (D\d+) on ([A-Z]\d+) /, 'wrote $1 on $2: ')
-    .replace(/^(D\d+) comment /, 'commented on $1: ')
-    .replace(/^(undo|redo) organizer changes for (r\d+)$/, (_, k: string, r: string) => (k === 'undo' ? `undid the filing of ${r}` : `put back the filing of ${r}`))
-    .replace(/^(r\d+) (edit|append): /, (_, r: string, k: string) => (k === 'edit' ? `edited ${r}: ` : `added details to ${r}: `))
-    .replace(/^organizer (r\d+) retry$/, 'filed $1 again')
-    .replace(/^organizer (r\d+) (ok|FAILED): /, (_, r: string, k: string) => (k === 'ok' ? `filed ${r}: ` : `could not file ${r}: `))
-    .replace(/\b(say|ask|block|propose|progress|decide|withdraw) (?=['"])/g, (_, k: string) => `${SAYS[k]} `)
-}
 
-/** The codes in it that are here, as links (an item by its code as written now; an input as #12). */
+/** The codes in words someone wrote that are here, as links (an item by its code as written now; an input as #12). */
 function linked(m: World, text: string): LogPart[] {
   const out: LogPart[] = []
   let at = 0
@@ -81,16 +62,137 @@ function linked(m: World, text: string): LogPart[] {
     at = x.index + c.length
   }
   out.push(text.slice(at))
-  return out.filter((p) => p !== '')
+  return out
 }
 
-/** A change to an item's status, when, priority or archive names the item by its code only: its title follows, faint,
- * so what Undo would undo is plain (as a row just acted on says it, D115 r1079 #2). */
-function titled(m: World, what: string, parts: LogPart[]): LogPart[] {
-  const first = parts[0]
-  if (!first || typeof first === 'string' || !('n' in first) || !new RegExp(`^[A-Z]\\d+ (?:status|when|pri|archived) `).test(what)) return parts
-  const it = m.byN.get(first.n)
-  return it ? [first, { faint: ' ' + it.title }, ...parts.slice(1)] : parts
+/** Words of one change: what it names, as parts. */
+function sentence(m: World, e: LogRow): LogPart[] {
+  const item = (n: number): LogPart => (m.byN.has(n) ? { n, code: codeOf(m, n) } : (e.codes?.[n] ?? codeOf(m, n)))
+  const input = (id: string | undefined): LogPart => (id && m.byId.has(id) ? { id, code: inputCode(id) } : id ? inputCode(id) : 'None')
+  const items = (ns: readonly number[]) => ns.flatMap((n, i) => (i ? [' ', item(n)] : [item(n)]))
+  /** what someone wrote, in quotes; none: a voice note */
+  const quoted = (s: string, none = 'a voice note'): LogPart[] => (s ? ['“', ...linked(m, plain(s)), '”'] : [none])
+  const doc = (d: number) => `D${d}`
+  const set = (x: LogField): LogPart[] => {
+    const { field: f, was, now } = x
+    if (f === 'status') return [`${word(STATUS_WORD, was)} → ${word(STATUS_WORD, now)}`]
+    if (f === 'when') return [`${word(WHEN_WORD, was)} → ${word(WHEN_WORD, now)}`]
+    if (f === 'archived') return [now === true ? 'archived' : 'unarchived']
+    if (f === 'pri') return [`priority ${String(was ?? '')} → ${String(now)}`]
+    if (f === 'type') return [`type ${cap(String(was ?? ''))} → ${cap(String(now))}`]
+    if (f === 'parent') return typeof now === 'number' ? ['moved under ', item(now)] : typeof was === 'number' ? ['taken out from under ', item(was)] : ['parent changed']
+    if (f === 'title') return ['renamed ', ...quoted(String(now ?? ''), '“”')]
+    if (f === 'body') return ['description edited']
+    if (f === 'next') return ['next step edited']
+    return [`${f} ${String(was ?? '')}→${String(now)}`]
+  }
+  switch (e.kind) {
+    case 'in':
+      return ['wrote ', input(e.id), ...(e.to ? [' to ', item(e.to)] : []), ' ', ...quoted(e.text)]
+    case 'add':
+      return ['made ', item(e.n), `, ${an(e.type)} ${e.type} (${e.pri}${e.when === 'later' ? ', later' : ''}): `, ...quoted(e.title, '“”'), ...(e.src ? [' from ', input(e.src)] : [])]
+    case 'set': {
+      const head: LogPart[] = [item(e.n)]
+      const it = m.byN.get(e.n)
+      if (it && TITLED.includes(e.set[0]?.field)) head.push({ faint: ' ' + it.title })
+      return [...head, ' ', ...e.set.flatMap((x, i) => (i ? [', ', ...set(x)] : set(x))), ...(e.undo ? [` (undoing #${e.undo})`] : [])]
+    }
+    case 'say':
+      return [item(e.n), ` ${SAYS[e.as] ?? e.as} `, ...quoted(e.text)]
+    case 'merge':
+      return [item(e.n), ' merged into ', item(e.into)]
+    case 'unmerge':
+      return [item(e.n), ' taken out of ', item(e.into)]
+    case 'due':
+      return [item(e.n), ' back to now (its day came)']
+    case 'ack':
+      return ['saw ', ...e.ids.flatMap((id, i) => (i ? [', ', input(id)] : [input(id)]))]
+    case 'cfg':
+      return ['renamed the project ', ...quoted(e.name, '“”')]
+    case 'doc':
+      return [`wrote ${doc(e.d)} on `, item(e.n), ': ', ...quoted(e.title, '“”')]
+    case 'dc':
+      return [`commented on ${doc(e.d)}: `, ...quoted(e.text)]
+    case 'dcedit':
+      return [`edited a comment on ${doc(e.d)}: `, ...quoted(e.text)]
+    case 'dcres':
+      return [`${e.on ? 'resolved' : 'reopened'} a thread on ${doc(e.d)}`]
+    case 'dcdel':
+      return [`deleted a comment on ${doc(e.d)}`]
+    case 'dcundel':
+      return [`restored a comment on ${doc(e.d)}`]
+    case 'dcmove':
+      return [`moved a comment on ${doc(e.d)}`]
+    case 'ddel':
+      return [`${e.on ? 'deleted' : 'restored'} ${doc(e.d)}`]
+    case 'dmove':
+      return [`${doc(e.d)} moved to `, item(e.to)]
+    case 'voice': {
+      const note: LogPart[] = e.src ? [input(e.src), ' voice note'] : ['a voice note']
+      if (e.state === 'wait') return e.text ? [...note, ' first words: ', ...quoted(e.text)] : [...note, ' being transcribed']
+      if (e.state === 'done') return [...note, ' words: ', ...quoted(e.text)]
+      return [...note, e.state === 'none' ? ': no words heard' : ': transcription failed']
+    }
+    case 'voicefix':
+      return [...(e.src ? [input(e.src), ' '] : []), 'voice note words corrected: ', ...quoted(e.text)]
+    case 'voices':
+      return [`kept each voice note's words in one place (${e.count} voice notes)`]
+    case 'asked':
+      return [e.count === 1 ? 'made 1 earlier block an ask' : `made ${e.count} earlier blocks asks`]
+    case 'heard':
+      return [`kept the words as said of ${e.count} voice note${e.count !== 1 ? 's' : ''}`]
+    case 'undo':
+      return ['undid the filing of ', input(e.src)]
+    case 'redo':
+      return ['put back the filing of ', input(e.src)]
+    case 'send':
+      return [input(e.src), ' sent (it was a cancelled recording)']
+    case 'del':
+    case 'undel': {
+      const kept = e.kind === 'del' ? e.kept : []
+      return [
+        input(e.src),
+        e.kind === 'del' ? ' deleted' : ' restored',
+        ...(e.ns.length ? [' with ', ...items(e.ns)] : []),
+        ...(kept.length ? ['; kept ', ...kept.flatMap(([n, why], i) => [...(i ? [', '] : []), item(n), ` (${why})`])] : []),
+      ]
+    }
+    case 'arch':
+      return [`${e.on ? 'archived' : 'unarchived'} ${e.count}: `, ...items(e.ns), ...(e.count > e.ns.length ? [' …'] : [])]
+    case 'idel':
+      return ['deleted ', ...items(e.ns)]
+    case 'iundel':
+      return ['restored ', ...items(e.ns)]
+    case 'moved':
+      return [input(e.src), ` moved to ${e.to} as ${inputCode(e.as)}`]
+    case 'amend':
+      return [...(e.mode === 'edit' ? ['edited ', input(e.src)] : e.mode === 'append' ? ['added details to ', input(e.src)] : [input(e.src), ` ${e.mode}`]), ': ', ...quoted(e.text)]
+    case 'tr':
+      return [input(e.src), ' voice note words: ', ...quoted(e.text)]
+    case 'unfile':
+      return [`took ${e.f} off `, ...(e.d ? [`a comment on ${doc(e.d)}`] : [input(e.src)])]
+    case 'hide':
+      return [`${e.on ? 'hid' : 'showed'} a message on `, item(e.n)]
+    case 'rescope':
+      return [input(e.src), ' now goes with ', item(e.to)]
+    case 'org':
+      if (e.retry) return ['filed ', input(e.src), ' again']
+      return [e.ok ? 'filed ' : 'could not file ', input(e.src), ': ', ...linked(m, plain(e.msg || ''))]
+    case 'other':
+      return linked(m, `${e.name} ${e.id ?? ''}`.trimEnd())
+  }
+}
+
+/** The parts with the words beside each other in one run, and none empty. */
+function joined(parts: LogPart[]): LogPart[] {
+  const out: LogPart[] = []
+  for (const p of parts) {
+    const last = out.at(-1)
+    if (p === '') continue
+    if (typeof p === 'string' && typeof last === 'string') out[out.length - 1] = last + p
+    else out.push(p)
+  }
+  return out
 }
 
 export function logSentence(m: World, e: LogRow): LogSentence {
@@ -99,20 +201,27 @@ export function logSentence(m: World, e: LogRow): LogSentence {
     // your own changes need no name (single user)
     who: e.who === 'you' ? '' : whoName(e.who),
     session: e.ses || '',
-    parts: titled(m, e.what, linked(m, said(m, e.what))),
+    parts: joined(sentence(m, e)),
     time: when(e.t, m.at),
   }
 }
 
-/** What a line is about, to open beside the list: its item, else its document, else its input. */
+/** What a line is about, to open beside the list: the first item or document it names that is here, else the first
+ * input. */
 export function logTarget(m: World, e: LogRow): { n: number } | { d: number } | { id: string } | null {
-  for (const c of e.what.match(/\b[A-Z]\d{1,5}\b/g) || []) {
-    const k = Number(c.slice(1))
-    if (c[0] === 'D' && m.docs.some((d) => d.d === k)) return { d: k }
-    if (m.byN.has(k) && codeOf(m, k) === c) return { n: k }
+  const parts = sentence(m, e)
+  for (const p of parts) {
+    if (typeof p !== 'string') {
+      if ('n' in p) return { n: p.n }
+      continue
+    }
+    for (const x of p.matchAll(/\bD(\d{1,5})\b/g)) {
+      const d = Number(x[1])
+      if (m.docs.some((y) => y.d === d)) return { d }
+    }
   }
-  const r = /\br\d+\b/.exec(e.what)?.[0]
-  return r && m.byId.has(r) ? { id: r } : null
+  const inp = parts.find((p) => typeof p !== 'string' && 'id' in p)
+  return inp ? { id: (inp as { id: string }).id } : null
 }
 
 /** What undoing one of your changes says it undid: "F12 is done". */

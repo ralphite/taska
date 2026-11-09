@@ -11,7 +11,7 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
 from taska.agent_text.language import parse  # noqa: E402
-from taska.agent_text.render import log_entries  # noqa: E402
+from taska.agent_text import log as change_log  # noqa: E402
 from taska.domain import events as ev, rules  # noqa: E402
 from taska.services.project import Project  # noqa: E402
 
@@ -43,7 +43,7 @@ class AskNotBlock(unittest.TestCase):
         count = self.p.store.count
         self.p.blocks_to_asks()  # nothing left: no change
         self.assertEqual(self.p.store.count, count)
-        said = [r["what"] for r in log_entries(self.p.state, 10)]
+        said = [change_log.said(x) for x in change_log.entries(self.p.state, 10)]
         self.assertIn("T1 ask 'I need the export key'", said)  # the log says what it is now
         self.assertIn("made 1 earlier block an ask", said)
         # read again from the file, it stays an ask

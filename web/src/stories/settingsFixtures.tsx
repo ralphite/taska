@@ -39,9 +39,9 @@ const ROWS: ProjectRow[] = [
 ]
 const GONE: DeletedProject[] = [{ name: 'old', title: 'Old notes', t: at(60 * 24 * 4), items: 4 }]
 export const LOG: LogRow[] = [
-  { seq: 41, t: at(5), who: 'claude-code', what: "F001 progress 'Reproduced it: the export reads the list before the filter'", ses: 'claude-code' },
-  { seq: 40, t: at(20), who: 'you', what: 'T004 status review→done' },
-  { seq: 39, t: at(60), who: 'claude-code', what: 'new F003 Keep the filter in the export file name' },
+  { seq: 41, t: at(5), who: 'claude-code', kind: 'say', n: 1, as: 'progress', text: 'Reproduced it: the export reads the list before the filter', ses: 'claude-code' },
+  { seq: 40, t: at(20), who: 'you', kind: 'set', n: 4, set: [{ field: 'status', was: 'review', now: 'done' }] },
+  { seq: 39, t: at(60), who: 'claude-code', kind: 'add', n: 3, type: 'feature', pri: 'P1', when: 'now', title: 'Keep the filter in the export file name' },
 ]
 const FIXES: Spelling[] = [{ wrong: 'tasker', right: 'Taska' }, { wrong: 'cloud code', right: 'Claude Code' }, { right: 'Storybook' }]
 

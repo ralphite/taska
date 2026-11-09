@@ -20,7 +20,7 @@ import re
 import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from ..agent_text.render import log_entries
+from ..agent_text import log as change_log
 from ..domain.vocab import MAX_FILE, TASKA
 from ..infra.audio import audio_type
 from ..page_api import views
@@ -84,7 +84,7 @@ def get(ctx: "AppContext", req: Request, p: Project, sub: str) -> Optional[Respo
     if sub == "/api/activity":
         n, before = min(int(req.arg("n", "300") or 300), 2000), int(req.arg("before", "0") or 0)
         with p.lock:
-            return as_json(log_entries(p.state, n, before)[::-1])
+            return as_json(change_log.entries(p.state, n, before)[::-1])
     if sub == "/api/picture-sizes":
         return as_json({name: list(wh) for name, wh in ctx.pictures.of_folder(p.files.folder).items()})
     if sub == "/api/words":  # a voice note's words, without waiting

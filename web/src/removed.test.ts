@@ -21,6 +21,7 @@ const REMOVED: { why: string; gone: RegExp }[] = [
   { why: 'B715 r1169: no hint at the end of a document on the phone ("Tap, select or circle to comment", a web page\'s "Tap a part to comment")', gone: /Tap, select or circle to comment|Tap a part to comment/ },
   { why: 'B715 r1169: no "Comment on the whole document" at the end of a document on the phone, nor its spoken comment on the whole document', gone: /Comment on the whole document|wholeButton|wholeRec/ },
   { why: 'B730: no "Recording 0:12" row in the list under the box (New input, the Inputs tab) while recording: the box shows it', gone: /\bRecordingRow\b/ },
+  { why: 'Refactor 1 (T728): the change log reaches the page as facts; no log words parsed back, no log_entries/_said', gone: /\blog_entries\b|\b_said\(|\bsaid\(m, (e\.)?what\b/ },
   { why: 'B682: a voice note shows its words (or that they are coming, or that none were heard), never "Voice note" in their place', gone: /(isAudio|audio\/)[^\n]*['"]Voice note['"]/ },
 ]
 

@@ -267,14 +267,52 @@ export interface VoicePrefs {
   tidy?: boolean
 }
 
-/** One change of the project's log, as the server lists it. */
-export interface LogRow {
+/** A field a change set: what it was (when it had one) and what it became; a text on its first line. */
+export interface LogField {
+  field: string
+  was?: string | number | boolean | null
+  now: string | number | boolean | null
+}
+
+/** One change of the project's log, as the server lists it: who, when, its stored kind and what it names (items by
+ * number, each named in `codes` by its code; inputs by id; documents by number). */
+export type LogRow = {
   seq: number
   t: string
   who: string
-  what: string
   ses?: string
-}
+  codes?: Record<string, string>
+} & (
+  | { kind: 'in'; id: string; to?: number; text: string }
+  | { kind: 'add'; n: number; type: string; pri: string; when: string; title: string; src?: string }
+  | { kind: 'set'; n: number; set: LogField[]; undo?: number }
+  | { kind: 'say'; n: number; as: string; text: string }
+  | { kind: 'merge' | 'unmerge'; n: number; into: number }
+  | { kind: 'due'; n: number }
+  | { kind: 'ack'; ids: string[] }
+  | { kind: 'cfg'; name: string }
+  | { kind: 'doc'; d: number; n: number; title: string }
+  | { kind: 'dc' | 'dcedit'; d: number; text: string }
+  | { kind: 'dcres' | 'ddel'; d: number; on: boolean }
+  | { kind: 'dcdel' | 'dcundel' | 'dcmove'; d: number }
+  | { kind: 'dmove'; d: number; to: number }
+  | { kind: 'voice'; src?: string; state: string; text: string }
+  | { kind: 'voicefix'; src?: string; text: string }
+  | { kind: 'voices' | 'asked' | 'heard'; count: number }
+  | { kind: 'undo' | 'redo' | 'send'; src: string }
+  | { kind: 'del'; src: string; ns: number[]; kept: [number, string][] }
+  | { kind: 'undel'; src: string; ns: number[] }
+  | { kind: 'arch'; on: boolean; ns: number[]; count: number }
+  | { kind: 'idel' | 'iundel'; ns: number[] }
+  | { kind: 'moved'; src: string; to: string; as: string }
+  | { kind: 'amend'; src: string; mode: string; text: string }
+  | { kind: 'tr'; src: string; text: string }
+  | { kind: 'unfile'; f: string; d?: number; src?: string }
+  | { kind: 'hide'; n: number; on: boolean }
+  | { kind: 'rescope'; src: string; to: number }
+  | { kind: 'org'; src: string; retry?: boolean; ok?: boolean; msg?: string }
+  | { kind: 'other'; name: string; id?: string }
+)
 
 export interface UndoEntry {
   seq: number

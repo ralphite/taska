@@ -1,4 +1,5 @@
-"""The plain-text answers agents read: an item's card, the item list, the inbox, the rules, a document, the log.
+"""The plain-text answers agents read: an item's card, the item list, the inbox, the rules, a document.
+The change log is in `log`.
 
 The words here are the agent interface: agents parse them, so they stay exactly as they are.
 """
@@ -9,14 +10,13 @@ import textwrap
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Mapping, Sequence
 
-from ..domain import events as ev
 from ..domain import rules, sections, versions
 from ..domain.model import Comment, Doc, FileRef, Input, Item, Message, Proposal
 from ..domain.rules import Held
 from ..domain.state import ProjectState
 from ..domain.text import clean_title, first_line, hm
 from ..domain.vocab import CLOSED
-from ..domain.voices import for_agents, is_voice, one_line
+from ..domain.voices import for_agents, is_voice
 
 FileRefText = Callable[[str], str]
 
@@ -335,141 +335,6 @@ def doc_text(rd: Reading, d: Doc) -> str:
                 out.append(f"   > {c.by} {hm(c.t)}: {_comment(rd, c)}")
     return "\n".join(out) + "\n"
 
-
-# ----------------------------------------------------------------------------- the change log
-
-
-def log(st: ProjectState, n: int) -> str:
-    return "".join(f"#{x['seq']} {hm(x['t'])} {x['who']}{' · ' + x['ses'] if x.get('ses') else ''} {x['what']}\n"
-                   for x in log_entries(st, n)) or "\n"
-
-
-def log_entries(st: ProjectState, n: int, before: int = 0) -> List[Dict[str, Any]]:
-    """The last n changes, one each: {seq, t, who, what}; with `before`, the n changes before that one."""
-    evs = st.events
-    if before:
-        lo, hi = 0, len(evs)
-        while lo < hi:  # events are in order: the first at or after `before`
-            mid = (lo + hi) // 2
-            if evs[mid].seq < before:
-                lo = mid + 1
-            else:
-                hi = mid
-        evs = evs[:lo]
-    out: List[Dict[str, Any]] = []
-    for e in evs[-n:]:
-        who, what = _said(st, e)
-        out.append({"seq": e.seq, "t": e.t, "who": who, "what": what, **({"ses": e.ses} if e.ses else {})})
-    return out
-
-
-def _codes(st: ProjectState, ns: Sequence[int]) -> str:
-    return " ".join(st.code(n) for n in ns)
-
-
-def _kind_now(st: ProjectState, e: ev.MessagePosted) -> str:
-    """What the message is now: an earlier block is an ask (T646)."""
-    it = st.items.get(e.n)
-    return next((x.kind for x in it.thread if x.id == e.seq), e.kind) if it else e.kind
-
-
-def _said(st: ProjectState, e: ev.Event) -> "tuple[str, str]":
-    """Who made a change and what it was, in the log's words."""
-    who = e.by
-    c = st.code
-    if isinstance(e, ev.InputAdded):
-        return who, f"in {e.id}" + (f" →{c(e.scope)}" if e.scope else "") + f" {first_line(one_line(st, e.text, e.files))!r}"
-    if isinstance(e, ev.ItemAdded):
-        return who, (f"new {c(e.n)} {e.type} {e.pri} {e.when} {first_line(e.clean)!r}" + (f" ←{e.src}" if e.src else ""))
-    if isinstance(e, ev.FieldsSet):
-        f = e.fields
-        return who, (f"{c(e.n)} " + ", ".join(f"{a} {first_line(e.was.get(a, ''), 24)}→{first_line(b, 24)}" for a, b in f.items())
-                     + (f" (undo #{e.undo_of})" if e.undo_of else ""))
-    if isinstance(e, ev.MessagePosted):
-        return who, f"{c(e.n)} {_kind_now(st, e)} {first_line(e.text)!r}"
-    if isinstance(e, ev.ItemMerged):
-        return who, f"{c(e.n)} merged into {c(e.into)}"
-    if isinstance(e, ev.ItemUnmerged):
-        return who, f"{c(e.n)} taken out of {c(e.into)}"
-    if isinstance(e, ev.LaterEnded):
-        return who, f"{c(e.n)} back to now (its day came)"
-    if isinstance(e, ev.InputsAcked):
-        return who, "ack " + " ".join(e.ids)
-    if isinstance(e, ev.ProjectRenamed) and e.name is not None:
-        return who, f"renamed the project {e.name!r}"
-    if isinstance(e, ev.DocWritten):
-        return who, f"doc D{e.d} on {c(e.n)} {first_line(e.title)!r}"
-    if isinstance(e, ev.CommentAdded):
-        return who, f"D{e.d} comment {first_line(one_line(st, e.text, e.files))!r}"
-    if isinstance(e, ev.ThreadResolved):
-        return who, f"{'resolved' if e.on else 'reopened'} a thread on D{e.d}"
-    if isinstance(e, ev.CommentEdited):
-        return who, f"edited a comment on D{e.d}: {first_line(e.text)!r}"
-    if isinstance(e, ev.VoiceHeard):
-        note = f"{e.src} voice note" if e.src else "a voice note"
-        if e.state == "wait":
-            return who, f"{note} first words: {first_line(e.early)!r}" if e.early else f"{note} being transcribed"
-        if e.state == "done":
-            return who, f"{note} words: {first_line(e.tidied)!r}"
-        return who, f"{note}: {'no words heard' if e.state == 'none' else 'transcription failed'}"
-    if isinstance(e, ev.VoiceFixed):
-        return who, f"{e.src + ' ' if e.src else ''}voice note words corrected: {first_line(e.tidied)!r}"
-    if isinstance(e, ev.VoicesSplit):
-        return who, f"kept each voice note's words in one place ({len(e.voices)} voice notes)"
-    if isinstance(e, ev.CommentDeleted):
-        return who, f"deleted a comment on D{e.d}"
-    if isinstance(e, ev.CommentRestored):
-        return who, f"restored a comment on D{e.d}"
-    if isinstance(e, ev.FilingUndone):
-        return who, f"undo organizer changes for {e.src}"
-    if isinstance(e, ev.FilingRedone):
-        return who, f"redo organizer changes for {e.src}"
-    if isinstance(e, (ev.InputDeleted, ev.InputRestored)):
-        kept = e.kept if isinstance(e, ev.InputDeleted) else []
-        return who, (f"{e.src} {'deleted' if isinstance(e, ev.InputDeleted) else 'restored'}"
-                     + (" with " + _codes(st, e.ns) if e.ns else "")
-                     + ("; kept " + ", ".join(f"{c(n)} ({why})" for n, why in kept) if kept else ""))
-    if isinstance(e, ev.ItemsArchived):
-        return who, (f"{'archived' if e.on else 'unarchived'} {len(e.ns)}: " + _codes(st, e.ns[:12])
-                     + (" …" if len(e.ns) > 12 else ""))
-    if isinstance(e, ev.InputMoved):
-        return who, f"{e.src} moved to {e.to} as {e.as_}"
-    if isinstance(e, ev.InputAmended):
-        return who, f"{e.src} {e.mode}: {first_line(e.text)!r}"
-    if isinstance(e, ev.WordsIn):
-        return who, f"{e.src} voice note words: {first_line(e.tr)!r}"
-    if isinstance(e, ev.BlocksAsked):
-        return who, "made 1 earlier block an ask" if len(e.ids) == 1 else f"made {len(e.ids)} earlier blocks asks"
-    if isinstance(e, ev.WordsKept):
-        n = sum(len(v) for v in e.notes.values())
-        return who, f"kept the words as said of {n} voice note{'s' if n != 1 else ''}"
-    if isinstance(e, ev.ItemsDeleted):
-        return who, "deleted " + _codes(st, e.ns)
-    if isinstance(e, ev.ItemsRestored):
-        return who, "restored " + _codes(st, e.ns)
-    if isinstance(e, ev.DocDeleted):
-        return who, f"{'deleted' if e.on else 'restored'} D{e.d}"
-    if isinstance(e, ev.DocMoved):
-        return who, f"D{e.d} moved to {c(e.to)}"
-    if isinstance(e, ev.CommentMoved):
-        return who, f"moved a comment on D{e.d}"
-    if isinstance(e, ev.FileTakenOff):
-        return who, f"took {e.f} off " + (f"a comment on D{e.d}" if e.d else str(e.src))
-    if isinstance(e, ev.MessageHidden):
-        return who, f"{'hid' if e.on else 'showed'} a message on {c(e.n)}"
-    if isinstance(e, ev.InputSent):
-        return who, f"{e.src} sent (it was a cancelled recording)"
-    if isinstance(e, ev.InputRescoped):
-        return who, f"{e.src} now goes with {c(e.to)}"
-    if not isinstance(e, ev.Organized) and e.src is None:  # a kind with no display text: show its stored identity
-        kind = e.kind if isinstance(e, ev.Unknown) else e.KIND
-        raw_id = e.raw.get("id", "") if isinstance(e, ev.Unknown) else ""
-        return who, f"{kind} {raw_id}".rstrip()
-    if isinstance(e, ev.Organized) and e.retry:
-        return who, f"organizer {e.src} retry"
-    msg = e.msg if isinstance(e, ev.Organized) else ""
-    ok = e.ok if isinstance(e, ev.Organized) else False
-    return "org", f"organizer {e.src} {'ok' if ok else 'FAILED'}: {first_line(msg, 90)}"
 
 
 def clean(title: str) -> str:
