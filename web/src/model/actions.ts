@@ -6,12 +6,12 @@ import type { ItemActId } from './itemActs'
 import { canDone, closed, statusChoices } from './items'
 import { yourStep } from './needStates'
 import type { Item } from './types'
-import { LETTER, WORK_TYPES } from './words'
+import { LETTER, TYPES } from './vocab.gen'
 
 export type Slot = readonly [field: string, value: string, act: ItemActId]
 
 /** T then a type's letter */
-const TYPE_KEY: Record<string, string> = Object.fromEntries(WORK_TYPES.map((t) => [LETTER[t].toLowerCase(), t]))
+const TYPE_KEY: Record<string, string> = Object.fromEntries(TYPES.map((t) => [LETTER[t].toLowerCase(), t]))
 
 /** S, P or T was pressed, then `key`: the field it sets and the value (a status by its number in `statuses`, a
  * priority by its digit, a type by its letter); null: the key sets nothing. */
@@ -29,7 +29,7 @@ export const pageStatuses = (it: Item): readonly string[] => statusChoices(it).m
 export function armHint(arm: 's' | 'p' | 't' | null, it: Item): string {
   if (arm === 's') return `Status: 1–${pageStatuses(it).length}`
   if (arm === 'p') return 'Priority: 0–3'
-  if (arm === 't') return 'Type: ' + WORK_TYPES.map((t) => LETTER[t]).join(' ')
+  if (arm === 't') return 'Type: ' + TYPES.map((t) => LETTER[t]).join(' ')
   return 'First S, P or T: then a digit'
 }
 

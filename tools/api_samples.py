@@ -285,7 +285,6 @@ def record(base: str) -> Dict[str, Any]:
     out["projects"] = c.json("/api/projects")
     out["needs"] = c.json("/api/needs")
     out["find"] = c.json("/api/find?q=export&here=" + slug)
-    out["search"] = c.json("/api/search?q=export&skip=")
     gone = c.json("/api/projects", {"title": "Old"})["name"]
     out["renameProject"] = c.json("/api/projects/rename", {"name": gone, "title": "Older"})
     out["deleteProject"] = c.json("/api/projects/delete", {"name": gone})

@@ -1,11 +1,18 @@
-"""The server's rules as cases the page checks its own copies against: each case runs on the real server code (a
-fresh project in a temporary folder, never real data) and is written into web/src/model/ruleCases.gen.ts.
+"""The server's rules as cases the page checks its own copies against, and the server's words the page uses. Each
+case runs on the real server code (fresh projects in a temporary folder, never real data, a clock that steps one
+second per change) and is written into web/src/model/ruleCases.gen.ts; domain/vocab.py's lists go to
+web/src/model/vocab.gen.ts, which the page imports instead of lists of its own.
 
 - EFFECTS: what a change does (refactor 7): a project as the page sees it (page_api/views.py), the commands you send
   (model/commands.ts), and the project after the server ran them. model/optimistic.test.ts holds each preview to it.
+- NEEDS: items in every status, asked or not, answered or not, archived or not, and whether they need you
+  (domain/rules.py needs_you). USER_WORDS: messages by everyone, of every kind, and whether they are the user's
+  words (user_word). QUEUE: items and the order agents take them (queue_order). NEXT: projects and the item /next
+  hands out next (agent_text/work.py next_work), with the inputs whose voice notes are still being worked out.
+  model/rules.test.ts holds the page's rules to them.
 
-tests/test_rule_cases.py writes the file again in memory and fails when it differs. Regenerate after changing a rule
-the page copies, or a case here:
+tests/test_rule_cases.py writes both files again in memory and fails when either differs. Regenerate after changing
+a rule or a word the page copies, or a case here:
 
     python3 tools/rule_cases.py
 """
@@ -21,9 +28,15 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "web", "src", "model", "ruleCases.gen.ts")
+VOCAB = os.path.join(ROOT, "web", "src", "model", "vocab.gen.ts")
 sys.path.insert(0, os.path.join(ROOT, "server"))
 
+from taska.agent_text.render import Reading  # noqa: E402
+from taska.agent_text.work import Asker, next_work  # noqa: E402
+from taska.domain import rules, vocab  # noqa: E402
+from taska.domain.model import Message  # noqa: E402
 from taska.page_api import views  # noqa: E402
+from taska.services import project as project_module  # noqa: E402
 from taska.services.workspace import Workspace  # noqa: E402
 
 AGENT = "claude-code"
@@ -198,32 +211,205 @@ def effects(ws: Workspace) -> List[Dict[str, Any]]:
     return out
 
 
-def render() -> str:
-    """The file, as it is written."""
-    with tempfile.TemporaryDirectory(prefix="taska-cases-") as tmp:
-        ws = Workspace(os.path.join(tmp, "data"), "", gemini=False)
-        try:
-            cases = effects(ws)
-        finally:
-            ws.close()
+# -- the rules the page copies (domain/rules.py, agent_text/work.py) ---------------------------------------------
+
+def _views(x: Place) -> List[Dict[str, Any]]:
+    with x.p.lock:
+        return [views.item_view(x.p.state, x.p.agents, it) for it in x.p.state.items.values() if not it.deleted]
+
+
+def needs(ws: Workspace) -> Dict[str, Any]:
+    """Every status, asked or not, your word after it or not, archived or not; merged; and whether each needs you."""
+    x = Place(ws, "needs")
+    n = 0
+    for status in vocab.STATUSES:
+        for asked in (False, True):
+            for answered in (False, True):
+                for archived in (False, True):
+                    n += 1
+                    ref = str(n)
+                    x.agent({"op": "new", "type": "task", "title": f"{status} asked={asked} answered={answered} archived={archived}"})
+                    if status != "proposed":
+                        x.you({"op": "set", "ref": ref, "f": {"status": "open"}})
+                        if status in ("doing", "review"):
+                            x.agent({"op": "set", "ref": ref, "f": {"status": "doing"}})
+                        if status == "review":
+                            x.agent({"op": "set", "ref": ref, "f": {"status": "done"}})
+                        if status in ("open", "done", "dropped"):
+                            x.you({"op": "set", "ref": ref, "f": {"status": status}})
+                    if asked:
+                        x.agent({"op": "say", "ref": ref, "kind": "ask", "text": "Which one?"})
+                    if answered:
+                        x.you({"op": "say", "ref": ref, "text": "This one."})
+                    if archived:
+                        x.you({"op": "set", "ref": ref, "f": {"archived": True}})
+    x.agent({"op": "new", "type": "task", "title": "merged"}, {"op": "merge", "ref": str(n + 1), "into": "1"})
+    with x.p.lock:
+        want = {str(it.n): rules.needs_you(x.p.state, it) for it in x.p.state.items.values()}
+    return {"items": _views(x), "needs": want}
+
+
+def user_words() -> List[Dict[str, Any]]:
+    return [{"by": by, "kind": kind, "src": src, "user": rules.user_word(Message(id=1, by=by, kind=kind, text="", t="", src=src))}
+            for by in ("you", "org", AGENT, vocab.TASKA) for kind in vocab.MESSAGE_KINDS for src in (None, "r1")]
+
+
+def queue(ws: Workspace) -> List[Dict[str, Any]]:
+    """Items in progress or not, placed by you (rank) or not, by priority: the order agents take them."""
+    out: List[Dict[str, Any]] = []
+    for i, rows in enumerate([
+        [("P2", None, False), ("P1", None, False), ("P2", None, True), ("P3", 1, False), ("P0", None, False)],
+        [("P1", -5, False), ("P1", None, False), ("P0", None, False), ("P2", -9, False), ("P3", None, False), ("P1", 3, False)],
+        [("P2", 2, True), ("P0", None, True), ("P1", 1, False), ("P1", None, False), ("P1", 1, True)],
+    ]):
+        x = Place(ws, f"queue-{i}")
+        for k, (pri, rank, doing) in enumerate(rows, 1):
+            x.you(task(f"Item {k}", pri=pri))
+            if rank is not None:
+                x.you({"op": "set", "ref": str(k), "f": {"rank": rank}})
+            if doing:
+                x.agent({"op": "set", "ref": str(k), "f": {"status": "doing"}})
+        with x.p.lock:
+            order = [it.n for it in rules.queue_order(list(x.p.state.items.values()))]
+        out.append({"items": _views(x), "order": order})
+    return out
+
+
+def _next(x: Place, held: List[str]) -> Dict[str, Any]:
+    """What /next hands an agent on nothing yet, every item in progress another session's (it skips those)."""
+    with x.p.lock:
+        st = x.p.state
+        rd = Reading(state=st, held=lambda inp: inp.id in held, organizer_on=False, file_ref=lambda f: f, file_path=lambda f: f)
+        asker = Asker(who=AGENT, session="case", holder=lambda it: ("other", 0.0) if it.status == "doing" else None)
+        given = next_work(rd, x.p.slug, False, asker).given
+    return {"items": _views(x), "inputs": [views.input_view(i, None, None) for i in st.inputs.values()], "held": held, "next": given}
+
+
+def next_up(ws: Workspace) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+
+    def place(name: str, rows: List[Tuple[str, str, str]]) -> Place:
+        """(pri, when, type) per item, open."""
+        x = Place(ws, name)
+        for k, (pri, when, kind) in enumerate(rows, 1):
+            x.you({"op": "new", "type": kind, "title": f"Item {k}", "pri": pri, "when": when})
+        return x
+
+    x = place("next-0", [("P2", "now", "task"), ("P1", "now", "bug"), ("P0", "later", "task"), ("P1", "now", "idea")])
+    out.append(_next(x, []))  # the queue's head: now, by priority, oldest first
+    x = place("next-1", [("P1", "now", "task"), ("P1", "now", "task"), ("P2", "now", "task")])
+    x.agent({"op": "say", "ref": "3", "text": "Started on it."})
+    x.you({"op": "say", "ref": "3", "text": "Look at this first."})
+    out.append(_next(x, []))  # you replied on a P2: the P1 queue head is more urgent
+    x.you({"op": "set", "ref": "1", "f": {"pri": "P2"}}, {"op": "set", "ref": "2", "f": {"pri": "P2"}})
+    out.append(_next(x, []))  # you replied on it, and it is as urgent as the head: it comes first
+    x = place("next-2", [("P1", "now", "task"), ("P2", "now", "task")])
+    x.agent({"op": "set", "ref": "2", "f": {"status": "doing"}}, {"op": "say", "ref": "2", "kind": "progress", "text": "Halfway."})
+    x.you({"op": "say", "ref": "2", "text": "Stop: not like that."})
+    out.append(_next(x, []))  # you replied on work in progress: it is resumed first
+    x = place("next-3", [("P1", "now", "task"), ("P2", "now", "task")])
+    x.you({"op": "input", "text": "", "scope": "1", "files": [x.file("note.webm", "audio/webm")]})
+    out.append(_next(x, ["r1"]))  # your voice note on it is still being worked out: it waits, it comes next
+    x = place("next-4", [("P1", "now", "task"), ("P2", "now", "task"), ("P0", "now", "task")])
+    x.you(task("Sub", parent="1", pri="P3"))
+    x.agent({"op": "say", "ref": "3", "kind": "ask", "text": "Which one?"})
+    out.append(_next(x, []))  # asked: it waits on you; a parent waits for its subitem
+    x = place("next-5", [("P1", "later", "task")])
+    x.agent({"op": "say", "ref": "1", "text": "Done?"})
+    x.you({"op": "say", "ref": "1", "text": "Not yet: one more thing."})
+    out.append(_next(x, []))  # the queue is empty: an item you replied on, even Later
+    x = place("next-6", [("P0", "now", "task"), ("P1", "now", "task")])
+    x.agent({"op": "set", "ref": "1", "f": {"status": "doing"}})
+    out.append(_next(x, []))  # in progress is another session's: the next one
+    x = place("next-7", [("P0", "now", "task")])
+    x.you(task("Middle", parent="1", pri="P1"), task("Deep", parent="2", pri="P3"))
+    x.you({"op": "set", "ref": "2", "f": {"status": "done"}})
+    out.append(_next(x, []))  # an open subitem at any depth, under a finished one, comes before its parent
+    return out
+
+
+def _ts(v: Any) -> str:
+    return json.dumps(v, ensure_ascii=True)
+
+
+def vocab_text() -> str:
+    """domain/vocab.py's words, for the page (model/vocab.gen.ts)."""
+    v = vocab
+    rows = [
+        ("LETTER", "Each item type and the letter of its code (the order of the page's type menus).", v.LETTER),
+        ("TYPES", "The item types.", list(v.LETTER)),
+        ("PRIORITIES", "Priorities, the most urgent first.", list(v.PRIORITIES)),
+        ("DEFAULT_PRI", "A new item's priority when nobody says one (r10, r1072).", v.DEFAULT_PRI),
+        ("WHENS", "Now or later.", list(v.WHENS)),
+        ("STATUSES", "An item's statuses, in their order.", list(v.STATUSES)),
+        ("CLOSED", "The finished statuses.", list(v.CLOSED)),
+        ("DECISIONS", "The two choices of a proposal (approve, won't do) and of finished work (accept, not yet).",
+         {k: list(x) for k, x in v.DECISIONS.items()}),
+        ("PEOPLE", "The user, and the organizer, who writes down what the user said.", list(v.PEOPLE)),
+        ("TASKA", "Taska's own notes to an agent.", v.TASKA),
+        ("NOTES", "Neither side's word: the organizer's own notes, and Taska's.", list(v.NOTES)),
+        ("MESSAGE_KINDS", "The kinds of a message on an item.", list(v.MESSAGE_KINDS)),
+        ("USER_KINDS", "What the organizer files from an input as the user's own: their words, decision, idea.", list(v.USER_KINDS)),
+        ("WORK_TYPES", "The types of work /next hands out.", list(v.WORK_TYPES)),
+        ("DOC_KEY", "The comment thread on a document as a whole.", v.DOC_KEY),
+    ]
+    body = "".join(f"/** {doc} */\nexport const {name} = {_ts(val)} as const\n\n" for name, doc, val in rows)
+    return ("// Generated by tools/rule_cases.py from server/taska/domain/vocab.py: do not edit (regenerate: python3 tools/rule_cases.py).\n"
+            "// The words of Taska's data, as the server has them.\n\n" + body.rstrip("\n") + "\n")
+
+
+def render() -> Tuple[str, str]:
+    """The two files, as they are written: the cases, the words."""
+    step = iter(range(10 ** 6))
+    real = project_module.now_iso
+
+    def clock() -> str:  # one second per change: times that tell changes apart, the same on every machine
+        n = next(step)
+        return f"2026-11-06T{9 + n // 3600:02d}:{n // 60 % 60:02d}:{n % 60:02d}-08:00"
+
+    project_module.now_iso = clock  # type: ignore[assignment]
+    try:
+        with tempfile.TemporaryDirectory(prefix="taska-cases-") as tmp:
+            ws = Workspace(os.path.join(tmp, "data"), "", gemini=False)
+            try:
+                cases = effects(ws)
+                more = {"NEEDS": needs(ws), "USER_WORDS": user_words(), "QUEUE": queue(ws), "NEXT": next_up(ws)}
+            finally:
+                ws.close()
+    finally:
+        project_module.now_iso = real  # type: ignore[assignment]
     text = json.dumps(cases, ensure_ascii=True, indent=1)
+    rest = "".join(f"export const {k}: {TYPES[k]} = {json.dumps(v, ensure_ascii=True, indent=1)}\n\n" for k, v in more.items())
     return (
         "// Generated by tools/rule_cases.py from the server's own rules: do not edit (regenerate: python3 tools/rule_cases.py).\n\n"
         "import type { Command } from './commands'\n"
-        "import type { Doc, Input, Item, UndoEntry, Voice } from './types'\n\n"
+        "import type { Doc, Input, Item, Kind, UndoEntry, Voice } from './types'\n\n"
         "/** A project as the page gets it (page_api/views.py entities, and what can be undone). */\n"
         "export interface Seen {\n  items: Item[]\n  inputs: Input[]\n  docs: Doc[]\n  voices: Voice[]\n  undo: UndoEntry[]\n}\n\n"
         "/** What a change did on the server: the project before, the commands you sent, the project after. */\n"
         "export interface EffectCase {\n  name: string\n  before: Seen\n  commands: Command[]\n  after: Seen\n}\n\n"
-        f"export const EFFECTS: EffectCase[] = {text}\n"
-    )
+        f"export const EFFECTS: EffectCase[] = {text}\n\n"
+        "/** Items, and whether each needs you (domain/rules.py needs_you), by its number. */\n"
+        "export interface NeedsCase {\n  items: Item[]\n  needs: Record<string, boolean>\n}\n\n"
+        "/** A message, and whether it is the user's own words (user_word). */\n"
+        "export interface UserWordCase {\n  by: string\n  kind: Kind\n  src: string | null\n  user: boolean\n}\n\n"
+        "/** Items, and the order agents take them (queue_order). */\n"
+        "export interface QueueCase {\n  items: Item[]\n  order: number[]\n}\n\n"
+        "/** A project, the inputs whose voice notes are still being worked out, and the item /next hands out next. */\n"
+        "export interface NextCase {\n  items: Item[]\n  inputs: Input[]\n  held: string[]\n  next: number | null\n}\n\n"
+        + rest.rstrip("\n") + "\n"
+    ), vocab_text()
+
+
+TYPES = {"NEEDS": "NeedsCase", "USER_WORDS": "UserWordCase[]", "QUEUE": "QueueCase[]", "NEXT": "NextCase[]"}
 
 
 def main() -> None:
-    text = render()
-    with open(OUT, "w", encoding="utf-8") as fh:
-        fh.write(text)
-    print("wrote", os.path.relpath(OUT, ROOT))
+    cases, words = render()
+    for path, text in ((OUT, cases), (VOCAB, words)):
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        print("wrote", os.path.relpath(path, ROOT))
 
 
 if __name__ == "__main__":

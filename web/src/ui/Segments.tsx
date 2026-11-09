@@ -2,7 +2,7 @@
 // and priority. Props only.
 
 import type { ReactNode } from 'react'
-import { WORK_TYPES } from '../model/words'
+import { TYPES } from '../model/vocab.gen'
 
 export const SEG_ON =
   'aria-pressed:bg-white aria-pressed:text-zinc-900 aria-pressed:shadow-sm aria-pressed:ring-1 aria-pressed:ring-zinc-900/5 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:text-white dark:aria-pressed:ring-white/10'
@@ -26,7 +26,7 @@ export function SegCtl({ opts, on, small = false, pick }: { opts: [string, React
 /** The types to pick: an item's own, or a filter's (with All). */
 export const typeOpts = (withAll: boolean): [string, ReactNode][] => [
   ...(withAll ? [['all', 'All'] as [string, ReactNode]] : []),
-  ...WORK_TYPES.map((t) => [t, <span className="truncate">{t[0].toUpperCase() + t.slice(1)}</span>] as [string, ReactNode]),
+  ...TYPES.map((t) => [t, <span className="truncate">{t[0].toUpperCase() + t.slice(1)}</span>] as [string, ReactNode]),
 ]
 const P0 = <span className="font-semibold text-red-600 dark:text-red-400">P0</span>
 export const priOpts = (withAll: boolean): [string, ReactNode][] => [...(withAll ? [['all', 'Any'] as [string, ReactNode]] : []), ['P0', P0], ['P1', 'P1'], ['P2', 'P2'], ['P3', 'P3']]

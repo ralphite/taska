@@ -19,6 +19,12 @@ const SAMPLES = path.join(web, 'src/api/samples.gen.ts')
 const VOICE = "the page's model puts a voice note's words there (B682); never sent"
 const TYPED = "the page's model keeps the typed words there when it adds a voice note's words; never sent"
 const UNSEEN = {
+  'activity[].undo': 'only a change that undid another (FieldsSet undo_of); the sample makes none',
+  'activity[].into': 'only a merge or unmerge; the sample makes none',
+  'activity[].ids': 'only inputs marked handled together (InputsAcked); the sample makes none',
+  'activity[].count': 'only voice notes split, blocks asked or notes kept; the sample makes none',
+  'activity[].f': 'only a file taken off an input or comment (FileTakenOff); the sample makes none',
+  'activity[].retry': 'only an input sent again; the sample makes none',
   'view.items[].thread[].files[].voice': VOICE,
   'view.items[].thread[].files[].size': "an agent's file is kept without its size (commands/items.py _message_files)",
   'view.items[].thread[].typed': TYPED,

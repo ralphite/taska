@@ -49,7 +49,7 @@ export const SAMPLES = {
   ]
  },
  "view": {
-  "cursor": "1a1b1cd8b8c.38.49.2",
+  "cursor": "1a1b1cd8b70.38.49.2",
   "full": true,
   "items": [
    {
@@ -151,7 +151,7 @@ export const SAMPLES = {
      "ses": "sample"
     },
     "readBy": {
-     "claude-code": 1793984400317
+     "claude-code": 1793984400303
     }
    },
    {
@@ -282,6 +282,29 @@ export const SAMPLES = {
     "parent": null,
     "next": "",
     "srcs": [
+     "r2"
+    ],
+    "mergedInto": null,
+    "archived": false,
+    "t0": "2026-11-06T09:00:00-08:00",
+    "t1": "2026-11-06T09:00:00-08:00",
+    "by": "org",
+    "thread": [],
+    "wait": null,
+    "talked": false
+   },
+   {
+    "n": 6,
+    "code": "T06",
+    "type": "task",
+    "title": "Sort the export by date",
+    "body": "",
+    "pri": "P2",
+    "when": "now",
+    "status": "open",
+    "parent": null,
+    "next": "",
+    "srcs": [
      "r1"
     ],
     "mergedInto": null,
@@ -305,31 +328,8 @@ export const SAMPLES = {
     "talked": true
    },
    {
-    "n": 6,
-    "code": "T06",
-    "type": "task",
-    "title": "Sort the export by date",
-    "body": "",
-    "pri": "P2",
-    "when": "now",
-    "status": "open",
-    "parent": null,
-    "next": "",
-    "srcs": [
-     "r2"
-    ],
-    "mergedInto": null,
-    "archived": false,
-    "t0": "2026-11-06T09:00:00-08:00",
-    "t1": "2026-11-06T09:00:00-08:00",
-    "by": "org",
-    "thread": [],
-    "wait": null,
-    "talked": false
-   },
-   {
-    "n": 8,
-    "code": "T08",
+    "n": 7,
+    "code": "T07",
     "type": "task",
     "title": "Sort the export by date",
     "body": "",
@@ -418,7 +418,7 @@ export const SAMPLES = {
     "acked": false,
     "touched": [
      1,
-     5,
+     6,
      10,
      11
     ],
@@ -453,7 +453,7 @@ export const SAMPLES = {
     },
     "deletion": {
      "go": [
-      5,
+      6,
       10,
       11
      ],
@@ -476,11 +476,11 @@ export const SAMPLES = {
     ],
     "acked": true,
     "touched": [
-     6
+     5
     ],
     "org": {
      "ok": true,
-     "msg": "Created T6",
+     "msg": "Created T5",
      "t": "2026-11-06T09:00:00-08:00",
      "keep": false,
      "changed": true,
@@ -491,12 +491,12 @@ export const SAMPLES = {
     "q": "page-2",
     "filing": {
      "can": true,
-     "what": "removes T06",
+     "what": "removes T05",
      "why": ""
     },
     "deletion": {
      "go": [
-      6
+      5
      ],
      "keep": []
     }
@@ -517,7 +517,7 @@ export const SAMPLES = {
     ],
     "acked": false,
     "touched": [
-     8
+     7
     ],
     "org": {
      "ok": true,
@@ -532,7 +532,7 @@ export const SAMPLES = {
     "q": "page-3",
     "deletion": {
      "go": [
-      8
+      7
      ],
      "keep": []
     }
@@ -581,7 +581,7 @@ export const SAMPLES = {
         "files": []
        },
        {
-        "id": 25,
+        "id": 27,
         "key": "4be021e4c5",
         "th": 8,
         "quote": "# Plan",
@@ -615,9 +615,9 @@ export const SAMPLES = {
     "detached": [],
     "whole": [
      {
-      "id": 26,
+      "id": 28,
       "key": "doc",
-      "th": 26,
+      "th": 28,
       "quote": "",
       "text": "Looks right.",
       "by": "you",
@@ -743,17 +743,17 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400387,
+     "t": 1793984400372,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400387
+       "t": 1793984400372
       },
       {
        "name": "helper",
-       "t": 1793984400272
+       "t": 1793984400243
       }
      ]
     }
@@ -762,7 +762,7 @@ export const SAMPLES = {
    "agentsVersion": 2,
    "undo": [
     {
-     "seq": 24,
+     "seq": 26,
      "n": 3,
      "f": {
       "status": "open",
@@ -789,8 +789,8 @@ export const SAMPLES = {
      "scope": null,
      "items": [
       {
-       "n": 7,
-       "code": "T07",
+       "n": 8,
+       "code": "T08",
        "title": "Sort the export by date",
        "type": "task"
       }
@@ -810,20 +810,20 @@ export const SAMPLES = {
    ],
    "phone": false,
    "base": "http://127.0.0.1:7340/p/shop",
-   "key": "5a5q-q376",
+   "key": "zrhg-w7z9",
    "remote": "",
    "lan": ""
   },
   "server": {
-   "page": "da39a3ee5e",
+   "page": "index-BHJ5skFE.js",
    "update": false
   }
  },
  "changes": {
-  "cursor": "1a1b1cd8b8c.38.49.2",
+  "cursor": "1a1b1cd8b70.38.49.2",
   "same": true,
   "server": {
-   "page": "da39a3ee5e",
+   "page": "index-BHJ5skFE.js",
    "update": false
   }
  },
@@ -833,7 +833,7 @@ export const SAMPLES = {
    "ok B01 pri=P0"
   ],
   "changes": {
-   "cursor": "1a1b1cd8b8c.39.50.2",
+   "cursor": "1a1b1cd8b70.39.50.2",
    "full": false,
    "items": [
     {
@@ -935,7 +935,7 @@ export const SAMPLES = {
       "ses": "sample"
      },
      "readBy": {
-      "claude-code": 1793984400317
+      "claude-code": 1793984400303
      }
     }
    ],
@@ -961,17 +961,17 @@ export const SAMPLES = {
     "agents": [
      {
       "name": "claude-code",
-      "t": 1793984400387,
+      "t": 1793984400372,
       "waiting": false,
       "session": "sample",
       "sessions": [
        {
         "name": "sample",
-        "t": 1793984400387
+        "t": 1793984400372
        },
        {
         "name": "helper",
-        "t": 1793984400272
+        "t": 1793984400243
        }
       ]
      }
@@ -991,7 +991,7 @@ export const SAMPLES = {
       "t": "2026-11-06T09:00:00-08:00"
      },
      {
-      "seq": 24,
+      "seq": 26,
       "n": 3,
       "f": {
        "status": "open",
@@ -1018,8 +1018,8 @@ export const SAMPLES = {
       "scope": null,
       "items": [
        {
-        "n": 7,
-        "code": "T07",
+        "n": 8,
+        "code": "T08",
         "title": "Sort the export by date",
         "type": "task"
        }
@@ -1039,12 +1039,12 @@ export const SAMPLES = {
     ],
     "phone": false,
     "base": "http://127.0.0.1:7340/p/shop",
-    "key": "5a5q-q376",
+    "key": "zrhg-w7z9",
     "remote": "",
     "lan": ""
    },
    "server": {
-    "page": "da39a3ee5e",
+    "page": "index-BHJ5skFE.js",
     "update": false
    }
   }
@@ -1064,314 +1064,591 @@ export const SAMPLES = {
    "seq": 50,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "F03 status open\u2192dropped, archived False\u2192True"
+   "kind": "set",
+   "n": 3,
+   "set": [
+    {
+     "field": "status",
+     "was": "open",
+     "now": "dropped"
+    },
+    {
+     "field": "archived",
+     "was": false,
+     "now": true
+    }
+   ],
+   "codes": {
+    "3": "F03"
+   }
   },
   {
    "seq": 49,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "F03 progress 'Moved to Garden as F2'"
+   "kind": "say",
+   "n": 3,
+   "as": "progress",
+   "text": "Moved to Garden as F2",
+   "codes": {
+    "3": "F03"
+   }
   },
   {
    "seq": 48,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "r2 moved to garden as r1"
+   "kind": "moved",
+   "src": "r2",
+   "to": "garden",
+   "as": "r1"
   },
   {
    "seq": 47,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "undo organizer changes for r2"
+   "kind": "undo",
+   "src": "r2"
   },
   {
    "seq": 46,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "B01 pri P1\u2192P0"
+   "kind": "set",
+   "n": 1,
+   "set": [
+    {
+     "field": "pri",
+     "was": "P1",
+     "now": "P0"
+    }
+   ],
+   "codes": {
+    "1": "B01"
+   }
   },
   {
    "seq": 45,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
-   "what": "organizer r1 ok: Created T11 \u00b7 Left for agent"
+   "kind": "org",
+   "src": "r1",
+   "ok": true,
+   "msg": "Created T11 \u00b7 Left for agent"
   },
   {
    "seq": 44,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
-   "what": "new T11 task P2 now 'Sort the export by date' \u2190r1"
+   "kind": "add",
+   "n": 11,
+   "type": "task",
+   "pri": "P2",
+   "when": "now",
+   "title": "Sort the export by date",
+   "src": "r1",
+   "codes": {
+    "11": "T11"
+   }
   },
   {
    "seq": 43,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "deleted I09"
+   "kind": "idel",
+   "ns": [
+    9
+   ],
+   "codes": {
+    "9": "I09"
+   }
   },
   {
    "seq": 42,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "r1 edit: 'And the sort, please. By date. Newest first.'"
+   "kind": "amend",
+   "src": "r1",
+   "mode": "edit",
+   "text": "And the sort, please. By date. Newest first."
   },
   {
    "seq": 41,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "claude-code",
-   "what": "B01 progress 'Sorting by date too.'",
-   "ses": "sample"
+   "kind": "say",
+   "n": 1,
+   "as": "progress",
+   "text": "Sorting by date too.",
+   "ses": "sample",
+   "codes": {
+    "1": "B01"
+   }
   },
   {
    "seq": 40,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
-   "what": "organizer r1 ok: Created T10 \u00b7 Left for agent"
+   "kind": "org",
+   "src": "r1",
+   "ok": true,
+   "msg": "Created T10 \u00b7 Left for agent"
   },
   {
    "seq": 39,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
-   "what": "new T10 task P2 now 'Sort the export by date' \u2190r1"
+   "kind": "add",
+   "n": 10,
+   "type": "task",
+   "pri": "P2",
+   "when": "now",
+   "title": "Sort the export by date",
+   "src": "r1",
+   "codes": {
+    "10": "T10"
+   }
   },
   {
    "seq": 38,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "new I09 idea P1 now 'Old idea'"
+   "kind": "add",
+   "n": 9,
+   "type": "idea",
+   "pri": "P1",
+   "when": "now",
+   "title": "Old idea",
+   "codes": {
+    "9": "I09"
+   }
   },
   {
    "seq": 37,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "hid a message on B01"
+   "kind": "hide",
+   "n": 1,
+   "on": true,
+   "codes": {
+    "1": "B01"
+   }
   },
   {
    "seq": 36,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "undo organizer changes for r3"
+   "kind": "undo",
+   "src": "r3"
   },
   {
    "seq": 35,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "r5 deleted with T07"
+   "kind": "del",
+   "src": "r5",
+   "ns": [
+    8
+   ],
+   "kept": [],
+   "codes": {
+    "8": "T08"
+   }
   },
   {
    "seq": 34,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "r1 append: 'And the sort, please. By date.'"
+   "kind": "amend",
+   "src": "r1",
+   "mode": "append",
+   "text": "And the sort, please. By date."
   },
   {
    "seq": 33,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
-   "what": "organizer r3 ok: Created T8"
+   "kind": "org",
+   "src": "r5",
+   "ok": true,
+   "msg": "Created T8"
   },
   {
    "seq": 32,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
-   "what": "new T08 task P2 now 'Sort the export by date' \u2190r3"
+   "kind": "add",
+   "n": 8,
+   "type": "task",
+   "pri": "P2",
+   "when": "now",
+   "title": "Sort the export by date",
+   "src": "r5",
+   "codes": {
+    "8": "T08"
+   }
   },
   {
    "seq": 31,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
-   "what": "organizer r5 ok: Created T7"
+   "kind": "org",
+   "src": "r3",
+   "ok": true,
+   "msg": "Created T7"
   },
   {
    "seq": 30,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
-   "what": "new T07 task P2 now 'Sort the export by date' \u2190r5"
+   "kind": "add",
+   "n": 7,
+   "type": "task",
+   "pri": "P2",
+   "when": "now",
+   "title": "Sort the export by date",
+   "src": "r3",
+   "codes": {
+    "7": "T07"
+   }
   },
   {
    "seq": 29,
    "t": "2026-11-06T09:00:00-08:00",
-   "who": "org",
-   "what": "organizer r2 ok: Created T6"
+   "who": "you",
+   "kind": "in",
+   "id": "r5",
+   "text": "One more thing"
   },
   {
    "seq": 28,
    "t": "2026-11-06T09:00:00-08:00",
-   "who": "org",
-   "what": "new T06 task P2 now 'Sort the export by date' \u2190r2"
+   "who": "you",
+   "kind": "dc",
+   "d": 1,
+   "text": "Looks right."
   },
   {
    "seq": 27,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "in r5 'One more thing'"
+   "kind": "dc",
+   "d": 1,
+   "text": "Read it from the address."
   },
   {
    "seq": 26,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "D1 comment 'Looks right.'"
+   "kind": "set",
+   "n": 3,
+   "set": [
+    {
+     "field": "status",
+     "was": "proposed",
+     "now": "open"
+    },
+    {
+     "field": "later_until",
+     "was": null,
+     "now": "2026-12-01"
+    },
+    {
+     "field": "rank",
+     "was": null,
+     "now": -5.0
+    },
+    {
+     "field": "when",
+     "was": "now",
+     "now": "later"
+    }
+   ],
+   "codes": {
+    "3": "F03"
+   }
   },
   {
    "seq": 25,
    "t": "2026-11-06T09:00:00-08:00",
-   "who": "you",
-   "what": "D1 comment 'Read it from the address.'"
+   "who": "org",
+   "kind": "org",
+   "src": "r1",
+   "ok": true,
+   "msg": "Created T6"
   },
   {
    "seq": 24,
    "t": "2026-11-06T09:00:00-08:00",
-   "who": "you",
-   "what": "F03 status proposed\u2192open, later_until None\u21922026-12-01, rank None\u2192-5.0, when now\u2192later"
+   "who": "org",
+   "kind": "add",
+   "n": 6,
+   "type": "task",
+   "pri": "P2",
+   "when": "now",
+   "title": "Sort the export by date",
+   "src": "r1",
+   "codes": {
+    "6": "T06"
+   }
   },
   {
    "seq": 23,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
-   "what": "organizer r1 ok: Created T5"
+   "kind": "org",
+   "src": "r2",
+   "ok": true,
+   "msg": "Created T5"
   },
   {
    "seq": 22,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
-   "what": "new T05 task P2 now 'Sort the export by date' \u2190r1"
+   "kind": "add",
+   "n": 5,
+   "type": "task",
+   "pri": "P2",
+   "when": "now",
+   "title": "Sort the export by date",
+   "src": "r2",
+   "codes": {
+    "5": "T05"
+   }
   },
   {
    "seq": 21,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "doc D3 on ?00 'Rules'"
+   "kind": "doc",
+   "d": 3,
+   "n": 0,
+   "title": "Rules",
+   "codes": {
+    "0": "?00"
+   }
   },
   {
    "seq": 20,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "in r4 'Never mind'"
+   "kind": "in",
+   "id": "r4",
+   "text": "Never mind"
   },
   {
    "seq": 19,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "in r3 'Look at this'"
+   "kind": "in",
+   "id": "r3",
+   "text": "Look at this"
   },
   {
    "seq": 18,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "in r2 'Sort the export by date, please.'"
+   "kind": "in",
+   "id": "r2",
+   "text": "Sort the export by date, please."
   },
   {
    "seq": 17,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "in r1 \u2192B01 'And the sort, please.'"
+   "kind": "in",
+   "id": "r1",
+   "to": 1,
+   "text": "And the sort, please.",
+   "codes": {
+    "1": "B01"
+   }
   },
   {
    "seq": 16,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "claude-code",
-   "what": "T04 ask 'Which columns? - [ ] Date - [ ] Total'",
-   "ses": "sample"
+   "kind": "say",
+   "n": 4,
+   "as": "ask",
+   "text": "Which columns? - [ ] Date - [ ] Total",
+   "ses": "sample",
+   "codes": {
+    "4": "T04"
+   }
   },
   {
    "seq": 15,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "claude-code",
-   "what": "new T04 task P1 now 'Pick the columns'",
-   "ses": "sample"
+   "kind": "add",
+   "n": 4,
+   "type": "task",
+   "pri": "P1",
+   "when": "now",
+   "title": "Pick the columns",
+   "ses": "sample",
+   "codes": {
+    "4": "T04"
+   }
   },
   {
    "seq": 14,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "claude-code",
-   "what": "B01 say '@helper the export as it is now'",
-   "ses": "sample"
+   "kind": "say",
+   "n": 1,
+   "as": "say",
+   "text": "@helper the export as it is now",
+   "ses": "sample",
+   "codes": {
+    "1": "B01"
+   }
   },
   {
    "seq": 13,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "taska",
-   "what": "a voice note words: 'Sort the export by date, please.'"
+   "kind": "voice",
+   "state": "done",
+   "text": "Sort the export by date, please."
   },
   {
    "seq": 12,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "taska",
-   "what": "a voice note first words: 'Sort the export by date, please.'"
+   "kind": "voice",
+   "state": "wait",
+   "text": "Sort the export by date, please."
   },
   {
    "seq": 11,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "taska",
-   "what": "a voice note being transcribed"
+   "kind": "voice",
+   "state": "wait",
+   "text": ""
   },
   {
    "seq": 10,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "claude-code",
-   "what": "dprop",
+   "kind": "other",
+   "name": "dprop",
    "ses": "sample"
   },
   {
    "seq": 9,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "claude-code",
-   "what": "doc D2 on F03 'Page'",
-   "ses": "sample"
+   "kind": "doc",
+   "d": 2,
+   "n": 3,
+   "title": "Page",
+   "ses": "sample",
+   "codes": {
+    "3": "F03"
+   }
   },
   {
    "seq": 8,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "claude-code",
-   "what": "D1 comment 'Checked the plan.'",
+   "kind": "dc",
+   "d": 1,
+   "text": "Checked the plan.",
    "ses": "sample"
   },
   {
    "seq": 7,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "claude-code",
-   "what": "doc D1 on B01 'Plan'",
-   "ses": "sample"
+   "kind": "doc",
+   "d": 1,
+   "n": 1,
+   "title": "Plan",
+   "ses": "sample",
+   "codes": {
+    "1": "B01"
+   }
   },
   {
    "seq": 6,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "claude-code",
-   "what": "B01 ask 'Which format should the export use? - ( ) CSV - ( ) Excel'",
-   "ses": "sample"
+   "kind": "say",
+   "n": 1,
+   "as": "ask",
+   "text": "Which format should the export use? - ( ) CSV - ( ) Excel",
+   "ses": "sample",
+   "codes": {
+    "1": "B01"
+   }
   },
   {
    "seq": 5,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "claude-code",
-   "what": "B01 progress 'Reproduced it: the export reads the list before the filter'",
-   "ses": "sample"
+   "kind": "say",
+   "n": 1,
+   "as": "progress",
+   "text": "Reproduced it: the export reads the list before the filter",
+   "ses": "sample",
+   "codes": {
+    "1": "B01"
+   }
   },
   {
    "seq": 4,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "claude-code",
-   "what": "new F03 feature P2 now 'Export to Excel'",
-   "ses": "sample"
+   "kind": "add",
+   "n": 3,
+   "type": "feature",
+   "pri": "P2",
+   "when": "now",
+   "title": "Export to Excel",
+   "ses": "sample",
+   "codes": {
+    "3": "F03"
+   }
   },
   {
    "seq": 3,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "claude-code",
-   "what": "new T02 task P2 later 'Read the filter from the address'",
-   "ses": "sample"
+   "kind": "add",
+   "n": 2,
+   "type": "task",
+   "pri": "P2",
+   "when": "later",
+   "title": "Read the filter from the address",
+   "ses": "sample",
+   "codes": {
+    "2": "T02"
+   }
   },
   {
    "seq": 2,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "claude-code",
-   "what": "new B01 bug P1 now 'Export ignores the active filter'",
-   "ses": "sample"
+   "kind": "add",
+   "n": 1,
+   "type": "bug",
+   "pri": "P1",
+   "when": "now",
+   "title": "Export ignores the active filter",
+   "ses": "sample",
+   "codes": {
+    "1": "B01"
+   }
   },
   {
    "seq": 1,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
-   "what": "renamed the project 'Shop'"
+   "kind": "cfg",
+   "name": "Shop"
   }
  ],
  "pictureSizes": {
@@ -1398,7 +1675,7 @@ export const SAMPLES = {
    "docs": 0,
    "agents": [],
    "work": false,
-   "t": 1794190164494
+   "t": 1794192065258
   },
   {
    "name": "garden",
@@ -1410,7 +1687,7 @@ export const SAMPLES = {
    "docs": 1,
    "agents": [],
    "work": true,
-   "t": 1794190164720
+   "t": 1794192065432
   },
   {
    "name": "shop",
@@ -1423,23 +1700,23 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400387,
+     "t": 1793984400372,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400387
+       "t": 1793984400372
       },
       {
        "name": "helper",
-       "t": 1793984400272
+       "t": 1793984400243
       }
      ]
     }
    ],
    "work": true,
-   "t": 1794190164720
+   "t": 1794192065432
   }
  ],
  "needs": [
@@ -1586,7 +1863,7 @@ export const SAMPLES = {
       "ses": "sample"
      },
      "readBy": {
-      "claude-code": 1793984400317
+      "claude-code": 1793984400303
      }
     },
     "parentCode": null,
@@ -1660,6 +1937,37 @@ export const SAMPLES = {
      "body": "",
      "pri": "P2",
      "when": "now",
+     "status": "dropped",
+     "parent": null,
+     "next": "",
+     "srcs": [
+      "r2"
+     ],
+     "mergedInto": null,
+     "archived": true,
+     "t0": "2026-11-06T09:00:00-08:00",
+     "t1": "2026-11-06T09:00:00-08:00",
+     "by": "org",
+     "thread": [],
+     "wait": null,
+     "talked": false
+    },
+    "parentCode": null,
+    "kids": null
+   },
+   {
+    "project": "shop",
+    "kind": "items",
+    "key": "i6",
+    "n": 6,
+    "item": {
+     "n": 6,
+     "code": "T06",
+     "type": "task",
+     "title": "Sort the export by date",
+     "body": "",
+     "pri": "P2",
+     "when": "now",
      "status": "open",
      "parent": null,
      "next": "",
@@ -1692,42 +2000,11 @@ export const SAMPLES = {
    {
     "project": "shop",
     "kind": "items",
-    "key": "i6",
-    "n": 6,
+    "key": "i7",
+    "n": 7,
     "item": {
-     "n": 6,
-     "code": "T06",
-     "type": "task",
-     "title": "Sort the export by date",
-     "body": "",
-     "pri": "P2",
-     "when": "now",
-     "status": "dropped",
-     "parent": null,
-     "next": "",
-     "srcs": [
-      "r2"
-     ],
-     "mergedInto": null,
-     "archived": true,
-     "t0": "2026-11-06T09:00:00-08:00",
-     "t1": "2026-11-06T09:00:00-08:00",
-     "by": "org",
-     "thread": [],
-     "wait": null,
-     "talked": false
-    },
-    "parentCode": null,
-    "kids": null
-   },
-   {
-    "project": "shop",
-    "kind": "items",
-    "key": "i8",
-    "n": 8,
-    "item": {
-     "n": 8,
-     "code": "T08",
+     "n": 7,
+     "code": "T07",
      "type": "task",
      "title": "Sort the export by date",
      "body": "",
@@ -1899,7 +2176,7 @@ export const SAMPLES = {
     "key": "r1",
     "n": 1,
     "code": "#1",
-    "title": "",
+    "title": "Sort the export by date, please.",
     "t": "2026-11-06T09:00:00-08:00",
     "became": "T1"
    },
@@ -1919,98 +2196,6 @@ export const SAMPLES = {
    "garden": "Garden"
   }
  },
- "search": [
-  {
-   "project": "garden",
-   "ptitle": "Garden",
-   "kind": "item",
-   "code": "T1",
-   "title": "Sort the export by date",
-   "status": "open",
-   "archived": false,
-   "t": "2026-11-06T09:00:00-08:00"
-  },
-  {
-   "project": "garden",
-   "ptitle": "Garden",
-   "kind": "item",
-   "code": "F2",
-   "title": "Export to Excel",
-   "status": "open",
-   "archived": false,
-   "t": "2026-11-06T09:00:00-08:00"
-  },
-  {
-   "project": "shop",
-   "ptitle": "Shop",
-   "kind": "item",
-   "code": "B01",
-   "title": "Export ignores the active filter",
-   "status": "proposed",
-   "archived": false,
-   "t": "2026-11-06T09:00:00-08:00"
-  },
-  {
-   "project": "shop",
-   "ptitle": "Shop",
-   "kind": "item",
-   "code": "F03",
-   "title": "Export to Excel",
-   "status": "dropped",
-   "archived": true,
-   "t": "2026-11-06T09:00:00-08:00"
-  },
-  {
-   "project": "shop",
-   "ptitle": "Shop",
-   "kind": "item",
-   "code": "T05",
-   "title": "Sort the export by date",
-   "status": "open",
-   "archived": false,
-   "t": "2026-11-06T09:00:00-08:00"
-  },
-  {
-   "project": "shop",
-   "ptitle": "Shop",
-   "kind": "item",
-   "code": "T06",
-   "title": "Sort the export by date",
-   "status": "dropped",
-   "archived": true,
-   "t": "2026-11-06T09:00:00-08:00"
-  },
-  {
-   "project": "shop",
-   "ptitle": "Shop",
-   "kind": "item",
-   "code": "T08",
-   "title": "Sort the export by date",
-   "status": "dropped",
-   "archived": true,
-   "t": "2026-11-06T09:00:00-08:00"
-  },
-  {
-   "project": "shop",
-   "ptitle": "Shop",
-   "kind": "item",
-   "code": "T10",
-   "title": "Sort the export by date",
-   "status": "open",
-   "archived": false,
-   "t": "2026-11-06T09:00:00-08:00"
-  },
-  {
-   "project": "shop",
-   "ptitle": "Shop",
-   "kind": "item",
-   "code": "T11",
-   "title": "Sort the export by date",
-   "status": "open",
-   "archived": false,
-   "t": "2026-11-06T09:00:00-08:00"
-  }
- ],
  "renameProject": {
   "ok": true,
   "name": "old",
@@ -2102,7 +2287,7 @@ export const SAMPLES = {
   "tidy": true
  },
  "pushKey": {
-  "key": "BNffU0fG5syP2TbPgvCsopK17JdU0OhtzjmuhuCRVZNgqBvImPZfjv_HGsvnwNZPubrf-d5FC61tY1fP8JEhGWs",
+  "key": "BOBulj2aui5ws0WwoReGM2WWKyjuv6s-1Dsp-Xy-aOeBVIN6IF85ANdIM7FURYZlNMQwzwSd30WCr8T8NDTqcsI",
   "on": false
  },
  "setPush": {
@@ -2152,7 +2337,7 @@ export const SAMPLES = {
  },
  "newKey": {
   "ok": true,
-  "key": "vbws-y46y"
+  "key": "rjkh-hjs6"
  },
  "login": {
   "ok": true

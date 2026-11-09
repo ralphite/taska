@@ -5,7 +5,7 @@ import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
-import { closed, queueHead } from '../../model/items'
+import { closed, heldItems, queueHead } from '../../model/items'
 import { forward } from '../../model/actions'
 import { codeOf, draftCodes, firstSteps, liveN, type ProjectModel } from '../../model/project'
 import { NEW_DRAFT } from '../../model/draftTarget'
@@ -63,7 +63,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     }
   }
 
-  const head = m ? queueHead(m.items) : undefined
+  const head = m ? queueHead(m.items, heldItems(m.inputs)) : undefined
   const draftWords = useStoreValue(stores.drafts, (s) => s.bySlug[route.slug])
   const draftFiles = useStoreValue(stores.box, (s) => s.files)
   const drafts = useMemo(() => (m ? draftCodes(m, draftWords || stores.drafts.getState().of(route.slug), draftFiles) : new Set<string>()), [m, draftWords, draftFiles, stores, route.slug])

@@ -2,22 +2,34 @@
 // dragged row goes (what an item needs from you is model/needStates). They agree with the server's (domain/rules.py), which the page cannot ask at every
 // keystroke: a change you make shows at once, before the server has it.
 
-import type { Item, Message, Status } from './types'
+import type { Input, Item, Message, Status } from './types'
+import { CLOSED, NOTES, TASKA, USER_KINDS, WORK_TYPES } from './vocab.gen'
 import { STATUS_WORD } from './words'
 
-export const closed = (s: Status | string) => s === 'done' || s === 'dropped'
+export const closed = (s: Status | string) => (CLOSED as readonly string[]).includes(s)
 
 /** The statuses an item can be set to, in the menu's order: [status, word][] */
 export const statusChoices = (_it: Item): [string, string][] => Object.entries(STATUS_WORD) as [string, string][]
 
 export const statusWord = (it: Item) => STATUS_WORD[it.status]
 
-/** The user's own words on an item: theirs, or what the organizer filed there from one of their inputs. */
-export const userWord = (m: Message) =>
-  m.by === 'you' || (m.by === 'org' && ['say', 'decide', 'propose'].includes(m.kind) && !!m.src)
+/** The user's own words on an item: theirs, or what the organizer filed there from one of their inputs (domain/rules.py
+ * user_word). */
+export const userWord = (m: Pick<Message, 'by' | 'kind' | 'src'>) => m.by === 'you' || (m.by === 'org' && (USER_KINDS as readonly string[]).includes(m.kind) && !!m.src)
 
 /** Taska's own note to an agent (a diagram that does not draw, B714 r1181): no agent's word, nothing for you to read. */
-export const taskaNote = (m: Message) => m.by === 'taska'
+export const taskaNote = (m: Message) => m.by === TASKA
+
+/** You wrote after an agent's last word on it: an agent should pick it up (domain/rules.py replied; the organizer's
+ * own notes and Taska's are neither side's word). */
+export function replied(it: Item): boolean {
+  let user = false
+  for (const x of [...it.thread].reverse()) {
+    if (userWord(x)) user = true
+    else if (!(NOTES as readonly string[]).includes(x.by)) return user
+  }
+  return false
+}
 
 export const lastAgentMessage = (it: Item) => [...it.thread].reverse().find((m) => !userWord(m) && !taskaNote(m))
 
@@ -52,10 +64,10 @@ export const oneLine = (t: unknown) =>
 export const canDone = (it: Item) =>
   !closed(it.status) && it.status !== 'proposed' && it.status !== 'review'
 
-/** In the agents' queue: not waiting on you, not finished, not archived. */
-/** In the agents' queue to be done now, by the server's own rule (agent_text/work.py next_work; T728 #4): to do now,
- * open or in progress, not waiting on you. A proposal, work in review, or an item you replied on is not in it. */
-export const queuedNow = (it: Item) => !it.mergedInto && !it.archived && it.when === 'now' && (it.status === 'open' || it.status === 'doing') && !it.wait
+/** In the agents' queue to be done now, by the server's own rule (agent_text/work.py next_work; T728 #4): work to do
+ * now, open or in progress, not waiting on you. A proposal or work in review is not in it. */
+export const queuedNow = (it: Item) =>
+  !it.mergedInto && !it.archived && it.when === 'now' && (WORK_TYPES as readonly string[]).includes(it.type) && (it.status === 'open' || it.status === 'doing') && !it.wait
 
 /** The order agents take the work: now before later, in progress first; then the user's own order (rank) before
  * priority: what they never placed goes in by priority, just before the first ranked item of a lower priority. */
@@ -76,17 +88,43 @@ export function queueOrder(items: Item[]): Item[] {
   return out
 }
 
-/** The items with open subitems: /next does not hand those out (their subitems come first). */
-export const withOpenKids = (items: readonly Item[]) => new Set(items.filter((it) => it.parent != null && !it.mergedInto && !closed(it.status)).map((it) => it.parent as number))
+/** The items with open subitems, at any depth (domain/rules.py open_kids): /next does not hand those out (their
+ * subitems come first). */
+export function withOpenKids(items: readonly Item[]): Set<number> {
+  const byN = new Map(items.map((it) => [it.n, it]))
+  const out = new Set<number>()
+  for (const it of items)
+    if (!it.mergedInto && !closed(it.status))
+      for (let p = it.parent, i = 0; p != null && i < 100; p = byN.get(p)?.parent ?? null, i++) {
+        const up = byN.get(p)
+        if (!up || up.mergedInto) break
+        out.add(p)
+      }
+  return out
+}
 
 /** Waiting in the agents' queue: what /next hands out and no one is on yet: queued now, not in progress, no open
  * subitems (`kids`: withOpenKids of its project). */
 export const waitsInQueue = (it: Item, kids: ReadonlySet<number> = new Set()) => queuedNow(it) && it.status === 'open' && !kids.has(it.n)
 
-/** The item an agent takes next. */
-export const queueHead = (items: Item[]) => {
+/** The items your voice note is on while its words are worked out (`inputs` with their notes' words): /next leaves
+ * them until the words are in (the server holds such an input at most VOICE_HOLD). */
+export const heldItems = (inputs: readonly Input[]): Set<number> =>
+  new Set(inputs.filter((r) => r.files.some((f) => f.voice?.state === 'wait')).flatMap((r) => [r.scope, ...r.touched].filter((n): n is number => n != null)))
+
+/** The item an agent on nothing yet takes next (agent_text/work.py next_work; what is in progress is another
+ * session's): work in progress you replied on, resumed; else the queue's head, unless an item you replied on is as
+ * urgent (by priority, then the oldest change); items your voice note is on wait (`held`). */
+export function queueHead(items: Item[], held: ReadonlySet<number> = new Set()): number | undefined {
+  const live = items.filter((it) => !it.mergedInto && !it.archived && !closed(it.status) && !held.has(it.n))
+  const yours = live.filter(replied)
+  const back = yours.filter((it) => it.status === 'doing').sort((a, b) => a.t1.localeCompare(b.t1))[0]
+  if (back) return back.n
+  const now = (it: Item) => +(it.when !== 'now')
+  const fresh = yours.filter((it) => it.status !== 'doing').sort((a, b) => a.pri.localeCompare(b.pri) || a.t1.localeCompare(b.t1) || now(a) - now(b) || a.n - b.n)[0]
   const kids = withOpenKids(items)
-  return queueOrder(items.filter((it) => waitsInQueue(it, kids)))[0]?.n
+  const head = queueOrder(live.filter((it) => waitsInQueue(it, kids)))[0]
+  return fresh && (!head || fresh.pri <= head.pri) ? fresh.n : head?.n
 }
 
 /** What needs you, the latest change first, the Later ones under the rest. */

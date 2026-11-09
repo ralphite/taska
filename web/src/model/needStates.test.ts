@@ -42,17 +42,7 @@ describe('the states', () => {
   })
 })
 
-describe("the list is the server's needs_you (domain/rules.py)", () => {
-  /** the server's rule, as it reads */
-  const server = (it: Item) => !it.mergedInto && !it.archived && !['done', 'dropped'].includes(it.status) && (!!it.wait || (['proposed', 'review'].includes(it.status) && !it.talked))
-  const all: Item[] = []
-  for (const status of ['proposed', 'open', 'doing', 'review', 'done', 'dropped'] as const)
-    for (const talked of [false, true])
-      for (const archived of [false, true])
-        for (const w of [null, waitOf(askWords)]) all.push(item({ n: 1, status, talked, archived, thread: w ? [proposal, askWords] : [proposal], wait: w }))
-  test('the same for every status, talked or not, archived or not, a question or none', () => {
-    for (const it of all) expect(needsYou(it), JSON.stringify({ s: it.status, t: it.talked, a: it.archived, w: !!it.wait })).toBe(server(it))
-  })
+describe("the list is the server's needs_you (domain/rules.py; its own cases: serverRules.test.ts)", () => {
   test('T728: a proposal of your own with only your words on it needs you, and its card is the proposal, not Skipped', () => {
     const mine = item({ n: 1, status: 'proposed', by: 'you', thread: [message({ id: 1, by: 'you', kind: 'say', text: 'Maybe a CSV export' })] })
     expect(needsYou(mine)).toBe(true)

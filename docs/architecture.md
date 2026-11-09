@@ -136,5 +136,7 @@ servers; `tests/check_data.py` validates a copied data root without a second imp
   a sender only says the command (`runner.change(slug, command, said)`), never what it shows.
 - Whether the server is out of reach is one rule, `model/reach.ts` (T728 #8): every place counts its tries without an
   answer the same way (one that timed out counts twice), says so from the same threshold and in the same words.
-- Derived things (sections of the list, counts, needs you) are selectors over that overlay, computed with the same
-  rules as the server's.
+- Derived things (sections of the list, counts, needs you, the agents' next item) are selectors over that overlay,
+  computed with the same rules as the server's: the page's copies are held to cases the server's own code ran
+  (`model/ruleCases.gen.ts`), and its words (types, statuses, priorities, kinds) are the server's
+  (`model/vocab.gen.ts`), both written by `tools/rule_cases.py`.

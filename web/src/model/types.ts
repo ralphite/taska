@@ -1,13 +1,15 @@
 // What the server sends: a project's view (GET /p/<project>/api/view) and the workspace's answers. The shapes are
 // the server's page_api/views.py.
 
+import type { MESSAGE_KINDS, PRIORITIES, STATUSES, TYPES, WHENS } from './vocab.gen'
 import type { RecordState } from './voiceStates'
 
-export type ItemType = 'feature' | 'bug' | 'idea' | 'task'
-export type Status = 'proposed' | 'open' | 'doing' | 'review' | 'done' | 'dropped'
-export type Pri = 'P0' | 'P1' | 'P2' | 'P3'
-export type When = 'now' | 'later'
-export type Kind = 'say' | 'ask' | 'withdraw' | 'propose' | 'decide' | 'progress'
+// the server's words (domain/vocab.py, by model/vocab.gen.ts)
+export type ItemType = (typeof TYPES)[number]
+export type Status = (typeof STATUSES)[number]
+export type Pri = (typeof PRIORITIES)[number]
+export type When = (typeof WHENS)[number]
+export type Kind = (typeof MESSAGE_KINDS)[number]
 
 export interface FileRef {
   f: string

@@ -1,9 +1,8 @@
 // The words the page uses for Taska's data: item types and their letters, statuses, priorities, agents' names.
 
-import type { ItemType, Status, When } from './types'
+import type { Status, When } from './types'
 
-export const LETTER: Record<ItemType, string> = { feature: 'F', bug: 'B', idea: 'I', task: 'T' }
-export const WORK_TYPES: ItemType[] = ['feature', 'bug', 'idea', 'task']
+export { LETTER } from './vocab.gen'
 
 export const STATUS_WORD: Record<Status, string> = {
   proposed: 'Proposed',

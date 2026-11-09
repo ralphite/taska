@@ -12,6 +12,7 @@ import { allComments, sameText } from './docs'
 import { closed } from './items'
 import { STAND, type DocPatch, type InputPatch, type ItemPatch, type ProjectModel } from './project'
 import type { Comment, Doc, FileRef, Input, Item, ItemType, Status } from './types'
+import { DECISIONS as DECIDE, DEFAULT_PRI, PEOPLE as WHO, PRIORITIES, STATUSES as ALL, TASKA, TYPES as KINDS, WHENS } from './vocab.gen'
 import { saidText } from './voices'
 
 /** What a change shows: its items', inputs' and documents' changes over the server's data. */
@@ -21,12 +22,10 @@ export interface Shown {
   docPatches: DocPatch[]
 }
 
-const PEOPLE = ['you', 'org']
-const TASKA = 'taska'
-/** The two choices of a proposal and of finished work (server domain/vocab.py DECISIONS). */
-const DECISIONS: Record<string, readonly string[]> = { proposed: ['open', 'dropped'], review: ['done', 'open'] }
-const TYPES: readonly string[] = ['feature', 'bug', 'idea', 'task']
-const STATUSES: readonly string[] = ['proposed', 'open', 'doing', 'review', 'done', 'dropped']
+const PEOPLE: readonly string[] = WHO
+const DECISIONS: Record<string, readonly string[]> = DECIDE
+const TYPES: readonly string[] = KINDS
+const STATUSES: readonly string[] = ALL
 const NONE = ['', '-', 'none', 'null']
 
 /** The project as the change goes on: the model with what the change did so far (a change may hold several
@@ -101,9 +100,9 @@ function value(w: Work, name: string, v: unknown, me: Item): { ok: boolean; v?: 
     case 'type':
       return TYPES.includes(s.toLowerCase()) ? { ok: true, v: s.toLowerCase() } : { ok: false }
     case 'pri':
-      return /^P[0-3]$/.test(s.toUpperCase()) ? { ok: true, v: s.toUpperCase() } : { ok: false }
+      return (PRIORITIES as readonly string[]).includes(s.toUpperCase()) ? { ok: true, v: s.toUpperCase() } : { ok: false }
     case 'when':
-      return ['now', 'later'].includes(s.toLowerCase()) ? { ok: true, v: s.toLowerCase() } : { ok: false }
+      return (WHENS as readonly string[]).includes(s.toLowerCase()) ? { ok: true, v: s.toLowerCase() } : { ok: false }
     case 'status': {
       const st = s.toLowerCase() === 'drop' ? 'dropped' : s.toLowerCase()
       return STATUSES.includes(st) ? { ok: true, v: st } : { ok: false }
@@ -209,7 +208,7 @@ function newItem(w: Work, c: CommandOf<'new'>): void {
   const n = STAND + (w.at % 1e11) + w.out.patches.length
   const t = new Date(w.at).toISOString()
   const add: Item = {
-    n, code: '…', type: (c.type || 'idea') as ItemType, title, body: (c.body || '').trim(), pri: c.pri || 'P1', when: c.when || 'now',
+    n, code: '…', type: (c.type || 'idea') as ItemType, title, body: (c.body || '').trim(), pri: c.pri || DEFAULT_PRI, when: c.when || 'now',
     status: (c.status || 'open') as Status, parent: parent?.n ?? null, next: (c.next || '').trim(), srcs: [], mergedInto: null, archived: false,
     t0: t, t1: t, by: 'you', thread: [], wait: null, talked: false, rank: null, decided: null,
   }
