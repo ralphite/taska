@@ -81,9 +81,6 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
     from .services.voice import transcriber_for
 
     logs.setup(log_db, log_level)
-    from .services.migrate import migrate_all
-    for line in migrate_all(os.path.abspath(os.path.expanduser(root))):  # once: every log in today's format (Refactor 8)
-        print(f"taska: {line}", flush=True)
     organizers = Organizers(enabled=organizer)
 
     made = threading.Event()  # the workspace exists: notes resumed while it opens its projects wait for it
@@ -97,10 +94,6 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
         assert isinstance(p, Project)
         p.organizing.on = organizer
         p.voice.set_transcriber(transcriber_for(p, workspace))
-        with p.lock:
-            p.voice.split_once()  # B682, once: each voice note's words in one record, out of the texts
-        p.blocks_to_asks()  # T646, once: the agents' earlier blocks are asks
-        p.rules_to_doc()  # I693, once: the rule items are the rules document
         p.voice.resume()  # before the organizer: an input waiting for its words is held for them again
         organizers.start(p)
 

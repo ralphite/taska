@@ -59,12 +59,6 @@ def _value(v: Any) -> Any:
     return v if v is None or isinstance(v, (bool, int, float)) else first_line(v)
 
 
-def _kind_now(st: ProjectState, e: ev.MessagePosted) -> str:
-    """What the message is now: an earlier block is an ask (T646)."""
-    it = st.items.get(e.n)
-    return next((x.kind for x in it.thread if x.id == e.seq), e.kind) if it else e.kind
-
-
 def _facts(st: ProjectState, e: ev.Event) -> "tuple[str, str, Entry]":
     """Who made a change, its kind, and what it names."""
     who, k = e.by, e.KIND
@@ -79,7 +73,7 @@ def _facts(st: ProjectState, e: ev.Event) -> "tuple[str, str, Entry]":
                    for a, b in e.fields.items()]
         return who, k, {"n": e.n, "set": changes, **({"undo": e.undo_of} if e.undo_of else {})}
     if isinstance(e, ev.MessagePosted):
-        return who, k, {"n": e.n, "as": _kind_now(st, e), "text": first_line(e.text)}
+        return who, k, {"n": e.n, "as": e.kind, "text": first_line(e.text)}
     if isinstance(e, (ev.ItemMerged, ev.ItemUnmerged)):
         return who, k, {"n": e.n, "into": e.into}
     if isinstance(e, ev.LaterEnded):
@@ -107,10 +101,8 @@ def _facts(st: ProjectState, e: ev.Event) -> "tuple[str, str, Entry]":
         return who, k, {**src, "text": first_line(e.tidied)}
     if isinstance(e, ev.VoicesSplit):
         return who, k, {"count": len(e.voices)}
-    if isinstance(e, ev.BlocksAsked):
-        return who, k, {"count": len(e.ids)}
-    if isinstance(e, ev.WordsKept):
-        return who, k, {"count": sum(len(v) for v in e.notes.values())}
+    if isinstance(e, ev.Folded):
+        return who, k, {"was": e.was}
     if isinstance(e, (ev.FilingUndone, ev.FilingRedone, ev.InputSent)):
         return who, k, {"src": e.src}
     if isinstance(e, ev.InputDeleted):
@@ -125,8 +117,6 @@ def _facts(st: ProjectState, e: ev.Event) -> "tuple[str, str, Entry]":
         return who, k, {"src": e.src, "to": e.to, "as": e.as_}
     if isinstance(e, ev.InputAmended):
         return who, k, {"src": e.src, "mode": e.mode, "text": first_line(e.text)}
-    if isinstance(e, ev.WordsIn):
-        return who, k, {"src": e.src, "text": first_line(e.tr)}
     if isinstance(e, ev.FileTakenOff):
         return who, k, {"f": e.f, **({"d": e.d} if e.d else src)}
     if isinstance(e, ev.MessageHidden):
@@ -210,6 +200,8 @@ def said(x: Entry) -> str:
         return f"{x['src'] + ' ' if x.get('src') else ''}voice note words corrected: {x['text']!r}"
     if k == "voices":
         return f"kept each voice note's words in one place ({x['count']} voice notes)"
+    if k == "folded":
+        return f"an earlier kind of change ({x['was']}), folded in"
     if k == "dcdel":
         return f"deleted a comment on D{x['d']}"
     if k == "dcundel":
@@ -229,12 +221,6 @@ def said(x: Entry) -> str:
         return f"{x['src']} moved to {x['to']} as {x['as']}"
     if k == "amend":
         return f"{x['src']} {x['mode']}: {x['text']!r}"
-    if k == "tr":
-        return f"{x['src']} voice note words: {x['text']!r}"
-    if k == "asked":
-        return "made 1 earlier block an ask" if x["count"] == 1 else f"made {x['count']} earlier blocks asks"
-    if k == "heard":
-        return f"kept the words as said of {x['count']} voice note{'s' if x['count'] != 1 else ''}"
     if k == "idel":
         return "deleted " + cs(x["ns"])
     if k == "iundel":

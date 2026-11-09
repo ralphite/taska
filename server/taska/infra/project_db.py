@@ -1,7 +1,6 @@
 """One project's SQLite file (taska.db): the change log, the current state rows, and small values.
 
-- `events`: the append-only change log, one row per change, in order; never removed, and changed only by a change of
-  the format (`rewrite`, from a backup made first), each change in its place.
+- `events`: the append-only change log, one row per change, in order; never changed or removed.
 - `items`, `inputs`, `docs`: the current state, kept within a second of the log, so the project can be read
   without Taska.
 - `kv`: what changes often and is not history (when each agent was last seen, what it read).
@@ -27,7 +26,7 @@ CREATE TABLE IF NOT EXISTS docs (d INTEGER PRIMARY KEY, data TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
 """
-# 2: every change in today's kinds (domain.migration); a file made new starts there, one of format 1 is migrated once
+# 2: every change in today's kinds; the logs of format 1 were rewritten once (Refactor 8A), nothing reads that format
 FORMAT_VERSION = "2"
 FILE_NAME = "taska.db"
 
@@ -98,29 +97,6 @@ class ProjectDb:
         """The format its log is in."""
         with self._lock:
             return self._meta("version") or FORMAT_VERSION
-
-    def backup(self, to: str) -> None:
-        """A copy of the whole file, as it is now (SQLite's backup: whole even with changes not yet in it)."""
-        with self._lock:
-            target = sqlite3.connect(to)
-            try:
-                self._con.backup(target)
-            finally:
-                target.close()
-
-    def rewrite(self, changed: Dict[int, Dict[str, Any]], version: str) -> None:
-        """Changes rewritten in their places (seq -> its new row) and the format they are in now, at once."""
-        with self._lock:
-            self._con.execute("BEGIN IMMEDIATE")
-            try:
-                self._con.executemany("UPDATE events SET k = ?, t = ?, by = ?, data = ? WHERE seq = ?",
-                                      [(str(r.get("k", "")), r.get("t"), r.get("by"), dumps(r), seq)
-                                       for seq, r in changed.items()])
-                self._set_meta("version", version)
-                self._con.execute("COMMIT")
-            except BaseException:
-                self._con.execute("ROLLBACK")
-                raise
 
     # -- the current state -------------------------------------------------------
 

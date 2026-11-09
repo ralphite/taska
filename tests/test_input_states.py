@@ -1,6 +1,7 @@
 """T728: what becomes of an input on Taska's side has its states and steps in one place (domain/input_states); the
-organizer, the agents' inbox and a voice note's late words ask it; one rule says a failure goes away by itself and the
-page is told (`org.again`); Undo of a filing is refused when there is no filing of the organizer's to take back."""
+organizer, the agents' inbox and a voice note's late words ask it; one rule says a failure goes away by itself (the
+organizer asks again and writes nothing: a failure written is one to fix); Undo of a filing is refused when there is
+no filing of the organizer's to take back."""
 
 import os
 import sys
@@ -13,7 +14,6 @@ from support import ProjectCase
 from taska.agent_text.language import parse  # noqa: E402
 from taska.domain import events as ev, input_states as st, rules  # noqa: E402
 from taska.domain.model import Input, OrgNote  # noqa: E402
-from taska.page_api.views import input_view  # noqa: E402
 from taska.services import organizer as org  # noqa: E402
 from taska.services.project import Project  # noqa: E402
 
@@ -46,8 +46,6 @@ class TheStates(unittest.TestCase):
             (inp(org=note(keep=True)), True, (), st.LEFT),
             (inp(org=note(msg="Undone", undone=True)), True, (), st.UNDONE),
             (inp(org=note(False, "Gemini HTTP 401: API key not valid")), True, (), st.FAILED),
-            (inp(org=note(False, "Gemini HTTP 503: overloaded")), True, (), st.AGAIN),
-            (inp(org=note(False, "Gemini HTTP 503: overloaded")), False, (), st.FAILED),
         ]
         for i, on, busy, want in cases:
             self.assertEqual(st.state_of(i, on, busy), want, (i.org, i.kind, on, busy))
@@ -73,18 +71,17 @@ class WhoAsksThem(unittest.TestCase):
         def old(i: Input, on: bool) -> bool:
             return (not on or bool(i.org)) and not (i.org and i.org.undone)
         grid = [inp(), inp(org=note()), inp(org=note(keep=True)), inp(org=note(msg="Undone", undone=True)),
-                inp(org=note(False, "B99 not found")), inp(org=note(False, "Gemini HTTP 503: overloaded"))]
+                inp(org=note(False, "B99 not found"))]
         for on in (True, False):
             for i in grid:
                 self.assertEqual(st.state_of(i, on, ()) in st.FOR_AGENTS, old(i, on), (i.org, on))
 
-    def test_the_organizer_takes_queued_and_old_busy_failures_only(self) -> None:
+    def test_the_organizer_takes_queued_only(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             p = Project(tmp, "demo")
             try:
                 o = org.Organizer(p)
                 self.assertTrue(o.due(inp()))
-                self.assertTrue(o.due(inp(org=note(False, "Gemini HTTP 503: overloaded"))))
                 for i in (inp(org=note(False, "Gemini HTTP 401: API key")), inp(org=note()), inp(org=note(msg="Undone", undone=True))):
                     self.assertFalse(o.due(i), i.org)
             finally:
@@ -94,13 +91,8 @@ class WhoAsksThem(unittest.TestCase):
         self.assertFalse(st.reached(inp(), ()))
         self.assertTrue(st.reached(inp(), ("r1",)))
         self.assertTrue(st.reached(inp(acked=True), ()))
-        self.assertTrue(st.reached(inp(org=note(False, "Gemini HTTP 503")), ()))
+        self.assertTrue(st.reached(inp(org=note(False, "B99 not found")), ()))
         self.assertTrue(st.reached(inp(org=note(keep=True)), ()))
-
-    def test_the_page_is_told_whether_it_is_asked_again(self) -> None:
-        self.assertTrue(input_view(inp(org=note(False, "Gemini HTTP 503: overloaded")), None, None)["org"]["again"])
-        self.assertNotIn("again", input_view(inp(org=note(False, "Gemini HTTP 401: API key")), None, None)["org"])
-        self.assertNotIn("again", input_view(inp(org=note()), None, None)["org"])
 
 
 class UndoOfAFiling(ProjectCase):

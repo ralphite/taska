@@ -9,7 +9,5 @@ type Story = StoryObj
 
 export const SentTranscribing: Story = { ...at({ sent: shown(sent({ text: '', files: [{ f: 'f9-voice_0-06.webm', name: 'voice_0-06.webm', mime: 'audio/webm' }] }), waiting('f9-voice_0-06.webm')) }), name: 'Sent, transcribing' }
 export const SentOrganizing: Story = { ...at({ sent: sent() }), name: 'Organizing' }
-/** its service was busy: Taska asks again by itself (T424, `org.again`), so it is organizing, no Retry */
-export const OrganizingAskedAgain: Story = { ...at({ sent: sent({ org: { ...org(false, 'Gemini HTTP 503: overloaded'), again: true } }) }), name: 'Organizing: its service asked again' }
 export const SentLeftForYourAgent: Story = { ...at({ sent: sent({ org: { ...org(true, 'Left for agent'), keep: true, changed: false } }) }), name: 'For an agent: left by the organizer' }
 export const SentWaitingForYourAgent: Story = { ...at({ sent: sent(), organizer: false }), name: 'For an agent: organizer off' }

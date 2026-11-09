@@ -97,9 +97,6 @@ export interface OrgNote {
   keep: boolean
   changed: boolean
   undone: boolean
-  /** it failed only for now (its service busy, slow or out of reach): the organizer asks again by itself (Taska's one
-   * rule for it, server domain/input_states.transient) */
-  again?: boolean
 }
 
 export interface Input {
@@ -304,7 +301,8 @@ export type LogRow = {
   | { kind: 'dmove'; d: number; to: number }
   | { kind: 'voice'; src?: string; state: string; text: string }
   | { kind: 'voicefix'; src?: string; text: string }
-  | { kind: 'voices' | 'asked' | 'heard'; count: number }
+  | { kind: 'voices'; count: number }
+  | { kind: 'folded'; was: string }
   | { kind: 'undo' | 'redo' | 'send'; src: string }
   | { kind: 'del'; src: string; ns: number[]; kept: [number, string][] }
   | { kind: 'undel'; src: string; ns: number[] }
@@ -312,7 +310,6 @@ export type LogRow = {
   | { kind: 'idel' | 'iundel'; ns: number[] }
   | { kind: 'moved'; src: string; to: string; as: string }
   | { kind: 'amend'; src: string; mode: string; text: string }
-  | { kind: 'tr'; src: string; text: string }
   | { kind: 'unfile'; f: string; d?: number; src?: string }
   | { kind: 'hide'; n: number; on: boolean }
   | { kind: 'rescope'; src: string; to: number }

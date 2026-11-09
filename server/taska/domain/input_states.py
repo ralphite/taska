@@ -1,7 +1,7 @@
 """What becomes of an input on Taska's side (T728 #1): the states of its way from being sent to being handled, the
 steps between them, and the one rule for a failure that goes away by itself. The organizer, the agents' inbox and the
 voice notes' late words all ask here; the page's model of what became of an input (web/src/model/inputStates.ts)
-says these states in its own words, from the same fields (and `org.again`, this rule, in the input's record).
+says these states in its own words, from the same fields.
 
     (sent) ------------------> queued       the organizer on: it takes it, the oldest first
     (sent) ------------------> agents       the organizer off: for the agents as it is
@@ -12,9 +12,6 @@ says these states in its own words, from the same fields (and `org.again`, this 
     organizing --failed------> failed       a failure that does not go away by itself (its key refused)
     organizing --filed-------> handled      it made or changed items, or there was nothing to do
     organizing --left--------> left         for an agent (pass, or edited after it was handled)
-    (old data) --------------> again        a failure written before T424 that the service only was busy for:
-                                            the organizer asks again by itself, as for queued
-    again --taken------------> organizing
     failed, undone --Retry---> queued, agents
     handled, left --Undo-----> undone       only the organizer's own filing, as it left it (`filing_of`)
     left, agents --acked-----> handled      an agent did it
@@ -36,13 +33,12 @@ DELETED = "deleted"
 QUEUED = "queued"
 ORGANIZING = "organizing"
 FAILED = "failed"
-AGAIN = "again"
 UNDONE = "undone"
 LEFT = "left"
 AGENTS = "agents"
 HANDLED = "handled"
-STATES: FrozenSet[str] = frozenset((CANCELLED, MOVED, DELETED, QUEUED, ORGANIZING, FAILED, AGAIN, UNDONE, LEFT,
-                                    AGENTS, HANDLED))
+STATES: FrozenSet[str] = frozenset((CANCELLED, MOVED, DELETED, QUEUED, ORGANIZING, FAILED, UNDONE, LEFT, AGENTS,
+                                    HANDLED))
 
 # The steps above, as (from, step, to); `from` None: where an input starts.
 STEPS: Tuple[Tuple[Optional[str], str, str], ...] = (
@@ -56,8 +52,6 @@ STEPS: Tuple[Tuple[Optional[str], str, str], ...] = (
     (ORGANIZING, "failed", FAILED),
     (ORGANIZING, "filed", HANDLED),
     (ORGANIZING, "left", LEFT),
-    (ORGANIZING, "busy, before T424", AGAIN),
-    (AGAIN, "taken", ORGANIZING),
     (FAILED, "retry", QUEUED),
     (FAILED, "retry", AGENTS),
     (UNDONE, "retry", QUEUED),
@@ -67,7 +61,7 @@ STEPS: Tuple[Tuple[Optional[str], str, str], ...] = (
     (LEFT, "acked", HANDLED),
     (AGENTS, "acked", HANDLED),
 ) + tuple((s, "edited", to) for s in (FAILED, UNDONE, LEFT, AGENTS, HANDLED) for to in (QUEUED, AGENTS)) \
-  + tuple((s, "moved", MOVED) for s in (CANCELLED, QUEUED, AGAIN, FAILED, UNDONE, LEFT, AGENTS, HANDLED)) \
+  + tuple((s, "moved", MOVED) for s in (CANCELLED, QUEUED, FAILED, UNDONE, LEFT, AGENTS, HANDLED)) \
   + tuple((s, "deleted", DELETED) for s in STATES - {DELETED, MOVED})
 
 _TRANSIENT = re.compile(r"(?i)\b(429|5\d\d)\b|rate.?limit|quota|exhausted|overload|unavailable|high demand|"
@@ -77,7 +71,7 @@ _REFUSED = re.compile(r"(?i)\b(401|403)\b|api.?key|unauthori")
 
 def transient(msg: str) -> bool:
     """A failure that goes away by itself: the service busy, slow or out of reach (not a refused key or request). The
-    one rule for it: the organizer asks again by itself, and the page is told (`org.again`) instead of guessing."""
+    one rule for it: the organizer asks again by itself and writes nothing, so a failure written is one to fix."""
     return bool(_TRANSIENT.search(msg or "")) and not _REFUSED.search(msg or "")
 
 
@@ -105,17 +99,16 @@ def _progress(inp: Input, organizer_on: bool, busy: Collection[str]) -> str:
     if o.undone:
         return UNDONE
     if not o.ok:
-        return AGAIN if organizer_on and transient(o.msg) else FAILED
+        return FAILED
     return LEFT
 
 
 # the organizer takes it (once it is due, and not while it waits for its words)
-FOR_ORGANIZER: FrozenSet[str] = frozenset((QUEUED, AGAIN))
-# an agent's inbox holds it: the organizer left it, is off, or failed (an agent can do it by hand; an old failure the
-# service only was busy for too, while the organizer asks again)
-FOR_AGENTS: FrozenSet[str] = frozenset((LEFT, AGENTS, FAILED, AGAIN))
+FOR_ORGANIZER: FrozenSet[str] = frozenset((QUEUED,))
+# an agent's inbox holds it: the organizer left it, is off, or failed (an agent can do it by hand)
+FOR_AGENTS: FrozenSet[str] = frozenset((LEFT, AGENTS, FAILED))
 # the organizer or an agent had it: its voice note's late words bring it back to them
-REACHED: FrozenSet[str] = frozenset((ORGANIZING, FAILED, AGAIN, UNDONE, LEFT, HANDLED))
+REACHED: FrozenSet[str] = frozenset((ORGANIZING, FAILED, UNDONE, LEFT, HANDLED))
 
 
 def undoable(inp: Input) -> bool:

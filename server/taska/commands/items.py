@@ -13,7 +13,7 @@ from ..domain.history import followed, last_archive, status_set_by
 from ..domain.model import FileRef, Item
 from ..domain.rules import RefContext, descendants, item_at, open_kids, replied, user_word
 from ..domain.state import ProjectState
-from ..domain.vocab import ASK_WORDS, CLOSED, DEFAULT_PRI, LETTER, MAX_TEXT, MESSAGE_KINDS, PEOPLE, PRIORITIES, STATUSES, WHENS, Refused
+from ..domain.vocab import CLOSED, DEFAULT_PRI, LETTER, MAX_TEXT, MESSAGE_KINDS, PEOPLE, PRIORITIES, STATUSES, WHENS, Refused
 from .base import Args, Outcome, Run, handles
 
 _NONE_WORDS = ("", "-", "none", "null")
@@ -24,8 +24,6 @@ def field_value(state: ProjectState, name: str, v: Any, ctx: Optional[RefContext
     """A field's value as sent, checked and in its stored form."""
     if name == "type":
         v = str(v).lower()
-        if v == "rule":  # the rules are one document (I693, r1118)
-            raise Refused("rules are one document now: propose a change with `rules propose <why>` (GET /rules)")
         if v not in LETTER:
             raise Refused(f"type must be one of {'/'.join(LETTER)}")
     elif name == "pri":
@@ -210,7 +208,6 @@ def say(r: Run, a: Args) -> Outcome:
     it = item_at(s, a.get("ref", ""), r.ctx)
     code = s.code(it.n)
     kind = a.get("kind", "say")
-    kind = "ask" if kind in ASK_WORDS else kind  # stuck: an ask for what it needs (T646)
     if kind not in MESSAGE_KINDS:
         raise Refused(f"kind must be one of {'/'.join(MESSAGE_KINDS)}")
     text = str(a.get("text", "")).strip()[:MAX_TEXT]

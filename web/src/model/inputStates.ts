@@ -7,7 +7,8 @@
 //
 // The state, with what it names (the items, why it failed, where it went), is worked out from the input Taska sent
 // and the organizer's facts by model/became `becameOf`, the one place it is; Taska's side of the same way is
-// server/taska/domain/input_states.py (its `transient` rule comes as `org.again`). Before Taska has it, it is on its
+// server/taska/domain/input_states.py (a failure its `transient` rule says goes away is never written). Before Taska
+// has it, it is on its
 // way (model/outgoingStates). Pure.
 
 import type { Became } from './became'
@@ -63,7 +64,7 @@ export const INPUT_STATES = {
   note: { label: 'Nothing filed, the organizer said why', say: '', tone: 'quiet', voice: 'handled', settled: true, show: { ...LISTS([]), line: ['move'], talk: null, sheet: ['move'] } },
   handled: { label: 'Handled', say: 'Handled', tone: 'done', voice: 'handled', settled: true, show: { ...LISTS([]), line: ['move'], talk: null, sheet: ['move'] } },
   // a failure that does not go away by itself (its key refused): Retry once it is fixed; a busy service is asked again
-  // by Taska itself (T424, `org.again`), so that one is organizing
+  // by Taska itself (T424), so that one is organizing
   failed: { label: "Couldn't organize", say: "Couldn't organize", tone: 'failed', voice: 'organizeFailed', settled: false, show: { ...LISTS(['retry']), line: ['retry'], talk: null, sheet: ['move'] } },
   undone: { label: 'Its filing undone', say: 'Undone', tone: 'quiet', voice: null, settled: true, show: { ...LISTS(['organize']), line: ['organize'], talk: null, sheet: ['move'] } },
   // a recording cancelled with Esc, kept: Send sends it after all (B627)

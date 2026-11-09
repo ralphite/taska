@@ -1,7 +1,6 @@
 // Changes you made that the server does not have yet: each shows at once (its patches lie over the server's data),
 // goes out in order, and is kept in this browser until the server has it, so a reload or a closed tab loses none.
-// Kept per project in localStorage "taska.pending.<project>" as [{id, o, patches, t, p}] (the format pages have
-// always kept them in).
+// Kept per project in localStorage "taska.pending.<project>" as [{id, o: its command or commands, patches, t}].
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { Command } from '../api/taska'
@@ -44,14 +43,13 @@ interface Kept {
   o: Command | Command[]
   patches: ItemPatch[]
   t: number
-  p: string
 }
 
 export function createChangesStore(kv: KeyValueStore): ChangesStore {
   const keep = (slug: string, list: PendingChange[]) => {
     const mine: Kept[] = list
       .filter((c) => c.slug === slug && c.mode !== 'show')
-      .map((c) => ({ id: c.id, o: c.commands.length === 1 ? c.commands[0] : c.commands, patches: c.patches.filter((x) => !x.add), t: c.t, p: `/p/${encodeURIComponent(slug)}/` })) // a stand-in item is not kept
+      .map((c) => ({ id: c.id, o: c.commands.length === 1 ? c.commands[0] : c.commands, patches: c.patches.filter((x) => !x.add), t: c.t })) // a stand-in item is not kept
     kv.setJson(KEY + slug, mine.length ? mine : null)
   }
   return createStore<ChangesState>()((set, get) => ({

@@ -12,7 +12,6 @@ from typing import Any, Dict, List, Optional
 
 from ..domain import rules, sections, versions
 from ..domain.history import DeletionPlan, Filing, deletions, filings, undoable
-from ..domain.input_states import transient
 from ..domain.model import Comment, Doc, FileRef, Input, Item, Message, Voice
 from ..domain.state import ProjectState
 from ..domain.vocab import Refused
@@ -90,8 +89,6 @@ def input_view(inp: Input, filing: Optional[Filing], plan: Optional[DeletionPlan
     if inp.org:
         o = inp.org
         out["org"] = {"ok": o.ok, "msg": o.msg, "t": o.t, "keep": o.keep, "changed": bool(o.changed), "undone": o.undone}
-        if not o.ok and transient(o.msg):  # the organizer asks again by itself (input_states, T424)
-            out["org"]["again"] = True
     if inp.kind:
         out["kind"] = inp.kind
     if inp.q:

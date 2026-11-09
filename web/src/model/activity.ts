@@ -137,10 +137,8 @@ function sentence(m: World, e: LogRow): LogPart[] {
       return [...(e.src ? [input(e.src), ' '] : []), 'voice note words corrected: ', ...quoted(e.text)]
     case 'voices':
       return [`kept each voice note's words in one place (${e.count} voice notes)`]
-    case 'asked':
-      return [e.count === 1 ? 'made 1 earlier block an ask' : `made ${e.count} earlier blocks asks`]
-    case 'heard':
-      return [`kept the words as said of ${e.count} voice note${e.count !== 1 ? 's' : ''}`]
+    case 'folded':
+      return [`an earlier kind of change (${e.was}), folded in`]
     case 'undo':
       return ['undid the filing of ', input(e.src)]
     case 'redo':
@@ -167,8 +165,6 @@ function sentence(m: World, e: LogRow): LogPart[] {
       return [input(e.src), ` moved to ${e.to} as ${inputCode(e.as)}`]
     case 'amend':
       return [...(e.mode === 'edit' ? ['edited ', input(e.src)] : e.mode === 'append' ? ['added details to ', input(e.src)] : [input(e.src), ` ${e.mode}`]), ': ', ...quoted(e.text)]
-    case 'tr':
-      return [input(e.src), ' voice note words: ', ...quoted(e.text)]
     case 'unfile':
       return [`took ${e.f} off `, ...(e.d ? [`a comment on ${doc(e.d)}`] : [input(e.src)])]
     case 'hide':

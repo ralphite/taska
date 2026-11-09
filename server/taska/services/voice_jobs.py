@@ -22,7 +22,6 @@ from ..domain.input_states import reached
 from ..domain.model import FileRef, Input, Voice
 from ..domain.vocab import VOICE_HOLD
 from ..domain.voice_states import DONE, FAILED, NONE, STATES, WAIT, answer_state
-from ..domain.voice_split import SplitReport, copies_in, plan
 from .news import News
 
 Transcript = Dict[str, Any]
@@ -52,8 +51,6 @@ class VoiceProject(Protocol):
     def emit(self, event: ev.Event) -> None: ...
 
     def file_path(self, fid: str) -> str: ...
-
-    def stored_rows(self) -> List[Dict[str, Any]]: ...
 
 
 Transcriber = Callable[[bytes, str, Optional[int], Optional[str], Callable[[str], None]], Transcript]
@@ -210,26 +207,6 @@ class VoiceJobs:
         busy = self._p.organizing.busy
         return any(reached(i, busy) for i in self._p.state.inputs.values()
                    if not i.moved and any(f.f == fid for f in i.files))
-
-    def split_once(self) -> Optional[SplitReport]:
-        """Once per project (B682): every voice note gets its one record of words, from what was kept of them before
-        (the log, the file next to its audio, the copies on its input or comment); the texts that held its words keep
-        only what was typed. One change; None when it was done before, or the project never had words kept the old
-        way (in its texts and on its files)."""
-        st = self._p.state
-        if st.voices_split:
-            return None
-        copies = copies_in(self._p.stored_rows())
-        if not copies and not any(isinstance(e, (ev.WordsIn, ev.WordsKept)) for e in st.events):
-            return None
-        kept: Dict[str, Transcript] = {}
-        for f in {f.f for _, _, files in _files_everywhere(st) for f in files}:
-            got = self.kept(f)
-            if got:
-                kept[f] = got
-        event, report = plan(st, kept, copies, _now_iso())
-        self._p.emit(event)
-        return report
 
     def to_resume(self) -> List[Tuple[str, str, Optional[int]]]:
         """Notes whose words were still being worked out when a restart cut it off."""

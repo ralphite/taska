@@ -1,4 +1,4 @@
-"""What was said and what became of it (the organizer's filing, words from voice, moves): typed events and how
+"""What was said and what became of it (the organizer's filing, moves): typed events and how
 their stored rows read."""
 
 from __future__ import annotations
@@ -54,38 +54,6 @@ class InputAmended(Event):
         row: Row = {"src": self.src, "mode": self.mode, "text": self.text, "by": self.by}
         opt(row, "files", files_row(self.files), bool(self.files))
         return row
-
-
-@dataclass
-class WordsIn(Event):
-    """A voice note's words, in after its input was sent; `was`: the shorter words they replace."""
-
-    KIND: ClassVar[str] = "tr"
-    f: str = ""
-    tr: str = ""
-    was: Optional[str] = None
-    late: bool = False  # an agent or the organizer had the input without them
-    heard: Optional[str] = None  # the words as said, word for word, when they differ from tr (F568)
-
-    def body(self) -> Row:
-        row: Row = {"src": self.src, "f": self.f, "tr": self.tr}
-        opt(row, "was", self.was, self.was is not None)
-        row["by"] = self.by
-        opt(row, "late", True, self.late)
-        opt(row, "heard", self.heard, bool(self.heard))
-        return row
-
-
-@dataclass
-class WordsKept(Event):
-    """Voice notes' words as said, word for word, kept with the inputs once (F568: before, only next to the audio):
-    {input id: {file id: words}}."""
-
-    KIND: ClassVar[str] = "heard"
-    notes: Dict[str, Dict[str, str]] = field(default_factory=dict)
-
-    def body(self) -> Row:
-        return {"notes": self.notes, "by": self.by}
 
 
 @dataclass
@@ -197,9 +165,6 @@ READERS: Dict[str, Reader] = {
     "ack": lambda r: InputsAcked(ids=list(need(r, "ids")), **common(r)),
     "amend": lambda r: InputAmended(src=need(r, "src"), mode=need(r, "mode"), text=need(r, "text"), files=files_of(r),
                                     **common(r)),
-    "tr": lambda r: WordsIn(src=need(r, "src"), f=need(r, "f"), tr=need(r, "tr"), was=r.get("was"),
-                            late=bool(r.get("late")), heard=r.get("heard"), **common(r)),
-    "heard": lambda r: WordsKept(notes=dict(need(r, "notes")), **common(r)),
     "undo": lambda r: FilingUndone(src=need(r, "src"), **common(r)),
     "redo": lambda r: FilingRedone(src=need(r, "src"), **common(r)),
     "del": lambda r: InputDeleted(src=need(r, "src"), ns=list(r.get("ns") or []), kept=list(r.get("kept") or []),

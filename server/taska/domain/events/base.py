@@ -56,8 +56,8 @@ class Unknown(Event):
 
 @dataclass
 class Folded(Event):
-    """A change of an earlier format whose effect the log's migration folded into the changes it touched (format 2,
-    domain.migration): it keeps its place in the log, and changes nothing. `was`: its kind then."""
+    """A change of an earlier format whose effect the log's migration to format 2 folded into the changes it touched
+    (Refactor 8A): it keeps its place in the log, and changes nothing. `was`: its kind then."""
 
     KIND: ClassVar[str] = "folded"
     was: str = ""

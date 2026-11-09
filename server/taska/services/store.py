@@ -13,7 +13,7 @@ from typing import Any, Callable, Dict, Mapping, Optional, Set
 from ..domain import events as ev
 from ..domain.projection import apply, replay
 from ..domain.state import ProjectState
-from ..infra.project_db import ProjectDb, StateRows, dumps
+from ..infra.project_db import FORMAT_VERSION, ProjectDb, StateRows, dumps
 
 Warn = Callable[[int, str], None]
 
@@ -43,6 +43,11 @@ class ProjectStore:
     def __init__(self, folder: str, lock: threading.RLock, warn: Warn):
         self._lock = lock
         self.db = ProjectDb(folder)
+        version = self.db.version
+        if version != FORMAT_VERSION:  # its changes would be read as kinds this version does not know
+            self.db.close()
+            raise RuntimeError(f"{self.db.path}: its log is in format {version}, this Taska reads only {FORMAT_VERSION}: "
+                               "start the Taska of Refactor 8A on it once to rewrite it")
         rows = []
         for seq, row, _ in self.db.rows():
             if row is None:

@@ -13,11 +13,11 @@ import sys
 import threading
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Protocol, Sequence, Set, Tuple
+from typing import Any, Callable, List, Optional, Protocol, Sequence, Set, Tuple
 
 from ..agent_text.render import Reading
 from ..commands.run import Command, run_all
-from ..domain import events as ev, rules_move
+from ..domain import events as ev
 from ..domain.model import Input
 from ..domain.rules import Held
 from ..domain.state import ProjectState
@@ -97,10 +97,6 @@ class Project:
     def file_path(self, fid: str) -> str:
         return self.files.path(fid)
 
-    def stored_rows(self) -> List[Dict[str, Any]]:
-        """Every stored change as its row (what a one-time change of the data reads)."""
-        return [row for _, row, _ in self.store.db.rows() if row is not None]
-
     # -- changing ---------------------------------------------------------------------
 
     def emit(self, event: ev.Event) -> None:
@@ -114,24 +110,6 @@ class Project:
             self.codex_notifications.on_event(event)
             if self.shared:
                 self.shared.changed(self.slug)  # what is found by meaning catches up soon
-
-    def blocks_to_asks(self) -> None:
-        """Once (T646): an agent waits on the user only by asking; its earlier blocks become asks, one change for the
-        whole project."""
-        with self.lock:
-            ids = [x.id for it in self.state.items.values() for x in it.thread if x.kind == "block"]
-            if ids:
-                self.emit(ev.BlocksAsked(ids=ids, by="taska"))
-
-    def rules_to_doc(self) -> int:
-        """Once (I693): the rule items become the rules document's first version, a rule waiting for the user a
-        proposal on it, and the rule items go (domain.rules_move). -> how many rule items went."""
-        with self.lock:
-            changes = rules_move.plan(self.state, now_iso())
-            for e in changes:
-                self.emit(e)
-            moved = changes[-1] if changes else None
-            return len(moved.ns) if isinstance(moved, ev.RulesMoved) else 0
 
     def bring_back_laters(self, today: str) -> int:
         """Items Later until `today` (YYYY-MM-DD, local) or before go back to Now by themselves (D115 #21). -> how many."""

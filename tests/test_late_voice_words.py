@@ -16,10 +16,9 @@ WORDS = "同步一下"
 LINK = "http://example.test/n/D1"
 
 
-def rows(late: bool, amend: bool = False, old: bool = False):
-    words = ({"k": "tr", "src": "r1", "f": VOICE["f"], "tr": WORDS, "by": "you", "late": late, "t": T % 22} if old else
-             {"k": "voice", "f": VOICE["f"], "state": "done", "src": "r1", "tidied": WORDS, "said": WORDS, "late": late,
-              "by": "taska", "t": T % 22})
+def rows(late: bool, amend: bool = False):
+    words = {"k": "voice", "f": VOICE["f"], "state": "done", "src": "r1", "tidied": WORDS, "said": WORDS, "late": late,
+             "by": "taska", "t": T % 22}
     out = [
         {"k": "add", "n": 1, "by": "claude-code", "title": "Sync", "type": "task", "pri": "P2", "when": "now", "status": "open", "body": "", "t": T % 0},
         {"k": "in", "id": "r1", "by": "you", "text": LINK, "scope": 1, "files": [VOICE], "q": "q1", "t": T % 14},
@@ -37,13 +36,12 @@ def message(state):
 
 class LateVoiceWords(unittest.TestCase):
     def test_words_in_late_are_not_an_edit(self):
-        for old in (False, True):  # as the record says it, and as changes stored before B682 said it
-            state = replay(rows(late=True, old=old), lambda seq, why: None)
-            m = message(state)
-            self.assertEqual((m.text, state.voices[VOICE["f"]].words), (LINK, WORDS))
-            self.assertIsNone(m.edited)
-            self.assertFalse(state.inputs["r1"].acked)  # it comes back to the agents with its words
-            self.assertIn(LINK, state.inputs["r1"].history[-1].text)
+        state = replay(rows(late=True), lambda seq, why: None)
+        m = message(state)
+        self.assertEqual((m.text, state.voices[VOICE["f"]].words), (LINK, WORDS))
+        self.assertIsNone(m.edited)
+        self.assertFalse(state.inputs["r1"].acked)  # it comes back to the agents with its words
+        self.assertIn(LINK, state.inputs["r1"].history[-1].text)
 
     def test_words_in_time_are_not_an_edit(self):
         state = replay(rows(late=False), lambda seq, why: None)

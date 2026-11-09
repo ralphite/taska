@@ -1,5 +1,4 @@
-"""What was said: an input arriving, its edits, its words from voice, deleting, moving and scoping it, the
-organizer's note."""
+"""What was said: an input arriving, its edits, deleting, moving and scoping it, the organizer's note."""
 
 from __future__ import annotations
 
@@ -8,10 +7,8 @@ from typing import List
 from .. import events as ev
 from ..model import Input, InputDeletion, InputVersion, Moved
 from ..state import ProjectState, Taken, TakenMessage, TakenSource
-from ..voices import said
 from .core import reduces
 from .steps import by_id, changed_words, link, org_note, post, show_edit
-from .voices import came_late, heard, inputs_with
 
 
 @reduces(ev.InputAdded)
@@ -50,28 +47,6 @@ def _amend(state: ProjectState, e: ev.Event) -> None:
     if e.files:
         inp.files = inp.files + list(e.files)
     show_edit(state, inp, e)
-
-
-@reduces(ev.WordsIn)
-def _words(state: ProjectState, e: ev.Event) -> None:
-    """A voice note's words, in after its input was sent, as changes stored before B682 said it: into the note's
-    record (the input keeps what was typed). Late: an agent or the organizer had the input without them, so it comes
-    back to them updated; you changed nothing (B626)."""
-    assert isinstance(e, ev.WordsIn)
-    before = [said(state, i.text, i.files) for i in inputs_with(state, e.f)] if e.late else []
-    heard(state, e.f, e, "done", e.heard or "", e.tr)
-    if e.late:
-        came_late(state, e.f, e, before)
-
-
-@reduces(ev.WordsKept)
-def _kept(state: ProjectState, e: ev.Event) -> None:
-    """Words as said, word for word, of notes heard before F568: into their records."""
-    assert isinstance(e, ev.WordsKept)
-    for notes in e.notes.values():
-        for f, words in notes.items():
-            if f in state.voices:
-                state.voices[f].said = words
 
 
 @reduces(ev.InputDeleted)

@@ -67,10 +67,6 @@ class OrganizerRetry(ProjectCase):
         self.assertFalse(self.p.state.inputs["r1"].org.ok)
         self.assertFalse(self.o.due(self.p.state.inputs["r1"]))
 
-    def test_an_earlier_busy_failure_is_asked_again(self):
-        self.p.emit(ev.Organized(src="r1", ok=False, msg="Gemini HTTP 503: busy", by="org"))
-        self.assertTrue(self.o.due(self.p.state.inputs["r1"]))
-
     def test_the_wait_is_capped(self):
         for _ in range(12):
             self.organize(Refused("Gemini HTTP 503"))

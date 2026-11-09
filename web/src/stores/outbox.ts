@@ -1,6 +1,6 @@
 // What you sent that the server does not have yet: sending never holds the box; inputs go out in order, each once its
 // files are up. An input whose files are all up is kept in this browser ("taska.outbox.<project>": {q: {text, scope,
-// t, kind?, files}}, the format pages have always kept them in), so a reload or a closed tab never loses it.
+// t, kind?, files, words?}}), so a reload or a closed tab never loses it.
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { FileRef } from '../model/types'

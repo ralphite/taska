@@ -86,8 +86,8 @@ export const shortWhy = (msg: string) =>
     .join(' · ') || msg
 
 /** A failure of the service behind the organizer in plain words (busy, too slow, out of reach, its key and where to
- * fix it); null when the words are Taska's own, plain already. Only words: whether it goes away by itself is Taska's
- * to say (`org.again`, server domain/input_states.transient). */
+ * fix it); null when the words are Taska's own, plain already. Only words: a failure that goes away by itself is never
+ * written (Taska asks again, server domain/input_states.transient). */
 function serviceWhy(msg: string): string | null {
   const m = msg.toLowerCase()
   if (/\b(401|403)\b|api.?key|unauthori[sz]ed|permission denied/.test(m)) return 'Gemini key not accepted · check GEMINI_API_KEY on the server'
@@ -121,9 +121,9 @@ export function becameOf(r: Input, m: ProjectModel, title: (slug: string) => str
   const hearing = sentNotes(r.files)
   if (hearing) return { k: 'transcribing', state: hearing }
   // one word for every input the organizer has not finished: whether it is on it now, next in line or asking its
-  // service again after a busy answer (Taska says so: `again`), it is being organized; no "Queued" (B684) to fall
+  // service again after a busy answer (nothing is written for one), it is being organized; no "Queued" (B684) to fall
   // back to: it jumped back and forth
-  const next = !r.acked && organizer.on && (!r.org || (!r.org.ok && !!r.org.again))
+  const next = !r.acked && organizer.on && !r.org
   if (organizer.busy.includes(r.id) || next) return { k: 'organizing' }
   const retry = !r.acked && organizer.on
   if (r.org?.undone) return { k: 'undone', retry }

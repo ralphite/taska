@@ -145,12 +145,11 @@ where it went) is worked out in one place, `becameOf` (`web/src/model/became.ts`
 diagram and the table are made from that file, and `web/src/model/inputStates.test.ts` fails when they differ from
 it. Each state names the voice state a voice message is in then ([voice.md](voice.md)).
 
-Taska's side of the same way is `server/taska/domain/input_states.py`: queued, organizing, failed, again (a failure the
-service only was busy for: asked again by itself), undone, left, agents, handled, cancelled, moved, deleted, with the
-steps between them; the organizer takes what it says is queued, an agent's inbox holds what it says is theirs, and
-Undo of a filing goes through only when the organizer filed it and that filing is there to take back. Whether a
-failure goes away by itself is one rule there (`transient`), told to the page as `org.again`: such an input is
-Organizing, never Retry (rule 13).
+Taska's side of the same way is `server/taska/domain/input_states.py`: queued, organizing, failed, undone, left,
+agents, handled, cancelled, moved, deleted, with the steps between them; the organizer takes what it says is queued, an
+agent's inbox holds what it says is theirs, and Undo of a filing goes through only when the organizer filed it and that
+filing is there to take back. Whether a failure goes away by itself is one rule there (`transient`): such a failure is
+never written, the organizer asks again by itself and the input is Organizing, never Retry (rule 13).
 
 <!-- made from inputStates.ts: inputDiagram() -->
 ```mermaid

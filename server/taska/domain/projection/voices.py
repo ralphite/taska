@@ -1,5 +1,5 @@
 """A voice note's words (B682): its one record, changed by each step of working them out and by a correction of
-yours; once per project, the words taken out of the texts that held them."""
+yours; records set as they are, with the texts that held their words (what B682 did once per project)."""
 
 from __future__ import annotations
 
@@ -93,4 +93,3 @@ def _split(state: ProjectState, e: ev.Event) -> None:
         for c in (d.comments + list(d.gone.values())) if d else []:
             if str(c.id) in cs:
                 c.text = cs[str(c.id)]
-    state.voices_split = True

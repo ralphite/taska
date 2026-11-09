@@ -59,10 +59,9 @@ Rules, checked by `tests/test_architecture.py`:
 6. No module over 600 lines (the two generated word lists of the guide excepted).
 
 Each project stores its event log, projected state and agent metadata in SQLite, with attachments in
-`taska-files/`. Changes must preserve existing user data and replay the event log consistently. A log of an earlier format is
-rewritten once when Taska starts (`services.migrate`, the rewrite itself pure in `domain.migration`): each change in its
-place, in today's kinds, from a copy of the file made beside it first, and only when it leaves the same records; no
-reader of an earlier format is kept.
+`taska-files/`. Changes must preserve existing user data and replay the event log consistently. Data of an earlier format is
+migrated once, then the code that read it goes: no reader of an earlier format is kept. The logs are in format 2
+(every change in today's kinds, Refactor 8A); a log of another format is refused when its project opens.
 
 ## Page: structure
 

@@ -132,8 +132,6 @@ describe('T728: the line over the box says and offers what the lists do', () => 
     const failed = (f: Partial<OrgNote> = {}) => input({ id: 'r1', org: org('Gemini HTTP 401: API key not valid', { ok: false, ...f }) })
     expect(line(failed())?.acts).toEqual(['retry'])
     expect(line(failed(), m(false))?.acts).toEqual([])
-    // its service only busy: Taska asks again by itself (T424), it is organizing
-    expect(line(failed({ msg: 'Gemini HTTP 503: overloaded', again: true }))?.text).toBe('Organizing…')
   })
   test('a recording kept as cancelled shows nothing there; Move only with another project', () => {
     expect(line(input({ id: 'r1', kind: 'cancelled' }))).toBeNull()

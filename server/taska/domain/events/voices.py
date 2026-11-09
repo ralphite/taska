@@ -55,8 +55,9 @@ class VoiceFixed(Event):
 
 @dataclass
 class VoicesSplit(Event):
-    """Once per project (B682): the voice notes' records, made from what was kept of their words before, and the
-    texts that held voice words as only what was typed: {input id: text}, {"<d>": {"<comment id>": text}}."""
+    """Voice notes' records set as they are, and texts that held voice words set to only what was typed: {input id:
+    text}, {"<d>": {"<comment id>": text}}. Written once per project by B682 (and, in format 2, for the words as said
+    that F568 kept once)."""
 
     KIND: ClassVar[str] = "voices"
     voices: Dict[str, Voice] = field(default_factory=dict)
