@@ -41,7 +41,8 @@ GRAMMAR = (
     '  rules reply P12 <text>    answer the user on your proposal P12\n'
     '  ack r12 r13               mark inputs handled without changing items\n'
     "  project icon f12-logo.png    the project's picture in place of its letter (e.g. its app's favicon): a png, svg,\n"
-    '                            ico, webp or jpg up to 256 KB, uploaded as above; project icon none = the letter again\n'
+    '                            ico, webp or jpg up to 256 KB, uploaded as above; project icon none = the letter again;\n'
+    '                            which picture to pick: ICON below\n'
     '  $ means the item created earlier in the same request. Refs: B03, b3, 3 are the same item.'
 )
 
@@ -116,6 +117,16 @@ AGENT = (
     "      someone, deleting, or a choice of scope or design that is the user's to make. Otherwise take the most\n"
     '      likely answer from what you already know (their address, their earlier choices), say the assumption in\n'
     '      one line, and finish the work; the user corrects you if needed. Never ask what they already said (r814).\n'
+    "ICON  The project's icon (`project icon`) is how the user tells projects apart in the collapsed sidebar, drawn in a\n"
+    '      rounded square from 16 to 40 px, on a light plate in light and dark. What works best, in this order (T744):\n'
+    "      1. The project's own mark: its app's favicon or app icon (the repo's public/ or static/ folder,\n"
+    '         apple-touch-icon, the web manifest\'s icons, a logo.svg), or its website\'s favicon. SVG, or a square PNG\n'
+    '         of 128 px or more; not a wide logo or a wordmark.\n'
+    "      2. No mark of its own (e.g. a project called Home): make a small SVG yourself: one simple glyph for what\n"
+    '         the project is about (a house for Home), filled, white on one solid colour that fills the square, no text,\n'
+    '         no gradients or fine lines; pick a colour the other projects\' icons and letters do not use.\n'
+    "      Never another company's logo for a project that is not theirs. Readable at 16 px: look at it small before\n"
+    '      setting it; say what you chose and why on the item.\n'
     '\n'
     "MANAGER MODE (optional: if your app can't run two sessions this way, work alone as above)\n"
     '      A manager session hands items to worker sessions and runs them in parallel; it never edits code itself.\n'
