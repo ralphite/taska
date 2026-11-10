@@ -121,6 +121,29 @@ updating=""
 mv -f "$TMP/taska.pyz" "$APP_DIR/taska.pyz"
 mv -f "$TMP/taska.pyz.sha256" "$APP_DIR/taska.pyz.sha256"
 
+# The Gemini key (voice notes written out, what you write organized): a service started by systemd does not see the
+# key exported in your shell, so the key this installer runs with is kept in ~/.config/taska/env (readable by you
+# only), where the launcher reads it. An existing env file keeps its own key unless this run has a different one.
+KEY_NOTE=""
+if [ -n "${GEMINI_API_KEY:-}" ]; then
+    mkdir -p "$CONFIG_DIR"
+    ENV_FILE="$CONFIG_DIR/env"
+    if [ -f "$ENV_FILE" ] && grep -q "^GEMINI_API_KEY=" "$ENV_FILE"; then
+        if ! grep -qxF "GEMINI_API_KEY=$GEMINI_API_KEY" "$ENV_FILE"; then
+            grep -v "^GEMINI_API_KEY=" "$ENV_FILE" > "$ENV_FILE.tmp" || true
+            printf 'GEMINI_API_KEY=%s\n' "$GEMINI_API_KEY" >> "$ENV_FILE.tmp"
+            mv -f "$ENV_FILE.tmp" "$ENV_FILE"
+            KEY_NOTE="Your GEMINI_API_KEY replaced the one in $ENV_FILE."
+        fi
+    else
+        ( umask 077; printf 'GEMINI_API_KEY=%s\n' "$GEMINI_API_KEY" >> "$ENV_FILE" )
+        KEY_NOTE="Your GEMINI_API_KEY is kept in $ENV_FILE (readable by you only), so the service has it."
+    fi
+    chmod 600 "$ENV_FILE"
+elif ! grep -q "^GEMINI_API_KEY=" "$CONFIG_DIR/env" 2>/dev/null; then
+    KEY_NOTE="No Gemini key: voice notes are kept without their words and nothing is organized. To add one, run the install command again with GEMINI_API_KEY set (curl ... | GEMINI_API_KEY=... sh), or put GEMINI_API_KEY=... in $CONFIG_DIR/env and restart Taska."
+fi
+
 # The launcher: the server's settings come from ~/.config/taska/env; the public address (a proxy in front of
 # Taska) from $TASKA_PUBLIC or the first line of ~/.taska/public-url, as on the macOS service.
 cat > "$LAUNCHER.tmp" <<EOF
@@ -251,6 +274,7 @@ else
 fi
 say "  update     run the same install command again"
 say "Your data is in ~/.taska (uninstalling leaves it). Settings such as GEMINI_API_KEY go in $CONFIG_DIR/env."
+if [ -n "$KEY_NOTE" ]; then say "$KEY_NOTE"; fi
 if [ "$HOST" = 127.0.0.1 ]; then
     say "From another machine: ssh -L $PORT:127.0.0.1:$PORT <this host>, then open $URL there."
 fi

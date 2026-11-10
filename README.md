@@ -161,8 +161,11 @@ Your data stays in `~/.taska`. Options go in front of `sh`, e.g. `... | TASKA_VE
 | `TASKA_LOCAL_ONLY=1` | Listen on this machine only (127.0.0.1): not reachable from the local network |
 | `TASKA_LINGER=1` | Also run `loginctl enable-linger`, so the service runs without a login session and starts at boot |
 
-Settings for the server, such as `GEMINI_API_KEY` or `TASKA_PUBLIC`, go in `~/.config/taska/env`, one
-`NAME=value` per line; the launcher reads them.
+For voice notes to be written out and what you write to be organized, Taska needs a Gemini key: run the install
+command with it set, `curl -fsSL .../install.sh | GEMINI_API_KEY=... sh`, and the installer keeps it in
+`~/.config/taska/env` (readable by you only), where the service reads it. A key exported in your shell alone does
+not reach a service started by systemd. Other settings for the server, such as `TASKA_PUBLIC`, go in the same file,
+one `NAME=value` per line.
 
 | To | With the systemd service | Started in the background |
 | --- | --- | --- |
