@@ -112,8 +112,21 @@ def _next(req: Request, p: Project, by: str) -> Response:
     try:
         with p.lock:  # ?wait=N: while there is nothing to do, hold until work arrives
             who = req.arg("by") or None if "ui" not in q else None
+            # what each session held before this ask: a wait is not woken by the item it already holds and works on
+            # (B741: a manager whose own doing item came back at once re-asked every 20 s); a plain /next still gets it
+            held = {n: c.who for n, c in p.state.claims.items()}
+
+            def nothing_new(w: Work) -> bool:
+                if not w.has_work:
+                    return True
+                if not wait or not w.claim:
+                    return False
+                n, me = w.claim
+                it = p.state.items.get(n)
+                return bool(it and it.status == "doing" and held.get(n) == me)
+
             w = work_for(p, req, who, session)
-            while not w.has_work and not p.gone and time.time() < end:  # a deleted project lets its agents go
+            while nothing_new(w) and not p.gone and time.time() < end:  # a deleted project lets its agents go
                 p.news.wait(timeout=end - time.time())
                 w = work_for(p, req, who, session)
             given = w.given
