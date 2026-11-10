@@ -440,6 +440,29 @@ test('r672: a page as tall as its window (an app) fills what the pane shows, and
   await expect(page1(page).getByText('Footer')).toBeInViewport()
 })
 
+test('B748: a short page has at least what the pane shows: its frame, with the page\'s own background, reaches down to the box', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 html Short page
+  <!doctype html><html><body style="margin:0;background:#111;color:#eee;font:15px sans-serif"><p style="padding:12px">One line</p></body></html>
+`,
+  })
+  await open(page, p, 'D1')
+  await expect(page1(page).getByText('One line')).toBeVisible()
+  await page.waitForTimeout(800)
+  const one = await page.locator('iframe').first().boundingBox()
+  if (!one) throw new Error('not drawn')
+  const under = foot(page).filter({ visible: true })
+  const strip = (await under.count()) ? await under.boundingBox() : null
+  let end = page.viewportSize()?.height || 0
+  if (strip && strip.y > one.y && strip.x < one.x + one.width && strip.x + strip.width > one.x) end = Math.min(end, strip.y)
+  expect(one.y + one.height, 'the frame reaches down to the box').toBeGreaterThan(end - 140)
+  expect(one.y + one.height).toBeLessThanOrEqual(end + 1)
+})
+
 // a board the page draws itself: a button moves the first card to the other column, another hides the board
 const BOARD = `${LOOP.then}T4 html Board page
   <!doctype html><html><body style="margin:0;padding:20px;font:15px sans-serif"><button id="move">Move the first card</button> <button id="hide">Hide the board</button><div id="board" style="display:flex;gap:12px;margin-top:12px"><div id="todo" style="flex:1;border:1px solid #ccc;padding:8px;min-height:140px"></div><div id="done" style="flex:1;border:1px solid #ccc;padding:8px;min-height:140px"></div></div><script>

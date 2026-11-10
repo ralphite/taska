@@ -154,7 +154,8 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
     // before the page says how tall it is, it has what the pane shows below its top, down to the box (the pane reaches
     // under the box, kept clear by its padding: r672); a page as tall as its window (an app, which follows it) keeps
     // filling it when the pane changes (the phone's sheet takes its full height after this); one that said it has a
-    // height of its own keeps that
+    // height of its own keeps that, and never less than what the pane shows: a short page's own background fills the
+    // pane, and a page that lays itself out to its window has all of it (B748)
     const f = frame.current
     const pane = f?.closest('.overflow-y-auto')
     if (!f || !pane) return
@@ -163,8 +164,9 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
       const under = parseFloat(getComputedStyle(pane).paddingBottom) || 0
       const h = Math.round(Math.min(pane.getBoundingClientRect().bottom - under, innerHeight) - top.top)
       const t = tall.current
-      if (h <= 240 || h === shownH.current || (t.h && !t.fill)) return
+      if (h <= 240 || h === shownH.current) return
       shownH.current = h
+      if (t.h && !t.fill) return setHeight(Math.max(t.h, h))
       t.h = 0
       setHeight(h)
     }
@@ -220,7 +222,7 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
       t.step = step
       if (t.n >= 3) return
       t.h = h
-      setHeight(h)
+      setHeight(Math.max(h, shownH.current))
     }
     const got = (e: MessageEvent) => {
       if (e.source !== frame.current?.contentWindow) return
