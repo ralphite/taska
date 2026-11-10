@@ -5,13 +5,30 @@ import { micTrouble as troubleWords } from '../../model/micWords'
 
 export const canRecord = () => typeof window !== 'undefined' && window.isSecureContext && typeof navigator.mediaDevices?.getUserMedia === 'function' && typeof window.MediaRecorder === 'function'
 
-export async function openMic(): Promise<MediaStream> {
+const AS_IT_HEARS = { echoCancellation: false, noiseSuppression: false, autoGainControl: false } as const
+
+/** The microphone opened: its stream, why it could not open as it hears (null: it did), and what the browser says it
+ * does to the sound (its echo cancelling, noise suppression, gain), for the developers' log (B745). */
+export interface OpenMic {
+  stream: MediaStream
+  refused: string | null
+  settings: MediaTrackSettings
+}
+
+export async function openMic(): Promise<OpenMic> {
   const md = navigator.mediaDevices
+  const opened = async (stream: MediaStream, refused: string | null): Promise<OpenMic> => {
+    const track = stream.getAudioTracks()[0]
+    // opened its usual way, it is asked once more to leave the sound alone
+    if (refused && track?.applyConstraints) await track.applyConstraints(AS_IT_HEARS).catch(() => {})
+    return { stream, refused, settings: track?.getSettings?.() ?? {} }
+  }
   try {
-    return await md.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+    return await opened(await md.getUserMedia({ audio: AS_IT_HEARS }), null)
   } catch (e) {
-    if ((e as Error)?.name === 'NotAllowedError' || (e as Error)?.name === 'SecurityError') throw e
-    return md.getUserMedia({ audio: true })
+    const name = (e as Error)?.name || 'Error'
+    if (name === 'NotAllowedError' || name === 'SecurityError') throw e
+    return opened(await md.getUserMedia({ audio: true }), `${name}: ${(e as Error)?.message || ''}`.slice(0, 200))
   }
 }
 

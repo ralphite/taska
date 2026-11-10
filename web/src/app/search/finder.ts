@@ -139,7 +139,7 @@ export class Finder {
     const gen = ++this.gen // a search under way stops mattering: you say more
     let stream: MediaStream
     try {
-      stream = await openMic()
+      stream = (await openMic()).stream
     } catch {
       if (gen === this.gen) this.s.set({ phase: 'nomic' })
       return

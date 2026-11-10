@@ -107,7 +107,14 @@ export class Voice {
     // asked while the press that started it still counts
     this.asleep = keepAwake()
     try {
-      this.stream = await openMic()
+      const mic = await openMic()
+      this.stream = mic.stream
+      // what the phone does to the sound (its gain, noise suppression), told to the developers' log: a note whose quiet
+      // parts went silent and loud parts too loud had them on (B745)
+      const { echoCancellation, noiseSuppression, autoGainControl, sampleRate, channelCount } = mic.settings
+      void this.d.api
+        .pageLog(slug, [{ kind: 'mic', level: mic.refused ? 'warn' : 'info', where: 'opened', msg: mic.refused ? `opened its usual way: ${mic.refused}` : 'opened as it hears', settings: { echoCancellation, noiseSuppression, autoGainControl, sampleRate, channelCount }, ua: navigator.userAgent }])
+        .catch(() => {})
     } catch (e) {
       this.asleep()
       this.asleep = null

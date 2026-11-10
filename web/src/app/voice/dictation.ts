@@ -87,7 +87,7 @@ export class Dictation {
     if (!canRecord()) return this.d.toasts.show(CANT_RECORD, null, { error: true })
     let stream: MediaStream
     try {
-      stream = await openMic()
+      stream = (await openMic()).stream
     } catch (e) {
       return this.d.toasts.show(micTrouble(e, this.d.desk()), null, { error: true })
     }
