@@ -6,11 +6,11 @@ import type { Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
 import { FOOT, TALK, box, duo, foot, talk as talkOf } from '../ui'
 
-/** The box's colour and the colour of the page just beside it (left of it, at its middle). */
+/** The box's colour and the colour of the page it stands on: the nearest painted one around it (by what holds it, not by
+ * what a point beside it hits: around the box the foot lets a press through to what is under it, B739). */
 const colours = (page: Page) =>
   page.evaluate(() => {
     const box = document.getElementById('composer') as HTMLElement
-    const r = box.getBoundingClientRect()
     const solid = (c: string) => c !== 'transparent' && !/rgba\(.*,\s*0\)$/.test(c)
     const bg = (el: Element | null): string => {
       for (let e = el; e; e = e.parentElement) {
@@ -19,8 +19,7 @@ const colours = (page: Page) =>
       }
       return getComputedStyle(document.body).backgroundColor
     }
-    const beside = document.elementsFromPoint(Math.max(0, r.left - 6), r.top + 14).find((e) => !box.contains(e)) || null
-    return { box: bg(box), page: bg(beside) }
+    return { box: bg(box), page: bg(box.parentElement) }
   })
 
 for (const scheme of ['light', 'dark'] as const)
