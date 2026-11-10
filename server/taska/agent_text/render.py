@@ -6,11 +6,13 @@ The words here are the agent interface: agents parse them, so they stay exactly 
 
 from __future__ import annotations
 
+import hashlib
 import textwrap
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Mapping, Sequence
+from typing import Any, Callable, Dict, List, Mapping, Sequence, Tuple
 
 from ..domain import rules, sections, versions
+from . import guide_text
 from ..domain.model import Comment, Doc, FileRef, Input, Item, Message, Proposal
 from ..domain.rules import Held
 from ..domain.state import ProjectState
@@ -232,6 +234,23 @@ def inbox(rd: Reading) -> str:
 def who_wrote(by: str) -> str:
     """Who wrote a version of the rules, as agents read it."""
     return {"you": "the user", "org": "the organizer (the user's words)", "taska": "taska"}.get(by, by)
+
+
+def guide(base: str, rules_line: str) -> str:
+    """GET /agent: the guide, for this address and with the rules' version."""
+    return guide_text.AGENT.format(base=base, grammar=guide_text.GRAMMAR, rules=rules_line)
+
+
+_version: List[str] = []  # the guide's words it was worked out from, then its version and the text
+
+
+def guide_version() -> Tuple[str, str]:
+    """The guide's version (a short hash) and its text as every project and address shares it, so it changes only
+    when the guide's words do (F743)."""
+    if _version[:2] != [guide_text.AGENT, guide_text.GRAMMAR]:
+        words = guide("BASE", "<the project rules' version>")
+        _version[:] = [guide_text.AGENT, guide_text.GRAMMAR, hashlib.sha256(words.encode()).hexdigest()[:12], words]
+    return _version[2], _version[3]
 
 
 def rules_head(st: ProjectState) -> str:

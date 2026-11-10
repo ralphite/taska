@@ -59,7 +59,7 @@ AGENT = (
     '  curl -s BASE/B03          full card: fields, body, thread, files (image/audio paths are readable from disk)\n'
     '  curl -s BASE/rules        project rules: one document of standing instructions; follow the parts that apply\n'
     '                            (when they change while you work, your next /next or /do reply says so once, with\n'
-    '                            what changed: follow it from then on)\n'
+    '                            what changed: follow it from then on; the same when this guide changes)\n'
     "  curl -s BASE/D1           a document: numbered paragraphs (¶) with the user's comments under each\n"
     '  curl -s BASE/log?n=30     recent changes\n'
     '  optional on any call: &session=<the title your app shows for this session> (or the header X-Taska-Session), so\n'

@@ -145,13 +145,13 @@ def diff(before: str, after: str) -> List[str]:
     names = list(dict.fromkeys(list(b) + list(a)))
     pre_a, pre_b = _preamble(before), _preamble(after)
     if pre_a != pre_b:
-        out += ["changed: the text before the first section"] + _lines_changed(pre_a, pre_b)
+        out += ["changed: the text before the first section"] + lines_changed(pre_a, pre_b)
     for k in names:
         if k in a and k in b and a[k][1] == b[k][1]:
             continue
         word = "added" if k not in a else "removed" if k not in b else "changed"
         title = (b.get(k) or a[k])[0]
-        out += [f"{word}: {title}"] + _lines_changed(a[k][1] if k in a else "", b[k][1] if k in b else "")
+        out += [f"{word}: {title}"] + lines_changed(a[k][1] if k in a else "", b[k][1] if k in b else "")
     return out
 
 
@@ -160,7 +160,8 @@ def _preamble(md: str) -> str:
     return "\n".join(_lines(md)[:ss[0].start]).strip() if ss else md.strip()
 
 
-def _lines_changed(a: str, b: str) -> List[str]:
+def lines_changed(a: str, b: str) -> List[str]:
+    """The lines that went ("  - ") and came ("  + "), blank ones left out."""
     out: List[str] = []
     for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, _lines(a), _lines(b), autojunk=False).get_opcodes():
         if tag == "equal":

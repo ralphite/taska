@@ -12,7 +12,7 @@ from urllib.parse import quote
 
 from ..agent_text import log as change_log
 from ..agent_text import render
-from ..agent_text.guide_text import AGENT, CONNECT, GRAMMAR
+from ..agent_text.guide_text import CONNECT
 from ..agent_text.language import parse
 from ..agent_text.work import Asker, Work, next_work
 from ..domain import rules
@@ -78,7 +78,9 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
     if sub == "/agent":
         with p.lock:
             head = render.rules_head(p.state)
-        return text(200, AGENT.format(base=base, grammar=GRAMMAR, rules=head))
+            if agent_call:
+                p.agents.read_guide(by, req.session(), render.guide_version())
+        return text(200, render.guide(base, head))
     if sub == "/next":
         return _next(req, p, by)
     if sub == "/rules":
@@ -143,6 +145,7 @@ def _next(req: Request, p: Project, by: str) -> Response:
             if given is not None:
                 p.agents.read_item(given, by, p.state)
             news = p.agents.rule_news(p.state, by, session)  # the rules changed since it last heard: said first
+            news += p.agents.guide_news(by, session, render.guide_version())  # and so did the guide (F743)
         if news:
             lines = out.split("\n")
             at = next((i + 1 for i, x in enumerate(lines) if "Project rules" in x), 1)
@@ -187,6 +190,7 @@ def do(req: Request, p: Project) -> Response:
     with p.lock:
         news = p.agents.news_for(by, rules.for_agent(p.state, p.organizing.on, p.held_fn)) if agent else []
         rule_lines = p.agents.rule_news(p.state, by, session) if agent else []
+        rule_lines += p.agents.guide_news(by, session, render.guide_version()) if agent else []
         calls += p.agents.call_news(p.state, by, session) if agent else []
         rev = p.news.rev
     note = (f"\n{len(news)} new input{'s' if len(news) != 1 else ''} since your last /next: {' '.join(news)}."

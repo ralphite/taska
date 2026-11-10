@@ -1,7 +1,7 @@
 """The agents of one project as Taska sees them: who called when (and from which session), who waits for work,
 what each read, which items each session holds, and what other sessions wrote for it.
 
-Kept in the project's `kv` (agents, reads, heard). Callers hold the project lock.
+Kept in the project's `kv` (agents, reads, heard, guide). Callers hold the project lock.
 """
 
 from __future__ import annotations
@@ -19,6 +19,9 @@ from ..domain.text import first_line, seconds
 from ..domain.vocab import CLAIM_TTL, PEOPLE
 from ..infra.agent_sessions import SID, Session
 from ..infra.project_db import ProjectDb
+
+
+GUIDE_DIFF_LINES = 40  # of a guide change, at most this many lines are told
 
 
 def agent_name(name: object) -> str:
@@ -68,6 +71,10 @@ class AgentActivity:
             {str(k): {int(n): int(m) for n, m in v.items()} for k, v in heard.items()} if isinstance(heard, dict) else {})
         self.told: Dict[str, Set[int]] = {}  # per session: messages for it that a /do reply named already
         self.rule_marks: Dict[str, int] = {}  # per session: how much of the log it has been told rules from
+        guide = db.get("guide")  # F743: the guide's versions sessions last saw, and those versions' words
+        guide = guide if isinstance(guide, dict) else {}
+        self.guide_texts: Dict[str, str] = {str(k): str(v) for k, v in (guide.get("texts") or {}).items()}
+        self.guide_marks: Dict[str, str] = {str(k): str(v) for k, v in (guide.get("marks") or {}).items()}
         self.blocked: Dict[str, List[Dict[str, object]]] = {}  # per agent: its sessions waiting on the user (T711)
 
     # -- calls ------------------------------------------------------------------
@@ -154,6 +161,42 @@ class AgentActivity:
                     out.append(f"the user wrote on your rules proposal P{q.id}: {first_line(e.text, 200)} "
                                f"(answer: rules reply P{q.id} <text>)")
         return out
+
+    def read_guide(self, name: object, ses: str, version: Tuple[str, str]) -> None:
+        """A session read the guide (GET /agent): it knows this version."""
+        self._mark_guide(f"{agent_name(name)}\x00{session_name(ses)}", version)
+
+    def guide_news(self, name: object, ses: str, version: Tuple[str, str]) -> List[str]:
+        """The guide changed since this session last read it, told once (F743): what changed, as lines that went and
+        came. A session Taska has not seen yet is only marked (it reads /agent)."""
+        key = f"{agent_name(name)}\x00{session_name(ses)}"
+        mark = self.guide_marks.get(key)
+        if mark == version[0]:
+            return []
+        before = self.guide_texts.get(mark or "")
+        self._mark_guide(key, version)
+        if mark is None:
+            return []
+        changed = sections.lines_changed(before, version[1]) if before is not None \
+            else ["  (the earlier version is no longer kept)"]
+        more = len(changed) - GUIDE_DIFF_LINES
+        return (["The guide for agents changed: read GET /agent again. What changed:"] + changed[:GUIDE_DIFF_LINES]
+                + ([f"  …{more} more lines"] if more > 0 else []))
+
+    def _mark_guide(self, key: str, version: Tuple[str, str]) -> None:
+        if self.guide_marks.get(key) == version[0] and version[0] in self.guide_texts:
+            return
+        self.guide_marks.pop(key, None)
+        self.guide_marks[key] = version[0]
+        self.guide_texts.pop(version[0], None)
+        self.guide_texts[version[0]] = version[1]
+        for old in list(self.guide_marks)[:-500]:
+            del self.guide_marks[old]
+        seen = set(self.guide_marks.values())
+        kept = [v for v in self.guide_texts if v in seen][-8:]
+        self.guide_texts = {v: self.guide_texts[v] for v in kept}
+        if not self._gone():
+            self._db.put("guide", {"texts": self.guide_texts, "marks": self.guide_marks})
 
     # -- holds ------------------------------------------------------------------
 
