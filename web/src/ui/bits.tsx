@@ -52,8 +52,16 @@ export function Kbd({ k }: { k: string }) {
   )
 }
 
-/** A project's tile: its first letter on its colour. */
-export function ProjTile({ title, tone, cls = 'size-5 rounded-md text-[11px]' }: { title: string; tone: string; cls?: string }) {
+/** A project's tile: its picture when it has one (F743), fitted on a light plate so a see-through favicon reads in
+ * either theme; else, or when the picture does not load, its first letter on its colour. */
+export function ProjTile({ title, tone, icon, cls = 'size-5 rounded-md text-[11px]' }: { title: string; tone: string; icon?: string; cls?: string }) {
+  const [failed, setFailed] = useState('')
+  if (icon && icon !== failed)
+    return (
+      <span aria-hidden="true" className={`grid shrink-0 place-items-center overflow-hidden bg-white ring-1 ring-zinc-900/10 ring-inset dark:ring-white/15 ${cls}`}>
+        <img src={icon} alt="" draggable={false} onError={() => setFailed(icon)} className="size-full object-contain select-none" />
+      </span>
+    )
   return (
     <span aria-hidden="true" className={`grid shrink-0 place-items-center leading-none font-bold text-white uppercase ${cls} ${tone}`}>
       {[...String(title || '?')][0]}

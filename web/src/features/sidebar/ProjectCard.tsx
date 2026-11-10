@@ -24,7 +24,7 @@ const AGENT: Record<AgentTone, string> = {
 }
 
 /** The card itself (props only): its stories draw it alone. `href`/`onOpen`: its name opens the project. */
-export function ProjectCard({ title, tone, card, href, onOpen }: { title: string; tone: string; card: ProjectCardFacts; href?: string; onOpen?(e: MouseEvent<HTMLAnchorElement>): void }) {
+export function ProjectCard({ title, tone, icon, card, href, onOpen }: { title: string; tone: string; icon?: string; card: ProjectCardFacts; href?: string; onOpen?(e: MouseEvent<HTMLAnchorElement>): void }) {
   const open = typeof card.open === 'number' ? card.open : null
   const items = open != null && card.closed != null ? open + card.closed : null
   const any = items !== 0 || card.needs || card.inputs || card.docs || card.agent || card.changed
@@ -33,7 +33,7 @@ export function ProjectCard({ title, tone, card, href, onOpen }: { title: string
   return (
     <div data-project-card className="w-80 overflow-hidden rounded-xl bg-white text-sm shadow-lg ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10">
       <div className="flex items-start gap-2.5 px-4 pt-3.5 pb-3">
-        <ProjTile title={title} tone={tone} cls="mt-px size-6 rounded-md text-xs" />
+        <ProjTile title={title} tone={tone} icon={icon} cls="mt-px size-6 rounded-md text-xs" />
         {href ? (
           <a href={href} onClick={onOpen} className="line-clamp-2 min-w-0 text-[15px] leading-snug font-semibold text-zinc-900 hover:underline dark:text-zinc-50">
             {title}
@@ -143,6 +143,7 @@ export function FloatingProjectCard({
   at,
   title,
   tone,
+  icon,
   card,
   href,
   on,
@@ -150,6 +151,7 @@ export function FloatingProjectCard({
   at: Hovered
   title: string
   tone: string
+  icon?: string
   card: ProjectCardFacts
   href: string
   on: { onPointerEnter(): void; onPointerLeave(): void; open(e: MouseEvent<HTMLAnchorElement>): void }
@@ -161,7 +163,7 @@ export function FloatingProjectCard({
   })
   return createPortal(
     <div ref={box} role="dialog" aria-label={title} onPointerEnter={on.onPointerEnter} onPointerLeave={on.onPointerLeave} className="fixed z-[70]" style={{ left: at.left, top: at.top - 6 }}>
-      <ProjectCard title={title} tone={tone} card={card} href={href} onOpen={on.open} />
+      <ProjectCard title={title} tone={tone} icon={icon} card={card} href={href} onOpen={on.open} />
     </div>,
     document.body,
   )

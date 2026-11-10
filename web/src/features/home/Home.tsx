@@ -14,6 +14,8 @@ export interface HomeRow {
   name: string
   title: string
   tone: string
+  /** its picture's address (F743) */
+  icon?: string
   open: number
   needs: number
   /** the agent last heard of, and whether it is around */
@@ -208,7 +210,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
                     className={`flex items-center gap-3 px-3 py-2.5 hover:bg-zinc-100 active:bg-zinc-200/70 lg:grid ${GRID} lg:px-4 lg:py-3 lg:text-[13px] dark:hover:bg-zinc-700/60 dark:active:bg-zinc-700`}
                   >
                     <span className="flex min-w-0 items-center gap-2.5">
-                      <ProjTile title={p.title || p.name} tone={p.tone} cls="size-8 rounded-lg text-sm lg:size-6 lg:rounded-md lg:text-xs" />
+                      <ProjTile title={p.title || p.name} tone={p.tone} icon={p.icon} cls="size-8 rounded-lg text-sm lg:size-6 lg:rounded-md lg:text-xs" />
                       <span className="min-w-0">
                         <span className="block truncate text-[15px] font-semibold lg:text-[13px]">{p.title || p.name}</span>
                         <span className="block truncate text-xs text-zinc-500 lg:hidden dark:text-zinc-400">{p.next ? next : `${p.open} open`}</span>

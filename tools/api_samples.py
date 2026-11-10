@@ -247,6 +247,8 @@ def record(base: str) -> Dict[str, Any]:
     out["words"] = c.json(p + f"words?f={voice['f']}&more=1", b"")
     picture = c.json(p + "file?name=shot.png", PNG, "image/png")
     shot = c.json(p + "file?name=shot2.png", PNG, "image/png")
+    logo = c.json(p + "file?name=logo.png", PNG, "image/png")
+    agent(f"project icon {logo['f']}\n")  # the project's picture (F743): its rows and facts carry it
     agent(f"B1 say files={shot['f']} @helper the export as it is now\n"
           f"new task P1 now Pick the columns\nT4 ask files={shot['f']} Which columns?\n  - [ ] Date\n  - [ ] Total\n")
     c.raw(f"/p/{slug}/B1?by=claude-code&session=sample")  # an agent reads it: Read by

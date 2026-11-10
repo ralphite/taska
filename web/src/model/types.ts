@@ -296,6 +296,7 @@ export type LogRow = {
   | { kind: 'due'; n: number }
   | { kind: 'ack'; ids: string[] }
   | { kind: 'cfg'; name: string }
+  | { kind: 'icon'; f: string }
   | { kind: 'doc'; d: number; n: number; title: string }
   | { kind: 'dc' | 'dcedit'; d: number; text: string }
   | { kind: 'dcres' | 'ddel'; d: number; on: boolean }
@@ -352,6 +353,8 @@ export interface DeletedThing {
 export interface ProjectFacts {
   slug: string
   title: string
+  /** its picture (F743), one of its files; '' for none (a copy kept from before may not have it) */
+  icon?: string
   width: number
   file: string
   /** busy: the inputs the organizer works on now (several at once) */
@@ -405,6 +408,8 @@ export interface NoNews {
 export interface ProjectRow {
   name: string
   title: string
+  /** its picture (F743), one of its files ('' or none: its letter) */
+  icon?: string
   open: number
   needs: number
   /** done or dropped on Items (F667: a list kept from before may not have these) */

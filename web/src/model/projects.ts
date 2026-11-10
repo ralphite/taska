@@ -5,6 +5,9 @@ import { agentLine, type AgentTone } from './agents'
 import { ago } from './time'
 import type { ProjectRow } from './types'
 
+/** Where a project's picture is (F743): the address of the file it names; undefined for none (its letter). */
+export const iconUrl = (slug: string, f: string | undefined): string | undefined => (f ? `/p/${encodeURIComponent(slug)}/f/${encodeURIComponent(f)}` : undefined)
+
 export const homeOrder = (rows: readonly ProjectRow[]): ProjectRow[] => [...rows].sort((a, b) => (a.pos ?? 1e9) - (b.pos ?? 1e9) || (b.t || 0) - (a.t || 0))
 
 /** What a project's card in the sidebar says. A count is null when the list kept from before does not have it yet. */

@@ -107,10 +107,12 @@ def command(head: str, cont: str) -> Union[Command, List[Command]]:
         return _new(rest, cont)
     if low == "rules":
         return _rules(rest, cont)
+    if low == "project":
+        return _project(rest)
     if _DOC_WORD.fullmatch(word):
         return _doc_command(word, rest, cont)
     if not _ITEM_WORD.fullmatch(word):
-        raise Refused(f"unknown command '{word}' (start with new, ack, rules or an item code like B03)")
+        raise Refused(f"unknown command '{word}' (start with new, ack, rules, project or an item code like B03)")
     verb, _, rest2 = rest.partition(" ")
     verb_l = verb.lower()
     if verb_l == "doc":
@@ -181,6 +183,14 @@ def _rules(rest: str, cont: str) -> Command:
             raise Refused("use: rules reply P12 <text>")
         return {"op": "rreply", "p": m.group(1), "text": (m.group(2) + ("\n" + cont if cont else "")).strip()}
     raise Refused("use: rules propose <why> (the changes by section indented under it), or rules reply P12 <text>")
+
+
+def _project(rest: str) -> Command:
+    """The project's picture (F743): `project icon f12-logo.png` (an image uploaded first) or `project icon none`."""
+    verb, _, f = rest.partition(" ")
+    if verb.lower() != "icon" or not f.strip() or len(f.split()) > 1:
+        raise Refused("use: project icon f12-logo.png (an image uploaded first with POST /api/file), or project icon none")
+    return {"op": "icon", "f": f.strip()}
 
 
 def _doc_command(word: str, rest: str, cont: str) -> Command:

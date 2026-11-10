@@ -54,6 +54,7 @@ class ProjectState:
     voices: Dict[str, Voice] = field(default_factory=dict)  # every voice note's words, by its file (B682)
     events: List[Event] = field(default_factory=list)  # the whole log, in order
     title: Optional[str] = None  # what people call the project (its address never changes)
+    icon: str = ""  # the project's picture (F743): one of its files, shown in place of its letter; "" for none
     max_n: int = 0
     max_input: int = 0
     max_doc: int = 0

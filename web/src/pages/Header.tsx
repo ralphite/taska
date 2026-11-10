@@ -93,6 +93,7 @@ export interface AgentInfo {
 export function ProjectBar({
   title,
   tone,
+  icon,
   tabs,
   agent,
   notSaved,
@@ -102,6 +103,7 @@ export function ProjectBar({
 }: {
   title: string
   tone: string
+  icon?: string
   tabs: TabInfo[]
   /** null: the project's data has not come yet */
   agent: AgentInfo | null
@@ -113,7 +115,7 @@ export function ProjectBar({
   return (
     <nav hidden={hidden} aria-label="This project" className={`flex h-12 min-w-0 items-stretch gap-1 border-b border-zinc-200 pr-3 pl-2 dark:border-zinc-800 ${place}`}>
       <div className="my-1.5 flex max-w-72 min-w-0 items-center gap-2 px-2">
-        <ProjTile title={title} tone={tone} cls="size-6 rounded-md text-xs" />
+        <ProjTile title={title} tone={tone} icon={icon} cls="size-6 rounded-md text-xs" />
         <span className="truncate text-[15px] font-semibold">{title}</span>
       </div>
       <span className="mx-2 my-3.5 w-px shrink-0 bg-zinc-200 dark:bg-zinc-800" />

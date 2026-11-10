@@ -10,6 +10,7 @@ export interface OtherProject {
   slug: string
   title: string
   tone: string
+  icon?: string
   open: number | string
 }
 
@@ -21,7 +22,7 @@ export function itemMoveProjectSheet({ code, others }: { code: string; others: O
         <div className="-mx-1 flex flex-col gap-0.5">
           {others.map((p) => (
             <button key={p.slug} onClick={() => onPick(p.slug)} className="flex h-12 items-center gap-3 rounded-xl px-3 text-left hover:bg-zinc-100 lg:h-10 dark:hover:bg-zinc-800">
-              <ProjTile title={p.title} tone={p.tone} cls="size-7 rounded-lg text-sm" />
+              <ProjTile title={p.title} tone={p.tone} icon={p.icon} cls="size-7 rounded-lg text-sm" />
               <span className="min-w-0 flex-1 truncate">{p.title}</span>
             </button>
           ))}
@@ -59,7 +60,7 @@ export function moveInputSheet({ code, words, others, made, byOrganizer, scope }
                 onClick={() => onPick(p.slug)}
                 className="flex h-12 items-center gap-3 rounded-xl px-3 text-left hover:bg-zinc-100 data-pressed:bg-zinc-100 dark:hover:bg-zinc-800 dark:data-pressed:bg-zinc-800"
               >
-                <ProjTile title={p.title} tone={p.tone} cls="size-7 rounded-lg text-xs" />
+                <ProjTile title={p.title} tone={p.tone} icon={p.icon} cls="size-7 rounded-lg text-xs" />
                 <span className="min-w-0 flex-1 truncate font-medium">{p.title}</span>
                 <span className={`text-xs ${MUTED}`}>{p.open} open</span>
               </button>
@@ -86,7 +87,7 @@ export interface ProjectMenuEvents {
 }
 
 /** A project's menu: opened from its own name above it, it does not say that name again. */
-export function projectMenuSheet({ here, slug, title, tone, open, settingsKeys }: { here: boolean; slug: string; title: string; tone: string; open: number | string; settingsKeys: string }, on: ProjectMenuEvents): SheetParts {
+export function projectMenuSheet({ here, slug, title, tone, icon, open, settingsKeys }: { here: boolean; slug: string; title: string; tone: string; icon?: string; open: number | string; settingsKeys: string }, on: ProjectMenuEvents): SheetParts {
   const row = (key: string, icon: IconName, label: string, run: () => void, k = '') => (
     <button key={key} onClick={run} className="flex h-12 w-full items-center gap-3 rounded-lg px-2.5 text-left text-[15px] hover:bg-zinc-100 lg:h-9 lg:text-sm dark:hover:bg-zinc-800">
       <Icon n={icon} c="size-[18px] text-zinc-500 dark:text-zinc-400" />
@@ -99,7 +100,7 @@ export function projectMenuSheet({ here, slug, title, tone, open, settingsKeys }
     // which project it is, this one too (on the phone the sheet would show nothing over its rows)
     head: (
       <span className="flex items-center gap-2.5">
-        <ProjTile title={title} tone={tone} cls="size-8 rounded-lg text-sm" />
+        <ProjTile title={title} tone={tone} icon={icon} cls="size-8 rounded-lg text-sm" />
         <span className="min-w-0">
           <span className="block truncate text-sm font-semibold">{title}</span>
           <span className="block truncate font-mono text-xs font-normal text-zinc-500 dark:text-zinc-400">

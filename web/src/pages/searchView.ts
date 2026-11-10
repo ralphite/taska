@@ -25,6 +25,8 @@ export interface SearchPlace {
   /** the projects in the sidebar's order */
   order: readonly string[]
   tone(slug: string): string
+  /** a project's picture's address (F743) */
+  icon?(slug: string): string | undefined
   seen: SeenMap
   /** the codes of the items with a draft, in the project you are in */
   drafts: ReadonlySet<string>
@@ -90,7 +92,7 @@ export function searchView(s: SearchNow, p: SearchPlace): SearchView {
     groups: a
       ? foundGroups(a, p.here, p.order, s.kind).map((g) => {
           const rows = g.rows.flatMap(row)
-          return { project: g.project, title: g.project === p.here && p.m ? p.m.facts.title : g.title, tone: p.tone(g.project), rows: s.kind === 'all' ? byKind(rows, heads) : rows }
+          return { project: g.project, title: g.project === p.here && p.m ? p.m.facts.title : g.title, tone: p.tone(g.project), icon: p.icon?.(g.project), rows: s.kind === 'all' ? byKind(rows, heads) : rows }
         })
       : null,
     recent,
@@ -100,6 +102,6 @@ export function searchView(s: SearchNow, p: SearchPlace): SearchView {
   function recentGroups(found: Found[]) {
     const by = new Map<string, Found[]>()
     for (const x of found) by.set(x.project, [...(by.get(x.project) ?? []), x])
-    return [...by].map(([project, xs]) => ({ project, title: project === p.here && p.m ? p.m.facts.title : (p.model(project)?.facts.title ?? project), tone: p.tone(project), rows: xs.flatMap(row) })).filter((g) => g.rows.length)
+    return [...by].map(([project, xs]) => ({ project, title: project === p.here && p.m ? p.m.facts.title : (p.model(project)?.facts.title ?? project), tone: p.tone(project), icon: p.icon?.(project), rows: xs.flatMap(row) })).filter((g) => g.rows.length)
   }
 }

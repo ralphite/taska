@@ -2,6 +2,7 @@
 // listed; and the others to move something to.
 
 import { useMemo } from 'react'
+import { iconUrl } from '../model/projects'
 import { projectTones, toneOf } from '../ui/tones'
 import { useStores, useStoreValue } from './context'
 import { useProjectModel } from './hooks'
@@ -10,7 +11,7 @@ import { sideProjects, type ListedProject } from './sideProjects'
 export type { ListedProject }
 
 /** The projects as the sidebar lists them: this one with this page's counts, the others as last listed. */
-export function useSideProjects(slug: string): { list: ListedProject[] | null; tones: Map<string, string> } {
+export function useSideProjects(slug: string): { list: ListedProject[] | null; tones: Map<string, string>; icons: Map<string, string> } {
   const stores = useStores('data')
   const rows = useStoreValue(stores.data, (s) => s.projects)
   const at = useStoreValue(stores.data, (s) => s.listedAt)
@@ -18,12 +19,12 @@ export function useSideProjects(slug: string): { list: ListedProject[] | null; t
   return useMemo(() => sideProjects(rows, m, slug, at), [rows, m, slug, at])
 }
 
-/** The other projects, to move something to: by name, with their colour and open count. */
-export function useOtherProjects(slug: string): { slug: string; title: string; tone: string; open: number }[] {
+/** The other projects, to move something to: by name, with their colour, picture and open count. */
+export function useOtherProjects(slug: string): { slug: string; title: string; tone: string; icon?: string; open: number }[] {
   const stores = useStores('data')
   const rows = useStoreValue(stores.data, (s) => s.projects)
   return useMemo(() => {
     const tones = projectTones([slug, ...(rows || []).map((p) => p.name)])
-    return (rows || []).filter((p) => p.name !== slug).map((p) => ({ slug: p.name, title: p.title || p.name, tone: toneOf(tones, p.name), open: p.open }))
+    return (rows || []).filter((p) => p.name !== slug).map((p) => ({ slug: p.name, title: p.title || p.name, tone: toneOf(tones, p.name), icon: iconUrl(p.name, p.icon), open: p.open }))
   }, [rows, slug])
 }

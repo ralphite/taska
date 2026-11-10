@@ -82,6 +82,8 @@ def _facts(st: ProjectState, e: ev.Event) -> "tuple[str, str, Entry]":
         return who, k, {"ids": list(e.ids)}
     if isinstance(e, ev.ProjectRenamed) and e.name is not None:
         return who, k, {"name": e.name}
+    if isinstance(e, ev.ProjectIconSet):
+        return who, k, {"f": e.f}
     if isinstance(e, ev.DocWritten):
         return who, k, {"d": e.d, "n": e.n, "title": first_line(e.title)}
     if isinstance(e, ev.CommentAdded):
@@ -181,6 +183,8 @@ def said(x: Entry) -> str:
         return "ack " + " ".join(x["ids"])
     if k == "cfg":
         return f"renamed the project {x['name']!r}"
+    if k == "icon":
+        return f"project icon {x['f']}" if x["f"] else "project icon none"
     if k == "doc":
         return f"doc D{x['d']} on {c(x['n'])} {x['title']!r}"
     if k == "dc":

@@ -200,7 +200,7 @@ def project_view(st: ProjectState, agents: AgentActivity, *, slug: str, title: s
                  organizer_busy: List[str], organizer_model: str, presence: List[View], work: bool,
                  db_path: str) -> View:
     """The project's own facts: its name, who is around, what can be undone, what is in Deleted."""
-    return {"slug": slug, "title": title, "width": len(str(st.max_n)), "file": home_short(db_path),
+    return {"slug": slug, "title": title, "icon": st.icon, "width": len(str(st.max_n)), "file": home_short(db_path),
             "organizer": {"on": organizer_on, "model": organizer_model, "busy": organizer_busy},
             "agents": presence, "work": work, "agentsVersion": agents.version,
             "undo": [{"seq": u.seq, "n": u.n, "f": u.f, "was": u.was, "t": u.t} for u in undoable(st)],

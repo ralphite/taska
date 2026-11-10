@@ -40,6 +40,8 @@ GRAMMAR = (
     '                            / delete ## <section>, its new text indented under that line (whole: all of it)\n'
     '  rules reply P12 <text>    answer the user on your proposal P12\n'
     '  ack r12 r13               mark inputs handled without changing items\n'
+    "  project icon f12-logo.png    the project's picture in place of its letter (e.g. its app's favicon): a png, svg,\n"
+    '                            ico, webp or jpg up to 256 KB, uploaded as above; project icon none = the letter again\n'
     '  $ means the item created earlier in the same request. Refs: B03, b3, 3 are the same item.'
 )
 

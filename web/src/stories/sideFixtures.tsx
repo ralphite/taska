@@ -15,6 +15,7 @@ import { T, modelOf } from './fixtures'
 import { PROJECT } from './listFixtures'
 import { act, acts } from './acts'
 import { withNewProject } from './newProjectFixtures'
+import { withIcon } from './projectIcons'
 
 const sideActs = acts('Sidebar', ['newInput', 'newVoice', 'newProject', 'hide', 'settings', 'help', 'keys', 'undo', 'order', 'dropProject', 'projectMenu', 'search'] as const, { keys: 'Keyboard shortcuts', search: 'Search on the desktop' })
 const goAct = act('Sidebar: go')
@@ -34,11 +35,11 @@ const DEV = [
   { label: 'Storybook', href: '#', icon: 'book' as const },
   { label: 'Dashboard', href: '#', icon: 'chart' as const },
 ]
-const projects = (drop?: string, look?: SideFacts['look']) => {
+const projects = (drop?: string, look?: SideFacts['look'], icons?: boolean) => {
   const list = sideProjects(ROWS, modelOf(PROJECT, [], { title: 'Shop' }), 'shop', AT).list
-  return list?.map((p) => ({ ...p, ...(p.slug === drop ? { drop: true } : {}), ...(look && p.slug === look.slug ? { look: look.as } : {}) })) ?? null
+  return list?.map((p) => ({ ...(icons ? withIcon(p) : p), ...(p.slug === drop ? { drop: true } : {}), ...(look && p.slug === look.slug ? { look: look.as } : {}) })) ?? null
 }
-type SideFacts = { look?: { slug: string; as: NonNullable<SideProject['look']> }; brandPressed?: boolean; side?: 'docs' | 'log' | 'deleted'; undo?: string; composing?: boolean; drop?: string; naming?: string; namingValue?: string; width?: number; loading?: boolean; settings?: boolean; noLinks?: boolean }
+type SideFacts = { look?: { slug: string; as: NonNullable<SideProject['look']> }; /** projects with pictures (F743) */ icons?: boolean; brandPressed?: boolean; side?: 'docs' | 'log' | 'deleted'; undo?: string; composing?: boolean; drop?: string; naming?: string; namingValue?: string; width?: number; loading?: boolean; settings?: boolean; noLinks?: boolean }
 // naming: New project being named (and why it was not made: '' none yet); noLinks: no project open, so no Documents, Activity, Deleted
 
 /** The sidebar with the state the page keeps for it (stores.ui's sideHidden and naming, stores.grips' side width),
@@ -59,7 +60,7 @@ function LiveSidebar({ phone, f, folded = false }: { phone: boolean; f: SideFact
   }
   // New project: a popover at its button (the desktop), a sheet (the phone), over the sidebar (D115 #7)
   const naming_ = (under: ReactNode) => (naming ? withNewProject(under, !phone, { beside: hidden, value: f.namingValue, error: naming.error, onDone: () => setNaming(null) }) : under)
-  const list = f.loading ? null : projects(f.drop, f.look)
+  const list = f.loading ? null : projects(f.drop, f.look, f.icons)
   const links = f.noLinks ? [] : sideLinks('shop', f.side ?? null)
   if (hidden) return naming_(<Rail keys={SIDE_KEYS} projects={list} links={links} composing={f.composing ?? true} settingsOpen={!!f.settings} on={on} />)
   const edge = phone ? null : (

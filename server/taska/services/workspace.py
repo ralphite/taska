@@ -205,7 +205,7 @@ class Workspace:
         out: List[Dict[str, Any]] = []
         for name, p in sorted(self.projects.items()):
             with p.lock:
-                row: Dict[str, Any] = {"name": name, "title": p.title, **tally(p.state), **presence(p),
+                row: Dict[str, Any] = {"name": name, "title": p.title, "icon": p.state.icon, **tally(p.state), **presence(p),
                                        "t": int(p.store.changed_at() * 1000)}
                 pos = self.order.position(name)
                 if pos is not None:

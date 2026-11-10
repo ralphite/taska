@@ -32,6 +32,7 @@ import { Frame } from './Frames'
 import { noRowEvents, T } from './fixtures'
 import { pageOf } from './itemPage'
 import { listOf } from './listFixtures'
+import { PROJECT_ICONS } from './projectIcons'
 import { ADDED, D1, HEARD, HOME, ITEMS, MISHEARD, MORE, ORDER, RIGHT, SHOP, searchOf } from './searchFixtures'
 
 /** Where the phone is: the list, the search page, or a result open over it. */
@@ -82,7 +83,7 @@ const PLACE: SearchPlace = {
   recent: [visit(SHOP, 'shop', 1), visit(SHOP, 'shop', 2), visit(HOME, 'home', 21)].filter((v): v is Visit => !!v),
   model: (slug) => (slug === 'shop' ? SHOP : slug === 'home' ? HOME : null),
 }
-const placeFor = (onOpen: (x: Found) => void): SearchPlace => ({ ...PLACE, on: (x) => ({ ...noRowEvents, open: () => onOpen(x) }) })
+const placeFor = (onOpen: (x: Found) => void, icons = false): SearchPlace => ({ ...PLACE, ...(icons ? { icon: (slug: string) => PROJECT_ICONS[slug] } : {}), on: (x) => ({ ...noRowEvents, open: () => onOpen(x) }) })
 
 const WAIT = { writing: 1300, searching: 1400 }
 
@@ -188,13 +189,13 @@ const Keyboard = () => (
 )
 
 /** The phone through the search, from the state `start` names; `still`: it stays in that state (a state's story). */
-export function SearchPhone({ start = {}, still = false }: { start?: Partial<Flow>; still?: boolean }) {
+export function SearchPhone({ start = {}, still = false, icons = false }: { start?: Partial<Flow>; still?: boolean; /** projects with pictures (F743) */ icons?: boolean }) {
   const { f, on, openSearch, back } = useFlow(start, still)
   if (f.at === 'list') return <ListPage onSearch={openSearch} />
   if (f.at === 'open' && f.open) return <OpenPage x={f.open} onBack={back} />
   return (
     <div className="flex h-full flex-col">
-      <SearchPage v={searchView(f, placeFor(on.open))} on={on} />
+      <SearchPage v={searchView(f, placeFor(on.open, icons))} on={on} />
       {f.typed ? <Keyboard /> : null}
     </div>
   )

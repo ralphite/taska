@@ -32,6 +32,7 @@ export interface FoundGroupView {
   project: string
   title: string
   tone: string
+  icon?: string
   rows: FoundRowView[]
 }
 
@@ -206,7 +207,7 @@ function Results({ groups, marks, faded, onOpen }: { groups: FoundGroupView[]; m
       {groups.map((g) => (
         <section key={g.project}>
           <h2 className="sticky top-0 z-20 flex h-10 items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 text-[15px] font-semibold dark:border-zinc-800 dark:bg-zinc-900">
-            <ProjTile title={g.title} tone={g.tone} />
+            <ProjTile title={g.title} tone={g.tone} icon={g.icon} />
             {g.title}
           </h2>
           {g.rows.map((r) => (

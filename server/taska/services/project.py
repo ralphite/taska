@@ -129,6 +129,9 @@ class Project:
     def file_exists(self, fid: str) -> bool:
         return self.files.exists(fid)
 
+    def file_size(self, fid: str) -> int:
+        return self.files.size(fid)
+
     def is_moving(self, rid: str) -> bool:
         return bool(self.shared and self.shared.input_moving(self.slug, rid))
 

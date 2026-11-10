@@ -24,7 +24,6 @@ const UNSEEN = {
   'activity[].ids': 'only inputs marked handled together (InputsAcked); the sample makes none',
   'activity[].count': "only voice notes' records set at once (B682); the sample makes none",
   'activity[].was': 'only a change of an earlier format folded into others (Refactor 8A); the sample makes none',
-  'activity[].f': 'only a file taken off an input or comment (FileTakenOff); the sample makes none',
   'activity[].retry': 'only an input sent again; the sample makes none',
   'view.items[].thread[].files[].voice': VOICE,
   'view.items[].thread[].files[].size': "an agent's file is kept without its size (commands/items.py _message_files)",

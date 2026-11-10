@@ -1,4 +1,4 @@
-"""Changes to items and their talk, and the project's name: typed events and how their stored rows read."""
+"""Changes to items and their talk, and the project's name and picture: typed events and how their stored rows read."""
 
 from __future__ import annotations
 
@@ -220,6 +220,17 @@ class ProjectRenamed(Event):
         return {"f": {"name": self.name} if self.name is not None else {}, "by": self.by}
 
 
+@dataclass
+class ProjectIconSet(Event):
+    """The project's picture (F743): a file it has, shown in place of its letter; "" takes it off."""
+
+    KIND: ClassVar[str] = "icon"
+    f: str = ""
+
+    def body(self) -> Row:
+        return {"f": self.f, "by": self.by}
+
+
 READERS: Dict[str, Reader] = {
     "add": lambda r: ItemAdded(n=need(r, "n"), title=need(r, "title"), src=r.get("src"), type=need(r, "type"),
                                pri=need(r, "pri"), when=need(r, "when"), status=need(r, "status"),
@@ -241,4 +252,5 @@ READERS: Dict[str, Reader] = {
     "unfile": lambda r: FileTakenOff(d=r.get("d"), id=r.get("id"), src=r.get("src"), f=need(r, "f"), **common(r)),
     "due": lambda r: LaterEnded(n=need(r, "n"), **common(r)),
     "cfg": lambda r: ProjectRenamed(name=(need(r, "f") or {}).get("name"), **common(r)),
+    "icon": lambda r: ProjectIconSet(f=str(need(r, "f") or ""), **common(r)),
 }

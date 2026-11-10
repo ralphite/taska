@@ -17,7 +17,7 @@ from .docs import DOC_EVENTS, CommentAdded, CommentDeleted, CommentEdited, Comme
 from .inputs import FilingRedone, FilingUndone, InputAdded, InputAmended, InputDeleted, InputMoved, InputRescoped, \
     InputRestored, InputSent, InputsAcked, Organized
 from .items import FieldsSet, FileTakenOff, ItemAdded, ItemMerged, ItemUnmerged, ItemsArchived, ItemsDeleted, ItemsRestored, LaterEnded, \
-    MessageHidden, MessagePosted, ProjectRenamed
+    MessageHidden, MessagePosted, ProjectIconSet, ProjectRenamed
 from .voices import VoiceFixed, VoiceHeard, VoicesSplit
 
 READERS: Dict[str, Reader] = {**inputs.READERS, **items.READERS, **docs.READERS, **voices.READERS,
@@ -38,7 +38,7 @@ def decode(row: Row) -> Event:
 __all__ = [
     "Event", "Folded", "Unknown", "Unreadable", "Row", "READERS", "DOC_EVENTS", "decode",
     "ItemAdded", "FieldsSet", "MessagePosted", "ItemMerged", "ItemUnmerged", "ItemsArchived", "ItemsDeleted", "ItemsRestored", "LaterEnded",
-    "MessageHidden", "FileTakenOff", "ProjectRenamed",
+    "MessageHidden", "FileTakenOff", "ProjectRenamed", "ProjectIconSet",
     "InputAdded", "InputsAcked", "InputAmended", "FilingUndone", "FilingRedone", "InputDeleted",
     "InputRestored", "InputMoved", "Organized", "InputRescoped", "InputSent",
     "DocWritten", "DocDeleted", "DocMoved", "CommentMoved", "ThreadResolved", "CommentAdded", "CommentEdited",

@@ -3,7 +3,7 @@
 // stories both use it.
 
 import { lastAgent } from '../../model/agents'
-import { homeOrder } from '../../model/projects'
+import { homeOrder, iconUrl } from '../../model/projects'
 import type { Need, ProjectRow } from '../../model/types'
 import { projectTones, toneOf } from '../../ui/tones'
 import type { HomeRow } from './Home'
@@ -16,6 +16,7 @@ export function homeRows(projects: readonly ProjectRow[], needs: readonly Need[]
       name: p.name,
       title: p.title || p.name,
       tone: toneOf(tones, p.name),
+      icon: iconUrl(p.name, p.icon),
       open: p.open,
       needs: p.needs,
       agent: lastAgent(p.agents, at),

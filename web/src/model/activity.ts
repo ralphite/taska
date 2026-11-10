@@ -110,6 +110,8 @@ function sentence(m: World, e: LogRow): LogPart[] {
       return ['saw ', ...e.ids.flatMap((id, i) => (i ? [', ', input(id)] : [input(id)]))]
     case 'cfg':
       return ['renamed the project ', ...quoted(e.name, '“”')]
+    case 'icon':
+      return [e.f ? "set the project's icon" : "took off the project's icon"]
     case 'doc':
       return [`wrote ${doc(e.d)} on `, item(e.n), ': ', ...quoted(e.title, '“”')]
     case 'dc':

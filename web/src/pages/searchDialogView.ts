@@ -31,6 +31,7 @@ export interface FoundLine {
   project: string
   projectTitle: string
   tone: string
+  icon?: string
   /** All: its kind's name, over the first row of that kind */
   head?: string
 }
@@ -61,7 +62,7 @@ export interface SearchDialogView {
   /** the kinds it found, with their counts (none found yet: null) */
   kinds: ViewChip[] | null
   project: string | null
-  projects: { slug: string; title: string; tone: string }[]
+  projects: { slug: string; title: string; tone: string; icon?: string }[]
   status: FindStatus | null
   /** nothing typed: what you opened lately */
   recent: FoundLine[]
@@ -83,6 +84,8 @@ export interface DialogPlace {
   model(slug: string): ProjectModel | null
   title(slug: string): string
   tone(slug: string): string
+  /** a project's picture's address (F743) */
+  icon?(slug: string): string | undefined
   /** the projects in the sidebar's order */
   projects: readonly string[]
   recent: readonly Visit[]
@@ -100,7 +103,7 @@ export function itemOf(x: Found, p: Pick<DialogPlace, 'model'>): Item | undefine
 
 export function lineOf(x: Found, p: DialogPlace): FoundLine {
   const m = p.model(x.project)
-  const base = { key: x.project + '/' + x.key, found: x, project: x.project, projectTitle: p.title(x.project), tone: p.tone(x.project) }
+  const base = { key: x.project + '/' + x.key, found: x, project: x.project, projectTitle: p.title(x.project), tone: p.tone(x.project), icon: p.icon?.(x.project) }
   const it = itemOf(x, p)
   if (x.kind === 'rules') return { ...base, mark: { kind: 'rules' }, code: 'Rules', title: x.title ?? '', path: base.projectTitle }
   if (x.kind === 'items' && it) {
@@ -171,7 +174,7 @@ export function searchDialogView(s: DialogNow, p: DialogPlace): SearchDialogView
     rec: s.phase === 'listening' ? { time: clock(s.ms), levels: s.levels } : null,
     kinds,
     project: s.project,
-    projects: p.projects.map((slug) => ({ slug, title: p.title(slug), tone: p.tone(slug) })),
+    projects: p.projects.map((slug) => ({ slug, title: p.title(slug), tone: p.tone(slug), icon: p.icon?.(slug) })),
     status: s.status,
     recent,
     results,

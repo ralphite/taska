@@ -19,7 +19,7 @@ export function SwitchProjectSheet(_: Req<'switch-project'>) {
   const slug = useProjectRoute()?.slug ?? ''
   // in your order, as the sidebar lists them
   const { list: side } = useSideProjects(slug)
-  const list = (side || []).map((x) => ({ slug: x.slug, title: x.title, tone: x.tone, needs: x.needs, here: x.current }))
+  const list = (side || []).map((x) => ({ slug: x.slug, title: x.title, tone: x.tone, icon: x.icon, needs: x.needs, here: x.current }))
   const open = (s: string) => {
     app.sheets.close()
     app.nav.to(`/p/${encodeURIComponent(s)}/`)

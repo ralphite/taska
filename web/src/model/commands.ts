@@ -97,6 +97,7 @@ export type Command = From &
     | { op: 'revert'; seq: number }
     // the project (commands/project.py)
     | { op: 'cfg'; name: string }
+    | { op: 'icon'; f: string }
   )
 
 export type Op = Command['op']
@@ -145,6 +146,7 @@ export const OPS = {
   'organize-again': true,
   revert: true,
   cfg: true,
+  icon: true,
 } as const satisfies Record<Op, true>
 
 /** One command of the union, by its op (a member for several ops, as this one). */

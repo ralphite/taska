@@ -23,6 +23,7 @@ import { acts } from './acts'
 import { withNewProject } from './newProjectFixtures'
 import { usePop } from './liveParts'
 import { goneProjectMenuSheet, projectMenuSheet } from '../ui/ProjectSheets'
+import { withIcon } from './projectIcons'
 import { PROJECT_TONES } from '../ui/tones'
 
 const now = Date.parse(T)
@@ -72,6 +73,8 @@ export interface SettingsHere {
   /** Voice spellings: none yet */
   noSpellings?: boolean
   organizerOff?: boolean
+  /** projects with pictures (F743) */
+  icons?: boolean
   /** each list still to load, or with nothing in it (T639) */
   projectsLoading?: boolean
   noneDeleted?: boolean
@@ -132,7 +135,8 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
   // what the column says comes from the same data as the section, as on the page
   const shop = shopWithHistory()
   const m = h.organizerOff ? { ...shop, facts: { ...shop.facts, organizer: { ...shop.facts.organizer, on: false } } } : shop
-  const side = sideProjects(ROWS, m, 'shop').list
+  const listed = sideProjects(ROWS, m, 'shop').list
+  const side = h.icons ? (listed?.map(withIcon) ?? null) : listed
   const rows = h.projectsLoading ? null : ROWS
   const st = { deleted: h.noneDeleted ? [] : GONE, ...p }
   const ask = (key: string, run: () => void) => (asked[key] ? run() : setAsked({ ...asked, [key]: 1 }))

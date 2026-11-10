@@ -46,6 +46,9 @@ class FileStore:
     def exists(self, fid: str) -> bool:
         return bool(fid) and os.path.isfile(self.path(fid))
 
+    def size(self, fid: str) -> int:
+        return os.path.getsize(self.path(fid))
+
     def read(self, fid: str) -> bytes:
         with open(self.path(fid), "rb") as f:
             return f.read()

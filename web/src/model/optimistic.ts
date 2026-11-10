@@ -418,6 +418,7 @@ const PREVIEW: { [K in Op]: (w: Work, c: CommandOf<K>) => void } = {
   'organize-again': later,
   revert,
   cfg: later,
+  icon: later,
 }
 
 /** What these commands, in order, show at once over the page's view `m`, made at `at` (ms). */

@@ -16,6 +16,7 @@ export interface ProjectRowFacts {
   name: string
   title: string
   tone: string
+  icon?: string
   open: number
   here: boolean
 }
@@ -182,7 +183,7 @@ export function ProjectsBody({ f, on, desk }: { f: ProjectsFacts; on: ProjectsEv
           {f.live.map((p) =>
             f.renaming === p.name ? (
               <div key={p.name} className="flex items-start gap-3 px-3.5 py-3">
-                <ProjTile title={p.title} tone={p.tone} cls="mt-1.5 size-8 rounded-lg text-sm" />
+                <ProjTile title={p.title} tone={p.tone} icon={p.icon} cls="mt-1.5 size-8 rounded-lg text-sm" />
                 <div className="min-w-0 flex-1">
                   <Renaming p={p} desk={false} on={on} />
                 </div>
@@ -191,7 +192,7 @@ export function ProjectsBody({ f, on, desk }: { f: ProjectsFacts; on: ProjectsEv
               <div key={p.name}>
                 <div className="flex min-h-14 items-center gap-3 py-2 pr-1.5 pl-3.5">
                   <ProjectLink p={p} on={on} cls="flex min-w-0 flex-1 items-center gap-3">
-                    <ProjTile title={p.title} tone={p.tone} cls="size-8 rounded-lg text-sm" />
+                    <ProjTile title={p.title} tone={p.tone} icon={p.icon} cls="size-8 rounded-lg text-sm" />
                     <span className="min-w-0 flex-1">
                       <span className="flex min-w-0 items-center gap-2 text-[15px] font-semibold">
                         <ProjectName p={p} />
@@ -245,7 +246,7 @@ export function ProjectsBody({ f, on, desk }: { f: ProjectsFacts; on: ProjectsEv
           const ren = f.renaming === p.name
           return (
             <li key={p.name} className="group relative flex min-h-16 items-center gap-3 py-3">
-              <ProjTile title={p.title} tone={p.tone} cls="size-8 rounded-lg text-sm" />
+              <ProjTile title={p.title} tone={p.tone} icon={p.icon} cls="size-8 rounded-lg text-sm" />
               <div className="min-w-0 flex-1">
                 {ren ? (
                   <Renaming p={p} desk on={on} />

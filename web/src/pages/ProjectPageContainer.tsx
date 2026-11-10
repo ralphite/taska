@@ -13,6 +13,7 @@ import { needsYou } from '../model/needStates'
 import { needsCount } from '../model/rules'
 import { filtersSet } from '../model/visible'
 import { composing } from '../model/route'
+import { iconUrl } from '../model/projects'
 import { toneOf } from '../ui/tones'
 import { FootContainer } from '../features/composer/FootContainer'
 import { BoxContainer } from '../features/composer/BoxContainer'
@@ -60,6 +61,16 @@ export function ProjectPageContainer({ route }: { route: ProjectRoute }) {
     const sec = settingsTitle(route.place, layout === 'desk')
     document.title = (waiting ? `(${waiting}) ` : '') + (sec ? sec + ' · ' : '') + (m ? `${m.facts.title} · Taska` : 'Taska')
   }, [m, route.place, layout])
+  // the tab shows the project's picture when it has one (F743): a later icon link wins over the page's own
+  const icon = m ? iconUrl(route.slug, m.facts.icon) : undefined
+  useEffect(() => {
+    if (!icon) return
+    const link = document.createElement('link')
+    link.rel = 'icon'
+    link.href = icon
+    document.head.appendChild(link)
+    return () => link.remove()
+  }, [icon])
   return (
     <>
       {layout === 'desk' ? <DeskLayout route={route} /> : <PhoneLayout route={route} />}
@@ -73,7 +84,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const stores = useStores('docView', 'grips', 'route', 'ui')
   const { title, agent, blocked, counts, notSaved } = useHeadFacts(route, true)
   const blockedRef = usePaneRef('blocked')
-  const { tones } = useSideProjects(route.slug)
+  const { tones, icons } = useSideProjects(route.slug)
   const sideHidden = useStoreValue(stores.ui, (s) => s.sideHidden)
   const help = route.place.kind === 'help'
   const settings = route.place.kind === 'settings' || help
@@ -104,6 +115,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
         <ProjectBar
           title={title}
           tone={toneOf(tones, route.slug)}
+          icon={icons.get(route.slug)}
           tabs={tabs}
           agent={agent}
           notSaved={notSaved}

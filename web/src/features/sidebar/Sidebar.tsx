@@ -15,6 +15,7 @@ export interface SideProject {
   slug: string
   title: string
   tone: string
+  icon?: string
   needs: number
   open: number | string
   current: boolean
@@ -129,7 +130,7 @@ function HoverCard({ hover, projects, on }: { hover: CardOn; projects: SideProje
       on.newInput()
     } else on.go(p.href, e)
   }
-  return <FloatingProjectCard at={hover.hovered} title={p.title} tone={p.tone} card={p.card} href={p.href} on={{ ...hover.card, open }} />
+  return <FloatingProjectCard at={hover.hovered} title={p.title} tone={p.tone} icon={p.icon} card={p.card} href={p.href} on={{ ...hover.card, open }} />
 }
 
 function ProjectRows({ phone, projects, hover, on }: { phone: boolean; projects: SideProject[] | null; hover: CardOn; on: SidebarEvents }) {
@@ -139,7 +140,7 @@ function ProjectRows({ phone, projects, hover, on }: { phone: boolean; projects:
       {projects.map((p) =>
         phone ? (
           <a key={p.slug} href={p.href} data-slug={p.slug} {...rowLook(p)} aria-current={p.current ? 'page' : undefined} onClick={(e) => on.go(p.href, e)} className={PHONE_ROW}>
-            <ProjTile title={p.title} tone={p.tone} cls="size-8 rounded-lg text-sm" />
+            <ProjTile title={p.title} tone={p.tone} icon={p.icon} cls="size-8 rounded-lg text-sm" />
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
                 <span className="min-w-0 flex-1 truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">{p.title}</span>
@@ -164,7 +165,7 @@ function ProjectRows({ phone, projects, hover, on }: { phone: boolean; projects:
             onClick={(e) => (p.current ? (e.preventDefault(), on.newInput()) : on.go(p.href, e))}
             className={DESK_ROW}
           >
-            <ProjTile title={p.title} tone={p.tone} cls="size-6 rounded-md text-xs" />
+            <ProjTile title={p.title} tone={p.tone} icon={p.icon} cls="size-6 rounded-md text-xs" />
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-1.5">
                 <span className={`min-w-0 flex-1 truncate text-sm ${p.current ? 'font-semibold' : 'font-medium'}`}>{p.title}</span>
@@ -428,7 +429,7 @@ export function Rail({ keys, projects, links, composing, settingsOpen, hidden, o
             aria-label={p.title}
             className="relative grid size-10 shrink-0 place-items-center rounded-xl hover:bg-zinc-200/60 focus-visible:outline-2 focus-visible:outline-blue-500 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-300 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/20 dark:aria-[current=page]:ring-blue-400/40"
           >
-            <ProjTile title={p.title} tone={p.tone} cls="size-7 rounded-lg text-xs" />
+            <ProjTile title={p.title} tone={p.tone} icon={p.icon} cls="size-7 rounded-lg text-xs" />
             {p.needs ? (
               <span className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-white ring-1 ring-zinc-900/10 dark:bg-zinc-900 dark:ring-white/15">
                 <NeedsCount n={p.needs} />

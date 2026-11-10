@@ -43,7 +43,7 @@ export function SearchSheet(_: { req: Extract<SheetRequest, { kind: 'search' }> 
   const listedAt = useStoreValue(stores.data, (x) => x.listedAt)
   const route = useProjectRoute()
   const here = route?.slug ?? ''
-  const { list, tones } = useSideProjects(here)
+  const { list, tones, icons } = useSideProjects(here)
   // the dialog went (Esc, a click outside, a result opened): the microphone stops, nothing under way goes on
   useEffect(() => () => app.finder.leaveDesk(), [app])
   const title = (slug: string) => (list ?? []).find((p) => p.slug === slug)?.title ?? s.answer?.titles[slug] ?? slug
@@ -52,6 +52,7 @@ export function SearchSheet(_: { req: Extract<SheetRequest, { kind: 'search' }> 
     model: (slug) => app.model(slug),
     title,
     tone: (slug) => toneOf(tones, slug),
+    icon: (slug) => icons.get(slug),
     projects: (list ?? []).map((p) => p.slug),
     recent,
     actions: route ? ACTIONS : [],

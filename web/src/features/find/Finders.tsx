@@ -47,6 +47,7 @@ export interface SwitchRow {
   slug: string
   title: string
   tone: string
+  icon?: string
   needs: number
   here: boolean
 }
@@ -98,7 +99,7 @@ export function Switcher({ rows, loading, query = '', onOpen }: { rows: SwitchRo
               }}
               className="flex h-11 items-center gap-3 rounded-xl px-3 hover:bg-zinc-100 aria-selected:bg-blue-50 aria-selected:ring-1 aria-selected:ring-blue-200 dark:hover:bg-zinc-800 dark:aria-selected:bg-blue-400/15 dark:aria-selected:ring-blue-400/30"
             >
-              <ProjTile title={p.title} tone={p.tone} cls="size-6 rounded-md text-xs" />
+              <ProjTile title={p.title} tone={p.tone} icon={p.icon} cls="size-6 rounded-md text-xs" />
               <span className="min-w-0 flex-1 truncate">{p.title}</span>
               {p.needs ? <NeedsCount n={p.needs} /> : null}
               {p.here ? <CurrentMark /> : null}

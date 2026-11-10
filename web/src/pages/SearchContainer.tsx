@@ -18,7 +18,7 @@ export function SearchContainer({ route, hidden }: { route: ProjectRoute; hidden
   const recent = useStoreValue(stores.recent, (x) => x.list)
   const s = useStoreValue(stores.find, (x) => x)
   const m = useProjectModel(route.slug)
-  const { list, tones } = useSideProjects(route.slug)
+  const { list, tones, icons } = useSideProjects(route.slug)
   const draftWords = useStoreValue(stores.drafts, (x) => x.bySlug[route.slug])
   const draftFiles = useStoreValue(stores.box, (x) => x.files)
   useStoreValue(app.seen.rev, (r) => r)
@@ -37,8 +37,8 @@ export function SearchContainer({ route, hidden }: { route: ProjectRoute; hidden
       fold() {},
       picture() {},
     })
-    return searchView(s, { here: route.slug, m, order: (list ?? []).map((p) => p.slug), tone: (slug) => toneOf(tones, slug), seen: app.seen.of(route.slug), drafts, on: rowOn, now: m?.at ?? 0, recent, model: (slug) => app.model(slug) })
-  }, [s, m, list, tones, route.slug, draftWords, draftFiles, recent]) // eslint-disable-line react-hooks/exhaustive-deps
+    return searchView(s, { here: route.slug, m, order: (list ?? []).map((p) => p.slug), tone: (slug) => toneOf(tones, slug), icon: (slug) => icons.get(slug), seen: app.seen.of(route.slug), drafts, on: rowOn, now: m?.at ?? 0, recent, model: (slug) => app.model(slug) })
+  }, [s, m, list, tones, icons, route.slug, draftWords, draftFiles, recent]) // eslint-disable-line react-hooks/exhaustive-deps
   const on: SearchEvents = {
     leave: () => app.finder.leave(),
     mic: () => void app.finder.listen(),

@@ -60,7 +60,7 @@ function LiveProjectMenu({ req }: { req: Extract<SheetRequest, { kind: 'project-
   const route = useProjectRoute()
   const here = route?.slug === req.slug
   const m = useProjectModel(req.slug)
-  const { tones } = useSideProjects(route?.slug ?? '')
+  const { tones, icons } = useSideProjects(route?.slug ?? '')
   const rows = useStoreValue(stores.data, (s) => s.projects)
   const row = rows?.find((p) => p.name === req.slug)
   const title = (here && m?.facts.title) || row?.title || req.slug
@@ -73,7 +73,7 @@ function LiveProjectMenu({ req }: { req: Extract<SheetRequest, { kind: 'project-
   return (
     <SheetLayout
       {...projectMenuSheet(
-        { here, slug: req.slug, title, tone: toneOf(tones, req.slug), open, settingsKeys: keysShown('settings') },
+        { here, slug: req.slug, title, tone: toneOf(tones, req.slug), icon: icons.get(req.slug), open, settingsKeys: keysShown('settings') },
         {
           open: done(() => app.nav.to(`/p/${encodeURIComponent(req.slug)}/`)),
           settings: done(() => app.nav.to(`/p/${encodeURIComponent(req.slug)}/settings`)),

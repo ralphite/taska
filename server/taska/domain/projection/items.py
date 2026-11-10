@@ -126,3 +126,9 @@ def _rename(state: ProjectState, e: ev.Event) -> None:
     assert isinstance(e, ev.ProjectRenamed)
     if e.name is not None:
         state.title = e.name
+
+
+@reduces(ev.ProjectIconSet)
+def _icon(state: ProjectState, e: ev.Event) -> None:
+    assert isinstance(e, ev.ProjectIconSet)
+    state.icon = e.f

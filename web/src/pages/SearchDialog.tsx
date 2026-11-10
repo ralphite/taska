@@ -94,7 +94,7 @@ function FoundRow({ l, i, sel, marks, recent, on }: { l: FoundLine; i: number; s
           <Hit text={l.title} words={marks} />
         </span>
         <span className="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
-          <ProjTile title={l.projectTitle} tone={l.tone} cls="size-3.5 rounded-[3px] text-[8px]" />
+          <ProjTile title={l.projectTitle} tone={l.tone} icon={l.icon} cls="size-3.5 rounded-[3px] text-[8px]" />
           <span className="truncate">{l.path}</span>
         </span>
       </span>
@@ -326,7 +326,7 @@ export function SearchDialog({ v, preview, menuOpen = null, on }: { v: SearchDia
               ...v.projects.map((p): [string, ReactNode] => [
                 p.slug,
                 <>
-                  <ProjTile title={p.title} tone={p.tone} cls="size-5 rounded-md text-[10px]" />
+                  <ProjTile title={p.title} tone={p.tone} icon={p.icon} cls="size-5 rounded-md text-[10px]" />
                   <span className="min-w-0 flex-1 truncate">{p.title}</span>
                   <Check on={v.project === p.slug} />
                 </>,
@@ -414,7 +414,7 @@ export function FoundPreview({ l, text, meta }: { l: FoundLine; /** its words (M
   return (
     <article className="px-8 pt-7 pb-10">
       <p className="mb-2 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-        <ProjTile title={l.projectTitle} tone={l.tone} cls="size-4 rounded text-[9px]" />
+        <ProjTile title={l.projectTitle} tone={l.tone} icon={l.icon} cls="size-4 rounded text-[9px]" />
         {l.path}
       </p>
       <h2 className="flex items-start gap-2 text-xl leading-snug font-semibold">
