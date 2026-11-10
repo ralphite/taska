@@ -8,11 +8,11 @@ import { becameOf, madeFrom } from '../model/became'
 import { laterOn } from '../model/time'
 import { codeOf, filesOf, findRef, sourceCount, type ProjectModel } from '../model/project'
 import type { Comment, Doc, Item } from '../model/types'
-import { DIAGRAMS, PICTURE, T } from './fixtures'
+import { DIAGRAMS, PICTURE, T, VIDEO } from './fixtures'
 import { acts } from './acts'
 
 export function talkEnv(m: ProjectModel, desk: boolean, f: Partial<TalkEnv> = {}): TalkEnv {
-  const url = (fid: string) => (/\.(png|jpe?g)$/.test(fid) ? PICTURE : '#' + fid)
+  const url = (fid: string) => (/\.(png|jpe?g)$/.test(fid) ? PICTURE : /\.mp4$/.test(fid) ? VIDEO : '#' + fid)
   return {
     world: { find: (c) => findRef(m, c), url, size: () => undefined, diagram: (src, dark, id) => DIAGRAMS.draw(src, dark, id) },
     now: Date.parse(T) + 60_000,

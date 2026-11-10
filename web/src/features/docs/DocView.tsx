@@ -263,7 +263,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
                 data-key={r.b.key}
                 onClick={(e) => {
                   const t = e.target as Element
-                  if (t.closest('button, a, [data-ref]')) return
+                  if (t.closest('button, a, video, [data-ref]')) return
                   // on the phone a tap on one item of a list picks that item, as pointing at it does on the desktop
                   const li = desk ? null : t.closest<HTMLElement>('li')
                   on.pick(r.b.key, li ? itemWords(li) : null, 'tap')

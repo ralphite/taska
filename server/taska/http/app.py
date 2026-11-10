@@ -166,7 +166,7 @@ class AppContext:
         if answer is not None:
             return answer
         if sub.startswith("/f/"):
-            return agent_routes.serve_file(p, sub[3:])
+            return agent_routes.serve_file(p, sub[3:], req.header("Range"))
         return text(404, NOT_FOUND)
 
     # -- POST --------------------------------------------------------------------------

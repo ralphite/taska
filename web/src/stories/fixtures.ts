@@ -94,6 +94,8 @@ export const noRowEvents: RowEvents = {
 /** A small picture for a thumbnail: a real screenshot of Taska (its demo data), as people send them; never a drawing
  * that reads as a loading placeholder (B709). */
 export const PICTURE = SHOT_SMALL
+/** a short video as Storybook serves the shop's files (F747) */
+export const VIDEO = '/p/shop/f/f8-demo.mp4'
 
 /** A project's facts as Taska is normally used: the organizer on, a coding agent around and waiting for work,
  * work waiting for it. A story of another setting says so in its name (…: organizer off). */

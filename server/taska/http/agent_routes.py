@@ -24,6 +24,7 @@ from ..services.project import Project
 from .messages import NOT_FOUND, Request, Response, as_json, text
 
 ITEM_PATH = re.compile(r"/([A-Za-z]?\d+)")
+BYTE_RANGE = re.compile(r"bytes=(\d*)-(\d*)$")
 AGENT_READS = ("/agent", "/next", "/rules", "/inbox", "/items", "/log")
 
 
@@ -199,8 +200,9 @@ def do(req: Request, p: Project) -> Response:
     return text(200, "\n".join(lines) + f"\nrev {rev}: GET /next to continue{note}\n")
 
 
-def serve_file(p: Project, name: str) -> Response:
-    """A project's file. A file never changes under its name: the browser keeps it."""
+def serve_file(p: Project, name: str, byte_range: str = "") -> Response:
+    """A project's file. A file never changes under its name: the browser keeps it. `byte_range` (the Range header):
+    one part of it, as a video player asks for its parts (the iPhone's plays only a file served this way, F747)."""
     import mimetypes
     name = os.path.basename(name)
     path = p.file_path(name)
@@ -209,11 +211,23 @@ def serve_file(p: Project, name: str) -> Response:
     mime = mimetypes.guess_type(name)[0] or "application/octet-stream"
     if mime.startswith("text/") or mime in ("application/json", "application/javascript"):
         mime += "; charset=utf-8"
+    headers = {"Content-Security-Policy": "sandbox", "Content-Disposition": f"inline; filename*=UTF-8''{quote(name)}",
+               "Accept-Ranges": "bytes"}
+    cache = "private, max-age=31536000, immutable"
+    size = os.path.getsize(path)
+    part = BYTE_RANGE.match(byte_range.strip())
+    if part and (part.group(1) or part.group(2)):
+        a, b = part.groups()
+        start, end = (int(a), min(int(b), size - 1) if b else size - 1) if a else (max(0, size - int(b)), size - 1)
+        if start > end:
+            return Response(416, b"", mime, headers={**headers, "Content-Range": f"bytes */{size}"}, cache=cache)
+        with open(path, "rb") as f:
+            f.seek(start)
+            data = f.read(end - start + 1)
+        return Response(206, data, mime, headers={**headers, "Content-Range": f"bytes {start}-{end}/{size}"}, cache=cache)
     with open(path, "rb") as f:
         data = f.read()
-    return Response(200, data, mime, headers={"Content-Security-Policy": "sandbox",
-                                              "Content-Disposition": f"inline; filename*=UTF-8''{quote(name)}"},
-                    cache="private, max-age=31536000, immutable")
+    return Response(200, data, mime, headers=headers, cache=cache)
 
 
 def scope_of(p: Project, req: Request) -> Optional[int]:

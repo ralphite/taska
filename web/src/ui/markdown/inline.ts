@@ -27,9 +27,18 @@ export const esc = (s: unknown) =>
 const refHtml = (c: string, to: RefTarget | null): string | null =>
   to ? `<span role="link" tabindex="0" data-ref="${c}" class="${REF_CLS}">${c}</span>` : null
 
+/** A video's file or address (F747): `![a walk-through](f12-demo.mp4)` plays where it stands. */
+export const isVideo = (src: string) => /\.(mp4|m4v|mov|webm)$/i.test(src.split(/[?#]/)[0])
+
 function pictureHtml(said: string, src: string, world: InlineWorld): string {
   // `![](shot.png)`: the picture (and the button it is in) named by its file, not nameless to a screen reader
   const alt = said || src.split(/[?#]/)[0].split('/').pop() || 'picture'
+  // a video plays in place, in the page on the phone too; its first moment shows before it plays (#t: the phone's
+  // Safari draws nothing until then)
+  if (isVideo(src)) {
+    const url = /^https?:\/\//.test(src) ? src : world.url(src)
+    return `<video controls playsinline preload="metadata" src="${url}#t=0.001" aria-label="${alt}" class="my-1 block max-h-96 max-w-full rounded-lg border border-zinc-200 bg-black dark:border-zinc-700"></video>`
+  }
   if (/^https?:\/\//.test(src))
     return `<a href="${src}" target="_blank" rel="noopener"><img src="${src}" alt="${alt}" loading="lazy" class="my-1 max-h-96 max-w-full rounded-lg border border-zinc-200 dark:border-zinc-700"></a>`
   // its size known, the picture's place is kept before it loads (as tall as 24rem at most); while it loads a spinner
@@ -46,7 +55,8 @@ function pictureHtml(said: string, src: string, world: InlineWorld): string {
 const emph = (t: string) => t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
 
 /** The pictures a text shows, in order (for the viewer's Previous and Next). */
-export const picturesIn = (s: string) => [...s.matchAll(/!\[[^\]]*\]\(([^)\s]+)\)/g)].map((m) => m[1]).filter((src) => !/^https?:\/\//.test(src))
+export const picturesIn = (s: string) =>
+  [...s.matchAll(/!\[[^\]]*\]\(([^)\s]+)\)/g)].map((m) => m[1]).filter((src) => !/^https?:\/\//.test(src) && !isVideo(src))
 
 /** One block's words as HTML (not yet checked: see `clean`). `refs`: codes become links. */
 export function inlineHtml(s: string, world: InlineWorld, refs = true): string {
@@ -87,4 +97,4 @@ export function inlineHtml(s: string, world: InlineWorld, refs = true): string {
 
 /** HTML checked by DOMPurify: Taska's attributes stay (data-*, the link targets, the pressed state, the roles). */
 export const clean = (html: string) =>
-  DOMPurify.sanitize(html, { ADD_ATTR: ['target', 'aria-pressed', 'role', 'tabindex'], ADD_TAGS: ['kbd'] })
+  DOMPurify.sanitize(html, { ADD_ATTR: ['target', 'aria-pressed', 'role', 'tabindex', 'controls', 'playsinline', 'preload'], ADD_TAGS: ['kbd', 'video'] })

@@ -53,6 +53,7 @@ export const Blocks: Story = {
             ['a Mermaid diagram', rich('```mermaid\ngraph TD\n  A[You say it] --> B[Organizer files it]\n  B --> C{Agent picks it up}\n  C -->|done| D[Review]\n  C -->|question| E[Needs you]\n```')],
             ['a Mermaid block that is not a diagram', rich('```mermaid\ngraph TD\n  A --> \n```')],
             ['a picture', rich('The screen: ![the list](f3-shot.png)')],
+            ['a video (plays in place)', rich('How it works: ![how it works](f8-demo.mp4)')],
           ]}
         />
       )}
