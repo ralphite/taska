@@ -1,7 +1,7 @@
 // The project page: the window's width picks its layout, the desktop's or the phone's, and nothing else does. The
 // two never share layout code; they place the same parts.
 
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Grip } from '../ui/Grip'
 import { useBackSwipe, useDrawerPull } from './phoneGestures'
 import { gripVars } from '../stores/grips'
@@ -100,7 +100,10 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const compose = composing(route)
   const filtersOpen = useStoreValue(stores.ui, (s) => s.deskFilters)
   const set = filtersSet(route.tab, route.list)
-  const [footH, setFootH] = useState(0)
+  // the foot's height and its box's middle (from the foot's top): what scrolls runs on under the box to its middle in
+  // dark, where the box floats over the talk, and stops at the foot's top in light, so a scrollbar is never under it (B739)
+  const [foot, setFoot] = useState({ h: 0, cut: 0 })
+  const onFoot = useCallback((h: number, cut: number) => setFoot((f) => (f.h === h && f.cut === cut ? f : { h, cut })), [])
   const tabs = deskTabs(counts, route.tab, settings || side)
   return (
     <div className="flex h-full w-full" style={gripVars(grips) as CSSProperties}>
@@ -109,8 +112,8 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
       <div
         {...(compose ? { 'data-compose': '' } : {})}
         {...(duo ? { 'data-duo': '' } : {})}
-        style={{ '--foot-h': footH + 'px', '--float-h': blocked ? FLOAT_H : undefined } as CSSProperties}
-        className="group/app relative z-10 grid h-full min-w-0 flex-1 grid-cols-[var(--list-w,360px)_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] bg-white pt-[env(safe-area-inset-top)] wide:grid-cols-[var(--list-w,420px)_minmax(0,1fr)] huge:grid-cols-[var(--list-w,460px)_minmax(0,1fr)] dark:bg-zinc-950"
+        style={{ '--foot-h': foot.h + 'px', '--foot-cut': foot.cut + 'px', '--float-h': blocked ? FLOAT_H : undefined } as CSSProperties}
+        className="group/app relative z-10 grid [--foot-under:0px] dark:[--foot-under:var(--foot-cut)] h-full min-w-0 flex-1 grid-cols-[var(--list-w,360px)_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] bg-white pt-[env(safe-area-inset-top)] wide:grid-cols-[var(--list-w,420px)_minmax(0,1fr)] huge:grid-cols-[var(--list-w,460px)_minmax(0,1fr)] dark:bg-zinc-950"
       >
         <ProjectBar
           title={title}
@@ -148,7 +151,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
             composePage={compose}
             place="group-data-duo/app:ml-[var(--duo-w,55%)] group-data-duo/app:after:left-1 group-data-[compose]/app:min-h-0 group-data-[compose]/app:flex-1"
             hidden={settings || route.place.kind === 'side' || docEditing}
-            onHeight={setFootH}
+            onHeight={onFoot}
           />
         </div>
         {help ? <HelpContainer route={route} place="col-span-2 col-start-1 row-span-2 row-start-1" /> : null}

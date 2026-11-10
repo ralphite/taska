@@ -394,3 +394,27 @@ test('D77 #3: editing an item with a long description and a long talk, its next 
   })
   expect(shown, 'Save is in sight, nothing over it').toBe(true)
 })
+
+test('B739: a long talk ends at the top of the box, so its scrollbar is never under it; around the box a press goes through', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    agent: 'new task P2 now A long talk\n',
+    approve: ['T1'],
+    then:
+      Array.from(
+        { length: 30 },
+        (_, i) => `T1 say Message ${i + 1} from the agent, long enough to take a line or two.`,
+      ).join('\n') + '\n',
+  })
+  await open(page, p, 'T1')
+  await expect(talk(page)).toBeVisible()
+  const g = await talk(page).evaluate((t) => {
+    const foot = document.querySelector('footer') as HTMLElement
+    return { over: t.scrollHeight > t.clientHeight, end: t.getBoundingClientRect().bottom, foot: foot.getBoundingClientRect().top, through: getComputedStyle(foot).pointerEvents }
+  })
+  expect(g.over, 'the talk is long enough to scroll').toBe(true)
+  expect(Math.abs(g.end - g.foot), 'the talk ends at the top of the box').toBeLessThan(1)
+  expect(g.through, 'the foot lets a press through around the box').toBe('none')
+})

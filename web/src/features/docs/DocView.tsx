@@ -269,7 +269,9 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
                   on.pick(r.b.key, li ? itemWords(li) : null, 'tap')
                 }}
                 {...(r.picked || r.speaking ? { 'data-picked': '' } : {})}
-                className="group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 has-[li[data-hov]]:bg-transparent data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 lg:cursor-text lg:after:absolute lg:after:inset-y-0 lg:after:left-full lg:after:w-18 dark:hover:bg-zinc-800/50 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600 lg:[&_li[data-hov]]:rounded-md lg:[&_li[data-hov]]:bg-zinc-100 dark:lg:[&_li[data-hov]]:bg-zinc-800/70 [&_li[data-q]]:-mx-1 [&_li[data-q]]:rounded-md [&_li[data-q]]:bg-amber-50 [&_li[data-q]]:px-1 [&_li[data-q]]:ring-2 [&_li[data-q]]:ring-amber-300 dark:[&_li[data-q]]:bg-amber-950/40 dark:[&_li[data-q]]:ring-amber-600"
+                // the pointing area beside it reaches to where its acts end, no further: wider, it made a narrow column
+                // scroll sideways (B739)
+                className="group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 has-[li[data-hov]]:bg-transparent data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 lg:cursor-text lg:after:absolute lg:after:inset-y-0 lg:after:left-full lg:after:w-16 dark:hover:bg-zinc-800/50 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600 lg:[&_li[data-hov]]:rounded-md lg:[&_li[data-hov]]:bg-zinc-100 dark:lg:[&_li[data-hov]]:bg-zinc-800/70 [&_li[data-q]]:-mx-1 [&_li[data-q]]:rounded-md [&_li[data-q]]:bg-amber-50 [&_li[data-q]]:px-1 [&_li[data-q]]:ring-2 [&_li[data-q]]:ring-amber-300 dark:[&_li[data-q]]:bg-amber-950/40 dark:[&_li[data-q]]:ring-amber-600"
               >
                 <div className="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2">
                   <RichFrame text={r.text} data-block="" cls={`min-w-0 flex-1 break-words ${r.b.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}`} onRef={on.ref} onPicture={on.picture}>
