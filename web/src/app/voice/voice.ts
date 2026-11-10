@@ -7,7 +7,7 @@
 
 import { Delivery } from '../../api/delivery'
 import { Abandoned } from '../../api/http'
-import { canRecord, micTrouble, openMic } from './mic'
+import { canRecord, keepAwake, micTrouble, openMic, stopRecorder } from './mic'
 import { CANT_RECORD, MUTED_BY_PHONE, TOO_SHORT, cancelledKept, noSound } from '../../model/micWords'
 import { clock } from '../../model/time'
 import { vcLabel, vcLineEnd, withQuote } from '../../model/voiceComments'
@@ -77,6 +77,8 @@ export class Voice {
   private typing = false
   private muted = false
   private n = 0
+  /** lets go of the screen kept on while recording */
+  private asleep: (() => void) | null = null
   constructor(d: VoiceDeps) {
     this.d = d
   }
@@ -102,9 +104,13 @@ export class Voice {
     if (!this.can()) return this.d.toasts.show(CANT_RECORD, null, { error: true })
     const box = this.d.fields.get('box')
     this.typing = !!box && box === box.ownerDocument.activeElement
+    // asked while the press that started it still counts
+    this.asleep = keepAwake()
     try {
       this.stream = await openMic()
     } catch (e) {
+      this.asleep()
+      this.asleep = null
       return this.d.toasts.show(this.why(slug, e), null, { error: true })
     }
     if (this.typing) box?.blur()
@@ -116,6 +122,11 @@ export class Voice {
     rec.ondataavailable = (e) => {
       if (e.data.size) this.chunks.push(e.data)
     }
+    // it stopped by itself (the phone took the microphone away): what was said so far goes into its draft at once,
+    // as Stop puts it there, and the phone's muting is said (B745)
+    rec.addEventListener('stop', () => {
+      if (this.rec === rec) void this.finish(false)
+    })
     rec.start(1000)
     this.t0 = Date.now()
     let meter = () => 0.2
@@ -146,24 +157,24 @@ export class Voice {
   }
 
   private stopped(): Promise<Blob | null> {
-    return new Promise((done) => {
-      const rec = this.rec
-      if (!rec) return done(null)
-      rec.onstop = () => done(new Blob(this.chunks, { type: rec.mimeType || 'audio/webm' }))
-      rec.stop()
-      if (this.muted) this.d.toasts.show(MUTED_BY_PHONE, null, { error: true })
-      clearInterval(this.tick)
-      this.stream?.getTracks().forEach((t) => t.stop())
-      this.stream = null
-      void this.ctx?.close()
-      this.ctx = null
-      this.rec = null
-      this.d.store.getState().stop()
-      if (this.typing) {
-        this.typing = false
-        this.d.fields.focus('box') // you were typing when you started: go on typing
-      }
-    })
+    const rec = this.rec
+    if (!rec) return Promise.resolve(null)
+    const blob = stopRecorder(rec, this.chunks)
+    if (this.muted) this.d.toasts.show(MUTED_BY_PHONE, null, { error: true })
+    clearInterval(this.tick)
+    this.stream?.getTracks().forEach((t) => t.stop())
+    this.stream = null
+    void this.ctx?.close()
+    this.ctx = null
+    this.asleep?.()
+    this.asleep = null
+    this.rec = null
+    this.d.store.getState().stop()
+    if (this.typing) {
+      this.typing = false
+      this.d.fields.focus('box') // you were typing when you started: go on typing
+    }
+    return blob
   }
 
   /** Stop: the note goes into its draft (and is sent, with `andSend`). */
