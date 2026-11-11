@@ -144,9 +144,12 @@ def card(rd: Reading, it: Item) -> str:
         pdocs = st.docs_of(par.n)
         if pdocs:
             out.append("  docs: " + "; ".join(f"D{d.d} {d.title}" for d in pdocs))
-    w = rules.waiting(st, it)
-    if w:
-        out.append("? asked, waiting on the user: " + w.text)
+    asks = rules.open_asks(st, it)
+    if asks and rules.replied(it):  # answered in part: the rest still waits (B749)
+        out.append("< the user answered some of the questions (see thread); still waiting on: "
+                   + " | ".join(first_line(x.text, 200) for x in asks))
+    elif asks:
+        out.append("? asked, waiting on the user: " + "\n".join(x.text for x in asks))
     elif rules.replied(it):
         out.append("< the user replied after the agent's last message (see thread)")
     if it.body:

@@ -26,6 +26,8 @@ def _input(state: ProjectState, e: ev.Event) -> None:
     it = state.items.get(inp.scope) if inp.scope is not None else None
     if it:
         post(state, it, e, "say", inp.text, inp.id)
+        if e.of:
+            it.thread[-1].of = list(e.of)
         link(state, it.n, inp.id, handled=False)
 
 

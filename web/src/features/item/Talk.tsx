@@ -8,7 +8,7 @@ import { voiceMark } from '../../model/inputs'
 import { hasChoices } from '../../model/markdown'
 import type { Became, ItemRef } from '../../model/became'
 import { MADE_WORD, becameText, showsIn } from '../../model/inputStates'
-import { answerOf, readMark, versions, withdrawn, type DocNote, type Version } from '../../model/talk'
+import { answerOf, askRows, readMark, versions, withdrawn, type DocNote, type Version } from '../../model/talk'
 import { when } from '../../model/time'
 import type { Doc, FileRef, Input, Item, Message } from '../../model/types'
 import { KIND_WORD, hasIcon, inputCode, whoName } from '../../model/words'
@@ -21,6 +21,7 @@ import { OUT_ACT_WORD, type OutShow, type OutTone } from '../../model/outgoingSt
 import { MsgText } from './MsgText'
 import { DocComment } from './TalkDocComment'
 import { Answered, type CardEvents } from './NeedsCard'
+import { AskRowCard } from './AskRowCard'
 import type { TalkEnv } from './talkEnv'
 
 export interface TalkLineEvents extends CardEvents {
@@ -62,8 +63,9 @@ export interface TalkFacts {
   peeking: ReadonlySet<number>
   /** the question being answered again */
   reask: number | null
-  /** an answer on its way: its words, and where it is as its question's card says it */
-  going: { text: string; card: OutShow } | null
+  /** an answer on its way: its words, and where it is as its question's card says it; `of`: the questions in a row
+   * it answers (B749) */
+  going: { text: string; card: OutShow; of?: readonly number[] } | null
   /** what you sent to this item and Taska has not yet */
   outgoing: Outgoing[]
   /** what became of an input your messages came from (model/became) */
@@ -154,6 +156,7 @@ function YourMessage({ x, env, on, facts, ver, read }: { x: Message; env: TalkEn
   const y = ver ? { ...x, text: ver.text } : x
   const strip = (files: FileRef[] | undefined) => (files?.length ? <FileRows files={files} url={env.url} play={env.play} tidy={env.tidy} on={on} cls="items-end max-w-full [&>div]:max-w-full" /> : null)
   if (y.text && y.text.trim().split('\n').every((l) => /^\s*✓/.test(l)) && !src?.files?.length) return null // an answer's ticks show on its card
+  if (x.of?.length && !src?.files?.length) return null // so do your answers to questions in a row (B749)
   // what became of the input it came from, as the talk shows it (model/inputStates): moved, what it made, its words
   // still to come
   const b = src ? facts.became(src.id) : null
@@ -441,6 +444,10 @@ export function Talk({ it, list, notes, card, env, on, facts, docs, code }: {
   const vers = versions(th)
   const gone = withdrawn(th)
   const read = readMark(it)
+  // questions in a row are one card, where the last of them is (B749)
+  const rows = askRows(th)
+  const rowOf = new Map(rows.flatMap((r) => r.map((x) => [x.id, r] as const)))
+  const rowGoing = facts.going?.of?.length ? { of: facts.going.of, card: facts.going.card } : null
   const out: ReactNode[] = []
   let k = 0
   const before = (t: string) => {
@@ -453,6 +460,11 @@ export function Talk({ it, list, notes, card, env, on, facts, docs, code }: {
     before(x.t)
     if (card && x.id === card.id) {
       out.push(<div key={'card' + x.id}>{card.node}</div>)
+      continue
+    }
+    const row = rowOf.get(x.id)
+    if (row) {
+      if (row.at(-1)?.id === x.id) out.push(<AskRowCard key={'row' + x.id} it={it} row={row} env={env} on={on} going={rowGoing} />)
       continue
     }
     out.push(

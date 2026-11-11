@@ -66,7 +66,7 @@ export type Command = From &
     | { op: 'hide'; ref: string; id: number; on?: boolean }
     | { op: 'due'; ref: string; today: string }
     // what you said (commands/inputs.py)
-    | { op: 'input'; text?: string; files?: SentFile[]; scope?: string | null;kind?: 'answer' | 'cancelled'; q?: string; words?: SentWords }
+    | { op: 'input'; text?: string; files?: SentFile[]; scope?: string | null; kind?: 'answer' | 'cancelled'; of?: number[]; q?: string; words?: SentWords }
     | { op: 'send' | 'delete' | 'restore'; id: string }
     | { op: 'correct'; id: string; wrong: string; right: string; v?: number }
     | { op: 'amend'; id: string; mode: 'edit' | 'append'; v?: number; text?: string; files?: SentFile[]; words?: SentWords }

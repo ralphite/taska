@@ -55,6 +55,8 @@ def message_view(m: Message) -> View:
         out["change"] = True
     if m.hidden:
         out["hidden"] = True
+    if m.of:
+        out["of"] = list(m.of)
     return out
 
 

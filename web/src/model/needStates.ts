@@ -12,7 +12,7 @@
 
 import { closed, lastAgentMessage, oneLine } from './items'
 import { hasChoices } from './markdown'
-import { answerOf } from './talk'
+import { answerOf, askRowOf } from './talk'
 import { ITEM_ACTS, pastOf, type ItemActId } from './itemActs'
 import type { Item, Message } from './types'
 import { PLACE_WORD, STATUS_WORD } from './words'
@@ -173,7 +173,8 @@ export function yourStep(it: Item): YourStep {
 export function talkPlan(it: Item, opts: { going?: string | null } = {}) {
   const n = needOf(it, opts.going)
   const card = NEED_STATES[n.state].card
-  const cardId = card && card !== 'onQuestion' ? (n.msg?.id ?? null) : null
+  // questions in a row are one card, where the last of them is (B749)
+  const cardId = card && card !== 'onQuestion' ? (card === 'question' ? askRowOf(it.thread, n.msg?.id)?.at(-1)?.id : null) ?? n.msg?.id ?? null : null
   const thread = it.thread.filter((x) => x.id !== it.wait?.id || x.id === cardId)
   // a card with no message of its own heads the talk once you said something (all of it came after the card)
   const first = cardId == null && !lastAgentMessage(it) && (it.talked || thread.length > 0)

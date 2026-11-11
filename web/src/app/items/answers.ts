@@ -4,7 +4,7 @@
 
 import { choiceLabels } from '../../model/markdown'
 import { codeOf, type ProjectModel } from '../../model/project'
-import { answerOf } from '../../model/talk'
+import { answerOf, askRowOf } from '../../model/talk'
 import type { Item } from '../../model/types'
 import type { ItemViewStore } from '../../stores/itemView'
 import type { OutboxStore } from '../../stores/outbox'
@@ -45,6 +45,7 @@ export class Answers {
   }
 
   send(m: ProjectModel, slug: string, it: Item): boolean {
+    if (askRowOf(it.thread, it.wait?.id)) return false // questions in a row: their card sends (B749)
     const chosen = [...this.picked(it)].sort((a, b) => a - b)
     if (!chosen.length) return false
     const labels = this.labels(it)
@@ -55,5 +56,10 @@ export class Answers {
     this.d.inputs.push({ slug, text, files: [], scope: codeOf(m, it.n), quiet: true, kind: 'answer' })
     this.d.view.getState().endAnswer()
     return true
+  }
+
+  /** Your answers to some of the questions in a row (`of`), as one reply; the others keep waiting (B749). */
+  sendRow(m: ProjectModel, slug: string, it: Item, of: number[], text: string): void {
+    this.d.inputs.push({ slug, text, files: [], scope: codeOf(m, it.n), quiet: true, kind: 'answer', of })
   }
 }

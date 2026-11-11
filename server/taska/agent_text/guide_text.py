@@ -25,6 +25,9 @@ GRAMMAR = (
     '  B03 say files=f12-a.png,f13-b.png <text>   images attached below the message instead\n'
     '  B03 ask <question>        with indented choices the user taps: "- ( ) option" lines = pick one (yes/no too),\n'
     '                            "- [ ] option" lines = pick any. The reply lists the picks as "✓ option".\n'
+    '                            Several things to ask: one ask each, in a row. The user answers them in one card;\n'
+    '                            the reply has a line each, "- <question> → ✓ option" (or their words), and the\n'
+    '                            questions not answered yet keep waiting.\n'
     '  B03 doc [title]           new document on B03 (plans, designs); its Markdown is the indented lines, first line = title\n'
     "  D1 doc [new title]        replace D1's Markdown with the indented lines; comments stay with unchanged paragraphs\n"
     '                            a ```mermaid block is drawn as a diagram. Keep it small and plain: flowchart or\n'

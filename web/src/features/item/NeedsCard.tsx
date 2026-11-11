@@ -4,6 +4,7 @@
 
 import type { ReactNode } from 'react'
 import { lastAgentMessage } from '../../model/items'
+import { askRowOf } from '../../model/talk'
 import { hasChoices } from '../../model/markdown'
 import { ITEM_ACTS, pastOf, type ItemActId } from '../../model/itemActs'
 import { chosenAct, DECISION, NEED_STATES, needOf, type Need } from '../../model/needStates'
@@ -17,6 +18,7 @@ import { Rich } from '../../ui/Markdown'
 import { DECIDED_OFF, DECIDED_ON, MODIFY_LINK, MUTED, NEED, NEEDS_CARD, PRIMARY_BASE, SECOND, actIcon, chosenTone } from '../../ui/tones'
 import { Thumbs } from '../../ui/Files'
 import { MsgText } from './MsgText'
+import { AskRowCard } from './AskRowCard'
 import type { OutShow, OutTone } from '../../model/outgoingStates'
 import type { TalkEnv, TalkEvents } from './talkEnv'
 
@@ -29,13 +31,15 @@ export interface CardEvents extends TalkEvents {
   modify(n: number): void
   cancelModify(): void
   sendAnswer(n: number): void
+  /** your answers to some of the questions in a row (`of`), as one reply (B749) */
+  sendRow(n: number, of: number[], text: string): void
   /** answer a question again; cancel leaves the answer as it was */
   reask(n: number, id: number): void
   cancelReask(): void
 }
 
 /** Who asks: the agent by its app's icon where it has one, then its session (T711). */
-const msgName = (x: { by: string; ses?: string | null }) => (
+export const msgName = (x: { by: string; ses?: string | null }) => (
   <>
     <Who by={x.by} />
     {x.ses ? `${hasIcon(x.by) ? ' ' : ' · '}${x.ses}` : ''}
@@ -172,7 +176,7 @@ function DecideBtns({ from, press }: { from: string; press(status: string): void
   ))
 }
 
-export function NeedsCard({ it, env, on, remodify, going = null }: {
+export function NeedsCard({ it, env, on, remodify, going = null, rowGoing = null }: {
   it: Item
   env: TalkEnv
   on: CardEvents
@@ -180,6 +184,8 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
   remodify: boolean
   /** an answer to its question on its way: its words */
   going?: string | null
+  /** an answer to some of its questions in a row on its way: which, and where it is */
+  rowGoing?: { of: readonly number[]; card: OutShow } | null
 }) {
   const n = it.n
   // what it needs from you, and so which card (model/needStates)
@@ -191,6 +197,9 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
   const card = (icon: IconName, title: ReactNode, body: ReactNode, buttons: ReactNode, hint = '') => (
     <NeedFrame icon={icon} title={title} t={m?.t} quiet={icon === 'ask'} body={body} foot={buttons} hint={hint} now={env.now} />
   )
+  // questions in a row: one card (B749)
+  const row = kind === 'question' ? askRowOf(it.thread, it.wait?.id) : null
+  if (row) return <AskRowCard it={it} row={row} env={env} on={on} going={rowGoing} />
   if (kind === 'question' && it.wait) {
     const w = it.wait
     const choices = hasChoices(w.text)

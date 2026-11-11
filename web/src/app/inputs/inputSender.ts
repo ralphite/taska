@@ -79,6 +79,7 @@ export class InputSender {
             scope: o.scope,
             q: o.q,
             ...(o.kind ? { kind: o.kind } : {}),
+            ...(o.of?.length ? { of: o.of } : {}),
             files: files.map(({ f, name, mime, size }) => ({ f, name, mime, size })),
             ...(Object.keys(words).length ? { words } : {}),
           }

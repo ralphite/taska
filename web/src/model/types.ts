@@ -50,6 +50,8 @@ export interface Message {
   edited?: string
   change?: boolean
   hidden?: boolean
+  /** your answer to these of the questions in a row; the others still wait (B749) */
+  of?: number[]
 }
 
 export interface Wait {

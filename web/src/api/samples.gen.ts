@@ -49,7 +49,7 @@ export const SAMPLES = {
   ]
  },
  "view": {
-  "cursor": "1a1b1cd8b7f.37.50.2",
+  "cursor": "1a1b1cd8b38.37.50.2",
   "full": true,
   "items": [
    {
@@ -151,7 +151,7 @@ export const SAMPLES = {
      "ses": "sample"
     },
     "readBy": {
-     "claude-code": 1793984400321
+     "claude-code": 1793984400245
     }
    },
    {
@@ -745,17 +745,17 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400331,
+     "t": 1793984400253,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400331
+       "t": 1793984400253
       },
       {
        "name": "helper",
-       "t": 1793984400259
+       "t": 1793984400187
       }
      ]
     }
@@ -812,23 +812,23 @@ export const SAMPLES = {
    ],
    "phone": false,
    "base": "http://127.0.0.1:7340/p/shop",
-   "key": "f298-hftd",
+   "key": "jyr8-y4g3",
    "remote": "",
    "lan": ""
   },
   "server": {
-   "page": "da39a3ee5e",
+   "page": "index-BQ3Bj8zv.js",
    "update": false,
-   "dev": false
+   "dev": true
   }
  },
  "changes": {
-  "cursor": "1a1b1cd8b7f.37.50.2",
+  "cursor": "1a1b1cd8b38.37.50.2",
   "same": true,
   "server": {
-   "page": "da39a3ee5e",
+   "page": "index-BQ3Bj8zv.js",
    "update": false,
-   "dev": false
+   "dev": true
   }
  },
  "commands": {
@@ -837,7 +837,7 @@ export const SAMPLES = {
    "ok B01 pri=P0"
   ],
   "changes": {
-   "cursor": "1a1b1cd8b7f.38.51.2",
+   "cursor": "1a1b1cd8b38.38.51.2",
    "full": false,
    "items": [
     {
@@ -939,7 +939,7 @@ export const SAMPLES = {
       "ses": "sample"
      },
      "readBy": {
-      "claude-code": 1793984400321
+      "claude-code": 1793984400245
      }
     }
    ],
@@ -966,17 +966,17 @@ export const SAMPLES = {
     "agents": [
      {
       "name": "claude-code",
-      "t": 1793984400331,
+      "t": 1793984400253,
       "waiting": false,
       "session": "sample",
       "sessions": [
        {
         "name": "sample",
-        "t": 1793984400331
+        "t": 1793984400253
        },
        {
         "name": "helper",
-        "t": 1793984400259
+        "t": 1793984400187
        }
       ]
      }
@@ -1044,14 +1044,14 @@ export const SAMPLES = {
     ],
     "phone": false,
     "base": "http://127.0.0.1:7340/p/shop",
-    "key": "f298-hftd",
+    "key": "jyr8-y4g3",
     "remote": "",
     "lan": ""
    },
    "server": {
-    "page": "da39a3ee5e",
+    "page": "index-BQ3Bj8zv.js",
     "update": false,
-    "dev": false
+    "dev": true
    }
   }
  },
@@ -1690,7 +1690,7 @@ export const SAMPLES = {
    "docs": 0,
    "agents": [],
    "work": false,
-   "t": 1794268893332
+   "t": 1794382600102
   },
   {
    "name": "garden",
@@ -1703,7 +1703,7 @@ export const SAMPLES = {
    "docs": 1,
    "agents": [],
    "work": true,
-   "t": 1794268893469
+   "t": 1794382600241
   },
   {
    "name": "shop",
@@ -1717,23 +1717,23 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400331,
+     "t": 1793984400253,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400331
+       "t": 1793984400253
       },
       {
        "name": "helper",
-       "t": 1793984400259
+       "t": 1793984400187
       }
      ]
     }
    ],
    "work": true,
-   "t": 1794268893469
+   "t": 1794382600241
   }
  ],
  "needs": [
@@ -1880,7 +1880,7 @@ export const SAMPLES = {
       "ses": "sample"
      },
      "readBy": {
-      "claude-code": 1793984400321
+      "claude-code": 1793984400245
      }
     },
     "parentCode": null,
@@ -2304,7 +2304,7 @@ export const SAMPLES = {
   "tidy": true
  },
  "pushKey": {
-  "key": "BOzfjr64FFxv5bJTEHMsdvwBjv-tcvjQuf8YjSmub0wa_Yqtl3WpGMNIAq3BVasWKnCyRaAVaLzNtWpRyerqrJ0",
+  "key": "BAdrnb17YH2g1Ednr43ZsNihu-hOSYrDfYqF4wf0qjNMu68JPeCEJLYWABeGpVU4k5K_w35ErYe7oIX7D3oPUjk",
   "on": false
  },
  "setPush": {
@@ -2354,7 +2354,7 @@ export const SAMPLES = {
  },
  "newKey": {
   "ok": true,
-  "key": "bt2j-6ean"
+  "key": "zcv7-4j6j"
  },
  "login": {
   "ok": true
@@ -2507,6 +2507,7 @@ export const SERVER_READS = {
  "input": [
   "files",
   "kind",
+  "of",
   "q",
   "scope",
   "src",

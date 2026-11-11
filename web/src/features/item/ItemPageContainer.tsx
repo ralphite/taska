@@ -78,7 +78,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   const mine = outbox.filter((o) => o.slug === slug && o.scope === ref && !shown.has(o.q))
   const answering = mine.filter((o) => o.kind === 'answer').flatMap((o) => {
     const card = outgoingIn(o, away, 'card')
-    return card ? [{ text: o.text, card }] : []
+    return card ? [{ text: o.text, card, ...(o.of?.length ? { of: o.of } : {}) }] : []
   }).at(-1)
   const outgoing: Outgoing[] = mine
     .filter((o) => !(o.kind === 'answer' && !o.files.length))
@@ -155,6 +155,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     },
     cancelModify: () => iv().setRemodify(null),
     sendAnswer: () => void app.answers.send(m, slug, it),
+    sendRow: (_k, of, text) => app.answers.sendRow(m, slug, it, of, text),
     reask: (k, id) => {
       const x = it.thread.find((y) => y.id === id)
       if (!x) return

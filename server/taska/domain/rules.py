@@ -25,16 +25,32 @@ def user_word(x: Message) -> bool:
     return x.by == "you" or (x.by == "org" and x.kind in USER_KINDS and bool(x.src))
 
 
-def waiting(state: ProjectState, it: Item) -> Optional[Message]:
-    """The open question (ask) an agent posted that the user has not answered yet. Whatever the user says
-    after it answers it, and so does a comment of theirs on one of the item's documents."""
+def open_asks(state: ProjectState, it: Item) -> List[Message]:
+    """The questions (asks) an agent posted that the user has not answered yet, in order: the latest, and the ones
+    asked in a row with it (B749). Whatever the user says after a question answers it, and so does a comment of theirs
+    on one of the item's documents; an answer that names its questions (`of`) answers those, the others still wait."""
+    said = [c.t for d in state.docs.values() if d.n == it.n and not d.deleted for c in d.comments if c.by == "you"]
+    answered: Set[int] = set()
+    out: List[Message] = []
     for x in reversed(it.thread):
-        if user_word(x) or x.kind == "withdraw":
-            return None
-        if x.kind == "ask":
-            said = (c.t for d in state.docs.values() if d.n == it.n and not d.deleted for c in d.comments if c.by == "you")
-            return None if any(t > x.t for t in said) else x
-    return None
+        if user_word(x) and x.of:
+            answered.update(x.of)
+        elif user_word(x) or x.kind == "withdraw":
+            break
+        elif x.kind == "ask":
+            if any(t > x.t for t in said):
+                break
+            if x.id not in answered:
+                out.append(x)
+        elif out or answered:  # anything else ends the questions in a row
+            break
+    return out[::-1]
+
+
+def waiting(state: ProjectState, it: Item) -> Optional[Message]:
+    """The latest open question an agent posted that the user has not answered yet (see open_asks)."""
+    asks = open_asks(state, it)
+    return asks[-1] if asks else None
 
 
 def in_progress(it: Item) -> bool:

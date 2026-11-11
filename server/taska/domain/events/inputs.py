@@ -21,11 +21,13 @@ class InputAdded(Event):
     files: List[FileRef] = field(default_factory=list)
     q: str = ""  # the page's id for it, so one sent again goes in once
     kind: Optional[str] = None  # "answer": a form you sent on its item; "cancelled": a recording you cancelled (B627)
+    of: List[int] = field(default_factory=list)  # an answer to some of the questions in a row: theirs (B749)
 
     def body(self) -> Row:
         row: Row = {"id": self.id, "by": self.by, "text": self.text, "scope": self.scope, "files": files_row(self.files)}
         opt(row, "q", self.q, bool(self.q))
         opt(row, "kind", self.kind, bool(self.kind))
+        opt(row, "of", list(self.of), bool(self.of))
         return row
 
     def items_touched(self) -> List[int]:
@@ -161,7 +163,7 @@ class InputRescoped(Event):
 
 READERS: Dict[str, Reader] = {
     "in": lambda r: InputAdded(id=need(r, "id"), text=r.get("text", ""), scope=r.get("scope"), files=files_of(r),
-                               q=r.get("q") or "", kind=r.get("kind"), **common(r)),
+                               q=r.get("q") or "", kind=r.get("kind"), of=list(r.get("of") or []), **common(r)),
     "ack": lambda r: InputsAcked(ids=list(need(r, "ids")), **common(r)),
     "amend": lambda r: InputAmended(src=need(r, "src"), mode=need(r, "mode"), text=need(r, "text"), files=files_of(r),
                                     **common(r)),

@@ -53,7 +53,8 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
     live = rules.by_priority(i for i in st.live_items() if i.status not in CLOSED and not i.archived)
     talking = {n for r in st.inputs.values() if rd.held(r) for n in [r.scope, *r.touched] if n}
     for label, rows in (
-            ("waiting on the user (skip)", [i for i in live if rules.waiting(st, i)]),
+            # answered in part (B749): what was answered is the agent's to pick up, the rest still waits
+            ("waiting on the user (skip)", [i for i in live if rules.waiting(st, i) and not rules.replied(i)]),
             ("proposed, the user has not approved yet (skip)", [i for i in live if i.status == "proposed" and not rules.replied(i)]),
             ("in review, the user accepts them (skip)", [i for i in live if i.status == "review" and not rules.replied(i)]),
             ("the user's voice note on it is being transcribed (skip, it comes next)", [i for i in live if i.n in talking])):

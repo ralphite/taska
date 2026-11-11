@@ -106,10 +106,13 @@ class Message:
     edited: Optional[str] = None
     change: bool = False  # a note on an edit of the input, not the input's words
     hidden: Optional[bool] = None
+    of: Optional[List[int]] = None  # your answer to these of the questions in a row, the others still wait (B749)
 
     def to_row(self) -> Row:
         out: Row = {"id": self.id, "by": self.by, "kind": self.kind, "text": self.text, "t": self.t, "src": self.src,
                     "files": files_row(self.files)}
+        if self.of:
+            out["of"] = list(self.of)
         if self.ses:
             out["ses"] = self.ses
         if self.to:

@@ -6,6 +6,7 @@
 import { closed } from '../model/items'
 import { visible } from '../model/visible'
 import { choiceMulti } from '../model/markdown'
+import { askRowOf } from '../model/talk'
 import { armHint, armedSet, doneTo, dropTo, pageStatuses, whyNot } from '../model/actions'
 import { ITEM_ACTS, type ItemActId } from '../model/itemActs'
 import { yourStep } from '../model/needStates'
@@ -398,7 +399,7 @@ export class Actions {
   /** A choice of the question that waits on you (1-9). */
   pickChoice(h: Here, i: number): boolean {
     const it = h.it
-    if (!it || it.wait?.kind !== 'ask' || i >= this.w.answers.labels(it).length) return false
+    if (!it || it.wait?.kind !== 'ask' || askRowOf(it.thread, it.wait.id) || i >= this.w.answers.labels(it).length) return false
     this.w.answers.pick(it, i, choiceMulti(it.wait.text, i))
     return true
   }

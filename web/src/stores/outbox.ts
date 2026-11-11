@@ -27,6 +27,7 @@ interface Kept {
   scope?: string | null
   t?: number
   kind?: 'answer' | 'cancelled'
+  of?: number[]
   files?: FileRef[]
   /** each voice note's words as you left them in the box (B682) */
   words?: Record<string, string>
@@ -44,6 +45,7 @@ export function createOutboxStore(kv: KeyValueStore): OutboxStore {
           scope: o.scope,
           t: o.t,
           ...(o.kind ? { kind: o.kind } : {}),
+          ...(o.of?.length ? { of: o.of } : {}),
           files: o.files.map(({ f, name, mime, size }) => ({ f, name, mime, size })),
           ...(o.words ? { words: wordsByFile(o.words, o.files) } : {}),
         }
@@ -95,6 +97,7 @@ export function keptOutgoing(kv: KeyValueStore): Outgoing[] {
         scope: k.scope || null,
         t: k.t || Date.now(),
         ...(k.kind ? { kind: k.kind } : {}),
+        ...(k.of?.length ? { of: k.of } : {}),
         ...(k.words ? { words: k.words } : {}),
         files: (k.files || []).map((f) => ({ ...f })),
         state: 'waiting',

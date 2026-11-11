@@ -268,7 +268,8 @@ export function ItemTalk({ it, f, env, facts, on }: { it: Item; f: ItemFacts; en
   const plan = talkPlan(it, { going: facts.going?.text ?? null })
   const notes = docNotes(f.docs)
   const top = plan.first && (plan.thread.length > 0 || notes.length > 0)
-  const card = <NeedsCard it={it} env={env} on={on} remodify={f.remodify} going={facts.going?.text ?? null} />
+  const rowGoing = facts.going?.of?.length ? { of: facts.going.of, card: facts.going.card } : null
+  const card = <NeedsCard it={it} env={env} on={on} remodify={f.remodify} going={facts.going?.of?.length ? null : (facts.going?.text ?? null)} rowGoing={rowGoing} />
   return (
     <>
       {plan.thread.length || notes.length ? (

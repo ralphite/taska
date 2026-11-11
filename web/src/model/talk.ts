@@ -9,10 +9,56 @@ import type { Comment, Doc, Item, Message } from './types'
 /** The item's latest message from anyone but the organizer: what you came to read, shown whole. */
 export const latestMessage = (it: Item): number | null => it.thread.filter((x) => x.by !== 'org').at(-1)?.id ?? null
 
+/** B749 (D132): an agent's questions in a row: two or more asks one after another, with only your answers to some of
+ * them (`of`) between. They are answered in one card, a question a page. Each row, in the talk's order. */
+export function askRows(thread: readonly Message[]): Message[][] {
+  const gone = withdrawn(thread)
+  const out: Message[][] = []
+  let row: Message[] = []
+  const end = () => {
+    if (row.length > 1) out.push(row)
+    row = []
+  }
+  for (const x of thread) {
+    if (x.kind === 'ask' && !gone.has(x.id)) row.push(x)
+    else if (!(row.length && userWord(x) && x.of?.length)) end()
+  }
+  end()
+  return out
+}
+
+/** The row of questions `id` is in, if it is in one. */
+export const askRowOf = (thread: readonly Message[], id: number | undefined) => (id == null ? null : (askRows(thread).find((r) => r.some((x) => x.id === id)) ?? null))
+
+/** Your answer to one of the questions in a row, by its line in the reply that named it: "- question → ✓ a ✓ b", or
+ * "- question → your words". */
+export function rowLine(reply: Message, id: number): { picked: string[]; words: string } | null {
+  const k = reply.of?.indexOf(id) ?? -1
+  const line = k < 0 ? null : reply.text.split('\n').filter((l) => l.startsWith('- '))[k]
+  if (line == null) return null
+  const said = line.slice(line.lastIndexOf(' → ') + 3).trim()
+  return said.startsWith('✓') ? { picked: said.split('✓').map((w) => w.trim()).filter(Boolean), words: '' } : { picked: [], words: said }
+}
+
+/** Your answer to a question in a row (`row`): the latest reply that named it, else what you said after the row. */
+export function rowAnswer(thread: readonly Message[], row: readonly Message[], x: Message): { picked: string[]; words: string } | null {
+  const rest = thread.slice(thread.indexOf(x) + 1)
+  const named = rest.filter((m) => userWord(m) && m.of?.includes(x.id)).at(-1)
+  if (named) return rowLine(named, x.id)
+  const last = row.at(-1)
+  const tail = last ? thread.slice(thread.indexOf(last) + 1) : []
+  const stop = tail.findIndex((m) => m.kind === 'ask')
+  const a = (stop < 0 ? tail : tail.slice(0, stop)).filter((m) => userWord(m) && !m.of?.length)[0]
+  return a ? { picked: ticks(a.text), words: ticks(a.text).length ? '' : a.text } : null
+}
+
 /** What you picked in answer to a question: your words after it and before the next question (answered again, the
- * latest answer counts); an answer still on its way counts first, for the latest question. */
+ * latest answer counts); an answer still on its way counts first, for the latest question. One of the questions in a
+ * row: as rowAnswer. */
 export function answerOf(thread: readonly Message[], x: Message, going?: string | null): string[] | null {
   if (x.kind !== 'ask') return null
+  const row = askRowOf(thread, x.id)
+  if (row) return rowAnswer(thread, row, x)?.picked ?? null
   if (going != null && thread.filter((m) => m.kind === 'ask').at(-1)?.id === x.id) return ticks(going)
   const rest = thread.slice(thread.indexOf(x) + 1)
   const end = rest.findIndex((m) => m.kind === 'ask')

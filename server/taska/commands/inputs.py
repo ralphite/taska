@@ -10,6 +10,7 @@ from ..domain import events as ev
 from ..domain.history import deletions
 from ..domain.model import FileRef
 from ..domain.rules import item_at
+from ..domain.state import ProjectState
 from ..domain.vocab import MAX_TEXT, PEOPLE, Refused
 from ..domain.voices import words_of
 from .base import Args, Outcome, Run, handles
@@ -47,6 +48,20 @@ def voice_words(r: Run, a: Args, notes: Iterable[str], src: Optional[str] = None
     return out
 
 
+def answered_of(s: ProjectState, n: Optional[int], of: object) -> List[int]:
+    """An answer to some of the questions in a row (B749): the ids of the item's questions it answers, each one an
+    agent's ask on that item; the others keep waiting. None given: it answers them all, as anything you say does."""
+    if not of:
+        return []
+    if not isinstance(of, list) or not all(isinstance(x, int) for x in of):
+        raise Refused("of: expected the ids of the questions answered")
+    asks = {x.id for x in s.items[n].thread if x.kind == "ask"} if n is not None else set()
+    bad = [x for x in of if x not in asks]
+    if bad:
+        raise Refused(f"of: {bad[0]} is not a question on this item")
+    return list(dict.fromkeys(of))
+
+
 @handles("input")
 def new_input(r: Run, a: Args) -> Outcome:
     s = r.state
@@ -62,8 +77,9 @@ def new_input(r: Run, a: Args) -> Outcome:
     cancelled = a.get("kind") == "cancelled"  # a recording you cancelled: kept, not sent to anyone (B627)
     if cancelled and scope is not None:
         raise Refused("only a new input can be kept as cancelled")
+    of = answered_of(s, scope, a.get("of")) if answer else []
     r.emit(ev.InputAdded(id=rid, by=r.by, text=text, scope=scope, files=files, q=q,
-                         kind="answer" if answer else "cancelled" if cancelled else None))
+                         kind="answer" if answer else "cancelled" if cancelled else None, of=of))
     for fix in voice_words(r, a, (f.f for f in files), rid):
         r.emit(fix)
     if cancelled:

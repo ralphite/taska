@@ -29,6 +29,8 @@ export interface Outgoing {
   scope: string | null
   /** cancelled: a recording cancelled with Esc, kept in the inputs without being sent (B627) */
   kind?: 'answer' | 'cancelled'
+  /** an answer to some of the questions in a row: theirs (B749); the others keep waiting */
+  of?: number[]
   files: OutFile[]
   /** each voice note's words as they were in the box when you sent it, by file (B682): what was typed is `text` */
   words?: Record<string, string>
