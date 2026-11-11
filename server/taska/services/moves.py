@@ -134,7 +134,7 @@ class Moves:
             if root.deleted or root.merged_into:
                 raise Refused(f"{st.code(root.n)} cannot be moved")
             plan = []
-            docs: List[Tuple[int, str, str]] = []
+            docs: List[Tuple[int, str, str, bool, str]] = []  # (item, title, text, a web page, its comments)
             said: List[Tuple[int, str, str, List[Carried]]] = []
             kept: Dict[int, List[Carried]] = {}  # the files of its talk and of its documents' comments
             for it, par in _tree(here, root):
@@ -156,8 +156,9 @@ class Moves:
                 for d in sorted((d for d in st.docs.values() if d.n == it.n and not d.deleted), key=lambda d: d.d):
                     notes = "\n\n".join(f"- {c.by} ({_stamp(c.t)})" + (f" on “{c.quote[:200]}”" if c.quote else "")
                                         + f": {words}" for c in d.comments for words in [said_text(st, c.text, c.files)] if words)
-                    md = d.md + (f"\n\n---\nComments in {named} D{d.d}:\n\n{notes}" if notes else "")
-                    docs.append((it.n, d.title or "", md))
+                    page = d.is_page  # a web page goes as it is; its comments go on the item (T753)
+                    md = d.md if page else d.md + (f"\n\n---\nComments in {named} D{d.d}:\n\n{notes}" if notes else "")
+                    docs.append((it.n, d.title or "", md, page, f"Comments in {named} D{d.d}:\n\n{notes}" if page and notes else ""))
                     kept[it.n] += _read(here, [f for c in d.comments for f in c.files])
         parent_there = None
         if under:  # put it under an item there
@@ -183,8 +184,10 @@ class Moves:
             if got:
                 there.run([(0, {"op": "say", "ref": new_as[n], "kind": "say", "files": _save(there, got),
                                 "text": f"Files from the talk and the comments in {named} {here.state.code(n)}"})], "you")
-        for n, title, md in docs:
-            there.run([(0, {"op": "doc", "ref": new_as[n], "title": title, "md": md})], "you")
+        for n, title, md, page, notes in docs:
+            there.run([(0, {"op": "doc", "ref": new_as[n], "title": title, "md": md, **({"fmt": "html"} if page else {})})], "you")
+            if notes:
+                there.run([(0, {"op": "say", "ref": new_as[n], "kind": "say", "text": notes[:MAX_TEXT]})], "you")
         to_name = there.state.title or there.slug
         for n, _, code, _, _, _ in plan:
             here.run([(0, {"op": "say", "ref": code, "kind": "progress", "text": f"Moved to {to_name} as {new_as[n]}"}),

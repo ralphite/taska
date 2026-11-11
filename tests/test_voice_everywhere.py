@@ -103,6 +103,22 @@ class VoiceEverywhere(unittest.TestCase):
         finally:
             there.close()
 
+    def test_a_moved_web_page_stays_a_web_page_and_its_comments_go_on_the_item(self):
+        """T753: moving an item with a web page document (D37 in dev2) kept its HTML as Markdown, so it no longer showed."""
+        there = Project(os.path.join(self.tmp.name, "other"), "other")
+        try:
+            n = self.item()
+            page = "<!doctype html><title>Contest</title><h1>Contest</h1><script>go()</script>"
+            self.run_one({"op": "doc", "ref": f"F{n}", "md": page, "fmt": "html"})
+            self.run_one({"op": "dc", "d": 1, "key": "doc", "text": "Bigger, please"})
+            Moves().item(self.p, there, f"F{n}")
+            doc = next(d for d in there.state.docs.values())
+            self.assertEqual((doc.is_page, doc.md, doc.title), (True, page, "Contest"))
+            talk = [x.text for it in there.state.items.values() for x in it.thread]
+            self.assertTrue(any("Bigger, please" in t for t in talk), talk)
+        finally:
+            there.close()
+
 
 if __name__ == "__main__":
     unittest.main()
