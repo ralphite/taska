@@ -265,6 +265,10 @@ def record(base: str) -> Dict[str, Any]:
     view = _settle(c, p)
     r = {i["q"]: i["id"] for i in view["inputs"] if i.get("q")}
     told = next(x["id"] for it in view["items"] if it["code"] == "B1" for x in it["thread"] if x["kind"] == "progress")
+    # questions in a row, one of them answered (B749): the answer names it (`of`), the other still waits
+    agent(f"T4 ask files={shot['f']} Anything else?\n")
+    first = next(x for it in _settle(c, p)["items"] if it["code"] == "T4" for x in it["thread"] if x["kind"] == "ask")
+    page("s2b", {"op": "input", "text": "- Which columns? → ✓ Date", "scope": "T4", "kind": "answer", "of": [first["id"]], "q": "page-6"})
     made = page("s3", {"op": "amend", "id": r["page-1"], "mode": "append", "text": "By date."},
                 {"op": "delete", "id": r["page-5"]},
                 {"op": "filing-undo", "id": r["page-3"]},
