@@ -29,20 +29,20 @@ const waitOf = (thread: readonly Message[]) => {
   return w ? { id: w.id, kind: 'ask' as const, text: w.text, by: w.by, ses: w.ses, files: [] } : null
 }
 
-function Live({ desk, start }: { desk: boolean; start: readonly Message[] }) {
+function Live({ desk, start, status = 'open' }: { desk: boolean; start: readonly Message[]; status?: Item['status'] }) {
   const [thread, setThread] = useState<Message[]>([...QS, ...start])
-  const it: Item = item({ n: 1, thread, wait: waitOf(thread) })
+  const it: Item = item({ n: 1, status, thread, wait: waitOf(thread) })
   const row = askRowOf(thread, 1)!
   const on = { ...noItemEvents, sendRow: (_n: number, of: number[], text: string) => setThread((t) => [...t, reply(t.length + 10, of, text)]) }
   return <AskRowCard it={it} row={row} env={talkEnv(modelOf([it]), desk)} on={on} />
 }
 
-const at = (start: readonly Message[] = []): Story => ({
+const at = (start: readonly Message[] = [], status?: Item['status']): Story => ({
   render: () => (
     <Frames phoneWidth={393} deskWidth={720}>
       {(layout) => (
         <div className="p-3">
-          <Live desk={layout === 'desk'} start={start} />
+          <Live desk={layout === 'desk'} start={start} status={status} />
         </div>
       )}
     </Frames>
@@ -52,3 +52,4 @@ const at = (start: readonly Message[] = []): Story => ({
 export const ThreeQuestionsTheFirstOpen: Story = { ...at(), name: 'Three questions, the first open' }
 export const TwoSentTheOneInWordsWaits: Story = { ...at([PART]), name: 'Two sent, the one in words still waits' }
 export const AllSent: Story = { ...at([PART, REST]), name: 'All sent' }
+export const ProposedApproveBeside: Story = { ...at([], 'proposed'), name: 'Proposed: Approve beside, the phone turns by the pages' }

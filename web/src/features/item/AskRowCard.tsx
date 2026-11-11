@@ -148,8 +148,9 @@ export function AskRowCard({ it, row, env, on, going = null }: {
       ) : null}
     </>
   )
+  // beside Approve or Accept the phone has no room for ‹ ›: the pages above turn it (B749 QA)
   const turn = (to: number, icon: 'left' | 'right', label: string) => (
-    <button onClick={() => go(to)} disabled={to < 0 || to >= row.length} aria-label={label} className={`${SECOND} w-11 px-0 disabled:opacity-40`}>
+    <button onClick={() => go(to)} disabled={to < 0 || to >= row.length} aria-label={label} className={`${SECOND} w-11 px-0 disabled:opacity-40 ${keep ? 'max-lg:hidden' : ''}`}>
       <Icon n={icon} c="size-4.5" sw="2.25" />
     </button>
   )

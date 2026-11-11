@@ -12,7 +12,7 @@
 
 import { closed, lastAgentMessage, oneLine } from './items'
 import { hasChoices } from './markdown'
-import { answerOf, askRowOf } from './talk'
+import { answerOf, askRowOf, rowAnswer } from './talk'
 import { ITEM_ACTS, pastOf, type ItemActId } from './itemActs'
 import type { Item, Message } from './types'
 import { PLACE_WORD, STATUS_WORD } from './words'
@@ -106,9 +106,17 @@ function stillDecided(it: Item): Decided | null {
   return (lastAgentMessage(it)?.id ?? null) === dec.msg ? dec : null
 }
 
-/** The agent's latest word is a question with choices you answered (`going`: an answer to it on its way). */
+/** Questions in a row, every one answered (B749). */
+const rowAnswered = (it: Item, x: Message | undefined) => {
+  const row = x ? askRowOf(it.thread, x.id) : null
+  return !!row && row.every((q) => rowAnswer(it.thread, row, q))
+}
+
+/** The agent's latest word is a question with choices you answered, or the last of questions in a row all answered
+ * (`going`: an answer to it on its way). */
 function answeredLast(it: Item, going?: string | null) {
   const x = lastAgentMessage(it)
+  if (rowAnswered(it, x)) return true
   return !!x && x.kind === 'ask' && hasChoices(x.text) && !!answerOf(it.thread, x, going)?.length
 }
 
@@ -131,7 +139,7 @@ export function needOf(it: Item, going?: string | null): Need {
   if (dec) {
     const x = it.thread.find((y) => y.id === dec.msg)
     const o = ofStatus(dec.from)
-    if (!choicesAsk(x)) return need('decided', x ?? null, o)
+    if (!choicesAsk(x) && !rowAnswered(it, x)) return need('decided', x ?? null, o)
     if (answeredLast(it)) return need('decidedOnAnswer', null, o, 'decided')
   }
   return need('none', null, null)
