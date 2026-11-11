@@ -11,12 +11,14 @@ import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import { SEP_V } from '../../ui/tones'
 
-// words shown only when the bar has room (the pane's header is the container "bar")
+// words shown only when the bar has room (the pane's header is the container "bar"); a web page's bar has one button
+// more (Full screen, F751), so its words need more room before the title is squeezed out
 const WIDE = 'hidden @2xl/bar:inline'
+const WIDER = 'hidden @4xl/bar:inline'
 
 /** A button of the bar: its icon, and its words when the bar has room (`ask`: a destructive question it asks, as
  * Delete?: always in words, in red). */
-const PaneBtn = ({ pressed, icon, label, ask = false, danger = false, onClick, children }: { pressed?: boolean; icon: IconName; label: string; ask?: boolean; danger?: boolean; onClick(e: MouseEvent<HTMLButtonElement>): void; children?: ReactNode }) => (
+const PaneBtn = ({ pressed, icon, label, ask = false, danger = false, wide = WIDE, onClick, children }: { pressed?: boolean; icon: IconName; label: string; ask?: boolean; danger?: boolean; wide?: string; onClick(e: MouseEvent<HTMLButtonElement>): void; children?: ReactNode }) => (
   <button
     onClick={onClick}
     title={label}
@@ -25,7 +27,7 @@ const PaneBtn = ({ pressed, icon, label, ask = false, danger = false, onClick, c
     className={`flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100 ${ask ? 'bg-red-50 font-semibold text-red-600 hover:bg-red-100 dark:bg-red-400/10 dark:text-red-400 dark:hover:bg-red-400/20' : danger ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-400/10' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'}`}
   >
     <Icon n={icon} c="size-4" />
-    <span className={ask ? '' : WIDE}>{label}</span>
+    <span className={ask ? '' : wide}>{label}</span>
     {children}
   </button>
 )
@@ -48,21 +50,22 @@ export function DocPaneHead({ d, editing }: { d: Pick<Doc, 'd' | 'title' | 'fmt'
 export function DocPaneActs({ web, inspect, whole, deleting, on }: { web: boolean; inspect: boolean; whole: boolean; deleting: boolean; on: { inspect(): void; whole(): void; full(): void; copy(): void; edit(): void; move(from: HTMLElement): void; remove(): void } }) {
   if (deleting) return <PaneBtn icon="trash" label="Delete?" ask danger onClick={on.remove} />
   const on_ = web ? inspect : whole
+  const wide = web ? WIDER : WIDE
   return (
     <>
-      <PaneBtn pressed={on_} icon="comment" label="Comment" onClick={web ? on.inspect : on.whole}>
+      <PaneBtn pressed={on_} icon="comment" label="Comment" wide={wide} onClick={web ? on.inspect : on.whole}>
         {on_ ? (
-          <span className={WIDE}>
+          <span className={wide}>
             <Kbd k="Esc" />
           </span>
         ) : null}
       </PaneBtn>
-      {web ? <PaneBtn icon="open" label="Full screen" onClick={on.full} /> : null}
-      <PaneBtn icon="copy" label="Copy" onClick={on.copy} />
-      <PaneBtn icon="pencil" label="Edit" onClick={on.edit} />
-      <PaneBtn icon="arrow" label="Move" onClick={(e) => on.move(e.currentTarget)} />
+      {web ? <PaneBtn icon="open" label="Full screen" wide={wide} onClick={on.full} /> : null}
+      <PaneBtn icon="copy" label="Copy" wide={wide} onClick={on.copy} />
+      <PaneBtn icon="pencil" label="Edit" wide={wide} onClick={on.edit} />
+      <PaneBtn icon="arrow" label="Move" wide={wide} onClick={(e) => on.move(e.currentTarget)} />
       <span className={SEP_V} />
-      <PaneBtn icon="trash" label="Delete" danger onClick={on.remove} />
+      <PaneBtn icon="trash" label="Delete" danger wide={wide} onClick={on.remove} />
     </>
   )
 }
