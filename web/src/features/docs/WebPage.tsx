@@ -5,7 +5,7 @@
 // recording strip, B498) and the box says what you comment on; each thread's count sits in its part's corner, and opens its
 // comments under it. Words selected are only selected, as on any page. Props, and the page's own state.
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Kbd } from '../../ui/bits'
 import { plainQuote } from '../../model/markdown'
@@ -98,7 +98,6 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
   on: WebPageEvents
 }) {
   const frame = useRef<HTMLIFrameElement>(null)
-  const fullFrame = useRef<HTMLIFrameElement>(null)
   const pop = useRef<HTMLDivElement>(null)
   const root = useRef<HTMLDivElement>(null)
   // the frame the page is drawn in (its layout and theme; a story's own frame): the page over the window goes there
@@ -238,8 +237,6 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
       setHeight(Math.max(h, shownH.current))
     }
     const got = (e: MessageEvent) => {
-      // the page over the window says only its Esc
-      if (e.source && e.source === fullFrame.current?.contentWindow) return void ((e.data as { esc?: number })?.esc && live.current.on.esc())
       if (e.source !== frame.current?.contentWindow) return
       const m = (e.data || {}) as { h?: number; fill?: number; hover?: Part | null; at?: XY; rects?: Record<string, Box & Corner>; pick?: Part; esc?: number; ready?: number; down?: number; maybe?: Part }
       const now = live.current
@@ -380,24 +377,73 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
           {renderThread(opened.tk, true)}
         </div>
       ) : null}
-      {full && host ? <FullPage title={title} html={html} desk={desk} frame={fullFrame} host={host} onExit={on.exit} /> : null}
+      {full && host ? <FullPage title={title} html={html} desk={desk} host={host} onExit={on.exit} onEsc={on.esc} /> : null}
     </div>
   )
 }
 
+/** how long Exit stays after the pointer last moved or the page was touched (F751 r1251) */
+const EXIT_FADES = 2500
+
 /** The page over all of the window (F751): the phone's whole screen, all of the desktop's browser window (not the
- * screen's), the page as a browser shows it, scrolling in itself; Exit (Esc) over its top right corner. It runs again
- * from its start, in a frame of its own. */
-function FullPage({ title, html, desk, frame, host, onExit }: { title: string; html: string; desk: boolean; frame: RefObject<HTMLIFrameElement | null>; host: Element; onExit(): void }) {
+ * screen's), the page as a browser shows it, scrolling in itself; Exit (Esc) over its top right corner. Left alone a
+ * moment, Exit fades away, out of the page's way; the pointer moving, a click or a tap brings it back (r1251). The page
+ * runs again from its start, in a frame of its own. */
+function FullPage({ title, html, desk, host, onExit, onEsc }: { title: string; html: string; desk: boolean; host: Element; onExit(): void; onEsc(): void }) {
+  const frame = useRef<HTMLIFrameElement>(null)
   const exit = useRef<HTMLButtonElement>(null)
-  useEffect(() => exit.current?.focus({ preventScroll: true }), [])
+  const [awake, setAwake] = useState(true)
+  const nap = useRef(0)
+  const held = useRef(false)
+  const live = useRef(onEsc)
+  useLayoutEffect(() => {
+    live.current = onEsc
+  })
+  useEffect(() => {
+    exit.current?.focus({ preventScroll: true })
+    const stir = () => {
+      setAwake(true)
+      clearTimeout(nap.current)
+      nap.current = window.setTimeout(() => !held.current && setAwake(false), EXIT_FADES)
+    }
+    // the page says when the pointer moves in it, and when it is clicked or tapped
+    const got = (e: MessageEvent) => {
+      if (!e.source || e.source !== frame.current?.contentWindow) return
+      const m = (e.data || {}) as { esc?: number; stir?: number; down?: number }
+      if (m.esc) live.current()
+      if (m.stir || m.down) stir()
+    }
+    addEventListener('message', got)
+    stir()
+    return () => {
+      removeEventListener('message', got)
+      clearTimeout(nap.current)
+    }
+  }, [])
   return createPortal(
     <div data-full-page className="fixed inset-0 z-55 bg-white">
       <iframe ref={frame} aria-label={title} sandbox="allow-scripts allow-popups allow-forms" srcDoc={html + PAGE_HELPER} className="block size-full" />
       <button
         ref={exit}
         onClick={onExit}
-        className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 flex h-9 items-center gap-1.5 rounded-full bg-zinc-900/75 px-3 text-sm font-medium text-white shadow-lg backdrop-blur hover:bg-zinc-900/90"
+        // under the pointer it stays
+        onMouseEnter={() => {
+          held.current = true
+          setAwake(true)
+        }}
+        onMouseLeave={() => {
+          held.current = false
+          clearTimeout(nap.current)
+          nap.current = window.setTimeout(() => setAwake(false), EXIT_FADES)
+        }}
+        // reached with the keyboard it shows, as when the pointer moves
+        onKeyUp={() => {
+          setAwake(true)
+          clearTimeout(nap.current)
+          nap.current = window.setTimeout(() => !held.current && setAwake(false), EXIT_FADES)
+        }}
+        data-awake={awake ? '' : undefined}
+        className={`absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 flex h-9 items-center gap-1.5 rounded-full bg-zinc-900/75 px-3 text-sm font-medium text-white shadow-lg backdrop-blur transition-opacity duration-300 hover:bg-zinc-900/90 ${awake ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
       >
         <Icon n="shrink" c="size-4" />
         Exit

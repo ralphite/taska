@@ -605,7 +605,7 @@ test("T501: a part with no room right of it has its count on its top edge, clear
   expect(await covered(page, rc, '#r1')).toBe(false)
 })
 
-test('F751 r183: Full screen puts the page over all of the window (the phone\'s screen, the desktop\'s browser window); Exit brings it back', async ({
+test('F751 r183 r1251: Full screen puts the page over all of the window (the phone\'s screen, the desktop\'s browser window); Exit fades when left alone and brings it back', async ({
   page,
   request,
 }) => {
@@ -618,7 +618,12 @@ test('F751 r183: Full screen puts the page over all of the window (the phone\'s 
   const at = await full.boundingBox()
   const win = page.viewportSize()
   expect(at, 'all of the window').toEqual({ x: 0, y: 0, width: win?.width, height: win?.height })
-  await full.getByRole('button', { name: 'Exit' }).click()
+  // r1251: left alone, Exit fades out of the page's way; a tap or click in the page (or the pointer moving) brings it back
+  const exit = full.getByRole('button', { name: 'Exit' })
+  await expect(exit).toHaveCSS('opacity', '0', { timeout: 6000 })
+  await full.frameLocator('iframe').getByText('Ship option A today.').click()
+  await expect(exit).toHaveCSS('opacity', '1')
+  await exit.click()
   await expect(full).toHaveCount(0)
   await expect(page1(page).getByText('Export plan')).toBeVisible()
   if (!isDesk(page)) return

@@ -149,6 +149,9 @@ export const PAGE_HELPER = String.raw`<script>(() => {
     const n = Date.now(); if (n - usedAt > 10000) { usedAt = n; send({ used: 1 }) }
   }
   for (const t of ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart', 'input']) addEventListener(t, used, true)
+  // F751 r1251: the pointer moving in the page (at most a few times a second): the page over the window shows its Exit
+  let stirAt = 0
+  addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse' && Date.now() - stirAt > 300) { stirAt = Date.now(); send({ stir: 1 }) } }, true)
   // B503: a click in the page closes open comments, and does nothing else (whatever Taska says meanwhile)
   addEventListener('pointerdown', () => { shutting = shut; send({ down: 1 }) }, true)
   // r799, r672: the page changes itself (its script shows another view, moves a card, adds a line): the counts and
