@@ -1,5 +1,6 @@
 // The button to the talk's end (F716, Yadong r1171): a round button with a down arrow just above the box, over the
-// middle of the talk. Scrolled up it shows; a tap scrolls to the end and it fades away. At the end it does not show.
+// middle of the talk. Scrolled up it points down; a tap scrolls to the end. At the end it points up, Back to top, and a
+// tap goes to the top (F752 r1250).
 // The page's own item pane (PaneFrame, ItemPage) and box, with an item's real talk.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { boxAt } from '../stories/boxFixtures'
@@ -37,5 +38,5 @@ const page = (up: boolean): Story => ({
   ),
 })
 
-export const ScrolledUp: Story = { ...page(true), name: 'Scrolled up: it shows' }
-export const AtTheEnd: Story = { ...page(false), name: 'At the end: it does not show' }
+export const ScrolledUp: Story = { ...page(true), name: 'Scrolled up: down to the end' }
+export const AtTheEnd: Story = { ...page(false), name: 'At the end: back to top' }

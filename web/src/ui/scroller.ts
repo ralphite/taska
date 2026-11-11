@@ -15,8 +15,9 @@ export const overflows = (el: HTMLElement) => el.scrollTop + el.clientHeight < e
 /** Whether the part that scrolls `sc` shows its end. */
 export const atEnd = (sc: HTMLElement) => sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4
 
-/** Whether the button to the end shows: while what scrolls `sc` does not show its end (F716 r1171). */
-export const toEndShown = (sc: HTMLElement) => !atEnd(sc)
+/** What the button to the end is: down to the end while what scrolls `sc` does not show its end (F716 r1171); at the
+ * end, up, back to the top (F752 r1250); none when there is nothing to scroll. */
+export const toEndWay = (sc: HTMLElement): 'down' | 'up' | 'none' => (sc.scrollHeight <= sc.clientHeight + 4 ? 'none' : atEnd(sc) ? 'up' : 'down')
 
 /** Whether the talk keeps to its end after `sc` scrolled from `was`: it shows its end, or it kept to it and nothing
  * scrolled it up (the page's own scroll to the end can come after the talk grew again). */
