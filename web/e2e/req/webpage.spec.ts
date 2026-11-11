@@ -604,3 +604,32 @@ test("T501: a part with no room right of it has its count on its top edge, clear
   expect(rc.y).toBeGreaterThanOrEqual(row.y - 2)
   expect(await covered(page, rc, '#r1')).toBe(false)
 })
+
+test('F751 r183: Full screen puts the page over all of the window (the phone\'s screen, the desktop\'s browser window); Exit brings it back', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, { ...LOOP, then: PAGE })
+  await open(page, p, 'D1')
+  await expect(page1(page).getByText('Export plan')).toBeVisible()
+  await page.getByRole('button', { name: 'Full screen' }).filter({ visible: true }).first().click()
+  const full = page.locator('[data-full-page]')
+  await expect(full.frameLocator('iframe').getByText('Ship option A today.')).toBeVisible()
+  const at = await full.boundingBox()
+  const win = page.viewportSize()
+  expect(at, 'all of the window').toEqual({ x: 0, y: 0, width: win?.width, height: win?.height })
+  await full.getByRole('button', { name: 'Exit' }).click()
+  await expect(full).toHaveCount(0)
+  await expect(page1(page).getByText('Export plan')).toBeVisible()
+  if (!isDesk(page)) return
+  // the desktop's Esc, from the window or from inside the page, brings it back too
+  await page.getByRole('button', { name: 'Full screen' }).click()
+  await expect(full).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(full).toHaveCount(0)
+  await page.getByRole('button', { name: 'Full screen' }).click()
+  await full.frameLocator('iframe').getByText('Ship option A today.').click()
+  await page.keyboard.press('Escape')
+  await expect(full).toHaveCount(0)
+  await expect(page1(page).getByText('Export plan')).toBeVisible()
+})

@@ -8,7 +8,7 @@ export default meta;
 type Story = StoryObj;
 
 // what its buttons do needs the page (Comment mode, the editor, the move sheet, Taska): the Actions panel
-const on = acts("Document pane", ["inspect", "whole", "copy", "edit", "move", "remove"] as const);
+const on = acts("Document pane", ["inspect", "whole", "full", "copy", "edit", "move", "remove"] as const);
 const bar = (children: React.ReactNode) => (
   <div className="flex h-14 items-center gap-1 border-b border-zinc-200 px-3 dark:border-zinc-800">
     {children}

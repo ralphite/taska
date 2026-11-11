@@ -260,8 +260,8 @@ const typingIn = (el: Element | null) => /INPUT|TEXTAREA|SELECT/.test(el?.tagNam
 
 type BackWorld = Pick<ActionWorld, 'finder' | 'route' | 'nav' | 'media' | 'ui' | 'sheet' | 'sheets' | 'selection' | 'voice' | 'desk' | 'fields' | 'boxStore' | 'box' | 'docs' | 'docEditor' | 'rules' | 'itemEdits' | 'itemView' | 'docView'>
 
-/** Esc: one level back: the drawer, the sheet, a subitem being written, an edit, the search, a field, full width, the
- * search's words, the item. */
+/** Esc: one level back: the drawer, the sheet, a subitem being written, an edit, the search, a field, a web page over
+ * the window, full width, the search's words, the item. */
 function stepBack(w: BackWorld, h: Here): void {
   const { r } = h
   const active = document.activeElement
@@ -289,6 +289,7 @@ function stepBack(w: BackWorld, h: Here): void {
   if (r.place.kind === 'doc') {
     // a document: its editor (kept as a draft), the area being drawn, what you picked, then the document itself
     const doc = w.docView.getState()
+    if (doc.full) return doc.setFull(false) // a web page over the window: back to its pane (F751)
     if (doc.editing) return w.docEditor.keep()
     if (doc.circle) return doc.setCircle(false)
     if (doc.quote || doc.sel.size || doc.reply) return w.docs.unpick()

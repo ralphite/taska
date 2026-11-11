@@ -37,18 +37,31 @@ export function commentMenuSheet(yours: boolean, on: { edit(): void; move(): voi
   }
 }
 
-/** The phone's ⋯ beside a document's close button (D115 #41); while an area is being marked, Done in its place. */
-export function DocSheetMore({ code, circle, on }: { code: string; circle: boolean; on: { more(): void; done(): void } }) {
-  return circle ? (
-    <button onClick={on.done} className="h-9 rounded-full bg-amber-100 px-3.5 text-sm font-semibold text-amber-900 dark:bg-amber-900/60 dark:text-amber-100">
-      Done
-    </button>
-  ) : (
+/** The phone's ⋯ beside a document's close button (D115 #41), a web page's Full screen before it (F751); while an area
+ * is being marked, Done in its place. */
+export function DocSheetMore({ code, circle, on }: { code: string; circle: boolean; on: { more(): void; done(): void; full?(): void } }) {
+  const more = (
     <button onClick={on.more} aria-label={`More for ${code}`} className="group -mr-2 grid size-11 shrink-0 place-items-center rounded-full">
       <span className="grid size-8 place-items-center rounded-full text-zinc-500 group-hover:bg-zinc-100 dark:text-zinc-400 dark:group-hover:bg-zinc-800">
         <Icon n="more" c="size-5" />
       </span>
     </button>
+  )
+  return circle ? (
+    <button onClick={on.done} className="h-9 rounded-full bg-amber-100 px-3.5 text-sm font-semibold text-amber-900 dark:bg-amber-900/60 dark:text-amber-100">
+      Done
+    </button>
+  ) : on.full ? (
+    <>
+      <button onClick={on.full} aria-label="Full screen" className="group grid size-11 shrink-0 place-items-center rounded-full">
+        <span className="grid size-8 place-items-center rounded-full text-zinc-500 group-hover:bg-zinc-100 dark:text-zinc-400 dark:group-hover:bg-zinc-800">
+          <Icon n="open" c="size-[18px]" />
+        </span>
+      </button>
+      {more}
+    </>
+  ) : (
+    more
   )
 }
 

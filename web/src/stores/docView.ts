@@ -20,6 +20,8 @@ export interface DocViewState {
   circle: boolean
   /** a web page's Comment mode */
   inspect: boolean
+  /** a web page over all of the window (F751) */
+  full: boolean
   /** the phone's box is shown to type a comment */
   typing: boolean
   /** the editor is open, with this text (null: the document's own) */
@@ -37,6 +39,7 @@ export interface DocViewState {
   unpick(): void
   setCircle(on: boolean): void
   setInspect(on: boolean): void
+  setFull(on: boolean): void
   setTyping(on: boolean): void
   edit(on: boolean, text?: string | null, newFor?: number | null): void
   setText(text: string): void
@@ -45,7 +48,7 @@ export interface DocViewState {
 
 export type DocViewStore = StoreApi<DocViewState>
 
-const fresh = { aim: null, threads: new Set<string>(), sel: new Set<string>(), quote: null, reply: null, circle: false, typing: false, editing: false, text: null, newFor: null }
+const fresh = { aim: null, threads: new Set<string>(), sel: new Set<string>(), quote: null, reply: null, circle: false, typing: false, editing: false, text: null, newFor: null, full: false }
 
 export function createDocViewStore(): DocViewStore {
   return createStore<DocViewState>()((set, get) => ({
@@ -71,6 +74,7 @@ export function createDocViewStore(): DocViewStore {
     unpick: () => set({ sel: new Set(), quote: null, reply: null, circle: false }),
     setCircle: (circle) => set({ circle, ...(circle ? { quote: null } : {}) }),
     setInspect: (inspect) => set({ inspect }),
+    setFull: (full) => set({ full }),
     setTyping: (typing) => set({ typing }),
     edit: (editing, text = null, newFor = null) => set({ editing, text: editing ? text : null, newFor: editing ? newFor : null }),
     setText: (text) => set({ text }),

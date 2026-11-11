@@ -226,5 +226,5 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
   )
 }
 const paneActs = acts('Pane', ['prev', 'next', 'back'] as const)
-const docPaneActs = acts('Document pane', ['inspect', 'whole', 'copy', 'edit', 'move', 'remove'] as const)
+const docPaneActs = acts('Document pane', ['inspect', 'whole', 'full', 'copy', 'edit', 'move', 'remove'] as const)
 const docBack = act('Document pane: back to its item')

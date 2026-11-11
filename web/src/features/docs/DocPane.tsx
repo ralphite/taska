@@ -1,6 +1,7 @@
 // The desktop pane's bar over a document: what it is (D4 and its title, or Editing), what can be done to it (Comment
-// mode for a web page, Copy, Edit, Move, Delete), and the way back, first and plain to see. A narrow bar (B547: a 1100 wide
-// window) keeps the buttons' icons and says their words under the pointer, so the title stays and nothing is cut.
+// mode and Full screen for a web page, Copy, Edit, Move, Delete), and the way back, first and plain to see. A narrow
+// bar (B547: a 1100 wide window) keeps the buttons' icons and says their words under the pointer, so the title stays
+// and nothing is cut.
 // Props only.
 
 import type { MouseEvent, ReactNode } from 'react'
@@ -44,7 +45,7 @@ export function DocPaneHead({ d, editing }: { d: Pick<Doc, 'd' | 'title' | 'fmt'
  * document's name in sight while you decide. */
 /** `whole`: the box comments on the whole document (a Markdown one's Comment, r1095); a web page's Comment picks its
  * parts instead. */
-export function DocPaneActs({ web, inspect, whole, deleting, on }: { web: boolean; inspect: boolean; whole: boolean; deleting: boolean; on: { inspect(): void; whole(): void; copy(): void; edit(): void; move(from: HTMLElement): void; remove(): void } }) {
+export function DocPaneActs({ web, inspect, whole, deleting, on }: { web: boolean; inspect: boolean; whole: boolean; deleting: boolean; on: { inspect(): void; whole(): void; full(): void; copy(): void; edit(): void; move(from: HTMLElement): void; remove(): void } }) {
   if (deleting) return <PaneBtn icon="trash" label="Delete?" ask danger onClick={on.remove} />
   const on_ = web ? inspect : whole
   return (
@@ -56,6 +57,7 @@ export function DocPaneActs({ web, inspect, whole, deleting, on }: { web: boolea
           </span>
         ) : null}
       </PaneBtn>
+      {web ? <PaneBtn icon="open" label="Full screen" onClick={on.full} /> : null}
       <PaneBtn icon="copy" label="Copy" onClick={on.copy} />
       <PaneBtn icon="pencil" label="Edit" onClick={on.edit} />
       <PaneBtn icon="arrow" label="Move" onClick={(e) => on.move(e.currentTarget)} />

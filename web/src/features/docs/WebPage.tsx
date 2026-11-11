@@ -5,7 +5,9 @@
 // recording strip, B498) and the box says what you comment on; each thread's count sits in its part's corner, and opens its
 // comments under it. Words selected are only selected, as on any page. Props, and the page's own state.
 
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
+import { Kbd } from '../../ui/bits'
 import { plainQuote } from '../../model/markdown'
 import { Icon } from '../../ui/Icon'
 import { PlaceVoice, PlaceVoiceFloat } from '../../ui/PlaceVoice'
@@ -41,6 +43,8 @@ export interface WebPageEvents {
   check(): void
   send(): void
   esc(): void
+  /** back from over the window to the pane (F751) */
+  exit(): void
   toggle(tk: string): void
   /** a click away from the open comments */
   away(tk: string, key: string): void
@@ -72,7 +76,7 @@ function inside(p: XY, a: XY, b: XY, c: XY) {
   return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0))
 }
 
-export function WebPage({ title, html, threads, held, rec = false, meter, open, desk, inspect, renderThread, on }: {
+export function WebPage({ title, html, threads, held, rec = false, meter, open, desk, inspect, full = false, renderThread, on }: {
   title: string
   html: string
   threads: PageThread[]
@@ -87,13 +91,22 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
   desk: boolean
   /** the desktop's Comment mode */
   inspect: boolean
+  /** over all of the window (F751): the phone's screen, the desktop's browser window */
+  full?: boolean
   /** a thread's comments (`rail`: a card over the page) */
   renderThread(tk: string, rail: boolean): ReactNode
   on: WebPageEvents
 }) {
   const frame = useRef<HTMLIFrameElement>(null)
+  const fullFrame = useRef<HTMLIFrameElement>(null)
   const pop = useRef<HTMLDivElement>(null)
   const root = useRef<HTMLDivElement>(null)
+  // the frame the page is drawn in (its layout and theme; a story's own frame): the page over the window goes there
+  const [host, setHost] = useState<Element | null>(null)
+  const rootRef = useCallback((el: HTMLDivElement | null) => {
+    root.current = el
+    if (el) setHost(el.closest('[data-layout]') ?? document.body)
+  }, [])
   const [height, setHeight] = useState(480)
   const tall = useRef({ h: 0, at: 0, step: 0, n: 0, fill: false })
   const [hover, setHover] = useState<Part | null>(null)
@@ -225,6 +238,8 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
       setHeight(Math.max(h, shownH.current))
     }
     const got = (e: MessageEvent) => {
+      // the page over the window says only its Esc
+      if (e.source && e.source === fullFrame.current?.contentWindow) return void ((e.data as { esc?: number })?.esc && live.current.on.esc())
       if (e.source !== frame.current?.contentWindow) return
       const m = (e.data || {}) as { h?: number; fill?: number; hover?: Part | null; at?: XY; rects?: Record<string, Box & Corner>; pick?: Part; esc?: number; ready?: number; down?: number; maybe?: Part }
       const now = live.current
@@ -312,7 +327,7 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
   }
   return (
     // edge to edge: on the phone across the sheet's side margins too
-    <div ref={root} className="relative -mx-4 mt-3 lg:mx-0 lg:mt-0">
+    <div ref={rootRef} className="relative -mx-4 mt-3 lg:mx-0 lg:mt-0">
       {/* the page as it is: no frame around it, and no tooltip over all of it (a name for screen readers only) */}
       <iframe ref={frame} aria-label={title} sandbox="allow-scripts allow-popups allow-forms" srcDoc={html + PAGE_HELPER} style={{ height }} className="block w-full bg-white" />
       {elsewhere.length ? (
@@ -365,6 +380,30 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
           {renderThread(opened.tk, true)}
         </div>
       ) : null}
+      {full && host ? <FullPage title={title} html={html} desk={desk} frame={fullFrame} host={host} onExit={on.exit} /> : null}
     </div>
+  )
+}
+
+/** The page over all of the window (F751): the phone's whole screen, all of the desktop's browser window (not the
+ * screen's), the page as a browser shows it, scrolling in itself; Exit (Esc) over its top right corner. It runs again
+ * from its start, in a frame of its own. */
+function FullPage({ title, html, desk, frame, host, onExit }: { title: string; html: string; desk: boolean; frame: RefObject<HTMLIFrameElement | null>; host: Element; onExit(): void }) {
+  const exit = useRef<HTMLButtonElement>(null)
+  useEffect(() => exit.current?.focus({ preventScroll: true }), [])
+  return createPortal(
+    <div data-full-page className="fixed inset-0 z-55 bg-white">
+      <iframe ref={frame} aria-label={title} sandbox="allow-scripts allow-popups allow-forms" srcDoc={html + PAGE_HELPER} className="block size-full" />
+      <button
+        ref={exit}
+        onClick={onExit}
+        className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 flex h-9 items-center gap-1.5 rounded-full bg-zinc-900/75 px-3 text-sm font-medium text-white shadow-lg backdrop-blur hover:bg-zinc-900/90"
+      >
+        <Icon n="shrink" c="size-4" />
+        Exit
+        {desk ? <Kbd k="Esc" /> : null}
+      </button>
+    </div>,
+    host,
   )
 }

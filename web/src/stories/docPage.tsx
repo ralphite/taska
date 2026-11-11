@@ -62,6 +62,8 @@ export interface DocHere {
   viewOnly?: boolean
   /** its contents opened */
   contentsOpen?: boolean
+  /** a web page over all of the window (F751) */
+  full?: boolean
   /** the pointer on an item of a list (the desktop) */
   pointing?: { key: string; li: number }
   /** a passage brought into view ('doc': its end) */
@@ -99,6 +101,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
   const m = modelOf([item({ n: d.n, title: 'Rewrite Taska from scratch', ...h.item })], [], {}, [d])
   const [v, setV] = useState({ threads: new Set(h.threads), sel: new Set(h.sel), quote: h.quote ?? null, reply: h.reply ?? null, circle: !!h.circle, typing: !!h.typing })
   const [inspect, setInspect] = useState(!!h.inspect)
+  const [full, setFull] = useState(!!h.full)
   const [ticks, setTicks] = useState<TickState>({ mine: {}, going: {}, open: new Set(), ...h.ticks })
   const [asked, setAsked] = useState(h.asked ?? {})
   const [speaking, setSpeaking] = useState(h.speaking ?? (h.spoken ? { key: h.spoken.key, bar: false, quote: h.spoken.text } : h.selected?.recording ? { key: h.selected.key, bar: true, quote: h.selected.words } : null))
@@ -194,6 +197,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
         open={w.open}
         desk={desk}
         inspect={inspect}
+        full={full}
         renderThread={(tk, rail) => <WebThread card={w.cards[tk]} rail={rail} replying={v.reply === tk} asking={w.asking} env={env} on={on} />}
         meter={recMeter(desk)}
         on={{
@@ -203,7 +207,8 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
           cancel: on.sayCancel,
           check: on.sayCheck,
           send: on.saySend,
-          esc: () => setInspect(false),
+          esc: () => (full ? setFull(false) : setInspect(false)),
+          exit: () => setFull(false),
           toggle,
           away: on.away,
         }}
@@ -264,7 +269,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
         place=""
         desk
         head={<DocPaneHead d={d} editing={false} />}
-        acts={<DocPaneActs web={web} inspect={inspect} whole={v.quote?.key === 'doc'} deleting={!!asked[deleting]} on={{ inspect: () => setInspect(!inspect), whole: () => setV(v.quote?.key === 'doc' ? { ...v, quote: null } : { ...v, sel: new Set(), quote: { key: 'doc', text: '' }, reply: null, typing: true }), copy: paneActs.copy, edit: paneActs.edit, move: paneActs.move, remove: on.deleteDoc }} />}
+        acts={<DocPaneActs web={web} inspect={inspect} whole={v.quote?.key === 'doc'} deleting={!!asked[deleting]} on={{ inspect: () => setInspect(!inspect), full: () => setFull(true), whole: () => setV(v.quote?.key === 'doc' ? { ...v, quote: null } : { ...v, sel: new Set(), quote: { key: 'doc', text: '' }, reply: null, typing: true }), copy: paneActs.copy, edit: paneActs.edit, move: paneActs.move, remove: on.deleteDoc }} />}
         lead={<DocPaneNav to={facts.itemCode} onBack={paneActs.back} />}
         onBack={paneActs.back}
       >
@@ -277,7 +282,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
   ) : (
     <>
       <Sheet open look={PHONE_DOC_LOOK} desk={false} onClose={paneActs.back}>
-        <SheetLayout title={`D${d.d}`} extra={<DocSheetMore code={`D${d.d}`} circle={!!h.circle} on={{ more: sheetActs.more, done: sheetActs.done }} />} body={view} />
+        <SheetLayout title={`D${d.d}`} extra={<DocSheetMore code={`D${d.d}`} circle={!!h.circle} on={{ more: sheetActs.more, done: sheetActs.done, ...(web ? { full: () => setFull(true) } : {}) }} />} body={view} />
       </Sheet>
       {bar}
       {media.node}

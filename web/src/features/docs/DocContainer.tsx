@@ -129,6 +129,7 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
       open={w.open}
       desk={env.desk}
       inspect={v.inspect}
+      full={v.full}
       renderThread={(tk, rail) => <WebThread card={w.cards[tk]} rail={rail} replying={v.reply === tk} asking={w.asking} env={env} on={on} />}
       on={{
         pick: (p) => {
@@ -146,6 +147,7 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
         check: on.sayCheck,
         send: on.saySend,
         esc: () => app.actions.run('back'),
+        exit: () => stores.docView.getState().setFull(false),
         toggle: (tk) => app.docs.toggle(tk),
         away: (tk, key) => stores.docView.getState().closeThreads(tk, key),
       }}
@@ -183,7 +185,7 @@ export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside, ta
       duo={!!beside}
       toEnd={beside ? talk : null}
       head={<DocPaneHead d={d} editing={false} />}
-      acts={<DocPaneActs web={web} inspect={v.inspect} whole={v.quote?.key === 'doc'} deleting={!!asked['doc-delete ' + dn]} on={{ inspect: () => stores.docView.getState().setInspect(!v.inspect), whole: () => (v.quote?.key === 'doc' ? stores.docView.getState().pick({ quote: null }) : app.docs.whole()), copy: on.copyDoc, edit: on.editDoc, move: on.moveDoc, remove: on.deleteDoc }} />}
+      acts={<DocPaneActs web={web} inspect={v.inspect} whole={v.quote?.key === 'doc'} deleting={!!asked['doc-delete ' + dn]} on={{ inspect: () => stores.docView.getState().setInspect(!v.inspect), full: () => stores.docView.getState().setFull(true), whole: () => (v.quote?.key === 'doc' ? stores.docView.getState().pick({ quote: null }) : app.docs.whole()), copy: on.copyDoc, edit: on.editDoc, move: on.moveDoc, remove: on.deleteDoc }} />}
       lead={<DocPaneNav to={side ? SIDE_NAME[side] : codeOf(m, liveN(m, d.n))} onBack={() => app.docs.close()} />}
       onBack={() => app.docs.close()}
     >
@@ -202,6 +204,7 @@ export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside, ta
 /** The phone's sheet with a document, over its item. */
 export function DocSheetContainer({ slug, dn, footRoom }: { slug: string; dn: number; footRoom: number }) {
   const app = useServices('docs', 'sheets')
+  const stores = useStores('docView')
   const { m, d, facts, env, on, v, page, aimed } = useDoc(slug, dn)
   if (!m || !d || !facts) return null
   return (
@@ -209,7 +212,7 @@ export function DocSheetContainer({ slug, dn, footRoom }: { slug: string; dn: nu
     <Sheet open look={PHONE_DOC_LOOK} desk={false} footRoom={footRoom} onClose={() => app.docs.close()}>
       <SheetLayout
         title={`D${d.d}`}
-        extra={<DocSheetMore code={`D${d.d}`} circle={v.circle} on={{ more: () => app.sheets.open({ kind: 'doc-menu', d: d.d }, { focus: false }), done: on.circle }} />}
+        extra={<DocSheetMore code={`D${d.d}`} circle={v.circle} on={{ more: () => app.sheets.open({ kind: 'doc-menu', d: d.d }, { focus: false }), done: on.circle, ...(d.fmt === 'html' ? { full: () => stores.docView.getState().setFull(true) } : {}) }} />}
         body={<DocView facts={facts} env={env} on={on} page={page} meter={<RecMeter n={PLACE_LEVELS.phone} />} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />} />
     </Sheet>
   )
