@@ -90,3 +90,8 @@ export function filtersSet(tab: Tab, list: ListQuery): [ListKey, string][] {
 
 /** Whether the list shows exactly one of your views (its type, when, status, priority and sort). */
 export const showsView = (list: Record<string, string>, v: Record<'type' | 'when' | 'status' | 'pri' | 'sort', string>) => (['type', 'when', 'status', 'pri', 'sort'] as const).every((k) => list[k] === v[k])
+
+/** The list shows the work order (so a row dragged near another's top or bottom is put before or after it, B754):
+ * Items in its own order, not the finished nor what waits on you. */
+export const inWorkOrder = (tab: Tab, list: ListQuery) =>
+  tab === 'items' && list.sort === 'all' && !['done', 'dropped', 'wait'].includes(list.status)

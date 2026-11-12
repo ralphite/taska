@@ -1,6 +1,6 @@
 // An item dragged in the list (the desktop, with a mouse): onto a row to go under it, near a row's top or bottom to go
-// before or after it in the queue, off every row to stand on its own, onto another project in the sidebar to move
-// there (with its subitems).
+// before or after it in the list's order (work in review too, B754), off every row to stand on its own, onto another
+// project in the sidebar to move there (with its subitems).
 
 import { closed, dropOn } from '../../model/items'
 import { codeOf, type ProjectModel } from '../../model/project'
@@ -14,6 +14,8 @@ export interface ItemDragDeps {
   moves: Moves
   slug(): string
   model(): ProjectModel | null
+  /** the list shows the work order: rows can be put before or after one another */
+  ordered(): boolean
 }
 
 export class ItemDrag {
@@ -36,7 +38,7 @@ export class ItemDrag {
     const { n } = this.d.store.getState()
     const m = this.d.model()
     if (n == null || !m) return false
-    const at = dropOn(m.byN, n, t, y)
+    const at = dropOn(m.byN, n, t, y, this.d.ordered())
     const was = this.d.store.getState().at
     if (was?.n !== at?.n || was?.how !== at?.how) this.d.store.getState().set({ at, project: null })
     return !!at

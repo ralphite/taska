@@ -7,7 +7,7 @@ import type { ProjectModel } from '../../model/project'
 import type { ListQuery } from '../../model/route'
 import { rulesDoc, waitingProposals } from '../../model/rules'
 import type { Item, RuleProposal } from '../../model/types'
-import { filtered, visible } from '../../model/visible'
+import { filtered, inWorkOrder, visible } from '../../model/visible'
 import { STATUS_FILTER_WORD, TAB_WORD, type Tab } from '../../model/words'
 
 export type Row =
@@ -112,8 +112,7 @@ export function listBody(m: ProjectModel | null, tab: Tab, list: ListQuery, st: 
   if (none && tab === 'archive') return { kind: 'empty', why: 'nothing-archived', status: list.status }
   if (none) return { kind: 'empty', why: 'no-items', status: list.status }
   if (tab === 'items' && list.sort === 'all') {
-    const ordered =
-      list.status === 'done' || list.status === 'dropped' ? [...rows].sort(latestFirst) : list.status === 'wait' ? [...rows].sort(needsOrder) : workOrder(rows)
+    const ordered = !inWorkOrder(tab, list) ? [...rows].sort(list.status === 'wait' ? needsOrder : latestFirst) : workOrder(rows)
     const { group, hidden } = hiddenKids(m, ordered, list, st, tab)
     const out: Row[] = []
     if ((list.status === 'done' || list.status === 'dropped') && ordered.some((it) => !it.archived && closed(it.status)))

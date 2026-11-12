@@ -3,6 +3,7 @@
 // list's order for Previous and Next. `held` is the list's: a row began holding still.
 
 import { holdKey, openItemN } from '../../model/route'
+import { inWorkOrder } from '../../model/visible'
 import type { Core } from '../core'
 import type { InputsArea } from '../inputs/area'
 import { Answers } from './answers'
@@ -33,7 +34,17 @@ export function makeItems(c: Core, i: Pick<InputsArea, 'inputs' | 'goDraft'>, he
   })
   const moves = new Moves({ api: c.api, delivery: c.delivery, runner, toasts, model: c.model, title: c.title, go: c.go, refresh: (sl) => c.project().stale(sl) })
   const selection = new Selection({ ui: s.ui, order: listOrder, runner, toasts, slug: c.slug, model: c.here, open })
-  const itemDrag = new ItemDrag({ store: s.drag, items, moves, slug: c.slug, model: c.here })
+  const itemDrag = new ItemDrag({
+    store: s.drag,
+    items,
+    moves,
+    slug: c.slug,
+    model: c.here,
+    ordered: () => {
+      const r = s.route.getState().route
+      return r.page === 'project' && inWorkOrder(r.tab, r.list)
+    },
+  })
   const itemEdits = new ItemEdits({ view: s.itemView, kept: s.keptEdits, route: s.route, toasts, desk: c.desk, model: c.here })
   const answers = new Answers({ inputs: i.inputs, view: s.itemView, outbox: s.outbox })
   // a merged item gives way to the one it went into; what you wrote for it goes along

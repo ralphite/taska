@@ -69,8 +69,9 @@ export const queuedNow = (it: Item) =>
 
 /** The order agents take the work: now before later, in progress first; then the user's own order (rank) before
  * priority: what they never placed goes in by priority, just before the first ranked item of a lower priority. */
+const bucket = (it: Item) => (it.when !== 'now' ? 2 : 0) + (it.status !== 'doing' ? 1 : 0)
+
 export function queueOrder(items: Item[]): Item[] {
-  const bucket = (it: Item) => (it.when !== 'now' ? 2 : 0) + (it.status !== 'doing' ? 1 : 0)
   const out: Item[] = []
   for (const b of [0, 1, 2, 3]) {
     const mine = items.filter((it) => bucket(it) === b)
@@ -139,25 +140,32 @@ export const workOrder = (all: Item[]) => [
 
 export type DropHow = 'before' | 'after' | 'into' | 'out'
 
+/** Two items the list puts in order among themselves: both unfinished and in one group of the work order (now or
+ * later, in progress or not), whatever their status: in review too (B754, Yadong r1258). */
+export const inLine = (a: Item, b: Item) =>
+  [a, b].every((it) => !it.mergedInto && !it.archived && !closed(it.status)) && bucket(a) === bucket(b)
+
 /** Where item `n` dragged over row `t` (at `y`, 0 at its top to 1 at its bottom) would go: before or after it in the
- * queue's order (both in the queue now), else under it; over no row, out from under its parent. Null: not there. */
-export function dropOn(byN: ReadonlyMap<number, Item>, n: number, t: number | null, y: number): { n?: number; how: DropHow } | null {
+ * work order (both in one group of it, and the list shows that order: `ordered`), else under it; over no row, out
+ * from under its parent. Null: not there. */
+export function dropOn(byN: ReadonlyMap<number, Item>, n: number, t: number | null, y: number, ordered = true): { n?: number; how: DropHow } | null {
   const it = byN.get(n)
   if (!it) return null
   if (t == null) return it.parent ? { how: 'out' } : null
   const to = byN.get(t)
   if (!to || t === n || closed(to.status)) return null
   for (let p = to.parent; p; p = byN.get(p)?.parent ?? null) if (p === n) return null // not under one of its own subitems
-  const line = queuedNow(it) && queuedNow(to)
+  const line = ordered && inLine(it, to)
   return { n: t, how: line && y < 0.3 ? 'before' : line && y > 0.7 ? 'after' : 'into' }
 }
 
-/** The ranks that put item `n` before or after `t` in the queue, whatever the priorities (the priority stays). */
+/** The ranks that put item `n` before or after `t` in their group of the work order, whatever the priorities (the
+ * priority stays). */
 export function ranksFor(items: readonly Item[], byN: ReadonlyMap<number, Item>, n: number, t: number, after: boolean): { n: number; rank: number; was: number | null }[] {
   const it = byN.get(n)
   const to = byN.get(t)
   if (!it || !to) return []
-  const group = queueOrder(items.filter((x) => queuedNow(x) && x.n !== n))
+  const group = queueOrder(items.filter((x) => x.n !== n && inLine(x, to)))
   group.splice(group.indexOf(to) + (after ? 1 : 0), 0, it)
   return group.map((x, i) => ({ n: x.n, rank: i, was: x.rank ?? null })).filter((p) => p.was !== p.rank)
 }
