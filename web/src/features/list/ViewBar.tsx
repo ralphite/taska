@@ -118,7 +118,7 @@ export function ViewBar({
       ref={row}
       onScroll={measure}
       {...(more ? { 'data-views-open': open ? 'true' : 'false' } : {})}
-      className={`flex min-h-12 items-center gap-1 px-2 ${open ? 'flex-wrap py-[calc((var(--spacing-bar)-1px-2rem)/2)]' : 'h-full [scrollbar-width:none] overflow-x-auto'}`}
+      className={`flex min-h-12 items-center gap-1 px-2 ${open ? 'flex-wrap py-[calc((var(--spacing-bar)-1px-2rem)/2)]' : 'h-full [scrollbar-width:none] overflow-x-auto overflow-y-hidden'}`}
     >
         {views.map((v) => (
           <button key={v.value} ref={v.on ? shown : undefined} aria-pressed={v.on} onClick={() => onView(v.value)} className={CHIP}>

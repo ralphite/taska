@@ -185,7 +185,7 @@ export function FilterChips({ set, onUnset }: { set: [string, ReactNode][]; onUn
  * stays at the end and fades what passes under it. */
 export function FilterStrip({ set, hidden, onUnset, onReset }: { set: [string, ReactNode][]; hidden: boolean; onUnset(k: string): void; onReset(): void }) {
   return (
-    <div hidden={hidden} className="flex h-11 shrink-0 [scrollbar-width:none] items-center gap-2 overflow-x-auto border-b border-zinc-100 pl-4 lg:hidden dark:border-zinc-800/70">
+    <div hidden={hidden} className="flex h-11 shrink-0 [scrollbar-width:none] items-center gap-2 overflow-x-auto overflow-y-hidden border-b border-zinc-100 pl-4 lg:hidden dark:border-zinc-800/70">
       <FilterChips set={set} onUnset={onUnset} />
       <button onClick={onReset} className="sticky right-0 ml-auto h-11 shrink-0 bg-linear-to-r from-transparent to-white to-50% pr-4 pl-12 text-[13px] font-semibold text-blue-600 dark:to-zinc-950 dark:text-blue-400">
         Clear
