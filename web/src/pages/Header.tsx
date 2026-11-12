@@ -43,12 +43,14 @@ export function OfflinePill() {
 export function AgentPill({ tone, label, who, offline }: { tone: AgentTone; label: string; who?: AgentWho; offline: boolean }) {
   if (offline) return <OfflinePill />
   const words = who ? [hasIcon(who.by) ? '' : whoName(who.by), who.session].filter(Boolean) : []
+  // the agent's own icon is the mark: no dot beside it, the pill's color says how it is (B759)
+  const icon = !!who && hasIcon(who.by)
   return (
     <span className={`flex h-8 max-w-52 items-center gap-2 rounded-full px-3 text-[13px] font-medium ring-1 ring-inset lg:max-w-80 ${PILL[tone][0]}`}>
-      <span className={`size-2 shrink-0 rounded-full ${PILL[tone][1]}`} />
+      {icon ? null : <span className={`size-2 shrink-0 rounded-full ${PILL[tone][1]}`} />}
       {who ? (
         <>
-          {hasIcon(who.by) ? <span className="-mx-0.5 flex shrink-0"><Avatar by={who.by} /></span> : null}
+          {icon ? <span className="-ml-1.5 -mr-0.5 flex shrink-0"><Avatar by={who.by} /></span> : null}
           {words.length ? <span className="min-w-0 truncate">{words.join(' · ')}</span> : null}
           {who.state ? <span className="-ml-1 shrink-0 whitespace-nowrap">{words.length ? `· ${who.state}` : who.state}</span> : null}
         </>

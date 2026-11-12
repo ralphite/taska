@@ -27,6 +27,12 @@ describe('agents by their icon, sessions where they belong (T711)', () => {
     expect(container.textContent).toBe('Fix export· 5m')
   })
 
+  test('B759 (Yadong r1277): the icon is the mark, no dot beside it; an agent without one keeps the dot', () => {
+    const dot = (by: string) => render(<AgentPill tone="ready" label="" who={{ by, session: '', state: 'ready' }} offline={false} />).container.querySelector('span.rounded-full span.rounded-full')
+    expect(dot('claude-code')).toBeNull()
+    expect(dot('antigravity')).toBeTruthy()
+  })
+
   test('lists name no session: a row\'s agent mark, the sidebar\'s card', () => {
     expect(workerTip('claude-code')).toBe('Claude Code is on it')
     const card = projectCard({ open: 1, closed: 0, needs: 0, inputs: 0, docs: 0, work: true, t: 0, agents: [{ name: 'claude-code', t: 1e12, waiting: true, session: 'Fix export' }] }, 1e12)
