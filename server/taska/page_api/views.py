@@ -140,11 +140,19 @@ def rules_view(st: ProjectState, d: Doc) -> View:
                           **({"p": x.p} if x.p else {}), **({"ses": x.ses} if x.ses else {})} for x in vs]}
 
 
+# B756: a web page bigger than this (its sound and pictures written into it) is not in the project's view: the page
+# asks for it when it is opened (GET api/doc), so the project opens fast over a slow connection.
+BIG_PAGE = 1_000_000
+
+
 def doc_view(d: Doc, st: Optional[ProjectState] = None) -> View:
     blocks, detached = rules.doc_view(d)
     more = rules_view(st, d) if st is not None and d.is_rules else {}
-    return {**more, "d": d.d, "n": d.n, "title": d.title, "md": d.md, "t0": d.t0, "t1": d.t1, "by": d.by, "versions": d.versions,
-            "fmt": d.fmt or "md",
+    big = d.fmt == "html" and len(d.md) > BIG_PAGE
+    if big:
+        more["size"] = len(d.md)
+    return {**more, "d": d.d, "n": d.n, "title": d.title, "md": "" if big else d.md, "t0": d.t0, "t1": d.t1, "by": d.by,
+            "versions": d.versions, "fmt": d.fmt or "md",
             "blocks": [{"key": b.key, "kind": b.kind, "text": b.text, "comments": [comment_view(c) for c in b.comments]}
                        for b in blocks],
             "detached": [{"key": t.key, "quote": t.quote, "comments": [comment_view(c) for c in t.comments]} for t in detached],

@@ -161,6 +161,9 @@ export interface Doc {
   by: string
   versions: number
   fmt: 'md' | 'html'
+  /** a web page too big for the project's view (B756: its sound and pictures are written into it): its length; its
+   * text (md is empty) comes when it is opened (Docs.loadPage) */
+  size?: number
   blocks: Block[]
   detached: { key: string; quote: string; comments: Comment[] }[]
   whole: Comment[]

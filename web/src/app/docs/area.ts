@@ -13,7 +13,7 @@ import { Rules } from './rules'
 
 export function makeDocs(c: Core, i: Pick<InputsArea, 'box' | 'inputs'>, dictation: () => Dictation) {
   const { s, toasts, runner, sheets, fields } = c
-  const docs = new Docs({ route: s.route, model: c.model, view: s.docView, nav: c.nav, fields, toasts, desk: c.desk, leaveEditor: () => docEditor.keep() })
+  const docs = new Docs({ route: s.route, model: c.model, view: s.docView, nav: c.nav, fields, toasts, api: c.api, desk: c.desk, leaveEditor: () => docEditor.keep() })
   const docEditor: DocEditor = new DocEditor({
     route: s.route,
     model: c.model,
@@ -23,6 +23,7 @@ export function makeDocs(c: Core, i: Pick<InputsArea, 'box' | 'inputs'>, dictati
     toasts,
     kv: c.kv,
     desk: c.desk,
+    page: docs,
     open: (dn) => docs.open(dn),
     close: () => docs.close(),
     mic: { discard: (key) => dictation().discard(key), settled: () => dictation().settled() },

@@ -44,6 +44,8 @@ export interface Request {
   headers?: Record<string, string>
   timeout?: number
   signal?: AbortSignal
+  /** an answer that never changes under its address (a version of a document): the browser may keep it */
+  cache?: boolean
 }
 
 export type Transport = (url: string, init: RequestInit) => Promise<Response>
@@ -78,7 +80,7 @@ export class Http {
     }
     let res: Response
     try {
-      res = await this.transport(url, { method: req.method || 'GET', headers, body, cache: 'no-store', signal: ctl.signal })
+      res = await this.transport(url, { method: req.method || 'GET', headers, body, cache: req.cache ? 'default' : 'no-store', signal: ctl.signal })
     } catch (ex) {
       if (outer?.aborted) throw new Abandoned()
       throw new Unreachable(ctl.signal.aborted, undefined, ex instanceof Error ? ex.message : undefined)

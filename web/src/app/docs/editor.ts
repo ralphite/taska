@@ -3,6 +3,7 @@
 // on an item; deleted and moved to another item, with Undo.
 
 import type { CommandOf } from '../../model/commands'
+import type { Doc } from '../../model/types'
 import { noteText } from '../../model/docs'
 import { codeOf, type ProjectModel } from '../../model/project'
 import type { DocViewStore } from '../../stores/docView'
@@ -19,6 +20,8 @@ export interface DocEditorDeps extends DocPlace {
   toasts: Toasts
   kv: KeyValueStore
   desk(): boolean
+  /** a big web page's text (B756: not in the view): edited once it came */
+  page: { pageText(slug: string, doc: Doc): string | undefined; loadPage(slug: string, doc: Doc): Promise<string> }
   /** the document, opened (a new one once it is here) */
   open(dn: number): void
   /** back from the document (it was deleted) */
@@ -53,6 +56,11 @@ export class DocEditor {
     const h = docHere(this.d)
     if (!h) return
     const was = this.drafts(h.slug)[`D${dn}`]
+    const doc = h.m.docs.find((x) => x.d === dn)
+    if (was == null && doc && this.d.page.pageText(h.slug, doc) == null) {
+      void this.d.page.loadPage(h.slug, doc).then(() => this.edit(dn), () => this.d.toasts.show('Not loaded: try again'))
+      return
+    }
     this.d.view.getState().edit(true, was ?? null)
     if (!this.d.desk()) this.d.sheets.open({ kind: 'doc-edit', d: dn }, { focus: false, tall: true })
     if (was) this.d.toasts.show('Draft restored')
@@ -72,7 +80,8 @@ export class DocEditor {
     const h = docHere(this.d)
     const v = this.d.view.getState()
     if (!h || !v.editing) return null
-    const doc = v.newFor == null && v.d != null ? h.m.docs.find((x) => x.d === v.d) : undefined
+    const found = v.newFor == null && v.d != null ? h.m.docs.find((x) => x.d === v.d) : undefined
+    const doc = found && { ...found, md: this.d.page.pageText(h.slug, found) ?? '' }
     const was = doc ? noteText(doc).trim() : ''
     const md = (v.text ?? (doc ? noteText(doc) : '')).trim()
     return { slug: h.slug, m: h.m, dn: doc?.d ?? null, n: v.newFor, md, was, key: doc ? `D${doc.d}` : `new ${v.newFor}` }

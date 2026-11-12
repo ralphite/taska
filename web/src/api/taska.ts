@@ -238,6 +238,11 @@ export class TaskaApi {
     return this.http.json('/api/key', { method: 'POST' })
   }
 
+  /** A big web page document's text (B756: not in the view), each version once: the browser keeps it. */
+  docText(slug: string, d: number, t1: string): Promise<string> {
+    return this.http.text(P(slug) + `doc?d=${d}&t=${encodeURIComponent(t1)}`, { timeout: 180000, cache: true })
+  }
+
   /** The pictures of the project's files, each with its width and height. */
   pictureSizes(slug: string): Promise<Answers['pictureSizes']> {
     return this.http.json(P(slug) + 'picture-sizes')

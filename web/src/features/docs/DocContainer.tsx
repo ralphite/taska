@@ -2,7 +2,7 @@
 // Delete, the way back), on the phone in a sheet over its item. What it shows comes from the model and the document's
 // view; what you do goes to app.docs.
 
-import { useEffect, useMemo, type ReactNode, useCallback } from 'react'
+import { useEffect, useMemo, useState, type ReactNode, useCallback } from 'react'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { usePaneRef } from '../../app/panes'
@@ -26,6 +26,7 @@ import type { DocEnv } from './Thread'
 import { docDraft } from '../../model/draftTarget'
 import { RecMeter } from '../../app/RecMeter'
 import { PLACE_LEVELS } from '../../ui/PlaceVoice'
+import { MUTED } from '../../ui/tones'
 
 const SIDE_NAME = { docs: 'Documents', log: 'Activity', deleted: 'Deleted' } as const
 
@@ -105,6 +106,32 @@ export function useDoc(slug: string, dn: number) {
   return { m, d, facts, env, on, v, desk, page, aimed }
 }
 
+/** A web page's text: a big one's (B756: not in the project's view) once it came, asked for again until it does. */
+function usePageText(slug: string, d: Doc): string | null {
+  const app = useServices('docs')
+  const k = `${slug} ${d.d} ${d.t1}`
+  const now = app.docs.pageText(slug, d)
+  const [got, setGot] = useState<{ k: string; text: string } | null>(null)
+  useEffect(() => {
+    if (now != null) return
+    let on = true
+    let timer = 0
+    const ask = () =>
+      app.docs.loadPage(slug, d).then(
+        (text) => on && setGot({ k, text }),
+        () => {
+          if (on) timer = window.setTimeout(ask, 3000)
+        },
+      )
+    void ask()
+    return () => {
+      on = false
+      clearTimeout(timer)
+    }
+  }, [k]) // eslint-disable-line react-hooks/exhaustive-deps
+  return now ?? (got?.k === k ? got.text : null)
+}
+
 /** A web page document's own view, with its threads. */
 function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string; d: Doc; v: DocViewState; seen: Readonly<Record<string, string>>; env: DocEnv; on: DocEvents; waiting: readonly NotSent[] }) {
   const app = useServices('actions', 'docVoice', 'docs', 'fields', 'voice')
@@ -118,10 +145,12 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
   const rec = !!spoken
   const w = useMemo(() => webFacts(d, v, seen, asked, waiting, spoken ? (JSON.parse(spoken) as { key: string; text: string }) : null), [d, v, seen, asked, waiting, spoken])
   const held = w.held
+  const html = usePageText(slug, d)
+  if (html == null) return <div className={`mt-6 text-sm ${MUTED}`}>Loading…</div>
   return (
     <WebPage
       title={d.title}
-      html={d.md}
+      html={html}
       threads={w.threads}
       held={held}
       rec={rec}

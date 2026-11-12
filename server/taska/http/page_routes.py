@@ -6,6 +6,7 @@
     (a file is sent as an agent sends one: POST /api/file, in agent_routes)
     GET  words?f=   POST words?f=&again=1&more=1     a voice note's words (POST waits for them)
     GET  activity?n=&before=    the change log, newest first
+    GET  doc?d=&t=              a big web page document's text (B756: not in the view)
     GET  picture-sizes          each picture's width and height
     POST page-log               the page's own records, into the log
     POST diagram-failed         {d, v, key, error}: a document's diagram the page could not draw, to its writer
@@ -98,6 +99,14 @@ def get(ctx: "AppContext", req: Request, p: Project, sub: str) -> Optional[Respo
         n, before = min(int(req.arg("n", "300") or 300), 2000), int(req.arg("before", "0") or 0)
         with p.lock:
             return as_json(change_log.entries(p.state, n, before)[::-1])
+    if sub == "/api/doc":  # a big web page's text (B756), as text: it is drawn in the page's own sandboxed frame
+        with p.lock:
+            d = p.state.docs.get(int(req.arg("d"))) if req.arg("d").isdigit() else None
+            md = d.md if d and not d.deleted else None
+        if md is None:
+            return text(404, NOT_FOUND)
+        return Response(200, md.encode(), "text/plain; charset=utf-8", headers={"Content-Security-Policy": "sandbox"},
+                        cache="private, max-age=31536000, immutable" if req.arg("t") else "no-store")
     if sub == "/api/picture-sizes":
         return as_json({name: list(wh) for name, wh in ctx.pictures.of_folder(p.files.folder).items()})
     if sub == "/api/words":  # a voice note's words, without waiting

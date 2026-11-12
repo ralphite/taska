@@ -6,6 +6,8 @@ import { docTarget, splitThread } from '../../model/docs'
 import { placeDoc } from '../../model/rules'
 import { codeOf, liveN } from '../../model/project'
 import type { Tab } from '../../model/words'
+import type { Doc } from '../../model/types'
+import type { TaskaApi } from '../../api/taska'
 import type { DocViewStore } from '../../stores/docView'
 import type { Fields } from '../page/fields'
 import type { Navigation } from '../page/navigation'
@@ -18,6 +20,7 @@ export interface DocsDeps extends DocPlace {
   nav: Navigation
   fields: Fields
   toasts: Toasts
+  api: Pick<TaskaApi, 'docText'>
   desk(): boolean
   /** leaving a document being edited (on the desktop, in the pane): its text is kept as a draft */
   leaveEditor(): void
@@ -25,6 +28,9 @@ export interface DocsDeps extends DocPlace {
 
 export class Docs {
   private readonly d: DocsDeps
+  /** big web pages' texts (B756), by project, document and version: the latest of each document */
+  private readonly pages = new Map<string, string>()
+  private readonly asking = new Map<string, Promise<string>>()
   readonly stop: () => void
   constructor(d: DocsDeps) {
     this.d = d
@@ -54,8 +60,32 @@ export class Docs {
 
   /** Its whole text, as written (Markdown, or a web page's HTML), on the clipboard (F625). */
   copy(dn: number): void {
-    const doc = docHere(this.d)?.m.docs.find((x) => x.d === dn)
-    if (doc) void copyText(doc.md).then(() => this.d.toasts.show('Copied'))
+    const h = docHere(this.d)
+    const doc = h?.m.docs.find((x) => x.d === dn)
+    if (h && doc) void this.loadPage(h.slug, doc).then(copyText).then(() => this.d.toasts.show('Copied'), () => this.d.toasts.show('Not copied: try again'))
+  }
+
+  /** A document's text: a big web page's (B756) once it came, else undefined. */
+  pageText(slug: string, doc: Doc): string | undefined {
+    return doc.size ? this.pages.get(pageKey(slug, doc)) : doc.md
+  }
+
+  /** A big web page's text (B756), asked for once per version; any other document's is in the view. */
+  loadPage(slug: string, doc: Doc): Promise<string> {
+    const k = pageKey(slug, doc)
+    const had = this.pageText(slug, doc)
+    if (had != null) return Promise.resolve(had)
+    let p = this.asking.get(k)
+    if (!p) {
+      p = this.d.api.docText(slug, doc.d, doc.t1).then((text) => {
+        for (const x of [...this.pages.keys()]) if (x.startsWith(`${slug} ${doc.d} `)) this.pages.delete(x)
+        this.pages.set(k, text)
+        return text
+      })
+      this.asking.set(k, p)
+      void p.finally(() => this.asking.delete(k)).catch(() => {})
+    }
+    return p
   }
 
   /** From an item's talk to a comment in its document: the document, the comment's thread open, its passage in view. */
@@ -170,3 +200,5 @@ export class Docs {
     if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
   }
 }
+
+const pageKey = (slug: string, doc: Doc) => `${slug} ${doc.d} ${doc.t1}`
