@@ -191,7 +191,7 @@ export class ItemActions {
     const ranks = ranksFor(m.items, m.byN, n, t, after)
     const send = (list: { n: number; rank: number | null }[]) =>
       this.d.runner.change(this.d.slug(), list.map((p): Command => ({ op: 'set', ref: codeOf(m, p.n), f: { rank: p.rank } })), `moving ${ref}`)
-    this.d.toasts.show(`${ref} ${after ? 'after' : 'before'} ${codeOf(m, t)}${it.pri !== to.pri ? `, now ${to.pri}` : ''}`, async () => {
+    this.d.toasts.show(`${ref} ${after ? 'after' : 'before'} ${codeOf(m, t)}`, async () => {
       this.d.toasts.show(`${ref} put back`)
       return send(ranks.map((p) => ({ n: p.n, rank: p.was })))
     })
