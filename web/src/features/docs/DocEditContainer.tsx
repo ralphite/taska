@@ -8,12 +8,14 @@ import { DocEdit } from './DocEdit'
 import { editFacts } from './docFacts'
 
 export function DocEditContainer({ slug }: { slug: string }) {
-  const app = useServices('dictation', 'docEditor', 'fields')
+  const app = useServices('dictation', 'docEditor', 'docs', 'fields')
   const stores = useStores('dictation', 'docView')
   const desk = useLayout() === 'desk'
   const m = useProjectModel(slug)
   const v = useStoreValue(stores.docView, (s) => s)
-  const d = v.newFor == null && v.d != null ? m?.docs.find((x) => x.d === v.d) : undefined
+  const found = v.newFor == null && v.d != null ? m?.docs.find((x) => x.d === v.d) : undefined
+  // a big web page's text (B756: not in the view) is the one that came when Edit was pressed
+  const d = found && { ...found, md: app.docs.pageText(slug, found) ?? '' }
   const text = v.text ?? (d ? noteText(d) : '')
   const rec = useStoreValue(stores.dictation, (s) => s.rec)
   const key = d ? `D${d.d}` : `new ${v.newFor}`
