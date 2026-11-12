@@ -153,7 +153,7 @@ AGENT = (
     '        mode), or `claude -p --resume <session> --permission-mode auto --output-format json "<brief>"`.\n'
     '      Codex: use the native send_message_to_thread tool only for authorized real work. Do not launch a relay\n'
     '      model. For automatic Taska updates, follow the Codex setup below.\n'
-    '      Antigravity: workers started from its Agent Manager and reused. Not tried yet, nor how to read its tokens.\n'
+    '      Antigravity: a subagent per item, as in its own section below.\n'
     '\n'
     'MANAGER NEVER BLOCKS (T652)\n'
     '      A manager does four things only: reads and writes Taska, sends messages to task sessions, checks what they\n'
@@ -244,8 +244,59 @@ as described above. Workers write progress, questions, and results directly to T
 There is no separate notification acknowledgement. When nothing needs action, end the turn.
 If delivery fails, report it once; no polling fallback or scheduled retry.
 """
-AGENT += CODEX_WORKERS + CODEX_DELIVERY.replace("{", "{{").replace("}", "}}")
-SKILL += CODEX_WORKERS + CODEX_DELIVERY
+ANTIGRAVITY = """
+## Antigravity: one main session, a subagent per item (F755)
+
+This section is for Antigravity only; Claude Code and Codex work as described above.
+
+One Antigravity session runs a project: the main session (Yadong runs it on Opus 5.5 high). It only
+dispatches: it takes work from Taska, starts a subagent for each item, and passes the user's new words on.
+It does not do the items itself.
+
+1. **Start.** Your session id is $ANTIGRAVITY_CONVERSATION_ID: use it as sid on every call. Take the project:
+   `curl -s "BASE/next?by=antigravity&sid=$ANTIGRAVITY_CONVERSATION_ID&lead=1"`. A newer session that does
+   this takes over; then your /next answers "replaced": stop and say so in one line.
+2. **An item: a subagent of its own.** For each item /next gives you, mark it doing, then start a subagent
+   with invoke_subagent, named by the item, e.g. "B754 drag to reorder":
+   - code or design work: the `taska-code` subagent (your model: Opus 5.5 high);
+   - anything else: the `taska-work` subagent (pro: the best Gemini);
+   - a model the user names on the item wins.
+   Its prompt: the item code, BASE, and "read BASE/<code>, do it, write back on it". Then take /next again.
+3. **New words on an item that has a subagent:** send them to that subagent (`agentapi send-message
+   <its conversation id> "<the item card from BASE/<code>>"`), never a second subagent for the item.
+   Keep the list item -> subagent id; it is also on the item (each subagent says it in its first message).
+4. **Nothing to do:** start the background wait /next gives you and end the turn. It holds until Taska has
+   work, then sends it to you as a message (agentapi send-message to yourself): you wake in seconds.
+5. **Subagents** never call /next and never wait for Taska. They write progress, done and ask on their item
+   with `curl -s "BASE/do?by=antigravity&session=<its name>&sid=$ANTIGRAVITY_CONVERSATION_ID"`, the done
+   message as the rules say; after an ask they end their turn: the main session brings them the answer.
+"""
+
+AGENT += CODEX_WORKERS + CODEX_DELIVERY.replace("{", "{{").replace("}", "}}") + ANTIGRAVITY.replace("{", "{{").replace("}", "}}")
+SKILL += CODEX_WORKERS + CODEX_DELIVERY + ANTIGRAVITY
+
+# F755: the subagents the Antigravity main session starts, one per item (~/.gemini/config/agents/<name>.md)
+_SUB = """---
+name: {name}
+description: {what}
+model: {model}
+---
+
+You do one Taska item. Your prompt names it and BASE, the project's Taska URL.
+- Read `curl -s BASE/agent` once, then `curl -s BASE/rules` and `curl -s BASE/<code>` (the item), and do the work.
+- Write back on the item only: `curl -s "BASE/do?by=antigravity&session=<your name>&sid=$ANTIGRAVITY_CONVERSATION_ID"
+  --data-binary @-` with `<code> progress <text>`, `<code> done <the done message>` or `<code> ask <question>`.
+  Your first message on it says your conversation id ($ANTIGRAVITY_CONVERSATION_ID), so new words reach you.
+- Never call /next and never wait for Taska: after an ask, or when done, end your turn. New words on the item
+  come to you as a message from the main session.
+- The user reads Taska only, usually on a phone: what they should see goes on the item, in their language.
+"""
+ANTIGRAVITY_AGENTS = {
+    "taska-code": _SUB.format(name="taska-code", model="inherit",
+                              what="Does one Taska item that is code or design work, on the main session's model."),
+    "taska-work": _SUB.format(name="taska-work", model="pro",
+                              what="Does one Taska item that is not code or design (research, writing, data), on the best Gemini."),
+}
 
 CONNECT = (
     '#!/bin/sh\n'
@@ -258,5 +309,11 @@ CONNECT = (
     '    mkdir -p "$d/taska" && curl -fsS \'{host}/skill\' -o "$d/taska/SKILL.md" && echo "skill: $d/taska/SKILL.md"\n'
     '  fi\n'
     'done\n'
+    'if [ -d "$HOME/.gemini/config" ]; then  # F755: the subagents Antigravity starts for Taska items\n'
+    '  mkdir -p "$HOME/.gemini/config/agents"\n'
+    '  for a in taska-code taska-work; do\n'
+    '    curl -fsS "{host}/antigravity-agents/$a.md" -o "$HOME/.gemini/config/agents/$a.md" && echo "subagent: $a"\n'
+    '  done\n'
+    'fi\n'
     'echo "This folder now points to Taska project {name}: {base} (saved in .taska)"\n'
 )

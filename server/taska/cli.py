@@ -45,10 +45,11 @@ def main(argv: Optional[List[str]] = None) -> None:
     ap.add_argument("--log-level", default="INFO", help="what the terminal shows (DEBUG shows every request)")
     args = ap.parse_args(argv)
     if args.command == "install-skill":
-        from .agent_text.guide_text import SKILL
-        from .infra.skill_files import install_skill
+        from .agent_text.guide_text import ANTIGRAVITY_AGENTS, SKILL
+        from .infra.skill_files import install_antigravity_agents, install_skill
         print("Installed the Taska skill:")
         install_skill(SKILL)
+        install_antigravity_agents(ANTIGRAVITY_AGENTS)
         return
     serve(args.root, args.host, args.port, args.organizer == "auto" and bool(api_key()), args.public,
           os.path.join(os.path.expanduser(args.root), "logs.db") if args.log_db is None else args.log_db, args.log_level)

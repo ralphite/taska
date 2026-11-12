@@ -19,3 +19,16 @@ def install_skill(text: str) -> None:
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
         print(f"  {agent}: {path}")
+
+
+def install_antigravity_agents(agents: dict) -> None:
+    """F755: the subagents Antigravity's main session starts for Taska items (~/.gemini/config/agents)."""
+    root = os.path.expanduser("~/.gemini/config")
+    if not os.path.isdir(root):
+        return
+    os.makedirs(os.path.join(root, "agents"), exist_ok=True)
+    for name, text in agents.items():
+        path = os.path.join(root, "agents", f"{name}.md")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(text)
+        print(f"  Antigravity subagent: {path}")

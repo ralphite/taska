@@ -76,6 +76,23 @@ class AgentActivity:
         self.guide_texts: Dict[str, str] = {str(k): str(v) for k, v in (guide.get("texts") or {}).items()}
         self.guide_marks: Dict[str, str] = {str(k): str(v) for k, v in (guide.get("marks") or {}).items()}
         self.blocked: Dict[str, List[Dict[str, object]]] = {}  # per agent: its sessions waiting on the user (T711)
+        lead = db.get("antigravity-lead")  # F755: the one Antigravity session that runs this project, and since when
+        self.lead: Optional[Tuple[str, str]] = (str(lead["sid"]), str(lead["t"])) if isinstance(lead, dict) and lead.get("sid") else None
+
+    # -- the Antigravity session that runs the project (F755) ----------------------
+
+    def take_lead(self, sid: str, t: str) -> None:
+        """An Antigravity session starts running this project: a newer one takes over from the one before it, whose
+        /next then tells it to stop (Yadong r1260)."""
+        if not SID.fullmatch(sid) or (self.lead and self.lead[0] == sid):
+            return
+        self.lead = (sid, t)
+        self._db.put("antigravity-lead", {"sid": sid, "t": t})
+        self._changed()
+
+    def replaced(self, sid: str) -> Optional[str]:
+        """For an Antigravity session that is not the one running this project: since when another is (else None)."""
+        return self.lead[1] if self.lead and sid != self.lead[0] else None
 
     # -- calls ------------------------------------------------------------------
 

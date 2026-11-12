@@ -106,12 +106,27 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
     return None
 
 
+REPLACED = ("replaced: another Antigravity session runs this project now (since {t}). Stop here: end your turn, do not "
+            "call /next again or start a wait, and tell the user in one line that this session was replaced.\n")
+
+
 def _next(req: Request, p: Project, by: str) -> Response:
     q = req.query
     wait = max(0, min(int(req.arg("wait", "0") or 0), 540))
     end = time.time() + wait
     given: Optional[int] = None
     session = req.session()
+    sid = req.arg("sid") if by == "antigravity" and "ui" not in q else ""
+    if sid:  # F755: one Antigravity session runs a project; a newer one takes over (lead=1), the one before stops
+        with p.lock:
+            if q.get("lead"):
+                p.agents.take_lead(sid, time.strftime("%m-%d %H:%M"))
+            since = p.agents.replaced(sid)
+        if since:
+            if q.get("wait"):
+                with p.lock:
+                    p.agents.saw(by, -1)
+            return text(200, REPLACED.format(t=since))
     try:
         with p.lock:  # ?wait=N: while there is nothing to do, hold until work arrives
             who = req.arg("by") or None if "ui" not in q else None
@@ -131,6 +146,8 @@ def _next(req: Request, p: Project, by: str) -> Response:
             w = work_for(p, req, who, session)
             while nothing_new(w) and not p.gone and time.time() < end:  # a deleted project lets its agents go
                 p.news.wait(timeout=end - time.time())
+                if sid and p.agents.replaced(sid):  # taken over while it waited: told at once
+                    return text(200, REPLACED.format(t=p.agents.replaced(sid)))  # (the wait is let go below)
                 w = work_for(p, req, who, session)
             given = w.given
             if given is not None and who:  # the card it was given holds what other sessions wrote there

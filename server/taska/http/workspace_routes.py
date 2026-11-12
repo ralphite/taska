@@ -7,7 +7,7 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING, Optional
 
-from ..agent_text.guide_text import SKILL
+from ..agent_text.guide_text import ANTIGRAVITY_AGENTS, SKILL
 from ..infra import logs
 from ..infra.logs import voice_fix
 from ..page_api.find import find_view
@@ -37,6 +37,8 @@ def get(ctx: "AppContext", req: Request, path: str) -> Optional[Response]:
         return as_json({"idle": int(time.time() - ctx.status.last_user), "update": ctx.status.update_ready()})
     if path == "/skill":
         return text(200, SKILL, "text/markdown; charset=utf-8")
+    if path.startswith("/antigravity-agents/") and path[20:].removesuffix(".md") in ANTIGRAVITY_AGENTS:  # F755
+        return text(200, ANTIGRAVITY_AGENTS[path[20:].removesuffix(".md")], "text/markdown; charset=utf-8")
     if path == "/api/projects":
         return as_json(ws.summary(presence))
     if path == "/api/needs":

@@ -20,6 +20,13 @@ Holder = Callable[[Item], Optional[Tuple[str, float]]]
 Calls = Callable[[], List[Tuple[Item, Message, bool]]]
 
 
+# F755: the Antigravity session's wait for work; Taska's answer comes back to it as a message to itself
+ANTIGRAVITY_WAIT = (
+    '  while o=$(curl -s "BASE/next?wait=540&by={who}&sid=$ANTIGRAVITY_CONVERSATION_ID"); [ -z "$o" ] || echo "$o" | grep -q '
+    "'nothing to do now'; do sleep 20; done; \"$HOME/.gemini/antigravity/bin/agentapi\" send-message --title=Taska "
+    '"$ANTIGRAVITY_CONVERSATION_ID" "$o"'
+)
+
 @dataclass
 class Work:
     text: str
@@ -109,4 +116,8 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         end += ("\nClaude Code: before ending the turn, start this with Bash run_in_background (it costs no tokens; Taska "
                 "answers it only when there is work, and that wakes you):\n"
                 f"  while o=$(curl -s \"BASE/next?wait=540&by={who}&sid=$CLAUDE_CODE_SESSION_ID\"); [ -z \"$o\" ] || echo \"$o\" | grep -q 'nothing to do now'; do sleep 20; done; echo \"$o\"")
+    elif asker.who == "antigravity":  # F755: its wait wakes the session by a message to itself (D133)
+        who = asker.who + (f"&session={asker.session}" if asker.session else "")
+        end += ("\nAntigravity: before ending the turn, run this as a background command (it costs no tokens; Taska answers it "
+                "only when there is work, and then it sends that to you as a message):\n" + ANTIGRAVITY_WAIT.format(who=who))
     return Work(f"{head}\n{end}\n", False)
