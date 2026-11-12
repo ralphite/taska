@@ -108,8 +108,19 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
   useRowSwipe(own, !desk && !!swipe, swipe ?? NO_SWIPE, drawingKey(rows))
   const rowOf = (t: EventTarget) => (t as Element).closest?.<HTMLElement>('article[data-n]') ?? null
   return (
+    // The views' row is above the list, not in it: the list scrolls and bounces (the phone's pull at its top) under it,
+    // and the row never moves (B758)
+    <div id="list" className="flex min-h-0 flex-1 flex-col">
+      {loading ? null : top}
+      {views && !loading ? (
+        // the desktop: as high as the pane's bar beside it, one line under both (B669); opened, as tall as its lines
+        <div className="flex shrink-0 items-stretch lg:min-h-bar">
+          <div className="min-w-0 flex-1">
+            <ViewBar views={views} own={ownViews} lead={viewsLead} more={viewsMore} onView={on.view} onOwn={on.ownView} onOwnMenu={on.ownMenu} onRename={on.rename} onRenameStop={on.renameStop} />
+          </div>
+        </div>
+      ) : null}
     <div
-      id="list"
       ref={(el) => {
         own.current = el
         if (typeof ref === 'function') ref(el)
@@ -148,16 +159,6 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
         <Skeleton shape="item" n={6} />
       ) : (
         <>
-          {top}
-          {views ? (
-            // the desktop: as high as the pane's bar beside it, one line under both (B669); opened, as tall as its lines.
-            // It stays at the top while the list scrolls under it (B758)
-            <div className="sticky top-0 z-10 flex items-stretch bg-white lg:min-h-bar dark:bg-zinc-950">
-              <div className="min-w-0 flex-1">
-                <ViewBar views={views} own={ownViews} lead={viewsLead} more={viewsMore} onView={on.view} onOwn={on.ownView} onOwnMenu={on.ownMenu} onRename={on.rename} onRenameStop={on.renameStop} />
-              </div>
-            </div>
-          ) : null}
           {rows.map((r) => {
             switch (r.kind) {
               case 'item':
@@ -175,6 +176,7 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
           {!rows.length ? empty : null}
         </>
       )}
+    </div>
     </div>
   )
 })
