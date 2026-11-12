@@ -240,6 +240,8 @@ def record(base: str) -> Dict[str, Any]:
     agent = lambda words, session="sample": c.raw(f"/p/{slug}/do?by=claude-code&session={session}", words.encode(), "text/plain")  # noqa: E731
     agent("T2 progress Looking at the address.\n", "helper")
     agent(SEED)
+    # a web page too big for the view (B756: its sound written into it): its text comes by itself (api/doc)
+    agent("T2 html\n  <html><head><title>Lecture</title></head><body><audio src='data:audio/mp3;base64," + "A" * 1_000_000 + "'></audio></body></html>\n")
     out["upload"] = c.json(p + "file?name=note.webm&transcribe=1&scope=B1", b"\x1aE\xdf\xa3 not really audio", "audio/webm")
     voice = out["upload"]
     # its final words, so the answer's shape never depends on whether the first words came early (B735: `more` is
