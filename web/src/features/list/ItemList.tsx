@@ -150,8 +150,9 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
         <>
           {top}
           {views ? (
-            // the desktop: as high as the pane's bar beside it, one line under both (B669); opened, as tall as its lines
-            <div className="flex items-stretch lg:min-h-bar">
+            // the desktop: as high as the pane's bar beside it, one line under both (B669); opened, as tall as its lines.
+            // It stays at the top while the list scrolls under it (B758)
+            <div className="sticky top-0 z-10 flex items-stretch bg-white lg:min-h-bar dark:bg-zinc-950">
               <div className="min-w-0 flex-1">
                 <ViewBar views={views} own={ownViews} lead={viewsLead} more={viewsMore} onView={on.view} onOwn={on.ownView} onOwnMenu={on.ownMenu} onRename={on.rename} onRenameStop={on.renameStop} />
               </div>
