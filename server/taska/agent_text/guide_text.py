@@ -280,6 +280,8 @@ _SUB = """---
 name: {name}
 description: {what}
 model: {model}
+tools: [view_file, list_dir, find_by_name, grep_search, write_to_file, replace_file_content, multi_replace_file_content, run_command, command_status, read_url_content, search_web]
+commandExecutionPolicy: auto
 ---
 
 You do one Taska item. Your prompt names it and BASE, the project's Taska URL.

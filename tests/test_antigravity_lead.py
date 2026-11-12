@@ -69,6 +69,8 @@ class AntigravityLead(ProjectCase):
     def test_the_subagents_it_starts(self) -> None:
         self.assertIn("model: inherit", guide_text.ANTIGRAVITY_AGENTS["taska-code"])  # the main session's: Opus 5.5 high
         self.assertIn("model: pro", guide_text.ANTIGRAVITY_AGENTS["taska-work"])
+        for a in guide_text.ANTIGRAVITY_AGENTS.values():  # a subagent has no tools unless they are listed: it ran nothing
+            self.assertIn("run_command", a.split("---")[1])
 
 
 if __name__ == "__main__":
