@@ -121,9 +121,11 @@ Change an input you sent and it is read again: its items follow the new words.
         about: 'Let Claude Code or Codex work on this project.',
         text: `## Open Agents
 
-Click the agent status at the top right. **Agents** shows whether an agent is here, what is waiting for one, and the ways to connect one.
+Click the agent status at the top right. **Agents** shows whether an agent is here, what is waiting for one, every agent session seen in the project and what each is doing, and the ways to connect one.
 
 ## Two ways to connect
+
+Under **Connect another agent**:
 
 1. **Run a command** once per machine, in the project's folder.
 2. **Tell the agent** the words shown there.
@@ -134,9 +136,9 @@ An agent that has worked on the project in the last few days counts as connected
 
 When you write, Taska tells the connected agent at once. An agent waiting for work spends no tokens.
 
-## What the agent reads
+## What agents read
 
-**What the agent reads**, at the foot of Agents, shows the guide it follows, word for word.`,
+**What agents read**, under the sessions in Agents, shows the guide they follow, word for word.`,
       },
     ],
   },

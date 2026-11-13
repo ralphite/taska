@@ -48,7 +48,7 @@ export const LoadingAndEveryEmptyList: Story = {
             ] as const
           ).map(([why, status, organizerOn]) => (
             <div key={why + status + organizerOn} className="flex flex-col">
-              <ItemList loading={false} views={null} rows={[]} on={listOn} empty={<EmptyList why={why} status={status} organizerOn={organizerOn} onReset={act('List: clear search and filters')} onConnect={act('List: connect an agent → Agents › Who works here')} />} />
+              <ItemList loading={false} views={null} rows={[]} on={listOn} empty={<EmptyList why={why} status={status} organizerOn={organizerOn} onReset={act('List: clear search and filters')} onConnect={act('List: connect an agent → Agents')} />} />
             </div>
           ))}
         </div>

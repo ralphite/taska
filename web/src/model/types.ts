@@ -210,12 +210,29 @@ export interface RuleProposal {
   comments: Comment[]
 }
 
+/** One session of an agent (F768): its name and last call; the id its app knows it by (sid) and what the app says
+ * of it now (Claude Code and Codex: busy, idle, waiting on the user, exited; since when, what it waits on, its
+ * folder); whether a waker waits for work for it (Antigravity); the item it is on and since when; the session that
+ * started it (a manager's worker). */
+export interface AgentSession {
+  name: string
+  t: number
+  sid?: string
+  status?: 'busy' | 'idle' | 'waiting' | 'exited'
+  since?: number
+  cwd?: string
+  waitingFor?: string
+  waiting?: boolean
+  on?: { n: number; since: number }
+  parent?: string
+}
+
 export interface AgentSeen {
   name: string
   t: number
   waiting: boolean
   session?: string
-  sessions?: { name: string; t: number }[]
+  sessions?: AgentSession[]
   /** its sessions that wait on the user now (T711): the session's title, what it waits on, since when */
   blocked?: { session: string; waitingFor: string; since: number }[]
 }

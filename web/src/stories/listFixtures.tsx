@@ -16,7 +16,7 @@ import type { Tab } from '../model/words'
 import { T, item, message, noRowEvents, modelOf } from './fixtures'
 import { act, acts } from './acts'
 
-const firstActs = acts('First steps', ['connect', 'say', 'phone'] as const, { connect: 'Agents › Who works here', phone: 'Settings › Use on your phone' })
+const firstActs = acts('First steps', ['connect', 'say', 'phone'] as const, { connect: 'Agents', phone: 'Settings › Use on your phone' })
 export const listOn: ListEvents = {
   ...noRowEvents,
   ...acts('List', ['view', 'ownView', 'drop', 'dragEnd', 'ownMenu', 'rename', 'renameStop', 'subMore', 'archiveAll', 'proposal'] as const, { ownMenu: 'Item list › Views › Your own views, sorting', proposal: 'Rules › Screens › A proposal opened' }),
@@ -159,7 +159,7 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
               status={query.status}
               organizerOn={m.facts.organizer.on}
               onReset={() => setWhere({ tab, query: { ...query, type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' } })}
-              onConnect={act('List: connect an agent → Agents › Who works here')}
+              onConnect={act('List: connect an agent → Agents')}
               firstRun={{ ...firstSteps(m), ...h.firstRun, on: firstActs }}
             />
           ) : null

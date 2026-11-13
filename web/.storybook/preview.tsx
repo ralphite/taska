@@ -47,7 +47,7 @@ const preview: Preview = {
             'Home page', ['Your projects', 'Searching', 'A new project', 'Deleted or missing projects'],
             'List pane',
             [
-              'Top bar', ['Project bar', 'Agent pill', ['Who works here', 'What an agent reads'], 'List head'],
+              'Top bar', ['Project bar', 'Agent pill', ['Agents', 'What agents read'], 'List head'],
               'View tabs', ['Tabs', 'View chips'],
               'Filters',
               'Item row',

@@ -73,7 +73,7 @@ export interface HeadHere {
 }
 
 const INPUTS = [input({ id: 'r3' }), input({ id: 'r2' }), input({ id: 'r1', acked: true })]
-const on = acts('Head', ['menu', 'agents', 'notSaved', 'noKey', 'search', 'filters', 'saveView'] as const, { agents: 'Agents › Who works here', notSaved: 'Sheets › Not saved, sign in', noKey: 'Settings › Organizer', search: 'Search on the phone', filters: 'Sheets › Filters on the phone' })
+const on = acts('Head', ['menu', 'agents', 'notSaved', 'noKey', 'search', 'filters', 'saveView'] as const, { agents: 'Agents', notSaved: 'Sheets › Not saved, sign in', noKey: 'Settings › Organizer', search: 'Search on the phone', filters: 'Sheets › Filters on the phone' })
 
 /** The head with what the page holds for it (the route's tab and filters, the phone's search, the desktop's filters
  * open): a tab opens, the filters set and take off, the phone's search types and clears (T662). The agents, Not saved,

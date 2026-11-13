@@ -1,27 +1,169 @@
-// What the Agents sheet shows, from the model: whether one is around, what waits for one, who was here and in which
-// sessions, how to connect. Pure: the container and the stories both use it.
+// What the Agents sheet shows, from the model (F768): whether one is around and what waits for one; every agent
+// session seen in the project, by its app, a manager's workers under it, each as it is now (working, idle, waiting
+// for you, gone); the one to show first; how to connect. Pure: the container and the stories both use it.
 
-import { agentState, presenceOf } from '../../model/agents'
+import { AROUND_MS, agentState, presenceOf } from '../../model/agents'
 import { ago } from '../../model/time'
 import { closed, waitsInQueue, withOpenKids } from '../../model/items'
 import type { ProjectModel } from '../../model/project'
-import type { AgentSeen } from '../../model/types'
-import { AGENT_NAME, whoName } from '../../model/words'
-import type { AgentsFacts } from './Agents'
+import type { AgentSeen, AgentSession, Item } from '../../model/types'
+import { whoName } from '../../model/words'
 
-/** An agent's sessions (those heard of today, as the server sends them, and any blocked on the user), those blocked on
- * the user first, then the latest first: each by its name, how long ago it was heard of, and what it waits on when it
- * waits on the user. */
-function sessionsOf(a: AgentSeen, at: number): AgentsFacts['seen'][number]['sessions'] {
-  const all = (a.sessions || []).filter((x) => x.name).map((x) => ({ name: x.name, t: x.t }))
-  for (const b of a.blocked || []) if (!all.some((x) => x.name === b.session)) all.push({ name: b.session, t: b.since })
-  return all
-    .map((x) => {
-      const b = a.blocked?.find((y) => y.session === x.name)
-      return { t: x.t, name: x.name, when: ago(x.t, at, 'short'), blocked: !!b, waitingFor: b?.waitingFor || '' }
-    })
-    .sort((x, y) => Number(y.blocked) - Number(x.blocked) || y.t - x.t)
-    .map(({ t: _t, ...s }) => s)
+export type SessionState = 'working' | 'idle' | 'waiting' | 'gone'
+
+export interface ItemRef {
+  n: number
+  code: string
+  title: string
+}
+
+/** A session as the sheet shows it: in the list (its state, name, when last heard of) and on its own page. */
+export interface SessionFacts {
+  key: string
+  app: string
+  name: string
+  state: SessionState
+  /** last heard of: now, 5m, 2h */
+  when: string
+  /** drawn under the session that started it */
+  worker: boolean
+  /** "Working · 20m" */
+  pill: string
+  /** its folder, ~ for the home folder ('' when its app does not say) */
+  folder: string
+  /** what it waits for you on ('' when its app does not say) and how long */
+  waits: { what: string; for: string } | null
+  on: ItemRef | null
+  workers: { key: string; name: string; state: SessionState; on: ItemRef | null }[]
+  /** its last messages in Taska, the latest first */
+  activity: { id: number; when: string; item: ItemRef; text: string }[]
+  /** back to the session in its app: Claude Code's own link, Codex's resume command */
+  link: { kind: 'open'; href: string } | { kind: 'resume'; cmd: string } | null
+}
+
+export interface AgentsFacts {
+  tone: 'ok' | 'bad' | 'idle' | 'blocked'
+  line: string
+  /** the agent the line names: its name there drawn by its app's icon where it has one (T711) */
+  lineBy?: string
+  queue: number
+  later: number
+  /** by app (Claude Code, Codex, Antigravity, then others), each session followed by its workers */
+  groups: { app: string; name: string; sessions: SessionFacts[] }[]
+  /** the session shown when the sheet opens: one waiting for you, else one working, else the latest; null: none */
+  start: string | null
+  cmd: string
+  far: string
+  ask: string
+  guide: string | null
+}
+
+const APPS = ['claude-code', 'codex', 'antigravity']
+const RANK: Record<SessionState, number> = { waiting: 0, working: 1, idle: 2, gone: 3 }
+const PILL: Record<SessionState, string> = { working: 'Working', idle: 'Idle', waiting: 'Waiting for you', gone: 'Gone' }
+
+/** A session's name as messages carry it (the server keeps 60 characters of it, spaces made one). */
+const sesKey = (s: string | null | undefined) => (s || '').split(/\s+/).filter(Boolean).join(' ').slice(0, 60)
+const keyOf = (app: string, name: string) => `${app}\u0000${name}`
+const short = (from: number, at: number) => (at - from < 60e3 ? '' : ago(from, at, 'short'))
+const firstLine = (text: string) => (text.split('\n').find((l) => l.trim()) || '').replace(/[*_`#>]+/g, '').trim()
+const home = (cwd: string) => cwd.replace(/^\/(Users|home)\/[^/]+(?=\/|$)/, '~')
+
+/** How a session is now: as its app says (Claude Code, Codex), else by when it was last heard of and whether it is on
+ * an item (Antigravity: seen lately, its waker waiting, or gone). A Codex thread is idle once its turn ends, also
+ * long after its app closed: one not heard of lately is gone. */
+export function sessionState(app: string, s: AgentSession, blocked: boolean, at: number): SessionState {
+  const quiet = !s.waiting && at - s.t >= AROUND_MS
+  if (blocked || s.status === 'waiting') return 'waiting'
+  if (s.status === 'busy') return 'working'
+  if (s.status === 'idle') return app === 'codex' && quiet ? 'gone' : 'idle'
+  if (s.status === 'exited' || quiet) return 'gone'
+  return s.on ? 'working' : 'idle'
+}
+
+/** An agent's sessions; one that never named a session is the agent itself, by its app's name. */
+function sessionsOf(a: AgentSeen): AgentSession[] {
+  const all: AgentSession[] = (a.sessions || []).filter((x) => x.name)
+  for (const b of a.blocked || []) if (!all.some((x) => x.name === b.session)) all.push({ name: b.session, t: b.since || a.t, status: 'waiting', waitingFor: b.waitingFor, since: b.since })
+  return all.length ? all : [{ name: '', t: a.t, waiting: a.waiting }]
+}
+
+function linkOf(app: string, sid: string | undefined): SessionFacts['link'] {
+  if (!sid) return null
+  if (app === 'claude-code') return { kind: 'open', href: `claude://code/continue?session=${encodeURIComponent(sid)}` }
+  if (app === 'codex') return { kind: 'resume', cmd: `codex resume ${sid}` }
+  return null
+}
+
+/** Every session of the project's agents, grouped by app, each followed by its workers; and the one to show first. */
+export function sessionGroups(m: ProjectModel): Pick<AgentsFacts, 'groups' | 'start'> {
+  const at = m.at
+  const items = new Map<number, Item>(m.items.map((it) => [it.n, it]))
+  const ref = (n: number | undefined): ItemRef | null => {
+    const it = n == null ? undefined : items.get(n)
+    return it ? { n: it.n, code: it.code, title: it.title } : null
+  }
+  const said = new Map<string, { id: number; t: number; item: ItemRef; text: string }[]>()
+  for (const it of m.items)
+    for (const x of it.thread) {
+      if (x.hidden || x.by === 'you' || !x.text.trim()) continue
+      const k = keyOf(x.by, sesKey(x.ses))
+      const list = said.get(k) ?? []
+      list.push({ id: x.id, t: Date.parse(x.t), item: { n: it.n, code: it.code, title: it.title }, text: firstLine(x.text) })
+      said.set(k, list)
+    }
+  type Row = { app: string; s: AgentSession; f: SessionFacts }
+  const rows: Row[] = m.facts.agents.flatMap((a) =>
+    sessionsOf(a).map((s) => {
+      const b = a.blocked?.find((x) => x.session === s.name)
+      const state = sessionState(a.name, s, !!b, at)
+      const name = s.name || whoName(a.name)
+      const since = state === 'gone' ? s.t : s.since || (state === 'working' && s.on ? s.on.since : s.t)
+      const dur = short(since, at)
+      const what = b?.waitingFor || s.waitingFor || ''
+      const f: SessionFacts = {
+        key: keyOf(a.name, s.name),
+        app: a.name,
+        name,
+        state,
+        when: ago(s.t, at, 'short'),
+        worker: false,
+        pill: dur ? `${PILL[state]} · ${dur}` : PILL[state],
+        folder: home(s.cwd || ''),
+        waits: state === 'waiting' ? { what, for: short(b?.since || s.since || s.t, at) } : null,
+        on: ref(s.on?.n),
+        workers: [],
+        activity: (said.get(keyOf(a.name, sesKey(s.name))) ?? [])
+          .sort((x, y) => y.t - x.t || y.id - x.id)
+          .slice(0, 5)
+          .map((x) => ({ id: x.id, when: ago(x.t, at, 'short'), item: x.item, text: x.text })),
+        link: linkOf(a.name, s.sid),
+      }
+      return { app: a.name, s, f }
+    }),
+  )
+  const order = (x: Row, y: Row) => RANK[x.f.state] - RANK[y.f.state] || y.s.t - x.s.t
+  const parentOf = (r: Row) => (r.s.parent ? rows.find((p) => p !== r && sesKey(p.s.name) === sesKey(r.s.parent) && p.app === r.app) ?? rows.find((p) => p !== r && sesKey(p.s.name) === sesKey(r.s.parent)) : undefined)
+  const kids = new Map<Row, Row[]>()
+  const tops: Row[] = []
+  for (const r of rows) {
+    const p = parentOf(r)
+    if (p && !p.s.parent) kids.set(p, [...(kids.get(p) ?? []), r])
+    else tops.push(r)
+  }
+  for (const [p, ks] of kids) p.f.workers = ks.sort(order).map((k) => ({ key: k.f.key, name: k.f.name, state: k.f.state, on: k.f.on }))
+  const apps = [...new Set(rows.map((r) => r.app))].sort((x, y) => (APPS.indexOf(x) + 1 || 99) - (APPS.indexOf(y) + 1 || 99) || x.localeCompare(y))
+  const groups = apps.map((app) => ({
+    app,
+    name: whoName(app),
+    sessions: tops
+      .filter((r) => r.app === app)
+      .sort(order)
+      .flatMap((r) => [r.f, ...(kids.get(r) ?? []).sort(order).map((k) => ({ ...k.f, worker: true }))]),
+  }))
+  const all = groups.flatMap((g) => g.sessions)
+  const first = all.find((s) => s.state === 'waiting') ?? all.find((s) => s.state === 'working') ?? [...all].sort((x, y) => RANK[x.state] - RANK[y.state])[0]
+  return { groups, start: first?.key ?? null }
 }
 
 /** `guide` is the guide for agents, once it has come. */
@@ -39,15 +181,7 @@ export function agentsFacts(m: ProjectModel, guide: string | null): AgentsFacts 
     lineBy: p.k === 'none' ? undefined : p.a.name,
     queue,
     later: live.filter((it) => it.when === 'later' && !closed(it.status)).length,
-    seen: [...m.facts.agents]
-      .sort((a, b) => b.t - a.t)
-      .map((a) => ({
-        name: a.name,
-        who: whoName(a.name),
-        when: a.blocked?.length ? 'Blocked' : a.waiting ? 'waiting for work' : ago(a.t, m.at, 'long'),
-        known: a.name in AGENT_NAME && a.name !== 'agent',
-        sessions: sessionsOf(a, m.at),
-      })),
+    ...sessionGroups(m),
     cmd: `curl -s ${base}/connect | sh`,
     far: m.facts.remote && m.facts.remote !== base ? `curl -s ${m.facts.remote}/connect | sh` : '',
     ask,

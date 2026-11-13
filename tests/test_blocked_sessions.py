@@ -116,24 +116,24 @@ class ToProject(unittest.TestCase):
         self.assertEqual(self.a.sids(), sorted([CC, CX]))
         waits = Session("claude-code", CC, "Another title", "/x", "waiting", "approve plan", 5)
         v = self.a.version
-        self.a.see_blocked({CC: waits, CX: Session("codex", CX, "Docs pass", "/w", "busy")})
+        self.a.see_sessions({CC: waits, CX: Session("codex", CX, "Docs pass", "/w", "busy")})
         self.assertEqual(self.a.version, v + 1)
         self.assertTrue(self.woken)
         rows = {r["name"]: r for r in self.a.presence()}
         self.assertEqual(rows["claude-code"]["blocked"], [{"session": "Fix export", "waitingFor": "approve plan", "since": 5}])
         self.assertNotIn("blocked", rows["codex"])
-        self.a.see_blocked({CX: Session("codex", CX, "Docs pass", "/w", "waiting", "exec approval request", 7)})
+        self.a.see_sessions({CX: Session("codex", CX, "Docs pass", "/w", "waiting", "exec approval request", 7)})
         rows = {r["name"]: r for r in self.a.presence()}
         self.assertEqual(rows["codex"]["blocked"], [{"session": "Docs pass", "waitingFor": "exec approval request", "since": 7}])
         self.assertNotIn("blocked", rows["claude-code"])
 
     def test_same_again_is_no_news_and_going_away_is(self) -> None:
         found = {CC: Session("claude-code", CC, "Fix export", "/x", "waiting", "approve plan", 5)}
-        self.a.see_blocked(found)
+        self.a.see_sessions(found)
         v = self.a.version
-        self.a.see_blocked(found)
+        self.a.see_sessions(found)
         self.assertEqual(self.a.version, v)
-        self.a.see_blocked({})
+        self.a.see_sessions({})
         self.assertEqual(self.a.version, v + 1)
         self.assertNotIn("blocked", self.a.presence()[0])
 
