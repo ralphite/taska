@@ -77,7 +77,7 @@ export function ProposalCard({ f, open = false, on }: { f: ProposalFacts; open?:
     const size = `${yes ? 'flex-[1.4]' : 'flex-1'} lg:flex-none`
     const mark = <Icon n={icon} c={yes ? 'size-4.5' : 'size-4'} sw="2.25" />
     return off ? (
-      <button disabled aria-pressed={decided === label} className={`${decided === label ? DECIDED_ON(chosenTone('approve')) : DECIDED_OFF} ${size}`}>
+      <button disabled aria-pressed={decided === label} className={`${decided === label ? DECIDED_ON(chosenTone(label === 'Approve' ? 'approve' : 'drop')) : DECIDED_OFF} ${size}`}>
         {mark}
         {decided === label ? past[label] : label}
       </button>
@@ -91,9 +91,10 @@ export function ProposalCard({ f, open = false, on }: { f: ProposalFacts; open?:
   const foot =
     open || decided ? (
       <>
-        <button onClick={on.comment} disabled={off} title="Comment" className={`${off ? DECIDED_OFF : SECOND} mr-auto lg:mr-0`}>
+        {/* the phone: its icon (and how many words on it) only, so three buttons fit on one line */}
+        <button onClick={on.comment} disabled={off} title="Comment" aria-label="Comment" className={`${off ? DECIDED_OFF : SECOND} shrink-0 px-3 lg:mr-0 lg:px-4`}>
           <Icon n="comment" c="size-4" />
-          {f.talk ? f.talk : 'Comment'}
+          {f.talk ? f.talk : <span className="hidden lg:inline">Comment</span>}
         </button>
         {btn('Not now', actIcon('drop', true), on.decline, false)}
         {btn('Approve', actIcon('approve', true), on.approve, true)}
