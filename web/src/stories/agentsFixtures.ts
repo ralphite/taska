@@ -50,9 +50,9 @@ export const WORKING: AgentSeen[] = [
     t: min(1),
     waiting: false,
     session: 'Export keeps the filter',
-    sessions: [{ name: 'Export keeps the filter', t: min(1), sid: SID.export, status: 'busy', since: min(20), cwd: '/Users/yadong/dev/shop', on: { n: 1, since: min(34) } }],
+    sessions: [{ name: 'Export keeps the filter', t: min(1), sid: SID.export, status: 'busy', since: min(20), cwd: '/Users/you/dev/shop', on: { n: 1, since: min(34) } }],
   },
-  { name: 'codex', t: min(3 * 60), waiting: false, session: 'main', sessions: [{ name: 'main', t: min(3 * 60), sid: SID.docs, status: 'idle', since: min(3 * 60), cwd: '/Users/yadong/dev/shop' }] },
+  { name: 'codex', t: min(3 * 60), waiting: false, session: 'main', sessions: [{ name: 'main', t: min(3 * 60), sid: SID.docs, status: 'idle', since: min(3 * 60), cwd: '/Users/you/dev/shop' }] },
 ]
 
 /** A Claude Code session asks to run a command: it waits for you. */
@@ -63,7 +63,7 @@ export const WAITING: AgentSeen[] = [
     waiting: false,
     session: 'Export keeps the filter',
     sessions: [
-      { name: 'Export keeps the filter', t: min(6), sid: SID.export, status: 'waiting', since: min(4), cwd: '/Users/yadong/dev/shop', waitingFor: 'approve Bash: npm --prefix web run check', on: { n: 1, since: min(34) } },
+      { name: 'Export keeps the filter', t: min(6), sid: SID.export, status: 'waiting', since: min(4), cwd: '/Users/you/dev/shop', waitingFor: 'approve Bash: npm --prefix web run check', on: { n: 1, since: min(34) } },
     ],
     blocked: [{ session: 'Export keeps the filter', waitingFor: 'approve Bash: npm --prefix web run check', since: min(4) }],
   },
@@ -78,20 +78,20 @@ export const MANAGER: AgentSeen[] = [
     waiting: false,
     session: 'Manager',
     sessions: [
-      { name: 'Manager', t: min(0), sid: SID.manager, status: 'busy', since: min(20), cwd: '/Users/yadong/dev/shop' },
-      { name: 'worker-1', t: min(0), sid: SID.worker1, status: 'busy', since: min(20), cwd: '/Users/yadong/dev/shop-w1', on: { n: 5, since: min(20) }, parent: 'Manager' },
-      { name: 'worker-2', t: min(1), sid: SID.worker2, status: 'idle', since: min(1), cwd: '/Users/yadong/dev/shop-w2', parent: 'Manager' },
-      { name: 'Export keeps the filter', t: min(6), sid: SID.export, status: 'waiting', since: min(4), cwd: '/Users/yadong/dev/shop', waitingFor: 'approve plan', on: { n: 1, since: min(34) } },
+      { name: 'Manager', t: min(0), sid: SID.manager, status: 'busy', since: min(20), cwd: '/Users/you/dev/shop' },
+      { name: 'worker-1', t: min(0), sid: SID.worker1, status: 'busy', since: min(20), cwd: '/Users/you/dev/shop-w1', on: { n: 5, since: min(20) }, parent: 'Manager' },
+      { name: 'worker-2', t: min(1), sid: SID.worker2, status: 'idle', since: min(1), cwd: '/Users/you/dev/shop-w2', parent: 'Manager' },
+      { name: 'Export keeps the filter', t: min(6), sid: SID.export, status: 'waiting', since: min(4), cwd: '/Users/you/dev/shop', waitingFor: 'approve plan', on: { n: 1, since: min(34) } },
     ],
     blocked: [{ session: 'Export keeps the filter', waitingFor: 'approve plan', since: min(4) }],
   },
-  { name: 'codex', t: min(12), waiting: false, session: 'main', sessions: [{ name: 'main', t: min(12), sid: SID.docs, status: 'idle', since: min(12), cwd: '/Users/yadong/dev/shop' }] },
+  { name: 'codex', t: min(12), waiting: false, session: 'main', sessions: [{ name: 'main', t: min(12), sid: SID.docs, status: 'idle', since: min(12), cwd: '/Users/you/dev/shop' }] },
   { name: 'antigravity', t: min(2 * 60), waiting: false, session: 'Shop lead', sessions: [{ name: 'Shop lead', t: min(2 * 60), sid: SID.lead }] },
 ]
 
 /** Every session left: one exited two hours ago, one not heard of since yesterday. */
 export const ALL_GONE: AgentSeen[] = [
-  { name: 'claude-code', t: min(2 * 60), waiting: false, session: 'Export keeps the filter', sessions: [{ name: 'Export keeps the filter', t: min(2 * 60), sid: SID.export, status: 'exited', cwd: '/Users/yadong/dev/shop', since: min(2 * 60) }] },
+  { name: 'claude-code', t: min(2 * 60), waiting: false, session: 'Export keeps the filter', sessions: [{ name: 'Export keeps the filter', t: min(2 * 60), sid: SID.export, status: 'exited', cwd: '/Users/you/dev/shop', since: min(2 * 60) }] },
   { name: 'codex', t: min(20 * 60), waiting: false, session: 'main', sessions: [{ name: 'main', t: min(20 * 60), sid: SID.docs }] },
 ]
 

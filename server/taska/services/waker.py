@@ -127,9 +127,10 @@ class Waker:
     def _say(self, sid: str) -> None:
         lines, _ = self.p.run([(0, {
             "op": "new", "type": "bug", "pri": "P1", "when": "now",
-            "title": "Antigravity 收不到 Taska 的消息",
-            "body": ("接手这个项目的 Antigravity 会话超过 15 分钟没在等 Taska，你发的消息它收不到。"
-                     "在那个 Antigravity 会话里说一句话，它会重新连上；连上后这个事项会自动删掉。"),
+            "title": "Antigravity does not hear from Taska",
+            "body": ("The Antigravity session that runs this project has not waited for Taska for over 15 minutes: "
+                     "what you write does not reach it. Say a word in that session and it connects again; then this "
+                     "item goes by itself."),
         })], "taska")
         ref: Optional[str] = lines[0].split()[1] if lines and lines[0].startswith("ok ") else None
         self.p.store.db.put(KEY, {"sid": sid, "ref": ref})

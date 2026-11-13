@@ -5,7 +5,7 @@ import { NEED, NEEDS_CARD, PRIMARY_BASE, SECOND } from '../../ui/tones'
 import { ProposalCard } from './Rules'
 
 // B763 (Yadong r1282): a rules proposal is drawn in the same card as an item's needs, with the same buttons: View
-// changes and Approve are the item card's Approve button, Not now its quieter one ("Component reuse 的一致性必须做到").
+// changes and Approve are the item card's Approve button, Not now its quieter one (the same component, reused).
 const p: RuleProposal = { id: 1, by: 'claude-code', t: '2026-11-13T09:00:00-08:00', why: 'Ask before pushing', state: 'wait', on: 3, comments: [] }
 const on = { view() {}, comment() {}, decline() {}, approve() {} }
 const f = { p, who: 'Claude Code', now: Date.parse('2026-11-13T10:00:00-08:00'), talk: 0 }
