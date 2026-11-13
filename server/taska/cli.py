@@ -22,14 +22,6 @@ from typing import List, Optional
 
 
 MODEL = os.environ.get("TASKA_MODEL", "gemini-flash-latest")
-KEY_VARS = ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY")
-
-
-def api_key() -> Optional[str]:
-    for v in KEY_VARS:
-        if os.environ.get(v):
-            return os.environ[v]
-    return None
 
 
 def main(argv: Optional[List[str]] = None) -> None:
@@ -51,7 +43,9 @@ def main(argv: Optional[List[str]] = None) -> None:
         install_skill(SKILL)
         install_antigravity_agents(ANTIGRAVITY_AGENTS)
         return
-    serve(args.root, args.host, args.port, args.organizer == "auto" and bool(api_key()), args.public,
+    from .infra import gemini
+    gemini.use_key_file(os.path.join(os.path.expanduser(args.root), "gemini-key"))  # F765: the key set in Settings
+    serve(args.root, args.host, args.port, args.organizer == "auto" and bool(gemini.api_key()), args.public,
           os.path.join(os.path.expanduser(args.root), "logs.db") if args.log_db is None else args.log_db, args.log_level)
 
 
@@ -82,6 +76,8 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
     from .services.voice import transcriber_for
 
     logs.setup(log_db, log_level)
+    from .infra import gemini
+    gemini.use_key_file(os.path.join(os.path.expanduser(root), "gemini-key"))  # F765: the key set in Settings
     organizers = Organizers(enabled=organizer)
 
     made = threading.Event()  # the workspace exists: notes resumed while it opens its projects wait for it
@@ -114,7 +110,7 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
     ws.lan = lan_address(host, port)
     print(f"Taska  http://{host}:{port}/  started {time.strftime('%Y-%m-%d %H:%M:%S')}\n  data       {ws.root}  "
           f"({', '.join(sorted(ws.projects))})\n  organizer  "
-          + (f"Gemini {MODEL}" if organizer else "off (set GEMINI_API_KEY to turn it on)")
+          + (f"Gemini {MODEL}" if organizer else "off (add a Gemini API key in Settings › Organizer)")
           + "\n  key        in " + os.path.join(ws.root, "key") + "  (needed from outside this machine and its network)",
           flush=True)
 

@@ -24,7 +24,7 @@ import { useSideProjects } from '../app/projectLists'
 import { SideListContainer } from '../features/side/SideListContainer'
 import { HelpContainer } from '../features/help/HelpContainer'
 import { SettingsContainer } from '../features/settings/SettingsContainer'
-import { settingsTitle } from '../features/settings/sectionList'
+import { SECTIONS, settingsTitle } from '../features/settings/sectionList'
 import { InputsContainer } from '../features/inputs/InputsContainer'
 import { SearchContainer } from './SearchContainer'
 import { DeskFilters, FilterStrip } from '../features/list/Filters'
@@ -33,6 +33,9 @@ import { DetailContainer } from './DetailContainer'
 import { RulesContainer } from '../features/docs/RulesContainer'
 import { ListHead, PhoneTabs, ProjectBar } from './Header'
 import { agentInfo, deskTabs, phoneTabs, tabCounts } from './headFacts'
+
+/** Settings › Organizer, where the Gemini API key is set (F765) */
+const organizerHref = (slug: string) => `/p/${encodeURIComponent(slug)}/${SECTIONS.organizer.path}`
 
 function useHeadFacts(route: ProjectRoute, desk: boolean) {
   const stores = useStores('data', 'feedback')
@@ -46,7 +49,9 @@ function useHeadFacts(route: ProjectRoute, desk: boolean) {
   // the agent whose session waits on the user: the bar floating at the bottom says so until it does not (T711)
   const blocked = m ? blockedAgent(m.facts.agents, m.at) : null
   const counts = useMemo(() => (m ? tabCounts(m, route.tab, route.list, desk) : null), [m, route.tab, route.list, desk])
-  return { m, title, agent, blocked, counts, notSaved, away, otherNeeds }
+  // no Gemini API key: the organizer and voice notes are off until one is set (F765)
+  const noKey = m?.facts.organizer.key?.from === ''
+  return { m, title, agent, blocked, counts, notSaved, away, otherNeeds, noKey }
 }
 
 export function ProjectPageContainer({ route }: { route: ProjectRoute }) {
@@ -71,7 +76,7 @@ export function ProjectPageContainer({ route }: { route: ProjectRoute }) {
 function DeskLayout({ route }: { route: ProjectRoute }) {
   const app = useServices('fields', 'listOrder', 'model', 'nav', 'sheets', 'views')
   const stores = useStores('docView', 'grips', 'route', 'ui')
-  const { title, agent, blocked, counts, notSaved } = useHeadFacts(route, true)
+  const { title, agent, blocked, counts, notSaved, noKey } = useHeadFacts(route, true)
   const blockedRef = usePaneRef('blocked')
   const { tones, icons } = useSideProjects(route.slug)
   const sideHidden = useStoreValue(stores.ui, (s) => s.sideHidden)
@@ -111,9 +116,10 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           tabs={tabs}
           agent={agent}
           notSaved={notSaved}
+          noKey={noKey}
           place="col-span-2 col-start-1 row-start-1"
           hidden={settings}
-          on={{ tab: (t) => app.nav.tab(t), agents: () => app.sheets.open(...AGENTS_SHEET), notSaved: (from) => app.sheets.openFrom(from, { kind: 'not-saved' }, { focus: false }) }}
+          on={{ tab: (t) => app.nav.tab(t), agents: () => app.sheets.open(...AGENTS_SHEET), notSaved: (from) => app.sheets.openFrom(from, { kind: 'not-saved' }, { focus: false }), noKey: () => app.nav.to(organizerHref(route.slug)) }}
         />
         {/* two columns under the bar, each laid out by itself: nothing the pane shows moves the list, or the other way
             round (B663) */}
@@ -192,7 +198,7 @@ const DRAWER_W = 'min(85vw, 320px)'
 function PhoneLayout({ route }: { route: ProjectRoute }) {
   const app = useServices('actions', 'fields', 'finder', 'nav', 'sheets', 'views')
   const stores = useStores('box', 'docView', 'route', 'sheet')
-  const { title, agent, blocked, counts, notSaved, otherNeeds } = useHeadFacts(route, false)
+  const { title, agent, blocked, counts, notSaved, otherNeeds, noKey } = useHeadFacts(route, false)
   const blockedRef = usePaneRef('blocked')
   const layers = useStoreValue(stores.route, (s) => s.layers)
   const searching = layers.includes('search')
@@ -256,11 +262,13 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
           otherNeeds={otherNeeds}
           agent={agent}
           notSaved={notSaved}
+          noKey={noKey}
           hidden={!under}
           on={{
             menu: () => app.nav.drawer(true),
             agents: () => app.sheets.open(...AGENTS_SHEET),
             notSaved: () => app.sheets.open({ kind: 'not-saved' }, { focus: false }),
+            noKey: () => app.nav.to(organizerHref(route.slug)),
             search: () => app.finder.open(),
           }}
         />

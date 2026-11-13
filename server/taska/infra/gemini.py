@@ -37,8 +37,66 @@ SERVER = frozenset((500, 502, 503, 504))  # its servers busy or failing: often o
 TOO_MANY = 429  # over a rate (tokens or requests per minute): it says when to come back
 
 
+_key_file: List[str] = []  # where the key set in Settings is kept (F765): the data root's gemini-key, set at start
+
+
+def use_key_file(path: str) -> None:
+    _key_file[:] = [path]
+
+
+def saved_key() -> Optional[str]:
+    """The key set in Settings (F765), else None."""
+    if not _key_file:
+        return None
+    try:
+        with open(_key_file[0], encoding="utf-8") as f:
+            return f.read().strip() or None
+    except OSError:
+        return None
+
+
 def api_key() -> Optional[str]:
-    return next((os.environ[v] for v in KEY_VARS if os.environ.get(v)), None)
+    """The key set in Settings, else one from the environment (F765: no need to set a variable)."""
+    return saved_key() or next((os.environ[v] for v in KEY_VARS if os.environ.get(v)), None)
+
+
+def key_source() -> Dict[str, str]:
+    """Where the key comes from ("settings", "env" or "") and its last 4 characters: never the key itself."""
+    k = api_key()
+    return {"from": ("settings" if saved_key() else "env") if k else "", "tail": k[-4:] if k and len(k) > 8 else ""}
+
+
+def save_key(key: str) -> None:
+    """Keep the key set in Settings (only its owner can read it); "" forgets it."""
+    if not _key_file:
+        raise Refused("no place to keep the key")
+    path = _key_file[0]
+    if not key:
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+        return
+    fd = os.open(path + ".tmp", os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(key + "\n")
+    os.replace(path + ".tmp", path)
+
+
+def check_key(key: str, timeout: float = 15) -> Optional[str]:
+    """Whether Google takes the key (a list of models: costs nothing): None when it does, else why not. Unreachable
+    is not a refusal: the key is kept and used when Google can be reached."""
+    req = urllib.request.Request("https://generativelanguage.googleapis.com/v1beta/models?pageSize=1",
+                                 headers={"x-goog-api-key": key})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout):
+            return None
+    except urllib.error.HTTPError as ex:
+        if ex.code in (400, 401, 403):
+            return "Google did not accept this key"
+        return None
+    except (OSError, http.client.HTTPException):
+        return None
 
 
 @dataclass(frozen=True)

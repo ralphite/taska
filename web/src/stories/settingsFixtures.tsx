@@ -8,7 +8,8 @@ import { sideProjects } from '../app/sideProjects'
 import { DeletedBody, DocsBody, LogBody } from '../features/settings/PhoneSections'
 import { Loading } from '../features/settings/SettingsParts'
 import { boxAt } from './boxFixtures'
-import { NotificationsBody, OrganizerBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody, type ProjectsEvents } from '../features/settings/Sections'
+import { NotificationsBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody, type ProjectsEvents } from '../features/settings/Sections'
+import { OrganizerBody } from '../features/settings/OrganizerSection'
 import { SettingsFrame } from '../features/settings/SettingsFrame'
 import { DeskNav, PhoneIndex } from '../features/settings/SettingsNav'
 import { docRows, logRows, navFacts, projectsOf } from '../features/settings/settingsFacts'
@@ -19,7 +20,7 @@ import type { DeletedProject } from '../stores/settings'
 import { T, modelOf } from './fixtures'
 import { doc } from './docFixtures'
 import { PROJECT } from './listFixtures'
-import { acts } from './acts'
+import { act, acts } from './acts'
 import { withNewProject } from './newProjectFixtures'
 import { usePop } from './liveParts'
 import { goneProjectMenuSheet, projectMenuSheet } from '../ui/ProjectSheets'
@@ -72,7 +73,12 @@ export interface SettingsHere {
   navPressed?: SectionKey
   /** Voice spellings: none yet */
   noSpellings?: boolean
+  /** no Gemini API key: the organizer off (F765) */
   organizerOff?: boolean
+  /** where the key comes from: Settings (the default when on) or the environment (F765) */
+  keyFrom?: 'settings' | 'env'
+  /** a key being checked and saved */
+  keySaving?: boolean
   /** projects with pictures (F743) */
   icons?: boolean
   /** each list still to load, or with nothing in it (T639) */
@@ -134,7 +140,7 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
   const [logAsking, setLogAsking] = useState<ReadonlySet<number> | null>(null)
   // what the column says comes from the same data as the section, as on the page
   const shop = shopWithHistory()
-  const m = h.organizerOff ? { ...shop, facts: { ...shop.facts, organizer: { ...shop.facts.organizer, on: false } } } : shop
+  const m = h.organizerOff ? { ...shop, facts: { ...shop.facts, organizer: { ...shop.facts.organizer, on: false, key: { from: '' as const, tail: '' } } } } : shop
   const listed = sideProjects(ROWS, m, 'shop').list
   const side = h.icons ? (listed?.map(withIcon) ?? null) : listed
   const rows = h.projectsLoading ? null : ROWS
@@ -181,7 +187,15 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
         on={{ editPrefs: () => setEditing(!editing), toggleTidy: () => setTidy(!tidy), addWord: async (w) => (setActs.addWord(w), true), forget: setActs.forget }}
       />
     ),
-    organizer: () => <OrganizerBody on={!h.organizerOff} model="gemini-flash-latest" />,
+    organizer: () => (
+      <OrganizerBody
+        on={!h.organizerOff}
+        model="gemini-flash-latest"
+        gemini={h.organizerOff ? { from: '', tail: '' } : { from: h.keyFrom ?? 'settings', tail: 'x7Qk' }}
+        saving={!!h.keySaving}
+        events={{ save: act('Organizer: save the key'), forget: act('Organizer: remove the key') }}
+      />
+    ),
     docs: () => <DocsBody docs={h.noDocs ? [] : docRows(m)} onOpen={setActs.openDoc} />,
     log: () => {
       const rows = h.log === 'loading' ? null : h.log === 'empty' ? [] : logRows(m, LOG)

@@ -77,6 +77,22 @@ export function NotSavedPill({ n, onOpen }: { n: number; onOpen(from: HTMLElemen
   )
 }
 
+/** No Gemini API key (F765): the organizer and voice notes are off until one is set; it opens Settings › Organizer. */
+export function NoKeyPill({ show, onOpen }: { show: boolean; onOpen(): void }) {
+  if (!show) return null
+  return (
+    <button
+      onClick={onOpen}
+      title="Set a Gemini API key"
+      aria-label="No Gemini key"
+      className="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-amber-50 px-2.5 text-[13px] font-semibold text-amber-800 ring-1 ring-amber-600/20 ring-inset hover:bg-amber-100 lg:px-3 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/25 dark:hover:bg-amber-400/20"
+    >
+      <Icon n="sparkle" c="size-3.5" sw="2.25" />
+      <span className="hidden lg:inline">No Gemini key</span>
+    </button>
+  )
+}
+
 export interface TabInfo {
   tab: Tab
   count: string | number
@@ -99,6 +115,7 @@ export function ProjectBar({
   tabs,
   agent,
   notSaved,
+  noKey = false,
   place,
   hidden,
   on,
@@ -110,9 +127,11 @@ export function ProjectBar({
   /** null: the project's data has not come yet */
   agent: AgentInfo | null
   notSaved: number
+  /** no Gemini API key (F765) */
+  noKey?: boolean
   place: string
   hidden?: boolean
-  on: { tab(t: Tab): void; agents(): void; notSaved(from: HTMLElement): void }
+  on: { tab(t: Tab): void; agents(): void; notSaved(from: HTMLElement): void; noKey?(): void }
 }) {
   return (
     <nav hidden={hidden} aria-label="This project" className={`flex h-12 min-w-0 items-stretch gap-1 border-b border-zinc-200 pr-3 pl-2 dark:border-zinc-800 ${place}`}>
@@ -137,6 +156,7 @@ export function ProjectBar({
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-2 pl-3">
         <NotSavedPill n={notSaved} onOpen={on.notSaved} />
+        <NoKeyPill show={noKey} onOpen={() => on.noKey?.()} />
         {agent ? (
           <button onClick={on.agents} aria-label="Agents" title={agent.offline ? undefined : agent.tip} className="flex rounded-full hover:brightness-95 dark:hover:brightness-125">
             <AgentPill {...agent} />
@@ -154,6 +174,7 @@ export function ListHead({
   otherNeeds,
   agent,
   notSaved,
+  noKey = false,
   hidden,
   pressed = false,
   on,
@@ -162,6 +183,8 @@ export function ListHead({
   otherNeeds: boolean
   agent: AgentInfo | null
   notSaved: number
+  /** no Gemini API key (F765) */
+  noKey?: boolean
   hidden?: boolean
   /** its menu and Search pressed (a finger on them) */
   pressed?: boolean
@@ -169,6 +192,7 @@ export function ListHead({
     menu(): void
     agents(): void
     notSaved(from: HTMLElement): void
+    noKey?(): void
     search(): void
   }
 }) {
@@ -184,6 +208,7 @@ export function ListHead({
         <span className="truncate text-[19px] font-semibold tracking-tight">{title}</span>
       </button>
       <NotSavedPill n={notSaved} onOpen={on.notSaved} />
+        <NoKeyPill show={noKey} onOpen={() => on.noKey?.()} />
       <button onClick={on.agents} aria-label="Agents" title={agent?.tip} className="flex h-11 shrink-0 items-center px-1">
         {agent ? <AgentPill {...agent} /> : null}
       </button>

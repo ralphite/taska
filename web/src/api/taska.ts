@@ -4,7 +4,7 @@ import type { Dash } from '../model/dashboard'
 import { Http, TIME_LIMIT } from './http'
 import type { FindAnswer } from '../model/find'
 import type { Command } from '../model/commands'
-import type { FileRef, LogRow, Need, NoNews, ProjectRow, Spelling, ViewAnswer, VoicePrefs, WordsAnswer, SavedView } from '../model/types'
+import type { FileRef, GeminiKey, LogRow, Need, NoNews, ProjectRow, Spelling, ViewAnswer, VoicePrefs, WordsAnswer, SavedView } from '../model/types'
 
 export type { Command } from '../model/commands'
 
@@ -58,6 +58,7 @@ export interface Answers {
   setVoicePrefs: VoicePrefs & Ok
   setTidy: Ok & { tidy: boolean }
   newKey: Ok & { key: string }
+  setGemini: Ok & GeminiKey & { restart: boolean }
   pictureSizes: Record<string, [number, number]>
   activity: LogRow[]
   diagramFailed: Ok & { result: string }
@@ -231,6 +232,11 @@ export class TaskaApi {
 
   setTidy(on: boolean): Promise<Answers['setTidy']> {
     return this.http.json('/api/voicetidy', { method: 'POST', body: { on } })
+  }
+
+  /** F765: the Gemini API key set in Settings ("" forgets it); Taska restarts to use it when `restart`. */
+  setGemini(key: string): Promise<Answers['setGemini']> {
+    return this.http.json('/api/gemini', { method: 'POST', body: { key } })
   }
 
   /** A new key: this device keeps working, every other one needs the new link. */

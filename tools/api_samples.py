@@ -315,6 +315,7 @@ def record(base: str) -> Dict[str, Any]:
     out["pushKey"] = c.json("/api/push?endpoint=")
     out["setPush"] = c.json("/api/push", {"endpoint": "https://push.invalid/x", "off": True})
     out["devDashboard"] = c.json("/dev/api/dashboard?days=7")
+    out["setGemini"] = c.json("/api/gemini", {"key": ""})  # F765: forgetting a key that is not set restarts nothing
     out["newKey"] = c.json("/api/key", b"")
     key = out["newKey"]["key"]
     out["login"] = c.json("/api/login", {"key": key}, headers={"X-Forwarded-For": "203.0.113.9"})

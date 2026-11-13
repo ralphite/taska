@@ -208,10 +208,11 @@ def entities(st: ProjectState, agents: AgentActivity) -> Dict[str, List[View]]:
 
 def project_view(st: ProjectState, agents: AgentActivity, *, slug: str, title: str, organizer_on: bool,
                  organizer_busy: List[str], organizer_model: str, presence: List[View], work: bool,
-                 db_path: str) -> View:
+                 db_path: str, organizer_key: Optional[Dict[str, str]] = None) -> View:
     """The project's own facts: its name, who is around, what can be undone, what is in Deleted."""
     return {"slug": slug, "title": title, "icon": st.icon, "width": len(str(st.max_n)), "file": home_short(db_path),
-            "organizer": {"on": organizer_on, "model": organizer_model, "busy": organizer_busy},
+            "organizer": {"on": organizer_on, "model": organizer_model, "busy": organizer_busy,
+                          "key": organizer_key or {"from": "", "tail": ""}},
             "agents": presence, "work": work, "agentsVersion": agents.version,
             "undo": [{"seq": u.seq, "n": u.n, "f": u.f, "was": u.was, "t": u.t} for u in undoable(st)],
             "deletedInputs": deleted_inputs(st), "deleted": deleted_things(st)}

@@ -355,6 +355,13 @@ export interface DeletedThing {
   on?: string
 }
 
+/** Where the Gemini API key comes from (F765): set in Settings, from the environment, or none; its last 4 characters,
+ * never the key */
+export interface GeminiKey {
+  from: 'settings' | 'env' | ''
+  tail: string
+}
+
 export interface ProjectFacts {
   slug: string
   title: string
@@ -363,7 +370,7 @@ export interface ProjectFacts {
   width: number
   file: string
   /** busy: the inputs the organizer works on now (several at once) */
-  organizer: { on: boolean; model: string; busy: readonly string[] }
+  organizer: { on: boolean; model: string; busy: readonly string[]; key?: GeminiKey }
   agents: AgentSeen[]
   work: boolean
   agentsVersion: number

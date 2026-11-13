@@ -230,6 +230,23 @@ export class Settings {
     }
   }
 
+  // ---- the Gemini API key (F765)
+
+  /** Keep a key ("" forgets the one set here): Google checks it first; Taska restarts to use it and the page
+   * comes back by itself. */
+  async saveGemini(slug: string, key: string): Promise<void> {
+    this.s.set({ geminiSaving: true })
+    try {
+      const r = await this.asked(() => this.d.api.setGemini(key))
+      this.d.toasts.show(key ? (r.restart ? 'Saved · Taska restarts' : 'Saved') : 'Removed')
+    } catch (ex) {
+      this.d.toasts.show(why(ex), null, { error: true })
+    } finally {
+      this.s.set({ geminiSaving: false })
+      this.d.refresh(slug)
+    }
+  }
+
   // ---- the phone's key
 
   async newKey(slug: string): Promise<void> {

@@ -556,7 +556,3 @@ export function SpellingsBody({ fixes, prefs, editing, prefsSlot, on }: { fixes:
 }
 
 // ---- Organizer
-
-export function OrganizerBody({ on, model }: { on: boolean; model: string }) {
-  return on ? <Part title="On" about={`Gemini (${model}) files inputs into items in all projects; undo it on the input`} /> : <Part title="Off" about="Set GEMINI_API_KEY to turn it on" />
-}

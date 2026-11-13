@@ -10,7 +10,8 @@ import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { codeOf } from '../../model/project'
 import { useSideProjects } from '../../app/projectLists'
 import { DeletedBody, DocsBody, LogBody } from './PhoneSections'
-import { NotificationsBody, OrganizerBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody, type ProjectsEvents } from './Sections'
+import { NotificationsBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody, type ProjectsEvents } from './Sections'
+import { OrganizerBody } from './OrganizerSection'
 import { SECTIONS, sectionOf, type SectionKey } from './sectionList'
 import { DeskNav, PhoneIndex } from './SettingsNav'
 import { Loading } from './SettingsParts'
@@ -110,7 +111,15 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
           />
         )
       case 'organizer':
-        return <OrganizerBody on={m.facts.organizer.on} model={m.facts.organizer.model} />
+        return (
+          <OrganizerBody
+            on={m.facts.organizer.on}
+            model={m.facts.organizer.model}
+            gemini={m.facts.organizer.key}
+            saving={st.geminiSaving}
+            events={{ save: (key) => void s.saveGemini(route.slug, key), forget: () => void s.saveGemini(route.slug, '') }}
+          />
+        )
       case 'docs':
         return (
           <DocsBody

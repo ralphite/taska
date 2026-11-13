@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from ..agent_text import log as change_log
 from ..domain.vocab import MAX_FILE, TASKA
+from ..infra import gemini
 from ..infra.audio import audio_type
 from ..page_api import views
 from ..page_api.sync import Cursor
@@ -48,7 +49,8 @@ def _view(ctx: "AppContext", req: Request, p: Project, since: Optional[Cursor]) 
         out = ctx.pages(p).feed.view(at, p.news.boot, lambda: views.entities(p.state, p.agents), since)
         out["project"] = views.project_view(p.state, p.agents, slug=p.slug, title=p.title, organizer_on=p.organizing.on,
                                             organizer_busy=sorted(p.organizing.busy), organizer_model=" + ".join(organizer.MODELS),
-                                            presence=pres["agents"], work=pres["work"], db_path=p.store.path)
+                                            presence=pres["agents"], work=pres["work"], db_path=p.store.path,
+                                            organizer_key=gemini.key_source())
     key = ws.key.value
     if _PHONE.search(req.header("User-Agent")):
         ws.saw_phone()

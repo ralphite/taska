@@ -8,7 +8,8 @@ import time
 from typing import TYPE_CHECKING, Optional
 
 from ..agent_text.guide_text import ANTIGRAVITY_AGENTS, SKILL
-from ..infra import logs
+from ..domain.vocab import Refused
+from ..infra import gemini, logs
 from ..infra.logs import voice_fix
 from ..page_api.find import find_view
 from ..services import devdash
@@ -108,6 +109,19 @@ def post(ctx: "AppContext", req: Request, path: str) -> Optional[Response]:
         d = req.json_body(20_000)
         ws.voice_prefs.set(d.get("text", ""))
         return as_json({"ok": True, **ws.voice_prefs.get(), "tidy": ws.voice_prefs.tidy()})
+    if path == "/api/gemini":  # F765: {key} sets the Gemini API key, {key: ""} forgets it; Taska restarts to use it
+        key = str(req.json_body(2_000).get("key") or "").strip()
+        if key and (len(key) > 200 or any(c.isspace() for c in key)):
+            raise Refused("that does not look like an API key")
+        why = gemini.check_key(key) if key else None
+        if why:
+            raise Refused(why)
+        was = bool(gemini.api_key())
+        gemini.save_key(key)
+        restart = was != bool(gemini.api_key()) or bool(key)  # the organizer and voice notes start with the key
+        if restart:
+            ctx.restart()
+        return as_json({"ok": True, **gemini.key_source(), "restart": restart})
     if path == "/api/key":  # a new key; this device keeps working, every other one needs the new link
         return key_answer(req, ctx.access, ws.key.renew())
     return None

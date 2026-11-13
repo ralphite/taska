@@ -24,6 +24,8 @@ export interface SettingsState {
   pMenu: string | null
   /** notifications were turned on or off in this browser */
   noticeRev: number
+  /** the Gemini API key being checked and saved (F765) */
+  geminiSaving: boolean
   set(p: Partial<Omit<SettingsState, 'set'>>): void
 }
 
@@ -39,6 +41,7 @@ export function createSettingsStore(): SettingsStore {
     renaming: null,
     pMenu: null,
     noticeRev: 0,
+    geminiSaving: false,
     set: (p) => set(p),
   }))
 }
