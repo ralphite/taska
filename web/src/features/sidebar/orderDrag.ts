@@ -1,22 +1,25 @@
 // Dragging the sidebar's projects into your own order. A mouse drags at once; a finger holds still first (moving at
 // once scrolls). The row you hold follows the pointer, lifted; the others slide out of its way; on release it settles
 // into the gap and the new order is told. The rows only move with transforms while you drag: React keeps the rows
-// and draws the new order once it is told.
+// and draws the new order once it is told. A finger that holds still and lets go without moving opens the project's
+// menu instead (`onHold`, F767: as an iPhone's home screen, hold to move or for the menu).
 
 import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react'
 
 const rowsIn = (box: HTMLElement) => [...box.querySelectorAll<HTMLElement>('a[data-slug]')]
 const still = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 
-export function useOrderDrag(boxRef: RefObject<HTMLElement | null>, onOrder: (names: string[], moved: string) => void): void {
+export function useOrderDrag(boxRef: RefObject<HTMLElement | null>, onOrder: (names: string[], moved: string) => void, onHold?: (slug: string, x: number, y: number) => void): void {
   const told = useRef(onOrder)
+  const held = useRef(onHold)
   useEffect(() => {
     told.current = onOrder
+    held.current = onHold
   })
   useLayoutEffect(() => {
     const box = boxRef.current
     if (!box) return
-    const s = { a: null as HTMLElement | null, on: false, id: 0, x: 0, y: 0, dy: 0, t: 0, touch: false, rows: [] as HTMLElement[], tops: [] as number[], from: 0, to: 0, ghost: null as HTMLElement | null }
+    const s = { a: null as HTMLElement | null, on: false, moved: false, id: 0, x: 0, y: 0, dy: 0, t: 0, touch: false, rows: [] as HTMLElement[], tops: [] as number[], from: 0, to: 0, ghost: null as HTMLElement | null }
     const start = () => {
       const a = s.a as HTMLElement
       const r = a.getBoundingClientRect()
@@ -57,6 +60,7 @@ export function useOrderDrag(boxRef: RefObject<HTMLElement | null>, onOrder: (na
       if (!s.a || (e && e.pointerId !== s.id)) return
       const a = s.a
       const on = s.on
+      const hold = on && s.touch && !s.moved // held still and let go: the menu, not a move
       const ghost = s.ghost
       const { rows, from, to } = s
       s.a = null
@@ -74,7 +78,11 @@ export function useOrderDrag(boxRef: RefObject<HTMLElement | null>, onOrder: (na
         tidy()
         if (to !== from) told.current(names, a.dataset.slug as string)
       }
-      if (still() || !ghost) land()
+      if (hold) {
+        tidy()
+        const r = a.getBoundingClientRect()
+        held.current?.(a.dataset.slug as string, r.left + r.width / 2, r.bottom)
+      } else if (still() || !ghost) land()
       else {
         const at = a.getBoundingClientRect()
         ghost.style.transition = 'top 150ms ease-out, left 150ms ease-out'
@@ -82,7 +90,7 @@ export function useOrderDrag(boxRef: RefObject<HTMLElement | null>, onOrder: (na
         Object.assign(ghost.style, { top: at.top + 'px', left: at.left + 'px' })
         setTimeout(land, 160)
       }
-      // the drop is not a click on the row
+      // the drop (or the hold) is not a click on the row
       const eat = (ev: Event) => {
         ev.preventDefault()
         ev.stopPropagation()
@@ -95,9 +103,11 @@ export function useOrderDrag(boxRef: RefObject<HTMLElement | null>, onOrder: (na
     }
     const down = (e: PointerEvent) => {
       const a = (e.target as Element).closest<HTMLElement>('a[data-slug]')
-      if (!a || e.button || rowsIn(box).length < 2) return
+      const touch = e.pointerType !== 'mouse'
+      // one project: nothing to reorder, but a finger's hold still opens its menu
+      if (!a || e.button || (rowsIn(box).length < 2 && !(touch && held.current))) return
       clearTimeout(s.t)
-      Object.assign(s, { a, id: e.pointerId, x: e.clientX, y: e.clientY, on: false, touch: e.pointerType !== 'mouse' })
+      Object.assign(s, { a, id: e.pointerId, x: e.clientX, y: e.clientY, on: false, moved: false, touch })
       if (s.touch)
         s.t = window.setTimeout(() => {
           if (s.a === a) start()
@@ -114,6 +124,7 @@ export function useOrderDrag(boxRef: RefObject<HTMLElement | null>, onOrder: (na
         }
         start()
       }
+      if (Math.hypot(e.clientX - s.x, e.clientY - s.y) >= 6) s.moved = true
       if (s.ghost) s.ghost.style.top = e.clientY - s.dy + 'px'
       slide(e.clientY)
     }

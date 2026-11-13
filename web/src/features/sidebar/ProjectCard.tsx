@@ -24,7 +24,7 @@ const AGENT: Record<AgentTone, string> = {
 }
 
 /** The card itself (props only): its stories draw it alone. `href`/`onOpen`: its name opens the project. */
-export function ProjectCard({ title, tone, icon, card, href, onOpen }: { title: string; tone: string; icon?: string; card: ProjectCardFacts; href?: string; onOpen?(e: MouseEvent<HTMLAnchorElement>): void }) {
+export function ProjectCard({ title, tone, icon, card, href, onOpen, onMenu }: { title: string; tone: string; icon?: string; card: ProjectCardFacts; href?: string; onOpen?(e: MouseEvent<HTMLAnchorElement>): void; /** ⋯ at its top right: the project's menu (F767) */ onMenu?(from: HTMLElement): void }) {
   const open = typeof card.open === 'number' ? card.open : null
   const items = open != null && card.closed != null ? open + card.closed : null
   const any = items !== 0 || card.needs || card.inputs || card.docs || card.agent || card.changed
@@ -41,6 +41,11 @@ export function ProjectCard({ title, tone, icon, card, href, onOpen }: { title: 
         ) : (
           <span className="line-clamp-2 min-w-0 text-[15px] leading-snug font-semibold text-zinc-900 dark:text-zinc-50">{title}</span>
         )}
+        {onMenu ? (
+          <button onClick={(e) => onMenu(e.currentTarget)} aria-label="Menu" title="Menu" className="-my-1 -mr-1.5 ml-auto grid size-7 shrink-0 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100">
+            <Icon n="more" c="size-4" />
+          </button>
+        ) : null}
       </div>
       {any ? (
       <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-100 bg-zinc-50 px-4 py-2 text-xs dark:border-zinc-700/60 dark:bg-zinc-900/40 ${MUTED}`}>
@@ -154,7 +159,7 @@ export function FloatingProjectCard({
   icon?: string
   card: ProjectCardFacts
   href: string
-  on: { onPointerEnter(): void; onPointerLeave(): void; open(e: MouseEvent<HTMLAnchorElement>): void }
+  on: { onPointerEnter(): void; onPointerLeave(): void; open(e: MouseEvent<HTMLAnchorElement>): void; menu?(from: HTMLElement): void }
 }) {
   const box = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
@@ -163,7 +168,7 @@ export function FloatingProjectCard({
   })
   return createPortal(
     <div ref={box} role="dialog" aria-label={title} onPointerEnter={on.onPointerEnter} onPointerLeave={on.onPointerLeave} className="fixed z-[70]" style={{ left: at.left, top: at.top - 6 }}>
-      <ProjectCard title={title} tone={tone} icon={icon} card={card} href={href} onOpen={on.open} />
+      <ProjectCard title={title} tone={tone} icon={icon} card={card} href={href} onOpen={on.open} onMenu={on.menu} />
     </div>,
     document.body,
   )

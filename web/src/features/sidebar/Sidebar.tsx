@@ -130,7 +130,12 @@ function HoverCard({ hover, projects, on }: { hover: CardOn; projects: SideProje
       on.newInput()
     } else on.go(p.href, e)
   }
-  return <FloatingProjectCard at={hover.hovered} title={p.title} tone={p.tone} icon={p.icon} card={p.card} href={p.href} on={{ ...hover.card, open }} />
+  const menu = (from: HTMLElement) => {
+    hover.hide()
+    const r = from.getBoundingClientRect()
+    on.projectMenu(p.slug, r.left, r.bottom)
+  }
+  return <FloatingProjectCard at={hover.hovered} title={p.title} tone={p.tone} icon={p.icon} card={p.card} href={p.href} on={{ ...hover.card, open, menu }} />
 }
 
 function ProjectRows({ phone, projects, hover, on }: { phone: boolean; projects: SideProject[] | null; hover: CardOn; on: SidebarEvents }) {
@@ -163,13 +168,32 @@ function ProjectRows({ phone, projects, hover, on }: { phone: boolean; projects:
             }}
             aria-current={p.current ? 'page' : undefined}
             onClick={(e) => (p.current ? (e.preventDefault(), on.newInput()) : on.go(p.href, e))}
-            className={DESK_ROW}
+            className={`group/row ${DESK_ROW}`}
           >
             <ProjTile title={p.title} tone={p.tone} icon={p.icon} cls="size-6 rounded-md text-xs" />
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-1.5">
                 <span className={`min-w-0 flex-1 truncate text-sm ${p.current ? 'font-semibold' : 'font-medium'}`}>{p.title}</span>
-                {p.needs ? <NeedsCount n={p.needs} /> : null}
+                {/* under the pointer its count gives way to ⋯, the project's menu (as a right click; F767) */}
+                <span className="grid shrink-0 place-items-center *:col-start-1 *:row-start-1">
+                  {p.needs ? <span className="group-hover/row:invisible">{<NeedsCount n={p.needs} />}</span> : null}
+                  <span
+                    role="button"
+                    aria-label={`${p.title}: menu`}
+                    title="Menu"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      hover.hide()
+                      const r = e.currentTarget.getBoundingClientRect()
+                      on.projectMenu(p.slug, r.left, r.bottom)
+                    }}
+                    className="invisible -my-1 grid size-6 place-items-center rounded-md text-zinc-500 group-hover/row:visible hover:bg-zinc-300/60 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100"
+                  >
+                    <Icon n="more" c="size-4" />
+                  </span>
+                </span>
               </span>
               <span className="block text-[11px] text-zinc-500 dark:text-zinc-400">{p.open} open</span>
             </span>
@@ -205,7 +229,7 @@ export function Sidebar(props: SidebarProps) {
   const rows = useRef<HTMLDivElement>(null)
   const hover = useProjectCard(phone || !!hidden)
   usePointed(projects, rows, hover.point)
-  useOrderDrag(rows, (names, moved) => on.order(names, moved))
+  useOrderDrag(rows, (names, moved) => on.order(names, moved), (slug, x, y) => on.projectMenu(slug, x, y))
   return (
     <nav id="drawer" data-tip-side="right" hidden={hidden} aria-label="Projects" className={`flex h-full flex-col pt-[env(safe-area-inset-top)] dark:bg-zinc-900 ${place}`}>
       {edge}
