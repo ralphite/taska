@@ -12,8 +12,8 @@ import { STATUS_FILTER_WORD, TAB_WORD, type Tab } from '../../model/words'
 
 export type Row =
   /** `said`: what you just did to it, while the list holds still (it is no longer in the list, or no longer waits on you) */
-  | { kind: 'item'; it: Item; depth: number; foldable: boolean; folded: boolean; band: string; said?: string }
-  | { kind: 'needs'; it: Item; depth: number; said?: string; act?: NeedAct }
+  | { kind: 'item'; it: Item; depth: number; foldable: boolean; folded: boolean; band: string; said?: string; struck?: boolean }
+  | { kind: 'needs'; it: Item; depth: number; said?: string; struck?: boolean; act?: NeedAct }
   | { kind: 'hidden-kids'; parent: number; depth: number; open: boolean; later: number }
   | { kind: 'archive-all'; n: number }
   /** an agent's proposed change to the rules, waiting on you (I693): first in Needs you */
@@ -86,17 +86,29 @@ function tree(group: Item[], st: ListState, opts: { needs?: boolean; hidden?: Ma
  * acted on that no longer belongs in the list, or no longer waits on you, stays the row it was, its title struck and
  * its button saying what you did: same place, same height, nothing jumps (B699). A Needs-you row someone else
  * answered meanwhile is an ordinary row, where it was. */
-export function heldRows(frozen: readonly Row[], m: ProjectModel, tab: Tab, list: ListQuery, held: ReadonlyMap<number, string>): Row[] {
+/** What you just did to a row: its words, and whether its title is struck (the change closed it; B766). */
+export interface HeldMark {
+  said: string
+  struck: boolean
+}
+
+/** A held change's mark: struck only when it closed the item (B766, Yadong r1293 r1294: struck says done, dropped
+ * or not needed; approved or sent back it is work to do); a change of another field as before (B699). */
+export const heldMark = (h: { said: string; f?: string; v?: unknown }): HeldMark => ({ said: h.said, struck: h.f !== 'status' || closed(String(h.v)) })
+
+export function heldRows(frozen: readonly Row[], m: ProjectModel, tab: Tab, list: ListQuery, held: ReadonlyMap<number, HeldMark>): Row[] {
   const shownNow = new Set(visible(m.items, tab, list).map((it) => it.n))
   // a row made a subitem meanwhile: its new parent folds at once
   const parents = new Set(frozen.flatMap((r) => (r.kind === 'item' || r.kind === 'needs' ? [m.byN.get(r.it.n)?.parent] : [])))
   return frozen.map((r) => {
     if (r.kind !== 'item' && r.kind !== 'needs') return r
     const it = m.byN.get(r.it.n) || r.it
-    const said = held.get(it.n)
+    const mark = held.get(it.n)
+    const said = mark?.said
+    const struck = !!mark?.struck
     // what you decided shows at once, also before Taska has it and the item still needs you (B766): its button as it was
-    if (said != null && r.kind === 'needs') return { ...r, it, said, act: r.act ?? needRow(r.it)?.act }
-    if (said != null && !shownNow.has(it.n)) return { ...r, it, said }
+    if (said != null && r.kind === 'needs') return { ...r, it, said, struck, act: r.act ?? needRow(r.it)?.act }
+    if (said != null && !shownNow.has(it.n)) return { ...r, it, said, struck }
     if (r.kind === 'needs' && !needsYou(it)) return { kind: 'item', it, depth: r.depth, foldable: false, folded: false, band: '' }
     return r.kind === 'item' && !r.foldable && parents.has(it.n) ? { ...r, it, foldable: true } : { ...r, it }
   })

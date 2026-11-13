@@ -202,10 +202,12 @@ export function ItemRow(props: {
   facts: RowFacts
   look: RowLook
   on: RowEvents
-  /** what you just did to it, while the list holds still: the row stays, its title struck (B699) */
+  /** what you just did to it, while the list holds still: the row stays, saying it (B699) */
   said?: string
+  /** that change closed it (done, Won't do ...): its title struck and faded; approved or sent back it is not (B766) */
+  struck?: boolean
 }) {
-  const { it, depth, band, foldable, folded, facts, look, on, said } = props
+  const { it, depth, band, foldable, folded, facts, look, on, said, struck = false } = props
   const isClosed = closed(it.status)
   const meta: ReactNode[] = [
     (
@@ -252,12 +254,12 @@ export function ItemRow(props: {
       <div
         {...marks(look)}
         onClick={(e) => on.open(it.n, e)}
-        className={`group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 ${pad(depth)} ${(isClosed && !it.archived) || said ? 'opacity-55' : ''} ${ROW_TINT}`}
+        className={`group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 ${pad(depth)} ${(isClosed && !it.archived) || struck ? 'opacity-55' : ''} ${ROW_TINT}`}
       >
         {facts.unread ? <span className="absolute top-4.5 left-1 size-2 rounded-full bg-blue-600 dark:bg-blue-400" title="New from an agent" /> : null}
         <StateIcon {...shownStatus(it)} />
         <div className="min-w-0 flex-1">
-          <CodeTitle it={it} code={facts.code} look={look} struck={(isClosed && !it.archived) || !!said} />
+          <CodeTitle it={it} code={facts.code} look={look} struck={(isClosed && !it.archived) || struck} />
           <HitLine text={facts.hitLine} words={look.words} />
           {meta.length ? (
             <div className="mt-1 flex items-center gap-x-2.5 overflow-hidden text-xs font-medium whitespace-nowrap text-zinc-500 dark:text-zinc-400">
@@ -292,9 +294,10 @@ export function ItemRow(props: {
   )
 }
 
-/** `said`: what you just did, while the list holds still: the same row, its title struck, its button disabled saying it
- * in the past tense (B699, as a decided card, r1003). */
-export function NeedsRow({ it, depth, facts, look, excerpt, said, act, on }: { it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; act?: NeedAct; on: RowEvents }) {
+/** `said`: what you just did, while the list holds still: the same row, its button disabled saying it in the past tense
+ * (B699, as a decided card, r1003); its title struck only when that closed it (Accepted, Declined), never when approved
+ * (B766: it is work to do now). */
+export function NeedsRow({ it, depth, facts, look, excerpt, said, struck = false, act, on }: { it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; struck?: boolean; act?: NeedAct; on: RowEvents }) {
   // its pill: what it needs from you (model/needStates); held after you acted, as it was
   const v = act ?? needRow(it)?.act ?? 'accept'
   const label = said ?? ITEM_ACTS[v].label
@@ -311,7 +314,7 @@ export function NeedsRow({ it, depth, facts, look, excerpt, said, act, on }: { i
         <div className="min-w-0 flex-1">
           <p className="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1">
             <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}`}>{facts.code}</span>
-            <span className={said ? 'text-zinc-500 line-through decoration-zinc-400 dark:text-zinc-400' : ''}>{it.title}</span>
+            <span className={struck ? 'text-zinc-500 line-through decoration-zinc-400 dark:text-zinc-400' : ''}>{it.title}</span>
           </p>
           <div className="mt-1 flex min-w-0 items-center gap-2 text-xs font-medium">
             {<span className={`shrink-0 ${PRI_TEXT[it.pri]}`}>{it.pri}</span>}

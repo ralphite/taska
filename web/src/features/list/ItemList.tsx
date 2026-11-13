@@ -13,8 +13,8 @@ import { useRowSwipe, type RowSwipe } from '../../ui/rowSwipe'
 import { PULL } from '../../ui/tones'
 
 export type DrawnRow =
-  | { kind: 'item'; key: string; it: Item; depth: number; band: string; foldable: boolean; folded: boolean; facts: RowFacts; look: RowLook; said?: string }
-  | { kind: 'needs'; key: string; it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; act?: NeedAct }
+  | { kind: 'item'; key: string; it: Item; depth: number; band: string; foldable: boolean; folded: boolean; facts: RowFacts; look: RowLook; said?: string; struck?: boolean }
+  | { kind: 'needs'; key: string; it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; struck?: boolean; act?: NeedAct }
   | { kind: 'hidden-kids'; key: string; parent: number; depth: number; open: boolean; later: number }
   | { kind: 'archive-all'; key: string; n: number }
   | { kind: 'proposal'; key: string; p: RuleProposal }
@@ -75,7 +75,7 @@ export function drawingKey(rows: DrawnRow[]): string {
     .map((r) => {
       if (r.kind !== 'item' && r.kind !== 'needs') return JSON.stringify(r)
       const it = r.it
-      return [r.key, it.status, it.when, it.later_until ?? '', it.archived ? 1 : 0, it.wait ? 1 : 0, it.t1, r.facts.openKids, r.said ?? ''].join(':')
+      return [r.key, it.status, it.when, it.later_until ?? '', it.archived ? 1 : 0, it.wait ? 1 : 0, it.t1, r.facts.openKids, r.said ?? '', r.struck ? 1 : 0].join(':')
     })
     .join(',')
 }
@@ -163,9 +163,9 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
           {rows.map((r) => {
             switch (r.kind) {
               case 'item':
-                return <ItemRow key={r.key} it={r.it} depth={r.depth} band={r.band} foldable={r.foldable} folded={r.folded} facts={r.facts} look={r.look} said={r.said} on={on} />
+                return <ItemRow key={r.key} it={r.it} depth={r.depth} band={r.band} foldable={r.foldable} folded={r.folded} facts={r.facts} look={r.look} said={r.said} struck={r.struck} on={on} />
               case 'needs':
-                return <NeedsRow key={r.key} it={r.it} depth={r.depth} facts={r.facts} look={r.look} excerpt={r.excerpt} said={r.said} act={r.act} on={on} />
+                return <NeedsRow key={r.key} it={r.it} depth={r.depth} facts={r.facts} look={r.look} excerpt={r.excerpt} said={r.said} struck={r.struck} act={r.act} on={on} />
               case 'hidden-kids':
                 return <HiddenKidsLine key={r.key} parent={r.parent} depth={r.depth} open={r.open} later={r.later} onToggle={() => on.subMore(r.parent)} />
               case 'archive-all':

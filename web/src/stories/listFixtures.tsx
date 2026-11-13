@@ -6,7 +6,7 @@ import { EmptyList, ItemList, type ListEvents } from '../features/list/ItemList'
 import { SelBar } from '../features/list/SelBar'
 import { DeskFilters, FiltersButton, FilterStrip, type FilterEvents } from '../features/list/Filters'
 import { drawRows, listViews } from '../features/list/drawRows'
-import { heldRows, listBody } from '../features/list/rows'
+import { heldMark, heldRows, listBody } from '../features/list/rows'
 import { queueHead, type DropHow } from '../model/items'
 import { NO_FILTERS, type ListKey, type ListQuery } from '../model/route'
 import { firstSteps } from '../model/project'
@@ -94,7 +94,7 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
   const moved = tab !== tab0 || JSON.stringify(query) !== JSON.stringify({ ...NO_FILTERS, ...q0 })
   if (h.held && !moved) {
     const was = listBody(modelOf(h.held.before), tab, query, st)
-    rows = heldRows(was.kind === 'rows' ? was.rows : [], m, tab, query, new Map(Object.entries(h.held.said).map(([n, s]) => [Number(n), s])))
+    rows = heldRows(was.kind === 'rows' ? was.rows : [], m, tab, query, new Map(Object.entries(h.held.said).map(([n, s]) => [Number(n), heldMark({ said: s, f: 'status', v: m.byN.get(Number(n))?.status })])))  // struck when the change closed it (B766)
   }
   const drawn = drawRows(m, rows, { slug: 'demo', openN: h.open ?? null, selected, words: [], desk, drafts: new Set(), head: queueHead(m.items), seen: { since: T }, drag: { n: h.drag?.n ?? null, at: h.drag?.at ?? null } })
   const { views, ownViews } = listViews(m, tab, query, body, { list: h.saved ?? [], edit: -1 })

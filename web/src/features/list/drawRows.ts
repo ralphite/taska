@@ -83,9 +83,9 @@ export function drawRows(m: ProjectModel, rows: Row[], w: DrawWith): DrawnRow[] 
   return rows.map((r): DrawnRow => {
     switch (r.kind) {
       case 'item':
-        return { kind: 'item', key: 'i' + r.it.n, it: r.it, depth: r.depth, band: r.band, foldable: r.foldable, folded: r.folded, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), said: r.said }
+        return { kind: 'item', key: 'i' + r.it.n, it: r.it, depth: r.depth, band: r.band, foldable: r.foldable, folded: r.folded, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), said: r.said, struck: r.struck }
       case 'needs': {
-        return { kind: 'needs', key: 'i' + r.it.n, it: r.it, depth: r.depth, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), excerpt: needRow(r.it)?.line ?? '', said: r.said, act: r.act }
+        return { kind: 'needs', key: 'i' + r.it.n, it: r.it, depth: r.depth, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), excerpt: needRow(r.it)?.line ?? '', said: r.said, struck: r.struck, act: r.act }
       }
       case 'hidden-kids':
         return { kind: 'hidden-kids', key: 'h' + r.parent, parent: r.parent, depth: r.depth, open: r.open, later: r.later }

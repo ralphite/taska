@@ -15,7 +15,7 @@ import { EmptyList, ItemList, type DrawnRow, type ListEvents } from './ItemList'
 import { SelBar } from './SelBar'
 import { FiltersButton } from './Filters'
 import { drawRows, listViews } from './drawRows'
-import { heldRows, listBody, type Row } from './rows'
+import { heldMark, heldRows, listBody, type Row } from './rows'
 
 /** the list marks no words: searching is the search page's and dialog's (r1092, T689 #2) */
 const NO_WORDS: string[] = []
@@ -56,7 +56,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   }, [ui.held, ui.heldFor, heldFor, stores])
   let rows: Row[] = []
   if (body.kind === 'rows') {
-    if (holding && kept?.key === listKey && m) rows = heldRows(kept.rows, m, route.tab, route.list, new Map([...ui.held].map(([n, h]) => [n, h.said])))
+    if (holding && kept?.key === listKey && m) rows = heldRows(kept.rows, m, route.tab, route.list, new Map([...ui.held].map(([n, h]) => [n, heldMark(h)])))
     else {
       rows = body.rows
       if (kept?.key !== listKey || kept.rows !== rows) setKept({ key: listKey, rows })
