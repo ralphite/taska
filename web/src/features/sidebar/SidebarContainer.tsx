@@ -19,7 +19,7 @@ const NEW_PROJECT = { kind: 'new-project' } as const
 
 export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; place: string; hidden?: boolean; rail?: boolean }) {
   const app = useServices('actions', 'finder', 'itemDrag', 'nav', 'projects', 'sheets', 'voice')
-  const stores = useStores('data', 'drag', 'feedback', 'grips', 'route', 'ui')
+  const stores = useStores('data', 'drag', 'feedback', 'grips', 'route', 'sheet', 'ui')
   const layout = useLayout()
   const drawerFoot = usePaneRef('drawerFoot')
   const { list: listed } = useSideProjects(slug)
@@ -27,6 +27,8 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
   const dropOn = useStoreValue(stores.drag, (s) => s.project)
   const list = dropOn && listed ? listed.map((p) => (p.slug === dropOn ? { ...p, drop: true } : p)) : listed
   const route = useStoreValue(stores.route, (s) => s.route)
+  // the project whose menu is open: its card beside the sidebar stays while it is (F767 r1299)
+  const menuFor = useStoreValue(stores.sheet, (s) => (s.spec?.req.kind === 'project-menu' ? s.spec.req.slug : null))
   const undo = useStoreValue(stores.feedback, (s) => s.undo.at(-1) ?? null)
   const sideHidden = useStoreValue(stores.ui, (s) => s.sideHidden)
   const composingNow = route.page === 'project' && composing(route)
@@ -65,10 +67,11 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
   // the tools for making Taska: from its source only, opened on this computer; never in a release (B740)
   const fromSource = useStoreValue(stores.data, (s) => s.dev)
   const dev = fromSource && typeof location !== 'undefined' && /^(localhost|127(\.\d{1,3}){3}|\[::1\])$/.test(location.hostname)
-  if (rail) return <Rail keys={SIDE_KEYS} projects={list} links={links} composing={composingNow && layout === 'desk'} settingsOpen={route.page === 'project' && route.place.kind === 'settings'} hidden={hidden} on={on} />
+  if (rail) return <Rail keys={SIDE_KEYS} projects={list} links={links} composing={composingNow && layout === 'desk'} settingsOpen={route.page === 'project' && route.place.kind === 'settings'} hidden={hidden} menuFor={menuFor} on={on} />
   return (
     <Sidebar
       keys={SIDE_KEYS}
+      menuFor={menuFor}
       footRef={drawerFoot}
       phone={layout === 'phone'}
       projects={list}

@@ -5,7 +5,7 @@
 // for you on, the item it is on, its workers, its last messages, and the way back to it in its app. The phone shows the
 // list, then the session's page with Back. Props only.
 
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { plural, hasIcon, whoName } from '../../model/words'
 import { Avatar, Who } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
@@ -23,11 +23,10 @@ export interface AgentsActs {
 }
 
 /** What shows when the sheet opens: the session picked (a key; 'guide': what agents read), whether the phone shows
- * its page rather than the list, whether Connect another agent is opened, whether Codex's resume command shows. */
+ * its page rather than the list, whether Codex's resume command shows. */
 export interface AgentsStart {
   pick?: string
   page?: boolean
-  connect?: boolean
   resume?: boolean
 }
 
@@ -99,7 +98,6 @@ function AgentsBody({ f, on, start }: { f: AgentsFacts; on: AgentsActs; start: A
   const [pick, setPick] = useState(start.pick ?? f.start ?? 'guide')
   // the phone opens on a session waiting for you (the blocked bar's Open: what it waits on), else on the list
   const [page, setPage] = useState(start.page ?? all.some((x) => x.key === f.start && x.state === 'waiting'))
-  const [connect, setConnect] = useState(start.connect ?? !all.length)
   const s = all.find((x) => x.key === pick) ?? (pick === 'guide' ? undefined : all.find((x) => x.key === f.start))
   const choose = (key: string) => {
     setPick(key)
@@ -130,11 +128,7 @@ function AgentsBody({ f, on, start }: { f: AgentsFacts; on: AgentsActs; start: A
           )}
         </div>
         <div className="border-t border-zinc-200 py-1 lg:px-2 dark:border-zinc-800">
-          <button onClick={() => setConnect(!connect)} aria-expanded={connect} className={`flex h-10 w-full items-center gap-2 rounded-lg px-2 text-left text-sm font-medium ${ROW_HOVER}`}>
-            <span className="min-w-0 flex-1">Connect another agent</span>
-            <Icon n="down" c={`size-4 text-zinc-400 transition-transform ${connect ? 'rotate-180' : ''}`} />
-          </button>
-          {connect ? <Connect f={f} on={on} /> : null}
+          <Connect f={f} on={on} />
           <button
             onClick={() => choose('guide')}
             aria-current={!s ? 'true' : undefined}
@@ -177,39 +171,33 @@ function ListRow({ s, picked, onPick }: { s: SessionFacts; picked: boolean; onPi
   )
 }
 
-/** The two ways to connect one more agent, each to copy: a command (and the one for another network), or words for
- * the agent. */
+/** The two ways to connect one more agent, always in sight (r1300: the most used, never folded away): Copy the command
+ * (and the one for another network), Copy the words for the agent; each one's text in its tip. */
 function Connect({ f, on }: { f: AgentsFacts; on: AgentsActs }) {
-  const way = (title: string, text: ReactNode, copy: string, more?: ReactNode) => (
-    <div className="flex flex-col gap-1.5 rounded-lg bg-zinc-100/80 p-2.5 dark:bg-zinc-800/60">
-      <div className="flex items-center gap-2">
-        <span className="min-w-0 flex-1 text-xs font-medium text-zinc-600 dark:text-zinc-300">{title}</span>
-        <button onClick={() => on.copy(copy)} className={`${CHIP} h-7 bg-white px-2 text-xs font-medium dark:bg-zinc-700`}>
-          <Icon n="copy" c="size-3.5" />
-          Copy
-        </button>
-      </div>
-      {text}
-      {more}
-    </div>
+  const copy = (label: string, text: string) => (
+    <button onClick={() => on.copy(text)} title={text.replace(/`/g, '')} className={`${CHIP} h-8 min-w-0 flex-1 justify-center bg-white px-2 text-xs font-medium ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700`}>
+      <Icon n="copy" c="size-3.5 shrink-0" />
+      <span className="truncate">{label}</span>
+    </button>
   )
   return (
-    <div className="flex flex-col gap-2 px-2 pb-2">
-      {way(
-        'Run a command',
-        <code className="font-mono text-[11.5px] leading-snug wrap-anywhere text-zinc-700 dark:text-zinc-300">{f.cmd}</code>,
-        f.cmd,
-        f.far ? (
-          <button onClick={() => on.copy(f.far)} className="w-fit text-xs font-medium text-blue-600 hover:underline dark:text-blue-400">
+    <section aria-label="Connect another agent" className="flex flex-col gap-1.5 px-2 pt-2 pb-1">
+      <h3 className={`flex h-6 items-center ${LABEL}`}>Connect another agent</h3>
+      <div className="flex gap-1.5">
+        {copy('Copy command', f.cmd)}
+        {copy('Copy for the agent', f.ask)}
+      </div>
+      <div className="flex items-center gap-3 px-0.5 text-xs font-medium">
+        {f.far ? (
+          <button onClick={() => on.copy(f.far)} className="text-blue-600 hover:underline dark:text-blue-400">
             Copy for another network
           </button>
-        ) : null,
-      )}
-      {way('Or tell the agent', <p className="text-xs leading-relaxed wrap-anywhere text-zinc-700 dark:text-zinc-300">{f.ask.replace(/`/g, '')}</p>, f.ask)}
-      <button onClick={on.help} className="w-fit px-0.5 text-xs font-medium text-blue-600 hover:underline dark:text-blue-400">
-        How it works
-      </button>
-    </div>
+        ) : null}
+        <button onClick={on.help} className="text-blue-600 hover:underline dark:text-blue-400">
+          How it works
+        </button>
+      </div>
+    </section>
   )
 }
 

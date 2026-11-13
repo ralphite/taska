@@ -91,6 +91,8 @@ export interface SidebarProps {
   edge?: ReactNode
   /** Taska, at its top, pressed (a finger on it) */
   brandPressed?: boolean
+  /** the project whose menu is open: its card stays while it is (F767) */
+  menuFor?: string | null
   on: SidebarEvents
 }
 
@@ -131,9 +133,9 @@ function HoverCard({ hover, projects, on }: { hover: CardOn; projects: SideProje
     } else on.go(p.href, e)
   }
   const menu = (from: HTMLElement) => {
-    hover.hide()
-    const r = from.getBoundingClientRect()
-    on.projectMenu(p.slug, r.left, r.bottom)
+    // the card stays while its menu is open (F767 r1299), the menu just right of it so the card never covers it
+    const card = from.closest('[data-project-card]')?.getBoundingClientRect() ?? from.getBoundingClientRect()
+    on.projectMenu(p.slug, card.right + 6, from.getBoundingClientRect().top)
   }
   return <FloatingProjectCard at={hover.hovered} title={p.title} tone={p.tone} icon={p.icon} card={p.card} href={p.href} on={{ ...hover.card, open, menu }} />
 }
@@ -185,7 +187,6 @@ function ProjectRows({ phone, projects, hover, on }: { phone: boolean; projects:
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      hover.hide()
                       const r = e.currentTarget.getBoundingClientRect()
                       on.projectMenu(p.slug, r.left, r.bottom)
                     }}
@@ -227,7 +228,7 @@ function SideLink({ link, phone, on }: { link: SideLinkInfo; phone: boolean; on:
 export function Sidebar(props: SidebarProps) {
   const { phone, keys, projects, composing, links, undoLabel, devLinks, place, hidden, edge, footRef, brandPressed, on } = props
   const rows = useRef<HTMLDivElement>(null)
-  const hover = useProjectCard(phone || !!hidden)
+  const hover = useProjectCard(phone || !!hidden, props.menuFor ?? null)
   usePointed(projects, rows, hover.point)
   useOrderDrag(rows, (names, moved) => on.order(names, moved), (slug, x, y) => on.projectMenu(slug, x, y))
   return (
@@ -397,8 +398,8 @@ export function Sidebar(props: SidebarProps) {
 }
 
 /** The sidebar folded: a narrow rail of the same. */
-export function Rail({ keys, projects, links, composing, settingsOpen, hidden, on }: { keys: SideKeys; projects: SideProject[] | null; links: SideLinkInfo[]; composing: boolean; settingsOpen: boolean; hidden?: boolean; on: SidebarEvents }) {
-  const hover = useProjectCard(!!hidden)
+export function Rail({ keys, projects, links, composing, settingsOpen, hidden, menuFor = null, on }: { keys: SideKeys; projects: SideProject[] | null; links: SideLinkInfo[]; composing: boolean; settingsOpen: boolean; hidden?: boolean; /** the project whose menu is open: its card stays (F767) */ menuFor?: string | null; on: SidebarEvents }) {
+  const hover = useProjectCard(!!hidden, menuFor)
   // the projects more than it holds: its edges fade where more of them are above or below (no scrollbar on the rail)
   const list = useRef<HTMLDivElement>(null)
   usePointed(projects, list, hover.point)

@@ -108,11 +108,18 @@ const GRACE = 200
 
 /** Which project's card shows, and the handlers its rows and the card take: a mouse over a row (no button held) shows
  * its card at once, right beside the row; leaving the row or the card puts it away after GRACE unless the pointer has
- * come onto the other. */
-export function useProjectCard(off = false) {
+ * come onto the other. `menuFor`: the project whose menu is open: its card stays while the menu is open (the pointer
+ * goes into the menu), and goes when it closes (F767 r1299). */
+export function useProjectCard(off = false, menuFor: string | null = null) {
   const [hovered, setHovered] = useState<Hovered | null>(null)
   const timer = useRef(0)
+  const menu = useRef(menuFor)
   useEffect(() => () => clearTimeout(timer.current), [])
+  useEffect(() => {
+    const was = menu.current
+    menu.current = menuFor
+    if (was && !menuFor) setHovered(null) // its menu closed: the card goes with it
+  }, [menuFor])
   const stay = () => clearTimeout(timer.current)
   const hide = () => {
     clearTimeout(timer.current)
@@ -120,7 +127,9 @@ export function useProjectCard(off = false) {
   }
   const leave = () => {
     clearTimeout(timer.current)
-    timer.current = window.setTimeout(() => setHovered(null), GRACE)
+    timer.current = window.setTimeout(() => {
+      if (!menu.current) setHovered(null)
+    }, GRACE)
   }
   const rowProps = (slug: string) =>
     off

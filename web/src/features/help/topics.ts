@@ -125,10 +125,10 @@ Click the agent status at the top right. **Agents** shows whether an agent is he
 
 ## Two ways to connect
 
-Under **Connect another agent**:
+Under **Connect another agent**, at the foot of the list:
 
-1. **Run a command** once per machine, in the project's folder.
-2. **Tell the agent** the words shown there.
+1. **Copy command** and run it once per machine, in the project's folder.
+2. **Copy for the agent** and paste it to the agent.
 
 An agent that has worked on the project in the last few days counts as connected.
 

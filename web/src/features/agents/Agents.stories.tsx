@@ -29,7 +29,7 @@ export const OneWorking: Story = { ...sheet(WORKING), name: 'One working' }
 export const WaitingForYou: Story = { ...sheet(WAITING), name: 'A session waiting for you' }
 /** A manager and its two workers under it, a session waiting for you (picked), Codex, Antigravity gone a while. */
 export const ManagerWithWorkers: Story = { ...sheet(MANAGER, { pick: sessionKey('claude-code', 'Manager') }), name: 'A manager with workers' }
-/** No agent has been here: Connect another agent opened, what agents read beside it. */
+/** No agent has been here: what agents read beside the way to connect one. */
 export const NoneYet: Story = { ...sheet([]), name: 'None yet' }
 /** Nothing waits for an agent and none has been here. */
 export const NothingWaitingNoneYet: Story = { ...sheet([], {}, { work: false, items: IDLE }), name: 'Nothing waiting, none yet' }
@@ -39,8 +39,8 @@ export const OnlyGone: Story = { ...sheet(ALL_GONE), name: 'Only gone ones' }
 export const CodexResume: Story = { ...sheet(MANAGER, { pick: sessionKey('codex', 'main'), resume: true }), name: 'Codex: resume' }
 /** An agent Taska does not know by name: a group of its own, by its name. */
 export const AnUnknownAgent: Story = { ...sheet([...WORKING, { name: 'helper-bot', t: WORKING[1].t, waiting: false }]), name: 'An agent Taska does not know' }
-/** Connect another agent opened, with no public address: no Copy for another network. */
-export const ConnectNoPublicAddress: Story = { ...sheet(WORKING, { connect: true }, { remote: '' }), name: 'Connect, no public address' }
+/** With no public address: no Copy for another network. */
+export const ConnectNoPublicAddress: Story = { ...sheet(WORKING, {}, { remote: '' }), name: 'Connect, no public address' }
 /** The phone: the list (it opens there unless a session waits for you). */
 export const PhoneList: Story = { ...sheet(MANAGER, { page: false }), name: 'Phone: the list' }
 /** The phone: a session's page, Back to the list (it opens there when a session waits for you). */
