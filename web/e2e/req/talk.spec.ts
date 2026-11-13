@@ -311,7 +311,7 @@ test('B770 r1292: replying by voice at the talk’s end keeps it at its end: rec
   expect({ off: got.off, up: got.up }, 'at its end all along, never up').toEqual({ off: 0, up: 0 })
 })
 
-test('B770 r1292: scrolled up to read, replying by voice moves nothing you see: recording, sent, transcribing, the first words, the final words; the phone as the desktop', async ({
+test('B770 r1292: scrolled up to read, replying by voice moves the talk once, down to its end where the reply is (T589), and from then on never up nor away from its end: recording, sent, transcribing, the first words, the final words; the phone as the desktop', async ({
   page,
   request,
 }) => {
@@ -335,41 +335,33 @@ test('B770 r1292: scrolled up to read, replying by voice moves nothing you see: 
     await cdp.detach()
   }
   await page.waitForTimeout(800)
-  // an older message in sight, and how far down the screen it is as each frame is drawn
+  // what scrolls the talk, as each frame is drawn: the most it went up, and the frames off its end once it got there
   await frames(page)
-  const start = await page.evaluate(() => {
+  await page.evaluate(() => {
     const talk = [...document.querySelectorAll<HTMLElement>('[data-item-talk]')].find((e) => e.getClientRects().length)!
     let sc: HTMLElement | null = talk
     while (sc && !/auto|scroll/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement
     if (!sc || sc.scrollHeight - sc.clientHeight - sc.scrollTop < 200) throw new Error('not scrolled up')
-    const foot = document.querySelector('footer:has(#composer)')?.getBoundingClientRect().top ?? innerHeight
-    const texts = document.createTreeWalker(talk, NodeFilter.SHOW_TEXT)
-    let el: HTMLElement | null = null
-    while (texts.nextNode()) {
-      const e = texts.currentNode.parentElement
-      const r = e?.getBoundingClientRect()
-      if (e && r && /Step \d line \d/.test(texts.currentNode.textContent || '') && r.top > 80 && r.bottom < Math.min(foot, innerHeight) - 40) {
-        el = e
-        break
-      }
-    }
-    if (!el) throw new Error('no older message in sight')
-    const at = el.getBoundingClientRect().top
-    const w = { moved: 0, on: true }
+    const s = sc
+    const w = { up: 0, offAfter: 0, reached: false, on: true }
     Object.assign(window, { b770: w })
+    let was = s.scrollTop
     ;(window as unknown as Frames).eachFrame(() => {
-      w.moved = Math.max(w.moved, Math.round(Math.abs(el.getBoundingClientRect().top - at)))
+      const atEnd = s.scrollHeight - s.scrollTop - s.clientHeight <= 4
+      if (w.reached && !atEnd) w.offAfter++
+      if (atEnd) w.reached = true
+      w.up = Math.max(w.up, Math.round(was - s.scrollTop))
+      was = s.scrollTop
       return w.on
     })
-    return el.textContent
   })
   await voiceReply(page, p, h, FIRST, FINAL)
-  const moved = await page.evaluate(() => {
-    const w = (window as unknown as { b770: { moved: number; on: boolean } }).b770
+  const got = await page.evaluate(() => {
+    const w = (window as unknown as { b770: { up: number; offAfter: number; reached: boolean; on: boolean } }).b770
     w.on = false
-    return w.moved
+    return { up: w.up, offAfter: w.offAfter, reached: w.reached }
   })
-  expect(moved, `"${start}" stays where it is on the screen`).toBeLessThanOrEqual(1)
+  expect(got, 'down to its end once, then at its end all along, never up').toEqual({ up: 0, offAfter: 0, reached: true })
 })
 
 test('B721 r1183: scrolled up right after an item opens, the talk stays where you scrolled it, never pulled back to its end; the phone (a finger) as the desktop (the wheel)', async ({
