@@ -128,7 +128,7 @@ test("r802: the card an item's code shows under the pointer says its status in o
   await expect(tip(page)).not.toContainText('In progress')
 })
 
-test('D115 #8: a proposal you decline and work you send back from the list say so on their rows as their cards do: the row stays, its title struck, its button saying Declined or Sent back', async ({
+test('D115 #8: a proposal you decline and work you send back from the list say so on their rows as their cards do: the row stays, its button saying Declined or Sent back; only the declined one struck (B766)', async ({
   page,
   request,
 }) => {
@@ -140,17 +140,18 @@ test('D115 #8: a proposal you decline and work you send back from the list say s
   })
   await open(page, p)
   await view(page, 'Needs you').click()
-  for (const [n, title, button, word] of [
-    ['2', 'A proposal', "Won't do", 'Declined'],
-    ['1', 'Some work', 'Not yet', 'Sent back'],
-  ]) {
+  for (const [n, title, button, word, struck] of [
+    ['2', 'A proposal', "Won't do", 'Declined', true],
+    ['1', 'Some work', 'Not yet', 'Sent back', false],
+  ] as const) {
     await row(page, title).first().hover()
     await rowActs(page, n).and(page.getByRole('button', { name: button, exact: true })).click()
-    // B699 (r1126): the row you acted on stays the row it was, in its place, its title struck and its button disabled
-    // saying what you did (not swapped for a one-line "Declined · title" as R6-1 #11 first had it)
+    // B699 (r1126): the row you acted on stays the row it was, in its place, its button disabled saying what you did
+    // (not swapped for a one-line "Declined · title" as R6-1 #11 first had it); B766 (r1293 r1294): its title struck only
+    // when that closed it: struck says done, dropped or not needed, and work sent back is still to do
     const held = page.locator(`#list article[data-n="${n}"]`)
     await expect(held).toContainText(title)
-    await expect(held.locator('span.line-through')).toContainText(title)
+    await expect(held.locator('span.line-through')).toHaveCount(struck ? 1 : 0)
     await expect(held.getByRole('button', { name: word, exact: true })).toBeDisabled()
     await expect(held.getByRole('button', { name: button, exact: true })).toHaveCount(0)
   }
