@@ -54,6 +54,10 @@ class CodexNotifications:
             return False  # a cancelled recording is kept, not sent (B627); sending it later is the update
         if isinstance(event, ev.VoiceHeard) and event.state == "wait":
             return False  # the first words: the input waits for its words (T687), they say it then
+        if isinstance(event, (ev.InputAdded, ev.InputSent)):
+            sent = self.project.state.inputs.get(event.id if isinstance(event, ev.InputAdded) else event.src or "")
+            if sent is not None and self.project.held(sent):
+                return False  # its voice note's words are still being worked out: they say it once final (B761)
         voice = isinstance(event, (ev.VoiceHeard, ev.VoiceFixed))
         inp = self.project.state.inputs.get(event.src or "") if voice else None
         if inp is not None and inp.kind == "cancelled":

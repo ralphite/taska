@@ -6,15 +6,18 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "server"))
 
 from support import ProjectCase
 from taska.domain import events as ev
+from taska.domain.model import FileRef
 from taska.infra.codex_queue import DeliveryError
 from taska.services.codex_notifications import CodexNotifications, KEY, MESSAGE
 from taska.services.project import Project
+from taska.services.voice_jobs import Job
 
 TARGET = "11111111-1111-4111-8111-111111111111"
 OTHER = "22222222-2222-4222-8222-222222222222"
@@ -91,6 +94,21 @@ class Notifications(ProjectCase):
         self.p.emit(ev.VoiceHeard(src=rid, f="f1", state="done", tidied="its words", by="taska"))
         self.assertEqual(self.n.sends, set())
         self.p.emit(ev.InputSent(src=rid, by="you"))
+        self.settle()
+        self.assertEqual(self.transport.messages, [(TARGET, MESSAGE)])
+
+    def test_a_voice_note_notifies_once_its_words_are_final(self):
+        # B761 (Yadong r1279): while its words are still being worked out (transcribing, confirming) the agent is
+        # not told; it is told once they are final
+        self.n.bind(TARGET)
+        rid = "r" + str(self.p.store.count + 1)
+        self.p.voice.jobs["f1.m4a"] = Job(t0=time.time())
+        self.p.emit(ev.VoiceHeard(f="f1.m4a", state="wait", by="taska"))
+        self.p.emit(ev.InputAdded(by="you", id=rid, files=[FileRef(f="f1.m4a", name="voice.m4a")]))
+        self.p.emit(ev.VoiceHeard(src=rid, f="f1.m4a", state="wait", early="first words", by="taska"))
+        self.assertEqual(self.n.sends, set())
+        self.p.voice.jobs["f1.m4a"].done = True
+        self.p.emit(ev.VoiceHeard(src=rid, f="f1.m4a", state="done", tidied="final words", by="taska"))
         self.settle()
         self.assertEqual(self.transport.messages, [(TARGET, MESSAGE)])
 
