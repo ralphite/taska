@@ -174,6 +174,7 @@ def _next(req: Request, p: Project, by: str) -> Response:
                 p.agents.read_item(given, by, p.state)
             news = p.agents.rule_news(p.state, by, session)  # the rules changed since it last heard: said first
             news += p.agents.guide_news(by, session, render.guide_version())  # and so did the guide (F743)
+            news += p.agents.roster_news(p.state, by, session)  # who else works here, when that changed (T774)
         if news:
             lines = out.split("\n")
             at = next((i + 1 for i, x in enumerate(lines) if "Project rules" in x), 1)
@@ -254,7 +255,7 @@ def do(req: Request, p: Project) -> Response:
             commands, taken = held_by_others(p, commands, by, session)
     lines, _ = p.run(commands, by, session=session)
     if taken:  # said on the item, so the session that had it hears it there (it is told what is written on its items)
-        p.run([(0, {"op": "say", "ref": ref, "kind": "progress", "text": f"@{who.split(' · ')[-1]} taken over from you, as the user asked.",
+        p.run([(0, {"op": "say", "ref": ref, "kind": "progress", "text": f"@{who.split(' · ')[-1]} {ref} is taken over from you, as the user asked: stop working on it.",
                     "src": None, "files": []}) for ref, who in taken], by, session=session)
     with p.lock:
         news = p.agents.news_for(by, rules.for_agent(p.state, p.organizing.on, p.held_fn)) if agent else []

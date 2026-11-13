@@ -72,6 +72,7 @@ class AgentActivity:
             {str(k): {int(n): int(m) for n, m in v.items()} for k, v in heard.items()} if isinstance(heard, dict) else {})
         self.told: Dict[str, Set[int]] = {}  # per session: messages for it that a /do reply named already
         self.rule_marks: Dict[str, int] = {}  # per session: how much of the log it has been told rules from
+        self.roster_told: Dict[str, str] = {}  # per session: who else it was last told works here (T774)
         guide = db.get("guide")  # F743: the guide's versions sessions last saw, and those versions' words
         guide = guide if isinstance(guide, dict) else {}
         self.guide_texts: Dict[str, str] = {str(k): str(v) for k, v in (guide.get("texts") or {}).items()}
@@ -368,6 +369,41 @@ class AgentActivity:
             self._changed()
 
     # -- what the page shows -------------------------------------------------------
+
+    def roster_news(self, state: ProjectState, by: object, ses: str = "") -> List[str]:
+        """T774: who else works on this project, for a session's /next: the other agent sessions heard of in the last
+        day, each with the item it is on and when it was last heard of; told on its first /next, then only when who is
+        here or what they are on changed (not as time passes)."""
+        me = ident(agent_name(by), session_name(ses))
+        holds = self._holds(state)
+        now = time.time()
+        rows: List[Tuple[float, str, str]] = []
+        for k, a in self.agents.items():
+            if k in ("org", "taska"):
+                continue
+            names = {n: t for n, t in a.sessions.items() if t > now - 86400} or ({"": a.t} if a.t > now - 86400 else {})
+            for n, t in names.items():
+                who = ident(k, n)
+                if who == me:
+                    continue
+                on = holds.get(who)
+                rows.append((t, who, state.code(on[0]) if on and on[0] in state.items else ""))
+        key = f"{agent_name(by)}\x00{session_name(ses)}"
+        seen = "|".join(sorted(f"{w}>{c}" for _, w, c in rows))
+        if self.roster_told.get(key) == seen:
+            return []
+        first = key not in self.roster_told
+        self.roster_told[key] = seen
+        if not rows:
+            return [] if first else ["no other agent session works here now"]
+
+        def ago(t: float) -> str:
+            m = int((now - t) // 60)
+            return "just now" if m < 1 else f"{m}m ago" if m < 60 else f"{m // 60}h ago"
+
+        said = "; ".join(f"{w} ({'on ' + c + ', ' if c else ''}heard {ago(t)})" for t, w, c in sorted(rows, reverse=True))
+        return [f"other agent sessions here: {said}. An item one of them is on is theirs: leave it, or write to them "
+                "with `B03 say @<session> ...`."]
 
     def _holds(self, state: ProjectState) -> Dict[str, Tuple[int, float]]:
         """Per agent session ("claude-code · worker"): the item it is on now and since when (the latest it took)."""

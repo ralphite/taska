@@ -43,8 +43,8 @@ class HeldItems(ProjectCase):
         out = self.do("beta", "T1 take\n")
         self.assertIn("ok T1 status=doing", out)
         said = [m.text for m in self.p.state.items[1].thread]
-        self.assertIn("@alpha taken over from you, as the user asked.", said)
-        self.assertIn("taken over from you", self.do("alpha", "T1 progress still here\n"))  # alpha is told on its next call
+        self.assertIn("@alpha T1 is taken over from you, as the user asked: stop working on it.", said)
+        self.assertIn("stop working on it", self.do("alpha", "T1 progress still here\n"))  # alpha is told on its next call
 
     def test_an_item_nobody_holds_is_taken_as_before(self) -> None:
         self.assertIn("ok T1 status=doing", self.do("beta", "T1 doing\n"))
@@ -52,3 +52,16 @@ class HeldItems(ProjectCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WhoIsHere(HeldItems):
+    """T774 (I769): a session's /next says who else works here, on its first call and then only when that changed."""
+
+    def test_told_once_then_only_when_it_changed(self) -> None:
+        self.get("/next?by=codex&session=main")
+        first = self.get("/next?by=claude-code&session=alpha")
+        self.assertIn("other agent sessions here: codex · main (on T1, heard just now)", first)
+        self.assertNotIn("other agent sessions here", self.get("/next?by=claude-code&session=alpha"))
+        self.p.run([(0, {"op": "new", "type": "task", "pri": "P1", "when": "now", "title": "Sort by date"})], "you")
+        self.do("beta", "T2 doing\n")
+        self.assertIn("claude-code · beta (on T2, heard just now)", self.get("/next?by=claude-code&session=alpha"))
