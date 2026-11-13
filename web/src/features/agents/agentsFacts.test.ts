@@ -75,3 +75,14 @@ test('an agent that named no session is one row, by its app; a blocked session i
     ['Codex', [['Codex', 'idle']]],
   ])
 })
+
+test('agents Taska has no app for are one group, Others, after the known apps (not a group each)', () => {
+  const t = Date.parse('2026-11-13T10:00:00-08:00')
+  const seen: AgentSeen[] = [
+    { name: 'claude-main', t, waiting: false },
+    { name: 'nightly', t, waiting: false },
+    { name: 'codex', t, waiting: false },
+  ]
+  expect(rows(seen).map(([g]) => g)).toEqual(['Codex', 'Others'])
+  expect(rows(seen)[1][1].length).toBe(2)
+})

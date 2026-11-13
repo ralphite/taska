@@ -131,6 +131,8 @@ def command(head: str, cont: str) -> Union[Command, List[Command]]:
         return {"op": "merge", "ref": word, "into": rest2.strip().split()[0] if rest2.strip() else ""}
     if verb_l == "delete" and not rest2.strip():
         return {"op": "idel", "ref": word}
+    if verb_l == "take" and not rest2.strip():  # doing, taken from the session that holds it, as the user asked (T772)
+        return {"op": "set", "ref": word, "f": {"status": "doing"}, "src": None, "take": True}
     until = re.fullmatch(r"(?i)later\s+until\s+(\S+)(?:\s+(.*))?", rest, re.S)
     if until:  # B03 later until 2026-11-10: Later, and back to Now on that day by itself (D115 #21)
         change: Command = {"op": "set", "ref": word, "f": {"when": "later", "later_until": until[1]}}

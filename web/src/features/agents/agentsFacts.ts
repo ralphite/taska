@@ -59,6 +59,8 @@ export interface AgentsFacts {
 }
 
 const APPS = ['claude-code', 'codex', 'antigravity']
+/** the group of agents Taska has no app for */
+export const OTHERS = 'others'
 const RANK: Record<SessionState, number> = { waiting: 0, working: 1, idle: 2, gone: 3 }
 const PILL: Record<SessionState, string> = { working: 'Working', idle: 'Idle', waiting: 'Waiting for you', gone: 'Gone' }
 
@@ -152,12 +154,14 @@ export function sessionGroups(m: ProjectModel): Pick<AgentsFacts, 'groups' | 'st
     else tops.push(r)
   }
   for (const [p, ks] of kids) p.f.workers = ks.sort(order).map((k) => ({ key: k.f.key, name: k.f.name, state: k.f.state, on: k.f.on }))
-  const apps = [...new Set(rows.map((r) => r.app))].sort((x, y) => (APPS.indexOf(x) + 1 || 99) - (APPS.indexOf(y) + 1 || 99) || x.localeCompare(y))
+  // the apps Taska knows each in its own group; every other agent name in one group of others (not a group each)
+  const groupOf = (app: string) => (APPS.includes(app) ? app : OTHERS)
+  const apps = [...new Set(rows.map((r) => groupOf(r.app)))].sort((x, y) => (APPS.indexOf(x) + 1 || 99) - (APPS.indexOf(y) + 1 || 99))
   const groups = apps.map((app) => ({
     app,
-    name: whoName(app),
+    name: app === OTHERS ? 'Others' : whoName(app),
     sessions: tops
-      .filter((r) => r.app === app)
+      .filter((r) => groupOf(r.app) === app)
       .sort(order)
       .flatMap((r) => [r.f, ...(kids.get(r) ?? []).sort(order).map((k) => ({ ...k.f, worker: true }))]),
   }))

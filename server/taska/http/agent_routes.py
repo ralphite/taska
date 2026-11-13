@@ -7,19 +7,21 @@ from __future__ import annotations
 import os
 import re
 import time
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
 from urllib.parse import quote
 
 from ..agent_text import log as change_log
 from ..agent_text import render
 from ..agent_text.guide_text import CONNECT
-from ..agent_text.language import parse
+from ..agent_text.language import Parsed, parse
 from ..agent_text.work import Asker, Work, next_work
 from ..domain import rules
 from ..domain.rules import item_at
+from ..domain.state import ident
 from ..domain.vocab import MAX_FILE, PEOPLE, Refused
 from ..infra.agent_sessions import SID, lookup
 from ..infra.audio import leveled
+from ..services.agents import agent_name, session_name
 from ..services.project import Project
 from ..services.waker import SCRIPT
 from .messages import NOT_FOUND, Request, Response, as_json, text
@@ -245,7 +247,15 @@ def do(req: Request, p: Project) -> Response:
         if agent:
             p.agents.saw(by, 0, session, req.arg("sid"), req.arg("parent"))
         calls: List[str] = p.agents.call_news(p.state, by, session) if agent else []  # what others wrote before
-    lines, _ = p.run(parse(body), by, session=session)
+    commands = parse(body)
+    taken: List[Tuple[str, str]] = []
+    if agent:
+        with p.lock:
+            commands, taken = held_by_others(p, commands, by, session)
+    lines, _ = p.run(commands, by, session=session)
+    if taken:  # said on the item, so the session that had it hears it there (it is told what is written on its items)
+        p.run([(0, {"op": "say", "ref": ref, "kind": "progress", "text": f"@{who.split(' · ')[-1]} taken over from you, as the user asked.",
+                    "src": None, "files": []}) for ref, who in taken], by, session=session)
     with p.lock:
         news = p.agents.news_for(by, rules.for_agent(p.state, p.organizing.on, p.held_fn)) if agent else []
         rule_lines = p.agents.rule_news(p.state, by, session) if agent else []
@@ -256,6 +266,39 @@ def do(req: Request, p: Project) -> Response:
             " Finish the step you are on, then GET /next.") if news else ""
     note += "".join("\n" + r for r in rule_lines + calls)
     return text(200, "\n".join(lines) + f"\nrev {rev}: GET /next to continue{note}\n")
+
+
+def held_by_others(p: Project, commands: Parsed, by: str, session: str) -> Tuple[Parsed, List[Tuple[str, str]]]:
+    """T772: `B03 doing` from a session while another one holds B03 is not done: it is told who holds it and since
+    when, and how to go on (leave it, write to the holder, or take it when the user asked: `B03 take`). -> the
+    commands to run, and the items taken over with who had them."""
+    me = ident(by, session)
+    rec = p.agents.agents.get(agent_name(by))
+    parent = rec.parents.get(session_name(session), "") if rec and session else ""
+    boss = ident(by, parent) if parent else ""  # its manager hands it on
+    out: Parsed = []
+    taken: List[Tuple[str, str]] = []
+    for no, c in commands:
+        if isinstance(c, dict) and c.get("op") == "set" and (c.get("f") or {}).get("status") == "doing":
+            take = bool(c.pop("take", False))
+            try:
+                it = item_at(p.state, str(c.get("ref") or ""))
+            except Refused:
+                out.append((no, c))
+                continue
+            h = p.agents.holder(p.state, it)
+            if h and h[0] != me and h[0] != boss:
+                code = p.state.code(it.n)
+                if take:
+                    taken.append((code, h[0]))
+                else:
+                    mins = max(1, int((time.time() - h[1]) // 60))
+                    out.append((no, Refused(
+                        f"{code} is held by {h[0]} (heard from {mins} min ago): leave it and take the next one, or write to it with "
+                        f"`{code} say @{h[0].split(' · ')[-1]} ...`; only when the user asked you to take it: `{code} take`")))
+                    continue
+        out.append((no, c))
+    return out, taken
 
 
 def serve_file(p: Project, name: str, byte_range: str = "") -> Response:

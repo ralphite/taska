@@ -11,7 +11,7 @@ import { Avatar, Who } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import type { SheetParts } from '../../ui/Sheet'
 import { CHIP, MUTED, NEEDS_CARD, SECOND } from '../../ui/tones'
-import type { AgentsFacts, ItemRef, SessionFacts, SessionState } from './agentsFacts'
+import { OTHERS, type AgentsFacts, type ItemRef, type SessionFacts, type SessionState } from './agentsFacts'
 import { AgentsGuide } from './AgentsGuide'
 
 export interface AgentsActs {
@@ -113,7 +113,7 @@ function AgentsBody({ f, on, start }: { f: AgentsFacts; on: AgentsActs; start: A
             f.groups.map((g) => (
               <section key={g.app} className="pb-4">
                 <h3 className={`flex h-7 items-center gap-2 px-2 ${LABEL}`}>
-                  <Avatar by={g.app} />
+                  {g.app === OTHERS ? null : <Avatar by={g.app} />}
                   {g.name}
                 </h3>
                 <ul>
