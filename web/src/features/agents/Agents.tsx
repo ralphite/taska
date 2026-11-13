@@ -175,7 +175,7 @@ function ListRow({ s, picked, onPick }: { s: SessionFacts; picked: boolean; onPi
  * (and the one for another network), Copy the words for the agent; each one's text in its tip. */
 function Connect({ f, on }: { f: AgentsFacts; on: AgentsActs }) {
   const copy = (label: string, text: string) => (
-    <button onClick={() => on.copy(text)} title={text.replace(/`/g, '')} className={`${CHIP} h-8 min-w-0 flex-1 justify-center bg-white px-2 text-xs font-medium ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700`}>
+    <button onClick={() => on.copy(text)} title={text.replace(/`/g, '')} className={`${CHIP} h-8 min-w-0 flex-1 justify-center bg-white lg:flex-none lg:justify-start px-2 text-xs font-medium ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700`}>
       <Icon n="copy" c="size-3.5 shrink-0" />
       <span className="truncate">{label}</span>
     </button>
@@ -183,7 +183,7 @@ function Connect({ f, on }: { f: AgentsFacts; on: AgentsActs }) {
   return (
     <section aria-label="Connect another agent" className="flex flex-col gap-1.5 px-2 pt-2 pb-1">
       <h3 className={`flex h-6 items-center ${LABEL}`}>Connect another agent</h3>
-      <div className="flex gap-1.5">
+      <div className="flex gap-1.5 lg:flex-col">
         {copy('Copy command', f.cmd)}
         {copy('Copy for the agent', f.ask)}
       </div>

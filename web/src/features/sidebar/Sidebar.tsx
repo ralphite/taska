@@ -102,6 +102,8 @@ const DESK_ROW =
   'flex items-center gap-2.5 rounded-xl px-2.5 py-2 select-none [-webkit-touch-callout:none] hover:bg-zinc-200/60 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 aria-[current=page]:hover:bg-blue-100 data-dragging:bg-zinc-200/70 data-dragging:ring-0 data-drop:bg-blue-100 data-drop:ring-2 data-drop:ring-blue-500 data-pressed:bg-zinc-200/80 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:aria-[current=page]:hover:bg-blue-400/20 dark:data-dragging:bg-zinc-800/70 dark:data-drop:bg-blue-400/15 dark:data-drop:ring-blue-400 dark:data-pressed:bg-zinc-800 data-dragging:[&>*]:invisible'
 
 type CardOn = ReturnType<typeof useProjectCard>
+/** the project card's width (ProjectCard's w-80) */
+const CARD_W = 320
 
 /** A row drawn pressed or being dragged, as the page marks it while a finger is on it or drags it. */
 const rowLook = (p: SideProject) => (p.look === 'pressed' ? { 'data-pressed': '' } : p.look === 'dragging' ? { 'data-dragging': '' } : {})
@@ -187,8 +189,10 @@ function ProjectRows({ phone, projects, hover, on }: { phone: boolean; projects:
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
+                      // beside its card when the card shows, so the card never covers it (F767)
                       const r = e.currentTarget.getBoundingClientRect()
-                      on.projectMenu(p.slug, r.left, r.bottom)
+                      const card = hover.hovered?.slug === p.slug ? hover.hovered : null
+                      on.projectMenu(p.slug, card ? card.left + CARD_W + 6 : r.left, card ? r.top : r.bottom)
                     }}
                     className="invisible -my-1 grid size-6 place-items-center rounded-md text-zinc-500 group-hover/row:visible hover:bg-zinc-300/60 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100"
                   >
