@@ -1,5 +1,6 @@
-// The sidebar's New input button (T701), on the desktop only (the phone's drawer has none): as it is, its key at the
-// end; under the pointer, its mic shows in the key's place (New input by voice); lit while the New input page is open.
+// The sidebar's New input button (T701), on the desktop only (the phone's drawer has none): its mic always at its end
+// (New input by voice; F777 r1301: no key there, the key is in the tip), its centre in line with the projects' marks
+// and the fold button above; lit while the New input page is open.
 // The page's own sidebar, its top.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frame } from '../../stories/Frames'
@@ -10,7 +11,7 @@ type Story = StoryObj
 
 const LOOKS: [label: string, look: string, composing: boolean][] = [
   ['as it is', 'plain', false],
-  ['under the pointer: its mic shows', 'pointer', false],
+  ['under the pointer', 'pointer', false],
   ['pointer on its mic', 'pointer-mic', false],
   ['on the New input page: lit', 'composing', true],
   ['on the New input page, under the pointer', 'composing-pointer', true],

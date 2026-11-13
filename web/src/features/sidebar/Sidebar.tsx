@@ -238,7 +238,7 @@ export function Sidebar(props: SidebarProps) {
   return (
     <nav id="drawer" data-tip-side="right" hidden={hidden} aria-label="Projects" className={`flex h-full flex-col pt-[env(safe-area-inset-top)] dark:bg-zinc-900 ${place}`}>
       {edge}
-      <div className="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4">
+      <div className="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-3.5 lg:pl-4">
         <a
           href="/"
           onClick={(e) => on.go('/', e)}
@@ -273,22 +273,22 @@ export function Sidebar(props: SidebarProps) {
         </div>
       </div>
       <div className="group/ni relative mx-2.5 mb-3 hidden shrink-0 lg:block">
+        {/* the voice button always in sight (F777 r1301); its centre, the projects' marks and the sidebar's fold button
+            in one line, 30px from the sidebar's right edge */}
         <button
           onClick={on.newInput}
           aria-pressed={composing}
+          title={`New input · ${keys.newInput}`}
           className="flex h-9 w-full items-center gap-2 rounded-xl bg-white px-3 text-sm font-medium text-zinc-800 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 aria-pressed:bg-blue-50 aria-pressed:text-blue-700 aria-pressed:ring-blue-500/40 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10 dark:hover:bg-zinc-700 dark:aria-pressed:bg-blue-400/10 dark:aria-pressed:text-blue-300 dark:aria-pressed:ring-blue-400/40"
         >
           <Icon n="newinput" c="size-4" />
           <span className="flex-1 text-left">New input</span>
-          <span className="group-hover/ni:invisible">
-            <Kbd k={keys.newInput} />
-          </span>
         </button>
         <button
           onClick={on.newVoice}
           title={`New input by voice · ${keys.voice}`}
           aria-label="New input by voice"
-          className="absolute inset-y-1 right-1 hidden w-9 place-items-center rounded-lg text-zinc-600 group-hover/ni:grid hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-white"
+          className="absolute inset-y-1 right-1 grid w-8 place-items-center rounded-lg text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-white"
         >
           <Icon n="mic" c="size-4" />
         </button>
