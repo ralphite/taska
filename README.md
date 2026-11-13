@@ -64,6 +64,8 @@ Every change to Taska is measured against one goal: **you get more done with les
 - **Agents keep working without you** and stop only for what really needs you.
 - **What needs you is obvious and quick to handle**: one tap to answer, approve or accept.
 - **You always know where things stand**, without reading a transcript.
+- **Different agents work on one project together**, over weeks: each hears about its work, knows who else is
+  here, and never does an item another one holds without knowing ([Agents working together](docs/collaboration.md)).
 
 ## How it works
 
