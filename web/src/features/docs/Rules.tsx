@@ -8,19 +8,18 @@ import { useState, type MouseEvent, type ReactNode } from 'react'
 import { foldRuns, type Chunk, type VersionRow } from '../../model/rules'
 import type { RuleProposal } from '../../model/types'
 import { hasIcon } from '../../model/words'
-import { Avatar, Empty } from '../../ui/bits'
+import { Avatar, Empty, Who } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import { Rich } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
 import type { SheetParts } from '../../ui/Sheet'
-import { DECIDED_OFF, DECIDED_ON, DISABLED, MUTED, NEEDS_CARD, PRIMARY, PRIMARY_BASE, SECOND, chosenTone } from '../../ui/tones'
+import { DECIDED_OFF, DECIDED_ON, DISABLED, MUTED, NEED, PRIMARY, PRIMARY_BASE, SECOND, actIcon, chosenTone } from '../../ui/tones'
+import { NeedFrame } from '../../ui/NeedFrame'
 import { DocBlock } from './DocBlock'
 
 /** the document's column, as DocView's */
 export const RULES_COLUMN = 'lg:mx-auto lg:w-full lg:max-w-[min(46rem,calc(100%-5rem))]'
-/** Approve, in Taska's Approve blue */
-const APPROVE = `${PRIMARY_BASE} bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600`
 
 /** The bar's name: Rules, and what it shows (the version, who, when; Editing; a proposal). */
 export function RulesHead({ sub }: { sub: ReactNode }) {
@@ -51,7 +50,8 @@ export function BarBtn({ icon, label, pressed, onClick }: { icon: IconName; labe
 export interface ProposalFacts {
   p: RuleProposal
   who: string
-  when: string
+  /** the time now, to say when it was proposed */
+  now: number
   /** the user's words on it and its agent's, newest last */
   talk: number
 }
@@ -63,53 +63,67 @@ export interface ProposalEvents {
   approve(): void
 }
 
-/** An agent's proposed change: who, why, when; waiting (View changes), opened (Comment, Not now, Approve), or decided
- * (in place, faded, its buttons disabled, the one chosen in the past tense; r1003). Sent back: what changed since. */
+/** An agent's proposed change, in the card an item's proposal is drawn in (ui/NeedFrame), with its buttons (B763: the
+ * same component and buttons, r1282): who, why, when; waiting (View changes), opened (Comment, Not now, Approve), or
+ * decided (in place, faded, its buttons disabled, the one chosen in the past tense; r1003). Sent back: what changed
+ * since. */
 export function ProposalCard({ f, open = false, on }: { f: ProposalFacts; open?: boolean; on: ProposalEvents }) {
   const { p } = f
   const decided = p.state === 'approved' ? 'Approve' : p.state === 'declined' ? 'Not now' : null
+  const off = !!decided || p.state === 'stale'
   const past: Record<string, string> = { Approve: 'Approved', 'Not now': 'Not now' }
-  const btn = (label: 'Approve' | 'Not now', run: () => void, primary: boolean) =>
-    decided || p.state === 'stale' ? (
-      <button disabled className={decided === label ? DECIDED_ON(chosenTone('approve')) : DECIDED_OFF}>
-        {decided === label ? <Icon n="check" c="size-4" sw="2.5" /> : null}
+  // no, a quieter one; yes, in Approve's blue (as an item's DecideBtns)
+  const btn = (label: 'Approve' | 'Not now', icon: IconName, run: () => void, yes: boolean) => {
+    const size = `${yes ? 'flex-[1.4]' : 'flex-1'} lg:flex-none`
+    const mark = <Icon n={icon} c={yes ? 'size-4.5' : 'size-4'} sw="2.25" />
+    return off ? (
+      <button disabled aria-pressed={decided === label} className={`${decided === label ? DECIDED_ON(chosenTone('approve')) : DECIDED_OFF} ${size}`}>
+        {mark}
         {decided === label ? past[label] : label}
       </button>
     ) : (
-      <button onClick={run} className={primary ? APPROVE : SECOND}>
+      <button onClick={run} className={`${yes ? `${PRIMARY_BASE} ${NEED.approve.btn}` : SECOND} ${size}`}>
+        {mark}
         {label}
       </button>
     )
+  }
+  const foot =
+    open || decided ? (
+      <>
+        <button onClick={on.comment} disabled={off} title="Comment" className={`${off ? DECIDED_OFF : SECOND} mr-auto lg:mr-0`}>
+          <Icon n="comment" c="size-4" />
+          {f.talk ? f.talk : 'Comment'}
+        </button>
+        {btn('Not now', actIcon('drop', true), on.decline, false)}
+        {btn('Approve', actIcon('approve', true), on.approve, true)}
+      </>
+    ) : p.state === 'wait' ? (
+      <button onClick={on.view} className={`${PRIMARY_BASE} ${NEED.approve.btn} flex-1 lg:flex-none`}>
+        <Icon n="book" c="size-4.5" sw="2.25" />
+        View changes
+      </button>
+    ) : null
   return (
-    <div data-proposal={p.id} className={`${NEEDS_CARD} p-3 lg:px-4`}>
-      <div className="flex items-start gap-2 text-sm">
-        <span className="mt-0.5">
-          <Avatar by={p.by} named />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-baseline gap-x-2">
-            <b className="font-semibold">{hasIcon(p.by) ? '' : `${f.who} `}proposes a change</b>
-            <span className={`text-xs ${MUTED}`}>{f.when}</span>
-          </div>
-          <div className="text-amber-900 dark:text-amber-200">{p.why}</div>
-          {p.state === 'stale' ? <div className={`mt-1 text-xs ${MUTED}`}>Sent back: {p.note?.replace(/^changed since: /, '') || 'the rules'} changed since</div> : null}
-        </div>
-        {!open && p.state === 'wait' ? (
-          <button onClick={on.view} className="h-9 shrink-0 rounded-lg bg-amber-100 px-3 text-sm font-semibold text-amber-900 hover:bg-amber-200 dark:bg-amber-400/15 dark:text-amber-100 dark:hover:bg-amber-400/25">
-            View changes
-          </button>
-        ) : null}
-      </div>
-      {open || decided ? (
-        <div className="mt-3 flex items-center justify-end gap-2">
-          <button onClick={on.comment} disabled={!!decided || p.state === 'stale'} title="Comment" className={`${decided || p.state === 'stale' ? DECIDED_OFF : SECOND} mr-auto lg:mr-0`}>
-            <Icon n="comment" c="size-4" />
-            {f.talk ? f.talk : 'Comment'}
-          </button>
-          {btn('Not now', on.decline, false)}
-          {btn('Approve', on.approve, true)}
-        </div>
-      ) : null}
+    <div data-proposal={p.id}>
+      <NeedFrame
+        icon="propose"
+        title={
+          <>
+            <Who by={p.by} /> proposes a change
+          </>
+        }
+        t={p.t}
+        now={f.now}
+        done={!!decided}
+        body={
+          <>
+            <div>{p.why}</div>
+            {p.state === 'stale' ? <div className={`text-xs ${MUTED}`}>Sent back: {p.note?.replace(/^changed since: /, '') || 'the rules'} changed since</div> : null}
+          </>
+        }
+        foot={foot}
+      />
     </div>
   )
 }

@@ -32,7 +32,7 @@ const on = acts('Rules', ['history', 'copy', 'edit', 'view', 'comment', 'decline
 const env = (desk: boolean) => envOf(modelOf([]), desk)
 const NOW = env(true).now
 const frame = (desk: boolean): RulesFrame => ({ desk, place: '' })
-const shown = (p: RuleProposal): ProposalShown => ({ f: { p, who: ruleWho(p.by), when: when(p.t, NOW), talk: p.comments.length }, on })
+const shown = (p: RuleProposal): ProposalShown => ({ f: { p, who: ruleWho(p.by), now: NOW, talk: p.comments.length }, on })
 const sub = (x: RuleVersion) => `v${x.v} · ${ruleWho(x.by)} · ${when(x.t, NOW)}`
 
 const screens = (draw: (desk: boolean) => ReactNode): Story => ({

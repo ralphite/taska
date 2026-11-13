@@ -14,7 +14,8 @@ import { Kbd } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
 import { DECIDED_ON, FIELD, MODIFY_LINK, NEED, PRIMARY_BASE, SECOND, chosenTone } from '../../ui/tones'
-import { KeepBtn, NeedFrame, msgName, type CardEvents } from './NeedsCard'
+import { KeepBtn, msgName, type CardEvents } from './NeedsCard'
+import { NeedFrame } from '../../ui/NeedFrame'
 import type { TalkEnv } from './talkEnv'
 
 /** what a question asks: its first line */

@@ -3,7 +3,6 @@
 // by day, the why line, a version's tools, the phone's Restore, the question a restore asks, no rules yet.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { diffChunks, historyRows, ruleWho } from '../../model/rules'
-import { when } from '../../model/time'
 import type { RuleProposal } from '../../model/types'
 import { SheetLayout, Sheet } from '../../ui/Sheet'
 import { acts } from '../../stories/acts'
@@ -18,7 +17,7 @@ type Story = StoryObj
 
 const on = acts('Rules', ['view', 'comment', 'decline', 'approve', 'pick', 'marks', 'now', 'restore', 'cancel', 'why', 'write', 'history'] as const)
 const env = envOf(modelOf([]), true)
-const f = (p: RuleProposal) => ({ p, who: ruleWho(p.by), when: when(p.t, env.now), talk: p.comments.length })
+const f = (p: RuleProposal) => ({ p, who: ruleWho(p.by), now: env.now, talk: p.comments.length })
 const rows = (items: [string, React.ReactNode][]) => (
   <div className="flex flex-col gap-4 p-4">
     {items.map(([label, node]) => (

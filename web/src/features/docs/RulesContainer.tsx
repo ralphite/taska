@@ -39,7 +39,7 @@ export function RulesContainer({ route, place, hidden, footRoom = 0 }: { route: 
   const go = (v: RulesView, push = true) => app.rules.go(v, push)
   const back = () => go(view.kind === 'version' && !desk ? { kind: 'history' } : { kind: 'read' }, false)
   const shown = (p: RuleProposal): ProposalShown => ({
-    f: { p, who: ruleWho(p.by), when: when(p.t, now), talk: p.comments.length },
+    f: { p, who: ruleWho(p.by), now, talk: p.comments.length },
     on: {
       view: () => go({ kind: 'proposal', p: p.id }),
       comment: () => app.docs.proposalComment(p.id, p.why),
