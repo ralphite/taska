@@ -51,7 +51,7 @@ def note_agent(state: ProjectState, e: ev.Event) -> None:
     if not isinstance(e, ev.MessagePosted) or not a or it.status != "doing" or ident(a.by, a.ses) == me \
             or seconds(e.t) - seconds(a.t) >= CLAIM_TTL:
         it.agent = AgentMark(by=e.by, t=e.t, ses=e.ses)
-        if not isinstance(e, ev.MessagePosted):
+        if not isinstance(e, (ev.MessagePosted, ev.ItemAdded)):  # making an item is not working on it (T772)
             state.claim(e.n, me, seconds(e.t))
     state.first_acts.setdefault(me, {}).setdefault(e.n, e.seq)
 

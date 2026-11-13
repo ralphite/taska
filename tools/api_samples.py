@@ -242,6 +242,10 @@ def record(base: str) -> Dict[str, Any]:
     c.raw(f"/p/{slug}/do?by=claude-code&session=helper&parent=sample&sid=aaaaaaaa-1111-2222-3333-444444444444",
           b"T2 progress Looking at the address.\n", "text/plain")
     agent(SEED)
+    # the worker on an item you approved (it holds it: Agents says what each session is on, F768)
+    c.raw(f"/p/{slug}/do?by=you", b"F3 open\n", "text/plain")
+    c.raw(f"/p/{slug}/do?by=claude-code&session=helper&parent=sample&sid=aaaaaaaa-1111-2222-3333-444444444444",
+          b"F3 doing\n", "text/plain")
     # a web page too big for the view (B756: its sound written into it): its text comes by itself (api/doc)
     agent("T2 html\n  <html><head><title>Lecture</title></head><body><audio src='data:audio/mp3;base64," + "A" * 1_000_000 + "'></audio></body></html>\n")
     out["upload"] = c.json(p + "file?name=note.webm&transcribe=1&scope=B1", b"\x1aE\xdf\xa3 not really audio", "audio/webm")
