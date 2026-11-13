@@ -13,7 +13,7 @@ import type { Doc, FileRef, Item } from '../../model/types'
 import { Kbd, SectionHead } from '../../ui/bits'
 import { Grip } from '../../ui/Grip'
 import { Icon, StateIcon } from '../../ui/Icon'
-import { keepsEnd, overflows, scrollerOf, toEnd } from '../../ui/scroller'
+import { holdHeight, keepsEnd, overflows, scrollerOf, toEnd } from '../../ui/scroller'
 import type { IconName } from '../../ui/icon-paths'
 import { Rich } from '../../ui/Markdown'
 import { clean, inlineHtml } from '../../ui/markdown/inline'
@@ -128,11 +128,16 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     let end = go
     // it leaves its end only as you scroll up: the scroll this page made comes after the talk may have grown again
     let was = sc.scrollTop
+    // at its end it never gets shorter: its last message shorter would scroll it up (B770 r1292)
+    const body = el.firstElementChild instanceof HTMLElement ? el.firstElementChild : null
+    let tall = body?.offsetHeight ?? 0
     const seen = () => {
       end = keepsEnd(sc, was, end)
       was = sc.scrollTop
+      if (!end && body?.style.minHeight) tall = holdHeight(body, tall, end)
     }
     const ro = new ResizeObserver(() => {
+      if (body) tall = holdHeight(body, tall, end)
       if (end) sc.scrollTop = sc.scrollHeight
       else if (up != null) sc.scrollTop = Math.max(0, sc.scrollHeight - sc.clientHeight - up)
       marks(el)
