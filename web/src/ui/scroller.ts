@@ -23,6 +23,18 @@ export const toEndWay = (sc: HTMLElement): 'down' | 'up' | 'none' => (sc.scrollH
  * scrolled it up (the page's own scroll to the end can come after the talk grew again). */
 export const keepsEnd = (sc: HTMLElement, was: number, end: boolean) => atEnd(sc) || (end && sc.scrollTop >= was)
 
+/** At its end the talk never gets shorter under you (B770 r1292): what it shows last getting shorter (a voice note's
+ * "confirming" line going as its final words come) would take what scrolls it up with it. While `end`, `body` keeps
+ * the height it had (`tall`); once it is taller again, or the talk left its end, nothing is held. -> its height now. */
+export function holdHeight(body: HTMLElement, tall: number, end: boolean): number {
+  if (!end) body.style.minHeight = ''
+  const h = body.offsetHeight
+  if (body.style.minHeight && h > tall) body.style.minHeight = ''
+  if (!end || h >= tall) return h
+  body.style.minHeight = `${tall}px`
+  return tall
+}
+
 /** What scrolls `el` scrolled to its end (the talk: to what was said last). */
 export function toEnd(el: HTMLElement): void {
   const sc = scrollerOf(el)

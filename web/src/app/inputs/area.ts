@@ -32,7 +32,7 @@ export function makeInputs(c: Core, links: InputLinks) {
   const { s, toasts, runner } = c
   const keep = (blob: Blob) => keptNotes.keep(blob)
   const goDraft = (key: DraftKey) => draftPlaces.go(key)
-  const delivered = new Delivered({ box: s.box, ui: s.ui, route: s.route, runner, toasts, fields: c.fields, model: c.model, slug: c.slug })
+  const delivered = new Delivered({ box: s.box, ui: s.ui, runner, toasts, model: c.model, slug: c.slug })
   const inputs = new InputSender(runner, s.outbox, {
     sent: (o, rid) => delivered.sent(o, rid),
     refused: (_o, why) => toasts.show(why ? `err: ${why}` : 'Not saved', null),
@@ -56,7 +56,6 @@ export function makeInputs(c: Core, links: InputLinks) {
     kv: c.kv,
     sent: (sl, key) => otherTabs.sent(sl, key),
     refresh: (sl) => c.project().refresh(sl),
-    replied: (sl, scope) => delivered.replied(sl, scope),
     delivery: c.delivery,
   })
   const draftSender = new DraftSender({ box, boxStore: s.box, inputs, docVoice: links.docVoice, model: c.model })

@@ -45,8 +45,6 @@ export interface BoxDeps {
   refresh?(slug: string): Promise<void>
   /** the other tabs: this draft went out from here */
   sent?(slug: string, key: DraftKey): void
-  /** a reply to the item open: its talk goes to its end, where the reply shows */
-  replied?(slug: string, scope: string): void
   /** what has to reach Taska is asked until it answers (its pauses end at once when Taska may be back) */
   delivery?: Delivery
 }
@@ -194,7 +192,6 @@ export class Box {
     const said = splitVoices(text, draftNotes(files))
     this.d.inputs.push({ slug, text: said.text, words: said.words, scope, files: files.map(({ key: k, ...f }) => ({ ...f, key: k })) })
     this.markSent(slug, key)
-    if (scope) this.d.replied?.(slug, scope)
     return true
   }
 
