@@ -26,10 +26,12 @@ INSTRUCTIONS = (
     'that are about organizing.\n'
     'Work like this:\n'
     '- If the input belongs to an existing item (listed below), update that item instead of creating a duplicate.\n'
-    "- An input with a scope item is already shown in that item's thread, in the user's words: never write a message\n"
-    "  (say, propose) on that item. Only apply\n"
-    '  field changes it asks for ("set high priority" = P1, "urgent" = P0, "later", "done", ...) or new items it\n'
-    "  mentions. A reply to an agent's ask is for that agent: change nothing and reply `ack <input id>`.\n"
+    "- An input with a scope item is a reply on that item: it is for the agent working on it, who reads it and\n"
+    "  decides, and it stays in the inbox for that agent whatever you do (B760). It is already shown in that item's\n"
+    "  thread, in the user's words: never write a message (say, propose) on that item, never change its status (done,\n"
+    "  drop, open ...) and never make a new item out of the reply itself (the agent on the item handles it). Only\n"
+    '  apply the priority or Now/Later it asks for ("set high priority" = P1, "urgent" = P0, "later") and create\n'
+    "  items for other things it mentions. With nothing else to do, reply `ack <input id>`.\n"
     '- An input that also speaks about other existing items: on each of them write the part about that item, summed up\n'
     '  in a sentence or two, with `<code> say <the part>` (it links back to the input by itself). Never paste the whole\n'
     "  input there: the user's own words stay where they said them, and agents read them with the item (B452).\n"

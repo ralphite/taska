@@ -75,6 +75,21 @@ def echo(p: Project, inp: Input, c: Any) -> bool:
         return False
 
 
+def unclosed(p: Project, scope: Optional[int], cmd: Tuple[int, Any]) -> Tuple[int, Any]:
+    """A reply on an item is for the agent on it, who reads it and decides (B760, Yadong r1278 r1281): the organizer
+    never changes that item's status (done, drop, open ...) from it; its other changes (priority, Now/Later) stay."""
+    no, c = cmd
+    if not isinstance(c, dict) or c.get("op") != "set" or "status" not in (c.get("f") or {}):
+        return cmd
+    try:
+        if rules.item_at(p.state, c.get("ref") or "").n != scope:
+            return cmd
+    except Refused:
+        return cmd
+    rest = {k: v for k, v in c["f"].items() if k != "status"}
+    return (no, dict(c, f=rest) if rest else None)
+
+
 def first_plan(parts: List[Dict[str, Any]], think: int) -> str:
     """The plan of whichever model answers first with words; an empty or failed answer waits for the other. Every
     model failed: the first failure (a busy service is asked again later by the organizer)."""
@@ -148,6 +163,7 @@ class Organizer(threading.Thread):
             files = list(inp.files)
             heard = {f.f: words_of(p.state, f.f) for f in files}  # a voice note without words goes as its audio
             scope, had_history = inp.scope, bool(inp.history)
+            reply = scope in p.state.items  # a reply on an item: for the agent on it (B760)
         err: Optional[str] = None
         try:
             for f in files:
@@ -179,9 +195,11 @@ class Organizer(threading.Thread):
                 p.emit(ev.Organized(src=rid, ok=False, msg=err, by="org"))
                 return
             self.later.pop(rid, None)
-            keep = had_history or bool(re.search(r"(?im)^\s*pass\s*$", plan))
+            keep = had_history or reply or bool(re.search(r"(?im)^\s*pass\s*$", plan))
             commands = parse(re.sub(r"(?im)^\s*pass\s*$", "", indent_strays(plan)))
             commands = [(no, c) for no, c in commands if not echo(p, current, c)]
+            if reply:
+                commands = [(no, c) for no, c in (unclosed(p, scope, c) for c in commands) if c is not None]
             if keep:  # the input is for the coding agent: changes may be made, but it stays in the inbox
                 commands = [(no, c) for no, c in commands if isinstance(c, Refused) or c.get("op") != "ack"]
             lines, labels = p.run(commands, "org", src=rid, keep=keep)
