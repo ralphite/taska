@@ -186,6 +186,13 @@ function Shell({ it, look, facts, on, children }: { it: Item; look: RowLook; fac
   )
 }
 
+
+/** The list narrower than about 90% of its width by default on the desktop (360px; 420px wide, 460px huge): an
+ * action's pill (Answer, Accept ...) keeps its icon only, its name in the tip (F764, Yadong r1284; B678). */
+export const NARROW_HIDE = '@max-[324px]/list:hidden wide:@max-[378px]/list:hidden huge:@max-[414px]/list:hidden'
+export const NARROW_PILL =
+  '@max-[324px]/list:w-8 @max-[324px]/list:min-w-0 @max-[324px]/list:px-0 wide:@max-[378px]/list:w-8 wide:@max-[378px]/list:min-w-0 wide:@max-[378px]/list:px-0 huge:@max-[414px]/list:w-8 huge:@max-[414px]/list:min-w-0 huge:@max-[414px]/list:px-0'
+
 export function ItemRow(props: {
   it: Item
   depth: number
@@ -336,11 +343,11 @@ export function NeedsRow({ it, depth, facts, look, excerpt, said, act, on }: { i
           className="group/pill -my-1 grid h-11 shrink-0 place-items-center outline-none disabled:cursor-not-allowed"
         >
           <span
-            className={`${ACTION_PILL(v)} @max-[22rem]/list:w-8 @max-[22rem]/list:min-w-0 @max-[22rem]/list:px-0 group-disabled/pill:opacity-60 group-enabled/pill:group-hover/pill:brightness-95 group-focus-visible/pill:outline-2 group-focus-visible/pill:outline-offset-2 group-focus-visible/pill:outline-blue-500 dark:group-hover/pill:brightness-125 dark:group-focus-visible/pill:outline-blue-400`}
+            className={`${ACTION_PILL(v)} ${NARROW_PILL} group-disabled/pill:opacity-60 group-enabled/pill:group-hover/pill:brightness-95 group-focus-visible/pill:outline-2 group-focus-visible/pill:outline-offset-2 group-focus-visible/pill:outline-blue-500 dark:group-hover/pill:brightness-125 dark:group-focus-visible/pill:outline-blue-400`}
           >
             <Icon n={NEED[v].icon} c="size-3.5" sw="2.25" />
             {/* a narrow list keeps the icon only, its name in the tip (B678) */}
-            <span className="@max-[22rem]/list:hidden">{label}</span>
+            <span className={NARROW_HIDE}>{label}</span>
           </span>
         </button>
       </div>
@@ -367,9 +374,9 @@ export function ProposalRow({ p, onOpen }: { p: RuleProposal; onOpen(): void }) 
           </div>
         </div>
         <button title="View changes" aria-label="View changes" onClick={(e) => (e.stopPropagation(), onOpen())} className="group/pill -my-1 grid h-11 shrink-0 place-items-center outline-none">
-          <span className={`${ACTION_PILL('approve')} group-hover/pill:brightness-95 dark:group-hover/pill:brightness-125`}>
+          <span className={`${ACTION_PILL('approve')} ${NARROW_PILL} group-hover/pill:brightness-95 dark:group-hover/pill:brightness-125`}>
             <Icon n="book" c="size-3.5" sw="2.25" />
-            <span className="@max-[22rem]/list:hidden">View</span>
+            <span className={NARROW_HIDE}>View</span>
           </span>
         </button>
       </div>

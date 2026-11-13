@@ -18,15 +18,15 @@ export const AsASubitem: Story = {
   name: 'As a subitem, under its parent',
   render: () => <Frames phoneWidth={393} deskWidth={460} height={420}>{(layout) => listOf([item({ n: 1, status: 'doing', title: 'Export keeps the filter you set' }), item({ n: 14, type: 'task', parent: 1, title: 'Which file name?', wait: { id: 4, kind: 'ask', text: 'Put the date in the file name?', by: 'claude-code', files: [] } })], 'items', { status: 'all' }, layout === 'desk')}</Frames>,
 }
-// ---- a narrow list (B678): the action is its icon, its name in the tip
+// ---- a narrow list (B678, F764): under about 90% of its width by default, the action is its icon, its name in the tip
 const narrow = (desk: boolean) => (
-  <div className="@container/list w-[340px]">
+  <div className="@container/list w-[320px]">
     {row(question, desk)}
     {row({ it: { n: 13, status: 'proposed', by: 'claude-code', title: 'Keep the filter in the export file name' }, excerpt: 'Proposed by Claude Code', f: { code: 'F013' } }, desk)}
     {row({ it: { n: 14, status: 'review', title: 'Excel export as well' }, excerpt: 'Done: the export keeps the filter now', f: { code: 'F014' } }, desk)}
   </div>
 )
-/** in a list 340 wide (the page's list beside an item, a narrow window): Answer, Approve and Accept as their icons */
-export const NarrowList: Story = { name: 'A narrow list: the actions as icons', render: () => <Frames phone={false} deskWidth={340} height={260}>{() => narrow(true)}</Frames> }
+/** in a list 320 wide, under 90% of its 360 by default (F764): Answer, Approve and Accept as their icons */
+export const NarrowList: Story = { name: 'A narrow list: the actions as icons', render: () => <Frames phone={false} deskWidth={320} height={260}>{() => narrow(true)}</Frames> }
 /** the pointer on one of them: its name and key in the tip */
 export const NarrowListTip: Story = { ...tipOne(narrow, '[data-need="approve"]', { width: 440, height: 260 }), name: 'A narrow list: the tip on an action' }
