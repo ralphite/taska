@@ -32,4 +32,11 @@ describe('a row you just acted on, while the list holds still', () => {
     const row = now.find((r) => r.kind === 'needs' && r.it.n === 4)
     expect(row && row.kind === 'needs' ? [row.said, row.act] : null).toEqual(['Approved', 'approve'])
   })
+
+  test('B766 (r1287): approved, before Taska has it (the item still proposed): already struck, saying Approved', () => {
+    const before = rowsOf([waiting, other])
+    const now = heldRows(before, modelOf([waiting, other]), 'items', { ...NO_FILTERS, status: 'wait' }, new Map([[4, 'Approved']]))
+    const row = now.find((r) => r.kind === 'needs' && r.it.n === 4)
+    expect(row && row.kind === 'needs' ? [row.said, row.act] : null).toEqual(['Approved', 'approve'])
+  })
 })

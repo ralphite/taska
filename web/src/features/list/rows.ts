@@ -94,7 +94,8 @@ export function heldRows(frozen: readonly Row[], m: ProjectModel, tab: Tab, list
     if (r.kind !== 'item' && r.kind !== 'needs') return r
     const it = m.byN.get(r.it.n) || r.it
     const said = held.get(it.n)
-    if (said != null && r.kind === 'needs' && (!shownNow.has(it.n) || !needsYou(it))) return { ...r, it, said, act: r.act ?? needRow(r.it)?.act } // its button as it was
+    // what you decided shows at once, also before Taska has it and the item still needs you (B766): its button as it was
+    if (said != null && r.kind === 'needs') return { ...r, it, said, act: r.act ?? needRow(r.it)?.act }
     if (said != null && !shownNow.has(it.n)) return { ...r, it, said }
     if (r.kind === 'needs' && !needsYou(it)) return { kind: 'item', it, depth: r.depth, foldable: false, folded: false, band: '' }
     return r.kind === 'item' && !r.foldable && parents.has(it.n) ? { ...r, it, foldable: true } : { ...r, it }
