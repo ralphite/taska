@@ -1,42 +1,47 @@
-// What the agent pill opens (F628): whether an agent is around, who has been here, how to connect one more. The page's own sheet with what the page's own agentsFacts makes of a demo project.
+// What the agent pill opens (F768, Gemini's "compact" design, Yadong's choice): every agent session seen in the
+// project by its app, a manager's workers under it; the one picked beside them. The page's own sheet with what the
+// page's own agentsFacts makes of the demo project Shop and the sessions its agents report.
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { ALL_GONE, ITEMS, MANAGER, WAITING, WORKING, sessionKey } from '../../stories/agentsFixtures'
 import { guide } from '../../stories/guideFixture'
 import { acts, SheetFrames } from '../../stories/sheetFixtures'
-import { SEEN, shopWithHistory } from '../../stories/settingsFixtures'
-import type { AgentSeen } from '../../model/types'
-import { agentsSheet } from './Agents'
-import { agentsFacts } from './agentsFacts'
+import { shopWithHistory } from '../../stories/settingsFixtures'
 import { waitsInQueue, withOpenKids } from '../../model/items'
-import { PROJECT } from '../../stories/listFixtures'
+import type { AgentSeen } from '../../model/types'
+import { agentsSheet, type AgentsStart } from './Agents'
+import { agentsFacts } from './agentsFacts'
 
-export default { title: 'UI/List pane/Top bar/Agent pill/Who works here' } satisfies Meta
+export default { title: 'UI/List pane/Top bar/Agent pill/Agents' } satisfies Meta
 type Story = StoryObj
 
+const on = acts('Agents', ['copy', 'help', 'open'], { help: 'Help › Topics › Connect an agent', open: 'the item' })
 /** the project with nothing in its queue now (what waits is for later, or in progress) */
-const IDLE = PROJECT.filter((it) => !waitsInQueue(it, withOpenKids(PROJECT)))
-const sheet = (f: ReturnType<typeof agentsFacts>, open = false): Story => ({ render: () => <SheetFrames look={{ tall: true, wide: true }} height={820} parts={() => agentsSheet(f, acts('Agents', ['copy', 'help'], { help: 'Help › Topics › Connect an agent' }), open)} /> })
+const IDLE = ITEMS.filter((it) => !waitsInQueue(it, withOpenKids(ITEMS)))
+const sheet = (agents: AgentSeen[], start: AgentsStart = {}, o: { work?: boolean; items?: typeof ITEMS; remote?: string } = {}): Story => ({
+  render: () => (
+    <SheetFrames look={{ tall: true, wide: true }} height={820} deskWidth={1200} parts={() => agentsSheet(agentsFacts(shopWithHistory(agents, { items: ITEMS, ...o }), guide('shop')), on, start)} />
+  ),
+})
 
-/** One around and one that was here earlier. */
-export const Agents: Story = { ...sheet(agentsFacts(shopWithHistory(), guide('shop'))), name: 'One at work, one here earlier' }
-export const NoneYet: Story = { ...sheet(agentsFacts(shopWithHistory([]), guide('shop'))), name: 'None yet' }
-/** How a connected agent gets work without spending tokens: from How it works in Agents. */
+/** One session works on F001, picked as the sheet opens; a Codex session left hours ago. */
+export const OneWorking: Story = { ...sheet(WORKING), name: 'One working' }
+/** A session asks to run a command: picked as the sheet opens, its amber block says what it waits on. */
+export const WaitingForYou: Story = { ...sheet(WAITING), name: 'A session waiting for you' }
+/** A manager and its two workers under it, a session waiting for you (picked), Codex, Antigravity gone a while. */
+export const ManagerWithWorkers: Story = { ...sheet(MANAGER, { pick: sessionKey('claude-code', 'Manager') }), name: 'A manager with workers' }
+/** No agent has been here: Connect another agent opened, what agents read beside it. */
+export const NoneYet: Story = { ...sheet([]), name: 'None yet' }
 /** Nothing waits for an agent and none has been here. */
-export const NothingWaitingNoneYet: Story = { ...sheet(agentsFacts(shopWithHistory([], { work: false, items: IDLE }), guide('shop'))), name: 'Nothing waiting, none yet' }
-// ---- more states (T639): each as the page's own agentsFacts makes it of the demo project
-const gone: AgentSeen[] = [{ name: 'codex', t: SEEN[1].t, waiting: false }]
-/** an agent that finished its round minutes ago and left: green, here lately */
-export const HereLately: Story = { ...sheet(agentsFacts(shopWithHistory([{ name: 'codex', t: SEEN[0].t - 3 * 60_000, waiting: false }]), guide('shop'))), name: 'One here a few minutes ago' }
-/** work waits and the agent that was here left hours ago: the red card, and who was seen */
-export const WorkWaitsAgentLeft: Story = { ...sheet(agentsFacts(shopWithHistory(gone), guide('shop'))), name: 'Work waits, the last agent left hours ago' }
-/** nothing waits and an agent was here before: the grey card with its time, and who was seen */
-export const NothingWaitingAgentWasHere: Story = { ...sheet(agentsFacts(shopWithHistory(gone, { work: false, items: IDLE }), guide('shop'))), name: 'Nothing waiting, an agent was here' }
-/** an agent Taska does not know by name: dimmed in Seen in this project */
-export const SeenAnUnknownAgent: Story = { ...sheet(agentsFacts(shopWithHistory([...SEEN, { name: 'helper-bot', t: SEEN[1].t, waiting: false }]), guide('shop'))), name: 'Seen: an agent Taska does not know' }
-/** a Claude Code session waits on the user (T711 #10443): the amber card; its line says Blocked, its session what it waits on */
-const blocked: AgentSeen[] = [
-  { name: 'claude-code', t: SEEN[0].t - 5 * 60_000, waiting: false, sessions: [{ name: 'Export keeps the filter', t: SEEN[0].t - 5 * 60_000 }], blocked: [{ session: 'Export keeps the filter', waitingFor: 'approve Bash: npm --prefix web run check', since: SEEN[0].t - 60_000 }] },
-  SEEN[1],
-]
-export const Blocked: Story = { ...sheet(agentsFacts(shopWithHistory(blocked), guide('shop'))), name: 'A session blocked, waiting on you' }
-/** no public address: no Copy for another network under the command */
-export const NoPublicAddress: Story = { ...sheet(agentsFacts(shopWithHistory(SEEN, { remote: '' }), guide('shop'))), name: 'No public address' }
+export const NothingWaitingNoneYet: Story = { ...sheet([], {}, { work: false, items: IDLE }), name: 'Nothing waiting, none yet' }
+/** Every session left: the latest picked, faint in the list. */
+export const OnlyGone: Story = { ...sheet(ALL_GONE), name: 'Only gone ones' }
+/** A Codex session picked, its Resume opened: the command to copy. */
+export const CodexResume: Story = { ...sheet(MANAGER, { pick: sessionKey('codex', 'main'), resume: true }), name: 'Codex: resume' }
+/** An agent Taska does not know by name: a group of its own, by its name. */
+export const AnUnknownAgent: Story = { ...sheet([...WORKING, { name: 'helper-bot', t: WORKING[1].t, waiting: false }]), name: 'An agent Taska does not know' }
+/** Connect another agent opened, with no public address: no Copy for another network. */
+export const ConnectNoPublicAddress: Story = { ...sheet(WORKING, { connect: true }, { remote: '' }), name: 'Connect, no public address' }
+/** The phone: the list (it opens there unless a session waits for you). */
+export const PhoneList: Story = { ...sheet(MANAGER, { page: false }), name: 'Phone: the list' }
+/** The phone: a session's page, Back to the list (it opens there when a session waits for you). */
+export const PhoneSessionPage: Story = { ...sheet(MANAGER), name: "Phone: a session's page" }

@@ -238,7 +238,9 @@ def record(base: str) -> Dict[str, Any]:
     other = c.json("/api/projects", {"title": "Garden"})["name"]
     p = f"/p/{slug}/api/"
     agent = lambda words, session="sample": c.raw(f"/p/{slug}/do?by=claude-code&session={session}", words.encode(), "text/plain")  # noqa: E731
-    agent("T2 progress Looking at the address.\n", "helper")
+    # a worker (F768): started by the session "sample", known by its app's id
+    c.raw(f"/p/{slug}/do?by=claude-code&session=helper&parent=sample&sid=aaaaaaaa-1111-2222-3333-444444444444",
+          b"T2 progress Looking at the address.\n", "text/plain")
     agent(SEED)
     # a web page too big for the view (B756: its sound written into it): its text comes by itself (api/doc)
     agent("T2 html\n  <html><head><title>Lecture</title></head><body><audio src='data:audio/mp3;base64," + "A" * 1_000_000 + "'></audio></body></html>\n")

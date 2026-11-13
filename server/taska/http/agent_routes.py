@@ -50,23 +50,24 @@ def work_for(p: Project, req: Request, who: Optional[str], session: str) -> Work
     return w
 
 
-def see_blocked(p: Project) -> None:
-    """Which of this project's agent sessions wait on the user now (T711): each looked up by the id its agent gave,
-    out of the lock (a few small reads)."""
+def see_sessions(p: Project) -> None:
+    """How this project's agent sessions are now (T711, F768: working, idle, waiting on the user): each looked up by
+    the id its agent gave, out of the lock (a few small reads)."""
     with p.lock:
         sids = p.agents.sids()
     found = {sid: s for sid, s in ((sid, lookup(sid)) for sid in sids) if s}
     with p.lock:
-        p.agents.see_blocked(found)
+        p.agents.see_sessions(found)
 
 
 def presence(p: Project) -> dict:
-    """What the page shows about agents: who came when, who waits now (for work, or on the user), and whether work
-    waits for them."""
-    see_blocked(p)
+    """What the page shows about agents: who came when, each session as its app says it is and the item it is on, who
+    waits now (for work, or on the user), and whether work waits for them."""
+    see_sessions(p)
     with p.lock:
         work = next_work(p.reading(), p.slug, p.gone, Asker()).has_work
-        return {"agents": p.agents.presence(), "work": work}
+        waking = {sid for sid, n in p.waker.waiting.items() if n}
+        return {"agents": p.agents.presence(p.state, waking), "work": work}
 
 
 def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
@@ -76,7 +77,7 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
     agent_call = (sub in AGENT_READS or ITEM_PATH.fullmatch(sub)) and "ui" not in q
     if agent_call:
         with p.lock:
-            p.agents.saw(by, 1 if sub == "/next" and q.get("wait") else 0, req.session(), req.arg("sid"))
+            p.agents.saw(by, 1 if sub == "/next" and q.get("wait") else 0, req.session(), req.arg("sid"), req.arg("parent"))
     if sub == "/agent":
         with p.lock:
             head = render.rules_head(p.state)
@@ -242,7 +243,7 @@ def do(req: Request, p: Project) -> Response:
     session = req.session() if agent else ""
     with p.lock:
         if agent:
-            p.agents.saw(by, 0, session, req.arg("sid"))
+            p.agents.saw(by, 0, session, req.arg("sid"), req.arg("parent"))
         calls: List[str] = p.agents.call_news(p.state, by, session) if agent else []  # what others wrote before
     lines, _ = p.run(parse(body), by, session=session)
     with p.lock:

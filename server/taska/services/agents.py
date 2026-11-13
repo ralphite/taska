@@ -44,6 +44,7 @@ class AgentRecord:
     sessions: Dict[str, float] = field(default_factory=dict)  # each session's last call (the latest 5)
     next_at: Optional[float] = None  # when it last read /next
     sids: Dict[str, str] = field(default_factory=dict)  # per session name: the id its app gave it (sid=, the latest 5)
+    parents: Dict[str, str] = field(default_factory=dict)  # per session name: the session that started it (parent=, F768)
 
 
 class AgentActivity:
@@ -76,6 +77,7 @@ class AgentActivity:
         self.guide_texts: Dict[str, str] = {str(k): str(v) for k, v in (guide.get("texts") or {}).items()}
         self.guide_marks: Dict[str, str] = {str(k): str(v) for k, v in (guide.get("marks") or {}).items()}
         self.blocked: Dict[str, List[Dict[str, object]]] = {}  # per agent: its sessions waiting on the user (T711)
+        self.found: Dict[str, Session] = {}  # per session id: what its app says of it now (F768)
         lead = db.get("antigravity-lead")  # F755: the one Antigravity session that runs this project, and since when
         self.lead: Optional[Tuple[str, str]] = (str(lead["sid"]), str(lead["t"])) if isinstance(lead, dict) and lead.get("sid") else None
 
@@ -96,9 +98,10 @@ class AgentActivity:
 
     # -- calls ------------------------------------------------------------------
 
-    def saw(self, name: object, waiting: int = 0, session: str = "", sid: str = "") -> None:
+    def saw(self, name: object, waiting: int = 0, session: str = "", sid: str = "", parent: str = "") -> None:
         """An agent called (waiting: +1 when it starts holding /next?wait, -1 when that returns), from the session
-        its app knows by `sid` (T711 #10568: its status is read by that id)."""
+        its app knows by `sid` (T711 #10568: its status is read by that id), started by the session named `parent`
+        (a manager's worker, F768)."""
         a = self.agents.setdefault(agent_name(name), AgentRecord())
         now = time.time()
         if session:
@@ -106,10 +109,24 @@ class AgentActivity:
             a.sessions[a.session] = now
             for old in sorted(a.sessions, key=lambda s: a.sessions[s])[:-5]:
                 del a.sessions[old]
+            if parent and session_name(parent) != session_name(a.session):
+                a.parents[a.session] = session_name(parent)
+            for old in [k for k in a.parents if k not in a.sessions]:
+                del a.parents[old]
         if SID.fullmatch(sid):
-            key = a.session if session else ""
-            a.sids.pop(key, None)
-            a.sids[key] = sid
+            named = next((k for k, v in a.sids.items() if v == sid and k), "")
+            if session:  # one id is one session: a new title for it takes the old one's place (F768)
+                for old in [k for k, v in a.sids.items() if v == sid and k != a.session]:
+                    del a.sids[old]
+                    a.sessions.pop(old, None)
+                    a.parents.pop(old, None)
+                a.sids.pop(a.session, None)
+                a.sids[a.session] = sid
+            elif named:  # a call by its id alone (Antigravity's waker): the session it named before was heard of
+                a.sessions[named] = now
+            else:
+                a.sids.pop("", None)
+                a.sids[""] = sid
             for old in list(a.sids)[:-5]:
                 del a.sids[old]
         before = (a.waiting > 0, now - a.t < 600)
@@ -334,9 +351,10 @@ class AgentActivity:
         """The session ids agents gave here."""
         return sorted({sid for a in self.agents.values() for sid in a.sids.values()})
 
-    def see_blocked(self, found: Dict[str, Session]) -> None:
-        """The sessions by id (T711 #10568): those waiting on the user are shown under the agent that gave the id,
-        by the session name it gave (else the app's title). A change wakes the pages."""
+    def see_sessions(self, found: Dict[str, Session]) -> None:
+        """The sessions by id (T711 #10568), as their apps say they are now (F768: working, idle, waiting on the user,
+        exited); those waiting on the user are shown under the agent that gave the id, by the session name it gave
+        (else the app's title). A change wakes the pages."""
         mine: Dict[str, List[Dict[str, object]]] = {}
         for k, a in self.agents.items():
             for ses, sid in a.sids.items():
@@ -344,23 +362,70 @@ class AgentActivity:
                 if s and s.status == "waiting":
                     mine.setdefault(k, []).append({"session": ses or s.name or sid[:8], "waitingFor": s.waiting_for,
                                                    "since": s.since})
-        if mine != self.blocked:
-            self.blocked = mine
+        if mine != self.blocked or found != self.found:
+            self.blocked, self.found = mine, dict(found)
             self.version += 1
             self._changed()
 
     # -- what the page shows -------------------------------------------------------
 
-    def presence(self) -> List[Dict[str, object]]:
+    def _holds(self, state: ProjectState) -> Dict[str, Tuple[int, float]]:
+        """Per agent session ("claude-code · worker"): the item it is on now and since when (the latest it took)."""
+        out: Dict[str, Tuple[int, float]] = {}
+        t_now = time.time()
+        for n in set(state.claims) | {n for n, i in state.items.items() if i.agent and i.status == "doing"}:
+            it = state.items.get(n)
+            if not it or it.deleted or it.merged_into:
+                continue
+            h = self.holder(state, it, t_now)
+            if h and (h[0] not in out or out[h[0]][1] < h[1]):
+                out[h[0]] = (n, h[1])
+        return out
+
+    def _session(self, k: str, name: str, t: float, sid: str, holds: Dict[str, Tuple[int, float]],
+                 waking: Set[str]) -> Dict[str, object]:
+        """One session as the page shows it (F768): its name and last call; the id its app knows it by, and what the
+        app says of it (status, since when, what it waits on, its folder); the item it is on; who started it."""
+        row: Dict[str, object] = {"name": name, "t": int(t * 1000)}
+        s = self.found.get(sid) if sid else None
+        if sid:
+            row["sid"] = sid
+        if s:
+            row.update({"status": s.status, "since": s.since, "cwd": s.cwd})
+            if s.waiting_for:
+                row["waitingFor"] = s.waiting_for
+            if not name:
+                row["name"] = s.name or sid[:8]
+        elif not name:
+            row["name"] = sid[:8]
+        if sid in waking:
+            row["waiting"] = True  # its waker waits for work for it (B762): it is connected
+        h = holds.get(ident(k, name))
+        if h:
+            row["on"] = {"n": h[0], "since": int(h[1] * 1000)}
+        parent = self.agents[k].parents.get(name)
+        if parent:
+            row["parent"] = parent
+        return row
+
+    def presence(self, state: Optional[ProjectState] = None, waking: Optional[Set[str]] = None) -> List[Dict[str, object]]:
+        """Each agent: its last call, whether it waits for work, its sessions (those heard of in the last day, and any
+        its app says waits on the user), each as _session says; `waking`: the session ids a waker waits for (B762)."""
         day = time.time() - 86400
+        holds = self._holds(state) if state else {}
+        waking = waking or set()
         out: List[Dict[str, object]] = []
         for k, v in self.agents.items():
             row: Dict[str, object] = {"name": k, "t": int(v.t * 1000), "waiting": v.waiting > 0}
             if v.session:
                 row["session"] = v.session
-            if v.sessions:
-                row["sessions"] = [{"name": n, "t": int(t * 1000)}
-                                   for n, t in sorted(v.sessions.items(), key=lambda x: -x[1]) if t > day]
+            rows = [self._session(k, n, t, v.sids.get(n, ""), holds, waking)
+                    for n, t in sorted(v.sessions.items(), key=lambda x: -x[1])
+                    if t > day or self.found.get(v.sids.get(n, "")) and self.found[v.sids[n]].status == "waiting"]
+            if v.sids.get("") and v.sids[""] not in {sid for n, sid in v.sids.items() if n}:
+                rows.append(self._session(k, "", v.t, v.sids[""], holds, waking))
+            if rows:
+                row["sessions"] = rows
             if self.blocked.get(k):
                 row["blocked"] = self.blocked[k]
             out.append(row)

@@ -30,7 +30,7 @@ from ..page_api.sync import Cursor
 from ..services import organizer
 from ..services.project import Project
 from ..services.voice_jobs import answer as voice_answer
-from .agent_routes import presence, scope_of, see_blocked
+from .agent_routes import presence, scope_of, see_sessions
 from .messages import NOT_FOUND, Request, Response, as_json, text
 
 if TYPE_CHECKING:
@@ -76,7 +76,7 @@ def _wait_news(p: Project, since: Optional[Cursor], wait: float) -> bool:
     (T711); with no page waiting, nobody looks."""
     end = time.monotonic() + wait
     while True:
-        see_blocked(p)  # a change bumps the agents' version: news
+        see_sessions(p)  # a change bumps the agents' version: news
         left = end - time.monotonic()
         if left <= 0:
             return _changed(p, since)

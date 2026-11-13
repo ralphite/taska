@@ -28,7 +28,7 @@ type Story = StoryObj
 const BLOCKED: AgentSeen[] = AGENTS.blocked
 const SHOP_BLOCKED = { ...SHOP, facts: { ...SHOP.facts, agents: BLOCKED } }
 type Layout = 'phone' | 'desk'
-const on = acts('Agents', ['copy', 'help'], { help: 'Help › Topics › Connect an agent' })
+const on = acts('Agents', ['copy', 'help', 'open'], { help: 'Help › Topics › Connect an agent', open: 'the item' })
 
 /** Where the page floats it, just above the box: on the phone 16 px from the screen's sides, on the desktop over the
  * pane's column (both as the page places them). */
