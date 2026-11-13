@@ -42,7 +42,7 @@ test('what scrolls shows only around the top of the box: from its middle down th
     approve: Array.from({ length: 31 }, (_, i) => `T${String(i + 1).padStart(2, '0')}`),
   })
   await open(page, p, isDesk(page) ? 'T31' : '')
-  const scroller = isDesk(page) ? pane(page) : page.locator('#list')
+  const scroller = isDesk(page) ? pane(page) : page.locator('#list [data-list-scroll]') // the list under its views' row (B758)
   // the page's own colour from the box's middle to the bottom of the screen
   const cover = await page.evaluate((foot) => {
     const f = document.querySelector(foot) as HTMLElement,

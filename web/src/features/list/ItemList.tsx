@@ -126,6 +126,7 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
         if (typeof ref === 'function') ref(el)
         else if (ref) ref.current = el
       }}
+      data-list-scroll
       {...(dragging?.out ? { 'data-drop-out': '' } : {})}
       onPointerDown={(e) => {
         // only a mouse drags a row (a finger scrolls and swipes)
