@@ -25,6 +25,7 @@ from ..domain.vocab import Refused
 from ..infra.files import FileStore
 from .agents import AgentActivity
 from .codex_notifications import CodexNotifications
+from .waker import Waker
 from .news import News
 from .store import ProjectStore
 from .voice_jobs import VoiceJobs
@@ -68,6 +69,7 @@ class Project:
         self.agents = AgentActivity(self.store.db, self.state, changed=self.news.wake, gone=lambda: self.gone)
         self.voice = VoiceJobs(self)
         self.codex_notifications = CodexNotifications(self)
+        self.waker = Waker(self)  # B762: wakes the Antigravity session that runs it
 
     def _warn(self, seq: int, what: str) -> None:
         print(f"taska: {self.slug}: change {seq} {what}", file=sys.stderr)
@@ -108,6 +110,7 @@ class Project:
             self.store.commit(event)
             self.news.bump()
             self.codex_notifications.on_event(event)
+            self.waker.on_event(event)
             if self.shared:
                 self.shared.changed(self.slug)  # what is found by meaning catches up soon
 

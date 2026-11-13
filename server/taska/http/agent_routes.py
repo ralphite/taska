@@ -18,9 +18,10 @@ from ..agent_text.work import Asker, Work, next_work
 from ..domain import rules
 from ..domain.rules import item_at
 from ..domain.vocab import MAX_FILE, PEOPLE, Refused
-from ..infra.agent_sessions import lookup
+from ..infra.agent_sessions import SID, lookup
 from ..infra.audio import leveled
 from ..services.project import Project
+from ..services.waker import SCRIPT
 from .messages import NOT_FOUND, Request, Response, as_json, text
 
 ITEM_PATH = re.compile(r"/([A-Za-z]?\d+)")
@@ -84,6 +85,10 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
         return text(200, render.guide(base, head))
     if sub == "/next":
         return _next(req, p, by)
+    if sub == "/waker":  # B762: the Antigravity session's waker, started in its own terminal
+        return text(200, SCRIPT.replace("{base}", base).replace("{slug}", p.slug), "text/x-shellscript; charset=utf-8")
+    if sub == "/wake":
+        return _wake(req, p)
     if sub == "/rules":
         with p.lock:
             return text(200, render.rules_text(p.state))
@@ -150,6 +155,8 @@ def _next(req: Request, p: Project, by: str) -> Response:
                     return text(200, REPLACED.format(t=p.agents.replaced(sid)))  # (the wait is let go below)
                 w = work_for(p, req, who, session)
             given = w.given
+            if sid:  # the waker wakes it only when it is idle (B762)
+                p.waker.next_read(sid, w.has_work)
             if given is not None and who:  # the card it was given holds what other sessions wrote there
                 p.agents.heard_item(p.state, given, who, session)
     finally:
@@ -169,6 +176,39 @@ def _next(req: Request, p: Project, by: str) -> Response:
             at = next((i + 1 for i, x in enumerate(lines) if "Project rules" in x), 1)
             out = "\n".join(lines[:at] + news + lines[at:])
     return text(200, out)
+
+
+def _wake(req: Request, p: Project) -> Response:
+    """GET /wake?sid=&wait=: the waker's wait (B762). "wake" when the session has work and may be woken (idle, or
+    silent since it was woken), "stop" when the project is gone, "replaced" when another session runs it, else
+    "nothing to do now" when the time is up. It takes no item and marks nothing read: the session does, on /next."""
+    sid = req.arg("sid")
+    if not SID.fullmatch(sid):
+        raise Refused("sid: the Antigravity session id")
+    end = time.time() + max(0, min(int(req.arg("wait", "0") or 0), 540))
+    with p.lock:
+        p.waker.holding(sid, 1)
+        p.agents.saw("antigravity", 1, sid=sid)
+    try:
+        with p.lock:
+            def ready() -> bool:
+                return bool(p.gone or p.agents.replaced(sid) or (
+                    p.waker.due(sid) and next_work(p.reading(), p.slug, p.gone, asker(p, "antigravity", "")).has_work))
+
+            ok = p.news.wait_for(ready, timeout=max(0.0, end - time.time()))
+            if p.gone:
+                return text(200, "stop: the project was deleted\n")
+            since = p.agents.replaced(sid)
+            if since:
+                return text(200, REPLACED.format(t=since))
+            if ok:
+                p.waker.woken(sid)
+                return text(200, "wake\n")
+            return text(200, "nothing to do now\n")
+    finally:
+        with p.lock:
+            p.waker.holding(sid, -1)
+            p.agents.saw("antigravity", -1)
 
 
 def _card(req: Request, p: Project, ref: str, by: str) -> Response:

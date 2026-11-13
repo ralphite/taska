@@ -255,7 +255,9 @@ It does not do the items itself.
 
 1. **Start.** Your session id is $ANTIGRAVITY_CONVERSATION_ID: use it as sid on every call. Take the project:
    `curl -s "BASE/next?by=antigravity&sid=$ANTIGRAVITY_CONVERSATION_ID&lead=1"`. A newer session that does
-   this takes over; then your /next answers "replaced": stop and say so in one line.
+   this takes over; then your /next answers "replaced": stop and say so in one line. Then start Taska's waker
+   (B762): `curl -s "BASE/waker" | sh -s "$ANTIGRAVITY_CONVERSATION_ID"`. It runs on its own in the background,
+   costs no tokens, and sends you a message when there is work while you are idle.
 2. **An item: a subagent of its own.** For each item /next gives you, mark it doing, then start a subagent
    with invoke_subagent, named by the item, e.g. "B754 drag to reorder":
    - code or design work: the `taska-code` subagent (your model: Opus 5.5 high);
@@ -265,8 +267,9 @@ It does not do the items itself.
 3. **New words on an item that has a subagent:** send them to that subagent (`agentapi send-message
    <its conversation id> "<the item card from BASE/<code>>"`), never a second subagent for the item.
    Keep the list item -> subagent id; it is also on the item (each subagent says it in its first message).
-4. **Nothing to do:** start the background wait /next gives you and end the turn. It holds until Taska has
-   work, then sends it to you as a message (agentapi send-message to yourself): you wake in seconds.
+4. **Before every turn ends** (nothing to do, or you stop for any reason, also after a restart): run the waker
+   command again. It returns at once and leaves a running waker as it is, so one is always running. Do not start
+   any other wait: the waker's message ("Taska has work for you ...") wakes you; then GET /next as it says.
 5. **Subagents** never call /next and never wait for Taska. They write progress, done and ask on their item
    with `curl -s "BASE/do?by=antigravity&session=<its name>&sid=$ANTIGRAVITY_CONVERSATION_ID"`, the done
    message as the rules say; after an ask they end their turn: the main session brings them the answer.
