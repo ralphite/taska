@@ -28,3 +28,5 @@ export const ProjectBarLooks: Story = {
 // ---- more states (T639)
 export const ProjectBarLoading: Story = { name: 'Its data not come yet', render: () => <Frames deskWidth={1100} phoneWidth={393} height={180}>{(layout) => headOf(layout === 'desk', { loading: true })}</Frames> }
 export const ProjectBarAway: Story = { name: 'Settings or a side list open (no tab lit)', render: () => <Frames phone={false} deskWidth={1100} height={180}>{() => headOf(true, { awayTab: true })}</Frames> }
+/** no Gemini API key (F765): the amber pill opens Settings › Organizer; the phone shows its icon */
+export const ProjectBarNoKey: Story = { name: 'No Gemini key', render: () => <Frames deskWidth={1100} phoneWidth={393} height={180}>{(layout) => headOf(layout === 'desk', { noKey: true })}</Frames> }

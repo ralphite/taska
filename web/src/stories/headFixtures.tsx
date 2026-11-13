@@ -56,6 +56,8 @@ export interface HeadHere {
   /** how long Taska has not answered */
   away?: number
   notSaved?: number
+  /** no Gemini API key (F765) */
+  noKey?: boolean
   /** another project needs you (the Needs you mark on the phone's menu) */
   otherNeeds?: boolean
   /** the desktop's filters opened */
@@ -71,7 +73,7 @@ export interface HeadHere {
 }
 
 const INPUTS = [input({ id: 'r3' }), input({ id: 'r2' }), input({ id: 'r1', acked: true })]
-const on = acts('Head', ['menu', 'agents', 'notSaved', 'search', 'filters', 'saveView'] as const, { agents: 'Agents › Who works here', notSaved: 'Sheets › Not saved, sign in', search: 'Search on the phone', filters: 'Sheets › Filters on the phone' })
+const on = acts('Head', ['menu', 'agents', 'notSaved', 'noKey', 'search', 'filters', 'saveView'] as const, { agents: 'Agents › Who works here', notSaved: 'Sheets › Not saved, sign in', noKey: 'Settings › Organizer', search: 'Search on the phone', filters: 'Sheets › Filters on the phone' })
 
 /** The head with what the page holds for it (the route's tab and filters, the phone's search, the desktop's filters
  * open): a tab opens, the filters set and take off, the phone's search types and clears (T662). The agents, Not saved,
@@ -101,7 +103,7 @@ function LiveHead({ desk, h }: { desk: boolean; h: HeadHere }) {
   if (desk)
     return (
       <div className="grid grid-cols-[420px_minmax(0,1fr)]">
-        <ProjectBar title="Shop" tone={PROJECT_TONES[4]} tabs={deskTabs(counts, tab, awayTab)} agent={agent} notSaved={h.notSaved ?? 0} place="col-span-2" on={{ tab: toTab, agents: h.onAgents ?? on.agents, notSaved: on.notSaved }} />
+        <ProjectBar title="Shop" tone={PROJECT_TONES[4]} tabs={deskTabs(counts, tab, awayTab)} agent={agent} notSaved={h.notSaved ?? 0} noKey={!!h.noKey} place="col-span-2" on={{ tab: toTab, agents: h.onAgents ?? on.agents, notSaved: on.notSaved, noKey: on.noKey }} />
         <DeskFilters tab={tab} list={list} set={set} open={filtersOpen} place="col-start-1" hidden={!(filtersOpen || set.length)} on={{ ...filterOn, toggle: () => setFiltersOpen(!filtersOpen) }} />
       </div>
     )
@@ -113,10 +115,12 @@ function LiveHead({ desk, h }: { desk: boolean; h: HeadHere }) {
         otherNeeds={!!h.otherNeeds}
         agent={agent}
         notSaved={h.notSaved ?? 0}
+        noKey={!!h.noKey}
         on={{
           menu: on.menu,
           agents: h.onAgents ?? on.agents,
           notSaved: on.notSaved,
+          noKey: on.noKey,
           // Search opens the phone's search (its own stories)
           search: on.search,
         }}

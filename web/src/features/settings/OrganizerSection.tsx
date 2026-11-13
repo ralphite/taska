@@ -58,8 +58,9 @@ export function OrganizerBody({ on, model, gemini = { from: '', tail: '' }, savi
               spellCheck={false}
               disabled={saving}
               aria-label="Gemini API key"
-              className={`${FIELD} min-w-0 flex-1 basis-56 font-mono`}
+              className={`${FIELD} min-w-0 flex-1 basis-full font-mono lg:basis-56`}
             />
+            {/* the phone: the field on its line, the buttons under it in every state (nothing jumps on Save) */}
             <button type="submit" disabled={saving || !key.trim()} className={PRIMARY}>
               {saving ? 'Checking…' : 'Save'}
             </button>
