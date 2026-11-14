@@ -25,6 +25,7 @@ GRAMMAR = (
     '  ![what it shows](f12-a.png): upload it first with\n'
     '  curl -s BASE/api/file?name=a.png -H \'Content-Type: image/png\' --data-binary @a.png   (prints its "f")\n'
     '  B03 say files=f12-a.png,f13-b.png <text>   images attached below the message instead\n'
+    '  [the report](f12-report.html)   a link to any file sent to Taska (a page, a PDF); opens on the phone too\n'
     '  B03 ask <question>        with indented choices the user taps: "- ( ) option" lines = pick one (yes/no too),\n'
     '                            "- [ ] option" lines = pick any. The reply lists the picks as "✓ option".\n'
     '                            Several things to ask: one ask each, in a row. The user answers them in one card;\n'

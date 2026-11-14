@@ -70,6 +70,10 @@ export function inlineHtml(s: string, world: InlineWorld, refs = true): string {
       .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, t: string, url: string) =>
         keep(`<a href="${url}" target="_blank" rel="noopener" class="text-blue-600 underline underline-offset-2 dark:text-blue-400">${emph(t)}</a>`),
       )
+      // a link to a file sent to Taska ([the report](f12-report.html)): it opens, from wherever the page is (F782)
+      .replace(/\[([^\]]+)\]\((f\d+-[^)\s/]+)\)/g, (_, t: string, fid: string) =>
+        keep(`<a href="${world.url(fid)}" target="_blank" rel="noopener" class="text-blue-600 underline underline-offset-2 dark:text-blue-400">${emph(t)}</a>`),
+      )
       // a link to what a Taska code names ([the plan](#D1), [the plan](D1)): its words open it; naming nothing, the words
       .replace(/\[([^\]]+)\]\(#?([FBITRD]\d{1,5}|r\d{1,6}|#\d{1,6})\)/g, (_, t: string, c: string) => {
         const to = refs ? world.find(c) : null

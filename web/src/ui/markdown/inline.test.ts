@@ -15,6 +15,13 @@ describe('links', () => {
   test('a link to a code that names nothing is just its words', () => {
     expect(inlineHtml('see [the plan](#D9)', world)).toBe('see the plan')
   })
+  test('a link to a file sent to Taska opens it at its address, on the phone too (F782)', () => {
+    const at: InlineWorld = { ...world, url: (f) => `/p/demo/f/${f}` }
+    const html = clean(inlineHtml('[进度报告](f121-deep-dive-1113-2021.html)', at))
+    expect(html).toContain('href="/p/demo/f/f121-deep-dive-1113-2021.html"')
+    expect(html).toContain('>进度报告</a>')
+    expect(html).not.toContain('](')
+  })
 })
 
 describe('pictures', () => {
