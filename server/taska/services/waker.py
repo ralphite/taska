@@ -9,7 +9,9 @@ within 10 minutes is woken once more; nothing is sent while it works.
 
 Nothing about it shows on the page while it works (r1286). Only when the user writes to the project and no waker has
 waited for the session for 15 minutes does Taska say so, once, as an item (proposed); when a waker waits again
-it is deleted, unless the user answered it. Callers hold the project lock unless a method says otherwise.
+it is deleted, unless the user answered it. Callers hold the project lock unless a method says otherwise. Any other
+answer (the project deleted, an error) is waited 20 s after, and after 30 in a row the waker stops (B786: one asked
+a deleted project again at once, 4.5 million times in 15 hours).
 """
 
 from __future__ import annotations
@@ -37,14 +39,14 @@ pidf="$HOME/.gemini/taska-waker-{slug}-$sid.pid"
 if [ -f "$pidf" ] && kill -0 "$(cat "$pidf")" 2>/dev/null; then echo "waker: running"; exit 0; fi
 nohup sh -c '
   echo $$ > "$1"
-  fails=0
+  fails=0; odd=0
   while :; do
     o=$(curl -s "$2/wake?wait=540&sid=$3")
     case "$o" in
       "") sleep 20; continue;;
-      wake*) ;;
+      wake*) odd=0;;
       stop*|replaced*) break;;
-      *) continue;;
+      *) odd=$((odd + 1)); [ "$odd" -ge 30 ] && break; sleep 20; continue;;
     esac
     if "$HOME/.gemini/antigravity/bin/agentapi" send-message --title=Taska "$3" "Taska has work for you: GET $2/next?by=antigravity&sid=$3 and do it." >/dev/null 2>&1; then
       fails=0

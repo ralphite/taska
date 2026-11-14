@@ -118,6 +118,37 @@ class Waker(ProjectCase):
         finally:
             os.unlink(f.name)
 
+    def test_a_waker_answered_anything_else_waits_before_asking_again(self) -> None:
+        # B786: a waker for a deleted project asked again at once, 4.5 million times in 15 hours
+        import http.server
+        asked = []
+
+        class Gone(http.server.BaseHTTPRequestHandler):
+            def do_GET(self) -> None:  # noqa: N802
+                asked.append(self.path)
+                self.send_response(404)
+                self.end_headers()
+                self.wfile.write(b"no such project")
+
+            def log_message(self, *a) -> None:
+                pass
+
+        srv = http.server.HTTPServer(("127.0.0.1", 0), Gone)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        base = f"http://127.0.0.1:{srv.server_port}/p/gone"
+        script = self.call("/waker").replace("http://x/p/demo", base)
+        home = tempfile.mkdtemp()
+        os.makedirs(os.path.join(home, ".gemini"))
+        subprocess.run(["sh", "-c", script, "waker", A], env=dict(os.environ, HOME=home), check=True, capture_output=True)
+        time.sleep(1.5)
+        pidf = os.path.join(home, ".gemini", f"taska-waker-demo-{A}.pid")
+        try:
+            self.assertEqual(len(asked), 1, asked)
+        finally:
+            if os.path.exists(pidf):
+                subprocess.run(["sh", "-c", f'kill $(cat "{pidf}") 2>/dev/null; pkill -P $(cat "{pidf}") 2>/dev/null'], check=False)
+            srv.shutdown()
+
 
 if __name__ == "__main__":
     unittest.main()
