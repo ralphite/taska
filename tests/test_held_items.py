@@ -65,3 +65,26 @@ class WhoIsHere(HeldItems):
         self.p.run([(0, {"op": "new", "type": "task", "pri": "P1", "when": "now", "title": "Sort by date"})], "you")
         self.do("beta", "T2 doing\n")
         self.assertIn("claude-code · beta (on T2, heard just now)", self.get("/next?by=claude-code&session=alpha"))
+
+
+class HoldMoves(HeldItems):
+    """Found by tools/collab_check.py with real agents (I769 r1307): `doing` on an item already doing changed nothing,
+    so a take or a manager's hand-on left the hold where it was."""
+
+    def holder(self) -> str:
+        return self.p.agents.holder(self.p.state, self.p.state.items[1])[0]
+
+    def test_take_of_an_item_already_doing_moves_the_hold(self) -> None:
+        self.get("/next?by=claude-code&session=alpha")
+        self.do("alpha", "T1 doing\n")
+        self.assertIn("ok T1 status=doing (yours now)", self.do("beta", "T1 take\n"))
+        self.assertEqual(self.holder(), "claude-code · beta")
+        self.do("alpha", "T1 progress still here\n")  # alpha's word on it later does not take it back
+        self.assertEqual(self.holder(), "claude-code · beta")
+
+    def test_a_worker_takes_the_item_its_manager_is_doing(self) -> None:
+        self.get("/next?by=claude-code&session=manager")
+        self.do("manager", "T1 doing\n")
+        req = Request("POST", "/do?by=claude-code&session=worker-1&parent=manager", {}, "127.0.0.1", read_body=lambda limit: b"T1 doing\n")
+        self.assertIn("ok T1 status=doing", agent_routes.do(req, self.p).body.decode())
+        self.assertEqual(self.holder(), "claude-code · worker-1")

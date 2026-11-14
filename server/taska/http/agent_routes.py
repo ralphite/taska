@@ -15,7 +15,7 @@ from ..agent_text import render
 from ..agent_text.guide_text import CONNECT
 from ..agent_text.language import Parsed, parse
 from ..agent_text.work import Asker, Work, next_work
-from ..domain import rules
+from ..domain import events as ev, rules
 from ..domain.rules import item_at
 from ..domain.state import ident
 from ..domain.vocab import MAX_FILE, PEOPLE, Refused
@@ -250,10 +250,19 @@ def do(req: Request, p: Project) -> Response:
         calls: List[str] = p.agents.call_news(p.state, by, session) if agent else []  # what others wrote before
     commands = parse(body)
     taken: List[Tuple[str, str]] = []
+    moves: List[int] = []
     if agent:
         with p.lock:
-            commands, taken = held_by_others(p, commands, by, session)
+            commands, taken, moves = held_by_others(p, commands, by, session)
     lines, _ = p.run(commands, by, session=session)
+    if moves:  # doing on an item already doing, taken or handed on: the change is recorded, so the hold moves (I769)
+        with p.lock:
+            for n in moves:
+                code = p.state.code(n)
+                h = p.agents.holder(p.state, p.state.items[n])
+                if h and h[0] != ident(by, session):
+                    p.emit(ev.FieldsSet(n=n, by=by, f={"status": "doing"}, was={"status": "doing"}, ses=session or None))
+                lines = [f"ok {code} status=doing (yours now)" if x.startswith(f"ok {code} no change") else x for x in lines]
     if taken:  # said on the item, so the session that had it hears it there (it is told what is written on its items)
         p.run([(0, {"op": "say", "ref": ref, "kind": "progress", "text": f"@{who.split(' · ')[-1]} {ref} is taken over from you, as the user asked: stop working on it.",
                     "src": None, "files": []}) for ref, who in taken], by, session=session)
@@ -269,16 +278,17 @@ def do(req: Request, p: Project) -> Response:
     return text(200, "\n".join(lines) + f"\nrev {rev}: GET /next to continue{note}\n")
 
 
-def held_by_others(p: Project, commands: Parsed, by: str, session: str) -> Tuple[Parsed, List[Tuple[str, str]]]:
+def held_by_others(p: Project, commands: Parsed, by: str, session: str) -> Tuple[Parsed, List[Tuple[str, str]], List[int]]:
     """T772: `B03 doing` from a session while another one holds B03 is not done: it is told who holds it and since
     when, and how to go on (leave it, write to the holder, or take it when the user asked: `B03 take`). -> the
-    commands to run, and the items taken over with who had them."""
+    commands to run, the items taken over with who had them, and the items already doing whose hold moves to it."""
     me = ident(by, session)
     rec = p.agents.agents.get(agent_name(by))
     parent = rec.parents.get(session_name(session), "") if rec and session else ""
     boss = ident(by, parent) if parent else ""  # its manager hands it on
     out: Parsed = []
     taken: List[Tuple[str, str]] = []
+    moves: List[int] = []
     for no, c in commands:
         if isinstance(c, dict) and c.get("op") == "set" and (c.get("f") or {}).get("status") == "doing":
             take = bool(c.pop("take", False))
@@ -288,6 +298,8 @@ def held_by_others(p: Project, commands: Parsed, by: str, session: str) -> Tuple
                 out.append((no, c))
                 continue
             h = p.agents.holder(p.state, it)
+            if h and h[0] != me and it.status == "doing" and (take or h[0] == boss):
+                moves.append(it.n)  # already doing: the plain change would be none, and the hold would stay
             if h and h[0] != me and h[0] != boss:
                 code = p.state.code(it.n)
                 if take:
@@ -299,7 +311,7 @@ def held_by_others(p: Project, commands: Parsed, by: str, session: str) -> Tuple
                         f"`{code} say @{h[0].split(' · ')[-1]} ...`; only when the user asked you to take it: `{code} take`")))
                     continue
         out.append((no, c))
-    return out, taken
+    return out, taken, moves
 
 
 def serve_file(p: Project, name: str, byte_range: str = "") -> Response:
