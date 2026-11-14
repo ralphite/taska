@@ -22,7 +22,7 @@ export interface SessionFacts {
   app: string
   name: string
   state: SessionState
-  /** last heard of: now, 5m, 2h */
+  /** how long it has been as it is: now, 5m, 2h (its pill's time) */
   when: string
   /** drawn under the session that started it */
   worker: boolean
@@ -97,14 +97,17 @@ export function sessionGroups(m: ProjectModel): Pick<AgentsFacts, 'groups' | 'st
       const since = state === 'gone' ? s.t : s.since || (state === 'working' && s.on ? s.on.since : s.t)
       const dur = short(since, at)
       const what = b?.waitingFor || s.waitingFor || ''
+      // idle and listening for work: Ready, as the project's pill says it (B784)
+      const word = state === 'idle' && (s.waiting || a.waiting) ? 'Ready' : PILL[state]
       const f: SessionFacts = {
         key: keyOf(a.name, s.name),
         app: a.name,
         name,
         state,
-        when: ago(s.t, at, 'short'),
+        // how long it has been as it is, the same time its pill says (B784: not when Taska last heard of it)
+        when: dur || 'now',
         worker: false,
-        pill: dur ? `${PILL[state]} · ${dur}` : PILL[state],
+        pill: dur ? `${word} · ${dur}` : word,
         folder: home(s.cwd || ''),
         waits: state === 'waiting' ? { what, for: short(b?.since || s.since || s.t, at) } : null,
         on: ref(s.on?.n),

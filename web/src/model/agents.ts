@@ -133,8 +133,9 @@ export function blockedOn(a: AgentSeen, session: string): string | undefined {
   return b ? (b.waitingFor ? `blocked: ${b.waitingFor}` : 'blocked') : undefined
 }
 
-/** The home page's agent cell, by the pill's own rule (presenceOf): who, and whether it is around or blocked. */
-export function lastAgent(agents: readonly AgentSeen[] | undefined, now: number): { by: string; on: boolean; blocked: boolean } | null {
+/** The home page's agent cell, by the pill's own rule (presenceOf, B784): who and what it does, in the pill's words;
+ * null when no agent is around (the pill says No agent then too). */
+export function lastAgent(agents: readonly AgentSeen[] | undefined, now: number): { by: string; state: 'blocked' | 'working' | 'ready' | 'idle' } | null {
   const p = presenceOf(agents, now)
-  return p.k === 'none' ? null : { by: p.a.name, on: p.k !== 'away', blocked: p.k === 'blocked' }
+  return p.k === 'none' || p.k === 'away' ? null : { by: p.a.name, state: p.k }
 }

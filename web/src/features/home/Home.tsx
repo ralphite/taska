@@ -18,8 +18,8 @@ export interface HomeRow {
   icon?: string
   open: number
   needs: number
-  /** the agent last heard of, and whether it is around */
-  agent: { by: string; on: boolean; blocked: boolean } | null
+  /** the agent around and what it does, as the project's pill says it (none: No agent) */
+  agent: { by: string; state: 'blocked' | 'working' | 'ready' | 'idle' } | null
   /** the first of what needs you there */
   next: { code: string; title: string } | null
 }
@@ -60,12 +60,13 @@ const NOTICE = 'mb-3 flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-2 te
 const NOTICE_X = 'relative grid size-9 shrink-0 place-items-center rounded-lg after:absolute after:-inset-1 text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-400/15'
 
 function AgentCell({ agent }: { agent: HomeRow['agent'] }) {
+  const dot = !agent ? 'bg-zinc-300 dark:bg-zinc-600' : agent.state === 'blocked' ? 'bg-amber-500' : agent.state === 'idle' ? 'bg-zinc-400 dark:bg-zinc-500' : 'bg-emerald-500'
   return (
     <span className="flex min-w-0 items-center gap-1.5 text-zinc-600 dark:text-zinc-300">
-      <span className={`size-1.5 shrink-0 rounded-full ${agent?.blocked ? 'bg-amber-500' : agent?.on ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
-      {/* the agent by its icon where it has one (T711), then whether it is blocked or idle */}
+      <span className={`size-1.5 shrink-0 rounded-full ${dot}`} />
+      {/* the agent by its icon where it has one (T711), then what it does in the pill's words (B784) */}
       {agent ? <Who by={agent.by} cls="truncate" /> : null}
-      {!agent || agent.blocked || !agent.on ? <span className="truncate">{!agent ? 'No agent' : `${hasIcon(agent.by) ? '' : '· '}${agent.blocked ? 'blocked' : 'idle'}`}</span> : null}
+      <span className="truncate">{!agent ? 'No agent' : `${hasIcon(agent.by) ? '' : '· '}${agent.state}`}</span>
     </span>
   )
 }

@@ -52,6 +52,16 @@ test('a session waiting for you says on what and how long; its pill how long it 
   expect(agentsFacts(at(WORKING), null).groups[0].sessions[0].pill).toBe('Working · 20m')
 })
 
+// B784: the list row says the same time as the session's pill, and a session idle and listening for work is Ready,
+// as the project's pill says it.
+test('the row and the pill tell one time; idle and listening for work is Ready', () => {
+  const [w] = agentsFacts(at(WORKING), null).groups[0].sessions
+  expect(w.pill).toBe(`Working · ${w.when}`)
+  const t = Date.now()
+  const [r] = agentsFacts(at([{ name: 'claude-code', t: t - 60_000, waiting: true, sessions: [{ name: 'Main', t: t - 60_000, status: 'idle', since: t - 5 * 60_000 }] }]), null).groups[0].sessions
+  expect(r.pill.startsWith('Ready')).toBe(true)
+})
+
 test("each app's way back: Claude Code's link by the session's id, Codex's resume command, none for Antigravity", () => {
   const all = agentsFacts(at(MANAGER), null).groups.flatMap((g) => g.sessions)
   expect(all.find((s) => s.name === 'Manager')?.link).toEqual({ kind: 'open', href: `claude://code/continue?session=${SID.manager}` })

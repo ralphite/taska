@@ -29,7 +29,7 @@ describe('the pill and the Agents sheet say the same (B784)', () => {
   test('a session its app says is busy is working on the pill too, however long since it called Taska', () => {
     expect(sessionState('claude-code', busy[0].sessions![0], false, now)).toBe('working')
     expect(agentLine(busy, true, now)).toMatchObject({ tone: 'ready', label: 'Claude Code · working', who: { by: 'claude-code', session: 'Fix export', state: 'working' } })
-    expect(lastAgent(busy, now)).toMatchObject({ on: true, blocked: false })
+    expect(lastAgent(busy, now)).toEqual({ by: 'claude-code', state: 'working' })
   })
   test('idle in its app: idle; while work waits and it does not listen for work, the pill says so', () => {
     const idle: AgentSeen[] = [{ ...busy[0], sessions: [{ ...busy[0].sessions![0], status: 'idle' }] }]
@@ -41,6 +41,9 @@ describe('the pill and the Agents sheet say the same (B784)', () => {
     const gone: AgentSeen[] = [{ ...busy[0], sessions: [{ ...busy[0].sessions![0], status: 'exited' }] }]
     expect(agentLine(gone, true, now)).toMatchObject({ tone: 'bad', label: 'No agent' })
     expect(agentLine(gone, true, now).who).toBeUndefined()
+    // the home page's card says the same as the pill (QA of B784 found it saying "idle" for an agent long gone)
+    expect(lastAgent(gone, now)).toBeNull()
+    expect(lastAgent([{ name: 'codex', t: now - 3600e3, waiting: false }], now)).toBeNull()
   })
 })
 
@@ -73,7 +76,7 @@ describe('presence, one rule for the pill and the home page (T728 #5)', () => {
       { name: 'claude-code', t: now - 30 * 60e3, waiting: false, blocked: [{ session: 'Shop project work' }] },
     ] as never
     expect(agentState(agents, false, now)[0]).toBe('blocked')
-    expect(lastAgent(agents, now)).toMatchObject({ blocked: true, on: true })
+    expect(lastAgent(agents, now)).toEqual({ by: 'claude-code', state: 'blocked' })
   })
 })
 
