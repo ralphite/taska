@@ -14,7 +14,7 @@ import { SettingsFrame } from '../features/settings/SettingsFrame'
 import { DeskNav, PhoneIndex } from '../features/settings/SettingsNav'
 import { docRows, logRows, navFacts, projectsOf } from '../features/settings/settingsFacts'
 import { goneRows } from '../model/goneRows'
-import type { SectionKey } from '../features/settings/sectionList'
+import { ALL_PROJECTS, SECTIONS, type SectionKey } from '../features/settings/sectionList'
 import type { AgentSeen, Item, LogRow, ProjectRow, Spelling } from '../model/types'
 import type { DeletedProject } from '../stores/settings'
 import { T, modelOf } from './fixtures'
@@ -43,7 +43,7 @@ export const SEEN: AgentSeen[] = [
   },
   { name: 'codex', t: now - 3 * 3600_000, waiting: false, session: 'Docs pass', sessions: [{ name: 'Docs pass', t: now - 3 * 3600_000 }] },
 ]
-const ROWS: ProjectRow[] = [
+export const ROWS: ProjectRow[] = [
   { name: 'home', title: 'Home', open: 13, needs: 11, pos: 0 },
   { name: 'shop', title: 'Shop', open: 0, needs: 0, pos: 1 },
   { name: 'notes', title: '\u8bfb\u4e66\u7b14\u8bb0', open: 2, needs: 1, pos: 2 },
@@ -94,6 +94,8 @@ export interface SettingsHere {
   noDocs?: boolean
   log?: 'loading' | 'empty' | 'asking' | 'more'
   nothingDeleted?: boolean
+  /** a section not built yet (a prototype's): last in the column, what its row says, its body */
+  more?: { key: SectionKey; section: (typeof SECTIONS)[SectionKey]; right: string | number; body(desk: boolean): ReactNode }
 }
 
 /** Shop with its history: agents, documents, what was deleted, what can be undone. */
@@ -147,7 +149,10 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
   const st = { deleted: h.noneDeleted ? [] : GONE, ...p }
   const ask = (key: string, run: () => void) => (asked[key] ? run() : setAsked({ ...asked, [key]: 1 }))
   // the column says what the section shows (the desktop's state; the phone's pushes on or off)
-  const nav = navFacts(m, { notifications: navWord(desk ? notices.state : push?.blocked ? 'Blocked by the phone' : push?.sub ? 'On' : 'Off'), projects: ROWS.length, spellings: h.spellingsLoading || h.noSpellings ? '' : FIXES.length })
+  const built = navFacts(m, { notifications: navWord(desk ? notices.state : push?.blocked ? 'Blocked by the phone' : push?.sub ? 'On' : 'Off'), projects: ROWS.length, spellings: h.spellingsLoading || h.noSpellings ? '' : FIXES.length })
+  const more = h.more
+  const nav = more ? { right: { ...built.right, [more.key]: more.right } } : built
+  const sections = more ? { keys: [...ALL_PROJECTS, more.key], of: { ...SECTIONS, [more.key]: more.section } } : undefined
   const pOn: ProjectsEvents = {
     newProject: () => (setP({ ...p, pErr: '', renaming: null, pMenu: null }), setNaming({ value: '', error: '' })),
     rename: (slug) => setP({ ...p, renaming: slug, pMenu: null }),
@@ -210,9 +215,10 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
         desk={desk}
         sec={sec}
         place=""
-        nav={desk ? <DeskNav current={sec ?? 'projects'} back="New input" f={nav} pressed={h.navPressed ?? null} on={navOn} /> : sec ? null : <PhoneIndex f={nav} on={navOn} />}
+        nav={desk ? <DeskNav current={sec ?? 'projects'} back="New input" f={nav} pressed={h.navPressed ?? null} sections={sections} on={navOn} /> : sec ? null : <PhoneIndex f={nav} sections={sections} on={navOn} />}
         prefs={editing && desk}
-        body={bodies[sec ?? 'projects']()}
+        body={more && sec === more.key ? more.body(desk) : bodies[sec ?? 'projects']()}
+        sections={sections?.of}
         onBack={back}
       />
       {menu.draw((k) => {
