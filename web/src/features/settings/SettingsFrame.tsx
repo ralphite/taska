@@ -7,7 +7,7 @@ import { SECTIONS, type SectionKey } from './sectionList'
 import { PhHead } from './SettingsParts'
 import { PULL } from '../../ui/tones'
 
-export function SettingsFrame({ desk, sec, place, prefs = false, paneRef, nav, body, onBack }: {
+export function SettingsFrame({ desk, sec, place, prefs = false, paneRef, nav, body, sections = SECTIONS, onBack }: {
   desk: boolean
   /** the section open (the phone: none is its index) */
   sec: SectionKey | null
@@ -17,6 +17,8 @@ export function SettingsFrame({ desk, sec, place, prefs = false, paneRef, nav, b
   paneRef?: Ref<HTMLDivElement>
   nav: ReactNode
   body: ReactNode
+  /** what each section is called and is for (a prototype's stories pass one not built yet) */
+  sections?: typeof SECTIONS
   onBack(): void
 }) {
   const k = sec ?? 'projects'
@@ -41,8 +43,8 @@ export function SettingsFrame({ desk, sec, place, prefs = false, paneRef, nav, b
         {!desk ? (
           sec ? (
             <>
-              <PhHead title={SECTIONS[sec].name} onBack={onBack} />
-              <p className="px-5 pt-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">{SECTIONS[sec].about()}</p>
+              <PhHead title={sections[sec].name} onBack={onBack} />
+              <p className="px-5 pt-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">{sections[sec].about()}</p>
               {sec === 'projects' ? body : <div className="mx-3 mt-4 rounded-2xl bg-white px-4 dark:bg-zinc-900 [&>:first-child]:border-t-0 [&>:last-child]:border-b-0">{body}</div>}
               <div className="h-10" />
             </>
@@ -51,8 +53,8 @@ export function SettingsFrame({ desk, sec, place, prefs = false, paneRef, nav, b
           // a container ("set"): a narrow section keeps its rows' buttons as icons (their words under the pointer)
           <div className="@container/set mx-auto w-full max-w-[46rem] px-8 pt-9 pb-16">
             <header className="pb-6">
-              <h1 className="text-[22px] leading-tight font-semibold tracking-tight">{SECTIONS[k].name}</h1>
-              <p className="mt-2 text-[15px] leading-relaxed text-zinc-500 dark:text-zinc-400">{SECTIONS[k].about()}</p>
+              <h1 className="text-[22px] leading-tight font-semibold tracking-tight">{sections[k].name}</h1>
+              <p className="mt-2 text-[15px] leading-relaxed text-zinc-500 dark:text-zinc-400">{sections[k].about()}</p>
             </header>
             {body}
           </div>
