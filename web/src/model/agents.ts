@@ -1,6 +1,6 @@
 // How the page says whether an agent is around: the pill in the project's bar, and its tip.
 
-import type { AgentSeen } from './types'
+import type { AgentSeen, AgentSession } from './types'
 import { ago } from './time'
 import { hasIcon, whoName } from './words'
 
@@ -29,16 +29,42 @@ export interface AgentLine {
  * sheet and the home page; the server's is the same 600 s). */
 export const AROUND_MS = 10 * 60e3
 
-/** Where a project's agents are (T728 #5), worked out once: a session blocked on the user comes first, then one
- * waiting for work, then the latest heard of within AROUND_MS; else away (or none ever). */
-export type Presence = { k: 'blocked' | 'ready' | 'recent' | 'away'; a: AgentSeen } | { k: 'none' }
+/** How one agent session is now (B784: the one state the pill, the Agents sheet and the home page all show). */
+export type SessionState = 'working' | 'idle' | 'waiting' | 'gone'
+
+/** How a session is now: as its app says (Claude Code, Codex), else by when it was last heard of and whether it is on
+ * an item (Antigravity: seen lately, its waker waiting, or gone). A Codex thread is idle once its turn ends, also
+ * long after its app closed: one not heard of lately is gone. */
+export function sessionState(app: string, s: AgentSession, blocked: boolean, at: number): SessionState {
+  const quiet = !s.waiting && at - s.t >= AROUND_MS
+  if (blocked || s.status === 'waiting') return 'waiting'
+  if (s.status === 'busy') return 'working'
+  if (s.status === 'idle') return app === 'codex' && quiet ? 'gone' : 'idle'
+  if (s.status === 'exited' || quiet) return 'gone'
+  return s.on ? 'working' : 'idle'
+}
+
+/** An agent's sessions; one that never named a session is the agent itself, by its app's name. */
+export function sessionsOf(a: AgentSeen): AgentSession[] {
+  const all: AgentSession[] = (a.sessions || []).filter((x) => x.name)
+  for (const b of a.blocked || []) if (!all.some((x) => x.name === b.session)) all.push({ name: b.session, t: b.since || a.t, status: 'waiting', waitingFor: b.waitingFor, since: b.since })
+  return all.length ? all : [{ name: '', t: a.t, waiting: a.waiting }]
+}
+
+/** Where a project's agents are (T728 #5, B784), worked out once from each session's own state: a session waiting
+ * on the user comes first, then one working, then one idle and listening for work (ready), then one idle; else the
+ * latest is gone (away), or there never was one (none). */
+export type Presence = { k: 'blocked' | 'working' | 'ready' | 'idle' | 'away'; a: AgentSeen; s: AgentSession } | { k: 'none' }
+const RANK = { blocked: 0, working: 1, ready: 2, idle: 3, away: 4 } as const
 export function presenceOf(agents: readonly AgentSeen[] | undefined, now: number): Presence {
-  const list = [...(agents || [])].sort((a, b) => b.t - a.t)
-  const stuck = list.find((x) => x.blocked?.length)
-  if (stuck) return { k: 'blocked', a: stuck }
-  const a = list.find((x) => x.waiting) || list[0]
-  if (!a) return { k: 'none' }
-  return { k: a.waiting ? 'ready' : now - a.t < AROUND_MS ? 'recent' : 'away', a }
+  let best: Presence = { k: 'none' }
+  for (const a of agents || [])
+    for (const s of sessionsOf(a)) {
+      const st = sessionState(a.name, s, !!a.blocked?.some((b) => b.session === s.name), now)
+      const k = st === 'waiting' ? 'blocked' : st === 'working' ? 'working' : st === 'gone' ? 'away' : s.waiting || a.waiting ? 'ready' : 'idle'
+      if (best.k === 'none' || RANK[k] < RANK[best.k] || (RANK[k] === RANK[best.k] && s.t > best.s.t)) best = { k, a, s }
+    }
+  return best
 }
 
 /** The agent whose session waits on the user, by presenceOf's rule; null while none does. The page's blocked bar
@@ -48,49 +74,57 @@ export function blockedAgent(agents: readonly AgentSeen[] | undefined, now: numb
   return p.k === 'blocked' ? p.a.name : null
 }
 
-/** [tone, the pill's words, a longer sentence] */
-/** `queued`: items in the queue now (the sentence never says nothing waits while some do). */
-/** A session waiting on the user comes first (T711 #10443): `Claude Code · blocked`. */
+/** [tone, the pill's words, a longer sentence], by presenceOf (B784: the pill never says one thing while the Agents
+ * sheet says another, and a time never follows "No agent"). `queued`: items in the queue now. */
 export function agentState(agents: readonly AgentSeen[] | undefined, work: boolean | undefined, now: number, queued = 0): ['ok' | 'bad' | 'idle' | 'blocked', string, string] {
   const p = presenceOf(agents, now)
-  const a = p.k === 'none' ? undefined : p.a
-  const name = a ? whoName(a.name) : ''
+  if (p.k === 'none') return [work ? 'bad' : 'idle', 'No agent', work ? 'Work is waiting. No agent yet.' : 'No agent yet.']
+  const name = whoName(p.a.name)
   if (p.k === 'blocked') return ['blocked', `${name} · blocked`, `${name} is blocked, waiting on you.`]
+  if (p.k === 'working') return ['ok', `${name} · working`, `${name} is working.`]
   if (p.k === 'ready') return ['ok', `${name} ready`, `${name} is ready for work.`]
-  if (p.k === 'recent' && a) return ['ok', `${name} · ${ago(a.t, now, 'short')}`, `${name} was here ${ago(a.t, now, 'long')}.`]
-  const last = a ? `The last agent (${name}) was here ${ago(a.t, now, 'long')}.` : 'No agent yet.'
-  return work
-    ? ['bad', a ? `No agent · ${ago(a.t, now, 'short')}` : 'No agent', `Work is waiting. ${last}`]
-    : ['idle', a ? `${name} · ${ago(a.t, now, 'short')}` : 'No agent', `${queued ? `${queued} ${queued === 1 ? 'item waits' : 'items wait'}.` : 'Nothing is waiting for an agent.'} ${last}`]
+  const waits = queued ? `${queued} ${queued === 1 ? 'item waits' : 'items wait'}.` : 'Nothing is waiting for an agent.'
+  if (p.k === 'idle')
+    return work ? ['bad', `${name} · idle`, `Work is waiting. ${name} is idle and not taking work.`] : ['idle', `${name} · idle`, `${waits} ${name} is idle.`]
+  const last = `The last agent (${name}) was here ${ago(p.s.t, now, 'long')}.`
+  return work ? ['bad', 'No agent', `Work is waiting. ${last}`] : ['idle', 'No agent', `${waits} ${last}`]
 }
 
 export function agentLine(agents: readonly AgentSeen[] | undefined, work: boolean | undefined, now: number): AgentLine {
   const [tone, label] = agentState(agents, work, now)
   const p = presenceOf(agents, now)
   const who: AgentWho | undefined =
-    p.k === 'none' || tone === 'bad'
+    p.k === 'none' || p.k === 'away'
       ? undefined
       : {
           by: p.a.name,
-          session: (p.k === 'blocked' ? p.a.blocked?.[0]?.session : p.a.session || p.a.sessions?.[0]?.name) || '',
-          state: p.k === 'blocked' ? 'blocked' : p.k === 'ready' ? 'ready' : ago(p.a.t, now, 'short'),
+          session: (p.k === 'blocked' ? p.a.blocked?.find((b) => b.session === p.s.name)?.session : undefined) || p.s.name || p.a.session || '',
+          state: p.k,
         }
-  const ready = tone === 'ok' && (agents || []).some((a) => a.waiting)
   const lines = (agents || [])
     .flatMap((a) =>
-      (a.sessions?.length ? a.sessions : [{ name: a.session || '', t: a.t }]).map((x, i) => ({
+      sessionsOf(a).map((x) => ({
         t: x.t,
-        text: [whoName(a.name), x.name, ago(x.t, now, 'short'), blockedOn(a, x.name) ?? (a.waiting && i === 0 ? 'waiting for work' : '')].filter(Boolean).join(' · '),
+        text: [whoName(a.name), x.name, sessionWord(a, x, now), blockedOn(a, x.name) ?? ''].filter(Boolean).join(' · '),
       })),
     )
     .sort((x, y) => y.t - x.t)
   return {
-    tone: tone === 'ok' ? (ready ? 'ready' : 'recent') : tone,
+    // working or ready: green; idle in its app: grey with a green dot; gone or none: idle (or bad while work waits)
+    tone: tone === 'ok' ? 'ready' : tone === 'idle' && p.k === 'idle' ? 'recent' : tone,
     label,
     who,
     // an icon in the agent's name's place: the tip names it, so it keeps every line
     tip: lines.map((l) => l.text).filter((l) => hasIcon(who?.by) || l !== label).join('\n') || undefined,
   }
+}
+
+/** A session's state in the pill's tip, in the sheet's words (B784): working, idle, ready (listening for work), gone. */
+function sessionWord(a: AgentSeen, s: AgentSession, now: number): string {
+  const st = sessionState(a.name, s, !!a.blocked?.some((b) => b.session === s.name), now)
+  if (st === 'waiting') return ''
+  if (st === 'idle' && (s.waiting || a.waiting)) return 'ready'
+  return st === 'gone' ? `gone · ${ago(s.t, now, 'short')}` : st
 }
 
 /** What a session of this agent waits on, when it waits on the user ("blocked: approve plan"); undefined when not. */

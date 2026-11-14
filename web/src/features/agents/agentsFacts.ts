@@ -2,13 +2,13 @@
 // session seen in the project, by its app, a manager's workers under it, each as it is now (working, idle, waiting
 // for you, gone); the one to show first; how to connect. Pure: the container and the stories both use it.
 
-import { AROUND_MS } from '../../model/agents'
+import { sessionState, sessionsOf, type SessionState } from '../../model/agents'
 import { ago } from '../../model/time'
 import type { ProjectModel } from '../../model/project'
-import type { AgentSeen, AgentSession, Item } from '../../model/types'
+import type { AgentSession, Item } from '../../model/types'
 import { whoName } from '../../model/words'
 
-export type SessionState = 'working' | 'idle' | 'waiting' | 'gone'
+export { sessionState, type SessionState }
 
 export interface ItemRef {
   n: number
@@ -63,25 +63,6 @@ const keyOf = (app: string, name: string) => `${app}\u0000${name}`
 const short = (from: number, at: number) => (at - from < 60e3 ? '' : ago(from, at, 'short'))
 const firstLine = (text: string) => (text.split('\n').find((l) => l.trim()) || '').replace(/[*_`#>]+/g, '').trim()
 const home = (cwd: string) => cwd.replace(/^\/(Users|home)\/[^/]+(?=\/|$)/, '~')
-
-/** How a session is now: as its app says (Claude Code, Codex), else by when it was last heard of and whether it is on
- * an item (Antigravity: seen lately, its waker waiting, or gone). A Codex thread is idle once its turn ends, also
- * long after its app closed: one not heard of lately is gone. */
-export function sessionState(app: string, s: AgentSession, blocked: boolean, at: number): SessionState {
-  const quiet = !s.waiting && at - s.t >= AROUND_MS
-  if (blocked || s.status === 'waiting') return 'waiting'
-  if (s.status === 'busy') return 'working'
-  if (s.status === 'idle') return app === 'codex' && quiet ? 'gone' : 'idle'
-  if (s.status === 'exited' || quiet) return 'gone'
-  return s.on ? 'working' : 'idle'
-}
-
-/** An agent's sessions; one that never named a session is the agent itself, by its app's name. */
-function sessionsOf(a: AgentSeen): AgentSession[] {
-  const all: AgentSession[] = (a.sessions || []).filter((x) => x.name)
-  for (const b of a.blocked || []) if (!all.some((x) => x.name === b.session)) all.push({ name: b.session, t: b.since || a.t, status: 'waiting', waitingFor: b.waitingFor, since: b.since })
-  return all.length ? all : [{ name: '', t: a.t, waiting: a.waiting }]
-}
 
 function linkOf(app: string, sid: string | undefined): SessionFacts['link'] {
   if (!sid) return null
