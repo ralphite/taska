@@ -189,3 +189,69 @@ export const itemMenu = (page: Page) => shown(page.getByRole('button', { name: '
 export const menuChoice = (page: Page, words: RegExp) => sheetBody(page).getByRole('button', { name: words })
 /** The toast's Undo. */
 export const undo = (page: Page) => shown(page.getByRole('button', { name: /^Undo/ })).first()
+
+// ---------------------------------------------------------------- Safari's engine on the phone (B786)
+/** The microphone in WebKit, which has no fake device as Chromium has (`--use-fake-device-for-media-stream`): a
+ * steady tone, played into what the page records for as long as it records. Before the page opens. */
+export const fakeMic = (page: Page) =>
+  page.addInitScript(() => {
+    if (!window.MediaDevices) return
+    Object.defineProperty(MediaDevices.prototype, 'getUserMedia', {
+      configurable: true,
+      value: async () => {
+        const ac = new AudioContext()
+        await ac.resume().catch(() => {})
+        const tone = ac.createOscillator()
+        tone.frequency.value = 440
+        const out = ac.createMediaStreamDestination()
+        tone.connect(out)
+        tone.start()
+        for (const t of out.stream.getTracks()) {
+          const stop = t.stop.bind(t)
+          t.stop = () => {
+            stop()
+            void ac.close().catch(() => {})
+          }
+        }
+        return out.stream
+      },
+    })
+  })
+
+/** A finger scrolling what is under (x, y) by `dy` px (less than 0: up, to read what came before). Chromium makes a
+ * real touch scroll; WebKit cannot, so the finger's touches go to the page as a phone sends them while what scrolls
+ * there moves under it, a step a frame. */
+export async function fingerScroll(page: Page, dy: number, at = { x: 196, y: 300 }) {
+  if (page.context().browser()?.browserType().name() === 'chromium') {
+    const cdp = await page.context().newCDPSession(page)
+    await cdp.send('Input.synthesizeScrollGesture', { ...at, yDistance: -dy, speed: 1500, gestureSourceType: 'touch' })
+    await cdp.detach()
+    return
+  }
+  await page.evaluate(
+    async ({ dy, at }) => {
+      const el = document.elementFromPoint(at.x, at.y)
+      let sc = el instanceof HTMLElement ? el : null
+      while (sc && !(/auto|scroll/.test(getComputedStyle(sc).overflowY) && sc.scrollHeight > sc.clientHeight)) sc = sc.parentElement
+      if (!el || !sc) throw new Error('nothing scrolls there')
+      const s = sc
+      const fire = (type: string, y: number) => {
+        const e = new Event(type, { bubbles: true, cancelable: true, composed: true })
+        const t = { identifier: 1, target: el, clientX: at.x, clientY: y, pageX: at.x, pageY: y }
+        const now = type === 'touchend' ? [] : [t]
+        Object.defineProperties(e, { touches: { value: now }, targetTouches: { value: now }, changedTouches: { value: [t] } })
+        el.dispatchEvent(e)
+      }
+      const frame = () => new Promise((ok) => requestAnimationFrame(ok))
+      const steps = 12
+      fire('touchstart', at.y)
+      for (let i = 1; i <= steps; i++) {
+        await frame()
+        fire('touchmove', at.y - (dy * i) / steps) // the finger goes down to scroll up
+        s.scrollTop += dy / steps
+      }
+      fire('touchend', at.y - dy)
+    },
+    { dy, at },
+  )
+}

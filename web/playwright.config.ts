@@ -16,5 +16,12 @@ export default defineConfig({
   projects: [
     { name: 'phone', use: { ...devices['iPhone 15'], viewport: { width: 393, height: 852 }, browserName: 'chromium' } },
     { name: 'desktop', use: { viewport: { width: 1440, height: 900 }, browserName: 'chromium' } },
+    // Safari's engine on the phone (B786: WebKit moves what scrolls the talk by itself where Chromium does not), for
+    // the spec files that name it on their "// layouts:" line (tools/e2e.py). Its page's service worker is kept out:
+    // in WebKit the requests it takes never reach a check's page.route
+    {
+      name: 'phone-webkit',
+      use: { ...devices['iPhone 15'], viewport: { width: 393, height: 852 }, browserName: 'webkit', serviceWorkers: 'block' },
+    },
   ],
 })

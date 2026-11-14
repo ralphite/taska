@@ -1,12 +1,16 @@
 // Yadong's requirements on an item's talk (D29, "Lists and items"; T475, D45): each check is named by the codes of his
 // inputs, so a change that breaks one is stopped before it ships with his own words.
-// guards: src/features/item/ src/features/composer/ src/app/voice/ src/ui/scroller.ts src/model/outgoing.ts src/app/inputs/delivered.ts src/ui/Markdown.tsx src/app/Tooltip.tsx src/app/actions.ts
+// guards: src/features/item/ src/features/composer/ src/app/voice/ src/ui/scroller.ts src/model/outgoing.ts src/app/inputs/delivered.ts src/ui/Markdown.tsx src/app/Tooltip.tsx src/app/actions.ts src/ui/ToEnd.tsx
+// layouts: phone desktop phone-webkit
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { isDesk, open, project, type Project } from '../seed'
-import { box, boxMain, pane, recording, talk as talkOf, tip } from '../ui'
+import { box, boxMain, fakeMic, fingerScroll, pane, recording, talk as talkOf, tip } from '../ui'
 
-// a voice reply is recorded from the test browser's fake microphone (B770)
+// a voice reply is recorded from the test browser's fake microphone (B770); WebKit has none of its own (B786)
 test.use({ launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] } })
+test.beforeEach(async ({ page, browserName }) => {
+  if (browserName === 'webkit') await fakeMic(page)
+})
 
 const lines = (n: number, what: string) => Array.from({ length: n }, (_, i) => `  ${what} line ${i + 1}`).join('\n')
 
@@ -329,11 +333,7 @@ test('B770 r1292: scrolled up to read, replying by voice moves the talk once, do
     const at = await page.locator('[data-item-talk]').filter({ visible: true }).first().boundingBox()
     await page.mouse.move(at!.x + at!.width / 2, at!.y + at!.height / 2)
     await page.mouse.wheel(0, -400)
-  } else {
-    const cdp = await page.context().newCDPSession(page)
-    await cdp.send('Input.synthesizeScrollGesture', { x: 196, y: 300, yDistance: 400, speed: 1500, gestureSourceType: 'touch' })
-    await cdp.detach()
-  }
+  } else await fingerScroll(page, -400)
   await page.waitForTimeout(800)
   // what scrolls the talk, as each frame is drawn: the most it went up, and the frames off its end once it got there
   await frames(page)
@@ -364,6 +364,84 @@ test('B770 r1292: scrolled up to read, replying by voice moves the talk once, do
   expect(got, 'down to its end once, then at its end all along, never up').toEqual({ up: 0, offAfter: 0, reached: true })
 })
 
+// B786: a long talk of an agent's long messages, as a tutor writes them, the last a question waiting on you (system-design
+// T27 on Yadong's iPhone); you answer it by voice, the agent's reply asks the next one
+const lesson = (i: number) =>
+  `T1 say Part ${i} of the lesson. ` +
+  'Selling assigned seats for a big show means holding a seat while someone pays, never selling it twice, and keeping a million people in the first minute from bringing the system down. '.repeat(3)
+const ASKED = 'Before we start: the scope, the goal and where to spend the time?'
+const NEXT = 'Cold start: walk me through your whole design in ten sentences.'
+async function tutorTalk(request: Parameters<typeof project>[0]) {
+  return project(request, {
+    agent: `new task P1 now Ticket booking deep dive\n  Practise the problem question by question.\n`,
+    approve: ['T1'],
+    then: `${Array.from({ length: 6 }, (_, i) => lesson(i + 1)).join('\n')}\nT1 ask ${ASKED}\n`,
+  })
+}
+const reply = (p: Project) => p.doAs(`T1 say Got it: the scope as it was, the time on what carries over to other problems.\nT1 ask ${NEXT}\n`)
+const shows = (page: Page, words: string) => page.getByText(words).filter({ visible: true }).last()
+
+test('B786 r1337: replying by voice at the end of a long talk whose last message asks you keeps it at its end, looked at as each frame is drawn: sent, transcribing, the first words, the final words, the agent’s reply with a new question; it never goes up; the phone as the desktop', async ({
+  page,
+  request,
+}) => {
+  const p = await tutorTalk(request)
+  const h = await hearing(page)
+  await open(page, p, 'T1')
+  await expect(shows(page, ASKED)).toBeInViewport()
+  await page.waitForTimeout(1500) // the page settled, done with its own scrolls to the end on opening
+  const w = await watchEnd(page, FINAL)
+  await voiceReply(page, p, h, FIRST, FINAL)
+  await reply(p)
+  await expect(shows(page, NEXT)).toBeInViewport()
+  await page.waitForTimeout(1000)
+  const got = await w()
+  expect({ off: got.off, up: got.up }, 'at its end all along, never up').toEqual({ off: 0, up: 0 })
+})
+
+test('B786 r1337: scrolled up to read after replying by voice at the end of a long talk, nothing moves the talk, not the agent’s reply with a new question either; the phone (a finger) as the desktop (the wheel)', async ({
+  page,
+  request,
+}) => {
+  const p = await tutorTalk(request)
+  const h = await hearing(page)
+  await open(page, p, 'T1')
+  await expect(shows(page, ASKED)).toBeInViewport()
+  await page.waitForTimeout(1500)
+  await voiceReply(page, p, h, FIRST, FINAL)
+  if (isDesk(page)) {
+    const at = await page.locator('[data-item-talk]').filter({ visible: true }).first().boundingBox()
+    await page.mouse.move(at!.x + at!.width / 2, at!.y + at!.height / 2)
+    await page.mouse.wheel(0, -400)
+  } else await fingerScroll(page, -400)
+  await page.waitForTimeout(800)
+  // what scrolls the talk, as each frame is drawn from here on: the most it moved either way
+  await frames(page)
+  await page.evaluate(() => {
+    const talk = [...document.querySelectorAll<HTMLElement>('[data-item-talk]')].find((e) => e.getClientRects().length)!
+    let sc: HTMLElement | null = talk
+    while (sc && !/auto|scroll/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement
+    if (!sc || sc.scrollHeight - sc.clientHeight - sc.scrollTop < 200) throw new Error('not scrolled up')
+    const s = sc
+    const from = s.scrollTop
+    const w = { moved: 0, on: true }
+    Object.assign(window, { b786: w })
+    ;(window as unknown as Frames).eachFrame(() => {
+      w.moved = Math.max(w.moved, Math.round(Math.abs(s.scrollTop - from)))
+      return w.on
+    })
+  })
+  await reply(p)
+  await expect(page.getByText(NEXT).last()).toBeAttached() // it came, below what you read
+  await page.waitForTimeout(1500)
+  const got = await page.evaluate(() => {
+    const w = (window as unknown as { b786: { moved: number; on: boolean } }).b786
+    w.on = false
+    return { moved: w.moved }
+  })
+  expect(got, 'where you scrolled it all along').toEqual({ moved: 0 })
+})
+
 test('B721 r1183: scrolled up right after an item opens, the talk stays where you scrolled it, never pulled back to its end; the phone (a finger) as the desktop (the wheel)', async ({
   page,
   request,
@@ -390,11 +468,7 @@ test('B721 r1183: scrolled up right after an item opens, the talk stays where yo
       const at = await page.locator('[data-item-talk]').filter({ visible: true }).first().boundingBox()
       await page.mouse.move(at!.x + at!.width / 2, at!.y + at!.height / 2)
       await page.mouse.wheel(0, -300)
-    } else {
-      const cdp = await page.context().newCDPSession(page)
-      await cdp.send('Input.synthesizeScrollGesture', { x: 196, y: 300, yDistance: 300, speed: 1500, gestureSourceType: 'touch' })
-      await cdp.detach()
-    }
+    } else await fingerScroll(page, -300)
     await expect.poll(away).toBeGreaterThan(100)
     const left = await away()
     const seen: number[] = []

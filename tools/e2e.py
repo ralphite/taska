@@ -6,7 +6,10 @@ Every spec file says what it guards on a line of its own:
 
 (paths under web; a path ending in / guards a whole folder; "server/..." is under server). A check that guards
 one of Yadong's requirements starts its title with the requirement's input codes ("r494 r308: ..."); when it fails,
-it says which requirement, in his words.
+it says which requirement, in his words. A spec file runs on the phone and the desktop (Chromium); one that must
+also run in Safari's engine on the phone (B786) says the layouts it runs in on a line of its own:
+
+    // layouts: phone desktop phone-webkit
 
     python3 tools/e2e.py                     the checks guarding what changed since --shipped
     python3 tools/e2e.py --all               every check
@@ -48,7 +51,7 @@ SHIPPED = "refs/taska/shipped"  # a local ref, never pushed: the commit the last
 CORE = ("src/main.tsx", "src/pages/App.tsx", "src/index.css", "src/app/createApp.ts", "package.json",
         "package-lock.json", "vite.config.ts", "playwright.config.ts", "e2e/seed.ts")
 KEYS = ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY", "GOOGLE_APPLICATION_CREDENTIALS")
-LAYOUTS = ("phone", "desktop")  # the projects of web/playwright.config.ts
+LAYOUTS = ("phone", "desktop")  # the projects of web/playwright.config.ts every spec file runs in (and phone-webkit)
 KNOWN = os.path.join(SPECS, "known.txt")  # the checks of docs/known-issues.md: they fail without stopping a ship
 JOBS = 6  # runs at once: each a Taska, a Playwright and a Chromium; 6 held steady on the 10-core Mac under other load
 
@@ -85,6 +88,16 @@ def guards() -> Dict[str, List[str]]:
                 m = re.search(r"^// guards: (.+)$", fh.read(), re.M)
             out[os.path.relpath(path, WEB)] = m.group(1).split() if m else ["src/"]  # no line: guards the page
     return out
+
+
+def layouts(spec: str) -> List[str]:
+    """The layouts a spec file runs in: its "// layouts:" line, else the phone and the desktop."""
+    try:
+        with open(os.path.join(WEB, spec), encoding="utf-8") as fh:
+            m = re.search(r"^// layouts: (.+)$", fh.read(), re.M)
+    except OSError:
+        m = None
+    return m.group(1).split() if m else list(LAYOUTS)
 
 
 def pick(files: Optional[Set[str]]) -> List[str]:
@@ -230,11 +243,14 @@ def report(failed: List[Failed]) -> None:
 
 
 def jobs(specs: List[str], rest: List[str]) -> List[Tuple[str, Optional[str]]]:
-    """Each spec file once per layout (unless the arguments choose one), the longest first (a file is about as long
-    as its checks take), so the last to finish are short."""
-    lays: List[Optional[str]] = [None] if any(a.startswith("--project") for a in rest) else list(LAYOUTS)
+    """Each spec file once per layout it runs in (unless the arguments choose one), the longest first (a file is about
+    as long as its checks take), so the last to finish are short."""
+    chosen = any(a.startswith("--project") for a in rest)
     size = {s: os.path.getsize(os.path.join(WEB, s)) if os.path.isfile(os.path.join(WEB, s)) else 0 for s in specs}
-    return [(s, lay) for s in sorted(specs, key=lambda s: -size[s]) for lay in lays]
+    out: List[Tuple[str, Optional[str]]] = []
+    for s in sorted(specs, key=lambda s: -size[s]):
+        out += [(s, None)] if chosen else [(s, lay) for lay in layouts(s)]
+    return out
 
 
 def one(spec: str, layout: Optional[str], rest: List[str], run_dir: str) -> Tuple[Outcome, str, int]:
