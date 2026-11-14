@@ -52,7 +52,7 @@ export interface AgentsFacts {
   groups: { app: string; name: string; sessions: SessionFacts[] }[]
   /** the session shown when the sheet opens: one waiting for you, else one working, else the latest; null: none */
   start: string | null
-  cmd: string
+  /** what to paste to an agent to connect it (its folder once, then the work); `far`: the same for another network */
   far: string
   ask: string
   guide: string | null
@@ -178,7 +178,11 @@ export function agentsFacts(m: ProjectModel, guide: string | null): AgentsFacts 
   const [tone, , line] = agentState(m.facts.agents, m.facts.work, m.at, queue)
   const p = presenceOf(m.facts.agents, m.at)
   const base = m.facts.base
-  const ask = `This project tracks work in Taska. Run \`curl -s ${base}/agent\` to learn the interface, then follow \`curl -s ${base}/next\` and write your progress back to the items.`
+  // one text to paste to an agent: it connects its folder once (the project's address and Taska's skill), then works
+  // (F768 r1305: the command alone was not needed beside it)
+  const say = (b: string) =>
+    `This project tracks work in Taska. Once in this project's folder, run \`curl -s ${b}/connect | sh\`. Then run \`curl -s ${b}/agent\` to learn the interface, follow \`curl -s ${b}/next\` and write your progress back to the items.`
+  const ask = say(base)
   return {
     tone,
     line,
@@ -186,8 +190,7 @@ export function agentsFacts(m: ProjectModel, guide: string | null): AgentsFacts 
     queue,
     later: live.filter((it) => it.when === 'later' && !closed(it.status)).length,
     ...sessionGroups(m),
-    cmd: `curl -s ${base}/connect | sh`,
-    far: m.facts.remote && m.facts.remote !== base ? `curl -s ${m.facts.remote}/connect | sh` : '',
+    far: m.facts.remote && m.facts.remote !== base ? say(m.facts.remote) : '',
     ask,
     guide,
   }

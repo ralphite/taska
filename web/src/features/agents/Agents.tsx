@@ -106,6 +106,7 @@ function AgentsBody({ f, on, start }: { f: AgentsFacts; on: AgentsActs; start: A
   return (
     <div className="flex flex-col border-t border-zinc-200 lg:-mx-4 lg:-mt-2 lg:-mb-5 lg:h-[calc(100%+1.75rem)] lg:flex-row dark:border-zinc-800">
       <nav aria-label="Sessions" className={`${page ? 'hidden lg:flex' : 'flex'} min-h-0 shrink-0 flex-col pt-3 lg:w-72 lg:rounded-bl-3xl lg:border-r lg:border-zinc-200 lg:bg-zinc-50/70 lg:pt-4 dark:lg:border-zinc-800 dark:lg:bg-zinc-950/30`}>
+        <Connect f={f} on={on} />
         <div className="flex-1 lg:overflow-y-auto lg:px-2 lg:scrollbar-thin">
           {f.groups.length ? (
             f.groups.map((g) => (
@@ -128,7 +129,6 @@ function AgentsBody({ f, on, start }: { f: AgentsFacts; on: AgentsActs; start: A
           )}
         </div>
         <div className="border-t border-zinc-200 py-1 lg:px-2 dark:border-zinc-800">
-          <Connect f={f} on={on} />
           <button
             onClick={() => choose('guide')}
             aria-current={!s ? 'true' : undefined}
@@ -171,32 +171,25 @@ function ListRow({ s, picked, onPick }: { s: SessionFacts; picked: boolean; onPi
   )
 }
 
-/** The two ways to connect one more agent, always in sight (r1300: the most used, never folded away): Copy the command
- * (and the one for another network), Copy the words for the agent; each one's text in its tip. */
+/** How to connect one more agent, always in sight at the top (r1300, r1305: the most used, never folded away): Copy
+ * the words for the agent (they connect its folder once, then put it to work), the same for another network. */
 function Connect({ f, on }: { f: AgentsFacts; on: AgentsActs }) {
-  const copy = (label: string, text: string) => (
-    <button onClick={() => on.copy(text)} title={text.replace(/`/g, '')} className={`${CHIP} h-8 min-w-0 flex-1 justify-center bg-white lg:flex-none lg:justify-start px-2 text-xs font-medium ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700`}>
-      <Icon n="copy" c="size-3.5 shrink-0" />
-      <span className="truncate">{label}</span>
-    </button>
-  )
   return (
-    <section aria-label="Connect another agent" className="flex flex-col gap-1.5 px-2 pt-2 pb-1">
-      <h3 className={`flex h-6 items-center ${LABEL}`}>Connect another agent</h3>
-      <div className="flex gap-1.5 lg:flex-col">
-        {copy('Copy command', f.cmd)}
-        {copy('Copy for the agent', f.ask)}
-      </div>
-      <div className="flex items-center gap-3 px-0.5 text-xs font-medium">
+    <section aria-label="Connect another agent" className="flex items-center gap-2 px-2 pb-3 lg:mx-2 lg:mb-2 lg:border-b lg:border-zinc-200 lg:px-0 dark:lg:border-zinc-800">
+      <button onClick={() => on.copy(f.ask)} title={f.ask.replace(/`/g, '')} className={`${CHIP} h-8 min-w-0 shrink-0 bg-white px-2.5 text-xs font-medium ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700`}>
+        <Icon n="copy" c="size-3.5 shrink-0" />
+        Copy for the agent
+      </button>
+      <span className="flex min-w-0 flex-wrap items-center gap-x-3 text-xs font-medium">
         {f.far ? (
           <button onClick={() => on.copy(f.far)} className="text-blue-600 hover:underline dark:text-blue-400">
-            Copy for another network
+            Another network
           </button>
         ) : null}
         <button onClick={on.help} className="text-blue-600 hover:underline dark:text-blue-400">
           How it works
         </button>
-      </div>
+      </span>
     </section>
   )
 }

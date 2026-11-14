@@ -86,3 +86,9 @@ test('agents Taska has no app for are one group, Others, after the known apps (n
   expect(rows(seen).map(([g]) => g)).toEqual(['Codex', 'Others'])
   expect(rows(seen)[1][1].length).toBe(2)
 })
+
+test('F768 r1305: one text to paste connects the agent: its folder once, then the work; no command apart', () => {
+  const f = agentsFacts(at([]), null)
+  expect(f.ask).toMatch(/connect \| sh`.*\/agent`.*\/next`/)
+  expect(f).not.toHaveProperty('cmd')
+})

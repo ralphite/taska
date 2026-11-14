@@ -123,12 +123,11 @@ Change an input you sent and it is read again: its items follow the new words.
 
 Click the agent status at the top right. **Agents** shows whether an agent is here, what is waiting for one, every agent session seen in the project and what each is doing, and the ways to connect one.
 
-## Two ways to connect
+## Connect one
 
-Under **Connect another agent**, at the foot of the list:
-
-1. **Copy command** and run it once per machine, in the project's folder.
-2. **Copy for the agent** and paste it to the agent.
+At the top of the list, **Copy for the agent** and paste it to the agent. It tells the agent to connect its folder once
+(the project's address and Taska's skill) and then to start on the work. **Another network** copies the same for an
+agent on a computer outside this network.
 
 An agent that has worked on the project in the last few days counts as connected.
 
