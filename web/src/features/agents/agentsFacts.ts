@@ -2,9 +2,8 @@
 // session seen in the project, by its app, a manager's workers under it, each as it is now (working, idle, waiting
 // for you, gone); the one to show first; how to connect. Pure: the container and the stories both use it.
 
-import { AROUND_MS, agentState, presenceOf } from '../../model/agents'
+import { AROUND_MS } from '../../model/agents'
 import { ago } from '../../model/time'
-import { closed, waitsInQueue, withOpenKids } from '../../model/items'
 import type { ProjectModel } from '../../model/project'
 import type { AgentSeen, AgentSession, Item } from '../../model/types'
 import { whoName } from '../../model/words'
@@ -42,12 +41,6 @@ export interface SessionFacts {
 }
 
 export interface AgentsFacts {
-  tone: 'ok' | 'bad' | 'idle' | 'blocked'
-  line: string
-  /** the agent the line names: its name there drawn by its app's icon where it has one (T711) */
-  lineBy?: string
-  queue: number
-  later: number
   /** by app (Claude Code, Codex, Antigravity, then others), each session followed by its workers */
   groups: { app: string; name: string; sessions: SessionFacts[] }[]
   /** the session shown when the sheet opens: one waiting for you, else one working, else the latest; null: none */
@@ -172,11 +165,6 @@ export function sessionGroups(m: ProjectModel): Pick<AgentsFacts, 'groups' | 'st
 
 /** `guide` is the guide for agents, once it has come. */
 export function agentsFacts(m: ProjectModel, guide: string | null): AgentsFacts {
-  const live = m.items.filter((it) => !it.mergedInto && !it.archived)
-  const kids = withOpenKids(m.items)
-  const queue = live.filter((it) => waitsInQueue(it, kids)).length
-  const [tone, , line] = agentState(m.facts.agents, m.facts.work, m.at, queue)
-  const p = presenceOf(m.facts.agents, m.at)
   const base = m.facts.base
   // one text to paste to an agent: it connects its folder once (the project's address and Taska's skill), then works
   // (F768 r1305: the command alone was not needed beside it)
@@ -184,11 +172,6 @@ export function agentsFacts(m: ProjectModel, guide: string | null): AgentsFacts 
     `This project tracks work in Taska. Once in this project's folder, run \`curl -s ${b}/connect | sh\`. Then run \`curl -s ${b}/agent\` to learn the interface, follow \`curl -s ${b}/next\` and write your progress back to the items.`
   const ask = say(base)
   return {
-    tone,
-    line,
-    lineBy: p.k === 'none' ? undefined : p.a.name,
-    queue,
-    later: live.filter((it) => it.when === 'later' && !closed(it.status)).length,
     ...sessionGroups(m),
     far: m.facts.remote && m.facts.remote !== base ? say(m.facts.remote) : '',
     ask,

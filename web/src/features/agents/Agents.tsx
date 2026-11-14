@@ -6,8 +6,8 @@
 // list, then the session's page with Back. Props only.
 
 import { useState } from 'react'
-import { plural, hasIcon, whoName } from '../../model/words'
-import { Avatar, Who } from '../../ui/bits'
+import { whoName } from '../../model/words'
+import { Avatar } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import type { SheetParts } from '../../ui/Sheet'
 import { CHIP, MUTED, NEEDS_CARD, SECOND } from '../../ui/tones'
@@ -29,13 +29,6 @@ export interface AgentsStart {
   page?: boolean
   resume?: boolean
 }
-
-const TONE = {
-  bad: 'bg-red-500 dark:bg-red-400',
-  ok: 'bg-emerald-500 dark:bg-emerald-400',
-  idle: 'bg-zinc-400',
-  blocked: 'bg-amber-500 dark:bg-amber-400',
-} as const
 
 const DOT: Record<SessionState, string> = {
   working: 'bg-emerald-500 dark:bg-emerald-400',
@@ -63,31 +56,16 @@ const PICKED = 'lg:bg-white lg:font-medium lg:shadow-sm lg:ring-1 lg:ring-zinc-2
 
 const Dot = ({ state }: { state: SessionState }) => <span aria-hidden className={`size-2 shrink-0 rounded-full ${DOT[state]}`} />
 
-/** A sentence that names an agent: the name drawn by the agent's app icon where it has one (T711). */
-function Said({ text, by }: { text: string; by?: string }) {
-  const name = by && hasIcon(by) ? whoName(by) : ''
-  const at = name ? text.indexOf(name) : -1
-  if (!by || at < 0) return <>{text}</>
-  return (
-    <>
-      {text.slice(0, at)}
-      <Who by={by} />
-      {text.slice(at + name.length)}
-    </>
-  )
-}
-
 /** The Agents sheet; `start`: what shows when it opens (the stories show each). */
 export function agentsSheet(f: AgentsFacts, on: AgentsActs, start: AgentsStart = {}): SheetParts {
   return {
     title: 'Agents',
-    sub: (
-      <p className="flex items-start gap-2 px-5 pb-3 text-[13px] leading-snug text-zinc-700 dark:text-zinc-300">
-        <span aria-hidden className={`mt-1.5 size-2 shrink-0 rounded-full ${TONE[f.tone]}`} />
-        <span>
-          <Said text={f.line} by={f.lineBy} /> <span className={MUTED}>{`${plural(f.queue, 'item')} in the queue${f.later ? ` (${f.later} later)` : ''}`}</span>
-        </span>
-      </p>
+    // the way to connect one more, beside Close (r1309: the most used; who is here and how is in the list itself)
+    extra: (
+      <button onClick={() => on.copy(f.ask)} title={f.ask.replace(/`/g, '')} className={`${CHIP} h-8 shrink-0 bg-white px-2.5 text-[13px] font-medium ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700`}>
+        <Icon n="copy" c="size-3.5 shrink-0" />
+        Connect new agent
+      </button>
     ),
     body: <AgentsBody f={f} on={on} start={start} />,
   }
@@ -106,7 +84,6 @@ function AgentsBody({ f, on, start }: { f: AgentsFacts; on: AgentsActs; start: A
   return (
     <div className="flex flex-col border-t border-zinc-200 lg:-mx-4 lg:-mt-2 lg:-mb-5 lg:h-[calc(100%+1.75rem)] lg:flex-row dark:border-zinc-800">
       <nav aria-label="Sessions" className={`${page ? 'hidden lg:flex' : 'flex'} min-h-0 shrink-0 flex-col pt-3 lg:w-72 lg:rounded-bl-3xl lg:border-r lg:border-zinc-200 lg:bg-zinc-50/70 lg:pt-4 dark:lg:border-zinc-800 dark:lg:bg-zinc-950/30`}>
-        <Connect f={f} on={on} />
         <div className="flex-1 lg:overflow-y-auto lg:px-2 lg:scrollbar-thin">
           {f.groups.length ? (
             f.groups.map((g) => (
@@ -136,6 +113,17 @@ function AgentsBody({ f, on, start }: { f: AgentsFacts; on: AgentsActs; start: A
           >
             <span className="min-w-0 flex-1">What agents read</span>
             <Icon n="right" c="size-4 text-zinc-400" />
+          </button>
+          {/* the less used ways round connecting, by their plain names (r1309) */}
+          {f.far ? (
+            <button onClick={() => on.copy(f.far)} title={f.far.replace(/`/g, '')} className={`flex h-10 w-full items-center gap-2 rounded-lg px-2 text-left text-sm font-medium ${ROW_HOVER}`}>
+              <span className="min-w-0 flex-1">Connect an agent on another network</span>
+              <Icon n="copy" c="size-4 text-zinc-400" />
+            </button>
+          ) : null}
+          <button onClick={on.help} className={`flex h-10 w-full items-center gap-2 rounded-lg px-2 text-left text-sm font-medium ${ROW_HOVER}`}>
+            <span className="min-w-0 flex-1">How connecting works</span>
+            <Icon n="info" c="size-4 text-zinc-400" />
           </button>
         </div>
       </nav>
@@ -171,28 +159,6 @@ function ListRow({ s, picked, onPick }: { s: SessionFacts; picked: boolean; onPi
   )
 }
 
-/** How to connect one more agent, always in sight at the top (r1300, r1305: the most used, never folded away): Copy
- * the words for the agent (they connect its folder once, then put it to work), the same for another network. */
-function Connect({ f, on }: { f: AgentsFacts; on: AgentsActs }) {
-  return (
-    <section aria-label="Connect another agent" className="flex items-center gap-2 px-2 pb-3 lg:mx-2 lg:mb-2 lg:border-b lg:border-zinc-200 lg:px-0 dark:lg:border-zinc-800">
-      <button onClick={() => on.copy(f.ask)} title={f.ask.replace(/`/g, '')} className={`${CHIP} h-8 min-w-0 shrink-0 bg-white px-2.5 text-xs font-medium ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700`}>
-        <Icon n="copy" c="size-3.5 shrink-0" />
-        Copy for the agent
-      </button>
-      <span className="flex min-w-0 flex-wrap items-center gap-x-3 text-xs font-medium">
-        {f.far ? (
-          <button onClick={() => on.copy(f.far)} className="text-blue-600 hover:underline dark:text-blue-400">
-            Another network
-          </button>
-        ) : null}
-        <button onClick={on.help} className="text-blue-600 hover:underline dark:text-blue-400">
-          How it works
-        </button>
-      </span>
-    </section>
-  )
-}
 
 function ItemButton({ item, on, cls = '' }: { item: ItemRef; on: AgentsActs; cls?: string }) {
   return (

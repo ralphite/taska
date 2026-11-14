@@ -39,7 +39,7 @@ export const OnlyGone: Story = { ...sheet(ALL_GONE), name: 'Only gone ones' }
 export const CodexResume: Story = { ...sheet(MANAGER, { pick: sessionKey('codex', 'main'), resume: true }), name: 'Codex: resume' }
 /** An agent Taska does not know by name: a group of its own, by its name. */
 export const AnUnknownAgent: Story = { ...sheet([...WORKING, { name: 'helper-bot', t: WORKING[1].t, waiting: false }]), name: 'An agent Taska does not know' }
-/** With no public address: no Another network. */
+/** With no public address: no Connect an agent on another network. */
 export const ConnectNoPublicAddress: Story = { ...sheet(WORKING, {}, { remote: '' }), name: 'Connect, no public address' }
 /** The phone: the list (it opens there unless a session waits for you). */
 export const PhoneList: Story = { ...sheet(MANAGER, { page: false }), name: 'Phone: the list' }

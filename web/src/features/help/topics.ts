@@ -125,9 +125,9 @@ Click the agent status at the top right. **Agents** shows whether an agent is he
 
 ## Connect one
 
-At the top of the list, **Copy for the agent** and paste it to the agent. It tells the agent to connect its folder once
-(the project's address and Taska's skill) and then to start on the work. **Another network** copies the same for an
-agent on a computer outside this network.
+**Connect new agent**, at the top right of Agents, copies what to paste to the agent. It tells the agent to connect its
+folder once (the project's address and Taska's skill) and then to start on the work. **Connect an agent on another
+network**, under the list, copies the same for an agent on a computer outside this network.
 
 An agent that has worked on the project in the last few days counts as connected.
 
