@@ -46,7 +46,7 @@ def http(method: str, url: str, body: object = None) -> str:
 
 def agent(cmd: List[str], prompt: str, cwd: str) -> str:
     env = {k: v for k, v in os.environ.items() if k not in ("CLAUDE_CODE_SESSION_ID", "CODEX_THREAD_ID")}
-    p = subprocess.run(cmd + [prompt], cwd=cwd, env=env, capture_output=True, text=True, timeout=600)
+    p = subprocess.run(cmd + [prompt], cwd=cwd, env=env, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=600)
     return (p.stdout or "") + (("\n[stderr] " + p.stderr[-800:]) if p.returncode else "")
 
 
