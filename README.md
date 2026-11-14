@@ -21,7 +21,8 @@ desk or your phone.
     <img src="docs/media/taska-intro.gif" width="800" alt="The Taska intro: say it and it becomes an item, answer an agent and accept its work, reply to an agent, approve a change to the rules, handle rows, see every agent session">
   </a>
   <br>
-  <sub><a href="docs/media/taska-intro.mp4">Watch the intro (1 min 24 s)</a>: the real page on a phone and a desktop, side by side.</sub>
+  <sub><a href="docs/media/taska-intro.mp4">Watch the intro (1 min 24 s)</a>: the real page on a phone and a desktop, side by side.
+  On a phone? <a href="docs/media/taska-intro-phone.mp4">Watch the vertical version (1 min 10 s)</a>.</sub>
 </p>
 
 <p align="center">
