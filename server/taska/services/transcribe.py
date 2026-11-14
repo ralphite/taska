@@ -60,6 +60,15 @@ class Hearing:
 VOICE_MODEL = os.environ.get("TASKA_VOICE_MODEL", "gemini-3.5-flash")
 ASR_MODEL = os.environ.get("TASKA_ASR_MODEL", "gemini-3.5-transcribe")
 PRO_MODEL = os.environ.get("TASKA_PRO_MODEL", "gemini-3.1-pro-preview")
+# T783 (Yadong, r1336): the strong model is gemini-4-hydrogen thinking deeply, and a try it failed goes to 3.1 Pro
+# (D135 round 2, 60 notes judged blind: as good as the final words, notes with a meaning changed 4 against 10, no
+# failure, median 7.2 s; without thinking it turned "不需要" into "就需要"). Try i is asked of HEAR_MODELS[i] (the
+# last one for the rest).
+HEAR_MODELS = [m.strip() for m in os.environ.get("TASKA_HEAR_MODELS", f"gemini-4-hydrogen,{PRO_MODEL}").split(",") if m.strip()]
+THINK_LEVEL = {"gemini-4-hydrogen": "high"}  # how much a strong model thinks; any other: low
+# T783 (r1336): tidying is gemini-4-hydrogen without thinking (D135 round 2, 20 notes judged blind: 4.80 against 4.15
+# for 3.5 Flash, 12 better, none worse; median 3.7 s against 1.4 s)
+TIDY_MODEL = os.environ.get("TASKA_TIDY_MODEL", "gemini-4-hydrogen")
 # How long one voice note may take, in seconds: the strong model once took 250 s on a phone note. Each model gets its
 # own cap; what one did not finish in time is left out.
 VOICE_CAP = float(os.environ.get("TASKA_VOICE_CAP", 50))  # the main and the speech model
@@ -80,9 +89,9 @@ def voice_main(audio: Dict[str, Any], prompt: str, model: Optional[str] = None) 
                 "generationConfig": {"temperature": 0.2, "responseMimeType": "application/json",
                                      "responseSchema": {"type": "OBJECT", "properties": {"transcript": {"type": "STRING", "description": VOICE_HINT}},
                                                         "required": ["transcript"]}}}
-        # The main one answers without thinking. The strong one thinks a little: on two phone notes it heard as much
-        # as with more thinking, in 7 s instead of 16.
-        body["generationConfig"]["thinkingConfig"] = {"thinkingLevel": "low"} if model else {"thinkingBudget": 0}
+        # The main one answers without thinking. A strong one thinks as THINK_LEVEL says, else a little (3.1 Pro: on
+        # two phone notes it heard as much as with more thinking, in 7 s instead of 16).
+        body["generationConfig"]["thinkingConfig"] = {"thinkingLevel": THINK_LEVEL.get(model, "low")} if model else {"thinkingBudget": 0}
         text, why = words_of(generate(model or VOICE_MODEL, body, timeout=240 if model else 120))
         if why and attempt == 1:
             continue
@@ -153,16 +162,20 @@ Step = Dict[str, Any]
 def strong(steps: List[Step], name: str, audio: Dict[str, Any], prompt: str, times: Dict[str, float], key: str) -> Callable[[], str]:
     """The strong model's words (Yadong on D121, 11-06: "not 10 s: wait, and when it fails, ask again"; T697: a try
     with no answer in PRO_TRY seconds has failed, as connections stalled for 4 to 6 minutes): up to PRO_TRIES tries,
-    each its own step (every result kept), a little apart."""
-    hear = lambda: capped(lambda: voice_main(audio, prompt, PRO_MODEL), PRO_TRY, "the strong model")  # a stalled connection is a failed try
-    first = ran(steps, name, PRO_MODEL, hear)  # its step in the order the steps are started
+    each its own step (every result kept), a little apart; try i asks HEAR_MODELS[i] (T783)."""
+    def model(i: int) -> str:
+        return HEAR_MODELS[min(i, len(HEAR_MODELS) - 1)]
+
+    def hear(m: str) -> Callable[[], str]:  # a stalled connection is a failed try
+        return lambda: capped(lambda: voice_main(audio, prompt, m), PRO_TRY, "the strong model")
+    first = ran(steps, name, model(0), hear(model(0)))  # its step in the order the steps are started
 
     def go() -> str:
         t0, last = time.time(), None
         try:
             for i in range(PRO_TRIES):
                 try:
-                    return (first if i == 0 else ran(steps, f"{name}_{i + 1}", PRO_MODEL, hear))()
+                    return (first if i == 0 else ran(steps, f"{name}_{i + 1}", model(i), hear(model(i))))()
                 except Exception as ex:
                     last = ex
                     if i + 1 < PRO_TRIES:
@@ -183,7 +196,7 @@ def tidy(text: str, step: Optional[Step] = None) -> str:
 
     def one():
         try:
-            out, why = ask("voice", TIDY_SYSTEM, [{"text": text}], think=0, temperature=0.2, timeout=60, answer_in=("text", "the tidied text"), model=VOICE_MODEL), ""
+            out, why = ask("voice", TIDY_SYSTEM, [{"text": text}], think=0, temperature=0.2, timeout=60, answer_in=("text", "the tidied text"), model=TIDY_MODEL), ""
         except Exception as ex:
             out, why = "", str(ex) or "failed"
         got.put((out, why))
@@ -353,7 +366,7 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
         doubts = voice_doubts(tr, alt)
     if h.tidy():  # T256: smooth to read, the words as said kept as "heard"
         t0_ = time.time()
-        step: Step = {"step": "tidy", "model": VOICE_MODEL}
+        step: Step = {"step": "tidy", "model": TIDY_MODEL}
         nice = tidy(tr, step)
         times["tidy"] = step["secs"] = round(time.time() - t0_, 1)
         if "tries" in step:  # it was asked (short words are not)

@@ -59,9 +59,9 @@ class Steps(unittest.TestCase):
         out = self.heard(lambda audio, prompt, model=None: SAID)
         steps = {s["step"]: s for s in out["steps"]}
         self.assertEqual([s["step"] for s in out["steps"]], ["pro", "asr", "tidy"])
-        self.assertEqual((steps["pro"]["model"], steps["pro"]["text"], steps["pro"].get("chosen")), (tr.PRO_MODEL, SAID, True))
+        self.assertEqual((steps["pro"]["model"], steps["pro"]["text"], steps["pro"].get("chosen")), (tr.HEAR_MODELS[0], SAID, True))
         self.assertEqual((steps["asr"]["model"], steps["asr"]["text"], steps["asr"].get("chosen")), (tr.ASR_MODEL, ASR, None))
-        self.assertEqual((steps["tidy"]["model"], steps["tidy"]["text"], steps["tidy"].get("chosen")), (tr.VOICE_MODEL, TIDIED, True))
+        self.assertEqual((steps["tidy"]["model"], steps["tidy"]["text"], steps["tidy"].get("chosen")), (tr.TIDY_MODEL, TIDIED, True))
         self.assertTrue(all(isinstance(s["secs"], float) for s in out["steps"]))
         self.assertEqual((out["tr"], out["heard"], out["tr_by"]), (TIDIED, SAID, "pro"))
 
@@ -92,6 +92,21 @@ class Steps(unittest.TestCase):
         self.assertEqual([s["step"] for s in steps], ["pro", "pro_2", "pro_3"])
         self.assertEqual([s.get("error") for s in steps[:2]], ["Gemini HTTP 503"] * 2)
         self.assertEqual((steps[2]["text"], steps[2].get("chosen"), out["tr_by"]), (SAID, True, "pro"))
+
+    def test_hydrogen_thinking_deeply_hears_first_and_3_1_pro_takes_a_failed_try(self):
+        # T783 (Yadong, r1336): "Hydrogen 深度思考做主力，3.1 Pro 只在它失败时用"; tidying is Hydrogen too
+        self.assertEqual((tr.HEAR_MODELS, tr.THINK_LEVEL["gemini-4-hydrogen"]), (["gemini-4-hydrogen", "gemini-3.1-pro-preview"], "high"))
+        self.assertEqual(tr.TIDY_MODEL, "gemini-4-hydrogen")
+        tries = []
+
+        def flaky(audio, prompt, model=None):
+            tries.append(model)
+            if len(tries) < 3:
+                raise Refused("Gemini HTTP 503")
+            return SAID
+        out = self.heard(flaky)
+        self.assertEqual(tries, ["gemini-4-hydrogen", "gemini-3.1-pro-preview", "gemini-3.1-pro-preview"])
+        self.assertEqual([s["model"] for s in out["steps"] if s["step"].startswith("pro")], tries)
 
     def test_a_try_with_no_answer_in_30_s_fails_and_is_asked_again(self):
         # T697 (Yadong, 11-06, "照这个改"): each try waits PRO_TRY (30 s); a stalled one is a failed try
