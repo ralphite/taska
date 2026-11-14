@@ -51,8 +51,10 @@ def context(p: Project, inp: Input) -> str:
 
 
 PARALLEL = int(os.environ.get("TASKA_ORGANIZE_PARALLEL", 4))  # inputs organized at the same time
-# B684 (Yadong, #9933): each input is asked of both models at once, and the first good answer is the plan
-MODELS = [m.strip() for m in os.environ.get("TASKA_ORGANIZER_MODELS", "gemini-3.1-pro-preview,gemini-3.8-flash").split(",") if m.strip()]
+# B684 (Yadong, #9933): each input is asked of both models at once, and the first good answer is the plan.
+# T783 (Yadong, r1335): gemini-4-hydrogen in place of 3.1 Pro (D135: on 20 real inputs judged 4.80 against 4.05,
+# none needing a fix, median 3.2 s against 6.5 s, no failure in 40 calls); 3.8 Flash stays as the second.
+MODELS = [m.strip() for m in os.environ.get("TASKA_ORGANIZER_MODELS", "gemini-4-hydrogen,gemini-3.8-flash").split(",") if m.strip()]
 
 
 def echo(p: Project, inp: Input, c: Any) -> bool:
