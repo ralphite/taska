@@ -17,6 +17,14 @@ desk or your phone.
 </div>
 
 <p align="center">
+  <a href="docs/media/taska-intro.mp4">
+    <img src="docs/media/taska-intro.gif" width="800" alt="The Taska intro: say it and it becomes an item, answer an agent and accept its work, reply to an agent, approve a change to the rules, handle rows, see every agent session">
+  </a>
+  <br>
+  <sub><a href="docs/media/taska-intro.mp4">Watch the intro (1 min 24 s)</a>: the real page on a phone and a desktop, side by side.</sub>
+</p>
+
+<p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/list-dark.png">
     <img src="docs/screenshots/list.png" width="240" alt="The list: what needs you on top, with the action right on the row; then your agent's queue">
@@ -103,14 +111,19 @@ flowchart LR
   when the first one fails, and words the two hear differently are pointed out before you send. A recording stays
   in your browser until it is sent, so a restart or a lost connection never loses it. Cancel a new input's
   recording with Esc and it is kept in Inputs as cancelled, sent to no one, to listen to and send later.
-- **Answers in one tap.** Agents can ask multiple-choice questions, and you answer with a tap.
+- **Answers in one tap.** Agents can ask multiple-choice questions, and you answer with a tap. Several questions in
+  a row are one card, a page each.
 - **The whole story of an item.** Its description, subitems, screenshots and documents, and the conversation
   with your agents: yours on the right, theirs on the left. Long reports fold to their first line.
-- **Documents.** Agents write plans and designs into documents. You comment on a paragraph, on selected text, or
-  on an area you circle.
-- **See who's working.** A pill in the header says whether an agent is connected, was here a while ago, or is
-  missing while work waits.
-- **Many projects.** One server holds them all. A drawer switches between them and shows which ones need you.
+- **Documents.** Agents write plans and designs into documents, in Markdown or as a whole web page that can go full
+  screen. You comment on a paragraph, on selected text, or on an area you circle.
+- **See every agent.** A pill in the header says whether an agent is working, waiting on you, or missing while work
+  waits. Open it for **Agents**: every agent session in the project by its app (Claude Code, Codex, Antigravity),
+  each with its state (working, idle, waiting for you, gone), the item it is on, a manager's workers under it, and
+  the way back to it (Open in Claude Code, or Codex's resume command). A session blocked on you shows a bar at the
+  bottom of every page.
+- **Many projects.** One server holds them all, each with its own icon. A drawer switches between them and shows
+  which ones need you.
 - **Light and dark**, on a phone or a desktop.
 
 **For your agents**
@@ -121,8 +134,15 @@ flowchart LR
   work arrives, so an agent can wait in the background.
 - **A loop that keeps going.** Agents take one item after another without stopping, and wait in the background
   when there is nothing to do.
-- **Works with any agent.** One command installs a skill for Claude Code, Codex and Antigravity. Any agent that
-  can run `curl` can use the API.
+- **Agents working together.** Several sessions of different agents can work on one project. `/next` gives each
+  session its own item and holds it; a session that tries an item another one holds is told who holds it. A
+  session's `/next` says who else is here and what each is on, sessions write to each other with `@session` on an
+  item, and `B03 take` hands an item over at your word (the one that had it is told to stop). See
+  [Agents working together](docs/collaboration.md).
+- **Works with any agent.** One command installs a skill for Claude Code, Codex and Antigravity. Claude Code waits
+  on `/next` in the background, Codex gets a short message from Taska for each update, and Antigravity runs a
+  project from one main session that Taska's waker wakes when there is work. Any agent that can run `curl` can use
+  the API.
 - **Rules.** One document of standing instructions for the project, such as how to write commit messages,
   which every agent reads. Every save is a version you can compare and restore; agents propose changes and you
   approve them.
@@ -163,7 +183,9 @@ Your data stays in `~/.taska`. Options go in front of `sh`, e.g. `... | TASKA_VE
 | `TASKA_LOCAL_ONLY=1` | Listen on this machine only (127.0.0.1): not reachable from the local network |
 | `TASKA_LINGER=1` | Also run `loginctl enable-linger`, so the service runs without a login session and starts at boot |
 
-For voice notes to be written out and what you write to be organized, Taska needs a Gemini key: run the install
+For voice notes to be written out and what you write to be organized, Taska needs a Gemini key. The simplest way
+is to paste it in **Settings › Organizer** once Taska runs: Google checks it, and Taska keeps it on the server,
+readable by you only. Or run the install
 command with it set, `curl -fsSL .../install.sh | GEMINI_API_KEY=... sh`, and the installer keeps it in
 `~/.config/taska/env` (readable by you only), where the service reads it. A key exported in your shell alone does
 not reach a service started by systemd. Other settings for the server, such as `TASKA_PUBLIC`, go in the same file,
@@ -201,16 +223,18 @@ Then:
 
 1. **Open Taska.** Go to http://127.0.0.1:7340, open the `default` project, and write your first thought in the
    box at the bottom.
-2. **Organize automatically (optional).** Set `GEMINI_API_KEY` before starting Taska. What you write is then
-   organized into items, and voice notes are transcribed.
-3. **Connect a coding agent.** Open **Settings → Agents** and copy the connection command to run in your
-   project's folder:
+2. **Organize automatically (optional).** Paste a Gemini API key in **Settings › Organizer** (or set
+   `GEMINI_API_KEY` before starting Taska). What you write is then organized into items, and voice notes are
+   transcribed.
+3. **Connect a coding agent.** Click the agent pill at the top right to open **Agents**, then **Connect new
+   agent**: it copies what to paste to your agent, which connects its folder once and starts on the work. The
+   connection itself is one command, run in your project's folder:
 
    ```sh
    curl -s http://127.0.0.1:7340/p/<project>/connect | sh
    ```
 
-   The command saves the project's address in `.taska` and installs the Taska skill for Claude Code, Codex and
+   It saves the project's address in `.taska` and installs the Taska skill for Claude Code, Codex and
    Antigravity. From then on, tell your agent to work on Taska and it knows what to do.
 
 ## The agent interface
@@ -258,7 +282,7 @@ Taska is designed for the phone first. Open it in your phone's browser and add i
 - **From anywhere:** put Taska behind a proxy that forwards to it, such as Tailscale Serve (tailnet only), and
   start it with `--public <its address>`.
   - Requests through the proxy need the key, which Taska creates in `~/.taska/key`.
-  - **Use on your phone** in the menu gives you a link that carries the key. Open it once on the phone and the key
+  - **Use on your phone**, in Settings, gives you a link that carries the key. Open it once on the phone and the key
     is remembered.
 
 > [!IMPORTANT]
@@ -274,9 +298,10 @@ Taska is designed for the phone first. Open it in your phone's browser and add i
 | `--root ~/.taska` | Where projects are stored, one folder each |
 | `--public <url>` | The public address behind a proxy, used for phone links and remote agents |
 | `--organizer off` | Leave organizing to your agents, even with a Gemini key |
-| `GEMINI_API_KEY` | Turns on the organizer and voice transcription |
-| `TASKA_MODEL` | The organizer's Gemini model (default `gemini-flash-latest`) |
-| `TASKA_VOICE_MODEL`, `TASKA_ASR_MODEL` | The two transcription models (default `gemini-3.8-flash`, a fixed version, and `gemini-3.5-transcribe`) |
+| `GEMINI_API_KEY` | Turns on the organizer and voice transcription; a key saved in Settings › Organizer is used first |
+| `TASKA_ORGANIZER_MODELS` | The organizer asks these Gemini models at once and takes the first good answer (default `gemini-3.1-pro-preview,gemini-3.8-flash`) |
+| `TASKA_MODEL` | The Gemini model for Taska's other requests (default `gemini-flash-latest`) |
+| `TASKA_VOICE_MODEL`, `TASKA_ASR_MODEL` | The two transcription models (default `gemini-3.5-flash` and `gemini-3.5-transcribe`) |
 | `TASKA_PRO_MODEL` | The strong model that also hears a phone's voice-processed notes (default `gemini-3.1-pro-preview`; needs macOS `afconvert` to tell such notes) |
 | `TASKA_VOTERS`, `TASKA_VOTE_WAIT`, `TASKA_VOTE_MODELS` | Where the two transcripts disagree on what was said, how many reviewers are asked (default 5; 3 after a recent rate limit; the first 3 answers count), how long they are waited for (default 25 s), and their models in turn (default the strong model) |
 
@@ -292,7 +317,7 @@ folder to match your machine). It reads the public address from `$TASKA_PUBLIC` 
     current state, so other tools can read it without Taska;
   - `taska-files/` holds images, files and voice notes, each voice note with its transcript (`<file>.tr.json`).
 - **What leaves your machine.** Only what you send to Gemini for organizing and transcription. That happens only
-  when you set `GEMINI_API_KEY`.
+  when you give Taska a Gemini key.
 
 ## Development
 

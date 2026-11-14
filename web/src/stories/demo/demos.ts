@@ -72,7 +72,7 @@ export const sayIt: Demo = {
 const needsYou = button(/^Needs you/, { label: 'Needs you' })
 const answerT07 = button('Answer', { within: row(7), label: 'Answer' })
 const choice = button(/^两个都提供/, { label: 'A choice' })
-const finished = { css: 'section', name: /^Claude Code · worker finished this/, label: 'The finished work' }
+const finished = { css: 'section', name: /worker finished this/, label: 'The finished work' }
 const accept = button('Accept', { within: finished, label: 'Accept' })
 
 /** Answer an agent's question, accept an agent's finished work (D124: the second Demo). */
