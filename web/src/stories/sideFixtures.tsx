@@ -17,7 +17,7 @@ import { act, acts } from './acts'
 import { withNewProject } from './newProjectFixtures'
 import { withIcon } from './projectIcons'
 
-const sideActs = acts('Sidebar', ['newInput', 'newVoice', 'newProject', 'hide', 'settings', 'help', 'keys', 'undo', 'order', 'dropProject', 'projectMenu', 'search'] as const, { keys: 'Keyboard shortcuts', search: 'Search on the desktop' })
+const sideActs = acts('Sidebar', ['newInput', 'newVoice', 'newProject', 'hide', 'settings', 'help', 'keys', 'undo', 'order', 'dropProject', 'projectMenu', 'projectMenuFrom', 'search'] as const, { keys: 'Keyboard shortcuts', search: 'Search on the desktop' })
 const goAct = act('Sidebar: go')
 export const sideOn: SidebarEvents = { ...sideActs, go: (href, e) => (e.preventDefault(), goAct(href)), dragProject: () => false }
 /** when the projects were listed */

@@ -54,6 +54,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
     order: (names, moved) => void app.projects.order(names, `${list?.find((p) => p.slug === moved)?.title || moved} moved`),
     dragProject: (to) => app.itemDrag.overProject(to),
     // the desktop's menu where it was asked for (a right click, ⋯); the phone's (a long press) as its sheets are (F767)
+    projectMenuFrom: (to, from) => (layout === 'desk' ? app.sheets.openFrom(from, { kind: 'project-menu', slug: to }, { focus: false }) : app.sheets.open({ kind: 'project-menu', slug: to }, { focus: false })),
     projectMenu: (to, x, y) => (layout === 'desk' ? app.sheets.open({ kind: 'project-menu', slug: to }, { pop: true, focus: false, at: { x, y } }) : app.sheets.open({ kind: 'project-menu', slug: to }, { focus: false })),
     dropProject: () => app.itemDrag.drop(),
     go: (href, e) => {

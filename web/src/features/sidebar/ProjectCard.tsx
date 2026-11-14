@@ -149,7 +149,7 @@ export function useProjectCard(off = false, menuFor: string | null = null) {
     const r = el.getBoundingClientRect()
     setHovered({ slug, left: r.right + 4, top: r.top })
   }
-  return { hovered: off ? null : hovered, rowProps, card: { onPointerEnter: stay, onPointerLeave: leave }, hide, point }
+  return { hovered: off ? null : hovered, menuFor, rowProps, card: { onPointerEnter: stay, onPointerLeave: leave }, hide, point }
 }
 
 /** The card where the pointer is: over the page (not clipped by the sidebar), kept inside the window. */
@@ -160,6 +160,7 @@ export function FloatingProjectCard({
   icon,
   card,
   href,
+  under = false,
   on,
 }: {
   at: Hovered
@@ -168,6 +169,8 @@ export function FloatingProjectCard({
   icon?: string
   card: ProjectCardFacts
   href: string
+  /** its project's menu is open: the card stays, under the menu */
+  under?: boolean
   on: { onPointerEnter(): void; onPointerLeave(): void; open(e: MouseEvent<HTMLAnchorElement>): void; menu?(from: HTMLElement): void }
 }) {
   const box = useRef<HTMLDivElement>(null)
@@ -176,7 +179,7 @@ export function FloatingProjectCard({
     if (el) el.style.top = `${Math.round(Math.max(8, Math.min(at.top - 6, innerHeight - el.offsetHeight - 8)))}px`
   })
   return createPortal(
-    <div ref={box} role="dialog" aria-label={title} onPointerEnter={on.onPointerEnter} onPointerLeave={on.onPointerLeave} className="fixed z-[70]" style={{ left: at.left, top: at.top - 6 }}>
+    <div ref={box} role="dialog" aria-label={title} onPointerEnter={on.onPointerEnter} onPointerLeave={on.onPointerLeave} className={`fixed ${under ? 'z-30' : 'z-[70]'}`} style={{ left: at.left, top: at.top - 6 }}>
       <ProjectCard title={title} tone={tone} icon={icon} card={card} href={href} onOpen={on.open} onMenu={on.menu} />
     </div>,
     document.body,
