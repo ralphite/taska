@@ -1,6 +1,7 @@
 // A document's editor: its text, the first line its title, with Speak (words go where the caret is), Discard and Save
 // (Create for a new one). Leaving it without saving keeps the text as a draft. Props only.
 
+import type { ReactNode } from 'react'
 import { Icon } from '../../ui/Icon'
 import { PRIMARY } from '../../ui/tones'
 
@@ -11,12 +12,24 @@ export interface DocEditEvents {
   mic(): void
 }
 
-export function DocEdit({ isNew, text, hint, mic, fieldRef, on }: { isNew: boolean; text: string; hint: string; mic: { on: boolean; text: string }; /** where you write, for Speak (its words go at the caret) */ fieldRef?: (el: HTMLTextAreaElement | null) => void; on: DocEditEvents }) {
+export function DocEdit({ isNew, text, hint, mic, tools, fieldRef, on }: {
+  isNew: boolean
+  text: string
+  /** a word beside the buttons (Esc keeps draft; what is wrong in the text, I779) */
+  hint: ReactNode
+  mic: { on: boolean; text: string }
+  /** buttons of this kind of document, before Speak (the rules: Insert shared rules, I779) */
+  tools?: ReactNode
+  /** where you write, for Speak (its words go at the caret) */
+  fieldRef?: (el: HTMLTextAreaElement | null) => void
+  on: DocEditEvents
+}) {
   return (
     <div className="flex min-h-full flex-col">
       {/* on the phone the hint has a line of its own under the buttons, not a narrow column beside them */}
       <div className="sticky -top-2 z-10 -mx-4 -mt-2 mb-2 flex flex-wrap items-center gap-2 bg-white px-4 py-2 text-xs text-zinc-500 dark:bg-zinc-900">
         <span className="min-w-0 flex-1 max-lg:order-last max-lg:basis-full">{hint}</span>
+        {tools}
         <button
           onClick={on.mic}
           {...(mic.on ? { 'data-on': '' } : {})}
