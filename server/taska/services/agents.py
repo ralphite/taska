@@ -47,6 +47,17 @@ class AgentRecord:
     parents: Dict[str, str] = field(default_factory=dict)  # per session name: the session that started it (parent=, F768)
 
 
+def _record(v: object) -> AgentRecord:
+    """A saved agent: its sessions too since B784 (before, its last call alone, a number)."""
+    if not isinstance(v, dict):
+        return AgentRecord(t=float(v))  # type: ignore[arg-type]
+    text = lambda d: {str(k): str(x) for k, x in d.items()} if isinstance(d, dict) else {}
+    ses = v.get("sessions")
+    return AgentRecord(t=float(v.get("t") or 0), session=str(v.get("session") or ""),
+                       sessions={str(k): float(x) for k, x in ses.items()} if isinstance(ses, dict) else {},
+                       sids=text(v.get("sids")), parents=text(v.get("parents")))
+
+
 class AgentActivity:
     def __init__(self, db: ProjectDb, state: ProjectState, changed: Callable[[], None], gone: Callable[[], bool]):
         self._db = db
@@ -56,7 +67,7 @@ class AgentActivity:
         self._saved_at = 0.0
         saved = db.get("agents")
         if isinstance(saved, dict):
-            self.agents: Dict[str, AgentRecord] = {str(k): AgentRecord(t=float(v)) for k, v in saved.items()}
+            self.agents: Dict[str, AgentRecord] = {str(k): _record(v) for k, v in saved.items()}
         else:  # first run: when did each agent last write here?
             self.agents = {}
             for e in state.events:
@@ -105,6 +116,7 @@ class AgentActivity:
         (a manager's worker, F768)."""
         a = self.agents.setdefault(agent_name(name), AgentRecord())
         now = time.time()
+        known = (dict(a.sids), set(a.sessions))  # a new session or id is saved at once (B784)
         if session:
             a.session = " ".join(session.split())[:160]
             a.sessions[a.session] = now
@@ -135,9 +147,15 @@ class AgentActivity:
         if (a.waiting > 0, True) != before:
             self.version += 1
             self._changed()
-        if (waiting or now - self._saved_at > 60) and not self._gone():
+        if (waiting or now - self._saved_at > 60 or known != (a.sids, set(a.sessions))) and not self._gone():
             self._saved_at = now
-            self._db.put("agents", {k: v.t for k, v in self.agents.items()})
+            self._save()
+
+    def _save(self) -> None:
+        """Each agent's last call and its sessions with the ids their apps know them by (B784: after a restart the
+        page still reads each session's own state, instead of guessing from the last call)."""
+        self._db.put("agents", {k: {"t": v.t, "session": v.session, "sessions": v.sessions, "sids": v.sids,
+                                    "parents": v.parents} for k, v in self.agents.items()})
 
     def read_item(self, n: int, name: object, state: ProjectState) -> None:
         """An agent read an item (its card, or /next gave it): the page says "Read by" under your last words."""

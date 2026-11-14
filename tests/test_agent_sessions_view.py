@@ -45,6 +45,19 @@ class SessionsInPresence(ProjectCase):
         self.assertNotIn("parent", s["Manager"])
         self.assertNotIn("on", s["Manager"])
 
+    def test_sessions_and_their_ids_survive_a_restart(self) -> None:
+        """B784: after Taska restarts, the page still knows each session by its app's id, so it shows the state the
+        app gives (working) instead of guessing "no agent" from the last call."""
+        from taska.services.project import Project  # noqa: E402
+        self.call(f"/next?by=claude-code&session=Manager&sid={CC}")
+        self.call(f"/next?by=claude-code&session=worker-1&parent=Manager&sid={W1}")
+        self.p.close()
+        self.p = Project(self.tmp.name, "demo")
+        s = self.sessions("claude-code")
+        self.assertEqual(s["Manager"]["sid"], CC)
+        self.assertEqual(s["worker-1"]["sid"], W1)
+        self.assertEqual(s["worker-1"]["parent"], "Manager")
+
     def test_what_the_app_says_of_each_session(self) -> None:
         self.call(f"/next?by=claude-code&session=Manager&sid={CC}")
         self.call(f"/next?by=claude-code&session=worker-1&sid={W1}")
