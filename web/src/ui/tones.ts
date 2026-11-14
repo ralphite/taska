@@ -55,11 +55,11 @@ export const MUTED = 'text-zinc-500 dark:text-zinc-400'
 /** your words in an item's talk: a blue bubble on the right */
 export const YOU_BUBBLE =
   'max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_[data-ref]]:text-white [&_[data-ref]]:underline [&_[data-ref]]:decoration-white/60 [&_[data-ref]]:underline-offset-2 [&_a]:text-white [&_a]:decoration-white/60 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_button[data-more]]:text-white [&_code]:bg-white/15 [&_code]:text-white [&_mark]:text-zinc-900 [&_pre]:bg-white/15 [&_pre]:text-white'
-/** A main button. */
-export const PRIMARY_BASE = `inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-transparent px-4 text-[15px] font-semibold ${DISABLED}`
+/** A main button; a button's label never wraps (B785). */
+export const PRIMARY_BASE = `inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-transparent px-4 text-[15px] font-semibold ${DISABLED}`
 export const PRIMARY = PRIMARY_BASE + ' bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200'
 export const SECOND =
-  'inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-4 text-[15px] font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700'
+  'inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-zinc-200 bg-white px-4 text-[15px] font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700'
 export const FIELD =
   'w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-base outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950'
 export const NEEDS_PILL =
