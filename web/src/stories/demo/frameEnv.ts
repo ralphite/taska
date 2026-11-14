@@ -78,9 +78,11 @@ export function fixClock(w: Win, at: number) {
 /** The frame's microphone: it plays `clip` (a data: address, so nothing is fetched) for as long as the page records; a
  * Demo that says nothing has none. */
 export function fixMic(w: Win, clip?: string) {
-  const md = w.navigator.mediaDevices
-  if (!md) return
-  md.getUserMedia = async () => {
+  if (!w.navigator.mediaDevices) return
+  // on what every MediaDevices has: in Safari's engine one set on the frame's own was not what the page called, and
+  // the real microphone was asked (B786)
+  Object.defineProperty(w.MediaDevices.prototype, 'getUserMedia', { configurable: true, writable: true, value: getUserMedia })
+  async function getUserMedia() {
     if (!clip) throw new DOMException('This Demo has no microphone', 'NotFoundError')
     const ac = new w.AudioContext()
     if (ac.state === 'suspended') await ac.resume().catch(() => {})

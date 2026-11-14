@@ -51,7 +51,8 @@ The destination must not already exist. The source data is only read and symboli
 | `python3 tests/check_data.py /tmp/taska-data-copy` | Existing data loads and replays consistently |
 | `node tools/smoke.mjs http://127.0.0.1:7341 taska --shots /tmp/task-shots` | Desktop and phone smoke check with screenshots |
 
-Each spec file runs once per layout (phone, desktop), each run on a Taska server of its own with an empty data folder;
+Each spec file runs once per layout (phone, desktop; a file with a `// layouts:` line also on `phone-webkit`, Safari's
+engine on the phone, as `talk.spec.ts` does for B786), each run on a Taska server of its own with an empty data folder;
 six runs go at once, the longest first, and inside a run the checks go one after another (some count every project
 their Taska has). The whole sweep takes under two minutes on the development Mac (nine minutes one file at a time). `tools/ship.sh` runs the
 journeys guarding what changed since the last ship (every one when a file every page uses changed; each spec file names
@@ -77,7 +78,7 @@ then fix what the type check and the tests say.
 Regenerate both after changing a rule or a word the page copies, or a case. Regenerate `samples.gen.ts` after changing what the server sends, what a command handler reads, or what the tool
 records (a new call: add it to `Answers` and to `record()`).
 
-Install browser binaries once with `cd web && npx playwright install chromium`. Browser checks must respect the
+Install browser binaries once with `cd web && npx playwright install chromium webkit`. Browser checks must respect the
 machine's browser budget. Run potentially destructive journeys on copied data; inspect the actual live app after
 deployment to verify the service and existing records still work.
 

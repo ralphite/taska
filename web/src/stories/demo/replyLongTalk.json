@@ -1,0 +1,14 @@
+{
+ "note": "What lies outside Taska in the Demo \"Reply by voice on a long talk\" (B786 r1337, as system-design T27 was on Yadong's iPhone): the words the microphone's recording (replyLongTalk.webm, a synthetic voice) says, as transcription gives them; the organizer's answer for what is said on an item an agent works on (it is left for the agent); and the tutor's reply with its next question, as it would write them. web/scripts/record-demo.mjs hands them to the real server it records against.",
+ "story": "demo-reply-by-voice-on-a-long-talk--phone-and-desktop",
+ "words": "按默认来。细节也要懂，但时间优先给能迁移的判断和模式；重点你从我的回答里找，边练边定。",
+ "plan": "pass\n",
+ "replies": [
+  {
+   "by": "claude-code",
+   "session": "tutor",
+   "ms": 2500,
+   "do": "ack {input}\nT1 say 收到：范围按默认；这道题本身要吃透，但时间优先给能迁移的判断和模式；重点由我从你的回答里找，边覆盖边定。进度文件已建好，报告等知识点地图定了再挂到这里。\nT1 ask 冷启动（不计分，只看起点）：像面试开场一样，把你的整个设计讲一遍，10–15 句话就够。题目：卖 10 万张对号入座的票，开售第一分钟涌进来 100 万人，hold 5 分钟，不能超卖。先说你会问面试官的需求和规模，再讲主要组件和一张票从选座到出票的主路径。"
+  }
+ ]
+}

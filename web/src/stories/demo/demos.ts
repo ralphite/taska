@@ -19,6 +19,9 @@ import rowsDesk from './recordings/handleRows.desk.json'
 import replyClip from './replyOnItem.webm?inline'
 import replyPhone from './recordings/replyOnItem.phone.json'
 import replyDesk from './recordings/replyOnItem.desk.json'
+import longTalkClip from './replyLongTalk.webm?inline'
+import longTalkPhone from './recordings/replyLongTalk.phone.json'
+import longTalkDesk from './recordings/replyLongTalk.desk.json'
 
 export interface Demo {
   id: string
@@ -220,4 +223,40 @@ export const replyOnItem: Demo = {
   recordings: { phone: replyPhone, desk: replyDesk },
 }
 
-export const DEMOS: Record<string, Demo> = { sayIt, answerAndAccept, rulesChange, handleRows, replyOnItem }
+// Answer the tutor's question on T1 of System design by voice, at the end of its long talk (B786 r1337: system-design
+// T27 on Yadong's iPhone, the talk jumping as the words came); its reply asks the next one (replyLongTalk.json).
+const teaching = title(1, 'T1')
+const yourWords = words(/边练边定/, 'Your words')
+const nextQuestion = words(/冷启动（不计分/, 'The next question')
+
+/** Reply by voice at the end of a long talk whose last message asks you; the words come, the agent asks the next
+ * question; the talk stays at its end all along (B786). */
+export const replyLongTalk: Demo = {
+  id: 'replyLongTalk',
+  start: '/p/system-design/',
+  now: story.now,
+  clip: longTalkClip,
+  tours: {
+    phone: {
+      steps: [
+        { say: 'Open the item the tutor is teaching on: a long talk, its last message a question for you.', target: teaching, wait: 15000 },
+        { say: 'Tap the mic to answer by voice.', target: button('Record a voice note'), pace: 2500 },
+        { say: 'Say it (here a recording plays), then tap ↑.', target: button('Stop and send'), pace: 7000 },
+        { say: 'Taska writes out your words. The talk stays at its end.', until: shows(yourWords), wait: 300 },
+        { say: 'The tutor replies with the next question, at the end where you are.', until: shows(nextQuestion), wait: 300 },
+      ],
+    },
+    desk: {
+      steps: [
+        { say: 'Open the item the tutor is teaching on: a long talk, its last message a question for you.', target: teaching, wait: 15000 },
+        { say: 'Click the mic to answer by voice.', target: button('Record a voice note'), pace: 2500 },
+        { say: 'Say it (here a recording plays), then click ↑.', target: button('Stop and send'), pace: 7000 },
+        { say: 'Taska writes out your words. The talk stays at its end.', until: shows(yourWords), wait: 300 },
+        { say: 'The tutor replies with the next question, at the end where you are.', until: shows(nextQuestion), wait: 300 },
+      ],
+    },
+  },
+  recordings: { phone: longTalkPhone, desk: longTalkDesk },
+}
+
+export const DEMOS: Record<string, Demo> = { sayIt, answerAndAccept, rulesChange, handleRows, replyOnItem, replyLongTalk }
