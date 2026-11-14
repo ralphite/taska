@@ -13,7 +13,7 @@ import type { Doc, FileRef, Item } from '../../model/types'
 import { Kbd, SectionHead } from '../../ui/bits'
 import { Grip } from '../../ui/Grip'
 import { Icon, StateIcon } from '../../ui/Icon'
-import { holdHeight, keepsEnd, overflows, scrollerOf, toEnd } from '../../ui/scroller'
+import { atEnd, holdHeight, keepsEnd, overflows, scrollerOf, toEnd, yourScroll } from '../../ui/scroller'
 import type { IconName } from '../../ui/icon-paths'
 import { Rich } from '../../ui/Markdown'
 import { clean, inlineHtml } from '../../ui/markdown/inline'
@@ -131,7 +131,15 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     // at its end it never gets shorter: its last message shorter would scroll it up (B770 r1292)
     const body = el.firstElementChild instanceof HTMLElement ? el.firstElementChild : null
     let tall = body?.offsetHeight ?? 0
+    // it leaves its end only as you scroll it: what moves it up by itself is put back (B786: Safari, as a message
+    // takes the place of the one being sent)
+    const you = yourScroll(sc)
     const seen = () => {
+      if (end && !atEnd(sc) && sc.scrollTop < was && !you.now()) {
+        sc.scrollTop = sc.scrollHeight
+        was = sc.scrollTop
+        return
+      }
       end = keepsEnd(sc, was, end)
       was = sc.scrollTop
       if (!end && body?.style.minHeight) tall = holdHeight(body, tall, end)
@@ -153,18 +161,22 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     const timers = go ? [120, 400, 1000].map((ms) => setTimeout(toLast, ms)) : []
     return () => {
       ro.disconnect()
+      you.stop()
       sc.removeEventListener('scroll', seen)
       timers.forEach(clearTimeout)
     }
   }, [readOnly, scrolledUp])
   const asks = needsYou(it)
-  const asked = useRef({ n: it.n, on: asks })
+  const said = it.thread.length
+  const asked = useRef({ n: it.n, on: asks, said })
   useLayoutEffect(() => {
-    // the card that asks you comes back (an Undo, a change put back): the talk shows it, at its end
+    // the card that asks you comes back (an Undo, a change put back): the talk shows it, at its end. A new question
+    // (a new message) does not move it: it keeps to its end as it grows only when it showed its end (B786)
     const el = talk.current
-    if (asks && asked.current.n === it.n && !asked.current.on && el) toEnd(el)
-    asked.current = { n: it.n, on: asks }
-  }, [asks, it.n])
+    const was = asked.current
+    if (asks && was.n === it.n && !was.on && said <= was.said && el) toEnd(el)
+    asked.current = { n: it.n, on: asks, said }
+  }, [asks, it.n, said])
 
   const head = f.editing ? (
     <Editor key={it.n} it={it} kept={f.editDraft ?? null} on={on} />

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { holdHeight, keepsEnd, scrollerOf, toEnd } from './scroller'
+import { holdHeight, keepsEnd, scrollerOf, toEnd, YOUR_SCROLL, yourScroll } from './scroller'
 
 // T589 #10486: the talk opens at its latest message and goes to its end after you send in one way on both layouts:
 // on the desktop the talk scrolls itself, on the phone the page round it does.
@@ -70,5 +70,59 @@ describe('at its end the talk never gets shorter under you (B770 r1292)', () => 
     expect(holdHeight(b.el, 1000, false)).toBe(975)
     b.set(900)
     expect(holdHeight(b.el, 975, false)).toBe(900)
+  })
+})
+
+// B786 (r1337): Safari moved the talk up by itself as a message took the place of the one being sent, and the talk
+// took that for you scrolling away from its end. Only you leave it: a finger moving, the wheel, its scrollbar, a key,
+// the button to its end; and what each set going, for as long as it goes on.
+describe('you scroll the talk, the browser does not (B786 r1337)', () => {
+  const at = (sc: HTMLElement, type: string, init: EventInit = {}, target: EventTarget = sc) => target.dispatchEvent(Object.assign(new Event(type, { bubbles: true, ...init })))
+  test('a tap, Send, a message changing: not you', () => {
+    const sc = document.createElement('div')
+    const msg = document.createElement('p')
+    sc.append(msg)
+    document.body.append(sc)
+    const you = yourScroll(sc)
+    at(sc, 'touchstart', {}, msg)
+    at(sc, 'touchend', {}, msg)
+    at(sc, 'pointerdown', {}, msg)
+    at(sc, 'scroll')
+    expect(you.now()).toBe(false)
+    you.stop()
+  })
+  test('a finger moving, the wheel, its scrollbar, a key that scrolls, the button to its end: you, and their scrolls go on as yours', () => {
+    const sc = document.createElement('div')
+    document.body.append(sc)
+    const ways: [string, () => void][] = [
+      ['a finger', () => (at(sc, 'touchstart'), at(sc, 'touchmove'), at(sc, 'touchend'))],
+      ['the wheel', () => at(sc, 'wheel')],
+      ['its scrollbar', () => at(sc, 'pointerdown')],
+      ['a key', () => document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'PageUp', bubbles: true }))],
+      ['the button to its end', () => at(sc, YOUR_SCROLL)],
+    ]
+    const was = performance.now
+    for (const [way, go] of ways) {
+      const you = yourScroll(sc)
+      performance.now = () => 0
+      go()
+      performance.now = () => 700
+      at(sc, 'scroll') // its momentum, a smooth scroll: still going at 900
+      performance.now = () => 900
+      expect(you.now(), way).toBe(true)
+      performance.now = () => 5000
+      expect(you.now(), `${way}, long after`).toBe(false)
+      you.stop()
+    }
+    performance.now = was
+  })
+  test('a key typed into a box is not a scroll', () => {
+    const sc = document.createElement('div')
+    const box = document.createElement('textarea')
+    document.body.append(sc, box)
+    const you = yourScroll(sc)
+    box.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }))
+    expect(you.now()).toBe(false)
+    you.stop()
   })
 })

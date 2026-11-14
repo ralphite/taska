@@ -7,7 +7,7 @@
 import { useLayoutEffect, useState } from 'react'
 import { Icon } from './Icon'
 import { PLACE_BUTTON } from './PlaceVoice'
-import { scrollerOf, toEndWay } from './scroller'
+import { scrollerOf, toEndWay, YOUR_SCROLL } from './scroller'
 
 const LOOK = PLACE_BUTTON.replace('size-7', 'size-9').replace('rounded-lg', 'rounded-full').replace('shadow-sm', 'shadow-md')
 
@@ -29,6 +29,7 @@ export function ToEnd({ of }: { of: HTMLElement | null }) {
   }, [of])
   const go = () => {
     const sc = of && scrollerOf(of)
+    sc?.dispatchEvent(new Event(YOUR_SCROLL)) // you scroll it (B786): the talk leaves its end when it goes up
     sc?.scrollTo({ top: way === 'up' ? 0 : sc.scrollHeight, behavior: 'smooth' })
   }
   const shown = way !== 'none'
