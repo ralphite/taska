@@ -33,7 +33,10 @@ from typing import Callable, List, Tuple
 
 CLAUDE = ["claude", "-p", "--model", "sonnet", "--allowedTools", "Bash(curl:*)", "--max-turns", "12", "--output-format", "text"]
 STOP = ("stop", "\u505c")  # an agent may answer in Chinese ("stop")
-CODEX = ["codex", "exec", "-s", "workspace-write", "-c", "sandbox_workspace_write.network_access=true", "--skip-git-repo-check"]
+# the Codex that comes with the ChatGPT app is kept up to date with it; a `codex` installed apart may be too old for
+# the model it is set to
+APP_CODEX = "/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex"
+CODEX = [APP_CODEX if os.path.exists(APP_CODEX) else "codex", "exec", "-s", "workspace-write", "-c", "sandbox_workspace_write.network_access=true", "--skip-git-repo-check"]
 
 
 def http(method: str, url: str, body: object = None) -> str:
