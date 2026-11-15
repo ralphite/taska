@@ -73,6 +73,8 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
     from .http.app import AppContext
     from .http.server import Server
     from .http.static import PageFiles
+    from .http.agent_routes import see_sessions
+    from .infra.agent_sessions import running
     from .services.voice import transcriber_for
 
     logs.setup(log_db, log_level)
@@ -117,11 +119,22 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
     def pushes() -> None:  # every 15 s, what newly needs you goes to the phones that asked
         while not stop.wait(15):
             try:
-                push.check(ws.needs) if push.subs else push.forget()
+                push.check(lambda: ws.needs(push=True)) if push.subs else push.forget()
             except Exception as ex:  # a push must never stop Taska
                 print(f"taska: push: {ex}", file=sys.stderr)
 
     threading.Thread(target=pushes, daemon=True).start()
+
+    def sessions() -> None:  # every 10 s (I810): the workers found by their titles, and how every session is now
+        while not stop.wait(10):
+            try:
+                ws.find_workers(running())
+                for p in list(ws.projects.values()):
+                    see_sessions(p)
+            except Exception as ex:  # looking at sessions must never stop Taska
+                print(f"taska: sessions: {ex}", file=sys.stderr)
+
+    threading.Thread(target=sessions, daemon=True).start()
 
     def laters() -> None:  # once a minute (and at the start): an item Later until today is back to Now (D115 #21)
         while True:

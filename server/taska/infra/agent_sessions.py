@@ -20,7 +20,7 @@ import os
 import re
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, Dict, Iterator, Optional
+from typing import Callable, Dict, Iterator, List, Optional
 
 SID = re.compile(r"[A-Za-z0-9-]{8,64}")  # a session id as an agent may report it (also safe in a file pattern)
 
@@ -68,21 +68,31 @@ def _claude_files() -> Iterator[dict]:
             yield d
 
 
+def _claude_session(d: dict) -> Session:
+    waits = d.get("waitingFor")
+    waits = waits if isinstance(waits, str) else ""
+    status = str(d.get("status") or "")
+    if not _alive(d["pid"]):
+        status = "exited"
+    elif waits:
+        status = "waiting"
+    since = d.get("statusUpdatedAt")
+    return Session("claude-code", str(d.get("sessionId") or ""), str(d.get("name") or ""), str(d.get("cwd") or ""),
+                   status, waits, int(since) if isinstance(since, (int, float)) else 0)
+
+
 def claude_code(sid: str) -> Optional[Session]:
     for d in _claude_files():
-        if d.get("sessionId") != sid:
-            continue
-        waits = d.get("waitingFor")
-        waits = waits if isinstance(waits, str) else ""
-        status = str(d.get("status") or "")
-        if not _alive(d["pid"]):
-            status = "exited"
-        elif waits:
-            status = "waiting"
-        since = d.get("statusUpdatedAt")
-        return Session("claude-code", sid, str(d.get("name") or ""), str(d.get("cwd") or ""), status, waits,
-                       int(since) if isinstance(since, (int, float)) else 0)
+        if d.get("sessionId") == sid:
+            return _claude_session(d)
     return None
+
+
+def running() -> List[Session]:
+    """Every Claude Code session running on this machine, whoever started it (I810: a manager's worker that never
+    calls Taska is among them, by the title its manager gave it)."""
+    out = [_claude_session(d) for d in _claude_files()]
+    return [s for s in out if s.status != "exited" and SID.fullmatch(s.id)]
 
 
 # -- Codex --------------------------------------------------------------------------

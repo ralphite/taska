@@ -90,6 +90,8 @@ class AgentActivity:
         self.guide_marks: Dict[str, str] = {str(k): str(v) for k, v in (guide.get("marks") or {}).items()}
         self.blocked: Dict[str, List[Dict[str, object]]] = {}  # per agent: its sessions waiting on the user (T711)
         self.found: Dict[str, Session] = {}  # per session id: what its app says of it now (F768)
+        # I810: a manager's workers that never call Taska, found by their titles: per session id, its title and item
+        self.workers: Dict[str, Tuple[str, int]] = {}
         lead = db.get("antigravity-lead")  # F755: the one Antigravity session that runs this project, and since when
         self.lead: Optional[Tuple[str, str]] = (str(lead["sid"]), str(lead["t"])) if isinstance(lead, dict) and lead.get("sid") else None
 
@@ -366,9 +368,21 @@ class AgentActivity:
 
     # -- sessions waiting on the user ----------------------------------------------
 
-    def sids(self) -> List[str]:
-        """The session ids agents gave here."""
-        return sorted({sid for a in self.agents.values() for sid in a.sids.values()})
+    def sids(self, own: bool = False) -> List[str]:
+        """The session ids agents gave here, and the workers found for them (I810; `own`: only those agents gave)."""
+        mine = {sid for a in self.agents.values() for sid in a.sids.values()}
+        return sorted(mine if own else mine | set(self.workers))
+
+    def folders(self) -> Set[str]:
+        """The folders this project's own agent sessions work in, as their apps say (I810: a worker works there too)."""
+        return {s.cwd for sid, s in self.found.items() if s.cwd and sid not in self.workers}
+
+    def adopt(self, workers: Dict[str, Tuple[str, int]]) -> None:
+        """The workers found now (I810): session id -> (its title, the item it works on). A change wakes the pages."""
+        if workers != self.workers:
+            self.workers = dict(workers)
+            self.version += 1
+            self._changed()
 
     def see_sessions(self, found: Dict[str, Session]) -> None:
         """The sessions by id (T711 #10568), as their apps say they are now (F768: working, idle, waiting on the user,
@@ -381,6 +395,11 @@ class AgentActivity:
                 if s and s.status == "waiting":
                     mine.setdefault(k, []).append({"session": ses or s.name or sid[:8], "waitingFor": s.waiting_for,
                                                    "since": s.since})
+        for sid, (title, n) in self.workers.items():  # I810: a worker waiting on the user, with the item it is on
+            s = found.get(sid)
+            if s and s.status == "waiting":
+                mine.setdefault(s.agent, []).append({"session": title, "waitingFor": s.waiting_for, "since": s.since,
+                                                     "on": n})
         if mine != self.blocked or found != self.found:
             self.blocked, self.found = mine, dict(found)
             self.version += 1
@@ -483,4 +502,23 @@ class AgentActivity:
             if self.blocked.get(k):
                 row["blocked"] = self.blocked[k]
             out.append(row)
+        # I810: the workers found by their titles, under their app, each with the item it works on
+        for sid, (title, n) in self.workers.items():
+            s = self.found.get(sid)
+            if not s:
+                continue
+            app = next((r for r in out if r["name"] == s.agent), None)
+            if app is None:
+                app = {"name": s.agent, "t": 0, "waiting": False}
+                out.append(app)
+            row = app
+            ses: Dict[str, object] = {"name": title, "t": s.since or 0, "sid": sid, "status": s.status, "since": s.since,
+                                      "cwd": s.cwd, "on": {"n": n, "since": s.since or 0}, "worker": True}
+            if s.waiting_for:
+                ses["waitingFor"] = s.waiting_for
+            rows = row.setdefault("sessions", [])
+            assert isinstance(rows, list)
+            rows.append(ses)
+            if s.status == "waiting":
+                row["blocked"] = self.blocked.get(s.agent, [])
         return out

@@ -10,6 +10,7 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import re
 import time
 import secrets
 import shutil
@@ -19,7 +20,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from ..domain import finding, rules, versions
 from ..domain.text import project_title, slug_of
 from ..domain.state import ProjectState
-from ..domain.vocab import CLOSED, PROJECT_NAME, SLUG_CHARS, Refused
+from ..domain.vocab import CLOSED, LETTER, PROJECT_NAME, SLUG_CHARS, Refused
+from ..infra.agent_sessions import Session
 from ..infra.project_db import ProjectDb
 from .meaning import Meaning
 from .moves import Moves
@@ -44,6 +46,10 @@ def tally(st: ProjectState) -> Dict[str, int]:
                and not (d.n in st.items and st.items[d.n].deleted))
     return {"open": len(listed) - closed, "needs": len(needs) + len(versions.waiting(st.rules)), "closed": closed,
             "inputs": sum(1 for r in st.inputs.values() if not r.deleted), "docs": docs}
+
+
+# I810: a worker's title starting with the code of the item it works on ("T28: the tutor skill", "T28 · …")
+WORKER_TITLE = re.compile(r"\s*([A-Z])0*(\d+)(?=$|[\s:\uff1a\u00b7,\uff0c.\-\u2014])")
 
 
 class Workspace:
@@ -229,12 +235,50 @@ class Workspace:
         """In every project, what was Later until `today` or before is back to Now (D115 #21). -> how many."""
         return sum(p.bring_back_laters(today) for p in list(self.projects.values()))
 
-    def needs(self) -> List[Dict[str, Any]]:
-        """What needs you in every project, newest first."""
+    def find_workers(self, running: List[Session]) -> None:
+        """I810: which running sessions are a manager's workers on which items, by their titles: a title starting with
+        an item's code ("T28: the tutor skill"), in a folder this project's own sessions work in. A code that fits
+        items in several projects goes to the one whose item is in progress, and to none when that does not settle it."""
+        found: Dict[str, Dict[str, Tuple[str, int]]] = {name: {} for name in self.projects}
+        for s in running:
+            m = WORKER_TITLE.match(s.name)
+            if not m:
+                continue
+            fits: List[Tuple[str, int, bool]] = []
+            for name, p in self.projects.items():
+                with p.lock:
+                    if s.id in p.agents.sids(own=True) or s.cwd not in p.agents.folders():
+                        continue
+                    it = p.state.items.get(int(m.group(2)))
+                    if it and not it.deleted and not it.merged_into and LETTER.get(it.type) == m.group(1) and it.status not in CLOSED:
+                        fits.append((name, it.n, it.status == "doing"))
+            doing = [f for f in fits if f[2]]
+            pick = fits if len(fits) == 1 else doing if len(doing) == 1 else []
+            for name, n, _ in pick:
+                found[name][s.id] = (s.name, n)
+        for name, p in list(self.projects.items()):
+            with p.lock:
+                p.agents.adopt(found.get(name, {}))
+
+    def needs(self, push: bool = False) -> List[Dict[str, Any]]:
+        """What needs you in every project, newest first. A session working on an item and waiting on you counts
+        once it has waited a minute (I810), and for a push once it has waited three."""
         out: List[Dict[str, Any]] = []
+        now_ms = time.time() * 1000
         for name, p in sorted(self.projects.items()):
             with p.lock:
                 st = p.state
+                for k, rows in p.agents.blocked.items():
+                    for b in rows:
+                        n, since = b.get("on"), b.get("since") or 0
+                        if not isinstance(n, int) or n not in st.items or not isinstance(since, (int, float)):
+                            continue
+                        if since and now_ms - since < (180_000 if push else 60_000):
+                            continue
+                        why = f": {b['waitingFor']}" if b.get("waitingFor") else ""
+                        out.append({"project": name, "ptitle": p.title, "n": n, "code": st.code(n),
+                                    "title": f"{b.get('session')} waits on you{why}", "kind": "blocked", "pri": "P1",
+                                    "t": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime((since or now_ms) / 1000))})
                 for i in st.live_items():
                     if i.status in CLOSED or i.merged_into or i.archived:
                         continue
