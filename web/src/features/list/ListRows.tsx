@@ -408,7 +408,7 @@ export function ArchiveAllLine({ n, onArchive }: { n: number; onArchive(): void 
       <button onClick={onArchive} className="group/arch -my-1 ml-auto flex h-11 items-center pr-2">
         <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-emerald-50 px-3 text-[13px] font-semibold text-emerald-800 ring-1 ring-emerald-600/20 ring-inset group-hover/arch:bg-emerald-100 dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/25 dark:group-hover/arch:bg-emerald-400/20">
           <Icon n="archive" c="size-4" />
-          Archive {n}
+          Archive all {n}
         </span>
       </button>
     </div>

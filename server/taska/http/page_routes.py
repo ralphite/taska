@@ -160,6 +160,16 @@ def post(ctx: "AppContext", req: Request, p: Project, sub: str) -> Response:
     return text(404, NOT_FOUND)
 
 
+def _what(c: Any) -> Dict[str, Any]:
+    """A change as the log keeps it: what it does and to what, never the words in it."""
+    if not isinstance(c, dict):
+        return {"op": "?"}
+    out: Dict[str, Any] = {k: c[k] for k in ("op", "ref", "id", "d", "n", "mode", "kind", "to", "v") if k in c and not isinstance(c[k], (dict, list))}
+    if isinstance(c.get("f"), dict):
+        out["fields"] = {k: v for k, v in c["f"].items() if isinstance(v, (bool, int)) or k in ("status", "pri", "when", "type", "parent")}
+    return out
+
+
 def _commands(ctx: "AppContext", req: Request, p: Project) -> Response:
     """Changes from the page, by you: run once per id (one sent again after a lost answer gets the first answer)."""
     body = req.json_body(MAX_FILE)
@@ -174,6 +184,10 @@ def _commands(ctx: "AppContext", req: Request, p: Project) -> Response:
             lines, _ = p.run([(0, c) for c in commands if isinstance(c, dict)], "you")
             code = 400 if any(x.startswith("err") for x in lines) or len(lines) != len(commands) else 200
             done = ({"ok": code == 200, "results": lines}, code)
+            if code == 400:  # what was refused, and why (B792 r1340: three refused changes could not be told apart)
+                ctx.log.warning(f"page commands refused: {'; '.join(x for x in lines if x.startswith('err'))[:300]}", extra={"f": {
+                    "source": "server", "kind": "refused", "project": p.slug, "via": req.via(),
+                    "commands": [_what(c) for c in commands[:20]], "results": [x[:200] for x in lines[:20]]}})
             kept.put(cid, done)
         answer, code = done
     out: Dict[str, Any] = dict(answer)
