@@ -3,6 +3,7 @@
 ## Start here
 
 - `README.md`: product and quick start.
+- `docs/principles.md`: the product principles every design and trade-off is weighed against first.
 - `docs/architecture.md`: server layers, frontend boundaries and data flow.
 - `docs/development.md`: development, checks, packaging and services.
 - `server/taska/` is the Python server; `web/` is the React frontend; `tests/` holds server tests;
