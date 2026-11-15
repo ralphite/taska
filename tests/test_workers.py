@@ -3,6 +3,7 @@ project's own sessions work in; waiting on the user, its item needs you after a 
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import tempfile
@@ -11,7 +12,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
-from taska.infra.agent_sessions import Session  # noqa: E402
+from taska.infra.agent_sessions import Session, running  # noqa: E402
 from taska.services.workspace import Workspace  # noqa: E402
 
 MANAGER = "11111111-1111-1111-1111-111111111111"
@@ -76,6 +77,54 @@ class Workers(unittest.TestCase):
         self.assertEqual([x for x in self.ws.needs(push=True) if x["kind"] == "blocked"], [])
         self.look(ses(WORKER, "T1 tutor", "waiting", "permission", now - 200_000))
         self.assertEqual(len([x for x in self.ws.needs(push=True) if x["kind"] == "blocked"]), 1)
+
+
+class CodexWorkers(unittest.TestCase):
+    """I810 r1369: a Codex thread its manager started is found by its first instruction (it has no title), and
+    waiting on an approval it needs you, as a Claude Code worker does."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.home = os.path.join(self.tmp.name, "codex")
+        day = os.path.join(self.home, "sessions", "2026", "11", "15")
+        os.makedirs(day)
+        sid = "01a1dd93-921a-7330-8502-eed8f8aef51c"
+        lines = [
+            {"type": "session_meta", "payload": {"cwd": "/work"}},
+            {"type": "event_msg", "payload": {"type": "task_started"}, "timestamp": "2026-11-15T09:00:00Z"},
+            {"type": "event_msg", "payload": {"type": "user_message", "message": "T1: write the tutor skill\nDetails..."}},
+            {"type": "response_item", "payload": {"type": "message", "role": "assistant"}},
+            {"type": "event_msg", "payload": {"type": "exec_approval_request"}, "timestamp": "2026-11-15T09:01:00Z"},
+        ]
+        with open(os.path.join(day, f"rollout-2026-11-15T09-00-00-{sid}.jsonl"), "w") as f:
+            f.write("\n".join(json.dumps(x) for x in lines) + "\n")
+        self.sid = sid
+        self.old = os.environ.get("TASKA_CODEX_HOME"), os.environ.get("TASKA_CLAUDE_SESSIONS")
+        os.environ["TASKA_CODEX_HOME"] = self.home
+        os.environ["TASKA_CLAUDE_SESSIONS"] = os.path.join(self.tmp.name, "none")
+        self.ws = Workspace(os.path.join(self.tmp.name, "data"), "", gemini=False)
+        self.p = self.ws.add("sysd")
+        self.p.run([(0, {"op": "new", "title": "Write the tutor skill", "type": "task"})], "you")
+        self.p.agents.saw("claude-code", 0, "manager", MANAGER)
+        self.p.agents.see_sessions({MANAGER: ses(MANAGER, "manager")})
+
+    def tearDown(self) -> None:
+        for k, v in zip(("TASKA_CODEX_HOME", "TASKA_CLAUDE_SESSIONS"), self.old):
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+        self.ws.close()
+        self.tmp.cleanup()
+
+    def test_found_by_its_first_instruction_and_needs_you_while_it_waits(self) -> None:
+        found = [s for s in running() if s.agent == "codex"]
+        self.assertEqual([(s.name, s.status, s.cwd) for s in found], [("T1: write the tutor skill", "waiting", "/work")])
+        self.ws.find_workers(found)
+        self.assertEqual(self.p.agents.workers, {self.sid: ("T1: write the tutor skill", 1)})
+        self.p.agents.see_sessions({MANAGER: ses(MANAGER, "manager"), self.sid: found[0]})
+        blocked = [x for x in self.ws.needs() if x["kind"] == "blocked"]
+        self.assertEqual([(x["code"], x["title"]) for x in blocked], [("T1", "T1: write the tutor skill waits on you: exec approval request")])
 
 
 class Listening(unittest.TestCase):

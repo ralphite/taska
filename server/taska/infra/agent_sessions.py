@@ -9,7 +9,7 @@ while it waits, `waitingFor` (a permission, a plan to approve, a question). A fi
 
 Codex: each thread logs to ~/.codex/sessions/YYYY/MM/DD/rollout-*-<id>.jsonl (the folder ~/.codex: TASKA_CODEX_HOME);
 its last turn event says busy (task_started), idle (task_complete) or waiting (an approval or input request), and
-~/.codex/session_index.jsonl has its title.
+~/.codex/session_index.jsonl has its title (one a manager started has none: its first instruction stands for it).
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ import glob
 import json
 import os
 import re
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable, Dict, Iterator, List, Optional
@@ -88,10 +89,22 @@ def claude_code(sid: str) -> Optional[Session]:
     return None
 
 
-def running() -> List[Session]:
-    """Every Claude Code session running on this machine, whoever started it (I810: a manager's worker that never
-    calls Taska is among them, by the title its manager gave it)."""
+def running(window: float = 86400) -> List[Session]:
+    """The agent sessions on this machine, whoever started them (I810: a manager's worker that never calls Taska is
+    among them, by the title its manager gave it): every Claude Code session running, and every Codex thread that
+    wrote in the last day (`window` seconds; Codex keeps no list of the ones running)."""
     out = [_claude_session(d) for d in _claude_files()]
+    cut = time.time() - window
+    for path in glob.glob(os.path.join(_codex_home(), "sessions", "*", "*", "*", "rollout-*.jsonl")):
+        try:
+            if os.path.getmtime(path) < cut:
+                continue
+        except OSError:
+            continue
+        m = re.search(r"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jsonl$", path)
+        s = codex(m.group(1)) if m else None
+        if s:
+            out.append(s)
     return [s for s in out if s.status != "exited" and SID.fullmatch(s.id)]
 
 
@@ -165,7 +178,16 @@ def codex(sid: str) -> Optional[Session]:
     try:
         with open(files[0], encoding="utf-8") as f:
             meta = json.loads(f.readline())
-        cwd = str((meta.get("payload") or {}).get("cwd") or "")
+            cwd = str((meta.get("payload") or {}).get("cwd") or "")
+            if not name:  # I810: a thread its manager started has no title: its first instruction says what it is
+                for line in f:
+                    if '"user_message"' not in line:
+                        continue
+                    e = json.loads(line)
+                    p = e.get("payload") if isinstance(e, dict) else None
+                    if isinstance(p, dict) and p.get("type") == "user_message":
+                        name = str(p.get("message") or "").strip().split("\n")[0][:120]
+                        break
     except (OSError, ValueError, AttributeError):
         pass
     return Session("codex", sid, name, cwd, status, waits, since)
