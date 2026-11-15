@@ -380,6 +380,8 @@ export interface GeminiKey {
 }
 
 export interface ProjectFacts {
+  /** changes Taska skipped when it opened the project, unreadable or damaged (T806 #3); absent when none */
+  damaged?: number
   slug: string
   title: string
   /** its picture (F743), one of its files; '' for none (a copy kept from before may not have it) */

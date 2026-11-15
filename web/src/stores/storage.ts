@@ -9,10 +9,30 @@ export interface KeyValueStore {
   keys(): string[]
   /** another tab of this browser changed a key (`fn` gets its name); returns how to stop */
   onChange?(fn: (key: string) => void): () => void
+  /** a write this browser refused (its storage full, or cleared by the system): `fn` gets the key and why (T806 #3:
+   * the page's log, so a draft not kept is not lost unnoticed); returns how to stop */
+  onRefused?(fn: Refused): () => void
+}
+
+export type Refused = (where: string, why: string) => void
+
+/** Listeners for refused writes, and how to tell them (a store's own, not the module's). */
+export function refusals(): { on(fn: Refused): () => void; tell(where: string, e: unknown): void } {
+  const fns = new Set<Refused>()
+  return {
+    on: (fn) => {
+      fns.add(fn)
+      return () => void fns.delete(fn)
+    },
+    tell: (where, e) => {
+      for (const fn of fns) fn(where, `${(e as Error)?.name || 'Error'}: ${(e as Error)?.message || String(e)}`.slice(0, 200))
+    },
+  }
 }
 
 /** `session`: this tab's own store (sessionStorage), gone when the tab closes. */
 export function browserStore(kind: 'local' | 'session' = 'local'): KeyValueStore {
+  const refused = refusals()
   const ls = (): Storage | null => {
     try {
       if (kind === 'session') return typeof sessionStorage === 'undefined' ? null : sessionStorage
@@ -22,6 +42,7 @@ export function browserStore(kind: 'local' | 'session' = 'local'): KeyValueStore
     }
   }
   return {
+    onRefused: refused.on,
     get: (key) => {
       try {
         return ls()?.getItem(key) ?? null
@@ -33,8 +54,8 @@ export function browserStore(kind: 'local' | 'session' = 'local'): KeyValueStore
       try {
         if (value == null) ls()?.removeItem(key)
         else ls()?.setItem(key, value)
-      } catch {
-        /* no storage here */
+      } catch (e) {
+        refused.tell(key, e) // no storage here works as before; one that refuses is told
       }
     },
     getJson<T>(key: string): T | null {
@@ -48,8 +69,8 @@ export function browserStore(kind: 'local' | 'session' = 'local'): KeyValueStore
       try {
         if (value == null) ls()?.removeItem(key)
         else ls()?.setItem(key, JSON.stringify(value))
-      } catch {
-        /* no storage here */
+      } catch (e) {
+        refused.tell(key, e)
       }
     },
     keys: () => {

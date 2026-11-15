@@ -23,6 +23,7 @@ from ..domain.rules import Held
 from ..domain.state import ProjectState
 from ..domain.vocab import Refused
 from ..infra.files import FileStore
+from ..infra.logs import log
 from .agents import AgentActivity
 from .codex_notifications import CodexNotifications
 from .waker import Waker
@@ -61,6 +62,7 @@ class Project:
         self.slug = slug  # its address and folder name: never changes
         self.shared = shared
         self.lock = threading.RLock()
+        self.damaged = 0  # changes skipped when it opened (_warn)
         self.store = ProjectStore(self.folder, self.lock, self._warn)
         self.files = FileStore(self.folder)
         self.news = News(self.lock, rev=self.store.count)
@@ -72,7 +74,12 @@ class Project:
         self.waker = Waker(self)  # B762: wakes the Antigravity session that runs it
 
     def _warn(self, seq: int, what: str) -> None:
+        """A change in the log that could not be read or applied when the project opened: skipped. Logged, and counted
+        for the page, which says so (T806 #3: it was only printed, and an item gone from the page went unnoticed)."""
+        self.damaged += 1
         print(f"taska: {self.slug}: change {seq} {what}", file=sys.stderr)
+        log.error(f"change {seq} skipped: {what}"[:300], extra={"f": {"source": "server", "kind": "replay",
+                                                                      "project": self.slug, "seq": seq}})
 
     # -- reading -------------------------------------------------------------------
 

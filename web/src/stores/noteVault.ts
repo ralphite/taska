@@ -3,6 +3,7 @@
 // always kept them in. A browser with no storage here (a private window) still records; nothing is kept.
 
 import type { Doubt } from '../model/types'
+import { refusals, type Refused } from './storage'
 
 export interface KeptNote {
   id: string
@@ -34,10 +35,13 @@ export interface NoteVault {
   put(n: KeptNote): Promise<void>
   del(id: string): Promise<void>
   all(): Promise<KeptNote[]>
+  /** a note this browser refused to keep (T806 #3); returns how to stop */
+  onRefused?(fn: Refused): () => void
 }
 
 export function browserVault(): NoteVault {
   let db: Promise<IDBDatabase> | null = null
+  const refused = refusals()
   const open = () =>
     (db ||= new Promise((ok, no) => {
       const r = indexedDB.open('taska-voice', 1)
@@ -54,11 +58,13 @@ export function browserVault(): NoteVault {
         t.oncomplete = () => ok(q.result)
         t.onerror = t.onabort = () => no(t.error)
       })
-    } catch {
+    } catch (e) {
+      if (mode === 'readwrite') refused.tell('voice notes', e) // a note not kept here: told to the page's log
       return null
     }
   }
   return {
+    onRefused: refused.on,
     put: async (n) => void (await run('readwrite', (s) => s.put(n))),
     del: async (id) => void (await run('readwrite', (s) => s.delete(id))),
     all: async () => ((await run('readonly', (s) => s.getAll())) || []) as KeptNote[],

@@ -41,7 +41,7 @@ class QuietHours(unittest.TestCase):
             self.assertEqual([(x["from"], x["to"]) for x in push.subs], [(21 * 60 + 15, 6 * 60 + 45), (22 * 60, 8 * 60)])
             self.assertEqual(Push(root).subs[0]["from"], 21 * 60 + 15)  # saved
             sent = []
-            push._send = lambda sub: sent.append(sub["endpoint"]) or True  # type: ignore[method-assign]
+            push._send = lambda sub: sent.append(sub["endpoint"]) or "ok"  # type: ignore[method-assign]
             push.check(lambda: [])  # the first look: nothing new yet
             at = list(time.localtime())
             at[3], at[4] = 21, 30

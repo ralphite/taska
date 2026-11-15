@@ -50,7 +50,7 @@ def _view(ctx: "AppContext", req: Request, p: Project, since: Optional[Cursor]) 
         out["project"] = views.project_view(p.state, p.agents, slug=p.slug, title=p.title, organizer_on=p.organizing.on,
                                             organizer_busy=sorted(p.organizing.busy), organizer_model=" + ".join(organizer.MODELS),
                                             presence=pres["agents"], work=pres["work"], db_path=p.store.path,
-                                            organizer_key=gemini.key_source())
+                                            organizer_key=gemini.key_source(), damaged=p.damaged)
     key = ws.key.value
     if _PHONE.search(req.header("User-Agent")):
         ws.saw_phone()

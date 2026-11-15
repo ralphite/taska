@@ -47,6 +47,7 @@ const UNSEEN = {
   'view.voices[].err': 'only a note whose words failed',
   'view.voices[].fixed': 'only words you changed',
   'view.removed*': 'only an answer since a cursor, after something went',
+  'view.project.damaged': 'only a project whose log had changes it could not read when it opened (T806)',
   'view.project.agents[].blocked*': 'only an agent session that waits on you (T711)',
   'view.project.agents[].sessions[].status': "only a session its app tells of (Claude Code's or Codex's own files)",
   'view.project.agents[].sessions[].since': "only a session its app tells of (Claude Code's or Codex's own files)",

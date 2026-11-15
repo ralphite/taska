@@ -153,7 +153,7 @@ export function createApp(env: AppEnv): App {
   const docs = makeDocs(c, inputs, () => voice.dictation)
   const voice = makeVoice(c, inputs, docs)
   const items = makeItems(c, inputs, () => listHold.started())
-  const page = makePage(c)
+  const page = makePage(c, env.vault)
   const access = new Access({ api, sheets, toasts, refresh: () => void c.project().refresh() })
   const project = makeProject(c, inputs, { presence: env.presence, cache: env.cache, pageScript: env.pageScript, keyNeeded: () => access.ask(), busy: page.busy })
 
@@ -235,7 +235,7 @@ export function createApp(env: AppEnv): App {
     access,
     refreshProjects: project.refreshProjects,
     stop: () => {
-      for (const x of [project.projects, project.projectSession, project.pictureSizes, sheets, docsOpen, docEditor, items.merges, page.arrival, project.notices, page.pageErrors, page.pageActions, page.leaveGuard]) x.stop()
+      for (const x of [project.projects, project.projectSession, project.damaged, project.pictureSizes, sheets, docsOpen, docEditor, items.merges, page.arrival, project.notices, page.pageErrors, page.pageActions, page.leaveGuard]) x.stop()
       unlisten()
     },
     actions,

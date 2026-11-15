@@ -5,6 +5,7 @@
 import { goingUp } from '../../model/fileStates'
 import { inFlight } from '../../model/outgoingStates'
 import { stillComing } from '../../model/voiceStates'
+import type { NoteVault } from '../../stores/noteVault'
 import type { Core } from '../core'
 import { Arrival } from './arrival'
 import { Diagrams } from './diagrams'
@@ -14,9 +15,10 @@ import { Media } from './media'
 import { PageActions } from './pageActions'
 import { PageErrors } from './pageErrors'
 
-export function makePage(c: Core) {
+export function makePage(c: Core, vault?: NoteVault) {
   const { s } = c
-  const pageErrors = new PageErrors({ api: c.api, slug: c.slug })
+  // what the page did not catch, and what this browser refused to keep (T806 #3)
+  const pageErrors = new PageErrors({ api: c.api, slug: c.slug, stores: [c.kv, vault] })
   const pageActions = new PageActions({ api: c.api, slug: c.slug, route: s.route, outbox: s.outbox })
   const media = new Media({ api: c.api, store: s.media, route: s.route, sheets: c.sheets, toasts: c.toasts, desk: c.desk, kept: (sl, f) => c.model(sl)?.voices.get(f) ?? null })
   // something being said into the page now: a voice note, a dictation, or search listening (T728 #6: one rule)

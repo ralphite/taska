@@ -9,6 +9,7 @@ import type { Presence } from '../../sync/projectSync'
 import type { Core } from '../core'
 import type { InputsArea } from '../inputs/area'
 import { Activity } from './activity'
+import { watchDamaged } from './damaged'
 import { Notices } from './notices'
 import { PictureSizes } from './pictureSizes'
 import { Projects } from './projects'
@@ -62,5 +63,6 @@ export function makeProject(c: Core, i: Pick<InputsArea, 'box' | 'inputActions' 
     keyNeeded: l.keyNeeded,
     projects: refreshProjects,
   })
-  return { pictureSizes, activity, restores, projects, refreshProjects, settings, notices, updates, projectSession }
+  const damaged = { stop: watchDamaged({ data: s.data, toasts }) }
+  return { pictureSizes, activity, restores, projects, refreshProjects, settings, notices, updates, projectSession, damaged }
 }

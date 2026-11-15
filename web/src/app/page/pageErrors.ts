@@ -1,8 +1,10 @@
 // Errors the page did not catch go to Taska's log (T582 #4), so what breaks on the phone can be read there: each
-// message once per page load, at most 20. It also asks the browser to keep this site's stored data (drafts, voice
+// message once per page load, at most 20; so do writes this browser's storage refused (T806 #3: a draft or a voice
+// note not kept here). It also asks the browser to keep this site's stored data (drafts, voice
 // notes not sent yet) when space runs short.
 
 import type { TaskaApi } from '../../api/taska'
+import type { Refused } from '../../stores/storage'
 
 const MAX = 20
 
@@ -10,7 +12,7 @@ export class PageErrors {
   private readonly told = new Set<string>()
   readonly stop: () => void
 
-  constructor(d: { api: Pick<TaskaApi, 'pageLog'>; slug(): string }) {
+  constructor(d: { api: Pick<TaskaApi, 'pageLog'>; slug(): string; stores?: ({ onRefused?(fn: Refused): () => void } | undefined)[] }) {
     const tell = (msg: string, stack: string) => {
       const slug = d.slug()
       if (!slug || !msg || this.told.has(msg) || this.told.size >= MAX) return
@@ -28,10 +30,19 @@ export class PageErrors {
     }
     window.addEventListener('error', onError)
     window.addEventListener('unhandledrejection', onReject)
+    const onRefused: Refused = (where, why) => {
+      const slug = d.slug()
+      const msg = `storage refused ${where.replace(/[^\w .:-]/g, '').slice(0, 40)}: ${why}`
+      if (!slug || this.told.has(msg) || this.told.size >= MAX) return
+      this.told.add(msg)
+      void d.api.pageLog(slug, [{ kind: 'storage', level: 'warn', msg, where: location.pathname, ua: navigator.userAgent }]).catch(() => {})
+    }
+    const unrefused = (d.stores ?? []).map((st) => st?.onRefused?.(onRefused))
     void navigator.storage?.persist?.().catch(() => {})
     this.stop = () => {
       window.removeEventListener('error', onError)
       window.removeEventListener('unhandledrejection', onReject)
+      for (const u of unrefused) u?.()
     }
   }
 }
