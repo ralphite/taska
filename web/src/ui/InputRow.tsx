@@ -12,7 +12,7 @@ import { Fragment, useRef, type ReactNode, type Ref } from 'react'
 import { useSwiped } from './rowSwipe'
 import type { Became, InputLine, ItemRef } from '../model/became'
 import { INPUT_ACT_WORD, INPUT_STATES, actsIn, becameText, type InputAct, type InputTone } from '../model/inputStates'
-import { countedInput, voiceMark } from '../model/inputs'
+import { voiceMark } from '../model/inputs'
 import { OUT_ACT_WORD, type OutAct, type OutShow, type OutTone } from '../model/outgoingStates'
 import { Icon, Spinner, StateIcon } from './Icon'
 import { PLACE_BUTTON, PlaceVoice } from './PlaceVoice'
@@ -216,8 +216,6 @@ export function InputRow({ x, text, files, place = 'row', lit = false, rec = nul
     <article ref={rowRef} className={`${ROW} ${lit ? LIT : ''}`}>
       <header className={`mb-1.5 flex items-center justify-between gap-2 ${x.draft || rec ? 'h-6' : 'h-5'}`}>
         <div className="flex min-w-0 items-center gap-1.5 font-mono text-[11px] whitespace-nowrap text-zinc-400 dark:text-zinc-500">
-          {/* counted in the Inputs number: not taken in yet (B329) */}
-          {countedInput(r) ? <span aria-label="Not handled yet" title="Not handled yet" className="size-1.5 shrink-0 rounded-full bg-blue-500" /> : null}
           <span className="font-medium text-zinc-600 dark:text-zinc-400">{x.code}</span>
           <span>
             {x.day} {x.time}

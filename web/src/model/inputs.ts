@@ -9,6 +9,3 @@ export const newestFirst = (list: readonly Input[]) => [...list].sort((a, b) => 
 
 /** The words of a voice note's input can be selected to correct them: their element says whose they are. */
 export const voiceMark = (r: { id: string; files?: readonly { mime?: string }[] } | null | undefined): { 'data-voice'?: string } => (r?.files?.some((f) => (f.mime || '').startsWith('audio/')) ? { 'data-voice': r.id } : {})
-
-/** Whether an input counts in the Inputs tab's number: not taken in yet, nor cancelled (B329: these carry a dot). */
-export const countedInput = (r: Pick<Input, 'acked' | 'kind'>) => !r.acked && r.kind !== 'cancelled'

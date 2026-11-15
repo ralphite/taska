@@ -10,7 +10,6 @@ import { seenNow } from '../../model/docs'
 import type { Doc } from '../../model/types'
 import type { DocViewState } from '../../stores/docView'
 import { WebPage } from './WebPage'
-import { Skeleton } from '../../ui/bits'
 import { Lasso } from './Lasso'
 import { WebThread } from './Thread'
 import { codeOf, liveN } from '../../model/project'
@@ -28,6 +27,7 @@ import type { DocEnv } from './Thread'
 import { docDraft } from '../../model/draftTarget'
 import { RecMeter } from '../../app/RecMeter'
 import { PLACE_LEVELS } from '../../ui/PlaceVoice'
+import { MUTED } from '../../ui/tones'
 
 const SIDE_NAME = { docs: 'Documents', log: 'Activity', deleted: 'Deleted' } as const
 
@@ -148,8 +148,7 @@ function WebPageContainer({ slug, cap, d, v, seen, env, on, waiting }: { slug: s
   const held = w.held
   const text = usePageText(slug, d)
   const html = useMemo(() => (text == null ? null : withFilesPass(text, slug, cap)), [text, slug, cap])
-  // a big web page still coming: lines where its words will be, as every list shows it loading (T642 #9062)
-  if (html == null) return <Skeleton shape="text" n={8} cls="mt-6" />
+  if (html == null) return <div className={`mt-6 text-sm ${MUTED}`}>Loading…</div>
   return (
     <WebPage
       title={d.title}

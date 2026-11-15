@@ -2,7 +2,7 @@
 // notes, comments on its documents in time, files and voice notes; what you sent and Taska has not yet, saying where
 // it is. The card that waits on you goes where its message is. Props only.
 
-import { Fragment, useEffect, useState, type ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { oneLine } from '../../model/items'
 import { voiceMark } from '../../model/inputs'
 import { hasChoices } from '../../model/markdown'
@@ -72,19 +72,6 @@ export interface TalkFacts {
   became(id: string): Became | null
   /** the items an input made, besides the item it was said in (B714 #10594) */
   made(id: string): readonly ItemRef[]
-  /** the input you just sent (for a few seconds): its words light up a moment as they come (B155) */
-  sent?: string | null
-}
-
-/** Lit for a moment while `key` is what you just sent: seen arriving (B155, B802); once is enough. */
-function useFlash(key: string | null): boolean {
-  const [over, setOver] = useState<string | null>(null)
-  useEffect(() => {
-    if (!key) return
-    const t = setTimeout(() => setOver(key), 1400)
-    return () => clearTimeout(t)
-  }, [key])
-  return !!key && over !== key
 }
 
 function KindTag({ x }: { x: Message }) {
@@ -166,7 +153,6 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
 /** Your words: in blue on the right, with what became of the input they came from. */
 function YourMessage({ x, env, on, facts, ver, read }: { x: Message; env: TalkEnv; on: TalkLineEvents; facts: TalkFacts; ver?: Version; read: { by: string[]; t: number } | null }) {
   const src = x.src ? facts.inputs.get(x.src) : undefined
-  const lit = useFlash(x.src && facts.sent === x.src && !ver?.old ? x.src : null)
   const y = ver ? { ...x, text: ver.text } : x
   const strip = (files: FileRef[] | undefined) => (files?.length ? <FileRows files={files} url={env.url} play={env.play} tidy={env.tidy} on={on} cls="items-end max-w-full [&>div]:max-w-full" /> : null)
   if (y.text && y.text.trim().split('\n').every((l) => /^\s*✓/.test(l)) && !src?.files?.length) return null // an answer's ticks show on its card
@@ -182,7 +168,7 @@ function YourMessage({ x, env, on, facts, ver, read }: { x: Message; env: TalkEn
   const voices = ver?.old ? [] : (src?.files || []).filter(isAudio)
   const mark = shown?.k === 'transcribing' ? becameText(shown, 'talk') : null
   return (
-    <div className={`group group/msg flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${lit ? 'bg-blue-50 dark:bg-blue-400/10' : ''} ${ver?.old ? 'opacity-60' : ''}`}>
+    <div className={`group group/msg flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl ${ver?.old ? 'opacity-60' : ''}`}>
       {voices.length ? (
         <VoiceBubble
           cls={YOU_BUBBLE}

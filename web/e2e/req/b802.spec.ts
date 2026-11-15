@@ -1,28 +1,11 @@
-// Guards for the B802 changes (requirements lost in the 10-24 rewrite, found by T795): what you sent lights up (B155), a picked choice and the box's words go as one answer
+// Guards for the B802 changes (requirements lost in the 10-24 rewrite, found by T795): a picked choice and the box's words go as one answer
 // (B145), the phone keeps the answered card in view, a web page's comment leaves its part when the words change (F432).
 // guards: src/features/item/ src/features/composer/ src/app/inputs/ src/app/items/ src/features/docs/
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
-import { box, boxMain, pane, pageCount, talk } from '../ui'
+import { box, boxMain, pane, pageCount } from '../ui'
 
 const SHOTS = process.env.QA_SHOTS || '/private/tmp/claude-501/-Users-yadong--claude-spares-spare-eIHkOr/c91cd215-e414-46bd-8e2a-2b6592fb6b97/scratchpad/shots/'
-
-test('B155: what you just sent lights up (bg-blue-50) for a moment and then fades', async ({ page, request }, info) => {
-  const p = await project(request, LOOP)
-  await open(page, p, 'T4')
-  await box(page).fill('Start with the install page')
-  await boxMain(page).click()
-  const bubble = talk(page).locator('.group\\/msg').filter({ hasText: 'Start with the install page' }).last()
-  await expect(bubble).toHaveClass(/bg-blue-50/, { timeout: 1500 })
-  await page.waitForTimeout(250)
-  const bg = await bubble.evaluate((e) => getComputedStyle(e).backgroundColor)
-  console.log('bubble bg while lit:', bg)
-  expect(bg).not.toBe('rgba(0, 0, 0, 0)')
-  await page.screenshot({ path: `${SHOTS}2-${info.project.name}-lit.png` })
-  await page.waitForTimeout(2200)
-  await expect(bubble).not.toHaveClass(/bg-blue-50/)
-  await page.screenshot({ path: `${SHOTS}2-${info.project.name}-faded.png` })
-})
 
 for (const via of ['card', 'box'] as const) {
   test(`B145: picked choice and box words go as one answer, sent with the ${via}`, async ({ page, request }, info) => {
