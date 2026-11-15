@@ -1,13 +1,20 @@
 // Yadong's requirements on voice notes (D29, "The input box", "Details"; T475, D45): each check is named by the codes of
 // his inputs, so a change that breaks one is stopped before it ships with his own words.
-// guards: src/features/composer/ src/features/item/Talk.tsx src/features/inputs/ src/ui/Files.tsx src/app/voice/ src/app/inputs/ src/stores/box.ts src/stores/outbox.ts src/stores/noteVault.ts src/app/actions.ts
+// guards: src/features/composer/ src/features/item/Talk.tsx src/features/inputs/ src/ui/Files.tsx src/app/voice/ src/app/inputs/ src/stores/box.ts src/stores/outbox.ts src/stores/noteVault.ts src/app/actions.ts src/app/search/finder.ts
+// layouts: phone desktop phone-webkit
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
 import type { Project } from '../seed'
-import { box, boxAux, boxMain, buttonAt, draftFiles, recording, tab, voiceChip } from '../ui'
+import { box, boxAux, boxMain, buttonAt, docEdit, docHint, docMic, draftFiles, fakeMic, recording, tab, voiceChip } from '../ui'
 
 test.use({ launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] } })
+
+// Safari's engine runs the check of the iPhone's microphone (B800) only; the rest are Chromium's, on the phone and the desktop
+test.beforeEach(async ({ page, browserName }, info) => {
+  test.skip(browserName === 'webkit' && !info.title.startsWith('B800'), "Chromium's check")
+  if (browserName === 'webkit') await fakeMic(page)
+})
 
 const voices = async (p: Project) => ((await p.read('inbox')).match(/voice/gi) || []).length
 
@@ -197,4 +204,84 @@ test('r485 r497 B640: pointing at a voice note shows its original words at once,
   await words.first().click()
   await expect(page.getByRole('dialog', { name: 'Original words', exact: true })).toBeVisible({ timeout: 15000 })
   expect(asked.length).toBeLessThanOrEqual(1)
+})
+
+/** Taska opened from the Home Screen (an app of its own), and every microphone the page is given, counted and kept to
+ * look at. Before the page opens (after `fakeMic`, which it wraps in WebKit). */
+const homeScreenMics = (page: Page) =>
+  page.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, 'standalone', { configurable: true, get: () => true })
+    const media = window.matchMedia.bind(window)
+    window.matchMedia = (q: string) => {
+      const m = media(q)
+      if (/display-mode:\s*standalone/.test(q)) Object.defineProperty(m, 'matches', { configurable: true, get: () => true })
+      return m
+    }
+    const w = window as unknown as { mics: MediaStream[]; micAsked: number }
+    w.mics = []
+    w.micAsked = 0
+    const ask = MediaDevices.prototype.getUserMedia
+    Object.defineProperty(MediaDevices.prototype, 'getUserMedia', {
+      configurable: true,
+      value: async function (this: MediaDevices, c?: MediaStreamConstraints) {
+        w.micAsked++
+        const s = await ask.call(this, c)
+        w.mics.push(s)
+        return s
+      },
+    })
+  })
+
+/** How often the page asked for the microphone, and how many of the tracks it was given still hear (not ended). */
+const mics = (page: Page) =>
+  page.evaluate(() => {
+    const w = window as unknown as { mics: MediaStream[]; micAsked: number }
+    return { asked: w.micAsked, hearing: w.mics.flatMap((s) => s.getTracks()).filter((t) => t.readyState !== 'ended').length }
+  })
+
+test('B800 (D136 C144): from the Home Screen, each recording opens the microphone and lets it go at its end: two voice notes, a spoken search, dictation into a document; the phone as the desktop', async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(120000)
+  await homeScreenMics(page)
+  const p = await project(request, {
+    agent: 'new task P2 now Plan the export\n',
+    approve: ['T1'],
+    then: 'T1 doc The plan\n  Ship option A today.\n',
+  })
+  await open(page, p)
+  expect(await page.evaluate(() => matchMedia('(display-mode: standalone)').matches)).toBe(true)
+  // two voice notes, each recorded and sent from the box: each asks for the microphone, and at its end nothing hears
+  for (const n of [1, 2]) {
+    const before = await voices(p)
+    const at = await record(page)
+    await expect.poll(() => mics(page)).toEqual({ asked: n, hearing: 1 })
+    await aSecond(page)
+    await expect.poll(() => buttonAt(page, at)).toBe('Stop and send')
+    await page.mouse.click(at.x, at.y)
+    await expect(recording(page)).toBeHidden()
+    await expect.poll(() => voices(p), { timeout: 15000 }).toBeGreaterThan(before)
+    await expect.poll(() => mics(page), { message: `voice note ${n}: the microphone is let go` }).toEqual({ asked: n, hearing: 0 })
+  }
+  // a spoken search: the phone's search page listens at once, the desktop's dialog when you press Speak
+  if (isDesk(page)) {
+    await page.keyboard.press('ControlOrMeta+k')
+    await page.locator('[data-part="search"]').getByRole('button', { name: 'Speak', exact: true }).click()
+  } else {
+    await page.getByRole('button', { name: 'Search', exact: true }).filter({ visible: true }).first().click()
+  }
+  const search = page.locator('[data-part="search"]').filter({ visible: true })
+  await expect.poll(() => mics(page)).toEqual({ asked: 3, hearing: 1 })
+  await search.getByRole('button', { name: 'Stop and search', exact: true }).click()
+  await expect.poll(() => mics(page), { message: 'the spoken search: the microphone is let go' }).toEqual({ asked: 3, hearing: 0 })
+  // dictation into a document being edited (the page opens afresh: what it counts starts again)
+  await open(page, p, 'D1')
+  await docEdit(page)
+  await docMic(page).click()
+  await expect(docHint(page)).toContainText('Listening')
+  await expect.poll(() => mics(page)).toEqual({ asked: 1, hearing: 1 })
+  await page.waitForTimeout(1000) // long enough to be heard, not thrown away as too short
+  await docMic(page).click()
+  await expect.poll(() => mics(page), { message: 'dictation: the microphone is let go' }).toEqual({ asked: 1, hearing: 0 })
 })
