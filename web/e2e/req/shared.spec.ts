@@ -5,6 +5,7 @@
 // guards: src/features/docs/ src/features/settings/ src/app/docs/ src/model/includes.ts src/pages/SharedRuleContainer.tsx src/pages/SharedRuleFrame.tsx src/pages/ProjectPageContainer.tsx server/taska/domain/includes.py server/taska/services/shared_rules.py server/taska/http/
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
 import { isDesk, open, pageOp, project } from '../seed'
+import { box } from '../ui'
 
 let k = 0
 /** A shared rule of the check's own, with its text: -> its name and address. */
@@ -38,6 +39,10 @@ test('I779 r1378: a line reads as the shared rules it puts in, opened in place; 
   const used = page.locator('[data-part="used-by"]').filter({ visible: true })
   await expect(used).toContainText(p.title)
   await expect(used).toContainText(`{{${s.name}}}`)
+  // a comment on it from the box, as on a project's rules: it is the shared rule's
+  await box(page).fill('整组 e2e 也算吗？')
+  await page.keyboard.press('Shift+Enter')
+  await expect.poll(async () => JSON.stringify((await (await request.get(`/p/${encodeURIComponent(s.slug)}/api/view`)).json()).docs)).toContain('整组 e2e 也算吗？')
   // and back to the list
   await page.getByRole('button', { name: /Back to shared rules/i }).filter({ visible: true }).first().click()
   await expect(page).toHaveURL(/\/shared$/)
