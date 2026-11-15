@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { Http } from '../../api/http'
+import { createOutboxStore } from '../../stores/outbox'
 import { createRouteStore, type History } from '../../stores/route'
+import { memoryStore } from '../../stores/storage'
 import { keyOf, PageActions } from './pageActions'
 
 const history = (): History => ({
@@ -24,9 +26,10 @@ describe('PageActions (B791: what you do on the page is logged)', () => {
     const sent: Record<string, unknown>[][] = []
     const http = new Http(answer)
     const api = { http, pageLog: vi.fn(async (_slug: string, list: Record<string, unknown>[]) => (sent.push(list), { ok: true })) }
-    const log = new PageActions({ api: api as never, slug: () => 'shop', route: createRouteStore(history()) })
+    const outbox = createOutboxStore(memoryStore())
+    const log = new PageActions({ api: api as never, slug: () => 'shop', route: createRouteStore(history()), outbox })
     stop = log.stop
-    return { log, sent, http }
+    return { log, sent, http, outbox }
   }
 
   test('a control tapped is logged by its name; what is typed is not', () => {
@@ -67,6 +70,17 @@ describe('PageActions (B791: what you do on the page is logged)', () => {
       expect.objectContaining({ why: 'failed', method: 'POST', url: '/p/shop/api/commands?cursor=1', status: 400, msg: 'no such item' }),
       expect.objectContaining({ why: 'slow', url: '/p/shop/api/doc?d=6', ms: 5000 }),
     ])
+  })
+
+  test('what you send is logged by where it went and how long it is, never its words; a send that failed too', () => {
+    const { log, sent, outbox } = page(async () => new Response('{}'))
+    const o = { q: 'q1', slug: 'shop', text: 'my secret words', scope: 'B12', files: [{ f: 'f1-voice.webm', name: 'voice.webm', mime: 'audio/webm', size: 9 }], t: 1, state: 'waiting' as const, tries: 0 }
+    outbox.getState().push(o)
+    outbox.getState().update('q1', { state: 'failed', net: true, tries: 1 })
+    log.send(false)
+    const rows = sent[0].filter((e) => e.kind !== 'open')
+    expect(rows).toEqual([expect.objectContaining({ kind: 'send', to: 'B12', chars: 15, files: 1, voice: 1 }), expect.objectContaining({ kind: 'send-failed', to: 'B12', net: true, tries: 1 })])
+    expect(JSON.stringify(sent)).not.toContain('secret')
   })
 
   test('the keys that act are told apart from typing', () => {

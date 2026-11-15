@@ -1,10 +1,12 @@
 // What you do on the page goes to Taska's log (B791; F407, T453: every action, so what went wrong where can be found
 // later): the page opening, each control you tap (its name, not what you typed), the keys that act, each place you
-// go to, leaving the page and coming back, and each request that failed (with the server's reason) or was slow.
+// go to, leaving the page and coming back, what you send (where, how long, how many files: never its words) and a
+// send that failed, and each request that failed (with the server's reason) or was slow.
 // Kept and sent a batch at a time, so the page is never slowed by it.
 
 import type { Http, Watched } from '../../api/http'
 import type { TaskaApi } from '../../api/taska'
+import type { OutboxStore } from '../../stores/outbox'
 import type { RouteStore } from '../../stores/route'
 
 /** a request slower than this is noted (ms) */
@@ -46,7 +48,7 @@ export class PageActions {
   private sent = 0
   readonly stop: () => void
 
-  constructor(private readonly d: { api: Pick<TaskaApi, 'pageLog'> & { http: Http }; slug(): string; route: RouteStore }) {
+  constructor(private readonly d: { api: Pick<TaskaApi, 'pageLog'> & { http: Http }; slug(): string; route: RouteStore; outbox: OutboxStore }) {
     if (typeof window === 'undefined') {
       this.stop = () => {}
       return
@@ -77,6 +79,17 @@ export class PageActions {
       url = s.url
       this.note({ kind: 'view', where: where(), to: s.url })
     })
+    // what you send, once each, and a send that failed
+    const told = new Map<string, string>()
+    const unOut = d.outbox.subscribe((s) => {
+      for (const o of s.list) {
+        const was = told.get(o.q)
+        if (was === undefined) this.note({ kind: 'send', to: o.scope || 'new input', chars: o.text.length, files: o.files.length, voice: o.files.filter((f) => /^audio\//.test(f.mime || '')).length, answer: o.kind === 'answer' || undefined, back: o.back || undefined, where: where() })
+        else if (o.state === 'failed' && was !== 'failed') this.note({ kind: 'send-failed', to: o.scope || 'new input', net: !!o.net, tries: o.tries, where: where() })
+        told.set(o.q, o.state)
+      }
+      for (const q of [...told.keys()]) if (!s.list.some((o) => o.q === q)) told.delete(q)
+    })
     // each request that failed or was slow, with the server's reason (B792: why a change was refused was not known)
     d.api.http.watch = (w: Watched) => {
       // the page's own log, and the long wait for news (slow on purpose; stopped when the page moves on)
@@ -91,6 +104,7 @@ export class PageActions {
     this.note({ kind: 'open', where: where(), size: `${window.innerWidth}x${window.innerHeight}`, ua: navigator.userAgent })
     this.stop = () => {
       unRoute()
+      unOut()
       d.api.http.watch = undefined
       document.removeEventListener('click', onClick, { capture: true })
       document.removeEventListener('keydown', onKey, { capture: true })
