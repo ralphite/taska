@@ -57,13 +57,6 @@ the Home indicator, two taps where one should do, unclear state: all count.
 9. Edges: very long Chinese and English titles, many items, an empty project, the server stopped ("Offline,
    retrying") and started again (the page recovers and picks up the new version).
 
-10. Only a real phone shows these (feature contract D136; no automatic check can): the microphone asks once, then
-    never again, also from the Home Screen app (C144); recording works over the tailnet address, not only localhost
-    (C138, C473: at home and away); a swipe in from the left edge is the phone's own Back, and a swipe right on an
-    item's page goes back (C354, C358); pulling a short list down still moves it (C412); scrolling with a finger on
-    text scrolls the page (C284). On the desktop: scrollbars are thin, faint, darker with the pointer on the pane
-    (C282).
-
 Swipes need touch pointer events; mouse drags are ignored on purpose:
 
 ```js

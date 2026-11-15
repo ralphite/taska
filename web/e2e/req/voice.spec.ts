@@ -239,7 +239,7 @@ const mics = (page: Page) =>
     return { asked: w.micAsked, hearing: w.mics.flatMap((s) => s.getTracks()).filter((t) => t.readyState !== 'ended').length }
   })
 
-test('B800 (D136 C144): from the Home Screen, each recording opens the microphone and lets it go at its end: two voice notes, a spoken search, dictation into a document; the phone as the desktop', async ({
+test('B800 r1371: from the Home Screen, each recording opens the microphone and lets it go at its end: two voice notes, a spoken search, dictation into a document; the phone as the desktop', async ({
   page,
   request,
 }) => {
