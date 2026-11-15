@@ -3,7 +3,7 @@
 # what to fix through its agent interface.
 #   zsh tools/nightly-checks.sh [data root, default ~/.taska]
 # The LaunchAgent runs this at 03:30. Failures are grouped into one Taska item until they change; the UI audit files
-# each new display problem as its own bug, and the voice notes whose words fell back since the last run are one bug.
+# each new display problem as its own bug.
 set -u
 ROOT=${0:A:h:h}
 DATA=${1:-$HOME/.taska}
@@ -51,7 +51,6 @@ step() {
   step "current data loads and replays consistently" data_check
   step "daily copy of the data (last 14 kept)" python3 "$WORK/source/tools/backup_data.py" "$DATA"
   step "UI display check (every story; new problems filed as bugs)" ui_audit
-  step "voice notes whose words fell back (filed as a bug)" python3 "$WORK/source/tools/voice_fallbacks.py" "$DATA/logs.db" "$URL" "$LOGS/voice-fallbacks.last"
 } > "$LOG" 2>&1
 if ! grep -q '^FAILED' "$LOG"; then
   rm -f "$LAST"

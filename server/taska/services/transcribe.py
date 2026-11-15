@@ -201,7 +201,7 @@ def strong(steps: List[Step], name: str, audio: Dict[str, Any], prompt: str, tim
 
 
 def fell_back(steps: List[Step]) -> List[str]:
-    """What a note's words fell back from (B788 r1339, to be seen by the nightly checks, not left silent): the strong
+    """What a note's words fell back from (B788, logged so the log review sees it, not left silent): the strong
     model's first try failing (its next try or the speech model's words took its place), or tidying giving no words in
     time or none that kept all the words (the words as said stayed, fillers and all)."""
     out: List[str] = []
