@@ -84,8 +84,11 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
   }
   return (
     <main className="mx-auto max-w-[1200px] px-3 pt-[env(safe-area-inset-top)] pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:px-10 lg:pt-8">
-      <header data-tip-side="bottom" className="flex min-h-14 flex-wrap items-center gap-x-3 gap-y-2 px-1 py-2">
-        <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
+      {/* the phone (B812): the search as wide as the projects' card, and the logo, the search's magnifier, each
+          project's picture and New project's plus on one line down the page (their middles where the pictures' are),
+          their words starting together after them */}
+      <header data-tip-side="bottom" className="flex min-h-14 flex-wrap items-center gap-x-3 gap-y-2 py-2 lg:px-1">
+        <h1 className="flex items-center gap-3.5 pl-4 text-xl font-semibold tracking-tight lg:gap-2 lg:pl-0">
           <Icon n="logo" c="size-6 text-blue-600 dark:text-blue-400" sw="2.25" />
           Taska
         </h1>
@@ -101,7 +104,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
           <Icon n="search" c="size-[18px]" />
         </button>
         {/* no projects: nothing to search, only New project below */}
-        <label hidden={!!rows && !rows.length} className={`order-last flex h-10 w-full items-center gap-2 rounded-xl bg-white px-3 text-sm ring-1 ring-zinc-900/10 focus-within:ring-2 focus-within:ring-blue-500 sm:order-none sm:w-72 lg:hidden dark:bg-zinc-800 dark:ring-white/10 ${MUTED}`}>
+        <label hidden={!!rows && !rows.length} className={`order-last flex h-10 w-full items-center gap-4.5 rounded-xl bg-white pr-3 pl-5 text-sm ring-1 ring-zinc-900/10 focus-within:ring-2 focus-within:ring-blue-500 sm:order-none sm:w-72 lg:hidden dark:bg-zinc-800 dark:ring-white/10 ${MUTED}`}>
           <Icon n="find" c="size-4" sw="2" />
           <input
             ref={searchRef}
@@ -238,7 +241,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
       </div>
       )}
       {rows?.length ? (
-        <button onClick={(e) => on.startNew(e.currentTarget)} className="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 lg:w-auto dark:text-blue-400">
+        <button onClick={(e) => on.startNew(e.currentTarget)} className="mt-1 flex h-12 w-full items-center gap-4 rounded-2xl pr-3 pl-4.5 text-[15px] font-medium text-blue-600 lg:w-auto lg:gap-3 lg:px-3 dark:text-blue-400">
           <Icon n="plus" c="size-5" />
           New project
         </button>
