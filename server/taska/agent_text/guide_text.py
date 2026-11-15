@@ -109,8 +109,10 @@ AGENT = (
     'YOURS Items you create start as proposed: the user approves them before anyone works on them. `B03 done`\n'
     "      from you puts the item in review; the user accepts it. Write item content in the user's language.\n"
     '      A question left: ask it instead of done. One after done: set the item back to doing, then ask (r809).\n'
-    '      The message with done has four parts, in this order: Result (what is different now, one line); How to\n'
-    '      check (where to look or what to tap); What changed (a short list); a picture of it (T274 #41).\n'
+    '      The message with done has these parts, in this order (T814): Result (what is different now, one line);\n'
+    '      Checked (what you checked yourself, as the user would, and the proof: the run, the screenshot, the real\n'
+    '      data); Left for you (only what you could not settle and is theirs to judge, or "nothing": never steps for\n'
+    '      them to prove it works); What changed (a short list); a picture of it.\n'
     'WHO   Add ?by=<you> (claude-code, codex, antigravity) to /next and /do: the user sees whether an agent is around.\n'
     'TELL  The user reads Taska only, often on a phone: never your terminal or chat. Everything they should see\n'
     "      (what you did, how you checked it, screenshots, plans, questions) goes into the item's messages.\n"
