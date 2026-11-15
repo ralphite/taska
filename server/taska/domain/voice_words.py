@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from .vocab import LETTER
 from .state import ProjectState
 from .rules import by_priority
+from .text import page_text
 
 VOICE_SYSTEM = ("\u4f60\u662f\u8bed\u97f3\u8f6c\u5199\u5458\u3002\u53ea\u5199\u5f55\u97f3\u91cc\u771f\u6b63\u8bf4\u51fa\u7684\u8bdd\uff1b"
                 "\u6ca1\u6709\u4eba\u8bf4\u8bdd\u5c31\u8fd4\u56de\u7a7a\u5b57\u7b26\u4e32\u3002"
@@ -70,6 +71,12 @@ def voice_terms(words: "Counter[str]", fixes: List[Dict[str, Any]], limit: int =
     return out[:limit]
 
 
+def doc_words(d: Any) -> str:
+    """A document's words as it reads: a web page's without its markup, styles and scripts (B809: "font-size" and
+    "border-radius" were the spelling hints for a note on an item with a web page)."""
+    return page_text(d.md or "") if d.fmt == "html" else (d.md or "")
+
+
 def voice_context(st: ProjectState, scope: Optional[int]) -> Tuple["Counter[str]", List[str], List[str]]:
     """(the project's words, its open items as "B73 title", their titles): what the transcription is told. Everything
     about the item spoken to is context: its text, its thread, its subitems and its documents; their words are hints
@@ -88,7 +95,7 @@ def voice_context(st: ProjectState, scope: Optional[int]) -> Tuple["Counter[str]
         kids = [k for k in st.items.values() if k.parent == scope]
         docs = [d for d in st.docs.values() if d.n == scope][-3:]
         parts = [it0.title, it0.body or "", it0.next or ""] + [m.text or "" for m in it0.thread][-40:] \
-            + [k.title for k in kids] + [d.md or "" for d in docs]
+            + [k.title for k in kids] + [doc_words(d) for d in docs]
         text = "\n".join(p for p in parts if p)
         for w in re.findall(r"[A-Za-z_][A-Za-z0-9_./\-]{2,}", text):
             words[w] += 3
