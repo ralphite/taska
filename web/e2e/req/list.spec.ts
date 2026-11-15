@@ -3,7 +3,7 @@
 // guards: src/features/list/ src/model/actions.ts src/model/items.ts src/app/page/navigation.ts src/app/actions.ts src/app/keys.ts
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
-import { row, rowActs, view, views } from '../ui'
+import { row, rowActs, sheetBody, view, views } from '../ui'
 
 test('r494 r308: the buttons every row has show only under the pointer', async ({ page, request }) => {
   test.skip(!isDesk(page), 'the phone has no pointer: its rows swipe')
@@ -106,4 +106,26 @@ test('D115 #20: an empty project shows its first steps, each ticked by itself on
   await expect(say).toBeEnabled()
   expect((await p.op({ op: 'input', text: 'A first thought' })).ok).toBe(true)
   await expect(say).toBeDisabled()
+})
+
+test('r978 (B640 #8700, B801): M on the selected item opens Put under… beside its row, as its right-click menu does, not in the window\'s corner', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'M and the beside-the-row menus are the desktop')
+  const p = await project(request, LOOP)
+  await open(page, p, '?status=every')
+  const it = row(page, 'Write the user docs').first()
+  await it.click() // picks the item: its row is the selected one
+  await expect(page).toHaveURL(/\/T0*4(\?|$)/)
+  await page.keyboard.press('m')
+  const menu = sheetBody(page)
+  await expect(menu).toBeVisible()
+  await expect(menu).toContainText('Move T4 under')
+  const [r, b, win] = [await it.boundingBox(), await menu.boundingBox(), page.viewportSize()]
+  if (!r || !b || !win) throw new Error('not drawn')
+  // beside its row: its top within 60 px of the row's top or bottom, and not where the window's corner is
+  const near = Math.min(Math.abs(b.y - r.y), Math.abs(b.y - (r.y + r.height)))
+  expect(near, `the menu ${JSON.stringify(b)} is beside the row ${JSON.stringify(r)}`).toBeLessThan(60)
+  expect(b.x + b.width, `the menu ${JSON.stringify(b)} is not at the window's right edge`).toBeLessThan(win.width - 40)
 })

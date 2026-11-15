@@ -3,7 +3,7 @@
 // guards: src/features/item/ src/features/composer/ src/app/voice/ src/ui/scroller.ts src/model/outgoing.ts src/app/inputs/delivered.ts src/ui/Markdown.tsx src/app/Tooltip.tsx src/app/actions.ts src/ui/ToEnd.tsx
 // layouts: phone desktop phone-webkit
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { isDesk, open, project, type Project } from '../seed'
+import { LOOP, isDesk, open, project, type Project } from '../seed'
 import { box, boxMain, fakeMic, fingerScroll, pane, recording, talk as talkOf, tip } from '../ui'
 
 // a voice reply is recorded from the test browser's fake microphone (B770); WebKit has none of its own (B786)
@@ -478,4 +478,52 @@ test('B721 r1183: scrolled up right after an item opens, the talk stays where yo
     }
     expect(Math.min(...seen), `opened ${wait} ms before: stays scrolled up (${seen.join(',')})`).toBeGreaterThanOrEqual(left - 20)
   }
+})
+
+// B801: an edited input shows the words from before the change when it is pointed at (desktop; the tip is the page's own)
+test('r978 (B640 #8700, B801): an edited input says "edited", and pointing at it shows the words from before the change; clicking it still opens the history', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'pointing is the desktop')
+  const p = await project(request, {
+    agent: 'new task P1 now Notes from the call\n',
+    approve: ['T1'],
+  })
+  const made = await p.op({ op: 'input', text: 'The first words of mine', scope: 1 })
+  expect(made.ok).toBe(true)
+  const rid = made.res[0].split(' ')[1]
+  const edit = await p.op({ op: 'amend', id: rid, mode: 'edit', v: 0, text: 'The changed words of mine', files: [] })
+  expect(edit.ok, edit.res.join('\n')).toBe(true)
+  // an input nobody edited has no such mark
+  await p.op({ op: 'input', text: 'Never edited', scope: 1 })
+  await open(page, p, 'T1')
+  const mark = pane(page).getByRole('button', { name: /^edited / }).filter({ visible: true })
+  await expect(pane(page).getByText('The changed words of mine').first()).toBeVisible()
+  await expect(mark).toHaveCount(1)
+  await mark.hover()
+  await expect(tip(page)).toBeVisible()
+  await expect(tip(page)).toContainText('The first words of mine')
+  await expect(tip(page)).not.toContainText('The changed words of mine')
+  await mark.click()
+  await expect(page.locator('[role="dialog"]').filter({ visible: true }).last()).toContainText('The first words of mine')
+})
+
+test('r978 (B640 #8700, B801): in the list of what you said, an edited input\'s "edited" shows the words from before the change when pointed at', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'pointing is the desktop')
+  const p = await project(request, LOOP)
+  const made = await p.op({ op: 'input', text: 'Fix the drain by the door' })
+  expect(made.ok).toBe(true)
+  const edit = await p.op({ op: 'amend', id: made.res[0].split(' ')[1], mode: 'edit', v: 0, text: 'Fix the gutter by the door', files: [] })
+  expect(edit.ok, edit.res.join('\n')).toBe(true)
+  await open(page, p)
+  const mark = page.locator('article span[data-tip]').filter({ hasText: /edited/ }).filter({ visible: true })
+  await expect(mark).toHaveCount(1)
+  await mark.hover()
+  await expect(tip(page)).toBeVisible()
+  await expect(tip(page)).toContainText('Fix the drain by the door')
+  await expect(tip(page)).not.toContainText('gutter')
 })
