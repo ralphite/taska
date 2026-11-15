@@ -39,6 +39,8 @@ GRAMMAR = (
     "                            back to you on the doc's item with Mermaid's reason: fix it\n"
     '  B03 html [title]          new web page document on B03: the indented lines are HTML (scripts allowed), shown as a page\n'
     '  D1 html [new title]       replace D1 with the indented HTML\n'
+    '                            sounds, videos and pictures in it: upload each (as above) and name it BASE/f/<its f>\n'
+    '                            (<audio src="BASE/f/f12-a.mp3">); never write them into the page (it gets too big to open)\n'
     '  D1 reply ¶3 <text>        answer the comments on paragraph 3 of D1 (¶3.2: its second thread, as /D1 names it)\n'
     '  B03 archive|unarchive     hide a done/dropped item from the default lists (reopening unarchives)\n'
     '  rules propose <why>       propose a change to the project rules (the user approves or declines it); indented\n'

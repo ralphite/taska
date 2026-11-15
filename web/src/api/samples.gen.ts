@@ -888,7 +888,8 @@ export const SAMPLES = {
    "base": "http://127.0.0.1:7340/p/shop",
    "key": "fuju-pr4t",
    "remote": "",
-   "lan": ""
+   "lan": "",
+   "filesCap": "0123456789abcdef01234567"
   },
   "server": {
    "page": "index-hNfJlr8V.js",
@@ -1130,7 +1131,8 @@ export const SAMPLES = {
     "base": "http://127.0.0.1:7340/p/shop",
     "key": "fuju-pr4t",
     "remote": "",
-    "lan": ""
+    "lan": "",
+    "filesCap": "0123456789abcdef01234567"
    },
    "server": {
     "page": "index-hNfJlr8V.js",

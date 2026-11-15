@@ -116,6 +116,7 @@ export function projectFacts(f: Partial<ProjectFacts> = {}): ProjectFacts {
     key: '',
     remote: '',
     lan: '',
+    filesCap: '',
     ...f,
   }
 }

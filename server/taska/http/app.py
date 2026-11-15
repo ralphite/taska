@@ -190,7 +190,7 @@ class AppContext:
 
     def note_request(self, req: Request, status: int, ms: int) -> None:
         """What is worth reading later: an agent's calls, and whatever failed or was slow."""
-        path = re.sub(r"/k/[^/?]+", "/k/…", re.sub(r"([?&]key=)[^&]*", r"\1…", req.raw_path))
+        path = re.sub(r"/k/[^/?]+", "/k/…", re.sub(r"([?&](?:key|cap)=)[^&]*", r"\1…", req.raw_path))
         bare = path.split("?")[0]
         if self.page.public(bare) and bare != "/login.html":
             return

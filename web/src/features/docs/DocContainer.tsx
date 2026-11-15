@@ -14,6 +14,7 @@ import { Lasso } from './Lasso'
 import { WebThread } from './Thread'
 import { codeOf, liveN } from '../../model/project'
 import { factsOf, webFacts } from './docFacts'
+import { withFilesPass } from '../../model/filesPass'
 import { notSent, type NotSent } from '../../model/voiceComments'
 import { Sheet, SheetLayout } from '../../ui/Sheet'
 import { useDocWorld } from '../../app/hooks'
@@ -101,7 +102,7 @@ export function useDoc(slug: string, dn: number) {
     // the box line's Send choices, from the document's own line (the phone's): the draft the box would write now
     sendTicks: () => void app.docChoices.sendTicks(slug, dn, app.box.key(null, undefined, dn)),
   }
-  const page = d?.fmt === 'html' && m ? <WebPageContainer slug={slug} d={d} v={v} seen={seen} env={env} on={on} waiting={waiting} /> : null
+  const page = d?.fmt === 'html' && m ? <WebPageContainer slug={slug} cap={m.facts.filesCap} d={d} v={v} seen={seen} env={env} on={on} waiting={waiting} /> : null
   const aimed = useCallback(() => stores.docView.getState().setAim(null), [stores])
   return { m, d, facts, env, on, v, desk, page, aimed }
 }
@@ -133,7 +134,7 @@ function usePageText(slug: string, d: Doc): string | null {
 }
 
 /** A web page document's own view, with its threads. */
-function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string; d: Doc; v: DocViewState; seen: Readonly<Record<string, string>>; env: DocEnv; on: DocEvents; waiting: readonly NotSent[] }) {
+function WebPageContainer({ slug, cap, d, v, seen, env, on, waiting }: { slug: string; /** the project's files pass (B790) */ cap: string; d: Doc; v: DocViewState; seen: Readonly<Record<string, string>>; env: DocEnv; on: DocEvents; waiting: readonly NotSent[] }) {
   const app = useServices('actions', 'docVoice', 'docs', 'fields', 'voice')
   const stores = useStores('docView', 'recording', 'sheet')
   const asked = useStoreValue(stores.sheet, (s) => s.asked)
@@ -145,7 +146,8 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
   const rec = !!spoken
   const w = useMemo(() => webFacts(d, v, seen, asked, waiting, spoken ? (JSON.parse(spoken) as { key: string; text: string }) : null), [d, v, seen, asked, waiting, spoken])
   const held = w.held
-  const html = usePageText(slug, d)
+  const text = usePageText(slug, d)
+  const html = useMemo(() => (text == null ? null : withFilesPass(text, slug, cap)), [text, slug, cap])
   if (html == null) return <div className={`mt-6 text-sm ${MUTED}`}>Loading…</div>
   return (
     <WebPage

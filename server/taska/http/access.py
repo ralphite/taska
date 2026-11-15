@@ -5,6 +5,7 @@ Other websites' scripts and forms are refused; opening Taska from another page i
 
 from __future__ import annotations
 
+import hashlib
 import hmac
 import json
 import re
@@ -16,6 +17,9 @@ from ..domain.text import plain_key
 from .messages import Request, Response, as_json, redirect, text
 
 _KEY_PATH = re.compile(r"/k/([A-Za-z0-9-]+)(/.*)?")
+# a file asked for by a web page document (B790): its sandboxed frame is no site, so it sends no cookie and its
+# requests come cross-site; the project's files pass (`files_cap`) lets it have that project's files and nothing else
+_FRAME_FILE = re.compile(r"/p/([A-Za-z0-9_-]+)/f/[^/?#]+\?cap=([0-9a-f]+)")
 LOGIN_PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark"><title>Taska</title></head><body>
 <form method="post" action="/login"><h1>Taska</h1><p>{wrong}Enter the key. On your computer it is in Taska's menu under <b>Use on your phone</b>.</p>
@@ -38,11 +42,20 @@ class Access:
         secure = "; Secure" if req.host().startswith("https:") else ""
         return {"Set-Cookie": f"taska_key={self._key()}; Path=/; Max-Age=34560000; HttpOnly; SameSite=Lax{secure}"}
 
+    def files_cap(self, slug: str) -> str:
+        """The pass a web page document's frame puts on the files of project `slug` it asks for (B790): made from the
+        key, so it changes with it, and good for that project's files only."""
+        return hmac.new(plain_key(self._key()).encode(), f"files {slug}".encode(), hashlib.sha256).hexdigest()[:24]
+
     def _right(self, given: str) -> bool:
         return hmac.compare_digest(plain_key(given), plain_key(self._key()))
 
     def check(self, req: Request) -> Union[Request, Response]:
         """The request to answer (with the key taken out of its path), or the answer that turns it away."""
+        framed = _FRAME_FILE.fullmatch(req.raw_path) if req.method in ("GET", "HEAD") else None
+        if framed and hmac.compare_digest(framed.group(2), self.files_cap(framed.group(1))):
+            req.prefix = ""
+            return req
         visit = req.method in ("GET", "HEAD") and req.header("Sec-Fetch-Mode") == "navigate" \
             and req.headers.get("Sec-Fetch-Dest") in ("document", None)
         if req.header("Sec-Fetch-Site") == "cross-site" and not visit:

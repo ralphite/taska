@@ -58,7 +58,7 @@ def _view(ctx: "AppContext", req: Request, p: Project, since: Optional[Cursor]) 
     out["project"]["phone"] = ws.phone_seen or bool(ctx.push.subs)
     out["project"].update(base=f"{req.host()}{req.prefix}/p/{p.slug}", key=key,
                           remote=f"{ws.public}/k/{key}/p/{p.slug}" if ws.public else "",
-                          lan=f"{ws.lan}/p/{p.slug}" if ws.lan else "")
+                          lan=f"{ws.lan}/p/{p.slug}" if ws.lan else "", filesCap=ctx.access.files_cap(p.slug))
     out["server"] = {"page": ctx.page.version(), "update": ctx.status.update_ready(), "dev": not ctx.page.bundled}
     return out
 
