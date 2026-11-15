@@ -234,7 +234,7 @@ export function createApp(env: AppEnv): App {
     access,
     refreshProjects: project.refreshProjects,
     stop: () => {
-      for (const x of [project.projects, project.projectSession, project.pictureSizes, sheets, docsOpen, docEditor, items.merges, page.arrival, project.notices, page.pageErrors, page.leaveGuard]) x.stop()
+      for (const x of [project.projects, project.projectSession, project.pictureSizes, sheets, docsOpen, docEditor, items.merges, page.arrival, project.notices, page.pageErrors, page.pageActions, page.leaveGuard]) x.stop()
       unlisten()
     },
     actions,

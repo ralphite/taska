@@ -1,4 +1,4 @@
-// The page's own part, made together: its errors sent to Taska, the player and picture viewer, the key that arms a
+// The page's own part, made together: its errors and what you do on it sent to Taska, the player and picture viewer, the key that arms a
 // field, where the page arrives (Back and Forward), Mermaid diagrams, asking before leaving while something is being
 // said, and what a reload now would lose.
 
@@ -11,11 +11,13 @@ import { Diagrams } from './diagrams'
 import { KeyArm } from './keyArm'
 import { LeaveGuard } from './leaveGuard'
 import { Media } from './media'
+import { PageActions } from './pageActions'
 import { PageErrors } from './pageErrors'
 
 export function makePage(c: Core) {
   const { s } = c
   const pageErrors = new PageErrors({ api: c.api, slug: c.slug })
+  const pageActions = new PageActions({ api: c.api, slug: c.slug, route: s.route })
   const media = new Media({ api: c.api, store: s.media, route: s.route, sheets: c.sheets, toasts: c.toasts, desk: c.desk, kept: (sl, f) => c.model(sl)?.voices.get(f) ?? null })
   // something being said into the page now: a voice note, a dictation, or search listening (T728 #6: one rule)
   const sayingNow = () => c.recording() || !!s.dictation.getState().rec || s.find.getState().phase === 'listening'
@@ -30,5 +32,5 @@ export function makePage(c: Core) {
   // leaving while something is being said asks first
   const leaveGuard = new LeaveGuard(sayingNow)
   const arrival = new Arrival({ route: s.route, fields: c.fields, data: s.data, model: c.model, desk: c.desk, session: c.session })
-  return { pageErrors, media, keyArm: new KeyArm(), busy, leaveGuard, arrival, diagrams: new Diagrams((sl, f) => c.api.diagramFailed(sl, f)) }
+  return { pageErrors, pageActions, media, keyArm: new KeyArm(), busy, leaveGuard, arrival, diagrams: new Diagrams((sl, f) => c.api.diagramFailed(sl, f)) }
 }

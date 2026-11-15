@@ -264,7 +264,8 @@ export class TaskaApi {
     return this.http.json(P(slug) + 'diagram-failed', { method: 'POST', body })
   }
 
-  pageLog(slug: string, list: Record<string, unknown>[]): Promise<Answers['pageLog']> {
-    return this.http.json(P(slug) + 'page-log', { method: 'POST', body: { list } })
+  /** `leaving`: sent as the page goes (it outlives the page) */
+  pageLog(slug: string, list: Record<string, unknown>[], leaving = false): Promise<Answers['pageLog']> {
+    return this.http.json(P(slug) + 'page-log', { method: 'POST', body: { list }, keepalive: leaving })
   }
 }

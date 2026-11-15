@@ -46,12 +46,27 @@ export interface Request {
   signal?: AbortSignal
   /** an answer that never changes under its address (a version of a document): the browser may keep it */
   cache?: boolean
+  /** sent as the page goes: it outlives the page */
+  keepalive?: boolean
+}
+
+/** A request as it ended, for the page's log (B791): its answer's status (none when it never came), and the reason a
+ * refused or failed one gave. */
+export interface Watched {
+  method: string
+  url: string
+  ms: number
+  ok: boolean
+  status?: number
+  why?: string
 }
 
 export type Transport = (url: string, init: RequestInit) => Promise<Response>
 
 export class Http {
   private readonly transport: Transport
+  /** told of each request as it ends (the page's log) */
+  watch?: (w: Watched) => void
   constructor(transport: Transport = (u, i) => fetch(u, i)) {
     this.transport = transport
   }
@@ -66,6 +81,20 @@ export class Http {
   }
 
   async text(url: string, req: Request = {}): Promise<string> {
+    const t0 = Date.now()
+    const method = req.method || 'GET'
+    try {
+      const text = await this.ask(url, req)
+      this.watch?.({ method, url, ms: Date.now() - t0, ok: true, status: 200 })
+      return text
+    } catch (ex) {
+      if (!(ex instanceof Abandoned))
+        this.watch?.({ method, url, ms: Date.now() - t0, ok: false, status: (ex as Refused | Unreachable).status ?? (ex instanceof KeyNeeded ? 401 : undefined), why: ex instanceof Unreachable && !ex.status ? ex.detail || ex.message : (ex as Error).message })
+      throw ex
+    }
+  }
+
+  private async ask(url: string, req: Request): Promise<string> {
     const ctl = new AbortController()
     const timer = setTimeout(() => ctl.abort(), req.timeout ?? TIME_LIMIT.read)
     const outer = req.signal
@@ -80,7 +109,7 @@ export class Http {
     }
     let res: Response
     try {
-      res = await this.transport(url, { method: req.method || 'GET', headers, body, cache: req.cache ? 'default' : 'no-store', signal: ctl.signal })
+      res = await this.transport(url, { method: req.method || 'GET', headers, body, cache: req.cache ? 'default' : 'no-store', signal: ctl.signal, ...(req.keepalive ? { keepalive: true } : {}) })
     } catch (ex) {
       if (outer?.aborted) throw new Abandoned()
       throw new Unreachable(ctl.signal.aborted, undefined, ex instanceof Error ? ex.message : undefined)
