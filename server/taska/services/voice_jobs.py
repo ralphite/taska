@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 import time
 from dataclasses import dataclass, field
@@ -25,10 +26,18 @@ from ..domain.voice_states import DONE, FAILED, NONE, STATES, WAIT, answer_state
 from .news import News
 
 Transcript = Dict[str, Any]
-# T806 #2: a failed transcription is tried again here, after these pauses (seconds); the note waits meanwhile, and is
-# failed only when the last try fails. A restart goes on with it (it still waits). Nothing to transcribe with: no retry.
+# T806 #2: a transcription that failed for a while (the models busy, over a rate, out of reach, too slow) is tried again
+# here, after these pauses (seconds); the note waits meanwhile, and is failed only when the last try fails. A restart
+# goes on with it (it still waits). One that cannot work (no key, the key refused, nothing to transcribe with) is not.
 RETRY_PAUSES = (20, 60, 180)
 NO_TRANSCRIBER = "voice notes are not transcribed here"
+FOR_A_WHILE = re.compile(r"HTTP (429|5\d\d)|RESOURCE_EXHAUSTED|UNAVAILABLE|high demand|overloaded|timed out|unreachable",
+                         re.I)
+
+
+def for_a_while(err: str) -> bool:
+    """Whether a transcription failed for a while only, so trying again later may work."""
+    return bool(FOR_A_WHILE.search(err))
 AUDIO_EXTS = (".webm", ".ogg", ".m4a", ".mp4", ".mp3", ".wav", ".aac", ".flac")
 
 
@@ -155,7 +164,7 @@ class VoiceJobs:
                 break
             except Exception as ex:  # tried again after a pause; the last failure is said on the page; Taska goes on
                 err = str(ex) or "transcription failed"
-                if err == NO_TRANSCRIBER:
+                if not for_a_while(err):
                     break
         hold.cancel()
         with self._p.lock:

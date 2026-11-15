@@ -1,5 +1,5 @@
-"""T806 #2 (r1376): a failed transcription is tried again by Taska itself, with pauses, and the note waits meanwhile; it
-is failed only when the last try fails, and nothing to transcribe with is not tried again."""
+"""T806 #2 (r1376): a transcription that failed for a while is tried again by Taska itself, with pauses, and the note
+waits meanwhile; it is failed only when the last try fails. One that cannot work (no key, the key refused) is not."""
 
 import os
 import sys
@@ -43,7 +43,7 @@ class TriedAgain(ProjectCase):
         return len(tries)
 
     def test_it_comes_through_on_a_later_try(self):
-        n = self.run_with([RuntimeError("Gemini HTTP 503"), RuntimeError("timed out"), {"tr": "Keep the sort."}])
+        n = self.run_with([RuntimeError("Gemini HTTP 503"), RuntimeError("the strong model timed out after 30 s"), {"tr": "Keep the sort."}])
         self.assertEqual((n, self.pauses), (3, [20, 60]))
         self.assertEqual((self.p.state.voices[FID].state, self.p.state.voices[FID].tidied), (DONE, "Keep the sort."))
 
@@ -51,6 +51,10 @@ class TriedAgain(ProjectCase):
         n = self.run_with([RuntimeError("Gemini HTTP 503")] * 4)
         self.assertEqual((n, self.pauses), (4, list(voice_jobs.RETRY_PAUSES)))
         self.assertEqual((self.p.state.voices[FID].state, self.p.state.voices[FID].err), (FAILED, "Gemini HTTP 503"))
+
+    def test_one_that_cannot_work_is_not_tried_again(self):
+        n = self.run_with([RuntimeError("Gemini HTTP 400: API key not valid")])
+        self.assertEqual((n, self.pauses, self.p.state.voices[FID].state), (1, [], FAILED))
 
     def test_nothing_to_transcribe_with_is_not_tried_again(self):
         self.p.voice.set_transcriber(None)  # type: ignore[arg-type]
