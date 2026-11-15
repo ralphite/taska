@@ -25,6 +25,11 @@ const REMOVED: { why: string; gone: RegExp }[] = [
   { why: 'Refactor 4 (T728): an item action is read by its id from one table (model/itemActs); no looks keyed by its words, no type R in a hint', gone: /\bACT_(TONE|ICON|BG|KEY)\b|\bCHOSEN_TONE\b|\bFORWARD_NEED\b|\bNEED_ACT_WORD\b|Type: F B I T R/ },
   { why: 'Refactor 6 (T728): one search across the projects, the Finder\'s (/api/find); no /api/search, CrossSearch, search store or search hits', gone: /\/api\/search\b|\bCrossSearch\b|\bcrossSearch\b|createSearchStore|\bSearchHit\b|\bSearchPhase\b|\bhitWhere\b|\bhitPath\b|def search\(self, q/ },
   { why: 'I779 r1325: no shared rule groups a project switches on (composition was not in the text; a switch is not text an agent can edit)', gone: /Shared rule groups|New group|\bwithShared\b|includes two groups/ },
+  { why: 'T563 (D136 C024): no Go through / guided triage, anywhere', gone: /\bgoThrough\b|\bgo_through\b|['"`]Go through|⇧J/ },
+  { why: 'B542 r510 r752 (D136 C068): no Create item for an input; an input nobody filed waits for an agent', gone: /Create item|\bunmake\b/ },
+  { why: 'B629 (D136 C106): an input is not labelled "You said" (it may be typed)', gone: />\s*You said\s*<|['"`]You said['"`]\s*[,})\]]/ },
+  { why: 'T260 (D136 C428): no Keep going switch; an agent keeps going by its guide', gone: /Keep going['"`]|\bkeepGoing\b|\bkeep_going\b/ },
+  { why: 'F700 (D136 C548): a label says "Phone:" / "Desktop:", never "On the phone" / "On the desktop"', gone: /['"`](On|on) the (phone|desktop)['"`]/ },
   { why: 'B682: a voice note shows its words (or that they are coming, or that none were heard), never "Voice note" in their place', gone: /(isAudio|audio\/)[^\n]*['"]Voice note['"]/ },
 ]
 
