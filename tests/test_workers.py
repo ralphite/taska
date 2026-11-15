@@ -78,5 +78,30 @@ class Workers(unittest.TestCase):
         self.assertEqual(len([x for x in self.ws.needs(push=True) if x["kind"] == "blocked"]), 1)
 
 
+class Listening(unittest.TestCase):
+    """B811: whether an agent session waits for work now, for the check at the end of its turns."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.ws = Workspace(os.path.join(self.tmp.name, "data"), "", gemini=False)
+        self.p = self.ws.add("demo")
+
+    def tearDown(self) -> None:
+        self.ws.close()
+        self.tmp.cleanup()
+
+    def test_a_session_listens_while_its_wait_is_open_and_a_minute_after(self) -> None:
+        self.assertEqual(self.ws.listening(MANAGER), {"known": False, "listening": False})  # never heard of: not checked
+        self.p.agents.saw("claude-code", 0, "main", MANAGER)
+        self.assertEqual(self.ws.listening(MANAGER), {"known": True, "listening": False})  # it stopped listening
+        self.p.agents.saw("claude-code", 1, "main", MANAGER)
+        self.assertEqual(self.ws.listening(MANAGER), {"known": True, "listening": True})
+        self.p.agents.saw("claude-code", -1)  # the wait ends, as /next ends it: by the agent, and by the session's id
+        self.p.agents.stopped_listening(MANAGER)
+        now = time.time()
+        self.assertTrue(self.p.agents.listens(MANAGER, now + 30))  # its next wait comes after a short pause
+        self.assertFalse(self.p.agents.listens(MANAGER, now + 120))
+
+
 if __name__ == "__main__":
     unittest.main()

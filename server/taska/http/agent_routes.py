@@ -166,6 +166,7 @@ def _next(req: Request, p: Project, by: str) -> Response:
         if q.get("wait"):
             with p.lock:
                 p.agents.saw(by, -1)
+                p.agents.stopped_listening(req.arg("sid"))
     out = w.text
     if "ui" not in q:
         with p.lock:

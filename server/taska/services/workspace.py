@@ -267,6 +267,18 @@ class Workspace:
             with p.lock:
                 p.agents.adopt(found.get(name, {}), titled.get(name, {}))
 
+    def listening(self, sid: str) -> Dict[str, bool]:
+        """B811: whether session `sid` is an agent session here (it gave Taska its id), and whether it waits for work
+        now in any project: the check at the end of each of its turns (a session that stopped listening takes no work)."""
+        now = time.time()
+        known = listens = False
+        for p in list(self.projects.values()):
+            with p.lock:
+                if sid in p.agents.sids(own=True):
+                    known = True
+                    listens = listens or p.agents.listens(sid, now)
+        return {"known": known, "listening": listens}
+
     def needs(self, push: bool = False) -> List[Dict[str, Any]]:
         """What needs you in every project, newest first. A session working on an item and waiting on you counts
         once it has waited a minute (I810), and for a push once it has waited three."""

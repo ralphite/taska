@@ -93,6 +93,9 @@ class AgentActivity:
         # I810: a manager's workers that never call Taska, found by their titles: per session id, its title and item
         self.workers: Dict[str, Tuple[str, int]] = {}
         self.titled: Dict[str, int] = {}  # I810: its own sessions whose app's title starts with an item's code
+        # B811: per session id, its long waits for work open now, and when its last one started or ended
+        self.listening: Dict[str, int] = {}
+        self.listened: Dict[str, float] = {}
         lead = db.get("antigravity-lead")  # F755: the one Antigravity session that runs this project, and since when
         self.lead: Optional[Tuple[str, str]] = (str(lead["sid"]), str(lead["t"])) if isinstance(lead, dict) and lead.get("sid") else None
 
@@ -129,6 +132,9 @@ class AgentActivity:
                 a.parents[a.session] = session_name(parent)
             for old in [k for k in a.parents if k not in a.sessions]:
                 del a.parents[old]
+        if SID.fullmatch(sid) and waiting:  # B811: whether this session listens for work now
+            self.listening[sid] = max(0, self.listening.get(sid, 0) + waiting)
+            self.listened[sid] = now
         if SID.fullmatch(sid):
             named = next((k for k, v in a.sids.items() if v == sid and k), "")
             if session:  # one id is one session: a new title for it takes the old one's place (F768)
@@ -373,6 +379,17 @@ class AgentActivity:
         """The session ids agents gave here, and the workers found for them (I810; `own`: only those agents gave)."""
         mine = {sid for a in self.agents.values() for sid in a.sids.values()}
         return sorted(mine if own else mine | set(self.workers))
+
+    def stopped_listening(self, sid: str) -> None:
+        """B811: a long wait for work by session `sid` ended (answered, or its time ran out)."""
+        if SID.fullmatch(sid or ""):
+            self.listening[sid] = max(0, self.listening.get(sid, 0) - 1)
+            self.listened[sid] = time.time()
+
+    def listens(self, sid: str, now: float) -> bool:
+        """B811: whether session `sid` waits for work here now (a long wait open, or one that ended a minute ago or
+        less: its next one comes after a short pause)."""
+        return self.listening.get(sid, 0) > 0 or now - self.listened.get(sid, 0) <= 60
 
     def folders(self) -> Set[str]:
         """The folders this project's own agent sessions work in, as their apps say (I810: a worker works there too)."""
