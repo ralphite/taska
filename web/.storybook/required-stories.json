@@ -254,17 +254,6 @@
   "Prototype/New mobile layout": [
    "New Mobile Layout"
   ],
-  "Prototype/I779 Rules include": [
-   "Reading: shared rules in place",
-   "Editing: the lines as text",
-   "Editing: insert shared rules",
-   "Settings: shared rules",
-   "Settings: one opened",
-   "Settings: the phone’s list of sections",
-   "Not found: reading",
-   "Not found: editing",
-   "What an agent reads"
-  ],
   "UI/Search/Desktop dialog/Walk through": [
    "Walk through"
   ],
@@ -327,6 +316,38 @@
    "Folded to icons",
    "Dark",
    "Its states"
+  ],
+  "UI/Rules tab/Shared rules": [
+   "Reading: the lines closed",
+   "Reading: one opened in place",
+   "Not found: reading",
+   "Editing: the lines as text",
+   "Editing: insert shared rules",
+   "Not found: editing",
+   "What an agent reads"
+  ],
+  "UI/Rules tab/Shared rules/Parts": [
+   "A line: closed",
+   "A line: opened in place",
+   "A line: one section, opened",
+   "A line: not found",
+   "A line: shared rules still coming",
+   "The editor: Shared, and what is not found",
+   "Insert: the shared rules and their sections",
+   "Insert: none yet",
+   "Used by",
+   "Used by: none yet"
+  ],
+  "UI/Settings and help/Settings/Shared rules": [
+   "The list",
+   "Loading",
+   "None yet",
+   "The phone’s sections",
+   "New shared rules: naming"
+  ],
+  "Pages/A shared rule’s page": [
+   "A shared rule’s page",
+   "A shared rule’s page: nothing written yet"
   ]
  }
 }

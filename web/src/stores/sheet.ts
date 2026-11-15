@@ -59,6 +59,10 @@ export type SheetRequest =
   | { kind: 'doc-edit'; n: number }
   /** restoring a version of the rules asks once (I693) */
   | { kind: 'rules-restore'; v: number }
+  /** the rules' editor: a shared rule (or one of its sections) to put in where the caret is (I779) */
+  | { kind: 'shared-insert' }
+  /** Settings › Shared rules: new shared rules, by name (I779) */
+  | { kind: 'new-shared' }
 
 export type SheetKind = SheetRequest['kind']
 

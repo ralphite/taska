@@ -12,9 +12,11 @@ import { NotificationsBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBod
 import { OrganizerBody } from '../features/settings/OrganizerSection'
 import { SettingsFrame } from '../features/settings/SettingsFrame'
 import { DeskNav, PhoneIndex } from '../features/settings/SettingsNav'
-import { docRows, logRows, navFacts, projectsOf } from '../features/settings/settingsFacts'
+import { docRows, logRows, navFacts, projectsOf, sharedRows } from '../features/settings/settingsFacts'
+import { SharedRulesBody } from '../features/settings/SharedRulesSection'
+import { SHARED_RULES } from './sharedRulesFixtures'
 import { goneRows } from '../model/goneRows'
-import { ALL_PROJECTS, SECTIONS, type SectionKey } from '../features/settings/sectionList'
+import type { SectionKey } from '../features/settings/sectionList'
 import type { AgentSeen, Item, LogRow, ProjectRow, Spelling } from '../model/types'
 import type { DeletedProject } from '../stores/settings'
 import { T, modelOf } from './fixtures'
@@ -94,8 +96,8 @@ export interface SettingsHere {
   noDocs?: boolean
   log?: 'loading' | 'empty' | 'asking' | 'more'
   nothingDeleted?: boolean
-  /** a section not built yet (a prototype's): last in the column, what its row says, its body */
-  more?: { key: SectionKey; section: (typeof SECTIONS)[SectionKey]; right: string | number; body(desk: boolean): ReactNode }
+  /** Shared rules (I779): still to load, or none yet */
+  shared?: 'loading' | 'none'
 }
 
 /** Shop with its history: agents, documents, what was deleted, what can be undone. */
@@ -120,7 +122,7 @@ export const shopWithHistory = (agents: AgentSeen[] = SEEN, o: { work?: boolean;
 
 export const settingsAt = (sec: SectionKey | null, desk: boolean, h: SettingsHere = {}) => <LiveSettings sec={sec} desk={desk} h={h} />
 
-const setActs = acts('Settings', ['saveRename', 'remove', 'restore', 'purge', 'open', 'leave', 'keys', 'copy', 'newKey', 'addWord', 'forget', 'openDoc', 'item', 'input', 'undo', 'more', 'restoreThing', 'restoreInput', 'onPhone'] as const, { keys: 'Sheets › Keyboard shortcuts', openDoc: 'Document › Reading' })
+const setActs = acts('Settings', ['saveRename', 'remove', 'restore', 'purge', 'open', 'leave', 'keys', 'copy', 'newKey', 'addWord', 'forget', 'openDoc', 'item', 'input', 'undo', 'more', 'restoreThing', 'restoreInput', 'onPhone', 'newShared', 'openShared'] as const, { keys: 'Sheets › Keyboard shortcuts', openDoc: 'Document › Reading', openShared: 'UI › Rules tab › Shared rules › A shared rule’s page' })
 
 /** Settings with what the page holds for it (the route's section, stores.settings: a project being named, renamed or
  * its menu open, what asks again; the notifications' and spellings' switches): a section opens (the phone's back goes
@@ -149,10 +151,8 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
   const st = { deleted: h.noneDeleted ? [] : GONE, ...p }
   const ask = (key: string, run: () => void) => (asked[key] ? run() : setAsked({ ...asked, [key]: 1 }))
   // the column says what the section shows (the desktop's state; the phone's pushes on or off)
-  const built = navFacts(m, { notifications: navWord(desk ? notices.state : push?.blocked ? 'Blocked by the phone' : push?.sub ? 'On' : 'Off'), projects: ROWS.length, spellings: h.spellingsLoading || h.noSpellings ? '' : FIXES.length })
-  const more = h.more
-  const nav = more ? { right: { ...built.right, [more.key]: more.right } } : built
-  const sections = more ? { keys: [...ALL_PROJECTS, more.key], of: { ...SECTIONS, [more.key]: more.section } } : undefined
+  const shared = h.shared === 'loading' ? null : h.shared === 'none' ? [] : SHARED_RULES
+  const nav = navFacts(m, { notifications: navWord(desk ? notices.state : push?.blocked ? 'Blocked by the phone' : push?.sub ? 'On' : 'Off'), projects: ROWS.length, spellings: h.spellingsLoading || h.noSpellings ? '' : FIXES.length, shared: shared?.length || '' })
   const pOn: ProjectsEvents = {
     newProject: () => (setP({ ...p, pErr: '', renaming: null, pMenu: null }), setNaming({ value: '', error: '' })),
     rename: (slug) => setP({ ...p, renaming: slug, pMenu: null }),
@@ -207,6 +207,7 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
       const asking = logAsking ?? new Set(h.log === 'asking' && rows?.length ? [rows.find((x) => x.undo != null)?.undo ?? -1] : [])
       return <LogBody rows={rows} end={h.log !== 'more'} asking={asking} on={{ item: setActs.item, input: setActs.input, undo: (seq) => (asking.has(seq) ? setActs.undo(seq) : setLogAsking(new Set([...asking, seq]))), more: setActs.more }} />
     },
+    shared: () => <SharedRulesBody rows={sharedRows(shared, now)} desk={desk} on={{ create: setActs.newShared, open: setActs.openShared }} />,
     deleted: () => <DeletedBody rows={h.nothingDeleted ? [] : goneRows(m)} on={{ restore: (x) => (x.kind === 'input' ? setActs.restoreInput(x.id) : setActs.restoreThing(x.key)) }} />,
   }
   const page = (
@@ -215,10 +216,9 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
         desk={desk}
         sec={sec}
         place=""
-        nav={desk ? <DeskNav current={sec ?? 'projects'} back="New input" f={nav} pressed={h.navPressed ?? null} sections={sections} on={navOn} /> : sec ? null : <PhoneIndex f={nav} sections={sections} on={navOn} />}
+        nav={desk ? <DeskNav current={sec ?? 'projects'} back="New input" f={nav} pressed={h.navPressed ?? null} on={navOn} /> : sec ? null : <PhoneIndex f={nav} on={navOn} />}
         prefs={editing && desk}
-        body={more && sec === more.key ? more.body(desk) : bodies[sec ?? 'projects']()}
-        sections={sections?.of}
+        body={bodies[sec ?? 'projects']()}
         onBack={back}
       />
       {menu.draw((k) => {

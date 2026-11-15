@@ -26,6 +26,7 @@ from ..infra.project_db import ProjectDb
 from .meaning import Meaning
 from .moves import Moves
 from .project import Project, now_iso
+from .shared_rules import SharedRules, is_shared_slug
 from .settings import AccessKey, ListViews, ProjectOrder, SearchByMeaning, Spellings, VoicePrefs
 
 Opened = Callable[[Project], None]
@@ -77,6 +78,7 @@ class Workspace:
                 self._open(name)
         if not self.projects:
             self.add("default")
+        self.shared_rules = SharedRules(self.root, self)  # I779: kept once for every project
         self.meaning.soon()  # the lines' embeddings, before the first search asks for them
 
     # -- what projects share (services.project.Shared) -------------------------------------
@@ -92,7 +94,15 @@ class Workspace:
         return self.moves.moving(slug, rid)
 
     def changed(self, slug: str) -> None:
-        self.meaning.soon()
+        if not is_shared_slug(slug):
+            self.meaning.soon()
+
+    def shared_texts(self) -> Dict[str, str]:
+        return self.shared_rules.texts()
+
+    def shared_listing(self) -> List[Dict[str, Any]]:
+        """Settings › Shared rules: each with the projects that put it in (I779)."""
+        return self.shared_rules.listing(dict(self.projects))
 
     # -- opening and changing projects ---------------------------------------------------------
 
@@ -348,5 +358,6 @@ class Workspace:
 
     def close(self) -> None:
         self.meaning.close()
+        self.shared_rules.close()
         for p in list(self.projects.values()):
             p.close()

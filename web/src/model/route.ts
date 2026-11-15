@@ -18,6 +18,7 @@ export const SETTINGS_PATHS: Record<string, string> = {
   notifications: 'notifications',
   spellings: 'spellings',
   organizer: 'organizer',
+  shared: 'shared',
   about: 'about',
 }
 

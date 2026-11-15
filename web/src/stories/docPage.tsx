@@ -71,6 +71,8 @@ export interface DocHere {
   /** the browser's selection on some words of a paragraph, as a drag over them leaves it (`recording`: the bar's mic
    * pressed: it records a comment about them) */
   selected?: { key: string; words: string; recording?: boolean }
+  /** a paragraph drawn otherwise (the rules' lines that put shared rules in, I779) */
+  lines?: (text: string) => ReactNode | null
 }
 
 export const envOf = (m: ReturnType<typeof modelOf>, desk: boolean): DocEnv => {
@@ -252,7 +254,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
   )
   const view = (
     <div ref={box} className="contents">
-      <DocView facts={facts} env={env} on={on} page={page} meter={recMeter(desk)} contentsOpen={h.contentsOpen} pointing={h.pointing} aim={h.aim ?? null} lasso={v.circle ? <Lasso onDrawn={(keys) => setV({ ...v, circle: false, sel: new Set(keys), quote: null })} /> : null} />
+      <DocView facts={facts} env={env} on={on} page={page} meter={recMeter(desk)} contentsOpen={h.contentsOpen} pointing={h.pointing} aim={h.aim ?? null} lines={h.lines} lasso={v.circle ? <Lasso onDrawn={(keys) => setV({ ...v, circle: false, sel: new Set(keys), quote: null })} /> : null} />
     </div>
   )
   if (h.viewOnly)

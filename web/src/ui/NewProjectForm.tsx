@@ -1,13 +1,16 @@
 // Naming a new project, the same wherever it is asked (the sidebar, the home page, Settings), in a small popover on the
 // desktop and a sheet on the phone titled New project (D115 #7): its tile as it will be, its name (any name), Create;
-// Enter makes it, Esc stops; why it was not made under it. Props only.
+// Enter makes it, Esc stops; why it was not made under it. New shared rules are named the same way, with no tile
+// (I779). Props only.
 
 import { useState } from 'react'
 import { ProjTile } from './bits'
 import { DISABLED, FIELD, PRIMARY } from './tones'
 
-export function NewProjectForm({ error, tone, typed = '', onCreate, onCancel }: {
+export function NewProjectForm({ error, tone, typed = '', what = 'Project', onCreate, onCancel }: {
   error: string
+  /** what is named: a project (its tile beside the name), or shared rules (I779) */
+  what?: 'Project' | 'Shared rules'
   /** the name in its field when it opens */
   typed?: string
   /** the colour its tile will have, for the name typed */
@@ -20,7 +23,7 @@ export function NewProjectForm({ error, tone, typed = '', onCreate, onCancel }: 
   return (
     <div className="min-w-0">
       <div className="flex items-center gap-3">
-        <ProjTile title={name.trim() || '?'} tone={name.trim() ? tone(name.trim()) : 'bg-zinc-300 dark:bg-zinc-600'} cls="size-11 rounded-xl text-lg lg:size-10" />
+        {what === 'Project' ? <ProjTile title={name.trim() || '?'} tone={name.trim() ? tone(name.trim()) : 'bg-zinc-300 dark:bg-zinc-600'} cls="size-11 rounded-xl text-lg lg:size-10" /> : null}
         <input
           autoFocus
           value={name}
@@ -38,8 +41,8 @@ export function NewProjectForm({ error, tone, typed = '', onCreate, onCancel }: 
             }
           }}
           className={`${FIELD} h-11 min-w-0 flex-1 py-2 lg:h-10 lg:py-1.5 lg:text-sm`}
-          placeholder="Project name"
-          aria-label="New project name"
+          placeholder={`${what} name`}
+          aria-label={`New ${what.toLowerCase()} name`}
           autoComplete="off"
           spellCheck={false}
         />

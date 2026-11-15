@@ -156,7 +156,7 @@ function Outline({ heads, open, onJump }: { heads: DocFacts['outline']; open: bo
   )
 }
 
-export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAimed, contentsOpen = false, pointing = null }: {
+export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAimed, contentsOpen = false, pointing = null, lines }: {
   facts: DocFacts
   env: DocEnv
   on: DocEvents
@@ -174,6 +174,8 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
   contentsOpen?: boolean
   /** the pointer on an item of a list when it opens: the list's key and the item's place in it (the desktop) */
   pointing?: { key: string; li: number } | null
+  /** a paragraph drawn otherwise (the rules' lines that put shared rules in, I779); null: as the document draws it */
+  lines?: (text: string) => ReactNode | null
 }) {
   const { d, rows, desk } = { ...facts, desk: env.desk }
   const web = d.fmt === 'html'
@@ -263,7 +265,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
                 data-key={r.b.key}
                 onClick={(e) => {
                   const t = e.target as Element
-                  if (t.closest('button, a, video, [data-ref]')) return
+                  if (t.closest('button, a, video, [data-ref], [data-include]')) return
                   // on the phone a tap on one item of a list picks that item, as pointing at it does on the desktop
                   const li = desk ? null : t.closest<HTMLElement>('li')
                   on.pick(r.b.key, li ? itemWords(li) : null, 'tap')
@@ -274,9 +276,11 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
                 className="group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 has-[li[data-hov]]:bg-transparent data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 lg:cursor-text lg:after:absolute lg:after:inset-y-0 lg:after:left-full lg:after:w-16 dark:hover:bg-zinc-800/50 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600 lg:[&_li[data-hov]]:rounded-md lg:[&_li[data-hov]]:bg-zinc-100 dark:lg:[&_li[data-hov]]:bg-zinc-800/70 [&_li[data-q]]:-mx-1 [&_li[data-q]]:rounded-md [&_li[data-q]]:bg-amber-50 [&_li[data-q]]:px-1 [&_li[data-q]]:ring-2 [&_li[data-q]]:ring-amber-300 dark:[&_li[data-q]]:bg-amber-950/40 dark:[&_li[data-q]]:ring-amber-600"
               >
                 <div className="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2">
-                  <RichFrame text={r.text} data-block="" cls={`min-w-0 flex-1 break-words ${r.b.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}`} onRef={on.ref} onPicture={on.picture}>
-                    <DocBlock b={{ kind: r.b.kind, text: r.text }} title={r.title} world={env.world} ticking={{ sent: r.sent, tick: (i) => on.tick(r.tk, i), modify: () => on.modifyTicks(r.tk) }} />
-                  </RichFrame>
+                  {lines?.(r.text) ?? (
+                    <RichFrame text={r.text} data-block="" cls={`min-w-0 flex-1 break-words ${r.b.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}`} onRef={on.ref} onPicture={on.picture}>
+                      <DocBlock b={{ kind: r.b.kind, text: r.text }} title={r.title} world={env.world} ticking={{ sent: r.sent, tick: (i) => on.tick(r.tk, i), modify: () => on.modifyTicks(r.tk) }} />
+                    </RichFrame>
+                  )}
                   {n ? (
                     <button
                       onClick={() => on.toggle(r.b.key)}

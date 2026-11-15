@@ -4,7 +4,7 @@ import type { Dash } from '../model/dashboard'
 import { Http, TIME_LIMIT } from './http'
 import type { FindAnswer } from '../model/find'
 import type { Command } from '../model/commands'
-import type { FileRef, GeminiKey, LogRow, Need, NoNews, ProjectRow, Spelling, ViewAnswer, VoicePrefs, WordsAnswer, SavedView } from '../model/types'
+import type { FileRef, GeminiKey, LogRow, Need, NoNews, ProjectRow, SharedRule, Spelling, ViewAnswer, VoicePrefs, WordsAnswer, SavedView } from '../model/types'
 
 export type { Command } from '../model/commands'
 
@@ -63,6 +63,8 @@ export interface Answers {
   activity: LogRow[]
   diagramFailed: Ok & { result: string }
   pageLog: Ok
+  sharedRules: SharedRule[]
+  newSharedRules: Ok & { slug: string; name: string }
 }
 
 const P = (slug: string) => `/p/${encodeURIComponent(slug)}/api/`
@@ -157,6 +159,15 @@ export class TaskaApi {
 
   deletedProjects(): Promise<Answers['deletedProjects']> {
     return this.http.json('/api/projects/deleted')
+  }
+
+  /** Shared rules (I779): each with its text, sections and the projects that put it in. */
+  sharedRules(): Promise<Answers['sharedRules']> {
+    return this.http.json('/api/shared-rules')
+  }
+
+  newSharedRules(name: string): Promise<Answers['newSharedRules']> {
+    return this.http.json('/api/shared-rules', { method: 'POST', body: { name } })
   }
 
   orderProjects(names: string[]): Promise<Answers['orderProjects']> {

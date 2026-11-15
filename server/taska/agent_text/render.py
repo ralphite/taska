@@ -11,7 +11,7 @@ import textwrap
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Mapping, Sequence, Tuple
 
-from ..domain import rules, sections, versions
+from ..domain import includes, rules, sections, versions
 from . import guide_text
 from ..domain.model import Comment, Doc, FileRef, Input, Item, Message, Proposal
 from ..domain.rules import Held
@@ -263,8 +263,9 @@ def rules_head(st: ProjectState) -> str:
     return f"Project rules v{v[-1].v}: read GET /rules once per session" if v else "No project rules yet"
 
 
-def rules_text(st: ProjectState) -> str:
-    """GET /rules: the rules document as it is now, headed by its version, who and when; the proposals waiting."""
+def rules_text(st: ProjectState, shared: Mapping[str, str] = {}) -> str:
+    """GET /rules: the rules document as it is now, headed by its version, who and when; the proposals waiting. Its
+    lines `{{name}}` are read as the shared rules they name, in their place (I779)."""
     d = st.rules
     vs = versions.versions(st, d) if d else []
     how = ("To change them, propose: `rules propose <why>` with the sections it changes indented under it (replace, "
@@ -273,8 +274,10 @@ def rules_text(st: ProjectState) -> str:
         out = ["No project rules yet.", how]
     else:
         x = vs[-1]
+        md = d.md.strip("\n") if d else ""
+        win = includes.win_line(md)
         out = [f"Project rules, version {x.v}, {who_wrote(x.by)}, {hm(x.t)}. Follow the parts that apply to what you are "
-               "doing.", how, "", d.md.strip("\n") if d else ""]
+               "doing.", *([win] if win else []), how, "", includes.expand(md, shared)]
     for p in versions.waiting(d):
         out.append(f"\nwaiting for the user: P{p.id} by {p.by}: {p.why}")
     return "\n".join(out) + "\n"

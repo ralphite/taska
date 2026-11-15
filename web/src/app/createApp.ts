@@ -54,6 +54,7 @@ import type { Notices } from './project/notices'
 import type { Projects } from './project/projects'
 import type { Restores } from './project/restores'
 import type { Settings } from './project/settings'
+import type { SharedRules } from './docs/sharedRules'
 import { Finder } from './search/finder'
 import { makeVoice } from './voice/area'
 import type { Dictation } from './voice/dictation'
@@ -120,6 +121,8 @@ export interface App {
   docs: Docs
   /** the project's rules (I693): edited with why, restored, proposals decided, its pages */
   rules: Rules
+  /** the shared rules (I779): listed, made, opened, a line put into the rules being edited */
+  sharedRules: SharedRules
   docComments: DocComments
   /** a document's choices, ticked and sent */
   docChoices: DocChoices
@@ -181,9 +184,9 @@ export function createApp(env: AppEnv): App {
     delivery: c.delivery,
   })
   const { box } = inputs
-  const { docs: docsOpen, docEditor, rules } = docs
+  const { docs: docsOpen, docEditor, rules, sharedRules } = docs
   const { items: itemActions, itemEdits, answers, selection, listOrder } = items
-  const actions = new Actions({ finder, items: itemActions, itemEdits, keyArm: page.keyArm, answers, toasts, nav, fields, sheets, docs: docsOpen, docEditor, rules, box, voice: voice.voice, media: page.media, selection, listOrder, route: s.route, ui: s.ui, feedback: s.feedback, sheet: s.sheet, itemView: s.itemView, docView: s.docView, boxStore: s.box, desk: env.desk, model })
+  const actions = new Actions({ finder, items: itemActions, itemEdits, keyArm: page.keyArm, answers, toasts, nav, fields, sheets, docs: docsOpen, docEditor, rules, sharedRules, box, voice: voice.voice, media: page.media, selection, listOrder, route: s.route, ui: s.ui, feedback: s.feedback, sheet: s.sheet, itemView: s.itemView, docView: s.docView, boxStore: s.box, desk: env.desk, model })
 
   // what did not go out before a reload goes now, in the order it was made
   for (const k of keptChanges(env.kv)) void runner.send(k)
@@ -221,6 +224,7 @@ export function createApp(env: AppEnv): App {
     docChoices: docs.docChoices,
     docEditor,
     rules,
+    sharedRules,
     settings: project.settings,
     notices: project.notices,
     voice: voice.voice,

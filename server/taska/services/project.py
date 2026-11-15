@@ -13,7 +13,7 @@ import sys
 import threading
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, List, Optional, Protocol, Sequence, Set, Tuple
+from typing import Any, Callable, Dict, List, Optional, Protocol, Sequence, Set, Tuple
 
 from ..agent_text.render import Reading
 from ..commands.run import Command, run_all
@@ -43,6 +43,10 @@ class Shared(Protocol):
 
     def changed(self, slug: str) -> None: ...
 
+    def shared_texts(self) -> Dict[str, str]:
+        """Each shared rule's text, by its name (I779): what a project's rules put in by a line `{{name}}`."""
+        ...
+
 
 def now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
@@ -67,6 +71,7 @@ class Project:
         self.files = FileStore(self.folder)
         self.news = News(self.lock, rev=self.store.count)
         self.gone = False  # deleted while this ran
+        self.holds_shared = False  # one of the shared rules (I779): it keeps only its rules document
         self.organizing = Organizing()
         self.agents = AgentActivity(self.store.db, self.state, changed=self.news.wake, gone=lambda: self.gone)
         self.voice = VoiceJobs(self)
@@ -91,6 +96,10 @@ class Project:
     def title(self) -> str:
         """What the project is called: any name; its address was made from it once."""
         return self.state.title or self.slug
+
+    def shared_texts(self) -> Dict[str, str]:
+        """The shared rules a line of this project's rules can put in, by name (I779)."""
+        return self.shared.shared_texts() if self.shared and not self.holds_shared else {}
 
     def held(self, inp: Input) -> bool:
         return self.voice.held(inp)

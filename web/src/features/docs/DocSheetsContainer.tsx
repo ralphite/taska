@@ -1,4 +1,5 @@
-// A document's sheets with the page's data: putting it on another item, and moving one of its comments.
+// A document's sheets with the page's data: putting it on another item, moving one of its comments, restoring a
+// version of the rules, putting shared rules into them (I779).
 
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { useCloseSheetWhen, useProjectModel, useProjectRoute } from '../../app/hooks'
@@ -11,6 +12,8 @@ import { commentMenuSheet, commentMoveSheet, docMenuSheet } from './DocSheets'
 import { restoreAsk } from './Rules'
 import { nowVersion, rulesDoc } from '../../model/rules'
 import { DocEditContainer } from './DocEditContainer'
+import { InsertList } from './Include'
+import { hasLine, lineOf, usedCount } from '../../model/includes'
 
 type Req<K extends SheetRequest['kind']> = { req: Extract<SheetRequest, { kind: K }> }
 
@@ -110,4 +113,21 @@ export function RulesRestoreSheet({ req }: Req<'rules-restore'>) {
   const d = rulesDoc(useProjectModel(slug))
   const next = (nowVersion(d)?.v ?? 0) + 1
   return <SheetLayout {...restoreAsk(req.v, next, { cancel: () => app.sheets.close(), restore: () => void app.rules.restore(req.v) })} />
+}
+
+/** Insert shared rules: each, and its sections, those the text puts in already ticked; a pick goes where the caret is. */
+export function SharedInsertSheet() {
+  const app = useServices('nav', 'sharedRules', 'sheets')
+  const stores = useStores('docView', 'settings')
+  const slug = useProjectRoute()?.slug ?? ''
+  const shared = useStoreValue(stores.settings, (s) => s.shared)
+  const text = useStoreValue(stores.docView, (s) => s.text) ?? ''
+  const rows = shared?.map((r) => ({ name: r.name, line: lineOf(r.name), count: usedCount(r), parts: r.parts.map((p) => ({ name: p.name, line: lineOf(r.name, p.name) })) })) ?? null
+  return (
+    <SheetLayout
+      menu
+      title="Insert shared rules"
+      body={<InsertList rows={rows} has={(l) => hasLine(text, l)} on={{ pick: (l) => app.sharedRules.insert(l), settings: () => app.sheets.close(() => app.nav.to(`/p/${encodeURIComponent(slug)}/shared`)) }} />}
+    />
+  )
 }

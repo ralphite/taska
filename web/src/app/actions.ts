@@ -28,6 +28,8 @@ import { copyText, forAgent } from './page/clipboard'
 import type { Docs } from './docs/docs'
 import type { DocEditor } from './docs/editor'
 import type { Rules } from './docs/rules'
+import type { SharedRules } from './docs/sharedRules'
+import { isSharedSlug } from '../model/includes'
 import type { Fields } from './page/fields'
 import type { ProjectRoute } from './hooks'
 import type { ItemActions } from './items/itemActions'
@@ -54,6 +56,7 @@ export interface ActionWorld {
   docs: Docs
   docEditor: DocEditor
   rules: Rules
+  sharedRules: SharedRules
   box: Box
   voice: Voice
   media: Media
@@ -253,7 +256,7 @@ export const ACTIONS = {
     run: (w) => void w.feedback.getState().undo.at(-1)?.run(),
   }),
   keys: page(['sheets'], { label: 'Keyboard shortcuts', keys: '?', listed: true, desk: true, run: (w) => w.sheets.open({ kind: 'keys' }) }),
-  back: page(['finder', 'route', 'nav', 'media', 'ui', 'sheet', 'sheets', 'selection', 'voice', 'desk', 'fields', 'boxStore', 'box', 'docs', 'docEditor', 'rules', 'itemEdits', 'itemView', 'docView'], { label: 'Step back one level', keys: 'Escape', run: (w, h) => stepBack(w, h) }),
+  back: page(['finder', 'route', 'nav', 'media', 'ui', 'sheet', 'sheets', 'selection', 'voice', 'desk', 'fields', 'boxStore', 'box', 'docs', 'docEditor', 'rules', 'sharedRules', 'itemEdits', 'itemView', 'docView'], { label: 'Step back one level', keys: 'Escape', run: (w, h) => stepBack(w, h) }),
   step: page(['nav', 'listOrder', 'toasts'], { label: 'Next item', keys: 'j', why: stepWhy, run: steps(1) }),
   'step-back': page(['nav', 'listOrder', 'toasts'], { label: 'Previous item', keys: 'k', why: stepWhy, run: steps(-1) }),
 } satisfies Record<string, Action>
@@ -265,7 +268,7 @@ export const ACTION_IDS = Object.keys(ACTIONS) as ActionId[]
 
 const typingIn = (el: Element | null) => /INPUT|TEXTAREA|SELECT/.test(el?.tagName || '') || !!(el as HTMLElement | null)?.isContentEditable
 
-type BackWorld = Pick<ActionWorld, 'finder' | 'route' | 'nav' | 'media' | 'ui' | 'sheet' | 'sheets' | 'selection' | 'voice' | 'desk' | 'fields' | 'boxStore' | 'box' | 'docs' | 'docEditor' | 'rules' | 'itemEdits' | 'itemView' | 'docView'>
+type BackWorld = Pick<ActionWorld, 'finder' | 'route' | 'nav' | 'media' | 'ui' | 'sheet' | 'sheets' | 'selection' | 'voice' | 'desk' | 'fields' | 'boxStore' | 'box' | 'docs' | 'docEditor' | 'rules' | 'sharedRules' | 'itemEdits' | 'itemView' | 'docView'>
 
 /** Esc: one level back: the drawer, the sheet, a subitem being written, an edit, the search, a field, a web page over
  * the window, full width, the search's words, the item. */
@@ -292,6 +295,7 @@ function stepBack(w: BackWorld, h: Here): void {
     if (doc.editing) return w.rules.keep()
     if (doc.quote || doc.sel.size || doc.reply) return w.docs.unpick()
     if (r.place.kind === 'rules' && !typingIn(active)) return w.rules.go({ kind: 'read' }, false)
+    if (isSharedSlug(r.slug) && !typingIn(active)) return w.sharedRules.back() // a shared rule's page: back to the list (I779)
   }
   if (r.place.kind === 'doc') {
     // a document: its editor (kept as a draft), the area being drawn, what you picked, then the document itself

@@ -1,13 +1,16 @@
 // What Settings' sections show, from the model and what the page has: Projects (this one with this page's counts),
-// Documents, Activity and Deleted.
+// Documents, Activity, Deleted and Shared rules.
 // Pure: the container and the stories both use it.
 
 import type { ListedProject } from '../../app/sideProjects'
 import { activityRows } from '../../model/activity'
 import { listedDocs } from '../../model/docs'
 import type { ProjectModel } from '../../model/project'
-import { dayShort } from '../../model/time'
-import type { LogRow, ProjectRow } from '../../model/types'
+import { ago, dayShort } from '../../model/time'
+import { usedCount } from '../../model/includes'
+import { plural } from '../../model/words'
+import type { LogRow, ProjectRow, SharedRule } from '../../model/types'
+import type { SharedRow } from './SharedRulesSection'
 import type { DeletedProject } from '../../stores/settings'
 import type { PhoneDocRow } from './PhoneSections'
 import type { ProjectsFacts } from './Sections'
@@ -42,6 +45,11 @@ export const logRows = (m: ProjectModel, rows: readonly LogRow[]) => activityRow
 
 /** The way through Settings: what each section's row says on its right (`said`: what the page knows of
  * notifications, projects and spellings). */
-export function navFacts(m: ProjectModel | null, said: { notifications: string; projects: number | ''; spellings: number | '' }): NavFacts {
-  return { right: { notifications: said.notifications, projects: said.projects, spellings: said.spellings, organizer: m?.facts.organizer.on ? 'On' : 'Off' } }
+export function navFacts(m: ProjectModel | null, said: { notifications: string; projects: number | ''; spellings: number | ''; shared?: number | '' }): NavFacts {
+  return { right: { notifications: said.notifications, projects: said.projects, spellings: said.spellings, organizer: m?.facts.organizer.on ? 'On' : 'Off', shared: said.shared ?? '' } }
+}
+
+/** Shared rules (I779): each by name, how many projects put it in, when it last changed. */
+export function sharedRows(rules: readonly SharedRule[] | null, now: number): SharedRow[] | null {
+  return rules ? rules.map((r) => ({ slug: r.slug, name: r.name, meta: [plural(usedCount(r), 'project'), r.t ? `changed ${ago(r.t, now, 'long')}` : 'nothing written yet'].join(' · ') })) : null
 }

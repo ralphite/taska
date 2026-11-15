@@ -1,6 +1,7 @@
 // Settings with the page's data: on the desktop its column of sections and the section beside it; on the phone its
 // index, or one section's page (Documents, Activity and Deleted are pages here too). It loads what a section shows
-// when the section opens; what you do goes to app.settings (and app.docs, app.restores for the phone's lists).
+// when the section opens; what you do goes to app.settings (and app.docs, app.restores for the phone's lists;
+// app.sharedRules for Shared rules).
 
 import { useEffect, type ReactNode } from 'react'
 import { Notices, navWord } from '../../app/project/notices'
@@ -16,14 +17,15 @@ import { SECTIONS, sectionOf, type SectionKey } from './sectionList'
 import { DeskNav, PhoneIndex } from './SettingsNav'
 import { Loading } from './SettingsParts'
 import { SettingsFrame } from './SettingsFrame'
-import { docRows, logRows, navFacts, projectsOf } from './settingsFacts'
+import { docRows, logRows, navFacts, projectsOf, sharedRows } from './settingsFacts'
+import { SharedRulesBody } from './SharedRulesSection'
 import { goneRows } from '../../model/goneRows'
 
 const standalone = () => typeof matchMedia !== 'undefined' && (matchMedia('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true)
 
 /** `prefsBox`: the box the transcription rules are edited in (the desktop's) */
 export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRoute; place: string; prefsBox: ReactNode }) {
-  const app = useServices('activity', 'docs', 'nav', 'notices', 'restores', 'settings', 'sheets')
+  const app = useServices('activity', 'docs', 'nav', 'notices', 'restores', 'settings', 'sharedRules', 'sheets')
   const stores = useStores('activity', 'box', 'data', 'settings', 'sheet')
   const pane = usePaneRef('settings')
   const desk = useLayout() === 'desk'
@@ -47,6 +49,9 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
   useEffect(() => {
     if (sec === 'log' && cursor) void app.activity.show(route.slug, cursor)
   }, [app, sec, route.slug, cursor])
+  useEffect(() => {
+    if (sec === 'shared' || !stores.settings.getState().shared) void app.sharedRules.load()
+  }, [app, stores, sec])
 
   const href = (k: SectionKey) => `/p/${encodeURIComponent(route.slug)}/${SECTIONS[k].path}`
   const open = (k: SectionKey) => app.nav.to(href(k))
@@ -56,6 +61,7 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
     notifications: navWord(desk ? app.notices.state() : app.notices.pushWord()),
     projects: projects ? projects.length : '',
     spellings: st.fixes?.length || '',
+    shared: st.shared?.length || '',
   })
 
 
@@ -118,6 +124,14 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
             gemini={m.facts.organizer.key}
             saving={st.geminiSaving}
             events={{ save: (key) => void s.saveGemini(route.slug, key), forget: () => void s.saveGemini(route.slug, '') }}
+          />
+        )
+      case 'shared':
+        return (
+          <SharedRulesBody
+            rows={sharedRows(st.shared, m.at)}
+            desk={desk}
+            on={{ create: (from) => (desk ? app.sheets.openFrom(from, { kind: 'new-shared' }, { focus: false }) : app.sheets.open({ kind: 'new-shared' }, { focus: false })), open: (slug) => app.sharedRules.open(slug) }}
           />
         )
       case 'docs':

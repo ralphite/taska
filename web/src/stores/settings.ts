@@ -1,8 +1,8 @@
 // What Settings shows that is not a project's data: the guide agents read, voice spellings and preferences, the
-// deleted projects; and where you are in its forms (a new project being named, one being renamed, a row's menu open).
+// deleted projects, the shared rules; and where you are in its forms (a new project being named, one being renamed, a row's menu open).
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
-import type { Spelling, VoicePrefs } from '../model/types'
+import type { SharedRule, Spelling, VoicePrefs } from '../model/types'
 
 export interface DeletedProject {
   name: string
@@ -16,6 +16,8 @@ export interface SettingsState {
   fixes: Spelling[] | null
   prefs: VoicePrefs | null
   deleted: DeletedProject[] | null
+  /** the shared rules (I779), once they came */
+  shared: SharedRule[] | null
   /** a new project's row is open (its name so far, and why it was not made) */
   pErr: string
   /** the project being renamed */
@@ -37,6 +39,7 @@ export function createSettingsStore(): SettingsStore {
     fixes: null,
     prefs: null,
     deleted: null,
+    shared: null,
     pErr: '',
     renaming: null,
     pMenu: null,

@@ -21,12 +21,13 @@ import { DocBlock } from './DocBlock'
 /** the document's column, as DocView's */
 export const RULES_COLUMN = 'lg:mx-auto lg:w-full lg:max-w-[min(46rem,calc(100%-5rem))]'
 
-/** The bar's name: Rules, and what it shows (the version, who, when; Editing; a proposal). */
-export function RulesHead({ sub }: { sub: ReactNode }) {
+/** The bar's name: Rules (a shared rule's own name, I779), and what it shows (the version, who, when; Editing; a
+ * proposal). */
+export function RulesHead({ sub, title = 'Rules' }: { sub: ReactNode; title?: string }) {
   return (
     <span className="flex min-w-0 items-center gap-2 overflow-hidden text-sm">
       <Icon n="book" c="size-[18px] shrink-0 text-zinc-500 dark:text-zinc-400" />
-      <span className="shrink-0 font-semibold">Rules</span>
+      <span className="max-w-[60%] shrink-0 truncate font-semibold">{title}</span>
       {sub ? <span className={`truncate ${MUTED}`}>{sub}</span> : null}
     </span>
   )
@@ -271,11 +272,11 @@ export function restoreAsk(v: number, next: number, on: { cancel(): void; restor
 }
 
 /** No rules yet: what they are for, and the way to write them. */
-export function NoRules({ onWrite }: { onWrite(): void }) {
+export function NoRules({ onWrite, about = 'No rules yet. Agents read them before they work.' }: { onWrite(): void; about?: string }) {
   return (
     <div className={`flex flex-col items-center gap-3 py-12 text-center ${RULES_COLUMN}`}>
       <Icon n="book" c="size-8 text-zinc-300 dark:text-zinc-600" />
-      <p className={`max-w-xs text-sm ${MUTED}`}>No rules yet. Agents read them before they work.</p>
+      <p className={`max-w-xs text-sm ${MUTED}`}>{about}</p>
       <button onClick={onWrite} className={PRIMARY}>
         <Icon n="pencil" c="size-4" />
         Write the rules

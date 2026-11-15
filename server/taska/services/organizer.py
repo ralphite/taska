@@ -32,7 +32,7 @@ def context(p: Project, inp: Input) -> str:
     """What the organizer reads with an input: the open items, the rules, the item it is about, and the input."""
     st = p.state
     rows = [render.line(st, i) for i in rules.by_priority(st.live_items()) if i.status not in CLOSED][:600]
-    out = ["Open items:\n" + ("\n".join(rows) if rows else "(none yet)"), "Project rules:\n" + render.rules_text(st)]
+    out = ["Open items:\n" + ("\n".join(rows) if rows else "(none yet)"), "Project rules:\n" + render.rules_text(st, p.shared_texts())]
     rd = p.reading()
     if inp.scope in st.items:
         out.append("Scope item (the input is about this one):\n" + render.card(rd, st.items[inp.scope]))  # type: ignore[index]

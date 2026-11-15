@@ -5,7 +5,7 @@
 import type { Place } from '../../model/route'
 import type { IconName } from '../../ui/icon-paths'
 
-export type SectionKey = 'projects' | 'phone' | 'notifications' | 'spellings' | 'organizer' | 'docs' | 'log' | 'deleted'
+export type SectionKey = 'projects' | 'phone' | 'notifications' | 'spellings' | 'organizer' | 'shared' | 'docs' | 'log' | 'deleted'
 
 export const SECTIONS: Record<SectionKey, { path: string; icon: IconName; name: string; about: () => string }> = {
   docs: { path: 'docs', icon: 'doc', name: 'Documents', about: () => 'Each opens with its item' },
@@ -16,9 +16,10 @@ export const SECTIONS: Record<SectionKey, { path: string; icon: IconName; name: 
   notifications: { path: 'notifications', icon: 'bell', name: 'Notifications', about: () => 'Alerts when something needs you' },
   spellings: { path: 'spellings', icon: 'pencil', name: 'Voice spellings', about: () => 'Add one by selecting wrong words in a voice note.' },
   organizer: { path: 'organizer', icon: 'sparkle', name: 'Organizer', about: () => 'Turns what you say into items across all projects.' },
+  shared: { path: 'shared', icon: 'book', name: 'Shared rules', about: () => 'Kept once for every project. A line {{name}} in a project’s rules puts one there.' },
 }
 
-export const ALL_PROJECTS: SectionKey[] = ['projects', 'phone', 'notifications', 'spellings', 'organizer']
+export const ALL_PROJECTS: SectionKey[] = ['projects', 'phone', 'notifications', 'spellings', 'organizer', 'shared']
 
 /** The section an address names ("about" is Projects). */
 export function sectionOf(path: string | null, desk: boolean): SectionKey | null {

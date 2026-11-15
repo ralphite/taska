@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
 from ..agent_text import render
-from ..domain import events as ev, rules, sections, versions
+from ..domain import events as ev, includes, rules, sections, versions
 from ..domain.model import Input, Item, Message
 from ..domain.state import ProjectState, ident
 from ..domain.text import first_line, seconds
@@ -83,6 +83,7 @@ class AgentActivity:
             {str(k): {int(n): int(m) for n, m in v.items()} for k, v in heard.items()} if isinstance(heard, dict) else {})
         self.told: Dict[str, Set[int]] = {}  # per session: messages for it that a /do reply named already
         self.rule_marks: Dict[str, int] = {}  # per session: how much of the log it has been told rules from
+        self.shared_marks: Dict[str, Dict[str, str]] = {}  # per session: the shared rules' texts it was last told (I779)
         self.roster_told: Dict[str, str] = {}  # per session: who else it was last told works here (T774)
         guide = db.get("guide")  # F743: the guide's versions sessions last saw, and those versions' words
         guide = guide if isinstance(guide, dict) else {}
@@ -222,6 +223,24 @@ class AgentActivity:
                 if q and q.by == name:
                     out.append(f"the user wrote on your rules proposal P{q.id}: {first_line(e.text, 200)} "
                                f"(answer: rules reply P{q.id} <text>)")
+        return out
+
+    def shared_news(self, state: ProjectState, name: object, ses: str, shared: Dict[str, str]) -> List[str]:
+        """The shared rules this project's rules put in changed since this session last heard, told once (I779): which,
+        and the changed sections. Its first call only sets the mark (it reads /rules)."""
+        key = f"{agent_name(name)}\x00{session_name(ses)}"
+        md = state.rules.md if state.rules else ""
+        names = {includes.norm(n): n for n in shared}
+        now = {names[includes.norm(i.name)]: shared[names[includes.norm(i.name)]] for i in includes.includes(md)
+               if includes.norm(i.name) in names}
+        was = self.shared_marks.get(key)
+        self.shared_marks[key] = now
+        out: List[str] = []
+        for n, text in now.items() if was is not None else []:
+            changed = sections.diff(was.get(n, ""), text) if n in was and was[n] != text else []  # type: ignore[union-attr]
+            if changed:
+                out.append(f"the shared rules “{n}” in this project's rules changed. Apply them from now on; what changed:")
+                out += ["  " + x for x in changed]
         return out
 
     def read_guide(self, name: object, ses: str, version: Tuple[str, str]) -> None:

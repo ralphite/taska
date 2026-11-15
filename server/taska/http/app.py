@@ -28,10 +28,10 @@ from .access import Access
 from .messages import NOT_FOUND, Request, Response, TooLarge, as_json, redirect, text
 from .static import PageFiles
 
-PROJECT_PATH = re.compile(r"/p/([a-z0-9][a-z0-9-]*)(/.*)?")
+PROJECT_PATH = re.compile(r"/p/(~?[a-z0-9][a-z0-9-]*)(/.*)?")  # ~<id>: one of the shared rules (I779)
 # the page's views: a browser opening one gets the page there
 VIEW_PATH = re.compile(r"/(inputs|archive|rules(?:/[a-z0-9/]+)?|new|settings|phone|notifications|spellings|log|deleted|"
-                       r"docs|about|projects|organizer|[A-Za-z]\d+)")
+                       r"docs|about|projects|organizer|shared|[A-Za-z]\d+)")
 SLOW_IS_FINE = re.compile(r"/api/(changes|words)|[?&]wait=")  # what waits on purpose
 
 
@@ -117,7 +117,7 @@ class AppContext:
         ws = self.workspace
         m = PROJECT_PATH.fullmatch(path)
         if m:
-            p = ws.projects.get(m.group(1))
+            p = ws.projects.get(m.group(1)) or ws.shared_rules.get(m.group(1))
             if not p and ws.was_deleted(m.group(1)):  # agents asking for work hear why there is none
                 raise Refused(f"project {m.group(1)} was deleted: there is no work here. The user can restore it in "
                               "Taska (Settings › Projects).")
@@ -144,7 +144,8 @@ class AppContext:
             if hub is not None:
                 return hub
             gone = PROJECT_PATH.fullmatch(path)
-            if gone and gone.group(1) not in self.workspace.projects and "text/html" in req.header("Accept"):
+            if gone and gone.group(1) not in self.workspace.projects and not self.workspace.shared_rules.get(gone.group(1)) \
+                    and "text/html" in req.header("Accept"):
                 # a person opening a project that is gone lands on the home page, which says so
                 return redirect(("/?gone=" if self.workspace.was_deleted(gone.group(1)) else "/?none=") + gone.group(1))
             p, sub, base = self.project_of(req, path)
@@ -159,7 +160,7 @@ class AppContext:
             return self.page_answer()
         if sub == "/":
             return self.page_answer()
-        answer = agent_routes.get(req, p, sub, base)
+        answer = None if p.holds_shared else agent_routes.get(req, p, sub, base)  # no agent works in shared rules
         if answer is not None:
             return answer
         answer = page_routes.get(self, req, p, sub)
@@ -178,7 +179,7 @@ class AppContext:
             if hub is not None:
                 return hub
             p, sub, _ = self.project_of(req, path)
-            if sub == "/do":
+            if sub == "/do" and not p.holds_shared:
                 return agent_routes.do(req, p)
             if sub == "/api/file":
                 return agent_routes.upload(req, p)

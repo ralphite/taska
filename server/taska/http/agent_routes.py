@@ -93,8 +93,9 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
     if sub == "/wake":
         return _wake(req, p)
     if sub == "/rules":
+        shared = p.shared_texts()  # the shared rules its lines put in (I779), read before its own lock
         with p.lock:
-            return text(200, render.rules_text(p.state))
+            return text(200, render.rules_text(p.state, shared))
     if sub == "/connect":
         return text(200, CONNECT.format(name=p.slug, base=base, host=req.host() + req.prefix))
     if sub in ("/inbox", "/inputs"):
@@ -169,11 +170,13 @@ def _next(req: Request, p: Project, by: str) -> Response:
                 p.agents.stopped_listening(req.arg("sid"))
     out = w.text
     if "ui" not in q:
+        shared = p.shared_texts()  # before its own lock (I779)
         with p.lock:
             p.agents.read_next(by)
             if given is not None:
                 p.agents.read_item(given, by, p.state)
             news = p.agents.rule_news(p.state, by, session)  # the rules changed since it last heard: said first
+            news += p.agents.shared_news(p.state, by, session, shared)  # and the shared rules they put in (I779)
             news += p.agents.guide_news(by, session, render.guide_version())  # and so did the guide (F743)
             news += p.agents.roster_news(p.state, by, session)  # who else works here, when that changed (T774)
         if news:

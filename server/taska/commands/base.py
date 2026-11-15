@@ -83,6 +83,11 @@ class Changes(Protocol):
 
     def note_voice_fix(self, wrong: str, right: str, inp: Input, by: str) -> None: ...
 
+    @property
+    def holds_shared(self) -> bool:
+        """One of the shared rules (I779): its rules put no other shared rules in."""
+        ...
+
 
 @dataclass
 class Run:

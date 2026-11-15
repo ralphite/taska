@@ -6,6 +6,7 @@
 import type { ReactNode } from 'react'
 import type { Chunk, VersionRow } from '../../model/rules'
 import type { InlineWorld } from '../../ui/markdown/inline'
+import { Icon } from '../../ui/Icon'
 import { PaneFrame } from '../../ui/PaneFrame'
 import { Sheet, SheetLayout } from '../../ui/Sheet'
 import { DocPaneNav } from './DocPane'
@@ -45,8 +46,17 @@ export interface ProposalShown {
   on: ProposalEvents
 }
 
+/** A shared rule's page (I779): its name for Rules, the way back to Settings › Shared rules, what an empty one is
+ * for, and the projects that use it under its text. */
+export interface SharedPage {
+  name: string
+  empty: string
+  under: ReactNode
+  onBack(): void
+}
+
 /** The rules read: the version, who and when in the bar, History, Copy and Edit, the phone's as the desktop's; the proposals waiting above the document; none yet: what they are for and Write the rules. */
-export function RulesReading({ f, sub, proposals, doc, on }: { f: RulesFrame; sub: ReactNode; proposals: ProposalShown[]; doc: ReactNode | null; on: { history(): void; copy(): void; edit(): void } }) {
+export function RulesReading({ f, sub, proposals, doc, shared, on }: { f: RulesFrame; sub: ReactNode; proposals: ProposalShown[]; doc: ReactNode | null; shared?: SharedPage; on: { history(): void; copy(): void; edit(): void } }) {
   const reading = (
     <>
       {proposals.map((p) => (
@@ -54,9 +64,11 @@ export function RulesReading({ f, sub, proposals, doc, on }: { f: RulesFrame; su
           <ProposalCard f={p.f} on={p.on} />
         </div>
       ))}
-      {doc ?? <NoRules onWrite={on.edit} />}
+      {doc ?? <NoRules onWrite={on.edit} about={shared?.empty} />}
+      {shared ? <div className={RULES_COLUMN}>{shared.under}</div> : null}
     </>
   )
+  const head = <RulesHead sub={sub} title={shared?.name} />
   const history = sub ? <BarBtn icon="history" label="History" onClick={on.history} /> : null
   const edit = <BarBtn icon="pencil" label="Edit" onClick={on.edit} />
   if (f.desk)
@@ -65,7 +77,8 @@ export function RulesReading({ f, sub, proposals, doc, on }: { f: RulesFrame; su
         place={f.place}
         hidden={f.hidden}
         desk
-        head={<RulesHead sub={sub} />}
+        lead={shared ? <DocPaneNav to="Shared rules" onBack={shared.onBack} /> : undefined}
+        head={head}
         acts={
           <>
             {history}
@@ -73,17 +86,20 @@ export function RulesReading({ f, sub, proposals, doc, on }: { f: RulesFrame; su
             {edit}
           </>
         }
-        onBack={() => undefined}
+        onBack={shared?.onBack ?? (() => undefined)}
       >
         <div className="w-full px-8 pt-8 pb-12">{reading}</div>
       </PaneFrame>
     )
   return (
     <section data-part="rules" hidden={f.hidden} className={`flex min-h-0 flex-1 flex-col ${f.place}`}>
-      <div className="flex h-12 shrink-0 items-center gap-1 border-b border-zinc-100 pr-2 pl-4 dark:border-zinc-800/70">
-        <span className="min-w-0 flex-1">
-          <RulesHead sub={sub} />
-        </span>
+      <div className={`flex h-12 shrink-0 items-center gap-1 border-b border-zinc-100 pr-2 dark:border-zinc-800/70 ${shared ? 'pl-1' : 'pl-4'}`}>
+        {shared ? (
+          <button onClick={shared.onBack} aria-label="Back to shared rules" className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 dark:text-zinc-400">
+            <Icon n="left" c="size-6" />
+          </button>
+        ) : null}
+        <span className="min-w-0 flex-1">{head}</span>
         {history}
         {sub ? <BarBtn icon="copy" label="Copy" onClick={on.copy} /> : null}
         {edit}

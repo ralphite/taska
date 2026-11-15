@@ -175,6 +175,21 @@ export interface Doc {
   history?: RuleVersion[]
 }
 
+/** Shared rules (I779): kept once for every project, put into a project's rules by a line `{{name}}`. Its address
+ * (`~<id>`) opens it as the Rules tab opens a project's rules; `parts` are the sections a line can name (`name`: the
+ * heading's words before a "（…）"); `used`: each project's line that puts it in. */
+export interface SharedRule {
+  slug: string
+  name: string
+  md: string
+  parts: { name: string; title: string; md: string }[]
+  /** its version now, who wrote it and when (none: nothing written yet) */
+  v?: number
+  by?: string
+  t?: string
+  used: { project: string; title: string; line: string }[]
+}
+
 /** A version of the rules (I693): who, when (its first and last save), every why (newest first), the inputs it came
  * from, the text it left; a restore says which version it put back; an approved proposal, which one. */
 export interface RuleVersion {

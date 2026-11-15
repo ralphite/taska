@@ -1,5 +1,5 @@
 // The documents' part of the page, made together: a document as you read it, the document itself as you edit it,
-// the project's rules, comments on documents and their choices. Speaking into a document being edited (the voice's
+// the project's rules and the shared rules they put in, comments on documents and their choices. Speaking into a document being edited (the voice's
 // part, made after it) is reached through `dictation`.
 
 import type { Core } from '../core'
@@ -10,6 +10,7 @@ import { DocComments } from './comments'
 import { Docs } from './docs'
 import { DocEditor } from './editor'
 import { Rules } from './rules'
+import { SharedRules } from './sharedRules'
 
 export function makeDocs(c: Core, i: Pick<InputsArea, 'box' | 'inputs'>, dictation: () => Dictation) {
   const { s, toasts, runner, sheets, fields } = c
@@ -31,6 +32,7 @@ export function makeDocs(c: Core, i: Pick<InputsArea, 'box' | 'inputs'>, dictati
   const rules = new Rules({ route: s.route, model: c.model, runner, view: s.docView, nav: c.nav, sheets, toasts, kv: c.kv })
   const docComments = new DocComments({ route: s.route, model: c.model, runner, view: s.docView, box: i.box, boxStore: s.box, fields, sheets, toasts, desk: c.desk })
   const docChoices = new DocChoices({ route: s.route, model: c.model, runner, ticks: s.docTicks, view: s.docView, box: i.box, inputs: i.inputs, toasts, desk: c.desk })
-  return { docs, docEditor, rules, docComments, docChoices }
+  const sharedRules = new SharedRules({ api: c.api, delivery: c.delivery, store: s.settings, data: s.data, route: s.route, view: s.docView, fields, sheets, toasts, kv: c.kv, slug: c.slug })
+  return { docs, docEditor, rules, docComments, docChoices, sharedRules }
 }
 export type DocsArea = ReturnType<typeof makeDocs>

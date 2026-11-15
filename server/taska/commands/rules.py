@@ -10,6 +10,7 @@ from typing import List, Optional
 
 from ..domain import events as ev
 from ..domain.model import Doc, Proposal, SectionEdit
+from ..domain.includes import check_shared_text
 from ..domain.rules import proposal_comments
 from ..domain.sections import apply, read_edits
 from ..domain.state import ProjectState
@@ -57,6 +58,8 @@ def write(r: Run, md: str, why: str, src: Optional[str], **more: object) -> Opti
     md = md.strip("\n")
     if len(md) > MAX_TEXT:
         raise Refused("the rules are too long")
+    if r.project.holds_shared:  # one level (I779, D134)
+        check_shared_text(md)
     d = _doc(s)
     if (d.md if d else "") == md and not more.get("undo"):
         return None

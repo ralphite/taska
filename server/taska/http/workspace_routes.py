@@ -50,6 +50,8 @@ def get(ctx: "AppContext", req: Request, path: str) -> Optional[Response]:
         return as_json(find_view(ws, req.arg("q"), req.arg("here")))
     if path == "/api/projects/deleted":
         return as_json(ws.deleted())
+    if path == "/api/shared-rules":  # I779: each shared rule, its text and sections, and the projects that put it in
+        return as_json(ws.shared_listing())
     if path == "/api/corrections":
         return as_json(ws.spellings.all())
     if path == "/api/views":
@@ -84,6 +86,9 @@ def post(ctx: "AppContext", req: Request, path: str) -> Optional[Response]:
             ws.set_order(d.get("names"))
             return as_json({"ok": True})
         return text(404, NOT_FOUND)
+    if path == "/api/shared-rules":  # {name}: new shared rules, empty (I779)
+        p = ws.shared_rules.add(req.json_body(10_000).get("name"))
+        return as_json({"ok": True, "slug": p.slug, "name": p.title})
     if path == "/api/views":
         d = req.json_body(20_000)
         return as_json({"ok": True, "views": ws.views.replace(d.get("views"))})

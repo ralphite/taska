@@ -15,7 +15,8 @@ import { FiltersSheet } from '../features/list/FiltersContainer'
 import { ViewMenuSheet } from '../features/list/ViewMenuContainer'
 import { SignInSheet } from '../features/project/SignInContainer'
 import { NewProjectSheet, NotSavedSheet, ProjectMenuSheet } from '../features/project/ProjectSheetsContainer'
-import { CommentMenuSheet, CommentMoveSheet, DocEditSheet, DocMenuSheet, DocMoveSheet, RulesRestoreSheet } from '../features/docs/DocSheetsContainer'
+import { CommentMenuSheet, CommentMoveSheet, DocEditSheet, DocMenuSheet, DocMoveSheet, RulesRestoreSheet, SharedInsertSheet } from '../features/docs/DocSheetsContainer'
+import { NewSharedSheet } from '../features/settings/SharedRulesContainer'
 
 const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { kind: K }> }> } = {
   'item-menu': ItemMenuSheet,
@@ -42,6 +43,8 @@ const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { ki
   'doc-menu': DocMenuSheet,
   'doc-edit': DocEditSheet,
   'rules-restore': RulesRestoreSheet,
+  'shared-insert': SharedInsertSheet,
+  'new-shared': NewSharedSheet,
   'view-menu': ViewMenuSheet,
   'sign-in': SignInSheet,
   'project-menu': ProjectMenuSheet,

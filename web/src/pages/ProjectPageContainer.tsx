@@ -33,6 +33,8 @@ import { DetailContainer } from './DetailContainer'
 import { RulesContainer } from '../features/docs/RulesContainer'
 import { ListHead, PhoneTabs, ProjectBar } from './Header'
 import { agentInfo, deskTabs, phoneTabs, tabCounts } from './headFacts'
+import { SharedRuleContainer } from './SharedRuleContainer'
+import { isSharedSlug } from '../model/includes'
 
 /** Settings › Organizer, where the Gemini API key is set (F765) */
 const organizerHref = (slug: string) => `/p/${encodeURIComponent(slug)}/${SECTIONS.organizer.path}`
@@ -63,11 +65,12 @@ export function ProjectPageContainer({ route }: { route: ProjectRoute }) {
   useEffect(() => {
     const waiting = m ? needsCount(m, needsYou) : 0
     const sec = settingsTitle(route.place, layout === 'desk')
-    document.title = (waiting ? `(${waiting}) ` : '') + (sec ? sec + ' · ' : '') + (m ? `${m.facts.title} · Taska` : 'Taska')
-  }, [m, route.place, layout])
+    const shared = isSharedSlug(route.slug) ? 'Shared rules · ' : '' // a shared rule's page (I779)
+    document.title = (waiting ? `(${waiting}) ` : '') + (sec ? sec + ' · ' : '') + shared + (m ? `${m.facts.title} · Taska` : 'Taska')
+  }, [m, route.place, route.slug, layout])
   return (
     <>
-      {layout === 'desk' ? <DeskLayout route={route} /> : <PhoneLayout route={route} />}
+      {isSharedSlug(route.slug) ? <SharedRuleContainer route={route} /> : layout === 'desk' ? <DeskLayout route={route} /> : <PhoneLayout route={route} />}
       <ToastContainer />
     </>
   )
