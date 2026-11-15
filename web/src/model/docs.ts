@@ -5,6 +5,7 @@
 import { userWord } from './items'
 import { codeOf, liveN, type ProjectModel } from './project'
 import type { Block, Comment, Doc, Item } from './types'
+import { when } from './time'
 
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' }
 
@@ -127,14 +128,14 @@ export const commentCount = (d: Doc) =>
  * changed since). */
 export const listedCommentCount = (d: Doc) => d.blocks.reduce((k, b) => k + b.comments.length, 0) + (d.whole?.length || 0)
 
-/** The documents as Documents lists them, the newest first: each with its item (its code and title) and how many
- * comments it has. */
-export function listedDocs(m: ProjectModel): { d: number; title: string; web: boolean; on: string; comments: number }[] {
+/** The documents as Documents lists them, the newest first: each with its item (its code and title), when it was
+ * last changed (F581 #7200), and how many comments it has. */
+export function listedDocs(m: ProjectModel): { d: number; title: string; web: boolean; on: string; when: string; comments: number }[] {
   return m.docs
     .filter((d) => d.kind !== 'rules') // the rules are the Rules tab, not one of the documents (I693)
     .sort((a, b) => b.d - a.d)
     .map((d) => {
       const it = m.byN.get(liveN(m, d.n))
-      return { d: d.d, title: d.title, web: d.fmt === 'html', on: it ? `${codeOf(m, it.n)} ${it.title}` : '', comments: listedCommentCount(d) }
+      return { d: d.d, title: d.title, web: d.fmt === 'html', on: it ? `${codeOf(m, it.n)} ${it.title}` : '', when: when(d.t1 || d.t0, m.at), comments: listedCommentCount(d) }
     })
 }

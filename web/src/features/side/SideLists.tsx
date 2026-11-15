@@ -46,6 +46,8 @@ export interface DocRow {
   web: boolean
   /** its item, as "F12 title" */
   on: string
+  /** when it was last changed */
+  when: string
   comments: number
 }
 
@@ -65,6 +67,7 @@ export function DocsList({ docs, open, onOpen }: { docs: DocRow[]; open: number 
             <p className="line-clamp-2 text-[15px] leading-snug font-medium break-words lg:line-clamp-1">{d.title}</p>
             <p className="mt-1 truncate text-xs font-medium text-zinc-500 dark:text-zinc-400">
               <span className="font-mono">D{d.d}</span>
+              {d.when ? ` · ${d.when}` : ''}
               {d.on ? ` · ${d.on}` : ''}
               {d.comments ? ` · ${plural(d.comments, 'comment')}` : ''}
             </p>

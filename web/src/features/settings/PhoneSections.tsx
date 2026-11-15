@@ -18,6 +18,8 @@ export interface PhoneDocRow {
   title: string
   web: boolean
   on: string
+  /** when it was last changed */
+  when: string
   comments: number
 }
 
@@ -40,6 +42,7 @@ export function DocsBody({ docs, onOpen }: { docs: PhoneDocRow[]; onOpen(d: numb
               <span className="line-clamp-2 block text-[15px] font-medium break-words">{d.title}</span>
               <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">
                 <span className="font-mono">D{d.d}</span>
+                {d.when ? ` · ${d.when}` : ''}
                 {d.on ? ` · ${d.on}` : ''}
                 {d.comments ? ` · ${plural(d.comments, 'comment')}` : ''}
               </span>

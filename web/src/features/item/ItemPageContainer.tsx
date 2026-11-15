@@ -44,6 +44,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   const ticks = useStoreValue(stores.docTicks, (s) => s)
   // the search's preview is always one column, whatever the page's own layout (r1070)
   const duo = useStoreValue(stores.ui, (s) => s.duo) && desk && !preview
+  const lastSent = useStoreValue(stores.ui, (s) => s.lastSent)
   const view = useStoreValue(stores.itemView, (s) => s)
   const kept = useStoreValue(stores.keptEdits, (s) => s)
   const outbox = useStoreValue(stores.outbox, (s) => s.list)
@@ -105,6 +106,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   }
   const facts: TalkFacts = {
     inputs: m.byId,
+    sent: lastSent?.slug === slug ? lastSent.rid : null,
     peeking: view.peeking,
     reask: view.reask,
     going: answering ?? null,
