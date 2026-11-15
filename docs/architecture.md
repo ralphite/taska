@@ -59,7 +59,10 @@ Rules, checked by `tests/test_architecture.py`:
 6. No module over 600 lines (the two generated word lists of the guide excepted).
 
 Each project stores its event log, projected state and agent metadata in SQLite, with attachments in
-`taska-files/`. Changes must preserve existing user data and replay the event log consistently. Data of an earlier format is
+`taska-files/`. Shared rules (I779) are kept the same way, each a small store of its own under `.shared-rules/` (address
+`~<id>`) that holds only its rules document; `services.shared_rules` opens them, no project list, count, search,
+agent or organizer sees them, and a project's rules put one in by a line `{{name}}` that readers get expanded in
+place (`domain.includes`). Changes must preserve existing user data and replay the event log consistently. Data of an earlier format is
 migrated once, then the code that read it goes: no reader of an earlier format is kept. The logs are in format 2
 (every change in today's kinds, Refactor 8A); a log of another format is refused when its project opens.
 

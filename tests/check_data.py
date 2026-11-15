@@ -27,9 +27,9 @@ from taska.infra.project_db import FORMAT_VERSION  # noqa: E402
 
 
 def databases(root: Path) -> List[Path]:
-    """Active and deleted projects, excluding links and unrelated databases."""
+    """Active and deleted projects and the shared rules (I779), excluding links and unrelated databases."""
     out = []
-    for parent in (root, root / ".deleted"):
+    for parent in (root, root / ".deleted", root / ".shared-rules"):
         if not parent.is_dir() or parent.is_symlink():
             continue
         for folder in parent.iterdir():

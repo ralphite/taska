@@ -35,7 +35,7 @@ export const Naming: Story = {
       {(layout) => (
         <div className="relative h-full">
           {settingsAt('shared', layout === 'desk')}
-          <Sheet open look={layout === 'desk' ? { pop: true, at: { x: 290, y: 190 } } : {}} desk={layout === 'desk'} onClose={on.cancel}>
+          <Sheet open look={layout === 'desk' ? { pop: true, at: { x: 334, y: 236 } } : {}} desk={layout === 'desk'} onClose={on.cancel}>
             <SheetLayout title="New shared rules" body={<div className="pb-1"><NewProjectForm what="Shared rules" error="shared rules called 编程 exist already" typed="编程" tone={() => ''} onCreate={on.create} onCancel={on.cancel} /></div>} />
           </Sheet>
         </div>

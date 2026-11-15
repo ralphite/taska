@@ -14,12 +14,12 @@
   },
   {
    "name": "编程",
-   "md": "## 需求（改功能、改行为时）\n\n- 动手前把需求放进真实使用里想一遍；可能听错或有两种理解时，先在事项里问用户确认。\n-用户明确讲过的需求是硬性要求；和新要求冲突时先问他。\n\n## 代码（改代码、提交、推送时）\n\n- 删功能或换掉旧做法就删干净：路由、状态、界面、服务端一起删，不做向后兼容。\n- 修一处先找出同样做法的地方一起改，完成时说查了哪些。\n- 推送的内容不含用户数据、个人数据、密钥；代码和提交说明不用中文。\n\n## 测试（决定测多少时）\n\n- 按风险测：改字、挪位置、小修只跑类型检查、lint 和单元测试。\n- 重测试（整组浏览器测试、逐状态截图）默认一天最多一次，先在事项里说明跑什么、为什么。\n- 测试一失败，先查是产品的 bug 还是测试过时。",
+   "md": "## 需求（改功能、改行为时）\n\n- 动手前把需求放进真实使用里想一遍；可能听错或有两种理解时，先在事项里问用户确认。\n- 用户明确讲过的需求是硬性要求；和新要求冲突时先问他。\n\n## 代码（改代码、提交、推送时）\n\n- 删功能或换掉旧做法就删干净：路由、状态、界面、服务端一起删，不做向后兼容。\n- 修一处先找出同样做法的地方一起改，完成时说查了哪些。\n- 推送的内容不含用户数据、个人数据、密钥；代码和提交说明不用中文。\n\n## 测试（决定测多少时）\n\n- 按风险测：改字、挪位置、小修只跑类型检查、lint 和单元测试。\n- 重测试（整组浏览器测试、逐状态截图）默认一天最多一次，先在事项里说明跑什么、为什么。\n- 测试一失败，先查是产品的 bug 还是测试过时。",
    "parts": [
     {
      "name": "需求",
      "title": "需求（改功能、改行为时）",
-     "md": "## 需求（改功能、改行为时）\n\n- 动手前把需求放进真实使用里想一遍；可能听错或有两种理解时，先在事项里问用户确认。\n-用户明确讲过的需求是硬性要求；和新要求冲突时先问他。"
+     "md": "## 需求（改功能、改行为时）\n\n- 动手前把需求放进真实使用里想一遍；可能听错或有两种理解时，先在事项里问用户确认。\n- 用户明确讲过的需求是硬性要求；和新要求冲突时先问他。"
     },
     {
      "name": "代码",
@@ -46,5 +46,5 @@
   }
  ],
  "rules": "{{通用}}\n\n{{编程}}\n\n## Taska 自己的开发规则\n\n改 Taska 的代码时看这一条。\n\n### 1. 上线\n\n- 改完马上上线，不攒；上线只用 tools/ship.sh。\n- 一分钟内在用不重启，弹提示让他点。\n\n### 2. Storybook\n\n- 故事 = 产品里真实用的组件 + 数据，不画产品里没有的界面。\n- 界面提案和 mock 一律是 Storybook 原型：用已有的组件和页面拼出来，只改被要求的那块。",
- "agent": "Parts of these rules come from shared rules, which several projects use: each line `{{name}}` of this project's rules is read as the shared rules it names. Where this project's own words and a shared part disagree, this project's own words win. A proposal changes this project's own text (a line `{{name}}` is one line of it); the user changes the shared rules themselves.\n\n## 沟通和工作方式（含禁止空跑） (from shared rules “通用”)\n\n给用户写东西、安排自己怎么干活、写规则时看这一条。\n\n### 1. 禁止空跑 (from shared rules “通用”)\n\n- 没有真实新工作就结束这一轮；不许定时唤醒模型查有没有活或消息，任何频率都不行。\n- 要一直连着 Taska、又不花 token：每轮结束前在后台挂一个请求，等到有新工作才返回。\n- 发现空跑立即停掉并告诉用户。\n\n### 2. 沟通 (from shared rules “通用”)\n\n- 一切沟通都在 Taska，用户只看 Taska；受阻就在 Taska 说明、建事项，接着做别的。\n- 超过 10 行写成文档，消息一句话指过去。\n- 他已经讲明的直接做，做完报告，不让他勾。\n\n### 3. 写规则 (from shared rules “通用”)\n\n- 规则越少越好：同一领域写成一条，分节写清什么时候用。\n- 规则里不许有编号、链接，不许引用文档；共享规则的引用行除外。\n\n## 需求（改功能、改行为时） (from shared rules “编程”)\n\n- 动手前把需求放进真实使用里想一遍；可能听错或有两种理解时，先在事项里问用户确认。\n-用户明确讲过的需求是硬性要求；和新要求冲突时先问他。\n\n## 代码（改代码、提交、推送时） (from shared rules “编程”)\n\n- 删功能或换掉旧做法就删干净：路由、状态、界面、服务端一起删，不做向后兼容。\n- 修一处先找出同样做法的地方一起改，完成时说查了哪些。\n- 推送的内容不含用户数据、个人数据、密钥；代码和提交说明不用中文。\n\n## 测试（决定测多少时） (from shared rules “编程”)\n\n- 按风险测：改字、挪位置、小修只跑类型检查、lint 和单元测试。\n- 重测试（整组浏览器测试、逐状态截图）默认一天最多一次，先在事项里说明跑什么、为什么。\n- 测试一失败，先查是产品的 bug 还是测试过时。\n\n## Taska 自己的开发规则\n\n改 Taska 的代码时看这一条。\n\n### 1. 上线\n\n- 改完马上上线，不攒；上线只用 tools/ship.sh。\n- 一分钟内在用不重启，弹提示让他点。\n\n### 2. Storybook\n\n- 故事 = 产品里真实用的组件 + 数据，不画产品里没有的界面。\n- 界面提案和 mock 一律是 Storybook 原型：用已有的组件和页面拼出来，只改被要求的那块。"
+ "agent": "Parts of these rules come from shared rules, which several projects use: each line `{{name}}` of this project's rules is read as the shared rules it names. Where this project's own words and a shared part disagree, this project's own words win. A proposal changes this project's own text (a line `{{name}}` is one line of it); the user changes the shared rules themselves.\n\n## 沟通和工作方式（含禁止空跑） (from shared rules “通用”)\n\n给用户写东西、安排自己怎么干活、写规则时看这一条。\n\n### 1. 禁止空跑 (from shared rules “通用”)\n\n- 没有真实新工作就结束这一轮；不许定时唤醒模型查有没有活或消息，任何频率都不行。\n- 要一直连着 Taska、又不花 token：每轮结束前在后台挂一个请求，等到有新工作才返回。\n- 发现空跑立即停掉并告诉用户。\n\n### 2. 沟通 (from shared rules “通用”)\n\n- 一切沟通都在 Taska，用户只看 Taska；受阻就在 Taska 说明、建事项，接着做别的。\n- 超过 10 行写成文档，消息一句话指过去。\n- 他已经讲明的直接做，做完报告，不让他勾。\n\n### 3. 写规则 (from shared rules “通用”)\n\n- 规则越少越好：同一领域写成一条，分节写清什么时候用。\n- 规则里不许有编号、链接，不许引用文档；共享规则的引用行除外。\n\n## 需求（改功能、改行为时） (from shared rules “编程”)\n\n- 动手前把需求放进真实使用里想一遍；可能听错或有两种理解时，先在事项里问用户确认。\n- 用户明确讲过的需求是硬性要求；和新要求冲突时先问他。\n\n## 代码（改代码、提交、推送时） (from shared rules “编程”)\n\n- 删功能或换掉旧做法就删干净：路由、状态、界面、服务端一起删，不做向后兼容。\n- 修一处先找出同样做法的地方一起改，完成时说查了哪些。\n- 推送的内容不含用户数据、个人数据、密钥；代码和提交说明不用中文。\n\n## 测试（决定测多少时） (from shared rules “编程”)\n\n- 按风险测：改字、挪位置、小修只跑类型检查、lint 和单元测试。\n- 重测试（整组浏览器测试、逐状态截图）默认一天最多一次，先在事项里说明跑什么、为什么。\n- 测试一失败，先查是产品的 bug 还是测试过时。\n\n## Taska 自己的开发规则\n\n改 Taska 的代码时看这一条。\n\n### 1. 上线\n\n- 改完马上上线，不攒；上线只用 tools/ship.sh。\n- 一分钟内在用不重启，弹提示让他点。\n\n### 2. Storybook\n\n- 故事 = 产品里真实用的组件 + 数据，不画产品里没有的界面。\n- 界面提案和 mock 一律是 Storybook 原型：用已有的组件和页面拼出来，只改被要求的那块。"
 }

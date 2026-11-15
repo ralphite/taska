@@ -9,7 +9,7 @@ export function SharedRuleFrame({ desk, nav, foot = 0, children }: { desk: boole
   const vars = { '--foot-h': foot + 'px' } as CSSProperties
   if (!desk)
     return (
-      <div data-part="shared-rule" style={vars} className="relative z-10 mx-auto flex h-full max-w-3xl flex-col bg-white pt-[env(safe-area-inset-top)] md:border-x md:border-zinc-200 dark:bg-zinc-950 md:dark:border-zinc-800">
+      <div data-part="shared-rule" style={vars} className="relative z-10 mx-auto flex h-full w-full max-w-3xl flex-col bg-white pt-[env(safe-area-inset-top)] md:border-x md:border-zinc-200 dark:bg-zinc-950 md:dark:border-zinc-800">
         {children}
       </div>
     )
