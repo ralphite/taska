@@ -10,6 +10,14 @@ while it waits, `waitingFor` (a permission, a plan to approve, a question). A fi
 Codex: each thread logs to ~/.codex/sessions/YYYY/MM/DD/rollout-*-<id>.jsonl (the folder ~/.codex: TASKA_CODEX_HOME);
 its last turn event says busy (task_started), idle (task_complete) or waiting (an approval or input request), and
 ~/.codex/session_index.jsonl has its title (one a manager started has none: its first instruction stands for it).
+Codex writes nothing to the log while it waits for an approval: its PermissionRequest hook (tools/codex_waiting_hook.py)
+leaves ~/.taska/agent-waits/<thread>.json (the folder: TASKA_AGENT_WAITS), and the thread waits while nothing it logged
+is newer.
+
+Antigravity: each conversation is ~/.gemini/antigravity/conversations/<id>.db (the folder ~/.gemini/antigravity:
+TASKA_ANTIGRAVITY_HOME), its steps with their status (the app's CortexStepStatus: 9 waiting on the user, as a command to
+run waits for its approval; 1, 2, 8, 11 pending, running, generating, queued), its workspace in the metadata blob, and
+agyhub_summaries_proto.pb has its title.
 """
 
 from __future__ import annotations
@@ -18,6 +26,7 @@ import glob
 import json
 import os
 import re
+import sqlite3
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -92,7 +101,8 @@ def claude_code(sid: str) -> Optional[Session]:
 def running(window: float = 86400) -> List[Session]:
     """The agent sessions on this machine, whoever started them (I810: a manager's worker that never calls Taska is
     among them, by the title its manager gave it): every Claude Code session running, and every Codex thread that
-    wrote in the last day (`window` seconds; Codex keeps no list of the ones running)."""
+    wrote in the last day (`window` seconds; Codex keeps no list of the ones running), and every Antigravity
+    conversation that changed in it."""
     out = [_claude_session(d) for d in _claude_files()]
     cut = time.time() - window
     for path in glob.glob(os.path.join(_codex_home(), "sessions", "*", "*", "*", "rollout-*.jsonl")):
@@ -103,6 +113,17 @@ def running(window: float = 86400) -> List[Session]:
             continue
         m = re.search(r"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jsonl$", path)
         s = codex(m.group(1)) if m else None
+        if s:
+            out.append(s)
+    titles = None
+    for path in glob.glob(os.path.join(_ag_home(), "conversations", "*.db")):
+        try:
+            if os.path.getmtime(path) < cut:
+                continue
+        except OSError:
+            continue
+        titles = _ag_titles() if titles is None else titles
+        s = antigravity(os.path.basename(path)[:-3], titles)
         if s:
             out.append(s)
     return [s for s in out if s.status != "exited" and SID.fullmatch(s.id)]
@@ -145,13 +166,14 @@ def codex(sid: str) -> Optional[Session]:
     files = glob.glob(os.path.join(home, "sessions", "*", "*", "*", f"rollout-*-{sid}.jsonl"))
     if not files:
         return None
-    status, waits, since, later = "idle", "", 0, False
+    status, waits, since, later, last = "idle", "", 0, False, 0
     for line in _lines_from_end(files[0]):
         try:
             e = json.loads(line)
         except ValueError:
             continue
         p = e.get("payload") if isinstance(e, dict) else None
+        last = last or (_ms(e.get("timestamp")) if isinstance(e, dict) else 0)
         t = str(p.get("type") or "") if isinstance(p, dict) else ""
         if t in ("task_complete", "turn_aborted"):
             status = "idle"
@@ -165,6 +187,9 @@ def codex(sid: str) -> Optional[Session]:
             continue
         since = _ms(e.get("timestamp"))
         break
+    mark = _codex_wait(sid)
+    if mark and mark[0] > last:  # asked for an approval after the last thing it logged: still waiting
+        status, waits, since = "waiting", mark[1], mark[0]
     name, cwd = "", ""
     try:
         with open(os.path.join(home, "session_index.jsonl"), encoding="utf-8") as f:
@@ -193,9 +218,114 @@ def codex(sid: str) -> Optional[Session]:
     return Session("codex", sid, name, cwd, status, waits, since)
 
 
+def _codex_wait(sid: str) -> Optional[tuple]:
+    """(when, what) Codex last asked this thread's approval, from its PermissionRequest hook."""
+    folder = os.environ.get("TASKA_AGENT_WAITS") or os.path.expanduser("~/.taska/agent-waits")
+    try:
+        with open(os.path.join(folder, f"{sid}.json"), encoding="utf-8") as f:
+            d = json.load(f)
+        return int(d["t"]), str(d.get("for") or "approval")
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+# -- Antigravity ----------------------------------------------------------------
+
+AG_WAITING, AG_BUSY = 9, {1, 2, 8, 11}
+
+
+def _ag_home() -> str:
+    return os.environ.get("TASKA_ANTIGRAVITY_HOME") or os.path.expanduser("~/.gemini/antigravity")
+
+
+def _pb(data: bytes) -> Iterator[tuple]:
+    """A protobuf message's (field, value) pairs: bytes for a length-delimited field, an int for a varint."""
+    i, n = 0, len(data)
+
+    def varint() -> int:
+        nonlocal i
+        v, shift = 0, 0
+        while i < n:
+            b = data[i]
+            i += 1
+            v |= (b & 0x7F) << shift
+            if b < 0x80:
+                return v
+            shift += 7
+        raise ValueError("cut off")
+
+    while i < n:
+        key = varint()
+        field, kind = key >> 3, key & 7
+        if kind == 0:
+            yield field, varint()
+        elif kind == 2:
+            ln = varint()
+            yield field, data[i:i + ln]
+            i += ln
+        elif kind == 1:
+            i += 8
+        elif kind == 5:
+            i += 4
+        else:
+            raise ValueError("unknown wire type")
+
+
+def _ag_titles() -> Dict[str, str]:
+    out: Dict[str, str] = {}
+    try:
+        with open(os.path.join(_ag_home(), "agyhub_summaries_proto.pb"), "rb") as f:
+            for field, entry in _pb(f.read()):
+                if field != 1 or not isinstance(entry, bytes):
+                    continue
+                cid, title = "", ""
+                for k, v in _pb(entry):
+                    if k == 1 and isinstance(v, bytes):
+                        cid = v.decode("utf-8", "replace")
+                    elif k == 2 and isinstance(v, bytes):
+                        title = next((t.decode("utf-8", "replace") for j, t in _pb(v) if j == 1 and isinstance(t, bytes)), "")
+                if cid:
+                    out[cid] = title
+    except (OSError, ValueError):
+        pass
+    return out
+
+
+def antigravity(sid: str, titles: Optional[Dict[str, str]] = None) -> Optional[Session]:
+    if not SID.fullmatch(sid):
+        return None
+    path = os.path.join(_ag_home(), "conversations", f"{sid}.db")
+    if not os.path.exists(path):
+        return None
+    status, cwd = "idle", ""
+    try:
+        db = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=1)
+        try:
+            row = db.execute("select status from steps order by idx desc limit 1").fetchone()
+            waiting = db.execute("select 1 from steps where status = ? limit 1", (AG_WAITING,)).fetchone()
+            blob = db.execute("select data from trajectory_metadata_blob limit 1").fetchone()
+        finally:
+            db.close()
+        if waiting:
+            status = "waiting"
+        elif row and row[0] in AG_BUSY:
+            status = "busy"
+        for field, v in _pb(blob[0] if blob and isinstance(blob[0], bytes) else b""):
+            if field == 1 and isinstance(v, bytes):
+                uri = next((u for j, u in _pb(v) if j == 1 and isinstance(u, bytes)), b"").decode("utf-8", "replace")
+                cwd = uri[len("file://"):] if uri.startswith("file://") else ""
+                break
+    except (sqlite3.Error, ValueError):
+        return None
+    name = (titles if titles is not None else _ag_titles()).get(sid, "")
+    since = int(os.path.getmtime(path) * 1000)
+    return Session("antigravity", sid, name, cwd, status, "approve a command" if status == "waiting" else "", since)
+
+
 # -- by id --------------------------------------------------------------------
 
-KINDS: Dict[str, Callable[[str], Optional[Session]]] = {"claude-code": claude_code, "codex": codex}
+KINDS: Dict[str, Callable[[str], Optional[Session]]] = {"claude-code": claude_code, "codex": codex,
+                                                        "antigravity": antigravity}
 
 
 def lookup(sid: str) -> Optional[Session]:

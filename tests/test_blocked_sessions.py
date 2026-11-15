@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import socket
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -82,6 +83,56 @@ class Lookup(unittest.TestCase):
         self.assertEqual((s.status, s.waiting_for, s.since), ("waiting", "exec approval request", _ms("10:00:03")))  # type: ignore[union-attr]
         codex_log(self.codex, CX, "task_started", "exec_approval_request", "message")  # answered: it went on
         self.assertEqual(codex(CX).status, "busy")  # type: ignore[union-attr]
+
+    def test_codex_waits_on_an_approval_its_hook_marked(self) -> None:  # I810 r1373: Codex logs nothing while it waits
+        waits = os.path.join(self.dir.name, "waits")
+        codex_log(self.codex, CX, "task_started", "message", "token_count")  # its last line: 10:00:03
+        hook = os.path.join(ROOT, "tools", "codex_waiting_hook.py")
+        asked = {"session_id": CX, "hook_event_name": "PermissionRequest", "tool_name": "exec_command",
+                 "tool_input": {"command": "curl -sI https://example.com"}}
+        out = subprocess.run([sys.executable, hook], input=json.dumps(asked), capture_output=True, text=True,
+                             env={**os.environ, "TASKA_AGENT_WAITS": waits})
+        self.assertEqual((out.returncode, out.stdout), (0, ""))  # it decides nothing
+        with mock.patch.dict(os.environ, {"TASKA_AGENT_WAITS": waits}):
+            s = codex(CX)
+            self.assertEqual((s.status, s.waiting_for), ("waiting", "approve exec_command: curl -sI https://example.com"))  # type: ignore[union-attr]
+            with open(os.path.join(waits, f"{CX}.json"), "w") as f:
+                json.dump({"t": _ms("10:00:02"), "for": "approve"}, f)  # answered: it logged more after
+            self.assertEqual(codex(CX).status, "busy")  # type: ignore[union-attr]
+
+    def test_antigravity_by_id(self) -> None:  # I810: CortexStepStatus 9 is waiting (a command waits for approval)
+        home = os.path.join(self.dir.name, "ag")
+        os.makedirs(os.path.join(home, "conversations"))
+        ag = "585097f5-5a87-45d6-8c7a-065799deb358"
+
+        def pb(field: int, v: bytes) -> bytes:
+            return bytes([field << 3 | 2, len(v)]) + v
+
+        with open(os.path.join(home, "agyhub_summaries_proto.pb"), "wb") as f:
+            f.write(pb(1, pb(1, ag.encode()) + pb(2, pb(1, b"I810: check the waits") + b"\x10\x09")))
+
+        def conversation(*statuses: int) -> None:
+            path = os.path.join(home, "conversations", f"{ag}.db")
+            if os.path.exists(path):
+                os.remove(path)
+            db = sqlite3.connect(path)
+            db.execute("create table steps (idx integer primary key, step_type integer, status integer)")
+            db.execute("create table trajectory_metadata_blob (id text, data blob)")
+            db.executemany("insert into steps values (?, 21, ?)", list(enumerate(statuses)))
+            db.execute("insert into trajectory_metadata_blob values ('main', ?)", (pb(1, pb(1, b"file:///Users/x/dev/app")),))
+            db.commit()
+            db.close()
+
+        with mock.patch.dict(os.environ, {"TASKA_ANTIGRAVITY_HOME": home}):
+            conversation(3, 3, 9)
+            s = lookup(ag)
+            self.assertEqual((s.agent, s.name, s.cwd, s.status, s.waiting_for),  # type: ignore[union-attr]
+                             ("antigravity", "I810: check the waits", "/Users/x/dev/app", "waiting", "approve a command"))
+            conversation(3, 2)
+            self.assertEqual(lookup(ag).status, "busy")  # type: ignore[union-attr]
+            conversation(3, 3)
+            self.assertEqual(lookup(ag).status, "idle")  # type: ignore[union-attr]
+            self.assertIn(ag, [x.id for x in agent_sessions.running()])
 
     def test_unknown_or_malformed_ids(self) -> None:
         self.assertIsNone(lookup(CC))
@@ -214,6 +265,27 @@ class OverHttp(unittest.TestCase):
             self.assertTrue(json.loads(call(p + f"/api/changes?cursor={cursor}&wait=3"))["same"])
             self.assertGreater(time.monotonic() - t0, 2.9)
 
+
+
+class CodexHookInstall(unittest.TestCase):
+    def test_it_adds_its_group_keeps_the_others_and_once(self) -> None:  # I810 r1373
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("inst", os.path.join(ROOT, "tools", "install_codex_waiting_hook.py"))
+        inst = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+        spec.loader.exec_module(inst)  # type: ignore[union-attr]
+        with tempfile.TemporaryDirectory() as home:
+            os.makedirs(os.path.join(home, ".codex"))
+            path = os.path.join(home, ".codex", "hooks.json")
+            kept = {"PreToolUse": [{"matcher": "*", "hooks": []}, {"matcher": "*", "hooks": [{"type": "command", "command": "guard"}]}]}
+            with open(path, "w") as f:
+                json.dump({"hooks": kept}, f)
+            from pathlib import Path
+            self.assertEqual(inst.install(Path(home)), [path])
+            self.assertEqual(inst.install(Path(home)), [])
+            with open(path) as f:
+                hooks = json.load(f)["hooks"]
+            self.assertEqual(hooks["PreToolUse"], kept["PreToolUse"])
+            self.assertEqual(hooks["PermissionRequest"], [{"matcher": "*", "hooks": [{"type": "command", "command": inst.command(), "timeout": 5}]}])
 
 if __name__ == "__main__":
     unittest.main()
