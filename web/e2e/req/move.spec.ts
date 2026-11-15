@@ -3,7 +3,7 @@
 // guards: src/features/list/ src/features/sidebar/ src/app/actions.ts src/app/items/ src/stores/outbox.ts server/taska/services/ server/taska/http/page_routes.py
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
-import { row } from '../ui'
+import { box, row } from '../ui'
 
 test('r506 r519: an item dragged onto another project in the sidebar leaves the list at once and is there', async ({
   page,
@@ -30,4 +30,23 @@ test('r506 r519: an item dragged onto another project in the sidebar leaves the 
   release()
   await expect.poll(async () => to.read('items?status=all'), { timeout: 15000 }).toContain('Write the user docs')
   expect(await p.read('items?status=all')).not.toContain('Write the user docs')
+})
+
+test('r518 r527 (B408, B799): what you wrote in its box and did not send goes along to the item there', async ({ page, request }) => {
+  test.skip(!isDesk(page), 'dragging to the sidebar is on the desktop')
+  const p = await project(request, LOOP),
+    to = await project(request)
+  await open(page, p, '?status=every')
+  const it = row(page, 'Write the user docs').first()
+  await it.click()
+  await box(page).fill('Ask about the second chapter')
+  // the box keeps a draft a moment after typing: wait for it, then move the item
+  await page.waitForTimeout(600)
+  await page.keyboard.press('Escape')
+  await it.dragTo(page.locator(`#drawer a[data-slug="${to.name}"]`))
+  await expect(it).toHaveCount(0, { timeout: 15000 })
+  await expect.poll(async () => to.read('items?status=all'), { timeout: 15000 }).toContain('Write the user docs')
+  await open(page, to, '?status=every')
+  await row(page, 'Write the user docs').first().click()
+  await expect(box(page)).toHaveValue('Ask about the second chapter')
 })
