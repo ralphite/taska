@@ -74,6 +74,13 @@ TIDY_MODEL = os.environ.get("TASKA_TIDY_MODEL", "gemini-4-hydrogen")
 VOICE_CAP = float(os.environ.get("TASKA_VOICE_CAP", 50))  # the main and the speech model
 PRO_TRIES = int(os.environ.get("TASKA_PRO_TRIES", 3))  # D121 (11-06): failed, the strong model is asked again
 PRO_TRY = float(os.environ.get("TASKA_PRO_TRY", 30))  # T697 (11-06): one try with no answer in 30 s failed (the slowest answer was 8 s)
+
+
+def try_cap(secs: float) -> float:
+    """How long one try of the strong model may take for a note `secs` long: PRO_TRY and 1 s more for each 10 s of it
+    (B788 r1339: gemini-4-hydrogen took 20 s on a 5-minute note; a longer one would be cut off at 30 s and asked of
+    3.1 Pro after the wait)."""
+    return PRO_TRY + max(0.0, secs) / 10
 # B724: where the two disagree on what was said, reviewers settle it (services.voice_vote): the strong model, or the
 # models named here in turn
 VOTE_MODELS = [m.strip() for m in os.environ.get("TASKA_VOTE_MODELS", PRO_MODEL).split(",") if m.strip()]
@@ -166,7 +173,7 @@ def tidy_cap(text: str) -> float:
 Step = Dict[str, Any]
 
 
-def strong(steps: List[Step], name: str, audio: Dict[str, Any], prompt: str, times: Dict[str, float], key: str) -> Callable[[], str]:
+def strong(steps: List[Step], name: str, audio: Dict[str, Any], prompt: str, times: Dict[str, float], key: str, secs: float = 0) -> Callable[[], str]:
     """The strong model's words (Yadong on D121, 11-06: "not 10 s: wait, and when it fails, ask again"; T697: a try
     with no answer in PRO_TRY seconds has failed, as connections stalled for 4 to 6 minutes): up to PRO_TRIES tries,
     each its own step (every result kept), a little apart; try i asks HEAR_MODELS[i] (T783)."""
@@ -174,7 +181,7 @@ def strong(steps: List[Step], name: str, audio: Dict[str, Any], prompt: str, tim
         return HEAR_MODELS[min(i, len(HEAR_MODELS) - 1)]
 
     def hear(m: str) -> Callable[[], str]:  # a stalled connection is a failed try
-        return lambda: capped(lambda: voice_main(audio, prompt, m), PRO_TRY, "the strong model")
+        return lambda: capped(lambda: voice_main(audio, prompt, m), try_cap(secs), "the strong model")
     first = ran(steps, name, model(0), hear(model(0)))  # its step in the order the steps are started
 
     def go() -> str:
@@ -191,6 +198,20 @@ def strong(steps: List[Step], name: str, audio: Dict[str, Any], prompt: str, tim
         finally:
             times[key] = round(time.time() - t0, 1)
     return go
+
+
+def fell_back(steps: List[Step]) -> List[str]:
+    """What a note's words fell back from (B788 r1339, to be seen by the nightly checks, not left silent): the strong
+    model's first try failing (its next try or the speech model's words took its place), or tidying giving no words in
+    time or none that kept all the words (the words as said stayed, fillers and all)."""
+    out: List[str] = []
+    for s in steps:
+        if s.get("step") in ("pro", "pro_loud") and s.get("error"):
+            out.append(f"the strong model ({s.get('model')}) failed its first try: {s['error']}"[:200])
+        if s.get("step") == "tidy" and s.get("error"):
+            why = "; ".join(str(t.get("error")) for t in s.get("tries", []) if t.get("error")) or s["error"]
+            out.append(f"tidying ({s.get('model')}) kept the words as said: {why}"[:200])
+    return out
 
 
 def tidy(text: str, step: Optional[Step] = None) -> str:
@@ -298,6 +319,7 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
     t0, times = time.time(), {}
     steps: List[Step] = []
     gated = tools.processed_silence(path, mime) >= 0.5
+    dur = tools.duration(path)
     def told(words: str) -> str:  # the speech model's words go ahead while the main model still works (T687)
         if first and words.strip() and "main" not in times:
             early = words.strip()
@@ -309,7 +331,7 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
 
     # the strong model is the main one (T687); the speech model's words show meanwhile, and it is waited for (D121)
     (tr, err), (alt, alt_err) = together(
-        strong(steps, "pro", audio, prompt, times, "main"),
+        strong(steps, "pro", audio, prompt, times, "main", dur),
         ran(steps, "asr", ASR_MODEL, lambda: told(capped(lambda: voice_asr(audio, vocab), VOICE_CAP, "the speech model", times, "asr"))))
     out = {"tr": "", "tr_by": "asr", "times": times, "steps": steps, **({"gated": True} if gated else {})}
     if alt_err is None and not alt:  # B494: heard nobody: said too quietly? once more, made loud enough to hear
@@ -317,7 +339,7 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
         if louder:
             loud = {"inline_data": {"mime_type": "audio/webm", "data": base64.b64encode(louder).decode()}}
             (tr, err), (alt, alt_err) = together(
-                strong(steps, "pro_loud", loud, prompt, times, "main_loud"),
+                strong(steps, "pro_loud", loud, prompt, times, "main_loud", dur),
                 ran(steps, "asr_loud", ASR_MODEL, lambda: capped(lambda: voice_asr(loud, vocab), VOICE_CAP, "the speech model, louder", times, "asr_loud")))
             if alt:
                 out["louder"], audio = True, loud
@@ -345,7 +367,7 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
         raise Refused(f"{err}; the speech model: {alt_err}")
     if not tr:
         return out
-    dur = tools.duration(path)  # B277: few words for a long note: heard again piece by piece, and those words win when clearly more
+    # B277: few words for a long note: heard again piece by piece, and those words win when clearly more
     if dur >= 6 and len(voice_tokens(tr)) < 2.0 * dur and len(tr) < 2.0 * dur:
         t1 = time.time()
         try:

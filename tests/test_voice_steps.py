@@ -190,6 +190,23 @@ class TidyTime(unittest.TestCase):
         self.assertEqual(tr.tidy_cap("短" * 20), tr.TIDY_CAP + 0.2)
         self.assertGreaterEqual(tr.tidy_cap("嗯" * 1636), 20)
 
+    def test_a_long_note_is_given_time_to_hear(self):
+        # B788 (r1339 "都做"): one try of the strong model waits 30 s and 1 s more for each 10 s of the note
+        self.assertEqual(tr.try_cap(0), tr.PRO_TRY)
+        self.assertEqual(tr.try_cap(300), tr.PRO_TRY + 30)
+
+    def test_what_the_words_fell_back_from_is_told(self):
+        # B788 (r1339): a fall back is not left silent: the nightly checks file it
+        steps = [{"step": "pro", "model": "gemini-4-hydrogen", "error": "the strong model timed out after 30 s"},
+                 {"step": "pro_2", "model": "gemini-3.1-pro-preview", "text": "words"},
+                 {"step": "asr", "model": "x", "text": "words"},
+                 {"step": "tidy", "model": "gemini-4-hydrogen", "tries": [{"error": "no answer within 8 s"}], "error": "no tidied words kept all the words"}]
+        said = tr.fell_back(steps)
+        self.assertEqual(len(said), 2)
+        self.assertIn("gemini-4-hydrogen", said[0])
+        self.assertIn("no answer within 8 s", said[1])
+        self.assertEqual(tr.fell_back([{"step": "pro", "text": "w"}, {"step": "tidy", "tries": [{"text": "w", "kept": True}], "chosen": True}]), [])
+
 
 if __name__ == "__main__":
     unittest.main()
