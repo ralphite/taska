@@ -59,7 +59,8 @@ export class PageActions {
       const el = at?.closest(CONTROL)
       const row = el ? null : at?.closest(ROW)
       if (el) this.note({ kind: 'tap', what: nameOf(el), role: el.getAttribute('role') || el.tagName.toLowerCase(), where: where() })
-      else if (row) this.note({ kind: 'tap', what: nameOf(row), role: 'row', n: row.getAttribute('data-n'), where: where() })
+      // the row itself, not the phone's swipe layers under it
+      else if (row) this.note({ kind: 'tap', what: nameOf(row.querySelector('[data-swipe]') ?? row), role: 'row', n: row.getAttribute('data-n'), where: where() })
     }
     const onKey = (e: KeyboardEvent) => {
       const at = e.target instanceof Element ? e.target : null

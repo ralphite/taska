@@ -42,7 +42,7 @@ describe('PageActions (B791: what you do on the page is logged)', () => {
     words.textContent = 'just words'
     const row = document.createElement('article')
     row.setAttribute('data-n', '12')
-    row.innerHTML = '<div>B12 <b>Fix the login</b></div>'
+    row.innerHTML = '<div data-swipe-left>Done Later</div><div data-swipe="12">B12 <b>Fix the login</b></div>'
     const settings = document.createElement('button')
     settings.innerHTML = 'Settings <kbd>G</kbd> <kbd>S</kbd>'
     document.body.append(send, box, words, row, settings)
