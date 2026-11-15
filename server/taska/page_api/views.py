@@ -140,9 +140,10 @@ def rules_view(st: ProjectState, d: Doc) -> View:
                           **({"p": x.p} if x.p else {}), **({"ses": x.ses} if x.ses else {})} for x in vs]}
 
 
-# B756: a web page bigger than this (its sound and pictures written into it) is not in the project's view: the page
-# asks for it when it is opened (GET api/doc), so the project opens fast over a slow connection.
-BIG_PAGE = 1_000_000
+# B756: a web page bigger than this is not in the project's view: the page asks for it when it is opened (GET
+# api/doc), so the project opens fast over a slow connection. B792: ten pages of 85 KB each, their sounds no longer
+# written into them (B790), made the view 1.5 MB; a page is seldom opened, so all but a small one waits to be asked for.
+BIG_PAGE = 50_000
 
 
 def doc_view(d: Doc, st: Optional[ProjectState] = None) -> View:
