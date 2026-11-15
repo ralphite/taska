@@ -92,6 +92,7 @@ class AgentActivity:
         self.found: Dict[str, Session] = {}  # per session id: what its app says of it now (F768)
         # I810: a manager's workers that never call Taska, found by their titles: per session id, its title and item
         self.workers: Dict[str, Tuple[str, int]] = {}
+        self.titled: Dict[str, int] = {}  # I810: its own sessions whose app's title starts with an item's code
         lead = db.get("antigravity-lead")  # F755: the one Antigravity session that runs this project, and since when
         self.lead: Optional[Tuple[str, str]] = (str(lead["sid"]), str(lead["t"])) if isinstance(lead, dict) and lead.get("sid") else None
 
@@ -377,10 +378,12 @@ class AgentActivity:
         """The folders this project's own agent sessions work in, as their apps say (I810: a worker works there too)."""
         return {s.cwd for sid, s in self.found.items() if s.cwd and sid not in self.workers}
 
-    def adopt(self, workers: Dict[str, Tuple[str, int]]) -> None:
-        """The workers found now (I810): session id -> (its title, the item it works on). A change wakes the pages."""
-        if workers != self.workers:
-            self.workers = dict(workers)
+    def adopt(self, workers: Dict[str, Tuple[str, int]], titled: Optional[Dict[str, int]] = None) -> None:
+        """The workers found now (I810): session id -> (its title, the item it works on); and its own sessions whose
+        app's title names an item (session id -> the item), for those on no item otherwise. A change wakes the pages."""
+        titled = titled or {}
+        if workers != self.workers or titled != self.titled:
+            self.workers, self.titled = dict(workers), dict(titled)
             self.version += 1
             self._changed()
 
@@ -394,7 +397,7 @@ class AgentActivity:
                 s = found.get(sid)
                 if s and s.status == "waiting":
                     mine.setdefault(k, []).append({"session": ses or s.name or sid[:8], "waitingFor": s.waiting_for,
-                                                   "since": s.since})
+                                                   "since": s.since, **({"on": self.titled[sid]} if sid in self.titled else {})})
         for sid, (title, n) in self.workers.items():  # I810: a worker waiting on the user, with the item it is on
             s = found.get(sid)
             if s and s.status == "waiting":
@@ -476,6 +479,8 @@ class AgentActivity:
         h = holds.get(ident(k, name))
         if h:
             row["on"] = {"n": h[0], "since": int(h[1] * 1000)}
+        elif sid in self.titled:  # I810: on no item here, but its app's title names one
+            row["on"] = {"n": self.titled[sid], "since": s.since if s else 0}
         parent = self.agents[k].parents.get(name)
         if parent:
             row["parent"] = parent

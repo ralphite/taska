@@ -52,6 +52,14 @@ class Workers(unittest.TestCase):
         row = next(s for a in self.a.agents.presence(self.a.state) for s in a.get("sessions", []) if s.get("worker"))
         self.assertEqual((row["name"], row["on"]["n"], row["status"]), ("T1：系统设计专用 tutor 技能", 1, "busy"))
 
+    def test_its_own_session_on_no_item_is_on_the_one_its_title_names(self) -> None:
+        # the worker called Taska itself (by its id, as "t28"), but took no item: its app's title names it
+        self.a.agents.saw("claude-code", 0, "t28", WORKER)
+        self.look(ses(WORKER, "T1：系统设计专用 tutor 技能"))
+        self.assertEqual(self.a.agents.workers, {})
+        row = next(s for a in self.a.agents.presence(self.a.state) for s in a.get("sessions", []) if s["name"] == "t28")
+        self.assertEqual(row["on"]["n"], 1)
+
     def test_not_found_without_the_code_first_or_in_another_folder(self) -> None:
         self.look(ses(WORKER, "Techknow (T1)"))
         self.assertEqual(self.a.agents.workers, {})

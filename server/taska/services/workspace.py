@@ -240,6 +240,7 @@ class Workspace:
         an item's code ("T28: the tutor skill"), in a folder this project's own sessions work in. A code that fits
         items in several projects goes to the one whose item is in progress, and to none when that does not settle it."""
         found: Dict[str, Dict[str, Tuple[str, int]]] = {name: {} for name in self.projects}
+        titled: Dict[str, Dict[str, int]] = {name: {} for name in self.projects}
         for s in running:
             m = WORKER_TITLE.match(s.name)
             if not m:
@@ -247,7 +248,13 @@ class Workspace:
             fits: List[Tuple[str, int, bool]] = []
             for name, p in self.projects.items():
                 with p.lock:
-                    if s.id in p.agents.sids(own=True) or s.cwd not in p.agents.folders():
+                    own = s.id in p.agents.sids(own=True)
+                    if own:  # one of its own sessions: its app's title says the item it is on (when nothing else does)
+                        it = p.state.items.get(int(m.group(2)))
+                        if it and LETTER.get(it.type) == m.group(1) and it.status not in CLOSED:
+                            titled[name][s.id] = it.n
+                        continue
+                    if s.cwd not in p.agents.folders():
                         continue
                     it = p.state.items.get(int(m.group(2)))
                     if it and not it.deleted and not it.merged_into and LETTER.get(it.type) == m.group(1) and it.status not in CLOSED:
@@ -258,7 +265,7 @@ class Workspace:
                 found[name][s.id] = (s.name, n)
         for name, p in list(self.projects.items()):
             with p.lock:
-                p.agents.adopt(found.get(name, {}))
+                p.agents.adopt(found.get(name, {}), titled.get(name, {}))
 
     def needs(self, push: bool = False) -> List[Dict[str, Any]]:
         """What needs you in every project, newest first. A session working on an item and waiting on you counts
