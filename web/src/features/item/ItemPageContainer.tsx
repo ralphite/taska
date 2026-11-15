@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, type ReactNode } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
+import { sessionsOn } from '../../model/agents'
 import { useAway, useFiles, useItemWorld } from '../../app/hooks'
 import { CHOICE } from '../../model/markdown'
 import { becameOf, madeFrom } from '../../model/became'
@@ -125,6 +126,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     files: filesOf(m, it),
     sources: sourceCount(m, it),
     laterOn: laterOn(it, m.at),
+    workers: sessionsOn(m.facts.agents, n, m.at),
     docs: docsOf(m, n),
     docWaiting: Object.fromEntries(docsOf(m, n).map((d) => [d.d, ticksNotSent(ticks, d)])),
     remodify: view.remodify === n,
@@ -173,6 +175,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     menu: (arm, from) => openItemMenu(app, desk, n, arm, from),
     later: (from) => openLater(app, desk, n, from),
     sources: () => app.sheets.open({ kind: 'item-sources', n }),
+    agents: () => app.sheets.open({ kind: 'agents' }),
     times: () => app.sheets.open({ kind: 'item-times', n }),
     goto,
     doc: (d: number) => app.docs.open(d),

@@ -1,6 +1,6 @@
 // T711 #10443: the pill says when an agent session waits on the user, before anything else it could say.
-import { describe, expect, test } from 'vitest'
-import { agentLine, agentState, blockedAgent, lastAgent, sessionState } from './agents'
+import { describe, expect, it, test } from 'vitest'
+import { agentLine, agentState, blockedAgent, lastAgent, sessionState, sessionsOn } from './agents'
 import type { AgentSeen } from './types'
 
 const now = 1_800_000_000_000
@@ -89,4 +89,25 @@ test('the blocked bar: only while presence says blocked, gone as soon as it does
   expect(blockedAgent([{ name: 'codex', t: now - 3600_000, waiting: false }], now)).toBeNull() // away
   expect(blockedAgent([], now)).toBeNull()
   expect(blockedAgent(undefined, now)).toBeNull()
+})
+
+describe('who works on an item (I810)', () => {
+  it("lists the sessions on it, a manager's worker among them, each as it is; gone ones not", () => {
+    const now = Date.now()
+    const agents = [
+      {
+        name: 'claude-code',
+        t: now,
+        waiting: false,
+        sessions: [
+          { name: 'T28：系统设计专用 tutor 技能', t: now, status: 'waiting' as const, on: { n: 28, since: now } },
+          { name: 'manager', t: now, status: 'busy' as const },
+          { name: 'old worker', t: now, status: 'exited' as const, on: { n: 28, since: now } },
+          { name: 'B3 other', t: now, status: 'busy' as const, on: { n: 3, since: now } },
+        ],
+      },
+    ]
+    expect(sessionsOn(agents, 28, now)).toEqual([{ name: 'T28：系统设计专用 tutor 技能', state: 'waiting' }])
+    expect(sessionsOn(agents, 3, now)).toEqual([{ name: 'B3 other', state: 'working' }])
+  })
 })

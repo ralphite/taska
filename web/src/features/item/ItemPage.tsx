@@ -27,6 +27,8 @@ import { TimesLine } from './TimesLine'
 import type { TalkEnv } from './talkEnv'
 
 export interface ItemEvents extends TalkLineEvents {
+  /** the Agents sheet: the sessions, what each is on and how it is (I810) */
+  agents?(): void
   /** the item's menu, or one of its fields' (status, priority, type) */
   menu(arm: 's' | 'p' | 't' | null, from: Element): void
   set(f: 'when' | 'archived' | 'status', v: string | boolean): void
@@ -73,6 +75,8 @@ export interface ItemFacts {
   addingSub: boolean
   /** a subitem title you started before */
   subDraft?: string
+  /** the sessions working on it now, and how each is (I810) */
+  workers?: { name: string; state: 'working' | 'idle' | 'waiting' }[]
 }
 
 /** The talk fades at its bottom while more of it is below, and at its top while some of it is above. */

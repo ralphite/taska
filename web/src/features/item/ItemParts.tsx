@@ -11,6 +11,8 @@ import { overflows } from '../../ui/scroller'
 import { CHIP, FIELD, NEED, PRIMARY, SECOND, TYPE_TEXT } from '../../ui/tones'
 import type { ItemEvents, ItemFacts } from './ItemPage'
 
+const WORKER_DOT = { working: 'bg-emerald-500', idle: 'bg-zinc-400', waiting: 'bg-orange-500' } as const
+const WORKER_TIP = { working: 'Working on it', idle: 'Idle', waiting: 'Waits on you' } as const
 const caret = <Icon n="down" c="size-3 opacity-50 group-data-ro/item:hidden" sw="2.25" /> // none read only (data-ro)
 
 export function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
@@ -49,6 +51,13 @@ export function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents })
           {caret}
         </button>
       )}
+      {/* who works on it now (I810): each session by its title, a dot saying how it is; it opens the Agents sheet */}
+      {f.workers?.map((w) => (
+        <button key={w.name} title={WORKER_TIP[w.state]} onClick={() => on.agents?.()} className={`${CHIP} max-w-56 min-w-0 text-zinc-700 dark:text-zinc-200`}>
+          <span className={`size-1.5 shrink-0 rounded-full ${WORKER_DOT[w.state]}`} />
+          <span className="truncate">{w.name}</span>
+        </button>
+      ))}
       {it.archived ? (
         <span className={`${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300`}>
           <Icon n="archive" c="size-3.5 opacity-60" />
