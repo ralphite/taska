@@ -26,6 +26,11 @@ def _is_fence(line: str) -> bool:
     return line.lstrip().startswith("```")
 
 
+def _table_starts(lines: list[str], i: int) -> bool:
+    """A table begins at line i: a row of cells with the alignment row under it."""
+    return lines[i].lstrip().startswith("|") and i + 1 < len(lines) and bool(_TABLE_SEPARATOR.match(lines[i + 1]))
+
+
 def blocks(md: str) -> list[Block]:
     out: list[Block] = []
     lines = md.replace("\r\n", "\n").split("\n")
@@ -43,7 +48,7 @@ def blocks(md: str) -> list[Block]:
         elif _HEADING.match(line):
             out.append(Block("heading", line))
             i += 1
-        elif line.lstrip().startswith("|") and i + 1 < len(lines) and _TABLE_SEPARATOR.match(lines[i + 1]):
+        elif _table_starts(lines, i):
             j = i + 2
             while j < len(lines) and lines[j].lstrip().startswith("|"):
                 j += 1
@@ -53,8 +58,8 @@ def blocks(md: str) -> list[Block]:
             kind = "list" if _LIST_START.match(line) else "quote" if line.lstrip().startswith(">") else "para"
             j = i + 1
             while j < len(lines) and lines[j].strip() and not _is_fence(lines[j]) and not _HEADING.match(lines[j]):
-                if kind == "para" and _LIST_OR_QUOTE.match(lines[j]):
-                    break
+                if kind == "para" and _LIST_OR_QUOTE.match(lines[j]) or _table_starts(lines, j):
+                    break  # F817: a table right under a line of text is a table of its own, not more of that text
                 j += 1
             out.append(Block(kind, "\n".join(lines[i:j])))
             i = j
