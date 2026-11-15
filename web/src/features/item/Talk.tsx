@@ -204,6 +204,8 @@ function YourMessage({ x, env, on, facts, ver, read }: { x: Message; env: TalkEn
               {src?.history?.length ? (
                 <button
                   onClick={() => on.inputHistory(src.id)}
+                  // pointed at: the words before this edit (B801, B640 #8700); clicked: the whole history
+                  data-tip={src.history[src.history.length - 1].text.slice(0, 400)}
                   className="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300"
                 >
                   edited {when(x.edited, env.now)}

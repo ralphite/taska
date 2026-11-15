@@ -220,7 +220,12 @@ export function InputRow({ x, text, files, place = 'row', lit = false, rec = nul
           <span>
             {x.day} {x.time}
           </span>
-          {edited ? <span className="italic">· edited</span> : null}
+          {/* pointed at: the words before the last change (B801, B640 #8700); the whole history stays in ⋯ */}
+          {edited ? (
+            <span data-tip={r.history?.[r.history.length - 1]?.text.slice(0, 400)} className="italic">
+              · edited
+            </span>
+          ) : null}
           {x.draft ? (
             <button
               data-draft

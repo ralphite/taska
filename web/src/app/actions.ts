@@ -171,7 +171,13 @@ export const ACTIONS = {
   status: item(['keyArm', 'toasts'], { label: 'Status…', keys: 's', listed: true, run: arm('s') }),
   priority: item(['keyArm', 'toasts'], { label: 'Priority…', keys: 'p', listed: true, run: arm('p') }),
   type: item(['keyArm', 'toasts'], { label: 'Type…', keys: 't', listed: true, run: arm('t') }),
-  'put-under': item(['sheets'], { label: 'Put under…', keys: 'm', listed: true, run: (w, h) => w.sheets.open({ kind: 'item-move-parent', n: h.it.n }, { pop: true, focus: false }) }),
+  // beside its row in the list, as its right-click menu is (B801, B640 #8700: it was in the window's corner)
+  'put-under': item(['sheets', 'fields'], {
+    label: 'Put under…',
+    keys: 'm',
+    listed: true,
+    run: (w, h) => w.sheets.openFrom(w.fields.get('list')?.querySelector(`article[data-n="${h.it.n}"]`) ?? null, { kind: 'item-move-parent', n: h.it.n }, { focus: false }),
+  }),
   'add-sub': item(['itemEdits'], { label: 'Add subitem', keys: 'A', listed: true, run: (w, h) => w.itemEdits.subStart(h.it.n) }),
   'new-doc': item(['docEditor'], { label: 'New doc', keys: 'D', listed: true, run: (w, h) => w.docEditor.create(h.it.n) }),
   copy: item(['toasts'], { label: 'Copy for agent', keys: 'C', listed: true, run: (w, h) => void copyText(forAgent(h.it, h.code, h.m.facts.base)).then(() => w.toasts.show('Copied')) }),
