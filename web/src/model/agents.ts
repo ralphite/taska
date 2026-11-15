@@ -85,7 +85,8 @@ export function agentState(agents: readonly AgentSeen[] | undefined, work: boole
   if (p.k === 'ready') return ['ok', `${name} ready`, `${name} is ready for work.`]
   const waits = queued ? `${queued} ${queued === 1 ? 'item waits' : 'items wait'}.` : 'Nothing is waiting for an agent.'
   if (p.k === 'idle')
-    return work ? ['bad', `${name} · idle`, `Work is waiting. ${name} is idle and not taking work.`] : ['idle', `${name} · idle`, `${waits} ${name} is idle.`]
+    // B811 r1362: red is not an error: work waits and this session does not take it; it says so, not "idle"
+    return work ? ['bad', `${name} · not taking work`, `${queued ? waits : 'Work is waiting.'} ${name} is not taking work.`] : ['idle', `${name} · idle`, `${waits} ${name} is idle.`]
   const last = `The last agent (${name}) was here ${ago(p.s.t, now, 'long')}.`
   return work ? ['bad', 'No agent', `Work is waiting. ${last}`] : ['idle', 'No agent', `${waits} ${last}`]
 }

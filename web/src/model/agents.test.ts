@@ -34,7 +34,7 @@ describe('the pill and the Agents sheet say the same (B784)', () => {
   test('idle in its app: idle; while work waits and it does not listen for work, the pill says so', () => {
     const idle: AgentSeen[] = [{ ...busy[0], sessions: [{ ...busy[0].sessions![0], status: 'idle' }] }]
     expect(agentLine(idle, false, now)).toMatchObject({ tone: 'recent', label: 'Claude Code · idle' })
-    expect(agentLine(idle, true, now)).toMatchObject({ tone: 'bad', label: 'Claude Code · idle' })
+    expect(agentLine(idle, true, now)).toMatchObject({ tone: 'bad', label: 'Claude Code · not taking work' }) // B811 r1362
     expect(agentLine([{ ...idle[0], waiting: true }], true, now)).toMatchObject({ tone: 'ready', label: 'Claude Code ready' })
   })
   test('exited: no agent', () => {
