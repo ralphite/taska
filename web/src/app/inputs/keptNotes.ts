@@ -71,6 +71,25 @@ export class KeptNotes {
     return rid
   }
 
+  /** Files of a draft whose item went to another project (B799): kept for its draft there (`to`, `key`), not up
+   * there yet; they come back into that draft, and go up to that project, when it opens. Taken out of here first, so
+   * this project's drafts letting them go does not let the browser forget them. */
+  carry(files: readonly DraftFile[], to: string, key: DraftKey): void {
+    // that project's kept notes were brought back already in this page: next time it opens, again (these are new)
+    if (this.restored === to) this.restored = ''
+    if (this.restoredSent === to) this.restoredSent = ''
+    for (const f of files) {
+      const blob = f.rid ? this.blobs.get(f.rid) : undefined
+      if (!f.rid || !blob) continue
+      const rid = f.rid
+      this.known.delete(rid)
+      this.blobs.delete(rid)
+      this.release(rid)
+      const r = this.rec(to, key, { ...f, f: '', uploading: undefined }, null)
+      void blob.arrayBuffer().then((data) => this.d.vault.put({ ...r, data }), () => {})
+    }
+  }
+
   /** Its audio (or the file), kept with what is known of it. */
   hold(rid: string, blob: Blob): void {
     this.blobs.set(rid, blob)

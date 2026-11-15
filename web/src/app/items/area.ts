@@ -15,7 +15,7 @@ import { Merges } from './merges'
 import { Moves } from './moves'
 import { Selection } from './selection'
 
-export function makeItems(c: Core, i: Pick<InputsArea, 'inputs' | 'goDraft'>, held: () => void) {
+export function makeItems(c: Core, i: Pick<InputsArea, 'inputs' | 'goDraft' | 'keptNotes'>, held: () => void) {
   const { s, toasts, runner } = c
   const open = () => openItemN(s.route.getState().route)
   const listOrder = new ListOrder()
@@ -32,7 +32,7 @@ export function makeItems(c: Core, i: Pick<InputsArea, 'inputs' | 'goDraft'>, he
     undoSeq: (n, f) => c.here()?.facts.undo.find((u) => u.n === n && f in u.f)?.seq ?? null,
     noteWith: () => false,
   })
-  const moves = new Moves({ api: c.api, delivery: c.delivery, runner, toasts, model: c.model, title: c.title, go: c.go, refresh: (sl) => c.project().stale(sl) })
+  const moves = new Moves({ api: c.api, delivery: c.delivery, runner, toasts, model: c.model, title: c.title, go: c.go, refresh: (sl) => c.project().stale(sl), drafts: s.drafts, box: s.box, carry: (fs, to, key) => i.keptNotes.carry(fs, to, key) })
   const selection = new Selection({ ui: s.ui, order: listOrder, runner, toasts, slug: c.slug, model: c.here, open })
   const itemDrag = new ItemDrag({
     store: s.drag,

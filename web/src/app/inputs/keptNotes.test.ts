@@ -34,6 +34,28 @@ function page(vault = memoryVault(), sending = false) {
   return { box, outbox, kept, vault, pushed, resumed, toasts }
 }
 
+describe('a draft whose item went to another project (B799)', () => {
+  it('its voice note goes along: kept for the item there, not up there yet, and back in its box when that project opens', async () => {
+    const a = page()
+    const there = { ...model, width: 1, byN: new Map([[5, { n: 5, type: 'task' }]]) } as unknown as ProjectModel
+    await a.kept.restore('q', there) // that project had opened in this page before
+    const rid = a.kept.id()
+    a.kept.hold(rid, new Blob(['sound'], { type: 'audio/webm' }))
+    a.box.getState().addFile(replyDraft('B12'), { key: rid, rid, f: 'f3-voice.webm', name: 'voice 0-03.webm', mime: 'audio/webm', ms: 3000, size: 5 })
+    await tick()
+    await tick()
+    a.kept.carry(a.box.getState().takeFiles(replyDraft('B12')), 'q', replyDraft('T5'))
+    await tick()
+    await tick()
+    expect((await a.vault.all()).map((n) => [n.project, n.key, n.f])).toEqual([['q', 'T5', null]])
+    // the other project opens again in this same page: the note is back in the item's box there
+    a.box.getState().show('q')
+    await a.kept.restore('q', there)
+    expect(a.box.getState().files.T5?.map((f) => [f.rid, f.f, f.uploading])).toEqual([[rid, '', true]])
+    expect(a.resumed).toEqual([`T5 ${rid}`])
+  })
+})
+
 describe('voice notes kept over a reload', () => {
   it('keeps a note in its draft and puts it back there after a reload', async () => {
     const a = page()
