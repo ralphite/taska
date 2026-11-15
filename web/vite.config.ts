@@ -25,7 +25,7 @@ function serviceWorker(): Plugin {
         c.imports.forEach(take)
       }
       Object.values(bundle).forEach((c) => c.type === 'chunk' && c.isEntry && c !== sw && take(c.fileName))
-      const files = [...Object.keys(bundle).filter((f) => f !== sw.fileName && (/\.js$/.test(f) ? page.has(f) : /\.(css|html|png|svg|woff2)$/.test(f))), ...pub.filter((f) => /\.(png|svg)$/.test(f)), 'index.html']
+      const files = [...Object.keys(bundle).filter((f) => f !== sw.fileName && (/\.js$/.test(f) ? page.has(f) : /\.(css|png|svg|woff2)$/.test(f))), ...pub.filter((f) => /\.(png|svg)$/.test(f))] // the page itself is kept apart (B793: there is no /index.html)
       sw.code = `const TASKA_SHELL=${JSON.stringify(files)};\n` + sw.code
     },
   }

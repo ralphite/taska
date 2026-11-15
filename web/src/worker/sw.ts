@@ -95,7 +95,7 @@ self.addEventListener('fetch', (e) => {
           return res
         })
         // a kept page whose files are not all kept comes from the network (it is kept only when that fails)
-        if (!kept || !(await whole(kept))) return fresh.catch(async () => kept || (await caches.match('/index.html')) || Response.error())
+        if (!kept || !(await whole(kept))) return fresh.catch(() => kept || Response.error())
         e.waitUntil(fresh.catch(() => undefined))
         return kept
       })(),
@@ -103,8 +103,9 @@ self.addEventListener('fetch', (e) => {
     return
   }
   if (req.mode === 'navigate') {
-    // any other address: from the network; while the server is away, the kept copy, which waits and sends later
-    e.respondWith(fetch(req).catch(async () => (await caches.match('/index.html')) || Response.error()))
+    // any other address: from the network; while the server is away, the kept page (B793: it was asked for as
+    // /index.html, which the server has not), which waits and sends later
+    e.respondWith(fetch(req).catch(async () => (await (await caches.open(PAGES)).match(PAGE_KEY)) || Response.error()))
   }
 })
 
