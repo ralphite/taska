@@ -123,7 +123,7 @@ export interface Core {
   go(url: string): void
   /** a voice note is being recorded for the box */
   recording(): boolean
-  /** the page's microphone, kept between recordings from the Home Screen (B800) */
+  /** the page's microphone: each recording opens it and lets it go (B800) */
   mic: Mic
   /** the project open in the page */
   project(): ProjectSession
@@ -162,8 +162,7 @@ export function makeCore(env: { http?: Http; kv: KeyValueStore; session?: KeyVal
     title: (sl) => s.data.getState().projects?.find((p) => p.name === sl)?.title || sl,
     go: (url) => s.route.getState().go(url, true),
     recording: () => !!s.recording.getState().rec,
-    // something being said into the page now: a voice note, a dictation, or search listening
-    mic: new Mic({ busy: () => !!s.recording.getState().rec || !!s.dictation.getState().rec || s.find.getState().phase === 'listening' }),
+    mic: new Mic(),
     project,
   }
 }

@@ -18,7 +18,7 @@ import { noteText } from '../../model/docs'
 
 export interface DictationDeps {
   api: TaskaApi
-  /** the page's microphone (kept between recordings from the Home Screen) */
+  /** the page's microphone */
   mic: Mic
   /** what has to reach Taska is asked until it answers (its pauses end at once when Taska may be back) */
   delivery: Delivery

@@ -28,7 +28,7 @@ import { NOTE_STOPPED, heardEvent, noteState, noteStep, type VoiceEvent } from '
 export interface VoiceDeps {
   api: TaskaApi
   store: RecordingStore
-  /** the page's microphone (kept between recordings from the Home Screen) */
+  /** the page's microphone */
   mic: Mic
   box: Box
   boxStore: BoxStore

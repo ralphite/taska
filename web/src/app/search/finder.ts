@@ -18,7 +18,7 @@ import { levelOf } from '../voice/voice'
 
 export interface FinderDeps {
   api: TaskaApi
-  /** the page's microphone (kept between recordings from the Home Screen) */
+  /** the page's microphone */
   mic: Mic
   store: FindStore
   /** the project you are in ('' none) */
