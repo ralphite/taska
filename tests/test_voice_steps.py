@@ -184,5 +184,12 @@ class OrganizerBody(ProjectCase):
         self.assertNotIn("misheard", card)
 
 
+class TidyTime(unittest.TestCase):
+    def test_a_long_note_is_given_time_to_tidy(self):
+        # B788 (r1338): a 5-minute note (1636 characters, tidied in 10.5 to 11.6 s) was cut off at 8 s and kept its fillers
+        self.assertEqual(tr.tidy_cap("短" * 20), tr.TIDY_CAP + 0.2)
+        self.assertGreaterEqual(tr.tidy_cap("嗯" * 1636), 20)
+
+
 if __name__ == "__main__":
     unittest.main()

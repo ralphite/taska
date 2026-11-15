@@ -156,6 +156,13 @@ def capped(fn: Callable[[], Any], secs: float, what: str, times: Optional[Dict[s
 
 
 TIDY_CAP, TIDY_TRIES = float(os.environ.get("TASKA_TIDY_CAP", 8)), 3
+
+
+def tidy_cap(text: str) -> float:
+    """How long tidying `text` may take, in seconds: TIDY_CAP and 1 s more for each 100 characters (B788: the 8 s set
+    for 3.5 Flash cut gemini-4-hydrogen off on a 5-minute note, 1636 characters tidied in 10.5 to 11.6 s, and the
+    note kept its "呃" and "嗯")."""
+    return TIDY_CAP + len(text) / 100
 Step = Dict[str, Any]
 
 
@@ -187,7 +194,7 @@ def strong(steps: List[Step], name: str, audio: Dict[str, Any], prompt: str, tim
 
 
 def tidy(text: str, step: Optional[Step] = None) -> str:
-    """text made smooth to read (TIDY_SYSTEM), or as it was: short words, no good answer within TIDY_CAP, or words lost.
+    """text made smooth to read (TIDY_SYSTEM), or as it was: short words, no good answer within tidy_cap, or words lost.
     Asked TIDY_TRIES times at once; the first answer that keeps the words wins (Nota's T678). step (a dict) gets every
     answer back by then ("tries": its words or its error, whether it kept the words) and the words chosen."""
     if len(text) < 12:
@@ -205,12 +212,13 @@ def tidy(text: str, step: Optional[Step] = None) -> str:
     tries: List[Dict[str, Any]] = []
     if step is not None:
         step["tries"] = tries
-    end = time.time() + TIDY_CAP
+    cap = tidy_cap(text)
+    end = time.time() + cap
     for _ in range(TIDY_TRIES):
         try:
             out, why = got.get(timeout=max(0.0, end - time.time()))
         except queue.Empty:
-            tries.append({"error": f"no answer within {TIDY_CAP:.0f} s"})
+            tries.append({"error": f"no answer within {cap:.0f} s"})
             break
         ok = tidy_ok(text, out)
         tries.append({"error": why} if why else {"text": out, "kept": ok})
