@@ -88,7 +88,8 @@ export const PAGE_HELPER = String.raw`<script>(() => {
         const e = document.querySelector(k.slice(2))
         if (e && e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden') {
           const r = e.getBoundingClientRect()
-          out[k] = Object.assign(box(r), corner(e, r))
+          // its words now too: a comment whose words are not there any more is not on it (F432 #5145)
+          out[k] = Object.assign(box(r), corner(e, r), { text: (e.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 4000) })
         }
       } catch (_) {}
     }

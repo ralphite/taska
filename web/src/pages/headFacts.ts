@@ -3,6 +3,7 @@
 // both use it.
 
 import { agentLine } from '../model/agents'
+import { countedInput } from '../model/inputs'
 import { outOfReach } from '../model/reach'
 import { rulesDoc, waitingProposals } from '../model/rules'
 import type { ProjectModel } from '../model/project'
@@ -17,7 +18,7 @@ export function tabCounts(m: ProjectModel, tab: Tab, list: ListQuery, desk: bool
   const num = (n: number, zero = false) => (desk ? n || (zero ? 0 : '') : tabNumber(n))
   return {
     items: num(isFiltered ? visible(m.items, 'items', list).filter((it) => !it.archived).length : openCount(m.items), true),
-    inputs: num(m.inputs.filter((r) => !r.acked && r.kind !== 'cancelled').length),
+    inputs: num(m.inputs.filter(countedInput).length),
     archive: num(m.items.filter((it) => it.archived && !it.mergedInto).length),
     // the rules are one document: the tab says a number only while a proposed change waits on you (I693, r1128)
     rules: num(waitingProposals(rulesDoc(m)).length),

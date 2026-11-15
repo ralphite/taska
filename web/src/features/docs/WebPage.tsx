@@ -17,7 +17,7 @@ import { MUTED } from '../../ui/tones'
 type Box = { x: number; y: number; w: number; h: number }
 /** at a part's top right corner (T501, each at most 40): how far below its top its own words start, and the room above
  * it before another part's words end */
-type Corner = { in?: number; up?: number }
+type Corner = { in?: number; up?: number; /** the part's words now (where its comments are) */ text?: string }
 export type Part = { key: string; text: string; rect: Box & Corner }
 type XY = [number, number]
 type Spot = { top: number; left: number }
@@ -52,6 +52,11 @@ export interface WebPageEvents {
 
 /** a part the page shows now (not hidden, not gone) */
 const shown = (r: Box | undefined): r is Box => !!r && r.w > 0 && r.h > 0
+
+const plain = (t: string) => t.replace(/\s+/g, ' ').trim()
+/** Whether a part's words now still have what its comments were about (F432 #5145: the place and the words both, else
+ * the words changed). A part whose words are not known yet keeps its comments. */
+export const stillSays = (now: string | undefined, quote: string) => now == null || !plain(quote) || plain(now).includes(plain(quote).slice(0, 80))
 
 /** Where the speak and comment buttons go: just above the outline at its right end, hiding none of the part, and
  * left of a comment count there (never under it, where a click could not reach them). Another part's words right
@@ -133,7 +138,7 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
   // (r799); kept inside the page; one that would cover another goes just under it; a part the page does not show now
   // has none
   const counts: (PageThread & Spot)[] = []
-  for (const t of threads.filter((x) => shown(rects[x.key])).sort((a, b) => rects[a.key].y - rects[b.key].y || rects[a.key].x - rects[b.key].x)) {
+  for (const t of threads.filter((x) => shown(rects[x.key]) && stillSays(rects[x.key].text, x.quote)).sort((a, b) => rects[a.key].y - rects[b.key].y || rects[a.key].x - rects[b.key].x)) {
     const r = rects[t.key]
     const left = Math.max(4, Math.min(r.x + r.w - 20, width - 48))
     const over = Math.min(r.y - 14, r.y + (r.in ?? 40) - 29)
@@ -152,6 +157,8 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
     spots.current = counts
   })
   const elsewhere = measured ? threads.filter((t) => !t.draft && !shown(rects[t.key])) : []
+  // on the page still, but its words changed: its comments are not on it any more
+  const changed = measured ? threads.filter((t) => !t.draft && shown(rects[t.key]) && !stillSays(rects[t.key].text, t.quote)) : []
   const opened = counts.find((c) => c.tk === open)
   const keys = [...new Set([...threads.map((t) => t.key), ...(held ? [held.key] : [])])]
   const want = JSON.stringify({ mode, keys, picked: held?.key || '', shut: !!opened })
@@ -327,17 +334,22 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
     <div ref={rootRef} className="relative -mx-4 mt-3 lg:mx-0 lg:mt-0">
       {/* the page as it is: no frame around it, and no tooltip over all of it (a name for screen readers only) */}
       <iframe ref={frame} aria-label={title} sandbox="allow-scripts allow-popups allow-forms" srcDoc={html + PAGE_HELPER} style={{ height }} className="block w-full bg-white" />
-      {elsewhere.length ? (
-        <div className="mt-6 space-y-4 border-t border-zinc-200 px-4 pt-4 dark:border-zinc-800">
-          <div className="text-xs font-medium text-zinc-500">Not on the page now</div>
-          {elsewhere.map((t) => (
-            <section key={t.tk}>
-              <div className={`line-clamp-2 text-sm ${MUTED}`}>“{plainQuote(t.quote)}”</div>
-              {renderThread(t.tk, false)}
-            </section>
-          ))}
-        </div>
-      ) : null}
+      {[
+        { head: 'Not on the page now', list: elsewhere },
+        { head: 'Its words changed', list: changed },
+      ].map((g) =>
+        g.list.length ? (
+          <div key={g.head} className="mt-6 space-y-4 border-t border-zinc-200 px-4 pt-4 dark:border-zinc-800">
+            <div className="text-xs font-medium text-zinc-500">{g.head}</div>
+            {g.list.map((t) => (
+              <section key={t.tk}>
+                <div className={`line-clamp-2 text-sm ${MUTED}`}>“{plainQuote(t.quote)}”</div>
+                {renderThread(t.tk, false)}
+              </section>
+            ))}
+          </div>
+        ) : null,
+      )}
       {hover && mode === true && !held ? ring('hover', hover.rect, 'ring-blue-500') : null}
       {held && rects[held.key] ? ring(held.key, rects[held.key], 'ring-amber-300') : null}
       {amber.map((k) => ring(k, rects[k], 'ring-amber-400'))}
