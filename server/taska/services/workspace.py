@@ -276,7 +276,9 @@ class Workspace:
             with p.lock:
                 if sid in p.agents.sids(own=True):
                     known = True
-                    listens = listens or p.agents.listens(sid, now)
+                    # an item in progress there: it is at work (waiting on what it started), not to listen now
+                    busy = any(i.status == "doing" and not i.deleted and not i.merged_into for i in p.state.items.values())
+                    listens = listens or busy or p.agents.listens(sid, now)
         return {"known": known, "listening": listens}
 
     def needs(self, push: bool = False) -> List[Dict[str, Any]]:

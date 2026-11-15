@@ -102,6 +102,12 @@ class Listening(unittest.TestCase):
         self.assertTrue(self.p.agents.listens(MANAGER, now + 30))  # its next wait comes after a short pause
         self.assertFalse(self.p.agents.listens(MANAGER, now + 120))
 
+    def test_a_session_with_an_item_in_progress_is_not_asked_to_listen(self) -> None:
+        self.p.agents.saw("claude-code", 0, "main", MANAGER)
+        self.p.run([(0, {"op": "new", "title": "Redo the brainstorm", "type": "task"})], "you")
+        self.p.run([(0, {"op": "set", "ref": "T1", "f": {"status": "doing"}})], "you")
+        self.assertEqual(self.ws.listening(MANAGER), {"known": True, "listening": True})
+
 
 if __name__ == "__main__":
     unittest.main()
