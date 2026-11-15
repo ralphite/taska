@@ -7,6 +7,7 @@ import { useServices, useStores, useStoreValue } from '../../app/context'
 import type { ProjectRoute } from '../../app/hooks'
 import { boxShowsRecording, shownBox } from '../../model/boxFoot'
 import { clock } from '../../model/time'
+import { liveN } from '../../model/project'
 import { Composer } from './Composer'
 import { BOX_WORDS_LOOK, Doubts, DraftWords, doubtsViewOf } from './Doubts'
 import { DraftFiles } from './DraftFiles'
@@ -17,7 +18,7 @@ const EMPTY: Record<string, string> = {}
 
 /** `bare`: just the box (Settings' transcription preferences), which writes what the box shown writes */
 export function BoxContainer({ route, composePage, boxRef, bare = false }: { route: ProjectRoute; composePage: boolean; boxRef?: RefObject<HTMLDivElement | null>; bare?: boolean }) {
-  const app = useServices('box', 'docChoices', 'docComments', 'docVoice', 'docs', 'fields', 'media', 'settings', 'voice', 'voiceWords')
+  const app = useServices('answers', 'box', 'docChoices', 'docComments', 'docVoice', 'docs', 'fields', 'media', 'settings', 'voice', 'voiceWords')
   const stores = useStores('box', 'drafts', 'recording')
   const { m, desk, mode, pick, role, key } = useBoxHere(route)
   useLayoutEffect(() => {
@@ -40,7 +41,9 @@ export function BoxContainer({ route, composePage, boxRef, bare = false }: { rou
     if (mode?.kind === 'comment') return void app.docComments.saveComment(route.slug, mode.d, mode.id, key)
     if (shown.voiceComments && role.doc != null) return void app.docVoice.post(route.slug, role.doc, key) // each quote's words, a comment on its passage
     if (role.aim) return void app.docComments.comment(route.slug, role.aim.d, role.aim.target, key)
-    void app.box.send(route.slug, m, role.scope, key)
+    // on an item with its question's choices picked: they go with what you wrote, as one answer (B145)
+    const it = role.scope && m ? m.byN.get(liveN(m, Number(role.scope.slice(1)))) : undefined
+    void app.box.send(route.slug, m, role.scope, key, it && m ? app.answers.picks(m, route.slug, it) : null)
   }
   const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
   // words of a voice note that may be misheard: under the box; on the phone in the box itself, to pick from

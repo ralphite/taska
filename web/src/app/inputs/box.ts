@@ -12,7 +12,7 @@ import { inputCode } from '../../model/words'
 import { draftNotes, shownNotes, splitVoices, wordsByFile } from '../../model/voices'
 import { outgoingText } from '../../model/outgoing'
 import { goingUp, isUp } from '../../model/fileStates'
-import { docDraft, draftKey, keyOf, NEW_DRAFT, PREFS_DRAFT, scopeDraft, type DraftKey } from '../../model/draftTarget'
+import { docDraft, draftKey, keyOf, NEW_DRAFT, PREFS_DRAFT, replyDraft, scopeDraft, type DraftKey } from '../../model/draftTarget'
 import type { BoxStore, DraftFile } from '../../stores/box'
 import type { BoxMode } from '../../model/boxFoot'
 import type { SentFile } from '../../model/commands'
@@ -174,13 +174,26 @@ export class Box {
     this.d.sent?.(slug, key)
   }
 
-  /** Send what the box has, to what it writes to. -> whether anything went */
-  send(slug: string, m: ProjectModel | null, scope: string | null, draft?: DraftKey): boolean {
+  /** Send what the box has, to what it writes to. `answer`: the choices picked on the item's question, which go with
+   * it as one answer (B145: the choices and what you wrote go together, whichever you send with). -> whether anything
+   * went */
+  send(slug: string, m: ProjectModel | null, scope: string | null, draft?: DraftKey, answer?: { text: string; done(): void } | null): boolean {
     const st = this.d.store.getState()
     const mode = st.mode
     const key = draft ?? this.key(scope, mode)
     const text = this.text(slug, key).trim()
     const files = st.files[key] || []
+    // the item's own reply, with the choices picked on its question (not an edit or a correction the box writes)
+    if (answer && scope && key === replyDraft(scope)) {
+      this.write(slug, key, '')
+      st.takeFiles(key)
+      const said = splitVoices(text, draftNotes(files))
+      const words = [answer.text, said.text].filter(Boolean).join('\n\n')
+      this.d.inputs.push({ slug, text: words, words: said.words, scope, files: files.map(({ key: k, ...f }) => ({ ...f, key: k })), quiet: true, kind: 'answer' })
+      answer.done()
+      if (text || files.length) this.markSent(slug, key)
+      return true
+    }
     if (mode?.kind === 'correct') return this.correct(slug, m, mode, key)
     if (!text && !files.length) return false
     if (mode?.kind === 'amend') {

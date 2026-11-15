@@ -15,7 +15,7 @@ import { Merges } from './merges'
 import { Moves } from './moves'
 import { Selection } from './selection'
 
-export function makeItems(c: Core, i: Pick<InputsArea, 'inputs' | 'goDraft' | 'keptNotes'>, held: () => void) {
+export function makeItems(c: Core, i: Pick<InputsArea, 'inputs' | 'goDraft' | 'keptNotes' | 'box'>, held: () => void) {
   const { s, toasts, runner } = c
   const open = () => openItemN(s.route.getState().route)
   const listOrder = new ListOrder()
@@ -46,7 +46,7 @@ export function makeItems(c: Core, i: Pick<InputsArea, 'inputs' | 'goDraft' | 'k
     },
   })
   const itemEdits = new ItemEdits({ view: s.itemView, kept: s.keptEdits, route: s.route, toasts, desk: c.desk, model: c.here })
-  const answers = new Answers({ inputs: i.inputs, view: s.itemView, outbox: s.outbox })
+  const answers = new Answers({ inputs: i.inputs, view: s.itemView, outbox: s.outbox, box: i.box })
   // a merged item gives way to the one it went into; what you wrote for it goes along
   const merges = new Merges({ route: s.route, data: s.data, drafts: s.drafts, box: s.box, toasts, model: c.model, showItem: (code, tab) => c.nav.openItemHere(code, tab), goDraft: i.goDraft })
   return { listOrder, items, moves, selection, itemDrag, itemEdits, answers, merges }

@@ -9,10 +9,12 @@ import type { Item } from '../../model/types'
 import type { ItemViewStore } from '../../stores/itemView'
 import type { OutboxStore } from '../../stores/outbox'
 import type { InputSender } from '../inputs/inputSender'
+import type { Box } from '../inputs/box'
+import { replyDraft } from '../../model/draftTarget'
 
 export class Answers {
-  private readonly d: { inputs: InputSender; view: ItemViewStore; outbox: OutboxStore }
-  constructor(d: { inputs: InputSender; view: ItemViewStore; outbox: OutboxStore }) {
+  private readonly d: { inputs: InputSender; view: ItemViewStore; outbox: OutboxStore; box: Pick<Box, 'send'> }
+  constructor(d: Answers['d']) {
     this.d = d
   }
 
@@ -44,18 +46,26 @@ export class Answers {
     return this.d.outbox.getState().list.filter((o) => o.slug === slug && o.scope === codeOf(m, n) && o.kind === 'answer').at(-1) ?? null
   }
 
-  send(m: ProjectModel, slug: string, it: Item): boolean {
-    if (askRowOf(it.thread, it.wait?.id)) return false // questions in a row: their card sends (B749)
+  /** The choices picked on the item's question, as the answer says them, to go with what is in the box (B145);
+   * null when none is picked (or its questions in a row answer on their card, B749). */
+  picks(m: ProjectModel, slug: string, it: Item): { text: string; done(): void } | null {
+    if (askRowOf(it.thread, it.wait?.id)) return null
     const chosen = [...this.picked(it)].sort((a, b) => a - b)
-    if (!chosen.length) return false
+    if (!chosen.length) return null
     const labels = this.labels(it)
     const reask = this.d.view.getState().reask
     const x = reask != null ? it.thread.find((y) => y.id === reask) : undefined
     const was = x ? answerOf(it.thread, x, this.going(m, slug, it.n)?.text ?? null) || [] : []
     const text = chosen.map((i) => '✓ ' + labels[i]).join('\n') + (was.length ? `\n\nChanged my answer (it was: ${was.join(', ')})` : '')
-    this.d.inputs.push({ slug, text, files: [], scope: codeOf(m, it.n), quiet: true, kind: 'answer' })
-    this.d.view.getState().endAnswer()
-    return true
+    return { text, done: () => this.d.view.getState().endAnswer() }
+  }
+
+  /** Send the answer: the choices picked, and what is written in the item's box with them (B145). */
+  send(m: ProjectModel, slug: string, it: Item): boolean {
+    const answer = this.picks(m, slug, it)
+    if (!answer) return false
+    const code = codeOf(m, it.n)
+    return this.d.box.send(slug, m, code, replyDraft(code), answer)
   }
 
   /** Your answers to some of the questions in a row (`of`), as one reply; the others keep waiting (B749). */
