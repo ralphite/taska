@@ -7,7 +7,7 @@
 
 import { Delivery } from '../../api/delivery'
 import { Abandoned } from '../../api/http'
-import { canRecord, keepAwake, micTrouble, openMic, stopRecorder } from './mic'
+import { canRecord, keepAwake, micTrouble, stopRecorder, type Mic } from './mic'
 import { CANT_RECORD, MUTED_BY_PHONE, TOO_SHORT, cancelledKept, noSound } from '../../model/micWords'
 import { clock } from '../../model/time'
 import { vcLabel, vcLineEnd, withQuote } from '../../model/voiceComments'
@@ -28,6 +28,8 @@ import { NOTE_STOPPED, heardEvent, noteState, noteStep, type VoiceEvent } from '
 export interface VoiceDeps {
   api: TaskaApi
   store: RecordingStore
+  /** the page's microphone (kept between recordings from the Home Screen) */
+  mic: Mic
   box: Box
   boxStore: BoxStore
   outbox: OutboxStore
@@ -107,7 +109,7 @@ export class Voice {
     // asked while the press that started it still counts
     this.asleep = keepAwake()
     try {
-      const mic = await openMic()
+      const mic = await this.d.mic.open()
       this.stream = mic.stream
       // what the phone does to the sound (its gain, noise suppression), told to the developers' log: a note whose quiet
       // parts went silent and loud parts too loud had them on (B745)
@@ -169,7 +171,7 @@ export class Voice {
     const blob = stopRecorder(rec, this.chunks)
     if (this.muted) this.d.toasts.show(MUTED_BY_PHONE, null, { error: true })
     clearInterval(this.tick)
-    this.stream?.getTracks().forEach((t) => t.stop())
+    this.d.mic.done(this.stream)
     this.stream = null
     void this.ctx?.close()
     this.ctx = null

@@ -13,11 +13,13 @@ import { pickSide, type HeardFile } from '../../model/doubts'
 import { heardWords, saidMore, type FindKind } from '../../model/find'
 import { clock } from '../../model/time'
 import type { FindState, FindStore } from '../../stores/find'
-import { canRecord, openMic } from '../voice/mic'
+import { canRecord, type Mic } from '../voice/mic'
 import { levelOf } from '../voice/voice'
 
 export interface FinderDeps {
   api: TaskaApi
+  /** the page's microphone (kept between recordings from the Home Screen) */
+  mic: Mic
   store: FindStore
   /** the project you are in ('' none) */
   slug(): string
@@ -139,13 +141,13 @@ export class Finder {
     const gen = ++this.gen // a search under way stops mattering: you say more
     let stream: MediaStream
     try {
-      stream = (await openMic()).stream
+      stream = (await this.d.mic.open()).stream
     } catch {
       if (gen === this.gen) this.s.set({ phase: 'nomic' })
       return
     }
     if (gen !== this.gen || this.s.phase !== 'listening' || this.live) {
-      stream.getTracks().forEach((t) => t.stop())
+      this.d.mic.done(stream)
       if (gen === this.gen && this.s.phase === 'listening') this.s.set({ phase: was })
       return
     }
@@ -182,7 +184,7 @@ export class Finder {
       r.rec.onstop = () => ok({ blob: new Blob(r.chunks, { type: r.rec.mimeType || 'audio/webm' }), ms })
     })
     r.rec.stop()
-    r.stream.getTracks().forEach((t) => t.stop())
+    this.d.mic.done(r.stream)
     void r.ctx?.close()
     return done
   }

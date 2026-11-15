@@ -11,13 +11,15 @@ import type { DocViewStore } from '../../stores/docView'
 import type { RouteStore } from '../../stores/route'
 import type { DocEditor } from '../docs/editor'
 import type { Fields } from '../page/fields'
-import { canRecord, micTrouble, openMic } from './mic'
+import { canRecord, micTrouble, type Mic } from './mic'
 import { CANT_RECORD, TOO_SHORT } from '../../model/micWords'
 import type { Toasts } from '../page/toasts'
 import { noteText } from '../../model/docs'
 
 export interface DictationDeps {
   api: TaskaApi
+  /** the page's microphone (kept between recordings from the Home Screen) */
+  mic: Mic
   /** what has to reach Taska is asked until it answers (its pauses end at once when Taska may be back) */
   delivery: Delivery
   store: DictationStore
@@ -87,13 +89,13 @@ export class Dictation {
     if (!canRecord()) return this.d.toasts.show(CANT_RECORD, null, { error: true })
     let stream: MediaStream
     try {
-      stream = (await openMic()).stream
+      stream = (await this.d.mic.open()).stream
     } catch (e) {
       return this.d.toasts.show(micTrouble(e, this.d.desk()), null, { error: true })
     }
     const at = this.editing(slug)
     const t = this.d.fields.get('doc') as HTMLTextAreaElement | null
-    if (!at || !t || this.live) return stream.getTracks().forEach((x) => x.stop()) // the editor closed meanwhile
+    if (!at || !t || this.live) return this.d.mic.done(stream) // the editor closed meanwhile
     // like dictation: what you selected is what you speak over
     const mark = `⟦🎙 ${++this.n}⟧`
     const v = this.text(slug)
@@ -142,7 +144,7 @@ export class Dictation {
       }
     })
     r.rec.stop()
-    r.stream.getTracks().forEach((x) => x.stop())
+    this.d.mic.done(r.stream)
   }
 
   /** The editor discarded: the microphone stops and the words still to come go nowhere. */

@@ -172,6 +172,7 @@ export function createApp(env: AppEnv): App {
   })
   const finder = new Finder({
     api,
+    mic: c.mic,
     store: s.find,
     slug: c.slug,
     layer: (on) => nav.search(on),
@@ -234,7 +235,7 @@ export function createApp(env: AppEnv): App {
     access,
     refreshProjects: project.refreshProjects,
     stop: () => {
-      for (const x of [project.projects, project.projectSession, project.pictureSizes, sheets, docsOpen, docEditor, items.merges, page.arrival, project.notices, page.pageErrors, page.pageActions, page.leaveGuard]) x.stop()
+      for (const x of [project.projects, project.projectSession, project.pictureSizes, sheets, docsOpen, docEditor, items.merges, page.arrival, project.notices, page.pageErrors, page.pageActions, page.leaveGuard, c.mic]) x.stop()
       unlisten()
     },
     actions,

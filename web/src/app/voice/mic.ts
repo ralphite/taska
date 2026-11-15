@@ -32,6 +32,63 @@ export async function openMic(): Promise<OpenMic> {
   }
 }
 
+/** Whether Taska runs from the Home Screen (an app of its own, not a browser tab). */
+export const fromHomeScreen = () =>
+  typeof window !== 'undefined' && (window.matchMedia?.('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true)
+
+/** The page's microphone (B217, B800). From the Home Screen the phone asks for it each time it is opened, so the
+ * microphone it was given is kept between recordings while Taska is on screen (nothing is recorded or sent between
+ * them) and let go when Taska goes to the background or away; in a browser tab each recording opens it and lets it go.
+ * `busy`: a recording under way (the microphone stays while it lasts, on screen or not). */
+export class Mic {
+  private kept: MediaStream | null = null
+  readonly stop: () => void
+  constructor(
+    private readonly d: { busy(): boolean; keep?: () => boolean; open?: () => Promise<OpenMic> },
+  ) {
+    if (typeof document === 'undefined') {
+      this.stop = () => {}
+      return
+    }
+    const away = () => document.visibilityState === 'hidden' && this.release()
+    const gone = () => this.release()
+    document.addEventListener('visibilitychange', away)
+    window.addEventListener('pagehide', gone)
+    this.stop = () => {
+      document.removeEventListener('visibilitychange', away)
+      window.removeEventListener('pagehide', gone)
+      this.release(true)
+    }
+  }
+
+  /** The microphone for a new recording: the one kept, while it still hears, else opened (and kept, from the Home
+   * Screen). */
+  async open(): Promise<OpenMic> {
+    const k = this.kept
+    const track = k?.getAudioTracks()[0]
+    if (k && track?.readyState === 'live') return { stream: k, refused: null, settings: track.getSettings?.() ?? {} }
+    this.kept = null
+    const m = await (this.d.open ?? openMic)()
+    if ((this.d.keep ?? fromHomeScreen)()) this.kept = m.stream
+    return m
+  }
+
+  /** A recording with `stream` ended: it lets go of the microphone, unless it is the one kept (then only when Taska is
+   * not on screen now). */
+  done(stream: MediaStream | null | undefined): void {
+    if (!stream) return
+    if (stream !== this.kept) stream.getTracks().forEach((t) => t.stop())
+    else if (typeof document !== 'undefined' && document.visibilityState === 'hidden') this.release()
+  }
+
+  /** The kept microphone let go (not while a recording uses it, unless `now`). */
+  private release(now = false): void {
+    if (!this.kept || (!now && this.d.busy())) return
+    this.kept.getTracks().forEach((t) => t.stop())
+    this.kept = null
+  }
+}
+
 /** Why the microphone did not start, and what to do here (the desktop's way to allow it, or the phone's). */
 export const micTrouble = (e: unknown, desk: boolean): string => troubleWords((e as Error)?.name || '', desk, window.isSecureContext)
 

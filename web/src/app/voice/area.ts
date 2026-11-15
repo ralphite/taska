@@ -12,6 +12,7 @@ export function makeVoice(c: Core, i: InputsArea, d: DocsArea) {
   const { s, toasts } = c
   const voice = new Voice({
     api: c.api,
+    mic: c.mic,
     store: s.recording,
     box: i.box,
     boxStore: s.box,
@@ -42,7 +43,7 @@ export function makeVoice(c: Core, i: InputsArea, d: DocsArea) {
     desk: c.desk,
     reply: (sl, key, scope) => void i.box.send(sl, c.model(sl), scope, key),
   })
-  const dictation = new Dictation({ api: c.api, delivery: c.delivery, store: s.dictation, view: s.docView, route: s.route, editor: d.docEditor, fields: c.fields, toasts, model: c.model, recording: c.recording, desk: c.desk })
+  const dictation = new Dictation({ api: c.api, mic: c.mic, delivery: c.delivery, store: s.dictation, view: s.docView, route: s.route, editor: d.docEditor, fields: c.fields, toasts, model: c.model, recording: c.recording, desk: c.desk })
   return { voice, docVoice, dictation }
 }
 export type VoiceArea = ReturnType<typeof makeVoice>
