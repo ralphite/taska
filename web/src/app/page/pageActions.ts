@@ -16,11 +16,18 @@ const FIELD = 'input, textarea, select, [contenteditable="true"]'
 
 export type Entry = Record<string, unknown> & { kind: string }
 
-/** A control's name as you see it: its label, else its words, at most 80 characters. */
+/** an item's row in a list: tapping it opens the item (no control of its own) */
+const ROW = 'article[data-n]'
+
+/** A control's name as you see it: its label, else its words without its key hints, at most 80 characters. */
 export function nameOf(el: Element): string {
-  const said = el.getAttribute('aria-label') || el.getAttribute('title') || (el as HTMLElement).innerText || el.textContent || ''
+  const said = el.getAttribute('aria-label') || el.getAttribute('title') || wordsOf(el)
   return said.replace(/\s+/g, ' ').trim().slice(0, 80)
 }
+
+/** the words in `node`, its key hints left out */
+const wordsOf = (node: Node): string =>
+  node.nodeType === Node.TEXT_NODE ? node.textContent || '' : node.nodeName === 'KBD' ? ' ' : [...node.childNodes].map(wordsOf).join(' ')
 
 /** The keys that act: Escape and Enter, a key with ⌘ or Ctrl or Alt, and the keys that act outside a field. */
 export function keyOf(e: KeyboardEvent, inField: boolean): string {
@@ -48,8 +55,9 @@ export class PageActions {
     const onClick = (e: MouseEvent) => {
       const at = e.target instanceof Element ? e.target : null
       const el = at?.closest(CONTROL)
-      if (!el) return
-      this.note({ kind: 'tap', what: nameOf(el), role: el.getAttribute('role') || el.tagName.toLowerCase(), where: where() })
+      const row = el ? null : at?.closest(ROW)
+      if (el) this.note({ kind: 'tap', what: nameOf(el), role: el.getAttribute('role') || el.tagName.toLowerCase(), where: where() })
+      else if (row) this.note({ kind: 'tap', what: nameOf(row), role: 'row', n: row.getAttribute('data-n'), where: where() })
     }
     const onKey = (e: KeyboardEvent) => {
       const at = e.target instanceof Element ? e.target : null
@@ -71,7 +79,8 @@ export class PageActions {
     })
     // each request that failed or was slow, with the server's reason (B792: why a change was refused was not known)
     d.api.http.watch = (w: Watched) => {
-      if (/\/page-log\b/.test(w.url) || (w.ok && w.ms < SLOW)) return
+      // the page's own log, and the long wait for news (slow on purpose; stopped when the page moves on)
+      if (/\/page-log\b/.test(w.url) || (w.ok && w.ms < SLOW) || (/[?&]wait=/.test(w.url) && (w.ok || !w.status))) return
       this.note({ kind: 'net', why: w.ok ? 'slow' : 'failed', method: w.method, url: plainUrl(w.url), status: w.status, ms: w.ms, msg: w.why?.slice(0, 300) })
     }
     document.addEventListener('click', onClick, { capture: true, passive: true })
