@@ -116,12 +116,11 @@ export class TaskaApi {
     return this.http.json(P(slug) + 'move-item?id=' + encodeURIComponent(id), { method: 'POST', body: { to, ref, ...(under ? { under } : {}) }, timeout: TIME_LIMIT.command })
   }
 
-  /** A voice note's words: at once when they are kept (GET), or waiting for them (POST; again: a failed one tried
-   * once more; more: the final words after its first words came early). */
-  words(slug: string, f: string, wait = false, o: { scope?: string | null; again?: boolean; more?: boolean } = {}): Promise<Answers['words']> {
+  /** A voice note's words: at once when they are kept (GET), or waiting for them (POST; more: the final words after
+   * its first words came early). Taska tries a failed one again itself (T806). */
+  words(slug: string, f: string, wait = false, o: { scope?: string | null; more?: boolean } = {}): Promise<Answers['words']> {
     const q = new URLSearchParams({ f })
     if (o.scope) q.set('scope', o.scope)
-    if (o.again) q.set('again', '1')
     if (o.more) q.set('more', '1')
     return this.http.json(P(slug) + 'words?' + q.toString(), wait ? { method: 'POST', timeout: 60000 } : {})
   }

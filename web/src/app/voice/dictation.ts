@@ -12,6 +12,7 @@ import type { RouteStore } from '../../stores/route'
 import type { DocEditor } from '../docs/editor'
 import type { Fields } from '../page/fields'
 import { canRecord, micTrouble, type Mic } from './mic'
+import { lost, wordsOf } from './words'
 import { CANT_RECORD, TOO_SHORT } from '../../model/micWords'
 import type { Toasts } from '../page/toasts'
 import { noteText } from '../../model/docs'
@@ -160,20 +161,14 @@ export class Dictation {
     const delivery = this.d.delivery
     let f = ''
     try {
-      for (let tries = 0, waits = 0; ; ) {
+      for (;;) {
         if (!f) f = (await delivery.until(() => this.d.api.upload(slug, blob, `voice ${clock(note.ms).replace(':', '-')}.${ext}`, { voice: true, scope: note.scope }))).f
-        const d = await delivery.until(() => this.d.api.words(slug, f, true, { scope: note.scope, again: tries > 0 }))
-        if (d.tr_error === 'no such voice note') {
+        const d = await wordsOf(() => delivery.until(() => this.d.api.words(slug, f, true, { scope: note.scope })))
+        if (lost(d)) {
           f = ''
           continue
         }
-        if (!d.done && ++waits < 20) continue
-        if (d.done && d.tr_error && ++tries < 4) {
-          // the models had trouble: a few more tries, with growing pauses
-          await delivery.wait(Delivery.pause(tries))
-          continue
-        }
-        return d.done ? d.tr || '' : null
+        return d.state === 'done' || d.state === 'none' ? d.tr || '' : null
       }
     } catch {
       return null // Taska said no

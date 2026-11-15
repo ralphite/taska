@@ -5,6 +5,7 @@ import os
 import sys
 import threading
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
@@ -12,6 +13,7 @@ from support import ProjectCase
 from taska.domain import events as ev  # noqa: E402
 from taska.domain.model import FileRef  # noqa: E402
 from taska.domain.projection import apply, replay  # noqa: E402
+from taska.services import voice_jobs  # noqa: E402
 
 FID = "f1-voice_0-08.webm"
 FIRST = "导出的时候保留筛选"
@@ -66,9 +68,10 @@ class JobsWriteTheRecord(ProjectCase):
 
         other = "f2-voice_0-03.webm"
         self.p.voice.set_transcriber(broken)
-        self.p.voice.start(other, b"audio", "audio/webm", None)
-        with self.p.lock:
-            self.p.news.wait_for(lambda: self.p.voice.jobs[other].done, timeout=5)
+        with mock.patch.object(voice_jobs.time, "sleep", lambda s: None):  # T806: tried again first, after pauses
+            self.p.voice.start(other, b"audio", "audio/webm", None)
+            with self.p.lock:
+                self.p.news.wait_for(lambda: self.p.voice.jobs[other].done, timeout=5)
         self.assertEqual((self.p.state.voices[other].state, self.p.state.voices[other].err), ("failed", "models down"))
 
 

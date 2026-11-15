@@ -25,6 +25,10 @@ from ..domain.voice_states import DONE, FAILED, NONE, STATES, WAIT, answer_state
 from .news import News
 
 Transcript = Dict[str, Any]
+# T806 #2: a failed transcription is tried again here, after these pauses (seconds); the note waits meanwhile, and is
+# failed only when the last try fails. A restart goes on with it (it still waits). Nothing to transcribe with: no retry.
+RETRY_PAUSES = (20, 60, 180)
+NO_TRANSCRIBER = "voice notes are not transcribed here"
 AUDIO_EXTS = (".webm", ".ogg", ".m4a", ".mp4", ".mp3", ".wav", ".aac", ".flac")
 
 
@@ -139,13 +143,20 @@ class VoiceJobs:
     def _work(self, fid: str, data: bytes, mime: str, scope: Optional[int], job: Job, hold: threading.Timer) -> None:
         res: Transcript = {}
         err = ""
-        try:
-            if self._transcriber is None:
-                raise RuntimeError("voice notes are not transcribed here")
-            res = self._transcriber(data, mime, scope, self._p.file_path(fid), lambda words: self._first(fid, job, words)) or {}
-            self.keep(fid, res)
-        except Exception as ex:  # a failed transcription is said on the page; Taska goes on
-            err = str(ex) or "transcription failed"
+        for pause in (0,) + RETRY_PAUSES:
+            if pause:
+                time.sleep(pause)
+            try:
+                if self._transcriber is None:
+                    raise RuntimeError(NO_TRANSCRIBER)
+                res = self._transcriber(data, mime, scope, self._p.file_path(fid), lambda words: self._first(fid, job, words)) or {}
+                self.keep(fid, res)
+                err = ""
+                break
+            except Exception as ex:  # tried again after a pause; the last failure is said on the page; Taska goes on
+                err = str(ex) or "transcription failed"
+                if err == NO_TRANSCRIBER:
+                    break
         hold.cancel()
         with self._p.lock:
             job.done, job.tr, job.err, job.res = True, str(res.get("tr", "")), err, res

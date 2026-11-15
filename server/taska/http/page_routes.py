@@ -4,7 +4,7 @@
     GET  changes?cursor=&wait=  the same, as soon as something changed (or after `wait` seconds: {"same": true})
     POST commands?cursor=       {id, commands: [...]}: changes, run once per id; the answer brings what changed
     (a file is sent as an agent sends one: POST /api/file, in agent_routes)
-    GET  words?f=   POST words?f=&again=1&more=1     a voice note's words (POST waits for them)
+    GET  words?f=   POST words?f=&more=1             a voice note's words (POST waits for them)
     GET  activity?n=&before=    the change log, newest first
     GET  doc?d=&t=              a big web page document's text (B756: not in the view)
     GET  picture-sizes          each picture's width and height
@@ -197,12 +197,12 @@ def _commands(ctx: "AppContext", req: Request, p: Project) -> Response:
 
 
 def _words(req: Request, p: Project) -> Response:
-    """A voice note's words: waits for them a while; again=1 tries a failed one once more."""
+    """A voice note's words: waits for them a while (a failed one was tried again already: voice_jobs)."""
     fid = os.path.basename(req.arg("f"))
     path, mime = p.file_path(fid), audio_type(fid)
     with p.lock:
         job = p.voice.jobs.get(fid)
-    if fid and mime and os.path.isfile(path) and (not job or (job.done and job.err and req.query.get("again"))):
+    if fid and mime and os.path.isfile(path) and not job:
         with open(path, "rb") as fh:
             p.voice.start(fid, fh.read(), mime, scope_of(p, req))
     more = bool(req.query.get("more"))

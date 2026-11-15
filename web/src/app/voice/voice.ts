@@ -8,6 +8,7 @@
 import { Delivery } from '../../api/delivery'
 import { Abandoned } from '../../api/http'
 import { canRecord, keepAwake, micTrouble, stopRecorder, type Mic } from './mic'
+import { wordsOf, type Words } from './words'
 import { CANT_RECORD, MUTED_BY_PHONE, TOO_SHORT, cancelledKept, noSound } from '../../model/micWords'
 import { clock } from '../../model/time'
 import { vcLabel, vcLineEnd, withQuote } from '../../model/voiceComments'
@@ -308,20 +309,12 @@ export class Voice {
         this.step(f, 'uploadRefused', cancelled)
         return this.d.flush()
       }
-    let d: Awaited<ReturnType<TaskaApi['words']>> | null = null
-    for (let n = 0, tries = 0, waits = 0; n < 40; n++) {
-      try {
-        d = await delivery.until(() => this.d.api.words(slug, fid, true, { scope, again: tries > 0 }))
-      } catch {
-        break // Taska said no
-      }
-      if (!heardEvent(d) && ++waits < 20) continue // still working: the server answers after 45 s for another ask
-      if (d.state === 'failed' && ++tries < 4) {
-        // the models had trouble: a few more tries, with growing pauses
-        await delivery.wait(Delivery.pause(tries))
-        continue
-      }
-      break
+    let d: Words | null = null
+    try {
+      // its fast words count as heard: the strong model's follow (hearMore)
+      d = await wordsOf(() => delivery.until(() => this.d.api.words(slug, fid, true, { scope })), (w) => !!heardEvent(w))
+    } catch {
+      /* Taska said no */
     }
     // no answer in all that time: it failed
     const on = (d && heardEvent(d)) || 'failed'

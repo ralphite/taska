@@ -15,6 +15,7 @@ import { clock } from '../../model/time'
 import type { FindState, FindStore } from '../../stores/find'
 import { canRecord, type Mic } from '../voice/mic'
 import { levelOf } from '../voice/voice'
+import { lost, wordsOf } from '../voice/words'
 
 export interface FinderDeps {
   api: TaskaApi
@@ -223,17 +224,18 @@ export class Finder {
     const on = { again: () => gen === this.gen, waiting: () => void (gen === this.gen && this.s.set({ phase: 'offline' })) }
     let f = ''
     try {
-      for (let tries = 0, waits = 0; gen === this.gen; ) {
+      while (gen === this.gen) {
         if (!f) f = (await this.d.delivery.until(() => this.d.api.upload(slug, blob, `search ${clock(ms).replace(':', '-')}.${ext}`, { voice: true }), on)).f
-        const w = await this.d.delivery.until(() => this.d.api.words(slug, f, true, { again: tries > 0 }), on)
-        if (this.s.phase === 'offline' && gen === this.gen) this.s.set({ phase: 'writing' })
-        if (w.tr_error === 'no such voice note') {
+        const w = await wordsOf(async () => {
+          const got = await this.d.delivery.until(() => this.d.api.words(slug, f, true), on)
+          if (this.s.phase === 'offline' && gen === this.gen) this.s.set({ phase: 'writing' })
+          return got
+        }, (x) => x.state !== 'wait' || gen !== this.gen)
+        if (lost(w)) {
           f = ''
           continue
         }
-        if (!w.done && ++waits < 20) continue
-        if (w.done && w.tr_error && ++tries < 4) continue
-        return w.done && !w.tr_error ? { f, tr: w.tr || '', doubts: w.doubts } : null
+        return w.state === 'done' || w.state === 'none' ? { f, tr: w.tr || '', doubts: w.doubts } : null
       }
     } catch {
       /* Taska said no, or another search began */

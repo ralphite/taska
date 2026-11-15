@@ -5,8 +5,8 @@ page's model of a voice message (web/src/model/voiceStates.ts) reads these as th
     wait  --its fast words-----------> wait     `early` holds them meanwhile (T687)
     wait  --its words----------------> done
     wait  --nobody heard-------------> none
-    wait  --failed-------------------> failed   `err` says why
-    none, failed --tried again-------> wait     the page asks again (again=1)
+    wait  --failed-------------------> failed   `err` says why (Taska tried it again itself first: voice_jobs)
+    none, failed --asked again-------> wait     a page asks for it after a restart (nothing tried it since)
     done  --any later step-----------> done     words in stay: a model's later step never takes them away
     any   --you changed its words----> done     (VoiceFixed) they are yours from then on
 
