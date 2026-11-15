@@ -30,6 +30,7 @@ const REMOVED: { why: string; gone: RegExp }[] = [
   { why: 'B629 (D136 C106): an input is not labelled "You said" (it may be typed)', gone: />\s*You said\s*<|['"`]You said['"`]\s*[,})\]]/ },
   { why: 'T260 (D136 C428): no Keep going switch; an agent keeps going by its guide', gone: /Keep going['"`]|\bkeepGoing\b|\bkeep_going\b/ },
   { why: 'F700 (D136 C548): a label says "Phone:" / "Desktop:", never "On the phone" / "On the desktop"', gone: /['"`](On|on) the (phone|desktop)['"`]/ },
+  { why: 'B800 r1370 r1371 (D136 C144): no microphone kept between recordings: kept, iPhone refused it after the background until Taska was reopened', gone: /\bfromHomeScreen\b|\bkept: MediaStream\b|\bmicRelease\b|MIC\.stream\b/ },
   { why: 'B682: a voice note shows its words (or that they are coming, or that none were heard), never "Voice note" in their place', gone: /(isAudio|audio\/)[^\n]*['"]Voice note['"]/ },
 ]
 
