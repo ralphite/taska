@@ -13,7 +13,7 @@ import secrets
 import threading
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
-from ..domain import includes, versions
+from ..domain import includes, skills, versions
 from ..domain.vocab import SLUG_CHARS
 from ..infra.project_db import ProjectDb
 from .project import Project, Shared
@@ -32,15 +32,28 @@ class SharedRules:
         self._shared = shared
         self._lock = threading.Lock()
         self.rules: Dict[str, Project] = {}
+        self._now: Dict[str, Tuple[str, str]] = {}  # slug -> (name, text) as last changed: the skills, read lock-free
         for name in sorted(os.listdir(self.folder)) if os.path.isdir(self.folder) else []:
             if all(c in SLUG_CHARS for c in name) and ProjectDb.exists_in(os.path.join(self.folder, name)):
-                self._open(name)
+                self.refresh(self._open(name).slug)
 
     def _open(self, name: str) -> Project:
         p = Project(os.path.join(self.folder, name), MARK + name, shared=self._shared)
         p.holds_shared = True
         self.rules[p.slug] = p
         return p
+
+    def refresh(self, slug: str) -> None:
+        """One has changed (its lock held, or no one else has it yet): what skills() gives (I821)."""
+        p = self.rules.get(slug)
+        if p is not None:
+            now = dict(self._now)
+            now[slug] = (p.title, p.state.rules.md if p.state.rules else "")
+            self._now = now  # replaced whole: a reader never sees it half made
+
+    def skills(self) -> Dict[str, str]:
+        """The skills (shared documents named /name), by name, as they were last changed."""
+        return skills.skills_of({name: md for name, md in self._now.values()})
 
     def get(self, slug: str) -> Optional[Project]:
         return self.rules.get(slug)

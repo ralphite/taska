@@ -15,7 +15,7 @@ from ..agent_text import render
 from ..agent_text.guide_text import CONNECT
 from ..agent_text.language import Parsed, parse
 from ..agent_text.work import Asker, Work, next_work
-from ..domain import events as ev, rules
+from ..domain import events as ev, includes, rules, skills
 from ..domain.rules import item_at
 from ..domain.state import ident
 from ..domain.vocab import MAX_FILE, PEOPLE, Refused
@@ -97,8 +97,15 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
         return _wake(req, p)
     if sub == "/rules":
         shared = p.shared_texts()  # the shared rules its lines put in (I779), read before its own lock
+        listed = skills.listing(p.skills(), base)  # I821: the skills, to apply one when it fits
         with p.lock:
-            return text(200, render.rules_text(p.state, shared))
+            return text(200, render.rules_text(p.state, shared) + ("\n\n" + listed if listed else ""))
+    if sub == "/skill":  # I821: a skill's text, by its name (/qa)
+        have = p.skills()
+        name = next((n for n in have if includes.norm(n) == includes.norm(req.arg("name", ""))), None)
+        if name is None:
+            return text(404, "no skill by that name; the skills: " + (", ".join(sorted(have)) or "none yet") + "\n")
+        return text(200, f"{name}\n\n{have[name].strip()}\n")
     if sub == "/connect":
         return text(200, CONNECT.format(name=p.slug, base=base, host=req.host() + req.prefix))
     if sub in ("/inbox", "/inputs"):

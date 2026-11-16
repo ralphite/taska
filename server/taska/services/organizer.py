@@ -18,12 +18,12 @@ from typing import Any, Dict, List, Optional, Tuple
 from ..agent_text import render
 from ..agent_text.language import parse
 from ..agent_text.organizer_text import AS_SAID_LABEL, INSTRUCTIONS
-from ..domain import events as ev, input_states, rules
+from ..domain import events as ev, input_states, rules, skills
 from ..domain.input_states import transient
 from ..domain.model import Input
 from ..domain.text import hm
 from ..domain.vocab import CLOSED, TEXT_VERBS, Refused
-from ..domain.voices import for_agents, words_of
+from ..domain.voices import for_agents, one_line, words_of
 from ..infra import gemini
 from .project import Project
 
@@ -32,7 +32,9 @@ def context(p: Project, inp: Input) -> str:
     """What the organizer reads with an input: the open items, the rules, the item it is about, and the input."""
     st = p.state
     rows = [render.line(st, i) for i in rules.by_priority(st.live_items()) if i.status not in CLOSED][:600]
-    out = ["Open items:\n" + ("\n".join(rows) if rows else "(none yet)"), "Project rules:\n" + render.rules_text(st, p.shared_texts())]
+    listed = skills.listing(p.skills(), "")
+    out = ["Open items:\n" + ("\n".join(rows) if rows else "(none yet)"), "Project rules:\n" + render.rules_text(st, p.shared_texts())
+           + ("\n\n" + listed if listed else "")]
     rd = p.reading()
     if inp.scope in st.items:
         out.append("Scope item (the input is about this one):\n" + render.card(rd, st.items[inp.scope]))  # type: ignore[index]
@@ -46,7 +48,8 @@ def context(p: Project, inp: Input) -> str:
     # T697 r(D121): a voice note's tidied words are what the body is written from; its words word for word come only
     # to judge whether something was misheard
     said = for_agents(st, inp.text, inp.files, as_said=True, said_as=AS_SAID_LABEL)
-    out.append(f"New input {inp.id} at {hm(inp.t)}{scope}:\n{said or '(no text)'}")
+    used = skills.applied(one_line(st, inp.text, inp.files), rd.skills)  # I821: a skill the user applied to it
+    out.append(f"New input {inp.id} at {hm(inp.t)}{scope}:\n{said or '(no text)'}" + ("\n" + "\n".join(used) if used else ""))
     return "\n\n".join(out)
 
 

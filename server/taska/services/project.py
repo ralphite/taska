@@ -47,6 +47,10 @@ class Shared(Protocol):
         """Each shared rule's text, by its name (I779): what a project's rules put in by a line `{{name}}`."""
         ...
 
+    def skills(self) -> Dict[str, str]:
+        """The skills (I821), by name: their text as it was last changed, read without any lock."""
+        ...
+
 
 def now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
@@ -101,6 +105,10 @@ class Project:
         """The shared rules a line of this project's rules can put in, by name (I779)."""
         return self.shared.shared_texts() if self.shared and not self.holds_shared else {}
 
+    def skills(self) -> Dict[str, str]:
+        """The skills the user may apply to what they say (I821), by name."""
+        return self.shared.skills() if self.shared and not self.holds_shared else {}
+
     def held(self, inp: Input) -> bool:
         return self.voice.held(inp)
 
@@ -110,7 +118,7 @@ class Project:
 
     def reading(self, file_ref: Optional[Callable[[str], str]] = None) -> Reading:
         return Reading(state=self.state, held=self.voice.held, organizer_on=self.organizing.on,
-                       file_ref=file_ref or self.file_path, file_path=self.file_path)
+                       file_ref=file_ref or self.file_path, file_path=self.file_path, skills=self.skills())
 
     def file_path(self, fid: str) -> str:
         return self.files.path(fid)

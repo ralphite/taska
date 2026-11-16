@@ -49,7 +49,7 @@ export const SAMPLES = {
   ]
  },
  "view": {
-  "cursor": "1a1b1cd8b2a.39.55.2",
+  "cursor": "1a1b1cd8afe.39.55.2",
   "full": true,
   "items": [
    {
@@ -157,7 +157,7 @@ export const SAMPLES = {
      "t": "2026-11-06T09:00:00-08:00"
     },
     "readBy": {
-     "claude-code": 1793984400251
+     "claude-code": 1793984400210
     }
    },
    {
@@ -789,17 +789,17 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400287,
+     "t": 1793984400245,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400287
+       "t": 1793984400245
       },
       {
        "name": "helper",
-       "t": 1793984400179,
+       "t": 1793984400134,
        "sid": "aaaaaaaa-1111-2222-3333-444444444444",
        "on": {
         "n": 3,
@@ -884,10 +884,10 @@ export const SAMPLES = {
    ],
    "phone": false,
    "base": "http://127.0.0.1:7340/p/shop",
-   "key": "e5pd-3q92",
+   "key": "2smz-sgwv",
    "remote": "",
    "lan": "",
-   "filesCap": "2d71dc4039d1602c0fd3f52a"
+   "filesCap": "57487da41fc5f178b5059844"
   },
   "server": {
    "page": "index-BBE-eUPC.js",
@@ -896,7 +896,7 @@ export const SAMPLES = {
   }
  },
  "changes": {
-  "cursor": "1a1b1cd8b2a.39.55.2",
+  "cursor": "1a1b1cd8afe.39.55.2",
   "same": true,
   "server": {
    "page": "index-BBE-eUPC.js",
@@ -910,7 +910,7 @@ export const SAMPLES = {
    "ok B01 pri=P0"
   ],
   "changes": {
-   "cursor": "1a1b1cd8b2a.40.56.2",
+   "cursor": "1a1b1cd8afe.40.56.2",
    "full": false,
    "items": [
     {
@@ -1018,7 +1018,7 @@ export const SAMPLES = {
       "t": "2026-11-06T09:00:00-08:00"
      },
      "readBy": {
-      "claude-code": 1793984400251
+      "claude-code": 1793984400210
      }
     }
    ],
@@ -1049,17 +1049,17 @@ export const SAMPLES = {
     "agents": [
      {
       "name": "claude-code",
-      "t": 1793984400287,
+      "t": 1793984400245,
       "waiting": false,
       "session": "sample",
       "sessions": [
        {
         "name": "sample",
-        "t": 1793984400287
+        "t": 1793984400245
        },
        {
         "name": "helper",
-        "t": 1793984400179,
+        "t": 1793984400134,
         "sid": "aaaaaaaa-1111-2222-3333-444444444444",
         "on": {
          "n": 3,
@@ -1155,10 +1155,10 @@ export const SAMPLES = {
     ],
     "phone": false,
     "base": "http://127.0.0.1:7340/p/shop",
-    "key": "e5pd-3q92",
+    "key": "2smz-sgwv",
     "remote": "",
     "lan": "",
-    "filesCap": "2d71dc4039d1602c0fd3f52a"
+    "filesCap": "57487da41fc5f178b5059844"
    },
    "server": {
     "page": "index-BBE-eUPC.js",
@@ -1875,12 +1875,12 @@ export const SAMPLES = {
  },
  "newSharedRules": {
   "ok": true,
-  "slug": "~cgkac",
+  "slug": "~9um78",
   "name": "Coding"
  },
  "sharedRules": [
   {
-   "slug": "~cgkac",
+   "slug": "~9um78",
    "name": "Coding",
    "md": "## Tests (when to run them)\n\n- Run them.",
    "parts": [
@@ -1914,7 +1914,7 @@ export const SAMPLES = {
    "docs": 0,
    "agents": [],
    "work": false,
-   "t": 1794856840095
+   "t": 1794862638983
   },
   {
    "name": "garden",
@@ -1927,7 +1927,7 @@ export const SAMPLES = {
    "docs": 1,
    "agents": [],
    "work": true,
-   "t": 1794856840309
+   "t": 1794862639164
   },
   {
    "name": "shop",
@@ -1941,17 +1941,17 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400287,
+     "t": 1793984400245,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400287
+       "t": 1793984400245
       },
       {
        "name": "helper",
-       "t": 1793984400179,
+       "t": 1793984400134,
        "sid": "aaaaaaaa-1111-2222-3333-444444444444",
        "on": {
         "n": 3,
@@ -1963,7 +1963,7 @@ export const SAMPLES = {
     }
    ],
    "work": true,
-   "t": 1794856840317
+   "t": 1794862639172
   }
  ],
  "needs": [
@@ -2116,7 +2116,7 @@ export const SAMPLES = {
       "t": "2026-11-06T09:00:00-08:00"
      },
      "readBy": {
-      "claude-code": 1793984400251
+      "claude-code": 1793984400210
      }
     },
     "parentCode": null,
@@ -2498,7 +2498,7 @@ export const SAMPLES = {
   "tidy": true
  },
  "pushKey": {
-  "key": "BJ_SizIycEwFjVzo_gsibHdErq88pqoE5SBNDaJzZfBbAGQ5C7CC4E4R1xQxOUaRk2ykXIxbGJRSPR_Vz2TG1P4",
+  "key": "BHd1j3uL5wIhnAIKc2TpA2ZM9bJEpEtebhrfTxL0HXyhlboUcQGgSRzzJw1TJkKKrFrz9QTBm0vaQg47tTMiqpc",
   "on": false
  },
  "setPush": {
@@ -2554,7 +2554,7 @@ export const SAMPLES = {
  },
  "newKey": {
   "ok": true,
-  "key": "6r57-6ubb"
+  "key": "xrww-kwde"
  },
  "login": {
   "ok": true

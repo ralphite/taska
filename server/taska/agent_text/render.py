@@ -8,17 +8,17 @@ from __future__ import annotations
 
 import hashlib
 import textwrap
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Mapping, Sequence, Tuple
 
-from ..domain import includes, rules, sections, versions
+from ..domain import includes, rules, sections, skills, versions
 from . import guide_text
 from ..domain.model import Comment, Doc, FileRef, Input, Item, Message, Proposal
 from ..domain.rules import Held
 from ..domain.state import ProjectState
 from ..domain.text import clean_title, first_line, hm
 from ..domain.vocab import CLOSED
-from ..domain.voices import for_agents, is_voice
+from ..domain.voices import for_agents, is_voice, one_line
 
 FileRefText = Callable[[str], str]
 
@@ -33,6 +33,7 @@ class Reading:
     organizer_on: bool
     file_ref: FileRefText  # for this caller
     file_path: FileRefText  # always the path on this machine
+    skills: Mapping[str, str] = field(default_factory=dict)  # I821: the skills, by name, whose text comes with words that apply one
 
 
 def _others(rd: Reading, files: Sequence[FileRef], path: bool = False) -> List[str]:
@@ -198,6 +199,7 @@ def _reference(rd: Reading, it: Item) -> List[str]:
             fs = _others(rd, inp.files)
             if fs:
                 out.append("  files: " + " ".join(fs))
+        out.extend("  " + ln for ln in skills.applied(one_line(st, inp.text, inp.files), rd.skills))
     return out
 
 
@@ -219,6 +221,7 @@ def input_card(rd: Reading, inp: Input) -> str:
     others = _others(rd, inp.files)
     if others:
         out.append("  files: " + " ".join(others))
+    out.extend("  " + ln for ln in skills.applied(one_line(st, inp.text, inp.files), rd.skills))
     if inp.org:
         out.append(f"  organizer: {inp.org.msg}")
     if inp.history:

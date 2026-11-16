@@ -96,6 +96,11 @@ class Workspace:
     def changed(self, slug: str) -> None:
         if not is_shared_slug(slug):
             self.meaning.soon()
+        else:  # called under that shared document's lock
+            self.shared_rules.refresh(slug)
+
+    def skills(self) -> Dict[str, str]:
+        return self.shared_rules.skills()
 
     def shared_texts(self) -> Dict[str, str]:
         return self.shared_rules.texts()
