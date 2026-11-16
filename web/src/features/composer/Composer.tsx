@@ -2,9 +2,10 @@
 // (add files; a voice note, or Send once there are words). Past one line on the desktop the words take the box's
 // whole width and the buttons go to a row under them. Props only.
 
-import { useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import type { BoxLine, BoxRight, FeedbackLine } from '../../model/boxFoot'
 import { VC_MARK } from '../../model/voiceComments'
+import { pickedSkill, skillMenu, type Skill } from '../../model/skills'
 import { OUT_ACT_WORD, type OutTone } from '../../model/outgoingStates'
 import { INPUT_ACT_WORD, INPUT_STATES, type InputAct, type InputState, type InputTone } from '../../model/inputStates'
 import { Icon, type IconName } from '../../ui/Icon'
@@ -102,6 +103,8 @@ export interface ComposerProps {
   fieldRef?: (el: HTMLTextAreaElement | null) => void
   /** recording a voice note here: its time, its loudness lately (0 to 1), and which mic started it */
   rec?: { time: string; levels: readonly number[]; from: 'main' | 'aux' } | null
+  /** the skills (I821): "/" at the start of the words lists them, to pick one */
+  skills?: readonly Skill[]
   on: {
     text(t: string): void
     send(): void
@@ -111,7 +114,31 @@ export interface ComposerProps {
     recCancel?(): void
     recStop?(): void
     recSend?(): void
+    /** "/" typed at the start: the skills are wanted (loaded once) */
+    skillsWanted?(): void
   }
+}
+
+/** The skills that fit the "/" being typed (I821): each its name and what it is for; ↑↓ to choose, ↵ or ⇥ to take. */
+export function SkillMenu({ menu, sel, on }: { menu: readonly Skill[]; sel: number; on: { pick(s: Skill): void; select(i: number): void } }) {
+  return (
+    <div role="listbox" aria-label="Skills" className="flex flex-col gap-0.5 px-1.5 pt-1.5">
+      {menu.map((s, i) => (
+        <button
+          key={s.name}
+          role="option"
+          aria-selected={i === sel}
+          onMouseDown={(e) => e.preventDefault()} // the words keep the caret
+          onMouseMove={() => i !== sel && on.select(i)}
+          onClick={() => on.pick(s)}
+          className="flex min-h-11 w-full min-w-0 items-center gap-2.5 rounded-2xl px-3 text-left text-[15px] aria-selected:bg-blue-50 lg:min-h-9 lg:text-sm dark:aria-selected:bg-blue-400/15"
+        >
+          <span className="shrink-0 font-medium text-zinc-900 dark:text-zinc-100">{s.name}</span>
+          <span className="min-w-0 flex-1 truncate text-zinc-500 dark:text-zinc-400">{s.what}</span>
+        </button>
+      ))}
+    </div>
+  )
 }
 
 interface Btn {
@@ -132,8 +159,18 @@ function insertedAt(was: string, now: string): number | null {
   return now.endsWith(was.slice(a)) ? a : null
 }
 
-export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, text, desk, composePage, micTip, files, doubts, words, hasFiles = false, attach = true, boxRef, fieldRef, rec = null, on }: ComposerProps) {
+export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, text, desk, composePage, micTip, files, doubts, words, hasFiles = false, attach = true, boxRef, fieldRef, rec = null, skills = [], on }: ComposerProps) {
   const area = useRef<HTMLTextAreaElement | null>(null)
+  // I821: the skills that fit the "/" being typed, the one chosen, and the words Esc closed the list for
+  const [skillSel, setSkillSel] = useState(0)
+  const [skillsOff, setSkillsOff] = useState<string | null>(null)
+  const menu = rec || skillsOff === text ? null : skillMenu(text, skills)
+  const sel = menu ? Math.min(skillSel, menu.length - 1) : 0
+  const pickSkill = (sk: Skill) => {
+    on.text(pickedSkill(sk))
+    setSkillSel(0)
+    area.current?.focus()
+  }
   const box = useRef<HTMLDivElement | null>(null)
   const back = useRef<HTMLDivElement | null>(null)
   // the quote lines of comments on a document ("> “…”") are drawn quieter, as quotes, behind the words you edit
@@ -198,6 +235,7 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
       </div>
       {files}
       {doubts}
+      {menu ? <SkillMenu menu={menu} sel={sel} on={{ pick: pickSkill, select: setSkillSel }} /> : null}
       <div className={`flex items-end gap-2 p-1.5 group-data-[multi]/box:flex-wrap lg:gap-0.5 lg:group-data-[compose]/app:order-first ${attach || rec ? '' : 'pl-3.5 group-data-[multi]/box:justify-end group-data-[multi]/box:pl-1.5'}`}>
         <button
           hidden={!rec && !attach}
@@ -249,10 +287,28 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
             }}
             onChange={(e) => {
               keep(e.currentTarget)
+              if (e.currentTarget.value.startsWith('/') && !text.startsWith('/')) on.skillsWanted?.()
+              setSkillSel(0)
               on.text(e.currentTarget.value)
             }}
             onSelect={(e) => keep(e.currentTarget)}
             onKeyDown={(e) => {
+              if (menu && !e.nativeEvent.isComposing) {
+                const step = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0
+                if (step) {
+                  e.preventDefault()
+                  return setSkillSel((sel + step + menu.length) % menu.length)
+                }
+                if ((e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) || e.key === 'Tab') {
+                  e.preventDefault()
+                  return pickSkill(menu[sel])
+                }
+                if (e.key === 'Escape') {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  return setSkillsOff(text)
+                }
+              }
               if (e.key === 'Enter' && !e.nativeEvent.isComposing && (e.shiftKey || e.metaKey || e.ctrlKey)) {
                 e.preventDefault()
                 on.send()

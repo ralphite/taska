@@ -2,10 +2,11 @@
 // voice note recording into it, the words that may be misheard (under the box; on the phone in the box, to pick
 // from), and where Send sends it.
 
-import { useLayoutEffect, type RefObject } from 'react'
+import { useLayoutEffect, useMemo, type RefObject } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
 import type { ProjectRoute } from '../../app/hooks'
 import { boxShowsRecording, shownBox } from '../../model/boxFoot'
+import { skillsOf } from '../../model/skills'
 import { clock } from '../../model/time'
 import { liveN } from '../../model/project'
 import { Composer } from './Composer'
@@ -18,8 +19,10 @@ const EMPTY: Record<string, string> = {}
 
 /** `bare`: just the box (Settings' transcription preferences), which writes what the box shown writes */
 export function BoxContainer({ route, composePage, boxRef, bare = false }: { route: ProjectRoute; composePage: boolean; boxRef?: RefObject<HTMLDivElement | null>; bare?: boolean }) {
-  const app = useServices('answers', 'box', 'docChoices', 'docComments', 'docVoice', 'docs', 'fields', 'media', 'settings', 'voice', 'voiceWords')
-  const stores = useStores('box', 'drafts', 'recording')
+  const app = useServices('answers', 'box', 'docChoices', 'docComments', 'docVoice', 'docs', 'fields', 'media', 'settings', 'sharedRules', 'voice', 'voiceWords')
+  const stores = useStores('box', 'drafts', 'recording', 'settings')
+  const shared = useStoreValue(stores.settings, (s) => s.shared)
+  const skills = useMemo(() => skillsOf(shared), [shared])
   const { m, desk, mode, pick, role, key } = useBoxHere(route)
   useLayoutEffect(() => {
     if (!bare) stores.box.getState().setShown(key, role.scope)
@@ -98,7 +101,9 @@ export function BoxContainer({ route, composePage, boxRef, bare = false }: { rou
       doubts={doubts}
       words={phoneWords}
       rec={rec}
+      skills={mode ? [] : skills}
       on={{
+        skillsWanted: () => void app.sharedRules.load(),
         text: (v) => app.box.write(route.slug, key, v),
         send,
         attach: (list) => app.box.attach(route.slug, key, list),
