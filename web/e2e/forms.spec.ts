@@ -1,11 +1,11 @@
-// Replies leave questions and proposals skipped; replying to finished work sends it back to the agent (B607).
+// Replies leave questions skipped; a reply on a proposal approves it (B818); replying to finished work sends it back to
+// the agent (B607).
 // guards: src/features/item/ src/features/docs/ src/ui/Markdown.tsx src/app/actions.ts src/app/docs/ src/model/docTicks.ts server/
 import { expect, test } from '@playwright/test'
-import type { Locator } from '@playwright/test'
 import { open, project } from './seed'
 import { box } from './ui'
 
-test('r637 r140 r349: a question and a proposal answered by a reply show Skipped (B471)', async ({
+test('r637 r140 r349: a question answered by a reply shows Replied; a proposal replied on is approved (B471, B818)', async ({
   page,
   request,
 }) => {
@@ -23,9 +23,10 @@ new idea P2 now A proposal
   // a question answered by a reply: Replied where Send answer was (r1003)
   await open(page, p, 'T1')
   await expect(page.getByText(/^Replied/).filter({ visible: true }).first()).toBeVisible()
-  // a proposal you replied on is not decided yet: Skipped, with Approve still there to press
+  // a proposal you replied on is approved (B818 r1401): open, its card decided in place
   await open(page, p, 'I2')
-  await expect(page.getByText('Skipped · you replied').filter({ visible: true })).toBeVisible()
+  await expect.poll(async () => p.read('I2')).toMatch(/^I2 \w+ P\d \w+ open/)
+  await expect(page.getByText('Skipped · you replied').filter({ visible: true })).toHaveCount(0)
 })
 
 test('choices in a document you were sent to, answered by a reply on the item, show Skipped (T472)', async ({
@@ -51,18 +52,7 @@ T1 ask Pick one in D1 (the colour plan).
   await expect(page.getByText('Skipped · you replied', { exact: true }).filter({ visible: true })).toBeVisible()
 })
 
-/** How light a colour is, 0 (black) to 1 (white); a see-through colour counts as none: -1. */
-const light = (css: string) => {
-  const [r, g, b, a = 1] = (css.match(/[\d.]+/g) || []).map(Number)
-  return a === 0 ? -1 : (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
-}
-const look = (l: Locator) =>
-  l.evaluate((el) => {
-    const s = getComputedStyle(el)
-    return { bg: s.backgroundColor, fg: s.color }
-  })
-
-test('r662: a reply leaves a proposal skipped, done and not to be pressed; Approve stays a button like any other (B485, F1 #3)', async ({
+test('B818 r1401: a reply on a proposal approves it; its card stays where it was, Approve greyed and not to be pressed (r1003)', async ({
   page,
   request,
 }) => {
@@ -70,18 +60,12 @@ test('r662: a reply leaves a proposal skipped, done and not to be pressed; Appro
     agent: 'new idea P2 now A proposal\n',
   })
   await p.op({ op: 'input', text: 'Let us talk first', scope: 1 })
-  await open(page, p, 'I1')
-  const skipped = page.getByText('Skipped · you replied').filter({ visible: true }).first()
-  const approve = page.getByRole('button', { name: /^Approve/ }).filter({ visible: true, hasText: 'Approve' }).first()
-  await expect(skipped).toBeVisible()
-  await expect(approve).toBeVisible()
-  // what you did is done: filled, as a pick is, and not to be pressed; Approve can still be pressed, and looks it
-  expect(light((await look(skipped)).bg), 'Skipped is filled, as a pick is').toBeGreaterThanOrEqual(0)
-  await expect(page.getByRole('button', { name: /Skipped · you replied/ }).filter({ visible: true }).first()).toBeDisabled()
-  await expect(approve).toBeEnabled()
-  await approve.click()
   await expect.poll(async () => p.read('I1')).toMatch(/^I1 \w+ P\d \w+ open/)
-
+  await open(page, p, 'I1')
+  const approve = page.getByRole('button', { name: /^Approve/ }).filter({ visible: true }).first()
+  await expect(approve).toBeVisible()
+  await expect(approve).toBeDisabled()
+  await expect(page.getByText('Skipped · you replied').filter({ visible: true })).toHaveCount(0)
 })
 
 test('B607: replying to finished work resumes it; Accept returns when the agent hands it over again', async ({ page, request }) => {
