@@ -30,8 +30,8 @@ test('I821: "/" lists the skills, ↵ takes one, and the agents read its text wi
   await expect(page.getByRole('option').filter({ visible: true })).toHaveCount(0)
   await box(page).pressSequentially('D1 讲了什么？')
   await box(page).press('Shift+Enter')
-  await expect.poll(async () => p.read('/inbox?by=claude-code')).toContain(`skill ${name} (the user applied it to these words; do as it says):`)
-  expect(await p.read('/inbox?by=claude-code')).toContain('只回答，不改代码')
+  await expect.poll(async () => p.read('inbox?by=claude-code')).toContain(`skill ${name} (the user applied it to these words; do as it says):`)
+  expect(await p.read('inbox?by=claude-code')).toContain('只回答，不改代码')
 })
 
 test('I821: Esc closes the list; other words show none', async ({ page, request }) => {
