@@ -1,30 +1,17 @@
 """An item's states (B816): which changes of status are allowed, by whom, and which ones an agent must be told of.
 The commands (an item's status set), the agents' /next and the tests ask here; nothing else decides it.
 
-    stateDiagram-v2
-        [*] --> proposed: an agent makes it
-        [*] --> open: you or the organizer make it
-        proposed --> open: you approve
-        proposed --> dropped: you decline, or the agent takes it back
-        open --> doing: an agent starts
-        doing --> open: an agent stops, or asks you
-        doing --> review: an agent hands in its result (its done)
-        open --> review: an agent hands in its result
-        review --> done: you accept
-        review --> doing: you send it back (in words)
-        doing --> dropped: you mark it won't do (the agent on it is told to stop)
-        doing --> done: you close it (the agent on it is told to stop)
-        done --> open: you reopen
-        dropped --> open: you reopen (an agent may not, when you dropped it)
+STEPS is the diagram in docs/item-states.md: `mermaid()` draws it, and a test keeps the document the same as this
+table and every step in it allowed by `refusal` (r1398: the state machine is part of the documents, kept by the
+code). `told` says when an agent is told of a change of yours (only STOP: you closed what it was doing).
 
 You may make any change; the organizer any but putting an item in review (it writes down your words, it finishes
 no work). An agent may not approve a proposal (only take its own back), may not reopen what you dropped, and its
 done is review: you accept it. An agent's done also takes back the questions it still has open on the item, so an
-item never waits for your answer and your acceptance at once.
+item never waits for your answer and your acceptance at once (I779).
 
-Told: an agent is told of a change of yours only when it would otherwise go on with work that is gone: you closed or
-dropped an item it was doing (STOP). An approval needs no telling: the item joins the queue, and an agent waiting for
-work is woken by it; one busy with another item takes it in its turn (r1397).
+An approval needs no telling: the item joins the queue, and an agent waiting for work is woken by it; one busy with
+another item takes it in its turn (r1397).
 
 Pure: no I/O."""
 
@@ -38,10 +25,30 @@ PROPOSED, OPEN, DOING, REVIEW, DONE, DROPPED = "proposed", "open", "doing", "rev
 
 YOU, ORG, AGENT = "you", "org", "agent"
 
+STOP = "stop"  # the one telling: the agent on it stops
+
+# The diagram: (from, to, who, what it is); from None: where an item starts. "told to stop" marks a STOP.
+STEPS: Tuple[Tuple[Optional[str], str, str, str], ...] = (
+    (None, PROPOSED, AGENT, "an agent proposes it"),
+    (None, OPEN, YOU, "the user or the organizer makes it"),
+    (PROPOSED, OPEN, YOU, "the user approves"),
+    (PROPOSED, DROPPED, YOU, "the user declines (won't do)"),
+    (PROPOSED, DROPPED, AGENT, "the agent takes it back"),
+    (OPEN, DOING, AGENT, "an agent starts working on it"),
+    (DOING, OPEN, AGENT, "the agent stops"),
+    (DOING, REVIEW, AGENT, "the agent is done (its done is review)"),
+    (OPEN, REVIEW, AGENT, "the agent is done"),
+    (REVIEW, DONE, YOU, "the user accepts"),
+    (REVIEW, OPEN, YOU, "the user says not yet, or writes on it"),
+    (OPEN, DROPPED, YOU, "won't do"),
+    (DOING, DROPPED, YOU, "won't do (the agent on it is told to stop)"),
+    (DOING, DONE, YOU, "closed (the agent on it is told to stop)"),
+    (DONE, OPEN, YOU, "reopened"),
+    (DROPPED, OPEN, YOU, "reopened (an agent may not, when the user dropped it)"),
+)
+
 # Where an agent may set an item by itself (its done is asked as done and becomes review; done itself is yours).
 AGENT_TO = frozenset({OPEN, DOING, REVIEW, DROPPED})
-
-STOP = "stop"  # the one telling: the agent on it stops
 
 
 def actor(by: str) -> str:
@@ -81,15 +88,8 @@ def told(frm: str, to: str, by: str) -> Optional[str]:
     return None
 
 
-def steps() -> Tuple[Tuple[str, str, str], ...]:
-    """Every (from, to, who) allowed, for the tests and the diagram's check."""
-    states = (PROPOSED, OPEN, DOING, REVIEW, DONE, DROPPED)
-    out = []
-    for f in states:
-        for t in states:
-            if f == t or t == PROPOSED:  # no one sets an item proposed: it is made so
-                continue
-            for who in (YOU, ORG, AGENT):
-                if refusal("X", f, t, who, None) is None:
-                    out.append((f, t, who))
-    return tuple(out)
+def mermaid() -> str:
+    """STEPS as the diagram in docs/item-states.md."""
+    name = {None: "[*]", PROPOSED: "Proposed", OPEN: "Open", DOING: "Doing", REVIEW: "Review", DONE: "Done",
+            DROPPED: "Dropped"}
+    return "stateDiagram-v2\n" + "\n".join(f"  {name[f]} --> {name[t]}: {what}" for f, t, _, what in STEPS)

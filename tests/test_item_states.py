@@ -5,32 +5,44 @@ on an item you close or drop is told at once to stop, once; an approval needs no
 from __future__ import annotations
 
 import os
+import re
 import sys
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "server"))
 
 from support import ServerCase
 from taska.domain import item_states as S  # noqa: E402
 
 
 class Table(unittest.TestCase):
-    def test_who_may_change_what(self) -> None:
-        steps = set(S.steps())
-        self.assertIn((S.PROPOSED, S.OPEN, S.YOU), steps)  # you approve
-        self.assertNotIn((S.PROPOSED, S.OPEN, S.AGENT), steps)  # an agent never approves
-        self.assertIn((S.PROPOSED, S.DROPPED, S.AGENT), steps)  # it takes its own back
-        self.assertNotIn((S.DOING, S.REVIEW, S.ORG), steps)  # the organizer finishes no work
-        self.assertIn((S.DOING, S.REVIEW, S.AGENT), steps)
-        self.assertNotIn((S.REVIEW, S.DONE, S.AGENT), steps)  # done is yours: you accept
+    def test_the_documents_diagram_is_the_codes(self) -> None:
+        # r1398: the state machine is part of the documents, kept by the code
+        with open(os.path.join(ROOT, "docs", "item-states.md"), encoding="utf-8") as f:
+            doc = f.read()
+        drawn = re.search(r"```mermaid\n(stateDiagram-v2\n.*?)\n```", doc, re.S)
+        self.assertIsNotNone(drawn)
+        self.assertEqual(drawn.group(1), S.mermaid(), "docs/item-states.md: paste item_states.mermaid() in")
+
+    def test_every_step_drawn_is_allowed_and_told_as_drawn(self) -> None:
+        for f, t, who, what in S.STEPS:
+            if f is None:
+                continue
+            self.assertIsNone(S.refusal("X", f, t, who, None), (f, t, who))
+            self.assertEqual(S.told(f, t, who) == S.STOP, "told to stop" in what, (f, t, who))
+
+    def test_who_may_not(self) -> None:
+        self.assertIsNotNone(S.refusal("B1", S.PROPOSED, S.OPEN, "codex", None))  # an agent never approves
+        self.assertIsNotNone(S.refusal("B1", S.DOING, S.REVIEW, "org", None))  # the organizer finishes no work
+        self.assertIsNotNone(S.refusal("B1", S.REVIEW, S.DONE, "codex", None))  # done is yours: you accept
         self.assertEqual(S.asked(S.DOING, S.DONE, "claude-code"), S.REVIEW)
         self.assertEqual(S.asked(S.DOING, S.DONE, "you"), S.DONE)
         self.assertIsNotNone(S.refusal("B1", S.DROPPED, S.OPEN, "codex", closed_by="you"))
         self.assertIsNone(S.refusal("B1", S.DROPPED, S.OPEN, "codex", closed_by="codex"))
 
     def test_only_closing_work_in_progress_is_told(self) -> None:
-        self.assertEqual(S.told(S.DOING, S.DROPPED, "you"), S.STOP)
-        self.assertEqual(S.told(S.DOING, S.DONE, "org"), S.STOP)
+        self.assertEqual(S.told(S.DOING, S.DONE, "org"), S.STOP)  # the organizer, from your words
         self.assertIsNone(S.told(S.OPEN, S.DROPPED, "you"))  # no one is on it
         self.assertIsNone(S.told(S.PROPOSED, S.OPEN, "you"))  # an approval joins the queue
         self.assertIsNone(S.told(S.DOING, S.DROPPED, "claude-code"))  # the agent itself

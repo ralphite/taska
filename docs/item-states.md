@@ -2,21 +2,32 @@
 
 What an item's status means, who moves it, and the rule that keeps exactly one side responsible at any moment.
 
+The diagram is drawn from the table in `server/taska/domain/item_states.py` (B816), the one place that says which
+changes are allowed and by whom; a test fails when the two differ (r1398). The user may make any change; the
+organizer any but putting an item in review; an agent may not approve a proposal (only take its own back), may not
+reopen what the user dropped, and its done is review. An agent is told of a change of the user's only when the user
+closes or drops an item it is doing: its next `/next` says `stop` (once, before anything but new inputs). An
+approval needs no telling: the item joins the queue and wakes an agent waiting for work. An agent's done takes back
+its own open question, so an item never waits for an answer and an acceptance at once.
+
 ```mermaid
 stateDiagram-v2
   [*] --> Proposed: an agent proposes it
   [*] --> Open: the user or the organizer makes it
   Proposed --> Open: the user approves
   Proposed --> Dropped: the user declines (won't do)
+  Proposed --> Dropped: the agent takes it back
   Open --> Doing: an agent starts working on it
   Doing --> Open: the agent stops
-  Doing --> Review: the agent is done
+  Doing --> Review: the agent is done (its done is review)
+  Open --> Review: the agent is done
   Review --> Done: the user accepts
   Review --> Open: the user says not yet, or writes on it
   Open --> Dropped: won't do
-  Doing --> Dropped: won't do
+  Doing --> Dropped: won't do (the agent on it is told to stop)
+  Doing --> Done: closed (the agent on it is told to stop)
   Done --> Open: reopened
-  Dropped --> Open: reopened
+  Dropped --> Open: reopened (an agent may not, when the user dropped it)
 ```
 
 `doing` (In progress) means an agent session is working on it now (r942). An item can also say who acts:
