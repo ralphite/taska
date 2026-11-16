@@ -76,12 +76,14 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
     from .http.agent_routes import see_sessions
     from .infra.agent_sessions import running
     from .services.voice import transcriber_for
+    from .services.voice_health import VoiceHealth
 
     logs.setup(log_db, log_level)
     from .infra import gemini
     gemini.use_key_file(os.path.join(os.path.expanduser(root), "gemini-key"))  # F765: the key set in Settings
     organizers = Organizers(enabled=organizer)
 
+    health = VoiceHealth(root)  # T822: how notes are heard lately, every project's together
     made = threading.Event()  # the workspace exists: notes resumed while it opens its projects wait for it
 
     def workspace() -> "Workspace":
@@ -92,7 +94,7 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
         from .services.project import Project
         assert isinstance(p, Project)
         p.organizing.on = organizer
-        p.voice.set_transcriber(transcriber_for(p, workspace))
+        p.voice.set_transcriber(transcriber_for(p, workspace, health))
         p.voice.resume()  # before the organizer: an input waiting for its words is held for them again
         organizers.start(p)
 

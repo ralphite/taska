@@ -41,6 +41,10 @@ class Hearing:
     fixes: Callable[[], List[Dict[str, Any]]]
     prefs: Callable[[], str]
     tidy: Callable[[], bool]
+    # T822 (Yadong r1405): after how many seconds with no answer the strong model's next model is asked beside it
+    # (None: only once it failed); and what its first try came to, (answered, seconds), told when it is done
+    hedge: Callable[[], Optional[float]] = lambda: None
+    heard: Callable[[bool, float], None] = lambda ok, secs: None
 
 
 # How voice notes become text, measured on 59 real notes and 5 where nobody speaks (T101):
@@ -173,27 +177,76 @@ def tidy_cap(text: str) -> float:
 Step = Dict[str, Any]
 
 
-def strong(steps: List[Step], name: str, audio: Dict[str, Any], prompt: str, times: Dict[str, float], key: str, secs: float = 0) -> Callable[[], str]:
+def race(first: Callable[[], str], second: Callable[[], Callable[[], str]], after: float) -> Tuple[str, bool]:
+    """first() now; when it has not answered in `after` seconds, second()() beside it (T822) -> (the first words
+    either gave, whether the second was asked). Raises the last error when every one asked failed."""
+    done: "queue.Queue[Tuple[Optional[str], Optional[BaseException]]]" = queue.Queue()
+
+    def run(fn: Callable[[], str]) -> None:
+        try:
+            done.put((fn(), None))
+        except Exception as ex:
+            done.put((None, ex))
+    threading.Thread(target=run, args=(first,), daemon=True).start()
+    try:
+        words, err = done.get(timeout=max(0.0, after))
+    except queue.Empty:
+        threading.Thread(target=run, args=(second(),), daemon=True).start()
+        last: Optional[BaseException] = None
+        for _ in range(2):
+            words, err = done.get()
+            if err is None:
+                return str(words), True
+            last = err
+        raise last or Refused("the strong model failed")
+    if err is not None:
+        raise err
+    return str(words), False
+
+
+def strong(steps: List[Step], name: str, audio: Dict[str, Any], prompt: str, times: Dict[str, float], key: str, secs: float = 0,
+           hedge: Optional[float] = None, heard: Callable[[bool, float], None] = lambda ok, secs: None) -> Callable[[], str]:
     """The strong model's words (Yadong on D121, 11-06: "not 10 s: wait, and when it fails, ask again"; T697: a try
     with no answer in PRO_TRY seconds has failed, as connections stalled for 4 to 6 minutes): up to PRO_TRIES tries,
-    each its own step (every result kept), a little apart; try i asks HEAR_MODELS[i] (T783)."""
+    each its own step (every result kept), a little apart; try i asks HEAR_MODELS[i] (T783). T822 (r1405): with
+    `hedge`, the second try starts beside the first once it has not answered in that many seconds (gemini-4-hydrogen
+    never answered after 23 s, and waited 30 to 52 s for nothing on a tenth of the notes), and the first words win;
+    `heard` is told what the first try came to, also when its words were not waited for."""
     def model(i: int) -> str:
         return HEAR_MODELS[min(i, len(HEAR_MODELS) - 1)]
 
     def hear(m: str) -> Callable[[], str]:  # a stalled connection is a failed try
         return lambda: capped(lambda: voice_main(audio, prompt, m), try_cap(secs), "the strong model")
-    first = ran(steps, name, model(0), hear(model(0)))  # its step in the order the steps are started
+
+    def told(fn: Callable[[], str]) -> Callable[[], str]:
+        def run() -> str:
+            t0 = time.time()
+            try:
+                out = fn()
+            except Exception:
+                heard(False, round(time.time() - t0, 1))
+                raise
+            heard(True, round(time.time() - t0, 1))
+            return out
+        return run
+    first = ran(steps, name, model(0), told(hear(model(0))))  # its step in the order the steps are started
 
     def go() -> str:
-        t0, last = time.time(), None
+        t0, last, i = time.time(), None, 0
         try:
-            for i in range(PRO_TRIES):
+            while i < PRO_TRIES:
+                both = i == 0 and hedge is not None and PRO_TRIES > 1
                 try:
+                    if both:
+                        assert hedge is not None
+                        words, both = race(first, lambda: ran(steps, f"{name}_2", model(1), hear(model(1))), hedge)
+                        return words
                     return (first if i == 0 else ran(steps, f"{name}_{i + 1}", model(i), hear(model(i))))()
                 except Exception as ex:
                     last = ex
-                    if i + 1 < PRO_TRIES:
-                        time.sleep(min(8, 2 ** i))
+                    i += 2 if both else 1  # both asked and both failed: the try after them
+                    if i < PRO_TRIES:
+                        time.sleep(min(8, 2 ** (i - 1)))
             raise last or Refused("the strong model failed")
         finally:
             times[key] = round(time.time() - t0, 1)
@@ -318,6 +371,7 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
     prompt = voice_prompt(terms, items, fixes, h.prefs())
     t0, times = time.time(), {}
     steps: List[Step] = []
+    hedge = h.hedge()
     gated = tools.processed_silence(path, mime) >= 0.5
     dur = tools.duration(path)
     def told(words: str) -> str:  # the speech model's words go ahead while the main model still works (T687)
@@ -331,15 +385,16 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
 
     # the strong model is the main one (T687); the speech model's words show meanwhile, and it is waited for (D121)
     (tr, err), (alt, alt_err) = together(
-        strong(steps, "pro", audio, prompt, times, "main", dur),
+        strong(steps, "pro", audio, prompt, times, "main", dur, hedge, h.heard),
         ran(steps, "asr", ASR_MODEL, lambda: told(capped(lambda: voice_asr(audio, vocab), VOICE_CAP, "the speech model", times, "asr"))))
-    out = {"tr": "", "tr_by": "asr", "times": times, "steps": steps, **({"gated": True} if gated else {})}
+    out = {"tr": "", "tr_by": "asr", "times": times, "steps": steps, **({"gated": True} if gated else {}),
+           **({"hedge": hedge} if hedge is not None else {})}
     if alt_err is None and not alt:  # B494: heard nobody: said too quietly? once more, made loud enough to hear
         louder = tools.louder(data, mime)
         if louder:
             loud = {"inline_data": {"mime_type": "audio/webm", "data": base64.b64encode(louder).decode()}}
             (tr, err), (alt, alt_err) = together(
-                strong(steps, "pro_loud", loud, prompt, times, "main_loud", dur),
+                strong(steps, "pro_loud", loud, prompt, times, "main_loud", dur, hedge),
                 ran(steps, "asr_loud", ASR_MODEL, lambda: capped(lambda: voice_asr(loud, vocab), VOICE_CAP, "the speech model, louder", times, "asr_loud")))
             if alt:
                 out["louder"], audio = True, loud

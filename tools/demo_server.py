@@ -120,7 +120,7 @@ def main() -> None:
 
     organizer.Organizer.organize = demo_organize  # type: ignore[assignment]
 
-    def transcriber_for(_p: Any, _workspace: Any) -> Any:
+    def transcriber_for(_p: Any, _workspace: Any, _health: Any = None) -> Any:
         def run(_data: bytes, _mime: str, _scope: Optional[int], _path: Optional[str], first: Any) -> Dict[str, Any]:
             time.sleep(0.6)
             first(words)

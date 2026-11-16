@@ -146,7 +146,7 @@ def serve(root: str, port: int) -> None:
     gemini.https_post = no_network  # type: ignore[assignment]
     organizer.first_plan = lambda parts, think: PLAN  # type: ignore[assignment]
 
-    def transcriber_for(_p: Any, _workspace: Any) -> Any:
+    def transcriber_for(_p: Any, _workspace: Any, _health: Any = None) -> Any:
         def run(_data: bytes, _mime: str, _scope: Optional[int], _path: Optional[str], first: Any) -> Dict[str, Any]:
             first(WORDS)
             step = {"step": "pro", "model": "fixed", "text": WORDS, "secs": 0.1, "chosen": True}

@@ -18,6 +18,12 @@ Two models work out the words at once (T687): the fast words come in about 2 s, 
 A message can be sent at any time, also before its words are final: it is then "Sent, words to come" or "Sent with
 the fast words", and its final words come into it after (silently); the organizer waits for them.
 
+The strong model (gemini-4-hydrogen) that has not answered in as long as nine in ten of its latest answers took
+(17 s until it has answered ten times; 20 s on 11-16) has the next one (3.1 Pro) asked beside it, and the first words
+win (T822: it never answered after 23 s, and a tenth of the notes waited 30 to 52 s for nothing). When hearing has got
+slow, of the latest 30 notes more than one in five first tries unanswered or one note over 60 s, one bug opens in the
+taska project with the numbers, and no other while it is open (`services/voice_health.py`; no model is asked).
+
 ## States and the ways between them
 
 <!-- made from voiceStates.ts: voiceDiagram() -->

@@ -10,10 +10,11 @@ from ..domain.voice_words import voice_context
 from ..infra.logs import log
 from .project import Project
 from .transcribe import Hearing, fell_back, transcribe
+from .voice_health import VoiceHealth
 from .voice_jobs import Transcriber
 
 
-def transcriber_for(p: Project, workspace: Callable[[], Any]) -> Transcriber:
+def transcriber_for(p: Project, workspace: Callable[[], Any], health: Optional[VoiceHealth] = None) -> Transcriber:
     def context(scope: Optional[int]):
         with p.lock:
             return voice_context(p.state, scope)
@@ -23,6 +24,7 @@ def transcriber_for(p: Project, workspace: Callable[[], Any]) -> Transcriber:
         fixes=lambda: workspace().spellings.all(),
         prefs=lambda: workspace().voice_prefs.get()["text"],
         tidy=lambda: workspace().voice_prefs.tidy(),
+        **({"hedge": health.hedge, "heard": health.heard} if health else {}),
     )
 
     def run(data: bytes, mime: str, scope: Optional[int], path: Optional[str], first: Callable[[str], None]) -> Dict[str, Any]:
@@ -31,6 +33,12 @@ def transcriber_for(p: Project, workspace: Callable[[], Any]) -> Transcriber:
         for why in fell_back(res.get("steps") or []):
             log.warning(f"voice fallback: {why}", extra={"f": {"source": "server", "kind": "voicefallback", "project": p.slug,
                                                                  "f": os.path.basename(path or ""), "why": why}})
+        said = health.done((res.get("times") or {}).get("total")) if health else None
+        if health and said:  # T822: hearing has got slow: a bug in the taska project, with the numbers
+            try:
+                health.report(said, workspace().live("taska"))
+            except Exception as ex:  # no taska project here, or it is closed: the log has it
+                log.warning(f"voice alarm not made: {ex}", extra={"f": {"source": "server", "kind": "voicealarm"}})
         return res
 
     return run
