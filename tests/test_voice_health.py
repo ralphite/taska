@@ -112,6 +112,19 @@ class Alarm(ProjectCase):
         health.report(said, p)
         self.assertEqual(len([it for it in p.state.items.values() if it.title == said[0]]), 2)
 
+    def test_counting_starts_again_after_a_bug_also_after_a_restart(self):
+        # B825: a restart read the notes counted for the bug before back in, and the next note made another bug
+        root = tempfile.mkdtemp()
+        os.makedirs(os.path.join(root, "home", "home-files"))
+        for i in range(12):
+            rec = {"times": {"total": 90.0}, "steps": [{"step": "pro", "model": "m", "error": "timed out", "secs": 30.0}]}
+            with open(os.path.join(root, "home", "home-files", f"f{i}-voice_0-05.webm.tr.json"), "w") as f:
+                json.dump(rec, f)
+        self.assertIsNotNone(vh.VoiceHealth(root).done(None))  # the bug
+        again = vh.VoiceHealth(root)  # Taska restarted
+        again.heard(True, 5.0)
+        self.assertIsNone(again.done(12.0))  # only the notes after it count
+
     def test_read_from_the_notes_records_when_taska_starts(self):
         root = tempfile.mkdtemp()
         os.makedirs(os.path.join(root, "home", "home-files"))

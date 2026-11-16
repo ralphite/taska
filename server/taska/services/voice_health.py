@@ -13,6 +13,7 @@ import glob
 import json
 import os
 import threading
+import time
 from collections import deque
 from typing import Any, Deque, Dict, Iterable, List, Optional, Tuple
 
@@ -22,6 +23,7 @@ WINDOW = 30  # notes
 HEDGE_FIRST, HEDGE_MIN, HEDGE_MAX = 17.0, 8.0, 30.0  # seconds; HEDGE_MAX: the try's own wait (transcribe.PRO_TRY)
 HEDGE_SEEN = 10  # answers before the time is the strong model's own
 ALARM_RATE, ALARM_SECS, ALARM_SEEN = 0.2, 60.0, 10
+SINCE = "voice-health.json"  # in the data folder: when counting started again (the last bug made), kept over restarts
 KEY = "voicealarm"  # in the taska project's db: the bug made, so no second one is made while it is open
 
 
@@ -49,9 +51,9 @@ def alarm(tries: List[bool], totals: List[float], hedge: float) -> Optional[Tupl
     return "语音转文字变慢了", body
 
 
-def note_records(root: str, n: int = WINDOW) -> List[Dict[str, Any]]:
-    """The latest n notes' records of every project here, oldest first."""
-    paths = glob.glob(os.path.join(root, "*", "*-files", "*.tr.json"))
+def note_records(root: str, n: int = WINDOW, since: float = 0) -> List[Dict[str, Any]]:
+    """The latest n notes' records of every project here heard after `since` (a time), oldest first."""
+    paths = [x for x in glob.glob(os.path.join(root, "*", "*-files", "*.tr.json")) if os.path.getmtime(x) > since]
     paths.sort(key=lambda x: os.path.getmtime(x))
     out = []
     for p in paths[-n:]:
@@ -79,11 +81,28 @@ class VoiceHealth:
         self.totals: Deque[float] = deque(maxlen=WINDOW)
         self.read = False
 
+    def _since(self) -> float:
+        try:
+            with open(os.path.join(self.root, SINCE), encoding="utf-8") as f:
+                return float(json.load(f).get("since") or 0)
+        except (OSError, ValueError, AttributeError):
+            return 0.0
+
+    def _again(self) -> None:
+        """Counting starts again now, also after a restart (B825: a restart read the notes counted before back in)."""
+        self.tries.clear()
+        self.totals.clear()
+        try:
+            with open(os.path.join(self.root, SINCE), "w", encoding="utf-8") as f:
+                json.dump({"since": time.time()}, f)
+        except OSError:
+            pass
+
     def _read(self) -> None:
         if self.read:
             return
         self.read = True
-        for rec in note_records(self.root):
+        for rec in note_records(self.root, since=self._since()):
             t = first_try(rec)
             if t:
                 self.tries.append(t)
@@ -109,8 +128,7 @@ class VoiceHealth:
                 self.totals.append(float(total))
             said = alarm([ok for ok, _ in self.tries], list(self.totals), hedge_after(s for ok, s in self.tries if ok))
             if said:
-                self.tries.clear()
-                self.totals.clear()
+                self._again()
             return said
 
     def report(self, said: Tuple[str, str], project: Any) -> None:
