@@ -41,7 +41,8 @@ def file_ref(req: Request, p: Project) -> Callable[[str], str]:
 
 def asker(p: Project, who: Optional[str], session: str) -> Asker:
     return Asker(who=who, session=session, holder=lambda it: p.agents.holder(p.state, it),
-                 calls=lambda: p.agents.calls_for(p.state, who, session))
+                 calls=lambda: p.agents.calls_for(p.state, who, session),
+                 told=lambda seq: p.agents.told_stop(who, session, seq))
 
 
 def work_for(p: Project, req: Request, who: Optional[str], session: str) -> Work:
@@ -49,6 +50,8 @@ def work_for(p: Project, req: Request, who: Optional[str], session: str) -> Work
     w = next_work(p.reading(file_ref(req, p)), p.slug, p.gone, asker(p, who, session))
     if w.claim:
         p.state.claim(w.claim[0], w.claim[1], time.time())
+    if w.stop and who:  # told once (B816)
+        p.agents.tell_stop(who, session, w.stop[1])
     return w
 
 

@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Tuple
 
-from ..domain import rules
+from ..domain import history, rules
 from ..domain.model import Item, Message
 from ..domain.state import ident
 from ..domain.vocab import CLOSED, WORK_TYPES
@@ -29,6 +29,7 @@ class Work:
     has_work: bool
     given: Optional[int] = None  # the item whose card it holds
     claim: Optional[Tuple[int, str]] = None  # (item, session): the queue item it takes
+    stop: Optional[Tuple[int, int]] = None  # (item, the change): told to stop it (B816)
 
 
 @dataclass
@@ -39,10 +40,24 @@ class Asker:
     session: str = ""
     holder: Holder = field(default=lambda it: None)
     calls: Calls = field(default=lambda: [])
+    told: Callable[[int], bool] = field(default=lambda seq: False)  # was it told of this change already
 
 
 IDEA = ("\nan idea: think it through first. Small and clear: do it. Bigger, or more than one way to go: "
         "post your plan ({code} propose ...) and ask before building.")
+
+
+def _stop(st, asker: Asker) -> Optional[Tuple[int, int]]:
+    """The first item closed under this agent session that it was not told of: the one on it, or any when no one
+    was heard on it."""
+    if not asker.who:
+        return None
+    me = ident(asker.who, asker.session)
+    for n, seq in history.to_stop(st):
+        a = st.items[n].agent
+        if not asker.told(seq) and (not a or ident(a.by, a.ses) == me):
+            return n, seq
+    return None
 
 
 def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
@@ -68,6 +83,13 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
     if inbox:
         cards = "".join(input_card(rd, i) + "\n" for i in rules.by_number(inbox))
         return Work(f"{head}\nfirst handle the inbox ({len(inbox)}):\n{cards}", True)
+    stop = _stop(st, asker)
+    if stop:  # you closed what it was doing: at once, before anything else (B816)
+        it = st.items[stop[0]]
+        how = "marked it won't do" if it.status == "dropped" else "closed it"
+        return Work(f"{head}\nstop {st.code(it.n)}: the user {how} while you were on it. Stop working on it now (a "
+                    f"worker you gave it to as well), and say on it in one line what you leave: `{st.code(it.n)} say ...`\n"
+                    + card(rd, it), True, stop=stop)
     docs = [d for d in st.docs.values() if rules.doc_unanswered(d) and not d.deleted and (d.is_rules or (
             st.items.get(d.n) and not st.items[d.n].merged_into and not st.items[d.n].deleted))]
     if docs:

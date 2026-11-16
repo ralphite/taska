@@ -7,11 +7,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from . import events as ev
+from . import events as ev, item_states
 from .model import Item
 from .rules import agent_hands, touched_since, touches
 from .state import ProjectState
-from .vocab import PEOPLE, STATUS_WORDS
+from .vocab import CLOSED, PEOPLE, STATUS_WORDS
 
 
 @dataclass
@@ -173,6 +173,29 @@ def status_set_by(state: ProjectState, it: Item) -> Optional[str]:
         if isinstance(e, ev.ItemAdded) and e.n == it.n:
             return e.by
     return None
+
+
+STOP_LOOK = 5000  # how far back a stop is looked for: it is told at the agent's next call
+
+
+def to_stop(state: ProjectState) -> List[Tuple[int, int]]:
+    """The items you (or the organizer, from your words) closed or dropped while an agent was doing them, with no
+    agent's word on them since: (item, the change's place in the log). That agent stops (B816, item_states.STOP)."""
+    seen: Set[int] = set()
+    out: List[Tuple[int, int]] = []
+    for e in reversed(state.events[-STOP_LOOK:]):
+        n = getattr(e, "n", None)
+        if not isinstance(n, int) or n in seen:
+            continue
+        if isinstance(e, ev.MessagePosted) and e.by not in PEOPLE:
+            seen.add(n)
+        elif isinstance(e, ev.FieldsSet) and "status" in e.f:
+            seen.add(n)
+            it = state.items.get(n)
+            if item_states.told(str(e.was.get("status")), e.f["status"], e.by) == item_states.STOP and it \
+                    and it.live and it.status in CLOSED:
+                out.append((n, e.seq))
+    return out[::-1]
 
 
 def last_archive(state: ProjectState, n: int) -> Optional[ev.ItemsArchived]:

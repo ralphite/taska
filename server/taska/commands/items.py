@@ -8,10 +8,10 @@ import re
 from datetime import date
 from typing import Any, Dict, List, Optional
 
-from ..domain import events as ev
+from ..domain import events as ev, item_states
 from ..domain.history import followed, last_archive, status_set_by
 from ..domain.model import FileRef, Item
-from ..domain.rules import RefContext, descendants, item_at, open_kids, replied, user_word
+from ..domain.rules import RefContext, descendants, item_at, open_kids, replied, user_word, waiting
 from ..domain.state import ProjectState
 from ..domain.vocab import CLOSED, DEFAULT_PRI, LETTER, MAX_TEXT, MESSAGE_KINDS, PEOPLE, PRIORITIES, STATUSES, WHENS, Refused
 from .base import Args, Outcome, Run, handles
@@ -153,18 +153,14 @@ def set_fields(r: Run, a: Args) -> Outcome:
     if f.get("when") == "now" and f.get("later_until"):
         raise Refused(f"{code}: later until a day is later; say `{code} later until <day>` or `{code} now`")
     note = ""
-    if r.by == "org" and f.get("status") == "review":  # the organizer writes down what you said; it finishes no work
-        raise Refused(f"{code}: only an agent that did the work puts it in review; to close it, set it done")
-    if not r.person and "status" in f:
-        if it.status == "proposed" and f["status"] != "dropped":
-            raise Refused(f"{code} is proposed: only the user can approve it. To move it on, answer them: `{code} say ...` "
-                          f"or `{code} ask ...` puts it back in front of them to approve (B299)")
-        if it.status == "dropped" and status_set_by(s, it) in PEOPLE:  # the user said no
-            raise Refused(f"{code}: the user marked it won't do. Don't reopen or work on it; to ask, post "
-                          f"`{code} ask <why it is worth doing>`")
-        if f["status"] == "done":
-            f["status"], note = "review", " (the user accepts it to make it done)"
-            if it.status == "review":
+    if "status" in f:  # the one place that says which changes of status are allowed (domain/item_states)
+        to = item_states.asked(it.status, f["status"], r.by)
+        why = item_states.refusal(code, it.status, to, r.by, status_set_by(s, it))
+        if why:
+            raise Refused(why)
+        if to != f["status"]:
+            f["status"], note = to, " (the user accepts it to make it done)"
+            if it.status == to:
                 del f["status"], was["status"]
     status = f.get("status", it.status)
     # any item can be archived, in any state; only setting it open again brings it back
@@ -172,7 +168,12 @@ def set_fields(r: Run, a: Args) -> Outcome:
         f["archived"], was["archived"] = False, True
     src = _src(r, a)
     if not f:
-        if not r.person and (a.get("f") or {}).get("status") == "done" and it.status == "review" and replied(it):
+        again = not r.person and (a.get("f") or {}).get("status") == "done" and it.status == "review"
+        if again and waiting(s, it):  # asked again while in review, then handed in: its result answers it
+            r.emit(ev.MessagePosted(n=it.n, by=r.by, kind="withdraw", text="Result handed in: the open question is taken back.",
+                                    src=src, keep=r.keep()))
+            return Outcome(f"ok {code} back with the user for review (its open question is taken back)", "Updated " + code)
+        if again and replied(it):
             r.emit(ev.MessagePosted(n=it.n, by=r.by, kind="progress", text="Ready for your review again.", src=src,
                                             keep=r.keep()))
             return Outcome(f"ok {code} back with the user for review (to say what changed, post `{code} progress ...`)",
@@ -183,6 +184,10 @@ def set_fields(r: Run, a: Args) -> Outcome:
         if left:
             note += f" (note: its subitems {' '.join(s.code(k.n) for k in left)} are not finished yet)"
     r.emit(ev.FieldsSet(n=it.n, by=r.by, f=f, was=was, src=src, keep=r.keep(), undo_of=a.get("undo_of") or None))
+    if not r.person and f.get("status") == item_states.REVIEW and waiting(s, it):  # its result answers its questions
+        r.emit(ev.MessagePosted(n=it.n, by=r.by, kind="withdraw", text="Result handed in: the open question is taken back.",
+                                src=src, keep=r.keep()))
+        note += " (its open question is taken back: the user only accepts the result now)"
     if r.person:  # what you do from the page goes to the subitems; an agent's changes stay as they were
         cascade(r, it, f, was, src)
     said = " ".join(f"{k}={v}" if k in ("pri", "when", "status", "type", "parent", "archived", "later_until") else k for k, v in f.items())

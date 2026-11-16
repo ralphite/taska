@@ -78,6 +78,9 @@ class AgentActivity:
                         pass
         reads = db.get("reads")
         self.reads: Dict[int, Dict[str, float]] = {int(n): dict(v) for n, v in reads.items()} if isinstance(reads, dict) else {}
+        stops = db.get("stops")
+        self.stops: Dict[str, List[int]] = ({str(k): [int(x) for x in v] for k, v in stops.items()}
+                                            if isinstance(stops, dict) else {})
         heard = db.get("heard")
         self.heard: Dict[str, Dict[int, int]] = (
             {str(k): {int(n): int(m) for n, m in v.items()} for k, v in heard.items()} if isinstance(heard, dict) else {})
@@ -366,6 +369,17 @@ class AgentActivity:
                 if to_me or (mine and x.id > took):
                     out.append((it, x, to_me))
         return sorted(out, key=lambda r: int(r[1].id))
+
+    def told_stop(self, by: object, ses: str, seq: int) -> bool:
+        """Was this session told to stop for the change seq (B816)?"""
+        return seq in self.stops.get(ident(by, ses), ())
+
+    def tell_stop(self, by: object, ses: str, seq: int) -> None:
+        mine = self.stops.setdefault(ident(by, ses), [])
+        if seq not in mine:
+            mine[:] = (mine + [seq])[-200:]
+            if not self._gone():
+                self._db.put("stops", self.stops)
 
     def heard_item(self, state: ProjectState, n: int, by: object, ses: str = "") -> None:
         """A session read item n: the messages on it so far have reached it."""
