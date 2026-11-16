@@ -7,6 +7,7 @@ urgent."""
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Tuple
 
@@ -53,7 +54,7 @@ def _stop(st, asker: Asker) -> Optional[Tuple[int, int]]:
     if not asker.who:
         return None
     me = ident(asker.who, asker.session)
-    for n, seq in history.to_stop(st):
+    for n, seq in history.to_stop(st, time.time()):
         a = st.items[n].agent
         if not asker.told(seq) and (not a or ident(a.by, a.ses) == me):
             return n, seq

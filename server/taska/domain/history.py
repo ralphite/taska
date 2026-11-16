@@ -11,6 +11,7 @@ from . import events as ev, item_states
 from .model import Item
 from .rules import agent_hands, touched_since, touches
 from .state import ProjectState
+from .text import seconds
 from .vocab import CLOSED, PEOPLE, STATUS_WORDS
 
 
@@ -176,11 +177,13 @@ def status_set_by(state: ProjectState, it: Item) -> Optional[str]:
 
 
 STOP_LOOK = 5000  # how far back a stop is looked for: it is told at the agent's next call
+STOP_FRESH = 12 * 3600  # an older one: that agent has long stopped (and the first release found old ones)
 
 
-def to_stop(state: ProjectState) -> List[Tuple[int, int]]:
-    """The items you (or the organizer, from your words) closed or dropped while an agent was doing them, with no
-    agent's word on them since: (item, the change's place in the log). That agent stops (B816, item_states.STOP)."""
+def to_stop(state: ProjectState, now: float) -> List[Tuple[int, int]]:
+    """The items you (or the organizer, from your words) closed or dropped while an agent was doing them, in the last
+    STOP_FRESH seconds, with no agent's word on them since: (item, the change's place in the log). That agent stops
+    (B816, item_states.STOP)."""
     seen: Set[int] = set()
     out: List[Tuple[int, int]] = []
     for e in reversed(state.events[-STOP_LOOK:]):
@@ -193,7 +196,7 @@ def to_stop(state: ProjectState) -> List[Tuple[int, int]]:
             seen.add(n)
             it = state.items.get(n)
             if item_states.told(str(e.was.get("status")), e.f["status"], e.by) == item_states.STOP and it \
-                    and it.live and it.status in CLOSED:
+                    and it.live and it.status in CLOSED and bool(e.t) and seconds(e.t) > now - STOP_FRESH:
                 out.append((n, e.seq))
     return out[::-1]
 
