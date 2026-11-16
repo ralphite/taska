@@ -122,7 +122,7 @@ export interface ComposerProps {
 /** The skills that fit the "/" being typed (I821): each its name and what it is for; ↑↓ to choose, ↵ or ⇥ to take. */
 export function SkillMenu({ menu, sel, on }: { menu: readonly Skill[]; sel: number; on: { pick(s: Skill): void; select(i: number): void } }) {
   return (
-    <div role="listbox" aria-label="Skills" className="flex flex-col gap-0.5 px-1.5 pt-1.5">
+    <div role="listbox" aria-label="Skills" className="flex flex-col gap-0.5 p-1.5">
       {menu.map((s, i) => (
         <button
           key={s.name}
@@ -163,8 +163,8 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
   const area = useRef<HTMLTextAreaElement | null>(null)
   // I821: the skills that fit the "/" being typed, the one chosen, and the words Esc closed the list for
   const [skillSel, setSkillSel] = useState(0)
-  const [skillsOff, setSkillsOff] = useState<string | null>(null)
-  const menu = rec || skillsOff === text ? null : skillMenu(text, skills)
+  const [skillsOff, setSkillsOff] = useState(false) // Esc or leaving the box closed it, until the words change
+  const menu = rec || skillsOff ? null : skillMenu(text, skills)
   const sel = menu ? Math.min(skillSel, menu.length - 1) : 0
   const pickSkill = (sk: Skill) => {
     const v = pickedSkill(sk)
@@ -294,9 +294,11 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
               keep(e.currentTarget)
               if (e.currentTarget.value.startsWith('/') && !text.startsWith('/')) on.skillsWanted?.()
               setSkillSel(0)
+              setSkillsOff(false)
               on.text(e.currentTarget.value)
             }}
             onSelect={(e) => keep(e.currentTarget)}
+            onBlur={() => setSkillsOff(true)}
             onKeyDown={(e) => {
               if (menu && !e.nativeEvent.isComposing) {
                 const step = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0
@@ -311,7 +313,7 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
                 if (e.key === 'Escape') {
                   e.preventDefault()
                   e.stopPropagation()
-                  return setSkillsOff(text)
+                  return setSkillsOff(true)
                 }
               }
               if (e.key === 'Enter' && !e.nativeEvent.isComposing && (e.shiftKey || e.metaKey || e.ctrlKey)) {

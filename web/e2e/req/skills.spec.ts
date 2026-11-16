@@ -44,6 +44,13 @@ test('I821: Esc closes the list; other words show none', async ({ page, request 
   await expect(page.getByRole('option', { name: new RegExp(name) }).filter({ visible: true })).toBeVisible()
   await box(page).press('Escape')
   await expect(page.getByRole('option').filter({ visible: true })).toHaveCount(0)
+  // gone back to "/" it lists them again (the QA run found it stayed closed)
+  await box(page).press('Backspace')
+  await box(page).press('Backspace')
+  await expect(page.getByRole('option').filter({ visible: true }).first()).toBeVisible()
+  // leaving the box closes it
+  await box(page).evaluate((el) => (el as HTMLElement).blur())
+  await expect(page.getByRole('option').filter({ visible: true })).toHaveCount(0)
   await box(page).fill('what does / do')
   await expect(page.getByRole('option').filter({ visible: true })).toHaveCount(0)
 })
