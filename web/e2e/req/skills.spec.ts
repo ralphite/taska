@@ -29,6 +29,7 @@ test('I821: "/" lists the skills, ↵ takes one, and the agents read its text wi
   await expect(box(page)).toHaveValue(`${name} `)
   await expect(page.getByRole('option').filter({ visible: true })).toHaveCount(0)
   await box(page).pressSequentially('D1 讲了什么？')
+  await expect(box(page)).toHaveValue(`${name} D1 讲了什么？`) // the caret was after the space
   await box(page).press('Shift+Enter')
   await expect.poll(async () => p.read('inbox?by=claude-code')).toContain(`skill ${name} (the user applied it to these words; do as it says):`)
   expect(await p.read('inbox?by=claude-code')).toContain('只回答，不改代码')

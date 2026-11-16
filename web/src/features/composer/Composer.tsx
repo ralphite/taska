@@ -167,9 +167,14 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
   const menu = rec || skillsOff === text ? null : skillMenu(text, skills)
   const sel = menu ? Math.min(skillSel, menu.length - 1) : 0
   const pickSkill = (sk: Skill) => {
-    on.text(pickedSkill(sk))
+    const v = pickedSkill(sk)
+    mine.current = { text: v, start: v.length, end: v.length } // the caret after the space, where you go on
+    on.text(v)
     setSkillSel(0)
-    area.current?.focus()
+    requestAnimationFrame(() => {
+      area.current?.focus()
+      area.current?.setSelectionRange(v.length, v.length)
+    })
   }
   const box = useRef<HTMLDivElement | null>(null)
   const back = useRef<HTMLDivElement | null>(null)
