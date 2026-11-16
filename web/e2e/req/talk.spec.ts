@@ -79,9 +79,10 @@ new task P2 now Still waits
   const above = (a: Locator, b: Locator, what: string) =>
     expect.poll(async () => (await top(a)) < (await top(b)), what).toBe(true)
   // a proposal and finished work: the card, updated, where it was; your reply after it
-  // (finished work you reply on goes back to work, B607/B606: its card says Sent back)
+  // (a proposal you reply on is approved, B818 r1401; finished work you reply on goes back to work, B607/B606: its
+  // card says Sent back)
   for (const [code, said, shown] of [
-    ['I3', 'Do it this way.', 'Skipped · you replied'],
+    ['I3', 'Do it this way.', 'Approved'],
     ['T2', 'Finished: it works.', 'Sent back'],
   ]) {
     await open(page, p, code)
@@ -90,11 +91,8 @@ new task P2 now Still waits
     await above(card(shown), words('Let us talk first'), `${code}: the card above your reply`)
     await above(words(said), words('Let us talk first'), `${code}: what the agent said above your reply`)
   }
-  // an agent's item with no words of its own: its card heads the talk, before your reply; deciding keeps it there
+  // an agent's item with no words of its own: its card heads the talk, before your reply, approved by it (B818)
   await open(page, p, 'I1')
-  await expect(card('Skipped · you replied')).toBeVisible()
-  await above(card('Skipped · you replied'), words('Let us talk first'), 'I1: the card above your reply')
-  await card('Skipped · you replied').getByRole('button', { name: /^Approve/ }).click()
   await expect.poll(async () => p.read('I1')).toMatch(/^I0*1 \w+ P\d \w+ open/)
   await expect(card('proposed this').getByRole('button', { name: 'Approved', exact: true })).toBeVisible()
   await above(card('proposed this'), words('Let us talk first'), 'I1 approved: the card above your reply')
