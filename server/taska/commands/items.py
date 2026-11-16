@@ -87,11 +87,14 @@ def new_item(r: Run, a: Args) -> Outcome:
     kind = field_value(s, "type", a.get("type") or "idea")
     pri = field_value(s, "pri", a.get("pri") or DEFAULT_PRI)
     when = field_value(s, "when", a.get("when") or "now")
-    status = "proposed" if not r.person else field_value(s, "status", a.get("status") or "open")
     body = field_value(s, "body", a.get("body") or "")
     nxt = field_value(s, "next", a.get("next") or "")
     parent = field_value(s, "parent", a.get("parent"), r.ctx) if a.get("parent") else None
-    e = ev.ItemAdded(n=s.max_n + 1, by=r.by, title=title, src=a.get("src") or r.ctx.src, type=kind, pri=pri, when=when,
+    src = a.get("src") or r.ctx.src
+    said = s.inputs.get(str(src)) if src else None
+    asked_for = parent is not None and said is not None and said.by in PEOPLE  # a part the user asked for (B818)
+    status = item_states.starts(r.by, asked_for) if not r.person else field_value(s, "status", a.get("status") or "open")
+    e = ev.ItemAdded(n=s.max_n + 1, by=r.by, title=title, src=src, type=kind, pri=pri, when=when,
                      status=status, body_text=body, next=nxt, parent=parent, keep=r.keep())
     if r.by == "org" and e.status == "review":  # only an agent finishing its work puts an item in review
         e.status = "open"

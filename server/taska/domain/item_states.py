@@ -14,6 +14,9 @@ Your words on an item are your turn given to the agent: on a proposal they appro
 press won't do if you did not want it; a question in them the agent answers before it starts), on an item in review
 or done they say it is not done yet (r961, r1082). An agent's words change no status: it never approves itself.
 
+A subitem the user asked for starts open (B818 r1404): an agent that splits an item into the parts the user asked
+for names the user's words it came from (`src=r12`, an input of theirs), and they show on it.
+
 An approval needs no telling: the item joins the queue, and an agent waiting for work is woken by it; one busy with
 another item takes it in its turn (r1397).
 
@@ -35,6 +38,7 @@ STOP = "stop"  # the one telling: the agent on it stops
 STEPS: Tuple[Tuple[Optional[str], str, str, str], ...] = (
     (None, PROPOSED, AGENT, "an agent proposes it"),
     (None, OPEN, YOU, "the user or the organizer makes it"),
+    (None, OPEN, AGENT, "an agent makes a subitem the user asked for (their words on it)"),
     (PROPOSED, OPEN, YOU, "the user approves, or writes on it"),
     (PROPOSED, DROPPED, YOU, "the user declines (won't do)"),
     (PROPOSED, DROPPED, AGENT, "the agent takes it back"),
@@ -83,6 +87,11 @@ def refusal(code: str, frm: str, to: str, by: str, closed_by: Optional[str]) -> 
     if to not in AGENT_TO:
         return f"{code}: an agent does not set it {to}"
     return None
+
+
+def starts(by: str, asked_for: bool) -> str:
+    """The status a new item starts with: an agent's is a proposal, unless it is a subitem the user asked for."""
+    return PROPOSED if actor(by) == AGENT and not asked_for else OPEN
 
 
 def on_your_words(status: str) -> Optional[str]:

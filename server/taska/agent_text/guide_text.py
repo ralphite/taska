@@ -106,7 +106,9 @@ AGENT = (
     '      user asked you to. /next also says which other sessions are here and what each is on.\n'
     '      /next picks items marked now, ideas included: an idea is something to think through; do it when small\n'
     '      and clear, otherwise propose a plan and ask.\n'
-    'YOURS Items you create start as proposed: the user approves them before anyone works on them. `B03 done`\n'
+    'YOURS Items you create start as proposed: the user approves them before anyone works on them. A subitem the\n'
+    '      user asked for (they said to split B03 into parts) starts open when you name their words: `new task\n'
+    '      parent=B03 src=r12 <title>`. `B03 done`\n'
     "      from you puts the item in review; the user accepts it. Write item content in the user's language.\n"
     '      A question left: ask it instead of done. One after done: set the item back to doing, then ask (r809).\n'
     '      The message with done has these parts, in this order (T814): Result (what is different now, one line);\n'
@@ -223,7 +225,8 @@ SKILL = (
     "   (`curl -s BASE/api/file?name=a.png -H 'Content-Type: image/png' --data-binary @a.png`).\n"
     '   Name items, documents and inputs by code (B03, D2, r12), and the first time add a few words on what each is,\n'
     '   e.g. "D2 (the release plan)": the page turns codes into links with a card on hover, but a bare code means little.\n'
-    '7. Items you create start as proposed until the user approves them. Never treat a suggestion as decided.\n'
+    '7. Items you create start as proposed until the user approves them, except a subitem the user asked for, made\n'
+    '   with their words (`parent=B03 src=r12`). Never treat a suggestion as decided.\n'
 )
 
 CODEX_WORKERS = """

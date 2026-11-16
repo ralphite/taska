@@ -100,6 +100,20 @@ class Commands(ServerCase):
         self.assertIn("open", self.get(f"/{code}").split("\n")[0])
         self.assertIn(f"resume {code}: the user replied", self.nxt())
 
+    def test_a_subitem_you_asked_for_starts_open(self) -> None:
+        # B818 r1404: the parts the user asked an item to be split into start open, their words on them
+        parent = self.new("a big feature")
+        rid = self.page({"op": "input", "text": "split it into subtasks so we can track them", "scope": int(parent[1:])}
+                        )["results"][0].split()[1]
+        out = self.do(f"new task P1 now parent={parent} src={rid} the export part")
+        self.assertNotIn("proposed", out)
+        code = out.split()[1]
+        self.assertIn("open", self.get(f"/{code}").split("\n")[0])
+        # without the user's words, or not under an item, it is a proposal
+        self.assertIn("proposed", self.do(f"new task P1 now parent={parent} another part"))
+        self.assertIn("proposed", self.do(f"new task P1 now src={rid} not a subitem"))
+        self.page({"op": "set", "ref": code, "f": {"status": "dropped"}})  # out of the other tests' queue
+
     def test_words_on_your_items(self) -> None:
         self.assertEqual(S.on_your_words(S.PROPOSED), S.OPEN)
         self.assertEqual(S.on_your_words(S.REVIEW), S.OPEN)

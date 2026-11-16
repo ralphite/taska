@@ -12,11 +12,14 @@ its own open question, so an item never waits for an answer and an acceptance at
 Words the user writes on an item give the agent its turn: on a proposal they approve it (B818; the user presses
 Won't do when they do not want it), on an item in review or done they set it back to open. An agent's words change
 no status.
+A subitem an agent makes from the user's words (`new ... parent=B03 src=r12`, r12 an input of the user's) starts
+open: the user asked for it (B818).
 
 ```mermaid
 stateDiagram-v2
   [*] --> Proposed: an agent proposes it
   [*] --> Open: the user or the organizer makes it
+  [*] --> Open: an agent makes a subitem the user asked for (their words on it)
   Proposed --> Open: the user approves, or writes on it
   Proposed --> Dropped: the user declines (won't do)
   Proposed --> Dropped: the agent takes it back
