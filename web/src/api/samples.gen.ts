@@ -49,7 +49,7 @@ export const SAMPLES = {
   ]
  },
  "view": {
-  "cursor": "1a1b1cd8b9c.40.55.2",
+  "cursor": "1a1b1cd8b32.39.55.2",
   "full": true,
   "items": [
    {
@@ -60,7 +60,7 @@ export const SAMPLES = {
     "body": "The export should keep the filter I set.",
     "pri": "P1",
     "when": "now",
-    "status": "proposed",
+    "status": "open",
     "parent": null,
     "next": "",
     "srcs": [
@@ -150,8 +150,14 @@ export const SAMPLES = {
      "t": "2026-11-06T09:00:00-08:00",
      "ses": "sample"
     },
+    "decided": {
+     "from": "proposed",
+     "to": "open",
+     "msg": 18,
+     "t": "2026-11-06T09:00:00-08:00"
+    },
     "readBy": {
-     "claude-code": 1793984400358
+     "claude-code": 1793984400261
     }
    },
    {
@@ -222,7 +228,7 @@ export const SAMPLES = {
     "body": "",
     "pri": "P1",
     "when": "now",
-    "status": "proposed",
+    "status": "open",
     "parent": null,
     "next": "",
     "srcs": [
@@ -251,7 +257,7 @@ export const SAMPLES = {
       "ses": "sample"
      },
      {
-      "id": 38,
+      "id": 37,
       "by": "claude-code",
       "kind": "ask",
       "text": "Anything else?",
@@ -267,7 +273,7 @@ export const SAMPLES = {
       "ses": "sample"
      },
      {
-      "id": 39,
+      "id": 38,
       "by": "you",
       "kind": "say",
       "text": "- Which columns? \u2192 \u2713 Date",
@@ -280,7 +286,7 @@ export const SAMPLES = {
      }
     ],
     "wait": {
-     "id": 38,
+     "id": 37,
      "kind": "ask",
      "text": "Anything else?",
      "by": "claude-code",
@@ -298,45 +304,17 @@ export const SAMPLES = {
      "by": "claude-code",
      "t": "2026-11-06T09:00:00-08:00",
      "ses": "sample"
+    },
+    "decided": {
+     "from": "proposed",
+     "to": "open",
+     "msg": 37,
+     "t": "2026-11-06T09:00:00-08:00"
     }
    },
    {
     "n": 5,
     "code": "T05",
-    "type": "task",
-    "title": "Sort the export by date",
-    "body": "",
-    "pri": "P2",
-    "when": "now",
-    "status": "open",
-    "parent": null,
-    "next": "",
-    "srcs": [
-     "r1"
-    ],
-    "mergedInto": null,
-    "archived": false,
-    "t0": "2026-11-06T09:00:00-08:00",
-    "t1": "2026-11-06T09:00:00-08:00",
-    "by": "org",
-    "thread": [
-     {
-      "id": 40,
-      "by": "you",
-      "kind": "say",
-      "text": "r1 updated:\nAnd the sort, please.\n\nBy date. Newest first.",
-      "t": "2026-11-06T09:00:00-08:00",
-      "src": "r1",
-      "files": [],
-      "edited": "2026-11-06T09:00:00-08:00"
-     }
-    ],
-    "wait": null,
-    "talked": true
-   },
-   {
-    "n": 6,
-    "code": "T06",
     "type": "task",
     "title": "Sort the export by date",
     "body": "",
@@ -381,8 +359,8 @@ export const SAMPLES = {
     "talked": false
    },
    {
-    "n": 10,
-    "code": "T10",
+    "n": 9,
+    "code": "T09",
     "type": "task",
     "title": "Sort the export by date",
     "body": "",
@@ -414,8 +392,8 @@ export const SAMPLES = {
     "talked": true
    },
    {
-    "n": 11,
-    "code": "T11",
+    "n": 10,
+    "code": "T10",
     "type": "task",
     "title": "Sort the export by date",
     "body": "",
@@ -448,13 +426,12 @@ export const SAMPLES = {
     "acked": false,
     "touched": [
      1,
-     5,
-     10,
-     11
+     9,
+     10
     ],
     "org": {
      "ok": true,
-     "msg": "Created T11 \u00b7 Left for agent",
+     "msg": "Created T10 \u00b7 Left for agent",
      "t": "2026-11-06T09:00:00-08:00",
      "keep": true,
      "changed": true,
@@ -478,14 +455,13 @@ export const SAMPLES = {
     "updated": "2026-11-06T09:00:00-08:00",
     "filing": {
      "can": true,
-     "what": "removes T11",
+     "what": "removes T10",
      "why": ""
     },
     "deletion": {
      "go": [
-      5,
-      10,
-      11
+      9,
+      10
      ],
      "keep": []
     }
@@ -506,27 +482,27 @@ export const SAMPLES = {
     ],
     "acked": true,
     "touched": [
-     6
+     5
     ],
     "org": {
      "ok": true,
-     "msg": "Created T6",
+     "msg": "Created T5",
      "t": "2026-11-06T09:00:00-08:00",
      "keep": false,
      "changed": true,
      "undone": false
     },
-    "seq": 22,
+    "seq": 23,
     "v": 0,
     "q": "page-2",
     "filing": {
      "can": true,
-     "what": "removes T06",
+     "what": "removes T05",
      "why": ""
     },
     "deletion": {
      "go": [
-      6
+      5
      ],
      "keep": []
     }
@@ -557,7 +533,7 @@ export const SAMPLES = {
      "changed": false,
      "undone": true
     },
-    "seq": 23,
+    "seq": 24,
     "v": 0,
     "q": "page-3",
     "deletion": {
@@ -577,7 +553,7 @@ export const SAMPLES = {
     "acked": false,
     "touched": [],
     "org": null,
-    "seq": 24,
+    "seq": 25,
     "v": 0,
     "kind": "cancelled",
     "q": "page-4"
@@ -594,7 +570,7 @@ export const SAMPLES = {
      4
     ],
     "org": null,
-    "seq": 39,
+    "seq": 38,
     "v": 0,
     "kind": "answer",
     "q": "page-6"
@@ -629,7 +605,7 @@ export const SAMPLES = {
         "ses": "sample"
        },
        {
-        "id": 31,
+        "id": 30,
         "key": "4be021e4c5",
         "th": 8,
         "quote": "# Plan",
@@ -663,9 +639,9 @@ export const SAMPLES = {
     "detached": [],
     "whole": [
      {
-      "id": 32,
+      "id": 31,
       "key": "doc",
-      "th": 32,
+      "th": 31,
       "quote": "",
       "text": "Looks right.",
       "by": "you",
@@ -738,7 +714,7 @@ export const SAMPLES = {
        "Commits"
       ],
       "srcs": [],
-      "seq": 25
+      "seq": 26
      }
     ],
     "d": 3,
@@ -813,17 +789,17 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400400,
+     "t": 1793984400293,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400400
+       "t": 1793984400293
       },
       {
        "name": "helper",
-       "t": 1793984400294,
+       "t": 1793984400186,
        "sid": "aaaaaaaa-1111-2222-3333-444444444444",
        "on": {
         "n": 3,
@@ -838,7 +814,18 @@ export const SAMPLES = {
    "agentsVersion": 2,
    "undo": [
     {
-     "seq": 30,
+     "seq": 39,
+     "n": 4,
+     "f": {
+      "status": "open"
+     },
+     "was": {
+      "status": "proposed"
+     },
+     "t": "2026-11-06T09:00:00-08:00"
+    },
+    {
+     "seq": 29,
      "n": 3,
      "f": {
       "status": "open",
@@ -853,6 +840,17 @@ export const SAMPLES = {
       "when": "now"
      },
      "t": "2026-11-06T09:00:00-08:00"
+    },
+    {
+     "seq": 22,
+     "n": 1,
+     "f": {
+      "status": "open"
+     },
+     "was": {
+      "status": "proposed"
+     },
+     "t": "2026-11-06T09:00:00-08:00"
     }
    ],
    "deletedInputs": [
@@ -865,8 +863,8 @@ export const SAMPLES = {
      "scope": null,
      "items": [
       {
-       "n": 8,
-       "code": "T08",
+       "n": 6,
+       "code": "T06",
        "title": "Sort the export by date",
        "type": "task"
       }
@@ -877,8 +875,8 @@ export const SAMPLES = {
    "deleted": [
     {
      "kind": "item",
-     "n": 9,
-     "code": "I09",
+     "n": 8,
+     "code": "I08",
      "title": "Old idea",
      "at": "2026-11-06T09:00:00-08:00",
      "more": 0
@@ -886,24 +884,24 @@ export const SAMPLES = {
    ],
    "phone": false,
    "base": "http://127.0.0.1:7340/p/shop",
-   "key": "9b75-gbzm",
+   "key": "fgkf-jhu2",
    "remote": "",
    "lan": "",
-   "filesCap": "a9f42e49be7a389fc62e0120"
+   "filesCap": "69361bb847f7e1c16cc509ec"
   },
   "server": {
-   "page": "da39a3ee5e",
+   "page": "index-BBE-eUPC.js",
    "update": false,
-   "dev": false
+   "dev": true
   }
  },
  "changes": {
-  "cursor": "1a1b1cd8b9c.40.55.2",
+  "cursor": "1a1b1cd8b32.39.55.2",
   "same": true,
   "server": {
-   "page": "da39a3ee5e",
+   "page": "index-BBE-eUPC.js",
    "update": false,
-   "dev": false
+   "dev": true
   }
  },
  "commands": {
@@ -912,7 +910,7 @@ export const SAMPLES = {
    "ok B01 pri=P0"
   ],
   "changes": {
-   "cursor": "1a1b1cd8b9c.41.56.2",
+   "cursor": "1a1b1cd8b32.40.56.2",
    "full": false,
    "items": [
     {
@@ -923,7 +921,7 @@ export const SAMPLES = {
      "body": "The export should keep the filter I set.",
      "pri": "P0",
      "when": "now",
-     "status": "proposed",
+     "status": "open",
      "parent": null,
      "next": "",
      "srcs": [
@@ -1013,8 +1011,14 @@ export const SAMPLES = {
       "t": "2026-11-06T09:00:00-08:00",
       "ses": "sample"
      },
+     "decided": {
+      "from": "proposed",
+      "to": "open",
+      "msg": 18,
+      "t": "2026-11-06T09:00:00-08:00"
+     },
      "readBy": {
-      "claude-code": 1793984400358
+      "claude-code": 1793984400261
      }
     }
    ],
@@ -1045,17 +1049,17 @@ export const SAMPLES = {
     "agents": [
      {
       "name": "claude-code",
-      "t": 1793984400400,
+      "t": 1793984400293,
       "waiting": false,
       "session": "sample",
       "sessions": [
        {
         "name": "sample",
-        "t": 1793984400400
+        "t": 1793984400293
        },
        {
         "name": "helper",
-        "t": 1793984400294,
+        "t": 1793984400186,
         "sid": "aaaaaaaa-1111-2222-3333-444444444444",
         "on": {
          "n": 3,
@@ -1081,7 +1085,18 @@ export const SAMPLES = {
       "t": "2026-11-06T09:00:00-08:00"
      },
      {
-      "seq": 30,
+      "seq": 39,
+      "n": 4,
+      "f": {
+       "status": "open"
+      },
+      "was": {
+       "status": "proposed"
+      },
+      "t": "2026-11-06T09:00:00-08:00"
+     },
+     {
+      "seq": 29,
       "n": 3,
       "f": {
        "status": "open",
@@ -1096,6 +1111,17 @@ export const SAMPLES = {
        "when": "now"
       },
       "t": "2026-11-06T09:00:00-08:00"
+     },
+     {
+      "seq": 22,
+      "n": 1,
+      "f": {
+       "status": "open"
+      },
+      "was": {
+       "status": "proposed"
+      },
+      "t": "2026-11-06T09:00:00-08:00"
      }
     ],
     "deletedInputs": [
@@ -1108,8 +1134,8 @@ export const SAMPLES = {
       "scope": null,
       "items": [
        {
-        "n": 8,
-        "code": "T08",
+        "n": 6,
+        "code": "T06",
         "title": "Sort the export by date",
         "type": "task"
        }
@@ -1120,8 +1146,8 @@ export const SAMPLES = {
     "deleted": [
      {
       "kind": "item",
-      "n": 9,
-      "code": "I09",
+      "n": 8,
+      "code": "I08",
       "title": "Old idea",
       "at": "2026-11-06T09:00:00-08:00",
       "more": 0
@@ -1129,15 +1155,15 @@ export const SAMPLES = {
     ],
     "phone": false,
     "base": "http://127.0.0.1:7340/p/shop",
-    "key": "9b75-gbzm",
+    "key": "fgkf-jhu2",
     "remote": "",
     "lan": "",
-    "filesCap": "a9f42e49be7a389fc62e0120"
+    "filesCap": "69361bb847f7e1c16cc509ec"
    },
    "server": {
-    "page": "da39a3ee5e",
+    "page": "index-BBE-eUPC.js",
     "update": false,
-    "dev": false
+    "dev": true
    }
   }
  },
@@ -1226,21 +1252,21 @@ export const SAMPLES = {
    "kind": "org",
    "src": "r1",
    "ok": true,
-   "msg": "Created T11 \u00b7 Left for agent"
+   "msg": "Created T10 \u00b7 Left for agent"
   },
   {
    "seq": 50,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
    "kind": "add",
-   "n": 11,
+   "n": 10,
    "type": "task",
    "pri": "P2",
    "when": "now",
    "title": "Sort the export by date",
    "src": "r1",
    "codes": {
-    "11": "T11"
+    "10": "T10"
    }
   },
   {
@@ -1249,10 +1275,10 @@ export const SAMPLES = {
    "who": "you",
    "kind": "idel",
    "ns": [
-    9
+    8
    ],
    "codes": {
-    "9": "I09"
+    "8": "I08"
    }
   },
   {
@@ -1284,21 +1310,21 @@ export const SAMPLES = {
    "kind": "org",
    "src": "r1",
    "ok": true,
-   "msg": "Created T10 \u00b7 Left for agent"
+   "msg": "Created T9 \u00b7 Left for agent"
   },
   {
    "seq": 45,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
    "kind": "add",
-   "n": 10,
+   "n": 9,
    "type": "task",
    "pri": "P2",
    "when": "now",
    "title": "Sort the export by date",
    "src": "r1",
    "codes": {
-    "10": "T10"
+    "9": "T09"
    }
   },
   {
@@ -1306,13 +1332,13 @@ export const SAMPLES = {
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
    "kind": "add",
-   "n": 9,
+   "n": 8,
    "type": "idea",
    "pri": "P1",
    "when": "now",
    "title": "Old idea",
    "codes": {
-    "9": "I09"
+    "8": "I08"
    }
   },
   {
@@ -1340,11 +1366,11 @@ export const SAMPLES = {
    "kind": "del",
    "src": "r5",
    "ns": [
-    8
+    6
    ],
    "kept": [],
    "codes": {
-    "8": "T08"
+    "6": "T06"
    }
   },
   {
@@ -1360,6 +1386,23 @@ export const SAMPLES = {
    "seq": 39,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
+   "kind": "set",
+   "n": 4,
+   "set": [
+    {
+     "field": "status",
+     "was": "proposed",
+     "now": "open"
+    }
+   ],
+   "codes": {
+    "4": "T04"
+   }
+  },
+  {
+   "seq": 38,
+   "t": "2026-11-06T09:00:00-08:00",
+   "who": "you",
    "kind": "in",
    "id": "r6",
    "to": 4,
@@ -1369,7 +1412,7 @@ export const SAMPLES = {
    }
   },
   {
-   "seq": 38,
+   "seq": 37,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "claude-code",
    "kind": "say",
@@ -1382,31 +1425,7 @@ export const SAMPLES = {
    }
   },
   {
-   "seq": 37,
-   "t": "2026-11-06T09:00:00-08:00",
-   "who": "org",
-   "kind": "org",
-   "src": "r5",
-   "ok": true,
-   "msg": "Created T8"
-  },
-  {
    "seq": 36,
-   "t": "2026-11-06T09:00:00-08:00",
-   "who": "org",
-   "kind": "add",
-   "n": 8,
-   "type": "task",
-   "pri": "P2",
-   "when": "now",
-   "title": "Sort the export by date",
-   "src": "r5",
-   "codes": {
-    "8": "T08"
-   }
-  },
-  {
-   "seq": 35,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
    "kind": "org",
@@ -1415,7 +1434,7 @@ export const SAMPLES = {
    "msg": "Created T7"
   },
   {
-   "seq": 34,
+   "seq": 35,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
    "kind": "add",
@@ -1430,7 +1449,31 @@ export const SAMPLES = {
    }
   },
   {
+   "seq": 34,
+   "t": "2026-11-06T09:00:00-08:00",
+   "who": "org",
+   "kind": "org",
+   "src": "r5",
+   "ok": true,
+   "msg": "Created T6"
+  },
+  {
    "seq": 33,
+   "t": "2026-11-06T09:00:00-08:00",
+   "who": "org",
+   "kind": "add",
+   "n": 6,
+   "type": "task",
+   "pri": "P2",
+   "when": "now",
+   "title": "Sort the export by date",
+   "src": "r5",
+   "codes": {
+    "6": "T06"
+   }
+  },
+  {
+   "seq": 32,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
    "kind": "in",
@@ -1438,7 +1481,7 @@ export const SAMPLES = {
    "text": "One more thing"
   },
   {
-   "seq": 32,
+   "seq": 31,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
    "kind": "dc",
@@ -1446,7 +1489,7 @@ export const SAMPLES = {
    "text": "Looks right."
   },
   {
-   "seq": 31,
+   "seq": 30,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
    "kind": "dc",
@@ -1454,7 +1497,7 @@ export const SAMPLES = {
    "text": "Read it from the address."
   },
   {
-   "seq": 30,
+   "seq": 29,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
    "kind": "set",
@@ -1486,40 +1529,16 @@ export const SAMPLES = {
    }
   },
   {
-   "seq": 29,
-   "t": "2026-11-06T09:00:00-08:00",
-   "who": "org",
-   "kind": "org",
-   "src": "r2",
-   "ok": true,
-   "msg": "Created T6"
-  },
-  {
    "seq": 28,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
-   "kind": "add",
-   "n": 6,
-   "type": "task",
-   "pri": "P2",
-   "when": "now",
-   "title": "Sort the export by date",
+   "kind": "org",
    "src": "r2",
-   "codes": {
-    "6": "T06"
-   }
+   "ok": true,
+   "msg": "Created T5"
   },
   {
    "seq": 27,
-   "t": "2026-11-06T09:00:00-08:00",
-   "who": "org",
-   "kind": "org",
-   "src": "r1",
-   "ok": true,
-   "msg": "Created T5 \u00b7 Left for agent"
-  },
-  {
-   "seq": 26,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
    "kind": "add",
@@ -1528,13 +1547,13 @@ export const SAMPLES = {
    "pri": "P2",
    "when": "now",
    "title": "Sort the export by date",
-   "src": "r1",
+   "src": "r2",
    "codes": {
     "5": "T05"
    }
   },
   {
-   "seq": 25,
+   "seq": 26,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
    "kind": "doc",
@@ -1546,7 +1565,7 @@ export const SAMPLES = {
    }
   },
   {
-   "seq": 24,
+   "seq": 25,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
    "kind": "in",
@@ -1554,7 +1573,7 @@ export const SAMPLES = {
    "text": "Never mind"
   },
   {
-   "seq": 23,
+   "seq": 24,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
    "kind": "in",
@@ -1562,12 +1581,29 @@ export const SAMPLES = {
    "text": "Look at this"
   },
   {
-   "seq": 22,
+   "seq": 23,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
    "kind": "in",
    "id": "r2",
    "text": "Sort the export by date, please."
+  },
+  {
+   "seq": 22,
+   "t": "2026-11-06T09:00:00-08:00",
+   "who": "you",
+   "kind": "set",
+   "n": 1,
+   "set": [
+    {
+     "field": "status",
+     "was": "proposed",
+     "now": "open"
+    }
+   ],
+   "codes": {
+    "1": "B01"
+   }
   },
   {
    "seq": 21,
@@ -1839,12 +1875,12 @@ export const SAMPLES = {
  },
  "newSharedRules": {
   "ok": true,
-  "slug": "~yxemc",
+  "slug": "~w3rwe",
   "name": "Coding"
  },
  "sharedRules": [
   {
-   "slug": "~yxemc",
+   "slug": "~w3rwe",
    "name": "Coding",
    "md": "## Tests (when to run them)\n\n- Run them.",
    "parts": [
@@ -1878,7 +1914,7 @@ export const SAMPLES = {
    "docs": 0,
    "agents": [],
    "work": false,
-   "t": 1794777831638
+   "t": 1794853089409
   },
   {
    "name": "garden",
@@ -1891,13 +1927,13 @@ export const SAMPLES = {
    "docs": 1,
    "agents": [],
    "work": true,
-   "t": 1794777831842
+   "t": 1794853089626
   },
   {
    "name": "shop",
    "title": "Shop",
    "icon": "f4-logo.png",
-   "open": 6,
+   "open": 5,
    "needs": 3,
    "closed": 0,
    "inputs": 5,
@@ -1905,17 +1941,17 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400400,
+     "t": 1793984400293,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400400
+       "t": 1793984400293
       },
       {
        "name": "helper",
-       "t": 1793984400294,
+       "t": 1793984400186,
        "sid": "aaaaaaaa-1111-2222-3333-444444444444",
        "on": {
         "n": 3,
@@ -1927,7 +1963,7 @@ export const SAMPLES = {
     }
    ],
    "work": true,
-   "t": 1794777831849
+   "t": 1794853089634
   }
  ],
  "needs": [
@@ -1983,7 +2019,7 @@ export const SAMPLES = {
      "body": "The export should keep the filter I set.",
      "pri": "P0",
      "when": "now",
-     "status": "proposed",
+     "status": "open",
      "parent": null,
      "next": "",
      "srcs": [
@@ -2073,8 +2109,14 @@ export const SAMPLES = {
       "t": "2026-11-06T09:00:00-08:00",
       "ses": "sample"
      },
+     "decided": {
+      "from": "proposed",
+      "to": "open",
+      "msg": 18,
+      "t": "2026-11-06T09:00:00-08:00"
+     },
      "readBy": {
-      "claude-code": 1793984400358
+      "claude-code": 1793984400261
      }
     },
     "parentCode": null,
@@ -2148,48 +2190,6 @@ export const SAMPLES = {
      "body": "",
      "pri": "P2",
      "when": "now",
-     "status": "open",
-     "parent": null,
-     "next": "",
-     "srcs": [
-      "r1"
-     ],
-     "mergedInto": null,
-     "archived": false,
-     "t0": "2026-11-06T09:00:00-08:00",
-     "t1": "2026-11-06T09:00:00-08:00",
-     "by": "org",
-     "thread": [
-      {
-       "id": 40,
-       "by": "you",
-       "kind": "say",
-       "text": "r1 updated:\nAnd the sort, please.\n\nBy date. Newest first.",
-       "t": "2026-11-06T09:00:00-08:00",
-       "src": "r1",
-       "files": [],
-       "edited": "2026-11-06T09:00:00-08:00"
-      }
-     ],
-     "wait": null,
-     "talked": true
-    },
-    "parentCode": null,
-    "kids": null
-   },
-   {
-    "project": "shop",
-    "kind": "items",
-    "key": "i6",
-    "n": 6,
-    "item": {
-     "n": 6,
-     "code": "T06",
-     "type": "task",
-     "title": "Sort the export by date",
-     "body": "",
-     "pri": "P2",
-     "when": "now",
      "status": "dropped",
      "parent": null,
      "next": "",
@@ -2242,11 +2242,11 @@ export const SAMPLES = {
    {
     "project": "shop",
     "kind": "items",
-    "key": "i10",
-    "n": 10,
+    "key": "i9",
+    "n": 9,
     "item": {
-     "n": 10,
-     "code": "T10",
+     "n": 9,
+     "code": "T09",
      "type": "task",
      "title": "Sort the export by date",
      "body": "",
@@ -2283,11 +2283,11 @@ export const SAMPLES = {
    {
     "project": "shop",
     "kind": "items",
-    "key": "i11",
-    "n": 11,
+    "key": "i10",
+    "n": 10,
     "item": {
-     "n": 11,
-     "code": "T11",
+     "n": 10,
+     "code": "T10",
      "type": "task",
      "title": "Sort the export by date",
      "body": "",
@@ -2498,7 +2498,7 @@ export const SAMPLES = {
   "tidy": true
  },
  "pushKey": {
-  "key": "BBbDZKBDu7Y4KnnfAoV74CYeE8CeetFC6wvVAWRG_k9zgWnJ-epKT6HHMVoOJTaYcmVUZei9A6m0PPirxNdmKMk",
+  "key": "BFWJ2OR-FreWRzoX_LKUoIpOdotppCu3xG09_GPtBeC176JygTy5dPVbPM1pxpJrx0cz1XtKD4lZKjNL0AL0JEg",
   "on": false
  },
  "setPush": {
@@ -2554,7 +2554,7 @@ export const SAMPLES = {
  },
  "newKey": {
   "ok": true,
-  "key": "6bz4-nd36"
+  "key": "h2gk-rngd"
  },
  "login": {
   "ok": true

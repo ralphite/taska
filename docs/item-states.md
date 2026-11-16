@@ -9,12 +9,15 @@ reopen what the user dropped, and its done is review. An agent is told of a chan
 closes or drops an item it is doing: its next `/next` says `stop` (once, before anything but new inputs). An
 approval needs no telling: the item joins the queue and wakes an agent waiting for work. An agent's done takes back
 its own open question, so an item never waits for an answer and an acceptance at once.
+Words the user writes on an item give the agent its turn: on a proposal they approve it (B818; the user presses
+Won't do when they do not want it), on an item in review or done they set it back to open. An agent's words change
+no status.
 
 ```mermaid
 stateDiagram-v2
   [*] --> Proposed: an agent proposes it
   [*] --> Open: the user or the organizer makes it
-  Proposed --> Open: the user approves
+  Proposed --> Open: the user approves, or writes on it
   Proposed --> Dropped: the user declines (won't do)
   Proposed --> Dropped: the agent takes it back
   Open --> Doing: an agent starts working on it
@@ -26,7 +29,7 @@ stateDiagram-v2
   Open --> Dropped: won't do
   Doing --> Dropped: won't do (the agent on it is told to stop)
   Doing --> Done: closed (the agent on it is told to stop)
-  Done --> Open: reopened
+  Done --> Open: reopened, or the user writes on it
   Dropped --> Open: reopened (an agent may not, when the user dropped it)
 ```
 
@@ -68,5 +71,5 @@ not spoken since (the card stays where it was, faded, its buttons disabled, r100
 ## One side responsible at a time
 
 - `doing` is only for work an agent session is doing now. An agent that hands back a result sets the item done (it goes to review) or asks; a result never sits in `doing` (T646). The agent guide says this in its LOOP part. Asking does not change the status by itself (D110, Yadong revoked that rule).
-- Words from the user move the turn to the agent: on an item in review they set it back to open (as Not yet does, D110), and `/next` gives an item first only while an agent is working on it; other replies wait their turn by priority (B606).
+- Words from the user move the turn to the agent: on a proposal they approve it (B818), on an item in review they set it back to open (as Not yet does, D110), and `/next` gives an item first only while an agent is working on it; other replies wait their turn by priority (B606).
 - An agent that stops working on an item sets it back to open.

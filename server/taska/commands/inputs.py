@@ -6,7 +6,7 @@ from __future__ import annotations
 import os
 from typing import Iterable, List, Optional
 
-from ..domain import events as ev
+from ..domain import events as ev, item_states
 from ..domain.history import deletions
 from ..domain.model import FileRef
 from ..domain.rules import item_at
@@ -84,12 +84,12 @@ def new_input(r: Run, a: Args) -> Outcome:
         r.emit(fix)
     if cancelled:
         return Outcome(f"ok {rid} kept as cancelled", "Kept in Inputs")
-    # words on an item that waits for review, not Accept, take it back to open (Yadong r961: open is the agent's turn;
-    # in progress only while an agent works on it); so do words on an item already done (r1082: replying to a done
-    # item means it is not done)
+    # your words on an item give the agent its turn: they approve a proposal (B818), take an item in review or done
+    # back to open (r961, r1082); see item_states.on_your_words
     it = s.items.get(scope) if scope is not None else None
-    if it is not None and it.status in ("review", "done") and r.by == "you":
-        r.emit(ev.FieldsSet(n=it.n, by=r.by, f={"status": "open"}, was={"status": it.status}, src=rid))
+    to = item_states.on_your_words(it.status) if it is not None and r.by == "you" else None
+    if it is not None and to:
+        r.emit(ev.FieldsSet(n=it.n, by=r.by, f={"status": to}, was={"status": it.status}, src=rid))
     return Outcome(f"ok {rid}", "Received")
 
 

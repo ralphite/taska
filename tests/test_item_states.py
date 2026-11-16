@@ -90,6 +90,22 @@ class Commands(ServerCase):
         self.page({"op": "set", "ref": code, "f": {"status": "open"}})
         self.assertIn(f"next {code}", self.nxt())
 
+    def test_your_reply_on_a_proposal_approves_it(self) -> None:
+        # B818 r1401: replying on an agent's proposal approves it; the agent's own words do not
+        code = self.do("new task proposed by an agent").split()[1]
+        self.do(f"{code} say should I start with the export?")
+        self.assertIn("proposed", self.get(f"/{code}").split("\n")[0])
+        n = int(code[1:])
+        self.page({"op": "input", "text": "yes, export first", "scope": n})
+        self.assertIn("open", self.get(f"/{code}").split("\n")[0])
+        self.assertIn(f"resume {code}: the user replied", self.nxt())
+
+    def test_words_on_your_items(self) -> None:
+        self.assertEqual(S.on_your_words(S.PROPOSED), S.OPEN)
+        self.assertEqual(S.on_your_words(S.REVIEW), S.OPEN)
+        self.assertIsNone(S.on_your_words(S.DOING))  # the agent on it reads them
+        self.assertIsNone(S.on_your_words(S.DROPPED))  # reopening is a choice of its own
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -10,6 +10,10 @@ no work). An agent may not approve a proposal (only take its own back), may not 
 done is review: you accept it. An agent's done also takes back the questions it still has open on the item, so an
 item never waits for your answer and your acceptance at once (I779).
 
+Your words on an item are your turn given to the agent: on a proposal they approve it (B818 r1401: you would
+press won't do if you did not want it; a question in them the agent answers before it starts), on an item in review
+or done they say it is not done yet (r961, r1082). An agent's words change no status: it never approves itself.
+
 An approval needs no telling: the item joins the queue, and an agent waiting for work is woken by it; one busy with
 another item takes it in its turn (r1397).
 
@@ -31,7 +35,7 @@ STOP = "stop"  # the one telling: the agent on it stops
 STEPS: Tuple[Tuple[Optional[str], str, str, str], ...] = (
     (None, PROPOSED, AGENT, "an agent proposes it"),
     (None, OPEN, YOU, "the user or the organizer makes it"),
-    (PROPOSED, OPEN, YOU, "the user approves"),
+    (PROPOSED, OPEN, YOU, "the user approves, or writes on it"),
     (PROPOSED, DROPPED, YOU, "the user declines (won't do)"),
     (PROPOSED, DROPPED, AGENT, "the agent takes it back"),
     (OPEN, DOING, AGENT, "an agent starts working on it"),
@@ -43,7 +47,7 @@ STEPS: Tuple[Tuple[Optional[str], str, str, str], ...] = (
     (OPEN, DROPPED, YOU, "won't do"),
     (DOING, DROPPED, YOU, "won't do (the agent on it is told to stop)"),
     (DOING, DONE, YOU, "closed (the agent on it is told to stop)"),
-    (DONE, OPEN, YOU, "reopened"),
+    (DONE, OPEN, YOU, "reopened, or the user writes on it"),
     (DROPPED, OPEN, YOU, "reopened (an agent may not, when the user dropped it)"),
 )
 
@@ -79,6 +83,11 @@ def refusal(code: str, frm: str, to: str, by: str, closed_by: Optional[str]) -> 
     if to not in AGENT_TO:
         return f"{code}: an agent does not set it {to}"
     return None
+
+
+def on_your_words(status: str) -> Optional[str]:
+    """The status an item takes when you write on it, or None (it stays)."""
+    return OPEN if status in (PROPOSED, REVIEW, DONE) else None
 
 
 def told(frm: str, to: str, by: str) -> Optional[str]:
