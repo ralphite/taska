@@ -147,7 +147,7 @@ EOF" && before=$(as_tester sysd 'systemctl --user show -p MainPID --value taska'
         && as_tester sysd 'curl -fsS -X POST http://127.0.0.1:7340/api/restart' && sleep 5 \
         && after=$(as_tester sysd 'systemctl --user show -p MainPID --value taska') \
         && [ "$before" != "$after" ] && echo "restart from the page: pid $before -> $after, back by systemd" \
-        && as_tester sysd "for i in $(seq 30); do curl -fsS http://127.0.0.1:7340/health && exit 0; sleep 1; done; exit 1" \
+        && as_tester sysd "for i in \$(seq 30); do curl -fsS http://127.0.0.1:7340/health && exit 0; sleep 1; done; exit 1" \
         && as_tester sysd "$INSTALL" && as_tester sysd 'systemctl --user is-active taska'
 } > "$LOGS/systemd-ubuntu-24.04.log" 2>&1
 result systemd-ubuntu-24.04 $?
