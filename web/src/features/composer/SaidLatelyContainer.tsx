@@ -5,6 +5,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
 import { draftTarget } from '../../model/draftTarget'
+import { fileUrl } from '../../model/filesPass'
 import { useAway, useFiles, useItemWorld, useLitFades, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import type { DraftKey } from '../../model/draftTarget'
 import { fixRange, voiceStretches } from '../../model/doubts'
@@ -71,7 +72,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
   }
   if (!m || !said) return null
   const mine = outbox.filter((o) => o.slug === route.slug)
-  const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
+  const url = (f: string) => fileUrl(route.slug, f, m.facts.filesCap)
   return (
     <section aria-label="Latest inputs" data-vc-area className="mx-auto mt-8 block max-w-[42rem]">
       <SaidLately

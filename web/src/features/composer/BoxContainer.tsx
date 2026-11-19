@@ -7,6 +7,7 @@ import { useServices, useStores, useStoreValue } from '../../app/context'
 import type { ProjectRoute } from '../../app/hooks'
 import { boxShowsRecording, shownBox } from '../../model/boxFoot'
 import { skillsOf } from '../../model/skills'
+import { fileUrl } from '../../model/filesPass'
 import { clock } from '../../model/time'
 import { liveN } from '../../model/project'
 import { Composer } from './Composer'
@@ -48,7 +49,7 @@ export function BoxContainer({ route, composePage, boxRef, bare = false }: { rou
     const it = role.scope && m ? m.byN.get(liveN(m, Number(role.scope.slice(1)))) : undefined
     void app.box.send(route.slug, m, role.scope, key, it && m ? app.answers.picks(m, route.slug, it) : null)
   }
-  const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
+  const url = (f: string) => fileUrl(route.slug, f, m?.facts.filesCap)
   // words of a voice note that may be misheard: under the box; on the phone in the box itself, to pick from
   const pickWord = (fk: string, k: number, side: 'was' | 'alt') => void app.voiceWords.pick(route.slug, key, fk, k, side)
   const compose = desk && composePage

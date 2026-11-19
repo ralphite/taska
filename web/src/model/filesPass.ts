@@ -9,3 +9,11 @@ export function withFilesPass(html: string, slug: string, cap: string): string {
   const at = new RegExp(`(?:https?://[^\\s"'()<>/]+)?(?:/k/[A-Za-z0-9-]+)?/p/${slug.replace(/[^\w-]/g, '')}/f/([^\\s"'()<>?#\\\\]+)(?:\\?cap=[0-9a-f]*)?`, 'g')
   return html.replace(at, (_, name: string) => `/p/${slug}/f/${name}?cap=${cap}`)
 }
+
+/** The address of file `f` of project `slug`. With the project's files pass, it opens anywhere the key is not (B828:
+ * on the iPhone, Taska added to the Home Screen opens a document's PDF in a browser window of its own, without the key,
+ * so it came to the sign-in page). */
+export function fileUrl(slug: string, f: string, cap = ''): string {
+  const at = `/p/${encodeURIComponent(slug)}/f/${encodeURIComponent(f)}`
+  return cap ? `${at}?cap=${cap}` : at
+}

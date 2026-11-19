@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { withFilesPass } from './filesPass'
+import { fileUrl, withFilesPass } from './filesPass'
 
 describe('withFilesPass (B790)', () => {
   it("puts the pass on each address of the project's files, however it is written", () => {
@@ -16,5 +16,14 @@ describe('withFilesPass (B790)', () => {
   it('is the same when done twice', () => {
     const once = withFilesPass('<img src="/p/a/f/f1.png">', 'a', 'c0ffee')
     expect(withFilesPass(once, 'a', 'c0ffee')).toBe(once)
+  })
+})
+
+describe('a file of the project (B828)', () => {
+  it('carries the files pass, so it opens in a window without the key (an iPhone Home Screen app opens a PDF in one)', () => {
+    expect(fileUrl('home', 'f217-family conversations.pdf', 'c0ffee')).toBe('/p/home/f/f217-family%20conversations.pdf?cap=c0ffee')
+  })
+  it('is the plain address without a pass', () => {
+    expect(fileUrl('home', 'f1.png')).toBe('/p/home/f/f1.png')
   })
 })

@@ -2,6 +2,8 @@
 // shows.
 
 import { useServices, useStores, useStoreValue } from '../../app/context'
+import { useProjectModel } from '../../app/hooks'
+import { fileUrl } from '../../model/filesPass'
 import { Viewer } from './Viewer'
 
 export function ViewerContainer() {
@@ -10,11 +12,12 @@ export function ViewerContainer() {
   const open = useStoreValue(stores.route, (s) => s.layers.includes('viewer'))
   const v = useStoreValue(stores.media, (s) => s.viewer)
   const f = v.group[v.idx] || ''
+  const m = useProjectModel(v.slug)
   return (
     <Viewer
       open={open}
       name={f.replace(/^f\d+-/, '')}
-      url={f ? `/p/${encodeURIComponent(v.slug)}/f/${encodeURIComponent(f)}` : ''}
+      url={f ? fileUrl(v.slug, f, m?.facts.filesCap) : ''}
       idx={v.idx}
       count={v.group.length}
       fit={v.fit}

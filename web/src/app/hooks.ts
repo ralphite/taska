@@ -8,6 +8,7 @@ import { codeBlock } from '../model/markdown'
 import type { Doc } from '../model/types'
 import type { InlineWorld } from '../ui/markdown/inline'
 import type { Route } from '../model/route'
+import { fileUrl } from '../model/filesPass'
 import { useApp, useStores, useStoreValue } from './context'
 
 export type ProjectRoute = Extract<Route, { page: 'project' }>
@@ -82,7 +83,7 @@ export function useItemWorld(m: ProjectModel | null, slug: string): InlineWorld 
   return useMemo(
     () => ({
       find: (c: string) => (m ? findRef(m, c) : null),
-      url: (f: string) => `/p/${encodeURIComponent(slug)}/f/${encodeURIComponent(f)}`,
+      url: (f: string) => fileUrl(slug, f, m?.facts.filesCap),
       size: (f: string) => sizes?.[f],
       diagram: (src: string, dark: boolean, id: string) => diagrams.draw(src, dark, id),
     }),
