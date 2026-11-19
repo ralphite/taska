@@ -5,7 +5,7 @@
 import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import type { BoxLine, BoxRight, FeedbackLine } from '../../model/boxFoot'
 import { VC_MARK } from '../../model/voiceComments'
-import { pickedSkill, skillMenu, type Skill } from '../../model/skills'
+import { fits, pickedSkill, skillMenu, type Skill } from '../../model/skills'
 import { OUT_ACT_WORD, type OutTone } from '../../model/outgoingStates'
 import { INPUT_ACT_WORD, INPUT_STATES, type InputAct, type InputState, type InputTone } from '../../model/inputStates'
 import { Icon, type IconName } from '../../ui/Icon'
@@ -120,9 +120,25 @@ export interface ComposerProps {
 }
 
 /** The skills that fit the "/" being typed (I821): each its name and what it is for; ↑↓ to choose, ↵ or ⇥ to take. */
-export function SkillMenu({ menu, sel, on }: { menu: readonly Skill[]; sel: number; on: { pick(s: Skill): void; select(i: number): void } }) {
+/** A skill's name as Codex lists it, without its "/", the letters typed standing out. */
+function SkillName({ name, typed }: { name: string; typed: string }) {
+  const at = new Set(fits(name, typed) ?? [])
   return (
-    <div role="listbox" aria-label="Skills" className="flex flex-col gap-0.5 p-1.5">
+    <span className="shrink-0 text-zinc-900 dark:text-zinc-100">
+      {[...name].map((c, i) => (i === 0 ? null : at.has(i) ? <b key={i} className="font-semibold">{c}</b> : c))}
+    </span>
+  )
+}
+
+/** The skills to pick from, as Codex shows its commands: a card over the box (under it on the desktop's New input
+ * page, where the box is at the top), a row each: its name, what it is for. */
+export function SkillMenu({ menu, sel, typed, on }: { menu: readonly Skill[]; sel: number; typed: string; on: { pick(s: Skill): void; select(i: number): void } }) {
+  return (
+    <div
+      role="listbox"
+      aria-label="Skills"
+      className="absolute inset-x-0 bottom-full z-20 mb-2 flex max-h-80 lg:group-data-[compose]/app:top-full lg:group-data-[compose]/app:bottom-auto lg:group-data-[compose]/app:mt-2 lg:group-data-[compose]/app:mb-0 flex-col gap-px overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-800 dark:bg-zinc-900"
+    >
       {menu.map((s, i) => (
         <button
           key={s.name}
@@ -131,9 +147,12 @@ export function SkillMenu({ menu, sel, on }: { menu: readonly Skill[]; sel: numb
           onMouseDown={(e) => e.preventDefault()} // the words keep the caret
           onMouseMove={() => i !== sel && on.select(i)}
           onClick={() => on.pick(s)}
-          className="flex min-h-11 w-full min-w-0 items-center gap-2.5 rounded-2xl px-3 text-left text-[15px] aria-selected:bg-blue-50 lg:min-h-9 lg:text-sm dark:aria-selected:bg-blue-400/15"
+          className="flex min-h-11 w-full min-w-0 shrink-0 items-center gap-2.5 rounded-xl px-2.5 text-left text-[15px] aria-selected:bg-zinc-100 lg:min-h-8 lg:text-sm dark:aria-selected:bg-zinc-800"
         >
-          <span className="shrink-0 font-medium text-zinc-900 dark:text-zinc-100">{s.name}</span>
+          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
+            <Icon n="book" c="size-[18px] lg:size-4" />
+          </span>
+          <SkillName name={s.name} typed={typed} />
           <span className="min-w-0 flex-1 truncate text-zinc-500 dark:text-zinc-400">{s.what}</span>
         </button>
       ))}
@@ -228,7 +247,7 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
         if (boxRef) boxRef.current = el
       }}
       id="composer"
-      className="group/box flex flex-col rounded-4xl border border-zinc-200 bg-white shadow-sm focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none dark:focus-within:border-zinc-700"
+      className="group/box relative flex flex-col rounded-4xl border border-zinc-200 bg-white shadow-sm focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none dark:focus-within:border-zinc-700"
     >
       {waiting ? (
         <div className="@container flex h-8 items-center gap-1.5 pt-1 pr-1.5 pl-4 text-[13px] text-zinc-500 dark:text-zinc-400">
@@ -240,7 +259,7 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
       </div>
       {files}
       {doubts}
-      {menu ? <SkillMenu menu={menu} sel={sel} on={{ pick: pickSkill, select: setSkillSel }} /> : null}
+      {menu ? <SkillMenu menu={menu} sel={sel} typed={text} on={{ pick: pickSkill, select: setSkillSel }} /> : null}
       <div className={`flex items-end gap-2 p-1.5 group-data-[multi]/box:flex-wrap lg:gap-0.5 lg:group-data-[compose]/app:order-first ${attach || rec ? '' : 'pl-3.5 group-data-[multi]/box:justify-end group-data-[multi]/box:pl-1.5'}`}>
         <button
           hidden={!rec && !attach}

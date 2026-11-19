@@ -29,12 +29,31 @@ export function skillsOf(shared: readonly SharedRule[] | null | undefined): Skil
 /** The box's words are a skill's name being typed: a "/" and letters, at the very start, nothing after. */
 export const typingSkill = (text: string) => /^\/[\w-]*$/.test(text)
 
-/** The skills to pick from while one is being typed (null: no menu). */
+/** Where the letters typed fall in a skill's name, in order, any case (null: they do not all fit). Like Codex's
+ * skill list: "/pl" and "/pn" both find /plan. */
+export function fits(name: string, text: string): number[] | null {
+  const n = name.toLowerCase()
+  const at: number[] = []
+  let from = 1 // after the "/"
+  for (const c of text.slice(1).toLowerCase()) {
+    const i = n.indexOf(c, from)
+    if (i < 0) return null
+    at.push(i)
+    from = i + 1
+  }
+  return at
+}
+
+/** The skills to pick from while one is being typed (null: no menu): those the letters fit, the ones they start
+ * first, then where they fit earliest. */
 export function skillMenu(text: string, skills: readonly Skill[]): Skill[] | null {
   if (!typingSkill(text)) return null
-  const typed = text.toLowerCase()
-  const found = skills.filter((s) => s.name.toLowerCase().startsWith(typed))
-  return found.length ? found : null
+  const found = skills
+    .map((s) => ({ s, at: fits(s.name, text) }))
+    .filter((x): x is { s: Skill; at: number[] } => x.at !== null)
+    .map(({ s, at }) => ({ s, rank: at.length ? at.reduce((a, i, k) => a + i - k - 1, 0) : 0 }))
+    .sort((a, b) => a.rank - b.rank || a.s.name.localeCompare(b.s.name))
+  return found.length ? found.map((x) => x.s) : null
 }
 
 /** The words once a skill is picked: its name and a space, then what you say. */
