@@ -38,7 +38,7 @@ test('r466 r481 r483: a picture keeps its place while it loads, a spinner in the
     await route.continue()
   })
   await open(page, p, 'T4')
-  const pic = page.locator(`img[data-pic][src$="${f}"]`).filter({ visible: true }).first()
+  const pic = page.locator(`img[data-pic][src*="/f/${f}"]`).filter({ visible: true }).first()
   const holder = pic.locator('xpath=..')
   const under = page.getByText('The words under the chart.').filter({ visible: true }).first()
   // the picture is held back, so everything below happens before it comes, however slow the machine is
