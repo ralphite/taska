@@ -33,7 +33,7 @@ test('r466 r481 r483: a picture keeps its place while it loads, a spinner in the
   // the picture comes late
   let release = () => {}
   const held = new Promise<void>((r) => (release = r))
-  await page.route(`**/f/${f}`, async (route) => {
+  await page.route((u) => u.pathname.endsWith(`/f/${f}`), async (route) => {
     await held
     await route.continue()
   })
@@ -85,7 +85,7 @@ test("D82 #8: a picture attached to a message shows a spinner while it loads and
   const f = ((await up.json()) as { f: string }).f
   await p.doAs(`T4 say files=${f} The screenshot.\n`)
   let how: 'hold' | 'fail' = 'hold'
-  await page.route(`**/f/${f}`, async (r) => {
+  await page.route((u) => u.pathname.endsWith(`/f/${f}`), async (r) => {
     while (how === 'hold') await new Promise((ok) => setTimeout(ok, 100))
     await r.abort()
   })
