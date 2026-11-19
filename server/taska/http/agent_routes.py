@@ -16,6 +16,7 @@ from ..agent_text.guide_text import CONNECT
 from ..agent_text.language import Parsed, parse
 from ..agent_text.work import Asker, Work, next_work
 from ..domain import events as ev, includes, rules, skills
+from ..domain.offers import TIMES
 from ..domain.rules import item_at
 from ..domain.state import ident
 from ..domain.vocab import MAX_FILE, PEOPLE, Refused
@@ -125,6 +126,14 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
     return None
 
 
+def let_go(p: Project, w: Work) -> None:
+    """The item handed to a session that does not take it is no longer held for it (B832)."""
+    if w.claim:
+        c = p.state.claims.get(w.claim[0])
+        if c and c.who == w.claim[1]:
+            del p.state.claims[w.claim[0]]
+
+
 REPLACED = ("replaced: another Antigravity session runs this project now (since {t}). Stop here: end your turn, do not "
             "call /next again or start a wait, and tell the user in one line that this session was replaced.\n")
 
@@ -153,8 +162,17 @@ def _next(req: Request, p: Project, by: str) -> Response:
             # (B741: a manager whose own doing item came back at once re-asked every 20 s); a plain /next still gets it
             held = {n: c.who for n, c in p.state.claims.items()}
 
+            key = req.arg("sid") or session or (who or "")
+
+            def mark(n: int) -> object:
+                it = p.state.items.get(n)
+                return (it.status, it.when, it.t1, len(it.thread)) if it else None
+
             def nothing_new(w: Work) -> bool:
                 if not w.has_work:
+                    return True
+                if wait and w.given is not None and p.agents.offers.passed(key, w.given, mark(w.given)):
+                    let_go(p, w)  # B832: it does not take this one: not held for it, so others may
                     return True
                 if not wait or not w.claim:
                     return False
@@ -169,6 +187,11 @@ def _next(req: Request, p: Project, by: str) -> Response:
                     return text(200, REPLACED.format(t=p.agents.replaced(sid)))  # (the wait is let go below)
                 w = work_for(p, req, who, session)
             given = w.given
+            if wait and given is not None and key and p.agents.offers.handed(key, given, mark(given)):
+                let_go(p, w)
+                p.run([(0, {"op": "say", "ref": p.state.code(given), "kind": "progress", "src": None, "files": [],
+                            "text": f"会话「{key[:40]}」连着 {TIMES} 次拿到这件都没接，现在没人在做。"})], "taska")
+                p.agents.offers.changed(key, given, mark(given))
             if sid:  # the waker wakes it only when it is idle (B762)
                 p.waker.next_read(sid, w.has_work)
             if given is not None and who:  # the card it was given holds what other sessions wrote there

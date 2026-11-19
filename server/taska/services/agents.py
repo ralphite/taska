@@ -14,6 +14,7 @@ from typing import Callable, Dict, List, Optional, Set, Tuple
 from ..agent_text import render
 from ..domain import events as ev, includes, rules, sections, versions
 from ..domain.model import Input, Item, Message
+from ..domain.offers import Offers
 from ..domain.state import ProjectState, ident
 from ..domain.text import first_line, seconds
 from ..domain.vocab import CLAIM_TTL, PEOPLE
@@ -64,6 +65,7 @@ class AgentActivity:
         self._changed = changed  # wakes those waiting for news
         self._gone = gone
         self.version = 0  # bumps when an agent turns up, starts or stops waiting, or reads an item
+        self.offers = Offers()  # work handed to a waiting session that does not take it (B832)
         self._saved_at = 0.0
         saved = db.get("agents")
         if isinstance(saved, dict):
