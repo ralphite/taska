@@ -1,6 +1,7 @@
 // Skills (I821, r1406): "/" at the start of the box lists the skills (shared documents named /name) with what each is
 // for; the letters typed narrow it; ↵ puts the skill's name and a space in the box; what is sent with it comes to the
 // agents with the skill's text under it. Esc closes the list.
+// A row shows the name without its "/", as Codex does (r1424).
 // guards: src/features/composer/ src/model/skills.ts src/app/docs/sharedRules.ts server/taska/domain/skills.py server/taska/agent_text/render.py server/taska/services/shared_rules.py
 import { expect, test, type APIRequestContext } from '@playwright/test'
 import { open, pageOp, project } from '../seed'
@@ -21,7 +22,7 @@ test('I821: "/" lists the skills, ↵ takes one, and the agents read its text wi
   await open(page, p, '')
   await box(page).click()
   await box(page).pressSequentially(name.slice(0, 4))
-  const option = page.getByRole('option', { name: new RegExp(name) }).filter({ visible: true })
+  const option = page.getByRole('option', { name: new RegExp(name.slice(1)) }).filter({ visible: true })
   await expect(option).toContainText('回答问题，只答不做。')
   await box(page).pressSequentially(name.slice(4))
   await expect(page.getByRole('option').filter({ visible: true })).toHaveCount(1)
@@ -41,7 +42,7 @@ test('I821: Esc closes the list; other words show none', async ({ page, request 
   await open(page, p, '')
   await box(page).click()
   await box(page).pressSequentially(name)
-  await expect(page.getByRole('option', { name: new RegExp(name) }).filter({ visible: true })).toBeVisible()
+  await expect(page.getByRole('option', { name: new RegExp(name.slice(1)) }).filter({ visible: true })).toBeVisible()
   await box(page).press('Escape')
   await expect(page.getByRole('option').filter({ visible: true })).toHaveCount(0)
   // gone back to "/" it lists them again (the QA run found it stayed closed)
