@@ -23,14 +23,28 @@ export async function openMic(): Promise<OpenMic> {
     if (refused && track?.applyConstraints) await track.applyConstraints(AS_IT_HEARS).catch(() => {})
     return { stream, refused, settings: track?.getSettings?.() ?? {} }
   }
+  // B829: the first recording after the Home Screen app came back from the background was refused (NotAllowedError),
+  // and the next press worked: refused, it is asked once more at once, so the press that started it records
+  const ask = async (audio: MediaTrackConstraints | boolean): Promise<MediaStream> => {
+    try {
+      return await md.getUserMedia({ audio })
+    } catch (e) {
+      if ((e as Error)?.name !== 'NotAllowedError') throw e
+      await new Promise((r) => setTimeout(r, AGAIN_MS))
+      return md.getUserMedia({ audio })
+    }
+  }
   try {
-    return await opened(await md.getUserMedia({ audio: AS_IT_HEARS }), null)
+    return await opened(await ask(AS_IT_HEARS), null)
   } catch (e) {
     const name = (e as Error)?.name || 'Error'
     if (name === 'NotAllowedError' || name === 'SecurityError') throw e
-    return opened(await md.getUserMedia({ audio: true }), `${name}: ${(e as Error)?.message || ''}`.slice(0, 200))
+    return opened(await ask(true), `${name}: ${(e as Error)?.message || ''}`.slice(0, 200))
   }
 }
+
+/** How long a refused microphone waits before it is asked once more (B829). */
+export const AGAIN_MS = 300
 
 /** The page's microphone, one for voice notes, dictation and search's listening: each recording opens it and lets it
  * go at its end, also from the Home Screen. Kept between recordings there (B800), iPhone kept its microphone light on

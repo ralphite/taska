@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { keepAwake, Mic, stopRecorder, type OpenMic } from './mic'
+import { keepAwake, Mic, openMic, stopRecorder, type OpenMic } from './mic'
 
 /** A recorder as far as stopping it goes: `state`, and a 'stop' it says when asked to stop. */
 class FakeRecorder extends EventTarget {
@@ -98,5 +98,27 @@ describe('the microphone (B800 r1370)', () => {
     expect(given[0].track.readyState).toBe('ended')
     m.done((await m.open()).stream)
     expect(given.map((g) => g.track.readyState)).toEqual(['ended', 'ended'])
+  })
+})
+
+describe('openMic (B829)', () => {
+  const refused = () => Object.assign(new Error('The request is not allowed'), { name: 'NotAllowedError' })
+  const stream = { getAudioTracks: () => [{ getSettings: () => ({}) }] } as unknown as MediaStream
+  const withMedia = (getUserMedia: () => Promise<MediaStream>) =>
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, get: () => ({ getUserMedia }) })
+
+  it('asks once more when refused (the first recording after the Home Screen app came back), and records', async () => {
+    const ask = vi.fn().mockRejectedValueOnce(refused()).mockResolvedValueOnce(stream)
+    withMedia(ask)
+    const mic = await openMic()
+    expect(mic.stream).toBe(stream)
+    expect(ask).toHaveBeenCalledTimes(2)
+  })
+
+  it('says it is refused when it is refused again (the microphone is not allowed)', async () => {
+    const ask = vi.fn().mockRejectedValue(refused())
+    withMedia(ask)
+    await expect(openMic()).rejects.toMatchObject({ name: 'NotAllowedError' })
+    expect(ask).toHaveBeenCalledTimes(2)
   })
 })
