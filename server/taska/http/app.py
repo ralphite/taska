@@ -13,7 +13,7 @@ import re
 import threading
 import time
 import weakref
-from typing import Callable, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple
 
 from ..domain.vocab import Refused
 from ..infra.images import PictureSizes
@@ -211,7 +211,18 @@ class AppContext:
                          "source": "server", "kind": "request", "project": m.group(1) if m else None,
                          "tab": req.header("X-Taska-Tab") or None,
                          "who": by or ("you" if req.header("X-Taska-Tab") else None),
-                         "ses": session, "ms": ms, "status": status or None, "via": req.via()}})
+                         "ses": session, "ms": ms, "status": status or None, "via": req.via(), **turned_away(req, status)}})
+
+
+def turned_away(req: Request, status: int) -> Dict[str, str]:
+    """Where a request turned away (401, 403) came from and how it was asked (B830: six refused cross-site could not be
+    told apart): the asking page's origin only, as its address may hold the key."""
+    if status not in (401, 403):
+        return {}
+    from urllib.parse import urlsplit
+    ref = urlsplit(req.header("Origin") or req.header("Referer"))
+    return {"from": f"{ref.scheme}://{ref.netloc}" if ref.netloc else "",
+            "fetch": "/".join(req.header(h) or "-" for h in ("Sec-Fetch-Site", "Sec-Fetch-Mode", "Sec-Fetch-Dest"))}
 
 
 def dispatch(ctx: AppContext, req: Request) -> Optional[Response]:

@@ -176,7 +176,8 @@ def _sizes_only(x: Any) -> Any:
 def _logged(who: str, model: str, body: Json, ms: int, reply: Optional[Json] = None, status: Optional[int] = None,
             error: str = "") -> None:
     usage = (reply or {}).get("usageMetadata") or {}
-    (log.error if error else log.info)(f"gemini {model} for {who}: {status or 200} in {ms} ms", extra={"f": {
+    said = status or (200 if reply is not None else "no answer")  # B830: a timeout was written as 200
+    (log.error if error else log.info)(f"gemini {model} for {who}: {said} in {ms} ms", extra={"f": {
         "source": "server", "kind": "gemini", "who": "org" if who == "organizer" else who, "ms": ms,
         "status": status or (200 if reply is not None else None), "model": model, "sent": _sizes_only(body),
         "reply": reply, "error": error or None, "tokens_in": usage.get("promptTokenCount"),
