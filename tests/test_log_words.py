@@ -11,6 +11,7 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
 from taska.http.app import turned_away  # noqa: E402
+from taska.http.page_routes import page_line  # noqa: E402
 from taska.http.messages import Request  # noqa: E402
 from taska.infra import gemini  # noqa: E402
 
@@ -37,6 +38,13 @@ class LogWords(unittest.TestCase):
         self.assertEqual(turned_away(req, 200), {})
         self.assertEqual(turned_away(Request("GET", "/", {}, "127.0.0.1"), 401), {"from": "", "fetch": "-/-/-"})
 
+
+    def test_a_page_record_says_what_it_is_about(self) -> None:
+        """B842: a request the page found slow says which (108 slow ones read "page net "); a sheet, which one."""
+        self.assertEqual(page_line("net", {"why": "slow", "method": "GET", "url": "/api/needs", "ms": 4539}), "page net slow GET /api/needs")
+        self.assertEqual(page_line("net", {"why": "failed", "msg": "Taska is unreachable"}), "page net Taska is unreachable")
+        self.assertEqual(page_line("sheet", {"what": "item-menu", "arm": "t", "where": "/p/sd/T10"}), "page sheet item-menu")
+        self.assertEqual(page_line("view", {"where": "/p/sd/T10"}), "page view /p/sd/T10")
 
 if __name__ == "__main__":
     unittest.main()

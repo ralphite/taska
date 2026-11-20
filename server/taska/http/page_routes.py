@@ -220,6 +220,14 @@ def _words(req: Request, p: Project) -> Response:
     return as_json(voice_answer(fid, job, voice))
 
 
+def page_line(kind: str, e: Dict[str, Any]) -> str:
+    """A page record's line: its words, else what it is about (B842: a request the page found slow or failed says
+    which, as 108 slow ones read "page net "; a sheet, which one), else where it was."""
+    said = e.get("msg") or (f"{e.get('why', '')} {e.get('method', '')} {e.get('url', '')}".strip() if kind == "net" else "") \
+        or (str(e.get("what") or "") if kind == "sheet" else "") or e.get("where") or ""
+    return f"page {kind} {str(said)[:160]}"
+
+
 def _page_log(ctx: "AppContext", req: Request, p: Project) -> None:
     """The page's own records (what you did, slow or failed saves, errors), into the log."""
     data = req.json_body(MAX_FILE)
@@ -229,6 +237,6 @@ def _page_log(ctx: "AppContext", req: Request, p: Project) -> None:
         kind = str(e.pop("kind", "") or "action")[:40]
         level = {"error": logging.ERROR, "warn": logging.WARNING}.get(str(e.pop("level", "")), logging.INFO)
         where = re.search(r"/([A-Z]\d+)\b", str(e.get("where", "")))
-        ctx.log.log(level, f"page {kind} {str(e.get('msg') or e.get('where') or '')[:160]}", extra={"f": {
+        ctx.log.log(level, page_line(kind, e), extra={"f": {
             **e, "source": "page", "kind": kind, "project": p.slug, "tab": req.header("X-Taska-Tab") or None, "who": "you",
             "item": where.group(1) if where else None, "via": req.via()}})

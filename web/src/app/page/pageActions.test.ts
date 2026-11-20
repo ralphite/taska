@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 import { Http } from '../../api/http'
 import { createOutboxStore } from '../../stores/outbox'
 import { createRouteStore, type History } from '../../stores/route'
+import { createSheetStore } from '../../stores/sheet'
 import { memoryStore } from '../../stores/storage'
 import { keyOf, PageActions } from './pageActions'
 
@@ -27,9 +28,10 @@ describe('PageActions (B791: what you do on the page is logged)', () => {
     const http = new Http(answer)
     const api = { http, pageLog: vi.fn(async (_slug: string, list: Record<string, unknown>[]) => (sent.push(list), { ok: true })) }
     const outbox = createOutboxStore(memoryStore())
-    const log = new PageActions({ api: api as never, slug: () => 'shop', route: createRouteStore(history()), outbox })
+    const sheet = createSheetStore()
+    const log = new PageActions({ api: api as never, slug: () => 'shop', route: createRouteStore(history()), outbox, sheet })
     stop = log.stop
-    return { log, sent, http, outbox }
+    return { log, sent, http, outbox, sheet }
   }
 
   test('a control tapped is logged by its name; what is typed is not', () => {
@@ -81,6 +83,15 @@ describe('PageActions (B791: what you do on the page is logged)', () => {
     const rows = sent[0].filter((e) => e.kind !== 'open')
     expect(rows).toEqual([expect.objectContaining({ kind: 'send', to: 'B12', chars: 15, files: 1, voice: 1 }), expect.objectContaining({ kind: 'send-failed', to: 'B12', net: true, tries: 1 })])
     expect(JSON.stringify(sent)).not.toContain('secret')
+  })
+
+  test('a sheet or menu that opens is logged, once, by its kind (B842: taps on Type could not be told from taps on nothing)', () => {
+    const { log, sent, sheet } = page(async () => new Response('{}'))
+    sheet.getState().open({ req: { kind: 'item-menu', n: 10, arm: 't' } } as never)
+    sheet.getState().setArm('t')
+    sheet.getState().close()
+    log.send(false)
+    expect(sent[0].filter((e) => e.kind === 'sheet')).toEqual([expect.objectContaining({ kind: 'sheet', what: 'item-menu', arm: 't' })])
   })
 
   test('the keys that act are told apart from typing', () => {

@@ -7,6 +7,7 @@
 import type { Http, Watched } from '../../api/http'
 import type { TaskaApi } from '../../api/taska'
 import type { OutboxStore } from '../../stores/outbox'
+import type { SheetStore } from '../../stores/sheet'
 import type { RouteStore } from '../../stores/route'
 
 /** a request slower than this is noted (ms) */
@@ -48,7 +49,7 @@ export class PageActions {
   private sent = 0
   readonly stop: () => void
 
-  constructor(private readonly d: { api: Pick<TaskaApi, 'pageLog'> & { http: Http }; slug(): string; route: RouteStore; outbox: OutboxStore }) {
+  constructor(private readonly d: { api: Pick<TaskaApi, 'pageLog'> & { http: Http }; slug(): string; route: RouteStore; outbox: OutboxStore; sheet?: SheetStore }) {
     if (typeof window === 'undefined') {
       this.stop = () => {}
       return
@@ -80,6 +81,14 @@ export class PageActions {
       url = s.url
       this.note({ kind: 'view', where: where(), to: s.url })
     })
+    // each sheet or menu that opens (B842: taps on a button that opens one could not be told from taps on nothing)
+    let sheet = d.sheet?.getState().spec?.req ?? null
+    const unSheet = d.sheet?.subscribe((s) => {
+      const req = s.spec?.req ?? null
+      if (req === sheet) return
+      sheet = req
+      if (req) this.note({ kind: 'sheet', what: req.kind, arm: 'arm' in req ? req.arm || undefined : undefined, where: where() })
+    })
     // what you send, once each, and a send that failed
     const told = new Map<string, string>()
     const unOut = d.outbox.subscribe((s) => {
@@ -106,6 +115,7 @@ export class PageActions {
     this.stop = () => {
       unRoute()
       unOut()
+      unSheet?.()
       d.api.http.watch = undefined
       document.removeEventListener('click', onClick, { capture: true })
       document.removeEventListener('keydown', onKey, { capture: true })

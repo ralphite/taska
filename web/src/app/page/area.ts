@@ -19,7 +19,7 @@ export function makePage(c: Core, vault?: NoteVault) {
   const { s } = c
   // what the page did not catch, and what this browser refused to keep (T806 #3)
   const pageErrors = new PageErrors({ api: c.api, slug: c.slug, stores: [c.kv, vault] })
-  const pageActions = new PageActions({ api: c.api, slug: c.slug, route: s.route, outbox: s.outbox })
+  const pageActions = new PageActions({ api: c.api, slug: c.slug, route: s.route, outbox: s.outbox, sheet: s.sheet })
   const media = new Media({ api: c.api, store: s.media, route: s.route, sheets: c.sheets, toasts: c.toasts, desk: c.desk, kept: (sl, f) => c.model(sl)?.voices.get(f) ?? null })
   // something being said into the page now: a voice note, a dictation, or search listening (T728 #6: one rule)
   const sayingNow = () => c.recording() || !!s.dictation.getState().rec || s.find.getState().phase === 'listening'
