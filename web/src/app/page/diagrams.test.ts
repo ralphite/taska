@@ -5,7 +5,7 @@
 import { describe, expect, test } from 'vitest'
 import { item, message } from '../../stories/fixtures'
 import { lastAgentMessage, workNews } from '../../model/items'
-import { Diagrams, DrawerUnavailable, loadFailed, type DiagramFailure } from './diagrams'
+import { Diagrams, DrawerUnavailable, loadFailed, RETRY_MS, type DiagramFailure } from './diagrams'
 
 const told = () => {
   const sent: [string, DiagramFailure][] = []
@@ -61,5 +61,38 @@ describe('a diagram that does not draw goes to its writer (B714 r1181)', () => {
     const it = item({ n: 1, status: 'doing', thread: [agent, note] })
     expect(lastAgentMessage(it)?.id).toBe(1)
     expect(workNews(it, T)?.text).toBe('Drew the flow.')
+  })
+})
+
+// B836: the phone back on the page before its connection: the drawing code that did not load is tried again by
+// itself while the block shows it drawing, instead of the block saying it could not load until the page reloads.
+describe('the drawing code not loading is tried again (B836)', () => {
+  const offline = () => new TypeError('Importing a module script failed.')
+  const mermaid = (render: (src: string) => Promise<{ svg: string }>) => ({ default: { initialize: () => {}, render: (_: string, src: string) => render(src) } }) as never
+
+  test('it draws once the code loads, after the tries that failed', async () => {
+    let tries = 0
+    const waited: number[] = []
+    const d = new Diagrams(undefined, {
+      load: () => (++tries < 3 ? Promise.reject(offline()) : Promise.resolve(mermaid(async () => ({ svg: '<svg id="x"></svg>' })))),
+      wait: async (ms) => void waited.push(ms),
+    })
+    await expect(d.draw('flowchart TB\n A --> B', false, 'b1')).resolves.toContain('<svg')
+    expect(tries).toBe(3)
+    expect(waited).toEqual(RETRY_MS.slice(0, 2))
+  })
+
+  test('words that are not a diagram fail at once', async () => {
+    let tries = 0
+    const d = new Diagrams(undefined, { load: async () => mermaid(() => (tries++, Promise.reject(syntax))), wait: async () => {} })
+    await expect(d.draw('flowchart TB\n A[(x) --> B', false, 'b2')).rejects.toBe(syntax)
+    expect(tries).toBe(1)
+  })
+
+  test('code that never loads: the block says so once every try has failed', async () => {
+    let tries = 0
+    const d = new Diagrams(undefined, { load: () => (tries++, Promise.reject(offline())), wait: async () => {} })
+    await expect(d.draw('flowchart TB\n A --> B', false, 'b3')).rejects.toBeInstanceOf(DrawerUnavailable)
+    expect(tries).toBe(RETRY_MS.length + 1)
   })
 })

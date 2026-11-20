@@ -27,6 +27,9 @@ function files(dir) {
 }
 
 /** Every break of the rules in the page's source folder; `allow`: the components that need no story. */
+/** The one place code is loaded when it is needed (B836). */
+const LAZY = 'app/page/diagrams.ts'
+
 export function check(src, allow = readAllow(WEB)) {
   const breaks = []
   const all = files(src)
@@ -68,6 +71,10 @@ export function check(src, allow = readAllow(WEB)) {
       if (r !== DEMO_PAGE) say(p, "a story that loads the app (only a Demo's frame does: stories/demo/DemoPage.tsx)")
       else if (!/\blockNetwork\(/.test(text) || !/createApp\(frameEnv\(/.test(text)) say(p, 'loads the app without closing its network (lockNetwork, frameEnv)')
     }
+    // code loaded only when it is needed fails when the phone is back on the page before its connection (B836): one
+    // place loads it, trying again by itself; another import() there needs the same
+    if (!story && !test && r !== LAZY && /(?<![\w.])import\(\s*['"`]/.test(text.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '')))
+      say(p, `code loaded when needed outside ${LAZY} (load it there, which tries again when it does not load)`)
     if (r.startsWith('stories/demo/') && !test && /(?<![\w.])fetch\(|\.fetch\(|new (XMLHttpRequest|WebSocket|EventSource)\b|sendBeacon\(/.test(text.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '')))
       say(p, 'a request out of a Demo (its page is answered by the replay only)')
   }
@@ -108,6 +115,7 @@ function selfCheck() {
       'features/list/leans.ts': "import { Sidebar } from '../sidebar/Sidebar'\nimport { Header } from '../../pages/Header'\nexport const s = [Sidebar, Header]\n",
       'stories/demo/Leaky.tsx': "import { App } from '../../pages/App'\nexport const L = () => (void fetch('/api/projects'), <App />)\n",
       'stories/PlaysAlone.stories.tsx': "import { DemoFrames } from './demo/DemoFrames'\nexport default { title: 'UI/X' }\nexport const A = { render: () => <DemoFrames demo={null as never} theme=\"light\" /> }\n",
+      'model/lazy.ts': "export const big = () => import('elkjs')\n",
       [DEMO_PAGE]: readFileSync(join(tmp, DEMO_PAGE), 'utf8').replace(/\blockNetwork\(w\)/, 'void w'),
     }
     for (const [p, text] of Object.entries(plant)) writeFileSync(join(tmp, p), text)
@@ -133,6 +141,7 @@ function selfCheck() {
       'stories/demo/Leaky.tsx: a request out of a Demo',
       'stories/PlaysAlone.stories.tsx: Play outside Demo/',
       `${DEMO_PAGE}: loads the app without closing its network`,
+      'model/lazy.ts: code loaded when needed outside',
     ]
     const missed = want.filter((w) => !got.includes(w))
     // a story that renders the new component covers it, and its container with it
