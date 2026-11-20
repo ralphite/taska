@@ -189,6 +189,12 @@ def _commands(ctx: "AppContext", req: Request, p: Project) -> Response:
             lines, _ = p.run([(0, c) for c in commands if isinstance(c, dict)], "you")
             code = 400 if any(x.startswith("err") for x in lines) or len(lines) != len(commands) else 200
             done = ({"ok": code == 200, "results": lines}, code)
+            if code == 200:  # every change you make, as it was done (F846 r1451: a log for product analysis)
+                whats = [_what(c) for c in commands[:20]]
+                ctx.log.info("page changes: " + "; ".join(" ".join(str(w.get(k)) for k in ("op", "ref", "d") if k in w)
+                                                          for w in whats)[:300], extra={"f": {
+                    "source": "server", "kind": "change", "project": p.slug, "via": req.via(),
+                    "tab": req.header("X-Taska-Tab") or None, "commands": whats, "results": [x[:120] for x in lines[:20]]}})
             if code == 400:  # what was refused, and why (B792 r1340: three refused changes could not be told apart)
                 ctx.log.warning(f"page commands refused: {'; '.join(x for x in lines if x.startswith('err'))[:300]}", extra={"f": {
                     "source": "server", "kind": "refused", "project": p.slug, "via": req.via(),
@@ -222,11 +228,11 @@ def _words(req: Request, p: Project) -> Response:
 
 def page_line(kind: str, e: Dict[str, Any]) -> str:
     """A page record's line: its words, else what it is about (B842: a request the page found slow or failed says
-    which, as 108 slow ones read "page net "; a sheet, which one; a swipe, which way and what it did, F846), else
-    where it was."""
+    which, as 108 slow ones read "page net "; a sheet, which one; a swipe, which way and what it did; any other, what
+    it was done to, F846), else where it was."""
     said = e.get("msg") or (f"{e.get('why', '')} {e.get('method', '')} {e.get('url', '')}".strip() if kind == "net" else "") \
-        or (str(e.get("what") or "") if kind == "sheet" else "") \
-        or (f"{e.get('dir', '')} {e.get('what', '')}".strip() if kind == "swipe" else "") or e.get("where") or ""
+        or (f"{e.get('dir', '')} {e.get('what', '')}".strip() if kind == "swipe" else "") \
+        or " ".join(str(e[k]) for k in ("what", "on", "into", "to") if e.get(k) not in (None, "")) or e.get("where") or ""
     return f"page {kind} {str(said)[:160]}"
 
 

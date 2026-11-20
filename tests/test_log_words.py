@@ -46,6 +46,8 @@ class LogWords(unittest.TestCase):
         self.assertEqual(page_line("sheet", {"what": "item-menu", "arm": "t", "where": "/p/sd/T10"}), "page sheet item-menu")
         self.assertEqual(page_line("view", {"where": "/p/sd/T10"}), "page view /p/sd/T10")
         self.assertEqual(page_line("swipe", {"dir": "right", "what": "Done", "n": "12"}), "page swipe right Done")  # F846
+        self.assertEqual(page_line("tap", {"what": "Accept", "role": "button", "where": "/p/sd/"}), "page tap Accept")
+        self.assertEqual(page_line("pick", {"what": "Priority", "to": "P2", "where": "/p/sd/T10"}), "page pick Priority P2")
 
 if __name__ == "__main__":
     unittest.main()

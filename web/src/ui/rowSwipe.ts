@@ -25,10 +25,11 @@ export interface RowSwipe {
 const still = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 const layer = (el: HTMLElement, which: 'left' | 'right') => el.parentElement?.querySelector<HTMLElement>(`[data-swipe-${which}]`) ?? null
 
-/** A swipe that ended (F846): right, whether the row had a way forward; left, the ways back opened. The page's log
+/** A swipe that ended (F846): right, whether the row had a way forward; left, the ways back opened; hold, a long
+ * press that opened the row's menu. The page's log
  * listens for it (app/page/pageActions), as it does for taps. */
 export const SWIPED = 'rowswipe'
-export type Swiped = { dir: 'right' | 'left'; did: boolean }
+export type Swiped = { dir: 'right' | 'left' | 'hold'; did: boolean }
 const swiped = (el: HTMLElement, dir: Swiped['dir'], did: boolean) => el.dispatchEvent(new CustomEvent<Swiped>(SWIPED, { bubbles: true, detail: { dir, did } }))
 
 function slideTo(el: HTMLElement, x: number): void {
@@ -118,6 +119,7 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
           // held still: its menu; the click the finger makes on the row as it lifts is not a tap
           w.el = null
           w.held = el
+          swiped(el, 'hold', true)
           hold(el.dataset.swipe ?? '', el)
         }, HOLD_MS)
     }

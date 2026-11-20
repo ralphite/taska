@@ -7,6 +7,7 @@ so every change traces back to the input. With no key, inputs wait for the codin
 from __future__ import annotations
 
 import base64
+import logging
 import os
 import queue
 import re
@@ -219,6 +220,9 @@ class Organizer(threading.Thread):
                 msg += " · Some commands failed: " + "; ".join(bad)
             p.emit(ev.Organized(src=rid, ok=not bad, msg=msg, plan=plan, keep=keep, changed=bool(labels),
                                 ms=int((time.time() - t0) * 1000), by="org"))
+            logging.getLogger("taska").info(f"organized {rid}: {msg}"[:300], extra={"f": {  # F846: what it did, in the log
+                "source": "server", "kind": "organized", "project": p.slug, "input": rid, "ok": not bad, "kept": keep,
+                "ms": int((time.time() - t0) * 1000)}})
 
 
 # a line that starts a command: new, ack, pass, or an item or document code ($ is the item made just before)

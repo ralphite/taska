@@ -68,8 +68,37 @@ export class PageActions {
     const onSwipe = (e: Event) => {
       const { dir, did } = (e as CustomEvent<Swiped>).detail
       const el = e.target instanceof HTMLElement ? e.target : null
-      const shown = el?.parentElement?.querySelector(dir === 'right' ? '[data-swipe-left]' : '[data-swipe-right]')
+      const shown = dir === 'hold' ? el : el?.parentElement?.querySelector(dir === 'right' ? '[data-swipe-left]' : '[data-swipe-right]')
       this.note({ kind: 'swipe', dir, what: did && shown ? nameOf(shown) : 'nothing', n: el?.closest(ROW)?.getAttribute('data-n') ?? el?.dataset.swipe, where: where() })
+    }
+    // the rest you do (F846 r1451: every action in the log): what it was done to, never the words in it
+    const target = (e: Event) => {
+      const at = e.target instanceof Element ? e.target : null
+      const field = at?.closest(FIELD)
+      if (field && !(field instanceof HTMLSelectElement)) return fieldName(field)
+      const el = at?.closest(CONTROL) ?? at?.closest(ROW)
+      return el ? nameOf(el) : (at?.tagName.toLowerCase() ?? '')
+    }
+    const onMenu = (e: Event) => this.note({ kind: 'menu', what: target(e), where: where() })
+    const onDrag = (e: DragEvent) => this.note({ kind: 'drag', what: target(e), where: where() })
+    const onDrop = (e: DragEvent) => this.note({ kind: 'drop', on: target(e), files: e.dataTransfer?.files.length ?? 0, where: where() })
+    const onPaste = (e: ClipboardEvent) => this.note({ kind: 'paste', into: target(e), files: e.clipboardData?.files.length ?? 0, chars: e.clipboardData?.getData('text').length ?? 0, where: where() })
+    const onPick = (e: Event) => {
+      const el = e.target
+      if (el instanceof HTMLSelectElement) this.note({ kind: 'pick', what: nameOf(el), to: el.selectedOptions[0]?.textContent?.trim().slice(0, 60) ?? '', where: where() })
+      else if (el instanceof HTMLInputElement && /^(checkbox|radio|range)$/.test(el.type))
+        this.note({ kind: 'pick', what: nameOf(el.closest('label') ?? el), to: el.type === 'range' ? el.value : String(el.checked), where: where() })
+    }
+    // a field by its label, never its words
+    const fieldName = (el: Element) => (el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('name') || el.tagName.toLowerCase()).slice(0, 80)
+    // a field typed in: how many characters it had when you left it, so words written and not sent show
+    const had = new WeakMap<Element, number>()
+    const length = (el: Element) => (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement ? el.value.length : (el.textContent ?? '').length)
+    const typing = (el: unknown): el is Element => el instanceof Element && el.matches('textarea, input:not([type]), input[type="text"], input[type="search"], [contenteditable="true"]')
+    const onFocus = (e: FocusEvent) => typing(e.target) && had.set(e.target, length(e.target))
+    const onBlur = (e: FocusEvent) => {
+      if (!typing(e.target) || had.get(e.target) === length(e.target)) return
+      this.note({ kind: 'typed', what: fieldName(e.target), chars: length(e.target), was: had.get(e.target) ?? 0, where: where() })
     }
     const onKey = (e: KeyboardEvent) => {
       const at = e.target instanceof Element ? e.target : null
@@ -117,6 +146,13 @@ export class PageActions {
     document.addEventListener('click', onClick, { capture: true, passive: true })
     document.addEventListener('keydown', onKey, { capture: true, passive: true })
     document.addEventListener(SWIPED, onSwipe)
+    document.addEventListener('contextmenu', onMenu, { capture: true, passive: true })
+    document.addEventListener('dragstart', onDrag, { capture: true, passive: true })
+    document.addEventListener('drop', onDrop, { capture: true, passive: true })
+    document.addEventListener('paste', onPaste, { capture: true, passive: true })
+    document.addEventListener('change', onPick, { capture: true, passive: true })
+    document.addEventListener('focusin', onFocus, { capture: true, passive: true })
+    document.addEventListener('focusout', onBlur, { capture: true, passive: true })
     document.addEventListener('visibilitychange', onShown)
     window.addEventListener('pagehide', onHide)
     const timer = window.setInterval(() => this.send(false), EVERY)
@@ -129,6 +165,13 @@ export class PageActions {
       document.removeEventListener('click', onClick, { capture: true })
       document.removeEventListener('keydown', onKey, { capture: true })
       document.removeEventListener(SWIPED, onSwipe)
+      document.removeEventListener('contextmenu', onMenu, { capture: true })
+      document.removeEventListener('dragstart', onDrag, { capture: true })
+      document.removeEventListener('drop', onDrop, { capture: true })
+      document.removeEventListener('paste', onPaste, { capture: true })
+      document.removeEventListener('change', onPick, { capture: true })
+      document.removeEventListener('focusin', onFocus, { capture: true })
+      document.removeEventListener('focusout', onBlur, { capture: true })
       document.removeEventListener('visibilitychange', onShown)
       window.removeEventListener('pagehide', onHide)
       clearInterval(timer)

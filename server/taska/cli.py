@@ -119,18 +119,24 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
     added = ws.shared_rules.seed() if skills else []  # r1450: the skills a release comes with, each added once
     if added:
         print("taska: added the skills it comes with: " + " ".join(added), flush=True)
+    logs.log.info(f"started on port {port}" + (f", added skills {' '.join(added)}" if added else ""), extra={"f": {
+        "source": "server", "kind": "start", "port": port, "organizer": organizer, "skills": added}})
     print(f"Taska  http://{host}:{port}/  started {time.strftime('%Y-%m-%d %H:%M:%S')}\n  data       {ws.root}  "
           f"({', '.join(sorted(ws.projects))})\n  organizer  "
           + (f"Gemini {MODEL}" if organizer else "off (add a Gemini API key in Settings › Organizer)")
           + "\n  key        in " + os.path.join(ws.root, "key") + "  (needed from outside this machine and its network)",
           flush=True)
 
+    def job_failed(job: str, ex: Exception) -> None:  # F846: a job of its own that failed is in the log, not only on stderr
+        print(f"taska: {job}: {ex}", file=sys.stderr)
+        logs.log.error(f"{job} failed: {ex}"[:300], extra={"f": {"source": "server", "kind": "job", "job": job}})
+
     def pushes() -> None:  # every 15 s, what newly needs you goes to the phones that asked
         while not stop.wait(15):
             try:
                 push.check(lambda: ws.needs(push=True)) if push.subs else push.forget()
             except Exception as ex:  # a push must never stop Taska
-                print(f"taska: push: {ex}", file=sys.stderr)
+                job_failed("push", ex)
 
     threading.Thread(target=pushes, daemon=True).start()
 
@@ -141,16 +147,18 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
                 for p in list(ws.projects.values()):
                     see_sessions(p)
             except Exception as ex:  # looking at sessions must never stop Taska
-                print(f"taska: sessions: {ex}", file=sys.stderr)
+                job_failed("sessions", ex)
 
     threading.Thread(target=sessions, daemon=True).start()
 
     def laters() -> None:  # once a minute (and at the start): an item Later until today is back to Now (D115 #21)
         while True:
             try:
-                ws.bring_back_laters(time.strftime("%Y-%m-%d"))
+                back = ws.bring_back_laters(time.strftime("%Y-%m-%d"))
+                if back:  # F846: what Taska does by itself is in the log too
+                    logs.log.info(f"later: {back} back to Now", extra={"f": {"source": "server", "kind": "later", "n": back}})
             except Exception as ex:  # a Later coming back must never stop Taska
-                print(f"taska: later: {ex}", file=sys.stderr)
+                job_failed("later", ex)
             if stop.wait(60):
                 return
 

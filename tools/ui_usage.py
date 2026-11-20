@@ -1,5 +1,5 @@
 """How the page's controls are used (F846, Yadong r1448): from the page's own records in the log (taps, keys, swipes,
-the views it went to), each control with how often it was used on the phone and on the desktop, and the signs that a
+menus, picks, drags and drops, pastes, fields typed in, the views it went to), each control with how often it was used on the phone and on the desktop, and the signs that a
 use did nothing: the same control tapped again within a moment (taps that seemed to do nothing), a swipe right on a
 row with no way forward. The list filters are told from the views (they are in the address). Only reads the log.
 
@@ -65,6 +65,8 @@ def usage(rows: Iterable[Tuple[datetime, str, Dict[str, Any]]]) -> Dict[str, Any
             if kind == "tap" and k in last and (at - last[k]).total_seconds() < AGAIN_S:
                 again[n] += 1
             last[k] = at
+        elif kind in ("menu", "pick", "drag", "drop", "paste", "typed"):  # F846 r1451: the other actions
+            used[f"{kind}: {re.sub(r'[0-9]+', '#', str(e.get('what') or e.get('on') or e.get('into') or ''))[:40]}"][side(e)] += 1
         elif kind == "swipe":
             swipes[(str(e.get("dir")), re.sub(r"\d+", "#", str(e.get("what"))))] += 1
         elif kind == "view" and "?" in str(e.get("to") or ""):

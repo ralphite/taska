@@ -115,6 +115,29 @@ describe('PageActions (B791: what you do on the page is logged)', () => {
     document.body.innerHTML = ''
   })
 
+  test('every other action is logged by what it was done to, never its words (F846 r1451)', () => {
+    const { log, sent } = page(async () => new Response('{}'))
+    document.body.innerHTML = `<button>Priority</button><select aria-label="Sort"><option>Newest</option><option>Oldest</option></select><textarea aria-label="Say something">secret draft</textarea>`
+    const [button] = document.body.getElementsByTagName('button')
+    const [select] = document.body.getElementsByTagName('select')
+    const [box] = document.body.getElementsByTagName('textarea')
+    button.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    select.selectedIndex = 1
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+    box.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+    box.value = 'secret draft, longer'
+    box.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+    log.send(false)
+    const rows = sent[0].filter((e) => ['menu', 'pick', 'typed'].includes(String(e.kind)))
+    expect(rows).toEqual([
+      expect.objectContaining({ kind: 'menu', what: 'Priority' }),
+      expect.objectContaining({ kind: 'pick', what: 'Sort', to: 'Oldest' }),
+      expect.objectContaining({ kind: 'typed', what: 'Say something', chars: 20, was: 12 }),
+    ])
+    expect(JSON.stringify(sent)).not.toContain('secret')
+    document.body.innerHTML = ''
+  })
+
   test('the keys that act are told apart from typing', () => {
     const k = (key: string, more: Partial<KeyboardEventInit> = {}) => new KeyboardEvent('keydown', { key, ...more })
     expect(keyOf(k('a'), true)).toBe('')

@@ -37,6 +37,22 @@ class RefusedLogged(ProjectCase):
         self.assertTrue(f["results"][0].startswith("err"))
         self.assertNotIn("my private words", json.dumps(f) + got[0].getMessage())
 
+    def test_every_change_you_make_is_logged_without_its_words(self) -> None:
+        """F846 r1451: every action you take is in the log, for product analysis."""
+        got = []
+        log = logging.getLogger("test-changes")
+        log.addHandler(type("H", (logging.Handler,), {"emit": lambda self, r: got.append(r)})())
+        log.setLevel(logging.INFO)
+        pages = ProjectPages()
+        ctx = SimpleNamespace(log=log, pages=lambda p: pages, status=SimpleNamespace(note_lock_wait=lambda req, ms: None))
+        self.p.run([(0, {"op": "new", "type": "task", "title": "A thing"})], "you")
+        body = json.dumps({"id": "c2", "commands": [{"op": "set", "ref": "T1", "f": {"pri": "P2", "body": "my private words"}}]}).encode()
+        req = Request("POST", "/p/demo/api/commands", {"Content-Type": "application/json"}, "127.0.0.1", read_body=lambda limit: body)
+        self.assertEqual(page_routes._commands(ctx, req, self.p).status, 200)
+        f = got[0].f  # type: ignore[attr-defined]
+        self.assertEqual((f["kind"], f["commands"]), ("change", [{"op": "set", "ref": "T1", "fields": {"pri": "P2"}}]))
+        self.assertNotIn("my private words", json.dumps(f) + got[0].getMessage())
+
 
 if __name__ == "__main__":
     unittest.main()

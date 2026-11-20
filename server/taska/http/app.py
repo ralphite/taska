@@ -190,7 +190,8 @@ class AppContext:
     # -- the request log ------------------------------------------------------------------
 
     def note_request(self, req: Request, status: int, ms: int) -> None:
-        """What is worth reading later: an agent's calls, and whatever failed or was slow."""
+        """What is worth reading later: an agent's calls, every request that changes something (F846 r1451), and
+        whatever failed or was slow."""
         path = re.sub(r"/k/[^/?]+", "/k/…", re.sub(r"([?&](?:key|cap)=)[^&]*", r"\1…", req.raw_path))
         bare = path.split("?")[0]
         if self.page.public(bare) and bare != "/login.html":
@@ -200,7 +201,8 @@ class AppContext:
         by = (q.get("by") or [""])[0][:20]
         slow = ms > 1000 and not SLOW_IS_FINE.search(path)
         failed = status >= 400 and not bare.startswith("/.well-known/")
-        if not (by or slow or failed):
+        writes = req.method not in ("GET", "HEAD", "OPTIONS") and not bare.endswith("/api/page-log")  # the page log logs itself
+        if not (by or slow or failed or writes):
             return
         m = re.search(r"/p/([^/?]+)", bare)
         lock_ms = self.status.lock_wait()
