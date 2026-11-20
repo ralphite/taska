@@ -55,3 +55,28 @@ test('I821: Esc closes the list; other words show none', async ({ page, request 
   await box(page).fill('what does / do')
   await expect(page.getByRole('option').filter({ visible: true })).toHaveCount(0)
 })
+
+// I834 (r1428): + opens a card of photos and files and, under them, the skills; picking one puts its name in the box,
+// as "/" does; Photos and files picks files as + did; a tap elsewhere closes the card.
+test('I834: + opens files and the skills; a skill picked goes in the box', async ({ page, request }) => {
+  const name = await skill(request, 'Answer only.')
+  const p = await project(request)
+  await open(page, p, '')
+  const plus = page.getByRole('button', { name: 'Add files' }).filter({ visible: true })
+  await plus.click()
+  const files = page.getByRole('option', { name: 'Photos and files' }).filter({ visible: true })
+  await expect(files).toBeVisible()
+  await page.getByRole('option', { name: new RegExp(name.slice(1)) }).filter({ visible: true }).click()
+  await expect(box(page)).toHaveValue(`${name} `)
+  await expect(page.getByRole('option').filter({ visible: true })).toHaveCount(0)
+  await page.keyboard.type('hi')
+  await expect(box(page)).toHaveValue(`${name} hi`) // back in the box, the caret after the space
+  await plus.click()
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), files.click()])
+  expect(chooser.isMultiple()).toBe(true)
+  await expect(page.getByRole('option').filter({ visible: true })).toHaveCount(0)
+  await plus.click()
+  await expect(files).toBeVisible()
+  await page.mouse.click(5, 5)
+  await expect(page.getByRole('option').filter({ visible: true })).toHaveCount(0)
+})

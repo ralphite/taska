@@ -30,3 +30,10 @@ export const LettersApart: Story = { ...at('/pt'), name: '"/pt": letters apart s
 export const Picked: Story = { ...at('/qa '), name: 'Picked: its name and a space' }
 export const NoneFits: Story = { ...at('/x'), name: 'None fits: no list' }
 export const NotAtTheStart: Story = { ...at('what does /qa do'), name: 'Not at the start: no list' }
+
+/** I834: + opens a card: photos and files first, the skills under them; picking one puts its name in the box, as "/"
+ * does. Without skills, + adds files at once, as before. */
+export const PlusTapped: Story = {
+  render: () => <Frames phoneWidth={393} deskWidth={720}>{(layout) => <div className="pt-80">{boxAt({ text: '' }, layout === 'desk', { skills: SKILLS, addOpen: true })}</div>}</Frames>,
+  name: '+ tapped: files, then the skills',
+}

@@ -2,7 +2,7 @@
 // (add files; a voice note, or Send once there are words). Past one line on the desktop the words take the box's
 // whole width and the buttons go to a row under them. Props only.
 
-import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import type { BoxLine, BoxRight, FeedbackLine } from '../../model/boxFoot'
 import { VC_MARK } from '../../model/voiceComments'
 import { fits, pickedSkill, skillMenu, type Skill } from '../../model/skills'
@@ -97,6 +97,8 @@ export interface ComposerProps {
   hasFiles?: boolean
   /** files can be added here (+); not to a corrected word, the transcription preferences or a comment being edited */
   attach?: boolean
+  /** +'s card of files and skills open at first (a story drawing it open) */
+  addOpen?: boolean
   /** the box's element, for the layout to measure */
   boxRef?: RefObject<HTMLDivElement | null>
   /** where you write, for the keys (R replies) */
@@ -132,13 +134,32 @@ function SkillName({ name, typed }: { name: string; typed: string }) {
 
 /** The skills to pick from, as Codex shows its commands: a card over the box (under it on the desktop's New input
  * page, where the box is at the top), a row each: its name, what it is for. */
-export function SkillMenu({ menu, sel, typed, on }: { menu: readonly Skill[]; sel: number; typed: string; on: { pick(s: Skill): void; select(i: number): void } }) {
+export function SkillMenu({ menu, sel, typed, files, cardRef, on }: { menu: readonly Skill[]; sel: number; typed: string; files?: () => void; cardRef?: Ref<HTMLDivElement>; on: { pick(s: Skill): void; select(i: number): void } }) {
   return (
     <div
+      ref={cardRef}
       role="listbox"
-      aria-label="Skills"
+      aria-label={files ? 'Add' : 'Skills'}
       className="absolute inset-x-0 bottom-full z-20 mb-2 flex max-h-80 lg:group-data-[compose]/app:top-full lg:group-data-[compose]/app:bottom-auto lg:group-data-[compose]/app:mt-2 lg:group-data-[compose]/app:mb-0 flex-col gap-px overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-800 dark:bg-zinc-900"
     >
+      {files ? (
+        // I834: + opens this card: files first, the skills under them (as ChatGPT's and Claude's apps do)
+        <>
+          <button
+            role="option"
+            aria-selected={sel === -1}
+            onMouseMove={() => sel !== -1 && on.select(-1)}
+            onClick={files}
+            className="flex min-h-11 w-full shrink-0 items-center gap-2.5 rounded-xl px-2.5 text-left text-[15px] text-zinc-900 aria-selected:bg-zinc-100 lg:min-h-8 lg:text-sm dark:text-zinc-100 dark:aria-selected:bg-zinc-800"
+          >
+            <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
+              <Icon n="file" c="size-[18px] lg:size-4" />
+            </span>
+            Photos and files
+          </button>
+          {menu.length ? <div className="mx-2.5 my-1 shrink-0 border-t border-zinc-200 dark:border-zinc-800" /> : null}
+        </>
+      ) : null}
       {menu.map((s, i) => (
         <button
           key={s.name}
@@ -178,18 +199,50 @@ function insertedAt(was: string, now: string): number | null {
   return now.endsWith(was.slice(a)) ? a : null
 }
 
-export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, text, desk, composePage, micTip, files, doubts, words, hasFiles = false, attach = true, boxRef, fieldRef, rec = null, skills = [], on }: ComposerProps) {
+export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, text, desk, composePage, micTip, files, doubts, words, hasFiles = false, attach = true, addOpen = false, boxRef, fieldRef, rec = null, skills = [], on }: ComposerProps) {
   const area = useRef<HTMLTextAreaElement | null>(null)
   // I821: the skills that fit the "/" being typed, the one chosen, and the words Esc closed the list for
-  const [skillSel, setSkillSel] = useState(0)
+  const [skillSel, setSkillSel] = useState(addOpen ? -2 : 0)
   const [skillsOff, setSkillsOff] = useState(false) // Esc or leaving the box closed it, until the words change
-  const menu = rec || skillsOff ? null : skillMenu(text, skills)
+  // I834: + opens a card of files and the skills (the phone has no easy "/"); it closes on a pick, Esc or a tap elsewhere
+  const [plus, setPlus] = useState(addOpen)
+  const plusCard = useRef<HTMLDivElement | null>(null)
+  const plusBtn = useRef<HTMLButtonElement | null>(null)
+  const plusMenu = plus && !rec && attach
+  const menu = plusMenu ? skills : rec || skillsOff ? null : skillMenu(text, skills)
   const sel = menu ? Math.min(skillSel, menu.length - 1) : 0
+  useEffect(() => {
+    if (attach) on.skillsWanted?.() // the skills known before + is first tapped
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attach])
+  useEffect(() => {
+    if (!plusMenu) return
+    const away = (e: PointerEvent) => {
+      const t = e.target as Node
+      if (!plusCard.current?.contains(t) && !plusBtn.current?.contains(t)) setPlus(false)
+    }
+    const esc = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      e.stopPropagation()
+      setPlus(false)
+    }
+    document.addEventListener('pointerdown', away, true)
+    document.addEventListener('keydown', esc, true)
+    return () => {
+      document.removeEventListener('pointerdown', away, true)
+      document.removeEventListener('keydown', esc, true)
+    }
+  }, [plusMenu])
   const pickSkill = (sk: Skill) => {
     const v = pickedSkill(sk)
     mine.current = { text: v, start: v.length, end: v.length } // the caret after the space, where you go on
+    // back into the box in the tap itself: picked from +'s card the box had left it, and iOS shows its keyboard only
+    // for a focus in the tap
+    if (area.current && document.activeElement !== area.current) area.current.focus()
     on.text(v)
     setSkillSel(0)
+    setPlus(false)
     // the caret is placed as the words are put in (below); here only back into the box, and not over a key typed
     // since (the check found a key typed at once put before the space)
     requestAnimationFrame(() => {
@@ -267,14 +320,37 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
       </div>
       {files}
       {doubts}
-      {menu ? <SkillMenu menu={menu} sel={sel} typed={text} on={{ pick: pickSkill, select: setSkillSel }} /> : null}
+      {menu ? (
+        <SkillMenu
+          menu={menu}
+          sel={plusMenu ? skillSel : sel}
+          typed={plusMenu ? '' : text}
+          cardRef={plusCard}
+          files={
+            plusMenu
+              ? () => {
+                  setPlus(false)
+                  picker.current?.click()
+                }
+              : undefined
+          }
+          on={{ pick: pickSkill, select: setSkillSel }}
+        />
+      ) : null}
       <div className={`flex items-end gap-2 p-1.5 group-data-[multi]/box:flex-wrap lg:gap-0.5 lg:group-data-[compose]/app:order-first ${attach || rec ? '' : 'pl-3.5 group-data-[multi]/box:justify-end group-data-[multi]/box:pl-1.5'}`}>
         <button
           hidden={!rec && !attach}
           aria-label={rec ? 'Discard the recording' : 'Add files'}
           title={desk ? (rec ? 'Discard · Esc' : 'Add files') : undefined}
-          onClick={() => (rec ? on.recCancel?.() : picker.current?.click())}
-          className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 group-data-[multi]/box:mr-auto hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+          ref={plusBtn}
+          aria-expanded={rec || !skills.length ? undefined : plus}
+          onClick={() => {
+            if (rec) return on.recCancel?.()
+            if (!skills.length) return picker.current?.click() // no skills: + is files, as before
+            setSkillSel(-2) // none chosen until pointed at (-1 is the files row)
+            setPlus(!plus)
+          }}
+          className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 group-data-[multi]/box:mr-auto hover:bg-zinc-100 aria-expanded:bg-zinc-100 aria-expanded:text-zinc-800 dark:aria-expanded:bg-zinc-800 dark:aria-expanded:text-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
         >
           <Icon n={rec ? 'x' : 'plus'} c="size-6 lg:size-5" />
         </button>
