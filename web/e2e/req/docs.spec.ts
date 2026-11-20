@@ -604,3 +604,30 @@ test("D115 #41: on the phone a document's Copy, Move, Mark an area, Edit and Del
   await expect(page.getByText('Deleted D1').first()).toBeVisible()
   await expect(page.getByText('First part of the plan.')).toHaveCount(0)
 })
+
+// F839 (r1441 r1443): a document's diagram or table is seen on the whole window from its button (on the phone always
+// shown, on the desktop when pointed at); a table reads as a table there, on the phone too; Esc closes it and leaves
+// the document as it was.
+test('F839: a table opens on the whole window and Esc closes it, the document still open', async ({ page, request }) => {
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc The plan
+  Who does what:
+
+  | Step | Who | Where | When |
+  |---|---|---|---|
+  | Say it | You | Input box | Any time |
+`,
+  })
+  await open(page, p, 'D1')
+  const button = page.getByRole('button', { name: 'Full screen: Table' }).filter({ visible: true }).first()
+  if (isDesk(page)) await docBlock(page, 'Say it').hover()
+  await button.click()
+  const full = page.getByRole('dialog', { name: 'Table' })
+  await expect(full.getByRole('columnheader', { name: 'When' })).toBeAttached()
+  const rect = await full.boundingBox()
+  expect(rect?.width).toBe(page.viewportSize()?.width)
+  await page.keyboard.press('Escape')
+  await expect(full).toHaveCount(0)
+  await expect(docBlock(page, 'Say it')).toBeVisible()
+})

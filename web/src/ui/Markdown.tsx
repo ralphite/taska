@@ -5,6 +5,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type HTMLAttributes, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import { blocks, type ListNode, type MdBlock } from '../model/markdown'
 import { Kbd } from './bits'
+import { FullView } from './FullView'
 import { Icon } from './Icon'
 import { clean, inlineHtml, picturesIn, type InlineWorld } from './markdown/inline'
 import { mermaidError } from './markdown/mermaid'
@@ -41,9 +42,9 @@ const listTag = (list: ListNode, world: InlineWorld) => {
 
 const CELL = 'min-w-32 max-w-[28rem] border-r border-b px-3 py-2 wrap-anywhere last:border-r-0'
 
-function Table({ b, world }: { b: Extract<MdBlock, { kind: 'table' }>; world: InlineWorld }) {
-  // a framed table that fits its column; on a phone a table of 3 or more columns reads as cards
-  const cards = b.head.length >= 3
+export function Table({ b, world, flat = false }: { b: Extract<MdBlock, { kind: 'table' }>; world: InlineWorld; flat?: boolean }) {
+  // a framed table that fits its column; on a phone a table of 3 or more columns reads as cards (`flat`: never)
+  const cards = !flat && b.head.length >= 3
   return (
     <>
       {cards ? (
@@ -146,7 +147,7 @@ const darkAt = (el: Element | null) => {
 
 /** A Mermaid block: its words until the diagram is drawn, then the diagram; words that are not a diagram say why,
  * over the words. It is drawn again when the theme changes. */
-function Diagram({ src, draw }: { src: string; draw: NonNullable<InlineWorld['diagram']> }) {
+export function Diagram({ src, draw, wide = false }: { src: string; draw: NonNullable<InlineWorld['diagram']>; wide?: boolean }) {
   const at = useRef<HTMLDivElement>(null)
   const id = 'm' + useId().replace(/[^a-zA-Z0-9]/g, '')
   const [dark, setDark] = useState<boolean | null>(null)
@@ -179,7 +180,10 @@ function Diagram({ src, draw }: { src: string; draw: NonNullable<InlineWorld['di
   return (
     <div ref={at} data-mermaid={now?.svg ? 'drawn' : now?.error ? 'failed' : 'drawing'}>
       {now?.svg ? (
-        <div className="flex justify-center overflow-x-auto rounded-lg bg-zinc-50 p-4 lg:scrollbar-thin dark:bg-zinc-800/60 [&>svg]:h-auto [&>svg]:max-w-full" dangerouslySetInnerHTML={{ __html: now.svg }} />
+        <div
+          className={`flex justify-center overflow-x-auto rounded-lg bg-zinc-50 p-4 lg:scrollbar-thin dark:bg-zinc-800/60 [&>svg]:h-auto ${wide ? 'h-[calc(100dvh-7.5rem)] [&>svg]:h-full [&>svg]:w-full [&>svg]:!max-w-none' : '[&>svg]:max-w-full'}`}
+          dangerouslySetInnerHTML={{ __html: now.svg }}
+        />
       ) : (
         <>
           {/* in its place, the reason, as Mermaid says it (B714 r1181): on the phone too, where nothing hovers */}
@@ -210,13 +214,25 @@ export function Block({ b, world, choosing, done }: { b: MdBlock; world: InlineW
         />
       )
     case 'code':
-      return b.lang === 'mermaid' && b.text.trim() && world.diagram ? <Diagram src={b.text} draw={world.diagram} /> : <Code text={b.text} />
+      return b.lang === 'mermaid' && b.text.trim() && world.diagram ? (
+        // F839: seen on the whole window, the width of it
+        <FullView label="Diagram" full={<Diagram src={b.text} draw={world.diagram} wide />}>
+          <Diagram src={b.text} draw={world.diagram} />
+        </FullView>
+      ) : (
+        <Code text={b.text} />
+      )
     case 'list': {
       const Tag = b.list.ordered ? 'ol' : 'ul'
       return <Tag className={LIST_CLS(b.list.ordered)} dangerouslySetInnerHTML={{ __html: clean(listHtml(b.list, world)) }} />
     }
     case 'table':
-      return <Table b={b} world={world} />
+      // F839: on the whole window a table reads as a table, on the phone too (not as cards), scrolling sideways
+      return (
+        <FullView label="Table" full={<Table b={b} world={world} flat />}>
+          <Table b={b} world={world} />
+        </FullView>
+      )
     case 'choices':
       return <Choices b={b} world={world} choosing={choosing} done={done} />
   }
