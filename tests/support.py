@@ -53,7 +53,7 @@ class ServerCase(unittest.TestCase):
         cls.root = tempfile.mkdtemp(prefix="taska-test-")
         env = {k: v for k, v in os.environ.items() if "KEY" not in k}
         cls.proc = subprocess.Popen([sys.executable, "-m", "taska", "serve", "--host", "127.0.0.1", "--port", str(port),
-                                     "--root", os.path.join(cls.root, "data"), "--organizer", "off", "--log-db", ""],
+                                     "--root", os.path.join(cls.root, "data"), "--organizer", "off", "--log-db", "", "--skills", "off"],
                                     cwd=os.path.join(ROOT, "server"), env=env, stdout=subprocess.DEVNULL,
                                     stderr=subprocess.DEVNULL)
         for _ in range(150):

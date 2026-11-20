@@ -15,7 +15,7 @@ from ..domain.rules import proposal_comments
 from ..domain.sections import apply, read_edits
 from ..domain.state import ProjectState
 from ..domain.versions import last_write, stale, versions, writes
-from ..domain.vocab import MAX_TEXT, PEOPLE, Refused
+from ..domain.vocab import MAX_TEXT, PEOPLE, TASKA, Refused
 from .base import Args, Outcome, Run, handles
 
 WHY_MAX = 200
@@ -88,8 +88,8 @@ def _v(r: Run) -> int:
 
 @handles("rules")
 def write_whole(r: Run, a: Args) -> Outcome:
-    """The whole text, the user's (the page's editor)."""
-    if r.by != "you":
+    """The whole text, the user's (the page's editor), or a skill Taska comes with (services.shared_rules.seed)."""
+    if r.by not in ("you", TASKA):
         raise Refused("agents propose changes to the rules: `rules propose <why>` with the sections it changes")
     e = write(r, a.text("md"), _why(r, a), a.get("src") or r.ctx.src)
     if not e:

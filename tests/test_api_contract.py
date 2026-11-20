@@ -45,7 +45,7 @@ class ApiContractTest(unittest.TestCase):
         env = {k: v for k, v in os.environ.items() if "KEY" not in k and k not in ("GOOGLE_APPLICATION_CREDENTIALS", "PYTHONPATH")}
         self.proc = subprocess.Popen(
             [sys.executable, "-m", "taska", "serve", "--host", "127.0.0.1", "--port", str(number),
-             "--root", str(self.data), "--organizer", "off", "--log-db", ""],
+             "--root", str(self.data), "--organizer", "off", "--log-db", "", "--skills", "off"],
             cwd=ROOT / "server", env=env, stdout=self.log, stderr=subprocess.STDOUT,
         )
         for _ in range(150):

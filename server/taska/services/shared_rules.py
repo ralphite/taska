@@ -4,21 +4,26 @@ versions, comments, History and the editor as a project's rules have, and the pa
 tab. They are not projects: no list, count, search, agent or organizer sees them.
 
     <root>/.shared-rules/<id>/taska.db     one shared rule; its address is ~<id> (never a project's)
+    <root>/.shared-rules/seeded.json       the skills Taska came with that were added here (`seed`)
 """
 
 from __future__ import annotations
 
+import importlib.resources
+import json
 import os
 import secrets
 import threading
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from ..domain import includes, skills, versions
-from ..domain.vocab import SLUG_CHARS
+from ..domain.vocab import SLUG_CHARS, TASKA
 from ..infra.project_db import ProjectDb
 from .project import Project, Shared
 
 FOLDER = ".shared-rules"
+SEEDED = "seeded.json"
+DEFAULTS = "default_skills"  # in the package: <name>.md, the skill /<name> Taska comes with (r1450)
 MARK = "~"  # a shared rule's address starts with it; a project's never does
 
 
@@ -77,6 +82,34 @@ class SharedRules:
             p = self._open(rid)
         p.run([(0, {"op": "cfg", "name": title})], "you")
         return p
+
+    def seed(self) -> List[str]:
+        """The skills Taska comes with (Yadong r1450: a release has them): each one this data has never had is added
+        once, with its text, by Taska. One here already, changed or not, stays as it is; one added before and then
+        renamed or emptied does not come back. Gives the names added."""
+        path = os.path.join(self.folder, SEEDED)
+        try:
+            with open(path, encoding="utf-8") as f:
+                had = set(json.load(f))
+        except (FileNotFoundError, ValueError):
+            had = set()
+        here = {includes.norm(n) for n in self.names()}
+        added: List[str] = []
+        for f in sorted(importlib.resources.files("taska").joinpath(DEFAULTS).iterdir(), key=lambda f: f.name):
+            name = skills.MARK + f.name[:-3] if f.name.endswith(".md") else ""
+            if not name or name in had:
+                continue
+            had.add(name)
+            if includes.norm(name) in here:
+                continue
+            p = self.add(name)
+            p.run([(0, {"op": "rules", "md": f.read_text(encoding="utf-8"), "why": "a skill Taska comes with"})], TASKA)
+            self.refresh(p.slug)  # no one else has it yet
+            added.append(name)
+        os.makedirs(self.folder, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as out:
+            json.dump(sorted(had), out, ensure_ascii=False, indent=1)
+        return added
 
     def texts(self) -> Dict[str, str]:
         """Each shared rule's text now, by its name: what a project's lines put in."""

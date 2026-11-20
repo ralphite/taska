@@ -134,7 +134,7 @@ class Taska:
             self.base = f"http://127.0.0.1:{self.port}"
             self.proc = subprocess.Popen([sys.executable, "-m", "taska", "serve", "--host", "127.0.0.1", "--port",
                                           str(self.port), "--root", os.path.join(self.root, "data"), "--organizer",
-                                          "off", "--log-db", ""], cwd=os.path.join(ROOT, "server"), env=env,
+                                          "off", "--log-db", "", "--skills", "off"], cwd=os.path.join(ROOT, "server"), env=env,
                                          stdout=self.log, stderr=subprocess.STDOUT)
             for _ in range(150):
                 if self.proc.poll() is not None:

@@ -34,6 +34,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     ap.add_argument("--organizer", choices=("auto", "off"), default="auto", help="auto = use Gemini when a key is set")
     ap.add_argument("--public", default="", help="the public address behind a proxy, e.g. https://<machine>.<tailnet>.ts.net:7340")
     ap.add_argument("--log-db", default=None, help="the log also goes into this SQLite file (default: logs.db in the data folder; '' for none)")
+    ap.add_argument("--skills", choices=("on", "off"), default="on", help="on = add the skills Taska comes with that the data never had (off: the checks' empty data)")
     ap.add_argument("--log-level", default="INFO", help="what the terminal shows (DEBUG shows every request)")
     args = ap.parse_args(argv)
     if args.command == "install-skill":
@@ -46,7 +47,8 @@ def main(argv: Optional[List[str]] = None) -> None:
     from .infra import gemini
     gemini.use_key_file(os.path.join(os.path.expanduser(args.root), "gemini-key"))  # F765: the key set in Settings
     serve(args.root, args.host, args.port, args.organizer == "auto" and bool(gemini.api_key()), args.public,
-          os.path.join(os.path.expanduser(args.root), "logs.db") if args.log_db is None else args.log_db, args.log_level)
+          os.path.join(os.path.expanduser(args.root), "logs.db") if args.log_db is None else args.log_db, args.log_level,
+          args.skills == "on")
 
 
 def lan_address(host: str, port: int) -> str:
@@ -65,7 +67,8 @@ def lan_address(host: str, port: int) -> str:
     return f"http://{ip}:{port}"
 
 
-def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db: Optional[str], log_level: str) -> None:
+def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db: Optional[str], log_level: str,
+          skills: bool = True) -> None:
     from .infra import logs
     from .services.workspace import Workspace
     from .services.organizer import Organizers
@@ -113,6 +116,9 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
         sys.exit(f"taska: cannot listen on {host}:{port}: {ex}")
     ws.lan = lan_address(host, port)
     ws.local = f"http://127.0.0.1:{port}"  # I833: what the agents here run
+    added = ws.shared_rules.seed() if skills else []  # r1450: the skills a release comes with, each added once
+    if added:
+        print("taska: added the skills it comes with: " + " ".join(added), flush=True)
     print(f"Taska  http://{host}:{port}/  started {time.strftime('%Y-%m-%d %H:%M:%S')}\n  data       {ws.root}  "
           f"({', '.join(sorted(ws.projects))})\n  organizer  "
           + (f"Gemini {MODEL}" if organizer else "off (add a Gemini API key in Settings › Organizer)")
