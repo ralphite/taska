@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import List
 
 from .. import events as ev
@@ -46,6 +47,8 @@ def _amend(state: ProjectState, e: ev.Event) -> None:
     inp.history.append(InputVersion(text=inp.text, t=e.t, mode=e.mode))
     inp.text = e.text
     changed_words(inp, e)
+    if e.places:  # B838: where its voice notes are in the words now
+        inp.files = [replace(f, at=e.places[f.f]) if f.f in e.places else f for f in inp.files]
     if e.files:
         inp.files = inp.files + list(e.files)
     show_edit(state, inp, e)

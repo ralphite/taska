@@ -262,7 +262,7 @@ def record(base: str) -> Dict[str, Any]:
     c.raw(f"/p/{slug}/B1?by=claude-code&session=sample")  # an agent reads it: Read by
     page = lambda rid, *cmds: c.json(p + "commands", {"id": rid, "commands": list(cmds)})  # noqa: E731
     page("s1", {"op": "input", "text": "And the sort, please.", "scope": "B1", "q": "page-1"},
-         {"op": "input", "text": "", "files": [voice], "words": {voice["f"]: WORDS}, "q": "page-2"},
+         {"op": "input", "text": "", "files": [{**voice, "at": 0}], "words": {voice["f"]: WORDS}, "q": "page-2"},  # B838: its place
          {"op": "input", "text": "Look at this", "files": [picture], "q": "page-3"},
          {"op": "input", "text": "Never mind", "kind": "cancelled", "q": "page-4"},
          {"op": "rules", "md": "## Commits\n\n- In English.", "why": "Commits"})

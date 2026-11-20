@@ -23,12 +23,15 @@ class FileRef:
     name: str
     mime: Optional[str] = None
     size: Optional[int] = None
+    at: Optional[int] = None  # B838: a voice note's place in the words typed (its words show there); None: after them
 
     @classmethod
     def from_row(cls, d: Any) -> FileRef:
         if isinstance(d, str):
             return cls(f=d, name=d.split("-", 1)[-1])
-        return cls(f=str(d.get("f", "")), name=str(d.get("name", "")), mime=d.get("mime"), size=d.get("size"))
+        at = d.get("at")
+        return cls(f=str(d.get("f", "")), name=str(d.get("name", "")), mime=d.get("mime"), size=d.get("size"),
+                   at=int(at) if isinstance(at, (int, float)) and not isinstance(at, bool) else None)
 
     def to_row(self) -> Row:
         out: Row = {"f": self.f, "name": self.name}
@@ -36,6 +39,8 @@ class FileRef:
             out["mime"] = self.mime
         if self.size is not None:
             out["size"] = self.size
+        if self.at is not None:
+            out["at"] = self.at
         return out
 
     @property

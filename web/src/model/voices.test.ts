@@ -3,8 +3,8 @@
 import { describe, expect, test } from 'vitest'
 import { merge, project } from './project'
 import { outgoingLine } from './outgoing'
-import { splitVoices } from './voices'
-import type { Comment, Doc, Input, Item, ViewAnswer, Voice } from './types'
+import { saidText, splitVoices } from './voices'
+import type { Comment, Doc, Input, Item, PlacedFile, ViewAnswer, Voice } from './types'
 
 const F = 'f4-voice_0-12.webm'
 const WORDS = 'Keep the filter, and the sort as well.'
@@ -45,19 +45,37 @@ describe('every place that shows a voice note shows its record’s words', () =>
 
 describe('sending, what was typed and each voice note’s words go apart', () => {
   test('the words as they were put in', () => {
-    expect(splitVoices(`See this\n${WORDS}`, [{ f: 'k1', words: WORDS }])).toEqual({ text: 'See this', words: { k1: WORDS } })
+    expect(splitVoices(`See this\n${WORDS}`, [{ f: 'k1', words: WORDS }])).toEqual({ text: 'See this', words: { k1: WORDS }, at: { k1: 8 } })
   })
 
   test('the words as you changed them in the box', () => {
     const changed = 'Keep the filter you set, and the sort as well.'
-    expect(splitVoices(`See this\n${changed}`, [{ f: 'k1', words: WORDS }])).toEqual({ text: 'See this', words: { k1: changed } })
+    expect(splitVoices(`See this\n${changed}`, [{ f: 'k1', words: WORDS }])).toEqual({ text: 'See this', words: { k1: changed }, at: { k1: 8 } })
   })
 
   test('words changed past finding are found by what was around them', () => {
-    expect(splitVoices('Typed first\nsomething else entirely', [{ f: 'k1', words: WORDS, around: ['Typed first', ''] }])).toEqual({ text: 'Typed first', words: { k1: 'something else entirely' } })
+    expect(splitVoices('Typed first\nsomething else entirely', [{ f: 'k1', words: WORDS, around: ['Typed first', ''] }])).toEqual({ text: 'Typed first', words: { k1: 'something else entirely' }, at: { k1: 11 } })
   })
 
   test('an edit begins with what was typed, then the words', () => {
-    expect(splitVoices('Typed\nKeep the filter only.', [{ f: F, words: WORDS }], 'Typed')).toEqual({ text: 'Typed', words: { [F]: 'Keep the filter only.' } })
+    expect(splitVoices('Typed\nKeep the filter only.', [{ f: F, words: WORDS }], 'Typed')).toEqual({ text: 'Typed', words: { [F]: 'Keep the filter only.' }, at: { [F]: 5 } })
+  })
+})
+
+// B838 (Yadong r1439 r1440): what was said is one text, as in Nota: each voice note's words where it was put in the
+// words typed; sending keeps that place, and every place that shows what was said puts the words back there
+describe('a voice note keeps its place in the words (B838)', () => {
+  const v = (f: string, words: string, at?: number): PlacedFile => ({ f, name: f, mime: 'audio/webm', ...(at != null ? { at } : {}), voice: { state: 'done', tidied: words } as never })
+  test('sending, a note put between the words is placed there', () => {
+    expect(splitVoices(`Before it.\n${WORDS}\nAfter it.`, [{ f: 'k1', words: WORDS }])).toEqual({ text: 'Before it.\n\nAfter it.', words: { k1: WORDS }, at: { k1: 10 } })
+  })
+  test('two notes, each in its place', () => {
+    const got = splitVoices(`One.\nFirst note words here.\nTwo.\nSecond note words here.`, [{ f: 'a', words: 'First note words here.' }, { f: 'b', words: 'Second note words here.' }])
+    expect(got).toEqual({ text: 'One.\n\nTwo.', words: { a: 'First note words here.', b: 'Second note words here.' }, at: { a: 4, b: 10 } })
+  })
+  test('what was said reads each note where it was put; a note with no place after the words', () => {
+    expect(saidText('Typed after it.', [v('a', 'Said first.', 0)])).toBe('Said first.\nTyped after it.')
+    expect(saidText('Before. After.', [v('a', 'Between.', 7)])).toBe('Before.\nBetween.\nAfter.')
+    expect(saidText('Typed.', [v('a', 'Said.')])).toBe('Typed.\nSaid.')
   })
 })

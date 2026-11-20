@@ -10,6 +10,8 @@ import { outgoingIn, type OutPlace, type OutShow } from './outgoingStates'
 /** A file on its way: its upload state (`f`, `uploading`, `failed`) is model/fileStates `fileState`. */
 export interface OutFile extends FileRef, UpFields {
   f: string
+  /** B838: a voice note's place in the words it goes with */
+  at?: number
   /** a picture's look before it is up (this page only) */
   preview?: string
   /** the page's own id for it while it goes up */

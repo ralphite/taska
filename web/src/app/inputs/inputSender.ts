@@ -80,7 +80,7 @@ export class InputSender {
             q: o.q,
             ...(o.kind ? { kind: o.kind } : {}),
             ...(o.of?.length ? { of: o.of } : {}),
-            files: files.map(({ f, name, mime, size }) => ({ f, name, mime, size })),
+            files: files.map(({ f, name, mime, size, at }) => ({ f, name, mime, size, ...(at != null ? { at } : {}) })),
             ...(Object.keys(words).length ? { words } : {}),
           }
           // out of reach, it shows it waits and goes again by itself, unless it was taken off meanwhile; Taska has it:

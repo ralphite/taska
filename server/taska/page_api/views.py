@@ -23,7 +23,7 @@ View = Dict[str, Any]
 def file_view(f: FileRef) -> View:
     """A file by its name; a voice note's words are its record's (voice_view), read by its file."""
     out: View = {"f": f.f, "name": f.name}
-    for k in ("mime", "size"):
+    for k in ("mime", "size", "at"):  # at: a voice note's place in the words of the input it is in (B838)
         v = getattr(f, k)
         if v is not None:
             out[k] = v

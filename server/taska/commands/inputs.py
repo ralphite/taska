@@ -4,7 +4,8 @@ restoring one, moving one to another item, taking a file off one, sending a canc
 from __future__ import annotations
 
 import os
-from typing import Iterable, List, Optional
+from dataclasses import replace
+from typing import Dict, Iterable, List, Optional
 
 from ..domain import events as ev, item_states
 from ..domain.history import deletions
@@ -23,9 +24,24 @@ def sent_files(r: Run, a: Args) -> List[FileRef]:
         fid = os.path.basename(str(f.get("f", "")))
         if not r.project.file_exists(fid):
             raise Refused(f"unknown file {fid}")
+        at = f.get("at")  # B838: a voice note's place in the words sent with it
         files.append(FileRef(f=fid, name=str(f.get("name", "")) if "name" in f else "", mime=f.get("mime"),
-                             size=f.get("size")))
+                             size=f.get("size"), at=max(0, int(at)) if isinstance(at, int) and not isinstance(at, bool) else None))
     return files
+
+
+def placed(files: List[FileRef], text: str, base: int = 0, last: Optional[int] = None) -> List[FileRef]:
+    """B838: the voice notes' places in the words they were sent with, moved by `base` (added after words already
+    there) and kept within them; `last`: where one sent without a place goes (None: after all the words, unplaced)."""
+    out: List[FileRef] = []
+    for f in files:
+        if f.at is not None:
+            out.append(replace(f, at=base + min(f.at, len(text))))
+        elif last is not None and f.is_audio:
+            out.append(replace(f, at=last))
+        else:
+            out.append(f)
+    return out
 
 
 def voice_words(r: Run, a: Args, notes: Iterable[str], src: Optional[str] = None) -> List[ev.VoiceFixed]:
@@ -69,6 +85,7 @@ def new_input(r: Run, a: Args) -> Outcome:
     if q in s.page_ids:  # the page sent it again because the answer got lost: it is in already
         return Outcome(f"ok {s.page_ids[q]}", "Received")
     text, files = a.text("text").strip()[:MAX_TEXT], sent_files(r, a)
+    files = placed(files, text)
     if not text and not files:
         raise Refused("empty input")
     scope = item_at(s, a.get("scope")).n if a.get("scope") else None  # a merged item's replies go where it went
@@ -156,15 +173,27 @@ def amend(r: Run, a: Args) -> Outcome:
     fixed = bool(fixes)
     if not text and not files and not fixed and not (mode == "edit" and inp.files):
         raise Refused("enter some text")
+    places: Dict[str, int] = {}
     if mode == "append":
-        text = (inp.text + ("\n\n" + text if text else "")).strip()
+        added = text
+        text = (inp.text + ("\n\n" + added if added else "")).strip()
+        # B838: added words and notes go after what is there, a note sent with no place after all of it
+        files = placed(files, added, base=len(text) - len(added), last=len(text))
+    else:
+        files = placed(files, text)
+        given = a.get("places") or {}  # where its voice notes are in the words as you left them
+        if not isinstance(given, dict):
+            raise Refused("places: expected {file: place}")
+        mine = {f.f for f in inp.files if f.is_audio}
+        places = {str(k): max(0, min(int(v), len(text))) for k, v in given.items() if str(k) in mine and isinstance(v, int) and not isinstance(v, bool)}
     if len(text) > MAX_TEXT:
         raise Refused(f"input is too long (maximum {MAX_TEXT} characters)")
     for fix in fixes:
         r.emit(fix)
-    if text == inp.text and not files:
+    moved = any(f.at != places[f.f] for f in inp.files if f.f in places)
+    if text == inp.text and not files and not moved:
         return Outcome(f"ok {rid} {'updated' if fixed else 'unchanged'}", "Updated" if fixed else "Unchanged")
-    r.emit(ev.InputAmended(src=rid, mode=str(mode), text=text, by=r.by, files=files))
+    r.emit(ev.InputAmended(src=rid, mode=str(mode), text=text, by=r.by, files=files, places=places))
     return Outcome(f"ok {rid} updated", "Updated")
 
 

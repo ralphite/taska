@@ -51,10 +51,12 @@ class InputAmended(Event):
     mode: str = "edit"
     text: str = ""
     files: List[FileRef] = field(default_factory=list)
+    places: Dict[str, int] = field(default_factory=dict)  # B838: its voice notes' places in the words, by file
 
     def body(self) -> Row:
         row: Row = {"src": self.src, "mode": self.mode, "text": self.text, "by": self.by}
         opt(row, "files", files_row(self.files), bool(self.files))
+        opt(row, "places", self.places, bool(self.places))
         return row
 
 
@@ -166,7 +168,7 @@ READERS: Dict[str, Reader] = {
                                q=r.get("q") or "", kind=r.get("kind"), of=list(r.get("of") or []), **common(r)),
     "ack": lambda r: InputsAcked(ids=list(need(r, "ids")), **common(r)),
     "amend": lambda r: InputAmended(src=need(r, "src"), mode=need(r, "mode"), text=need(r, "text"), files=files_of(r),
-                                    **common(r)),
+                                    places={str(k): int(v) for k, v in (r.get("places") or {}).items()}, **common(r)),
     "undo": lambda r: FilingUndone(src=need(r, "src"), **common(r)),
     "redo": lambda r: FilingRedone(src=need(r, "src"), **common(r)),
     "del": lambda r: InputDeleted(src=need(r, "src"), ns=list(r.get("ns") or []), kept=list(r.get("kept") or []),

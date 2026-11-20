@@ -12,6 +12,8 @@ export interface SentFile {
   name?: string
   mime?: string
   size?: number
+  /** B838: a voice note's place in the words sent with it */
+  at?: number
 }
 
 /** A voice note's words as you left them, by its file: they become the note's words (B682). */
@@ -69,7 +71,7 @@ export type Command = From &
     | { op: 'input'; text?: string; files?: SentFile[]; scope?: string | null; kind?: 'answer' | 'cancelled'; of?: number[]; q?: string; words?: SentWords }
     | { op: 'send' | 'delete' | 'restore'; id: string }
     | { op: 'correct'; id: string; wrong: string; right: string; v?: number }
-    | { op: 'amend'; id: string; mode: 'edit' | 'append'; v?: number; text?: string; files?: SentFile[]; words?: SentWords }
+    | { op: 'amend'; id: string; mode: 'edit' | 'append'; v?: number; text?: string; files?: SentFile[]; words?: SentWords; places?: Record<string, number> }
     | { op: 'ack'; ids: string[] }
     | { op: 'rescope'; id: string; to: string }
     // documents (commands/docs.py)

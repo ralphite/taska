@@ -21,6 +21,11 @@ export interface FileRef {
   voice?: Voice
 }
 
+/** A file of an input (B838): a voice note's place in the words typed (its words show there); none: after them. */
+export interface PlacedFile extends FileRef {
+  at?: number
+}
+
 /** A voice note's words (B682): the one record every place that shows the note reads. `said`: word for word;
  * `tidied`: what everyone reads (yours once you changed them: `fixed`, when); `early`: the first words while it is
  * worked out (state wait); none: nobody was heard; failed: `err` says why. */
@@ -105,12 +110,13 @@ export interface Input {
   id: string
   t: string
   by: string
-  /** what was said: the words typed, then each voice note's words (the page's model puts them together) */
+  /** what was said: the words typed with each voice note's words where it was put (the page's model puts them
+   * together, B838) */
   text: string
   /** the words typed alone, as Taska keeps them */
   typed?: string
   scope: number | null
-  files: FileRef[]
+  files: PlacedFile[]
   acked: boolean
   touched: number[]
   org: OrgNote | null

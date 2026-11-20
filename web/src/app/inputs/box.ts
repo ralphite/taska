@@ -189,7 +189,8 @@ export class Box {
       st.takeFiles(key)
       const said = splitVoices(text, draftNotes(files))
       const words = [answer.text, said.text].filter(Boolean).join('\n\n')
-      this.d.inputs.push({ slug, text: words, words: said.words, scope, files: files.map(({ key: k, ...f }) => ({ ...f, key: k })), quiet: true, kind: 'answer' })
+      const base = words.length - said.text.length // the picks come first: the notes' places after them
+      this.d.inputs.push({ slug, text: words, words: said.words, scope, files: placedFiles(files, said.at, base), quiet: true, kind: 'answer' })
       answer.done()
       if (text || files.length) this.markSent(slug, key)
       return true
@@ -205,7 +206,7 @@ export class Box {
     st.takeFiles(key)
     // what was typed goes as the input's words; each voice note's words, as you left them, go to the note (B682)
     const said = splitVoices(text, draftNotes(files))
-    this.d.inputs.push({ slug, text: said.text, words: said.words, scope, files: files.map(({ key: k, ...f }) => ({ ...f, key: k })) })
+    this.d.inputs.push({ slug, text: said.text, words: said.words, scope, files: placedFiles(files, said.at) })
     this.markSent(slug, key)
     if (scope) this.d.replied?.(slug, scope)
     return true
@@ -251,15 +252,16 @@ export class Box {
     const r = m?.byId.get(mode.id)
     this.d.toasts.show(mode.mode === 'edit' ? `${inputCode(mode.id)} updated` : `Added to ${inputCode(mode.id)}`)
     const up = drafts.filter(isUp)
-    const files = up.map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size }))
-    // an edit begins with what was said (typed, then its voice notes' words): what was typed goes as its words, the
-    // notes' words as you left them go to the notes (B682)
+    // an edit begins with what was said (typed, its voice notes' words where they were put): what was typed goes as
+    // its words, the notes' words as you left them go to the notes (B682), and where each is in the words (B838)
     const said = splitVoices(text, [...(mode.mode === 'edit' ? shownNotes(r?.files) : []), ...draftNotes(up)], mode.mode === 'edit' ? (r?.typed ?? r?.text) : undefined)
+    const files = up.map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size, ...(said.at[f.key] != null ? { at: said.at[f.key] } : {}) }))
     const words = { ...wordsByFile(said.words, up), ...Object.fromEntries(Object.entries(said.words).filter(([k]) => !up.some((f) => f.key === k))) }
+    const places = mode.mode === 'edit' ? Object.fromEntries(Object.entries(said.at).filter(([k]) => !up.some((f) => f.key === k))) : {}
     text = said.text
     const what = mode.mode === 'edit' ? `editing ${inputCode(mode.id)}` : `adding to ${inputCode(mode.id)}`
     void (async () => {
-      const ok = await this.d.runner.change(slug, { op: 'amend', id: mode.id, mode: mode.mode, v: mode.v, text, files, ...(Object.keys(words).length ? { words } : {}) }, what, { mode: 'own' })
+      const ok = await this.d.runner.change(slug, { op: 'amend', id: mode.id, mode: mode.mode, v: mode.v, text, files, ...(Object.keys(words).length ? { words } : {}), ...(Object.keys(places).length ? { places } : {}) }, what, { mode: 'own' })
       if (!ok) await this.editedElsewhere(slug, mode, key, text, files, drafts, what, words)
     })()
     return true
@@ -386,4 +388,9 @@ export class Box {
     if (this.d.store.getState().mode?.kind === 'correct' && typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
     this.d.store.getState().setMode(null)
   }
+}
+
+/** A draft's files as they go, each voice note with its place in the words sent (B838; `base`: words put before). */
+function placedFiles<T extends { key: string }>(files: readonly T[], at: Readonly<Record<string, number>>, base = 0): (T & { at?: number })[] {
+  return files.map((f) => (at[f.key] != null ? { ...f, at: base + (at[f.key] ?? 0) } : { ...f }))
 }

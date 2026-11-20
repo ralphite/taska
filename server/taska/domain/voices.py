@@ -5,7 +5,7 @@ what was said; agents read each note as "voice 0:21: <its words>". Pure: no I/O.
 from __future__ import annotations
 
 import re
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, Union
 
 from .model import FileRef, Voice
 from .state import ProjectState
@@ -72,11 +72,27 @@ def voice_line(st: ProjectState, f: FileRef, as_said: bool = False, said_as: str
     return out
 
 
+def in_place(text: str, files: Iterable[FileRef]) -> List[Union[str, FileRef]]:
+    """What was said in order (B838): the words typed, each voice note where it was put in them (its place), the
+    notes with no place after all the words."""
+    notes = voices_of(files)
+    out: List[Union[str, FileRef]] = []
+    pos = 0
+    for f in sorted((f for f in notes if f.at is not None), key=lambda f: min(f.at or 0, len(text))):
+        at = max(pos, min(f.at or 0, len(text)))
+        if text[pos:at].strip():
+            out.append(text[pos:at].strip())
+        out.append(f)
+        pos = at
+    if text[pos:].strip():
+        out.append(text[pos:].strip())
+    return out + [f for f in notes if f.at is None]
+
+
 def for_agents(st: ProjectState, text: str, files: Iterable[FileRef], as_said: bool = False, said_as: str = AS_SAID) -> str:
-    """What was said as agents read it: the words typed, then one line per voice note with its words."""
-    lines = [text.rstrip()] if text.strip() else []
-    lines += [voice_line(st, f, as_said, said_as) for f in voices_of(files)]
-    return "\n".join(lines)
+    """What was said as agents read it: the words typed, with a line for each voice note, with its words, where it
+    was put in them (B838)."""
+    return "\n".join(x if isinstance(x, str) else voice_line(st, x, as_said, said_as) for x in in_place(text, files))
 
 
 def one_line(st: ProjectState, text: str, files: Iterable[FileRef]) -> str:

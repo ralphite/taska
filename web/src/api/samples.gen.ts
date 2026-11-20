@@ -49,7 +49,7 @@ export const SAMPLES = {
   ]
  },
  "view": {
-  "cursor": "1a1b1cd8b3d.39.55.2",
+  "cursor": "1a1b1cd8b31.39.55.2",
   "full": true,
   "items": [
    {
@@ -157,7 +157,7 @@ export const SAMPLES = {
      "t": "2026-11-06T09:00:00-08:00"
     },
     "readBy": {
-     "claude-code": 1793984400265
+     "claude-code": 1793984400253
     }
    },
    {
@@ -336,8 +336,8 @@ export const SAMPLES = {
     "talked": false
    },
    {
-    "n": 7,
-    "code": "T07",
+    "n": 6,
+    "code": "T06",
     "type": "task",
     "title": "Sort the export by date",
     "body": "",
@@ -477,7 +477,8 @@ export const SAMPLES = {
       "f": "f1-note.webm",
       "name": "note.webm",
       "mime": "audio/webm",
-      "size": 21
+      "size": 21,
+      "at": 0
      }
     ],
     "acked": true,
@@ -523,7 +524,7 @@ export const SAMPLES = {
     ],
     "acked": false,
     "touched": [
-     7
+     6
     ],
     "org": {
      "ok": true,
@@ -538,7 +539,7 @@ export const SAMPLES = {
     "q": "page-3",
     "deletion": {
      "go": [
-      7
+      6
      ],
      "keep": []
     }
@@ -605,7 +606,7 @@ export const SAMPLES = {
         "ses": "sample"
        },
        {
-        "id": 30,
+        "id": 32,
         "key": "4be021e4c5",
         "th": 8,
         "quote": "# Plan",
@@ -639,9 +640,9 @@ export const SAMPLES = {
     "detached": [],
     "whole": [
      {
-      "id": 31,
+      "id": 33,
       "key": "doc",
-      "th": 31,
+      "th": 33,
       "quote": "",
       "text": "Looks right.",
       "by": "you",
@@ -789,17 +790,17 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400297,
+     "t": 1793984400286,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400297
+       "t": 1793984400286
       },
       {
        "name": "helper",
-       "t": 1793984400197,
+       "t": 1793984400185,
        "sid": "aaaaaaaa-1111-2222-3333-444444444444",
        "on": {
         "n": 3,
@@ -825,7 +826,7 @@ export const SAMPLES = {
      "t": "2026-11-06T09:00:00-08:00"
     },
     {
-     "seq": 29,
+     "seq": 31,
      "n": 3,
      "f": {
       "status": "open",
@@ -863,8 +864,8 @@ export const SAMPLES = {
      "scope": null,
      "items": [
       {
-       "n": 6,
-       "code": "T06",
+       "n": 7,
+       "code": "T07",
        "title": "Sort the export by date",
        "type": "task"
       }
@@ -884,22 +885,22 @@ export const SAMPLES = {
    ],
    "phone": false,
    "base": "http://127.0.0.1:7340/p/shop",
-   "key": "bnup-vnd4",
+   "key": "r3zb-v76v",
    "remote": "",
    "lan": "",
-   "filesCap": "3ba213192a8ef3e7d4e432f2"
+   "filesCap": "3aa75c35afe02b9acc8a95f6"
   },
   "server": {
-   "page": "index-DVMW2-9Y.js",
+   "page": "index-CsCA7ae4.js",
    "update": false,
    "dev": true
   }
  },
  "changes": {
-  "cursor": "1a1b1cd8b3d.39.55.2",
+  "cursor": "1a1b1cd8b31.39.55.2",
   "same": true,
   "server": {
-   "page": "index-DVMW2-9Y.js",
+   "page": "index-CsCA7ae4.js",
    "update": false,
    "dev": true
   }
@@ -910,7 +911,7 @@ export const SAMPLES = {
    "ok B01 pri=P0"
   ],
   "changes": {
-   "cursor": "1a1b1cd8b3d.40.56.2",
+   "cursor": "1a1b1cd8b31.40.56.2",
    "full": false,
    "items": [
     {
@@ -1018,7 +1019,7 @@ export const SAMPLES = {
       "t": "2026-11-06T09:00:00-08:00"
      },
      "readBy": {
-      "claude-code": 1793984400265
+      "claude-code": 1793984400253
      }
     }
    ],
@@ -1049,17 +1050,17 @@ export const SAMPLES = {
     "agents": [
      {
       "name": "claude-code",
-      "t": 1793984400297,
+      "t": 1793984400286,
       "waiting": false,
       "session": "sample",
       "sessions": [
        {
         "name": "sample",
-        "t": 1793984400297
+        "t": 1793984400286
        },
        {
         "name": "helper",
-        "t": 1793984400197,
+        "t": 1793984400185,
         "sid": "aaaaaaaa-1111-2222-3333-444444444444",
         "on": {
          "n": 3,
@@ -1096,7 +1097,7 @@ export const SAMPLES = {
       "t": "2026-11-06T09:00:00-08:00"
      },
      {
-      "seq": 29,
+      "seq": 31,
       "n": 3,
       "f": {
        "status": "open",
@@ -1134,8 +1135,8 @@ export const SAMPLES = {
       "scope": null,
       "items": [
        {
-        "n": 6,
-        "code": "T06",
+        "n": 7,
+        "code": "T07",
         "title": "Sort the export by date",
         "type": "task"
        }
@@ -1155,13 +1156,13 @@ export const SAMPLES = {
     ],
     "phone": false,
     "base": "http://127.0.0.1:7340/p/shop",
-    "key": "bnup-vnd4",
+    "key": "r3zb-v76v",
     "remote": "",
     "lan": "",
-    "filesCap": "3ba213192a8ef3e7d4e432f2"
+    "filesCap": "3aa75c35afe02b9acc8a95f6"
    },
    "server": {
-    "page": "index-DVMW2-9Y.js",
+    "page": "index-CsCA7ae4.js",
     "update": false,
     "dev": true
    }
@@ -1366,11 +1367,11 @@ export const SAMPLES = {
    "kind": "del",
    "src": "r5",
    "ns": [
-    6
+    7
    ],
    "kept": [],
    "codes": {
-    "6": "T06"
+    "7": "T07"
    }
   },
   {
@@ -1429,7 +1430,7 @@ export const SAMPLES = {
    "t": "2026-11-06T09:00:00-08:00",
    "who": "org",
    "kind": "org",
-   "src": "r3",
+   "src": "r5",
    "ok": true,
    "msg": "Created T7"
   },
@@ -1443,7 +1444,7 @@ export const SAMPLES = {
    "pri": "P2",
    "when": "now",
    "title": "Sort the export by date",
-   "src": "r3",
+   "src": "r5",
    "codes": {
     "7": "T07"
    }
@@ -1451,37 +1452,13 @@ export const SAMPLES = {
   {
    "seq": 34,
    "t": "2026-11-06T09:00:00-08:00",
-   "who": "org",
-   "kind": "org",
-   "src": "r5",
-   "ok": true,
-   "msg": "Created T6"
-  },
-  {
-   "seq": 33,
-   "t": "2026-11-06T09:00:00-08:00",
-   "who": "org",
-   "kind": "add",
-   "n": 6,
-   "type": "task",
-   "pri": "P2",
-   "when": "now",
-   "title": "Sort the export by date",
-   "src": "r5",
-   "codes": {
-    "6": "T06"
-   }
-  },
-  {
-   "seq": 32,
-   "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
    "kind": "in",
    "id": "r5",
    "text": "One more thing"
   },
   {
-   "seq": 31,
+   "seq": 33,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
    "kind": "dc",
@@ -1489,7 +1466,7 @@ export const SAMPLES = {
    "text": "Looks right."
   },
   {
-   "seq": 30,
+   "seq": 32,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
    "kind": "dc",
@@ -1497,7 +1474,7 @@ export const SAMPLES = {
    "text": "Read it from the address."
   },
   {
-   "seq": 29,
+   "seq": 31,
    "t": "2026-11-06T09:00:00-08:00",
    "who": "you",
    "kind": "set",
@@ -1526,6 +1503,30 @@ export const SAMPLES = {
    ],
    "codes": {
     "3": "F03"
+   }
+  },
+  {
+   "seq": 30,
+   "t": "2026-11-06T09:00:00-08:00",
+   "who": "org",
+   "kind": "org",
+   "src": "r3",
+   "ok": true,
+   "msg": "Created T6"
+  },
+  {
+   "seq": 29,
+   "t": "2026-11-06T09:00:00-08:00",
+   "who": "org",
+   "kind": "add",
+   "n": 6,
+   "type": "task",
+   "pri": "P2",
+   "when": "now",
+   "title": "Sort the export by date",
+   "src": "r3",
+   "codes": {
+    "6": "T06"
    }
   },
   {
@@ -1880,12 +1881,12 @@ export const SAMPLES = {
  },
  "newSharedRules": {
   "ok": true,
-  "slug": "~dhypa",
+  "slug": "~xatzq",
   "name": "Coding"
  },
  "sharedRules": [
   {
-   "slug": "~dhypa",
+   "slug": "~xatzq",
    "name": "Coding",
    "md": "## Tests (when to run them)\n\n- Run them.",
    "parts": [
@@ -1919,7 +1920,7 @@ export const SAMPLES = {
    "docs": 0,
    "agents": [],
    "work": false,
-   "t": 1795149160025
+   "t": 1795154818607
   },
   {
    "name": "garden",
@@ -1932,7 +1933,7 @@ export const SAMPLES = {
    "docs": 1,
    "agents": [],
    "work": true,
-   "t": 1795149160225
+   "t": 1795154818803
   },
   {
    "name": "shop",
@@ -1946,17 +1947,17 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400297,
+     "t": 1793984400286,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400297
+       "t": 1793984400286
       },
       {
        "name": "helper",
-       "t": 1793984400197,
+       "t": 1793984400185,
        "sid": "aaaaaaaa-1111-2222-3333-444444444444",
        "on": {
         "n": 3,
@@ -1968,7 +1969,7 @@ export const SAMPLES = {
     }
    ],
    "work": true,
-   "t": 1795149160287
+   "t": 1795154818867
   }
  ],
  "needs": [
@@ -2121,7 +2122,7 @@ export const SAMPLES = {
       "t": "2026-11-06T09:00:00-08:00"
      },
      "readBy": {
-      "claude-code": 1793984400265
+      "claude-code": 1793984400253
      }
     },
     "parentCode": null,
@@ -2216,11 +2217,11 @@ export const SAMPLES = {
    {
     "project": "shop",
     "kind": "items",
-    "key": "i7",
-    "n": 7,
+    "key": "i6",
+    "n": 6,
     "item": {
-     "n": 7,
-     "code": "T07",
+     "n": 6,
+     "code": "T06",
      "type": "task",
      "title": "Sort the export by date",
      "body": "",
@@ -2503,7 +2504,7 @@ export const SAMPLES = {
   "tidy": true
  },
  "pushKey": {
-  "key": "BMirwy1Vx9Mvp1_PpnNj9OZGah2Ju7PpkE6eKqk_hMxKhbJUiZODO-vNPFlPIvB_VMC3xOVOvz384pRl73RESxc",
+  "key": "BF-uj7bYd6U4MQopQ37bUPZGqSCplZ_dw1ywS9R0WvKQqXctZ6v8j55yV44myYslI1GXS3YG_mN_5IP0R7Wg_pE",
   "on": false
  },
  "setPush": {
@@ -2559,7 +2560,7 @@ export const SAMPLES = {
  },
  "newKey": {
   "ok": true,
-  "key": "wsp7-tmgp"
+  "key": "9trx-gqa7"
  },
  "login": {
   "ok": true
@@ -2578,6 +2579,7 @@ export const SERVER_READS = {
   "files",
   "id",
   "mode",
+  "places",
   "src",
   "text",
   "v",
