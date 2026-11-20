@@ -76,6 +76,27 @@ def presence(p: Project) -> dict:
         return {"agents": p.agents.presence(p.state, waking), "work": work}
 
 
+def local_root(p: Project, req: Request) -> str:
+    """Taska on this machine, for what the agents here run (I833); else the address the caller used."""
+    return getattr(p.shared, "local", "") or f"{req.host()}{req.prefix}"
+
+
+def back(p: Project, sid: str) -> None:
+    """I833: a session the user asked to bring back called: it is back (no project lock held)."""
+    rc = getattr(p.shared, "reconnects", None)
+    if rc and SID.fullmatch(sid or "") and rc.heard(sid):
+        p.news.wake()  # the page shows it connected
+
+
+def relay_job(p: Project, req: Request, by: str) -> str:
+    """I833: for a connected Claude or Antigravity session, the narrow job of bringing back a lost one ('' none)."""
+    sid = req.arg("sid")
+    ws = p.shared
+    if "ui" in req.query or by not in ("claude-code", "antigravity") or not SID.fullmatch(sid or "") or not hasattr(ws, "relay_for"):
+        return ""
+    return ws.relay_for(by, sid, local_root(p, req))  # type: ignore[union-attr]
+
+
 def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
     """An agent's read, or None when the path is not one."""
     q = req.query
@@ -84,6 +105,7 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
     if agent_call:
         with p.lock:
             p.agents.saw(by, 1 if sub == "/next" and q.get("wait") else 0, req.session(), req.arg("sid"), req.arg("parent"))
+        back(p, req.arg("sid"))
     if sub == "/agent":
         with p.lock:
             head = render.rules_head(p.state)
@@ -180,11 +202,17 @@ def _next(req: Request, p: Project, by: str) -> Response:
                 it = p.state.items.get(n)
                 return bool(it and it.status == "doing" and held.get(n) == me)
 
+            job = relay_job(p, req, by)  # I833: bringing back a lost session comes before any other work
+            if job:
+                return text(200, job)
             w = work_for(p, req, who, session)
             while nothing_new(w) and not p.gone and time.time() < end:  # a deleted project lets its agents go
                 p.news.wait(timeout=end - time.time())
                 if sid and p.agents.replaced(sid):  # taken over while it waited: told at once
                     return text(200, REPLACED.format(t=p.agents.replaced(sid)))  # (the wait is let go below)
+                job = relay_job(p, req, by)
+                if job:
+                    return text(200, job)
                 w = work_for(p, req, who, session)
             given = w.given
             if wait and given is not None and key and p.agents.offers.handed(key, given, mark(given)):
@@ -232,9 +260,12 @@ def _wake(req: Request, p: Project) -> Response:
         p.agents.saw("antigravity", 1, sid=sid)
     try:
         with p.lock:
+            rc = getattr(p.shared, "reconnects", None)
+
             def ready() -> bool:
-                return bool(p.gone or p.agents.replaced(sid) or (
-                    p.waker.due(sid) and next_work(p.reading(), p.slug, p.gone, asker(p, "antigravity", "")).has_work))
+                return bool(p.gone or p.agents.replaced(sid) or (p.waker.due(sid) and (
+                    next_work(p.reading(), p.slug, p.gone, asker(p, "antigravity", "")).has_work
+                    or (rc and rc.waiting_for("antigravity", sid)))))  # I833: a lost session to bring back
 
             ok = p.news.wait_for(ready, timeout=max(0.0, end - time.time()))
             if p.gone:
@@ -249,7 +280,7 @@ def _wake(req: Request, p: Project) -> Response:
     finally:
         with p.lock:
             p.waker.holding(sid, -1)
-            p.agents.saw("antigravity", -1)
+            p.agents.saw("antigravity", -1, sid=sid)  # its listening ends too (it was counted with its id)
 
 
 def _card(req: Request, p: Project, ref: str, by: str) -> Response:
@@ -285,6 +316,8 @@ def do(req: Request, p: Project) -> Response:
         if agent:
             p.agents.saw(by, 0, session, req.arg("sid"), req.arg("parent"))
         calls: List[str] = p.agents.call_news(p.state, by, session) if agent else []  # what others wrote before
+    if agent:
+        back(p, req.arg("sid"))
     commands = parse(body)
     taken: List[Tuple[str, str]] = []
     moves: List[int] = []
@@ -312,6 +345,9 @@ def do(req: Request, p: Project) -> Response:
     note = (f"\n{len(news)} new input{'s' if len(news) != 1 else ''} since your last /next: {' '.join(news)}."
             " Finish the step you are on, then GET /next.") if news else ""
     note += "".join("\n" + r for r in rule_lines + calls)
+    job = relay_job(p, req, by) if agent else ""  # I833: told at work too, to do once the step it is on is done
+    if job:
+        note += "\n" + job.rstrip("\n")
     return text(200, "\n".join(lines) + f"\nrev {rev}: GET /next to continue{note}\n")
 
 

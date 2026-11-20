@@ -10,7 +10,7 @@ import { agentsSheet } from './Agents'
 import { agentsFacts } from './agentsFacts'
 
 export function AgentsSheet(_: { req: Extract<SheetRequest, { kind: 'agents' }> }) {
-  const app = useServices('nav', 'settings', 'sheets')
+  const app = useServices('nav', 'settings', 'sheets', 'api')
   const stores = useStores('settings')
   const slug = useProjectRoute()?.slug ?? ''
   const m = useProjectModel(slug)
@@ -26,6 +26,7 @@ export function AgentsSheet(_: { req: Extract<SheetRequest, { kind: 'agents' }> 
         copy: (t) => app.settings.copy(t),
         help: () => app.sheets.close(() => app.nav.to(`/p/${encodeURIComponent(slug)}/help/connect`)),
         open: (code) => app.sheets.close(() => app.nav.openItem(code)),
+        reconnect: (sid) => app.api.reconnect(slug, sid),
       })}
     />
   )

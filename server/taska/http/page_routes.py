@@ -30,7 +30,7 @@ from ..page_api.sync import Cursor
 from ..services import organizer
 from ..services.project import Project
 from ..services.voice_jobs import answer as voice_answer
-from .agent_routes import presence, scope_of, see_sessions
+from .agent_routes import local_root, presence, scope_of, see_sessions
 from .messages import NOT_FOUND, Request, Response, as_json, text
 
 if TYPE_CHECKING:
@@ -144,6 +144,11 @@ def post(ctx: "AppContext", req: Request, p: Project, sub: str) -> Response:
         cmd = {"op": "diagram-failed", **{k: d[k] for k in ("d", "v", "key", "error") if k in d}}
         lines, _ = p.run([(0, cmd)], TASKA)
         return as_json({"ok": not lines[0].startswith("err"), "result": lines[0]})
+    if sub == "/api/reconnect":  # I833: bring back a session that lost its connection
+        d = req.json_body(10_000)
+        if not isinstance(d, dict):
+            raise ValueError("expected an object")
+        return as_json(ctx.workspace.reconnect(p.slug, str(d.get("sid") or ""), local_root(p, req)))
     if sub == "/api/move-input":
         d = req.json_body(10_000)
         return as_json(ctx.workspace.moves.input(p, ctx.workspace.projects.get(str(d.get("to") or "")), d.get("id")))

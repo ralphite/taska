@@ -20,6 +20,7 @@ from ..domain.text import first_line, seconds
 from ..domain.vocab import CLAIM_TTL, PEOPLE
 from ..infra.agent_sessions import SID, Session
 from ..infra.project_db import ProjectDb
+from .reconnects import LostSessions
 
 
 GUIDE_DIFF_LINES = 40  # of a guide change, at most this many lines are told
@@ -102,6 +103,7 @@ class AgentActivity:
         # B811: per session id, its long waits for work open now, and when its last one started or ended
         self.listening: Dict[str, int] = {}
         self.listened: Dict[str, float] = {}
+        self.lostness = LostSessions(db, gone)  # I833: who waited for work before a restart and is not back
         lead = db.get("antigravity-lead")  # F755: the one Antigravity session that runs this project, and since when
         self.lead: Optional[Tuple[str, str]] = (str(lead["sid"]), str(lead["t"])) if isinstance(lead, dict) and lead.get("sid") else None
 
@@ -138,9 +140,12 @@ class AgentActivity:
                 a.parents[a.session] = session_name(parent)
             for old in [k for k in a.parents if k not in a.sessions]:
                 del a.parents[old]
+        if SID.fullmatch(sid):
+            self.lostness.heard_from(sid, now)  # I833: it is connected
         if SID.fullmatch(sid) and waiting:  # B811: whether this session listens for work now
             self.listening[sid] = max(0, self.listening.get(sid, 0) + waiting)
             self.listened[sid] = now
+            self.lostness.save(self.listening, self.listened)
         if SID.fullmatch(sid):
             named = next((k for k, v in a.sids.items() if v == sid and k), "")
             if session:  # one id is one session: a new title for it takes the old one's place (F768)
@@ -420,6 +425,7 @@ class AgentActivity:
         if SID.fullmatch(sid or ""):
             self.listening[sid] = max(0, self.listening.get(sid, 0) - 1)
             self.listened[sid] = time.time()
+            self.lostness.save(self.listening, self.listened)
 
     def listens(self, sid: str, now: float) -> bool:
         """B811: whether session `sid` waits for work here now (a long wait open, or one that ended a minute ago or
@@ -544,6 +550,7 @@ class AgentActivity:
         day = time.time() - 86400
         holds = self._holds(state) if state else {}
         waking = waking or set()
+        lost = self.lostness.lost()
         out: List[Dict[str, object]] = []
         for k, v in self.agents.items():
             row: Dict[str, object] = {"name": k, "t": int(v.t * 1000), "waiting": v.waiting > 0}
@@ -551,7 +558,10 @@ class AgentActivity:
                 row["session"] = v.session
             rows = [self._session(k, n, t, v.sids.get(n, ""), holds, waking)
                     for n, t in sorted(v.sessions.items(), key=lambda x: -x[1])
-                    if t > day or self.found.get(v.sids.get(n, "")) and self.found[v.sids[n]].status == "waiting"]
+                    if t > day or v.sids.get(n, "") in lost or self.found.get(v.sids.get(n, "")) and self.found[v.sids[n]].status == "waiting"]
+            for r in rows:  # I833: it waited for work before the restart and is not back
+                if r.get("sid") in lost:
+                    r["lost"] = True
             if v.sids.get("") and v.sids[""] not in {sid for n, sid in v.sids.items() if n}:
                 rows.append(self._session(k, "", v.t, v.sids[""], holds, waking))
             if rows:

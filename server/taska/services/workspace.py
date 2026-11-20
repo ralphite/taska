@@ -21,11 +21,13 @@ from ..domain import finding, rules, versions
 from ..domain.text import project_title, slug_of
 from ..domain.state import ProjectState
 from ..domain.vocab import CLOSED, LETTER, PROJECT_NAME, SLUG_CHARS, Refused
-from ..infra.agent_sessions import Session
+from ..agent_text import reconnect as reconnect_text
+from ..infra.agent_sessions import Session, claude_desktop
 from ..infra.project_db import ProjectDb
 from .meaning import Meaning
 from .moves import Moves
 from .project import Project, now_iso
+from .reconnects import APPS as RECONNECT_APPS, Reconnects, connected, session_of
 from .shared_rules import SharedRules, is_shared_slug
 from .settings import AccessKey, ListViews, ProjectOrder, SearchByMeaning, Spellings, VoicePrefs
 
@@ -72,6 +74,8 @@ class Workspace:
         self.meaning = Meaning(SearchByMeaning(self.root), allowed=gemini,  # gemini: the server may ask it (cli)
                                path=os.path.join(self.root, "meaning.db"), lists=self.short_lists)
         self.moves = Moves()
+        self.reconnects = Reconnects()  # I833: sessions to bring back after they lost their connection
+        self.local = ""  # Taska on this machine ("http://127.0.0.1:7340"), for what the agents here run
         self.projects: Dict[str, Project] = {}
         for name in sorted(os.listdir(self.root)):
             if PROJECT_NAME.fullmatch(name) and ProjectDb.exists_in(os.path.join(self.root, name)):
@@ -295,6 +299,67 @@ class Workspace:
                     busy = any(i.status == "doing" and not i.deleted and not i.merged_into for i in p.state.items.values())
                     listens = listens or busy or p.agents.listens(sid, now)
         return {"known": known, "listening": listens}
+
+    # -- bringing back lost sessions (I833) ---------------------------------------------------
+
+    def _connected(self, app: str, but: str = "") -> List[str]:
+        """The sessions of `app` that wait for work now, in any project (one may bring back another)."""
+        out: List[str] = []
+        for p in list(self.projects.values()):
+            with p.lock:
+                out += [sid for sid in connected(p.agents, app) if sid != but]
+        return out
+
+    def _wake_all(self) -> None:
+        """Every project's waiting agents look again (no project lock held)."""
+        for p in list(self.projects.values()):
+            p.news.wake()
+
+    def reconnect(self, slug: str, sid: str, root: str) -> Dict[str, Any]:
+        """The user asked to bring back session `sid` of project `slug`. With a session of its app connected, that one
+        is handed it (relay); with none, every lost session of that app is asked for too and the answer is what to give
+        a new session (and, for Claude, the link that opens one with it)."""
+        p = self.live(slug)
+        with p.lock:
+            got = session_of(p.agents, sid)
+        if not got or got[0] not in RECONNECT_APPS:
+            raise Refused("Taska cannot bring back that session")
+        app, name = got
+        if app == "claude-code":
+            d = claude_desktop(sid)
+            if d and d["archived"]:
+                raise Refused("that session is archived in the Claude app")
+            name = name or (str(d["title"]) if d else "")
+        relays = self._connected(app, but=sid)
+        self.reconnects.add(sid, app, slug, name)
+        out: Dict[str, Any] = {"ok": True, "relay": bool(relays)}
+        if not relays:
+            for q in list(self.projects.values()):
+                with q.lock:
+                    lost = [(x, session_of(q.agents, x)) for x in q.agents.lostness.lost()]
+                for x, of in lost:
+                    if of and of[0] == app and not self.reconnects.asked(x):
+                        self.reconnects.add(x, app, q.slug, of[1])
+            out["text"] = reconnect_text.new_session(root, app)
+        self._wake_all()
+        return out
+
+    def relay_for(self, app: str, sid: str, root: str) -> str:
+        """The narrow job for connected session `sid` of `app` when a lost one waits to be brought back ('' none)."""
+        a = self.reconnects.for_relay(app, sid)
+        if not a:
+            return ""
+        return reconnect_text.relay(root, a.app, a.slug, a.sid, a.name, claude_desktop(a.sid) if a.app == "claude-code" else None)
+
+    def lost_list(self, app: str, root: str) -> str:
+        """GET /api/reconnects?app=: for the new session the user started to bring back every lost session of `app`."""
+        if app not in RECONNECT_APPS:
+            raise Refused("app: claude-code or antigravity")
+        rows: List[Dict[str, object]] = []
+        for a in self.reconnects.pending(app):
+            self.reconnects.for_relay(app, "new session")  # handed to it: a connected session does not send it too
+            rows.append({"sid": a.sid, "slug": a.slug, "name": a.name, "desktop": claude_desktop(a.sid) if app == "claude-code" else None})
+        return reconnect_text.all_lost(root, app, rows)
 
     def needs(self, push: bool = False) -> List[Dict[str, Any]]:
         """What needs you in every project, newest first. A session working on an item and waiting on you counts

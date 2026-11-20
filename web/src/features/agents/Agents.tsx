@@ -20,7 +20,13 @@ export interface AgentsActs {
   help(): void
   /** an item, by its code */
   open(code: string): void
+  /** I833: bring back a session that lost its connection (by the id its app knows it by): relay, a connected session
+   * of its app is handed it; else `text` is what to give a new session */
+  reconnect(sid: string): Promise<{ relay: boolean; text?: string }>
 }
+
+/** I833: a Reconnect pressed: asked, handed to a connected session, what to start a new one with, or why not */
+export type Reconnecting = 'asking' | 'sent' | { text: string } | { error: string }
 
 /** What shows when the sheet opens: the session picked (a key; 'guide': what agents read), whether the phone shows
  * its page rather than the list, whether Codex's resume command shows. */
@@ -28,6 +34,8 @@ export interface AgentsStart {
   pick?: string
   page?: boolean
   resume?: boolean
+  /** a Reconnect already pressed (I833) */
+  reconnecting?: Reconnecting
 }
 
 const DOT: Record<SessionState, string> = {
@@ -133,7 +141,7 @@ function AgentsBody({ f, on, start }: { f: AgentsFacts; on: AgentsActs; start: A
           Agents
         </button>
         {s ? (
-          <SessionPage key={s.key} s={s} on={on} onPick={(k) => setPick(k)} resume={!!start.resume} />
+          <SessionPage key={s.key} s={s} on={on} onPick={(k) => setPick(k)} resume={!!start.resume} reconnecting={start.reconnecting} />
         ) : (
           <section className="flex flex-col gap-3 pt-2 lg:pt-0">
             <h3 className="text-xl font-semibold">What agents read</h3>
@@ -169,8 +177,19 @@ function ItemButton({ item, on, cls = '' }: { item: ItemRef; on: AgentsActs; cls
   )
 }
 
-function SessionPage({ s, on, onPick, resume }: { s: SessionFacts; on: AgentsActs; onPick(key: string): void; resume: boolean }) {
+function SessionPage({ s, on, onPick, resume, reconnecting }: { s: SessionFacts; on: AgentsActs; onPick(key: string): void; resume: boolean; reconnecting?: Reconnecting }) {
   const [shown, setShown] = useState(resume)
+  const [rc, setRc] = useState<Reconnecting | null>(reconnecting ?? null)
+  const reconnect = () => {
+    setRc('asking')
+    on.reconnect(s.reconnect).then(
+      (r) => setRc(r.relay || !r.text ? 'sent' : { text: r.text }),
+      (e: unknown) => setRc({ error: e instanceof Error ? e.message : String(e) }),
+    )
+  }
+  const busy = rc === 'asking' || rc === 'sent'
+  const start = rc && typeof rc === 'object' && 'text' in rc ? rc.text : ''
+  const why = rc && typeof rc === 'object' && 'error' in rc ? rc.error : ''
   return (
     <article className="flex flex-col gap-6 pt-2 pb-4 lg:pt-0">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
@@ -182,6 +201,13 @@ function SessionPage({ s, on, onPick, resume }: { s: SessionFacts; on: AgentsAct
             </span>
           )}
           <span className="hidden flex-1 lg:block" />
+          {s.reconnect ? (
+            // I833: another session of its app sends it a message to reconnect (or a new one does)
+            <button onClick={reconnect} disabled={busy} className={`${SECOND} ${WAY_BACK}`}>
+              <Icon n={busy ? 'spinner' : 'reopen'} c={`size-4 ${busy ? 'animate-spin' : ''}`} />
+              {busy ? 'Reconnecting' : 'Reconnect'}
+            </button>
+          ) : null}
           {s.link?.kind === 'open' ? (
             <a href={s.link.href} className={`${SECOND} ${WAY_BACK}`}>
               Open in Claude Code
@@ -205,6 +231,27 @@ function SessionPage({ s, on, onPick, resume }: { s: SessionFacts; on: AgentsAct
             </span>
           ) : null}
         </p>
+        {s.reconnect && start ? (
+          // none of its app connected to send it: a new session does, with these words (on the desktop, Claude's
+          // own link opens one with them filled in)
+          <div className="order-last mt-1 flex basis-full flex-col gap-2 rounded-lg bg-zinc-100 p-3 dark:bg-zinc-800">
+            <p className="text-[13px] font-medium">Start a new {whoName(s.app)} session with this</p>
+            <code className="font-mono text-[12.5px] break-all">{start}</code>
+            <div className="flex gap-2">
+              {s.app === 'claude-code' ? (
+                <a href={`claude://code/new?q=${encodeURIComponent(start)}`} className={`${CHIP} hidden h-7 bg-white px-2 text-xs font-medium lg:inline-flex dark:bg-zinc-700`}>
+                  <Icon n="open" c="size-3.5" />
+                  New session
+                </a>
+              ) : null}
+              <button onClick={() => on.copy(start)} className={`${CHIP} h-7 bg-white px-2 text-xs font-medium dark:bg-zinc-700`}>
+                <Icon n="copy" c="size-3.5" />
+                Copy
+              </button>
+            </div>
+          </div>
+        ) : null}
+        {s.reconnect && why ? <p className="order-last basis-full text-[13px] text-red-600 dark:text-red-400">{why}</p> : null}
         {shown && s.link?.kind === 'resume' ? (
           <div className="order-last mt-1 flex basis-full items-center gap-2 rounded-lg bg-zinc-100 py-1.5 pr-1.5 pl-3 dark:bg-zinc-800">
             <code className="min-w-0 flex-1 font-mono text-[12.5px] break-all">{s.link.cmd}</code>

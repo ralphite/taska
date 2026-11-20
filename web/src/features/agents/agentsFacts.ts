@@ -38,6 +38,9 @@ export interface SessionFacts {
   activity: { id: number; when: string; item: ItemRef; text: string }[]
   /** back to the session in its app: Claude Code's own link, Codex's resume command */
   link: { kind: 'open'; href: string } | { kind: 'resume'; cmd: string } | null
+  /** I833: gone, and another session of its app can bring it back (Claude Code, Antigravity): the id its app knows
+   * it by; '' none */
+  reconnect: string
 }
 
 export interface AgentsFacts {
@@ -52,6 +55,8 @@ export interface AgentsFacts {
 }
 
 const APPS = ['claude-code', 'codex', 'antigravity']
+/** the apps whose lost sessions another session brings back (I833; Codex is woken through its own queue) */
+const RECONNECT = ['claude-code', 'antigravity']
 /** the group of agents Taska has no app for */
 export const OTHERS = 'others'
 const RANK: Record<SessionState, number> = { waiting: 0, working: 1, idle: 2, gone: 3 }
@@ -117,6 +122,7 @@ export function sessionGroups(m: ProjectModel): Pick<AgentsFacts, 'groups' | 'st
           .slice(0, 5)
           .map((x) => ({ id: x.id, when: ago(x.t, at, 'short'), item: x.item, text: x.text })),
         link: linkOf(a.name, s.sid),
+        reconnect: state === 'gone' && s.sid && !s.worker && RECONNECT.includes(a.name) ? s.sid : '',
       }
       return { app: a.name, s, f }
     }),

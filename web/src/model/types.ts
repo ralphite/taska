@@ -240,6 +240,10 @@ export interface AgentSession {
   waiting?: boolean
   on?: { n: number; since: number }
   parent?: string
+  /** a worker found by its title (I810): it never called Taska */
+  worker?: boolean
+  /** I833: it waited for work before the machine restarted and is not back */
+  lost?: boolean
 }
 
 export interface AgentSeen {

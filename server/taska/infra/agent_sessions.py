@@ -48,6 +48,27 @@ class Session:
 
 # -- Claude Code ------------------------------------------------------------------
 
+def _desktop_folder() -> str:
+    return os.environ.get("TASKA_CLAUDE_DESKTOP") or os.path.expanduser("~/Library/Application Support/Claude/claude-code-sessions")
+
+
+def claude_desktop(sid: str) -> Optional[Dict[str, object]]:
+    """I833: the Claude desktop app's own record of the session whose id is `sid` (its `cliSessionId`): the id another
+    session sends it a message by (local_...), its title, and whether it is archived; None when the app has none."""
+    if not SID.fullmatch(sid or ""):
+        return None
+    for path in glob.glob(os.path.join(_desktop_folder(), "*", "*", "local_*.json")):
+        try:
+            with open(path, encoding="utf-8") as f:
+                d = json.load(f)
+        except (OSError, ValueError):
+            continue
+        if isinstance(d, dict) and d.get("cliSessionId") == sid:
+            return {"id": str(d.get("sessionId") or os.path.basename(path)[:-5]), "title": str(d.get("title") or ""),
+                    "archived": bool(d.get("isArchived"))}
+    return None
+
+
 def _claude_folder() -> str:
     return os.environ.get("TASKA_CLAUDE_SESSIONS") or os.path.expanduser("~/.claude/sessions")
 

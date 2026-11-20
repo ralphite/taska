@@ -112,6 +112,7 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
     except OSError as ex:
         sys.exit(f"taska: cannot listen on {host}:{port}: {ex}")
     ws.lan = lan_address(host, port)
+    ws.local = f"http://127.0.0.1:{port}"  # I833: what the agents here run
     print(f"Taska  http://{host}:{port}/  started {time.strftime('%Y-%m-%d %H:%M:%S')}\n  data       {ws.root}  "
           f"({', '.join(sorted(ws.projects))})\n  organizer  "
           + (f"Gemini {MODEL}" if organizer else "off (add a Gemini API key in Settings › Organizer)")

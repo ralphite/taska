@@ -298,6 +298,8 @@ def record(base: str) -> Dict[str, Any]:
     out["pictureSizes"] = c.json(p + "picture-sizes")
     out["diagramFailed"] = c.json(p + "diagram-failed", {"d": 1, "v": 1, "key": "x", "error": "Parse error"})
     out["pageLog"] = c.json(p + "page-log", {"list": [{"kind": "action", "msg": "sample"}]})
+    # I833: bring back a session (none of its app is connected: what to give a new session)
+    out["reconnect"] = c.json(p + "reconnect", {"sid": "aaaaaaaa-1111-2222-3333-444444444444"})
     out["newSharedRules"] = c.json("/api/shared-rules", {"name": "Coding"})  # I779
     rule = "/p/" + out["newSharedRules"]["slug"] + "/api/"
     c.json(rule + "commands", {"id": "s7", "commands": [{"op": "rules", "md": "## Tests (when to run them)\n\n- Run them.", "why": "First"}]})

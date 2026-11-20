@@ -44,6 +44,8 @@ def get(ctx: "AppContext", req: Request, path: str) -> Optional[Response]:
         return as_json(ws.summary(presence))
     if path == "/api/needs":
         return as_json(ws.needs())
+    if path == "/api/reconnects":  # I833: for a new session the user started to bring back the lost ones
+        return text(200, ws.lost_list(req.arg("app"), ws.local or f"{req.host()}{req.prefix}"))
     if path == "/api/listening":  # B811: the check at the end of an agent's turn
         return as_json(ws.listening(req.arg("sid")))
     if path == "/api/find":  # the search (F479; Home's, ⌘K, the phone's): every project, by meaning and by the words

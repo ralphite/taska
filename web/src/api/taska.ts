@@ -62,6 +62,8 @@ export interface Answers {
   pictureSizes: Record<string, [number, number]>
   activity: LogRow[]
   diagramFailed: Ok & { result: string }
+  /** I833: relay, a connected session of its app is handed it; else `text` is what to give a new session */
+  reconnect: Ok & { relay: boolean; text?: string }
   pageLog: Ok
   sharedRules: SharedRule[]
   newSharedRules: Ok & { slug: string; name: string }
@@ -272,6 +274,11 @@ export class TaskaApi {
   /** A document's diagram that did not draw (B714 r1181): Taska tells the agent that wrote it, once. */
   diagramFailed(slug: string, body: { d: number; v: number; key: string; error: string }): Promise<Answers['diagramFailed']> {
     return this.http.json(P(slug) + 'diagram-failed', { method: 'POST', body })
+  }
+
+  /** Bring back an agent session that lost its connection (I833), by the id its app knows it by. */
+  reconnect(slug: string, sid: string): Promise<Answers['reconnect']> {
+    return this.http.json(P(slug) + 'reconnect', { method: 'POST', body: { sid } })
   }
 
   /** `leaving`: sent as the page goes (it outlives the page) */

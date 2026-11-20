@@ -16,7 +16,8 @@ import { DeskPage as NewInputDesk, PhonePage as NewInputPhone } from '../../stor
 import { DeskPage, PageBox } from '../../stories/searchDeskPage'
 import { D1, SHOP } from '../../stories/searchFixtures'
 import { shopWithHistory } from '../../stories/settingsFixtures'
-import { act, acts } from '../../stories/sheetFixtures'
+import { act } from '../../stories/sheetFixtures'
+import { AGENTS_ON } from '../../stories/agentsFixtures'
 import { agentsSheet } from './Agents'
 import { agentsFacts } from './agentsFacts'
 import { BlockedBar } from './BlockedBar'
@@ -28,7 +29,7 @@ type Story = StoryObj
 const BLOCKED: AgentSeen[] = AGENTS.blocked
 const SHOP_BLOCKED = { ...SHOP, facts: { ...SHOP.facts, agents: BLOCKED } }
 type Layout = 'phone' | 'desk'
-const on = acts('Agents', ['copy', 'help', 'open'], { help: 'Help › Topics › Connect an agent', open: 'the item' })
+const on = AGENTS_ON
 
 /** Where the page floats it, just above the box: on the phone 16 px from the screen's sides, on the desktop over the
  * pane's column (both as the page places them). */

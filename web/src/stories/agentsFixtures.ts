@@ -3,6 +3,8 @@
 // each session wrote on the items. Used by the Agents sheet's stories.
 
 import type { AgentSeen, Item, Message } from '../model/types'
+import type { AgentsActs } from '../features/agents/Agents'
+import { acts } from './sheetFixtures'
 import { T, message } from './fixtures'
 import { PROJECT } from './listFixtures'
 
@@ -97,3 +99,13 @@ export const ALL_GONE: AgentSeen[] = [
 
 /** The key the sheet knows a session by (agentsFacts). */
 export const sessionKey = (app: string, name: string) => `${app}\u0000${name}`
+
+/** What the Agents sheet does, for its stories: each in the Actions panel; Reconnect is handed to a connected
+ * session of its app (I833). */
+export const AGENTS_ON: AgentsActs = {
+  ...acts('Agents', ['copy', 'help', 'open'], { help: 'Help › Topics › Connect an agent', open: 'the item' }),
+  reconnect: () => new Promise((done) => setTimeout(() => done({ relay: true }), 300)),
+}
+
+/** I833: what the page gives a new Claude session when none is connected to bring the lost one back. */
+export const NEW_SESSION_TEXT = 'Bring back the Taska sessions that lost their connection: run curl -s "http://127.0.0.1:7340/api/reconnects?app=claude-code" and do what it says. Then you are done.'
