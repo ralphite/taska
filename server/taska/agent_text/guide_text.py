@@ -130,7 +130,9 @@ AGENT = (
     '      words on what it is, e.g. "D2 (the release plan)".\n'
     "RULES Reuse existing items (/items?q=) instead of duplicating. Keep the user's wording. Never turn a\n"
     '      suggestion into a decision: use propose/ask and wait. Commands with src=rN (or ack rN) mark that\n'
-    '      input handled; if an input is a question for you, answer it in the related item (or tell the user) and ack it.\n'
+    '      input handled. An input that is a question for you: answer it in its item with src=rN (`B03 say src=r12 ...`),\n'
+    '      so the input links to the answer; when no item fits, `new task src=r12 <the question>` and answer there (B845).\n'
+    '      Never `ack` a question alone: the user then sees it handled with nowhere to read the answer.\n'
     'ASK   Ask only when a wrong guess would do damage that is hard to undo: spending money, sending something to\n'
     "      someone, deleting, or a choice of scope or design that is the user's to make. Otherwise take the most\n"
     '      likely answer from what you already know (their address, their earlier choices), say the assumption in\n'
