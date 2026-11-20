@@ -49,7 +49,7 @@ export const SAMPLES = {
   ]
  },
  "view": {
-  "cursor": "1a1b1cd8afe.39.55.2",
+  "cursor": "1a1b1cd8b0b.39.55.2",
   "full": true,
   "items": [
    {
@@ -157,7 +157,7 @@ export const SAMPLES = {
      "t": "2026-11-06T09:00:00-08:00"
     },
     "readBy": {
-     "claude-code": 1793984400210
+     "claude-code": 1793984400198
     }
    },
    {
@@ -789,17 +789,17 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400245,
+     "t": 1793984400232,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400245
+       "t": 1793984400232
       },
       {
        "name": "helper",
-       "t": 1793984400134,
+       "t": 1793984400147,
        "sid": "aaaaaaaa-1111-2222-3333-444444444444",
        "on": {
         "n": 3,
@@ -884,22 +884,22 @@ export const SAMPLES = {
    ],
    "phone": false,
    "base": "http://127.0.0.1:7340/p/shop",
-   "key": "2smz-sgwv",
+   "key": "jdu2-nrd7",
    "remote": "",
    "lan": "",
-   "filesCap": "57487da41fc5f178b5059844"
+   "filesCap": "df6f84df71ccc224f41edd65"
   },
   "server": {
-   "page": "index-BBE-eUPC.js",
+   "page": "index-DVMW2-9Y.js",
    "update": false,
    "dev": true
   }
  },
  "changes": {
-  "cursor": "1a1b1cd8afe.39.55.2",
+  "cursor": "1a1b1cd8b0b.39.55.2",
   "same": true,
   "server": {
-   "page": "index-BBE-eUPC.js",
+   "page": "index-DVMW2-9Y.js",
    "update": false,
    "dev": true
   }
@@ -910,7 +910,7 @@ export const SAMPLES = {
    "ok B01 pri=P0"
   ],
   "changes": {
-   "cursor": "1a1b1cd8afe.40.56.2",
+   "cursor": "1a1b1cd8b0b.40.56.2",
    "full": false,
    "items": [
     {
@@ -1018,7 +1018,7 @@ export const SAMPLES = {
       "t": "2026-11-06T09:00:00-08:00"
      },
      "readBy": {
-      "claude-code": 1793984400210
+      "claude-code": 1793984400198
      }
     }
    ],
@@ -1049,17 +1049,17 @@ export const SAMPLES = {
     "agents": [
      {
       "name": "claude-code",
-      "t": 1793984400245,
+      "t": 1793984400232,
       "waiting": false,
       "session": "sample",
       "sessions": [
        {
         "name": "sample",
-        "t": 1793984400245
+        "t": 1793984400232
        },
        {
         "name": "helper",
-        "t": 1793984400134,
+        "t": 1793984400147,
         "sid": "aaaaaaaa-1111-2222-3333-444444444444",
         "on": {
          "n": 3,
@@ -1155,13 +1155,13 @@ export const SAMPLES = {
     ],
     "phone": false,
     "base": "http://127.0.0.1:7340/p/shop",
-    "key": "2smz-sgwv",
+    "key": "jdu2-nrd7",
     "remote": "",
     "lan": "",
-    "filesCap": "57487da41fc5f178b5059844"
+    "filesCap": "df6f84df71ccc224f41edd65"
    },
    "server": {
-    "page": "index-BBE-eUPC.js",
+    "page": "index-DVMW2-9Y.js",
     "update": false,
     "dev": true
    }
@@ -1875,12 +1875,12 @@ export const SAMPLES = {
  },
  "newSharedRules": {
   "ok": true,
-  "slug": "~9um78",
+  "slug": "~m73sy",
   "name": "Coding"
  },
  "sharedRules": [
   {
-   "slug": "~9um78",
+   "slug": "~m73sy",
    "name": "Coding",
    "md": "## Tests (when to run them)\n\n- Run them.",
    "parts": [
@@ -1914,7 +1914,7 @@ export const SAMPLES = {
    "docs": 0,
    "agents": [],
    "work": false,
-   "t": 1794862638983
+   "t": 1795145999126
   },
   {
    "name": "garden",
@@ -1927,7 +1927,7 @@ export const SAMPLES = {
    "docs": 1,
    "agents": [],
    "work": true,
-   "t": 1794862639164
+   "t": 1795145999304
   },
   {
    "name": "shop",
@@ -1941,17 +1941,17 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400245,
+     "t": 1793984400232,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400245
+       "t": 1793984400232
       },
       {
        "name": "helper",
-       "t": 1793984400134,
+       "t": 1793984400147,
        "sid": "aaaaaaaa-1111-2222-3333-444444444444",
        "on": {
         "n": 3,
@@ -1963,7 +1963,7 @@ export const SAMPLES = {
     }
    ],
    "work": true,
-   "t": 1794862639172
+   "t": 1795145999312
   }
  ],
  "needs": [
@@ -2116,7 +2116,7 @@ export const SAMPLES = {
       "t": "2026-11-06T09:00:00-08:00"
      },
      "readBy": {
-      "claude-code": 1793984400210
+      "claude-code": 1793984400198
      }
     },
     "parentCode": null,
@@ -2498,7 +2498,7 @@ export const SAMPLES = {
   "tidy": true
  },
  "pushKey": {
-  "key": "BHd1j3uL5wIhnAIKc2TpA2ZM9bJEpEtebhrfTxL0HXyhlboUcQGgSRzzJw1TJkKKrFrz9QTBm0vaQg47tTMiqpc",
+  "key": "BG0DmeO5Q0nLLcOu_iaW3J7S11TRkiOiPQ2JCeClK18uZZoZ4Zu3QXQFzOtbu_dF9V0FLADim0-2-DCxL1ezXgg",
   "on": false
  },
  "setPush": {
@@ -2554,7 +2554,7 @@ export const SAMPLES = {
  },
  "newKey": {
   "ok": true,
-  "key": "xrww-kwde"
+  "key": "d3mx-mesp"
  },
  "login": {
   "ok": true
@@ -2596,6 +2596,7 @@ export const SERVER_READS = {
  ],
  "dc": [
   "d",
+  "detached",
   "files",
   "key",
   "para",

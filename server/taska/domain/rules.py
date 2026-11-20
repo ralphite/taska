@@ -213,6 +213,12 @@ class Detached:
     comments: List[Comment] = field(default_factory=list)
 
 
+def detached_threads(d: Doc) -> List[Tuple[str, int, str]]:
+    """Each thread whose paragraph was rewritten or removed, in order: its paragraph's key, the thread, its quote.
+    ¶x1 is the first (B837): so a reply goes into it."""
+    return [(t.key, th, t.quote) for t in doc_view(d)[1] for th in dict.fromkeys(c.th for c in t.comments)]
+
+
 def doc_view(d: Doc) -> Tuple[List[DocBlock], List[Detached]]:
     """The document's blocks with their comments; comments whose paragraph changed come back detached. A web page
     has no paragraphs: each part commented on is a block of its own."""

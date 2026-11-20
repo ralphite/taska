@@ -30,6 +30,24 @@ class DocReplyThread(ProjectCase):
         self.p.run(parse(f"D{d.d} reply ¶2 The CSV one.\n"), "claude-code")
         self.assertEqual(rules.doc_unanswered(self.p.state.docs[d.d]), 0)
 
+    def test_a_thread_whose_paragraph_was_rewritten_is_answered_by_its_x_name(self):
+        """B837: the paragraph commented on was written again; its thread comes under "rewritten or removed" and was
+        not answerable, so /next asked for an answer forever. ¶xK answers it, as /D names it."""
+        from taska.agent_text.render import doc_text
+        from taska.agent_text.render import Reading
+        d = next(iter(self.p.state.docs.values()))
+        key = rules.doc_view(d)[0][1].key
+        self.p.run([(1, {"op": "dc", "d": str(d.d), "key": key, "text": "The diagram does not draw."})], "you")
+        self.p.run(parse(f"D{d.d} doc\n  # Plan\n  \n  Ship the export as CSV, now drawn.\n"), "claude-code")
+        d = self.p.state.docs[d.d]
+        self.assertEqual(len(rules.detached_threads(d)), 1)
+        self.assertEqual(rules.doc_unanswered(d), 1)
+        rd = Reading(state=self.p.state, held=lambda inp: False, organizer_on=False, file_ref=lambda f: f, file_path=lambda f: f)
+        self.assertIn("[¶x1] you", doc_text(rd, d))
+        self.assertIn("x1-x1", "\n".join(sum(self.p.run(parse(f"D{d.d} reply ¶x2 Fixed.\n"), "claude-code"), [])))
+        self.p.run(parse(f"D{d.d} reply ¶x1 Fixed: it draws now.\n"), "claude-code")
+        self.assertEqual(rules.doc_unanswered(self.p.state.docs[d.d]), 0)
+
     def test_a_reply_names_its_session_as_a_message_does(self):
         """T711: the page shows an agent's comment with its session's name, as it shows its messages."""
         from taska.page_api.views import comment_view

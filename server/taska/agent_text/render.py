@@ -329,7 +329,8 @@ def doc_text(rd: Reading, d: Doc) -> str:
     blocks, detached = rules.doc_view(d)
     titled = bool(blocks) and " ".join(blocks[0].text.lstrip("#").split()) == d.title
     out = [f"D{d.d} on {st.code(d.n)}{'' if titled else ': ' + d.title}  (updated {hm(d.t1)} by {d.by}; reply with: "
-           f"D{d.d} reply ¶N <text>, ¶0 for the whole document, ¶N.K for thread K of ¶N)"]
+           f"D{d.d} reply ¶N <text>, ¶0 for the whole document, ¶N.K for thread K of ¶N"
+           f"{', ¶xK for thread K of the comments whose paragraph was rewritten' if detached else ''})"]
     texts = [b.text for b in blocks]
     if d.is_rules:  # the project's rules (I693): answered here; changed only by proposing
         out[0] = (f"D{d.d}: the project's rules  (updated {hm(d.t1)} by {who_wrote(d.by)}; reply with: D{d.d} reply ¶N "
@@ -356,11 +357,16 @@ def doc_text(rd: Reading, d: Doc) -> str:
             part = "" if " ".join(c.quote.split()) == " ".join(text.split()) else f"on \"{first_line(c.quote, 120)}\": "
             out.append(f"   > {names.get(c.th, '')}{c.by} {hm(c.t)}: {part}{_comment(rd, c)}")
     if detached:
-        out.append("comments whose paragraph was rewritten or removed:")
+        out.append("comments whose paragraph was rewritten or removed (reply with ¶xK, B837):")
+        k = 0
         for t in detached:
             out.append(f"   on \"{first_line(t.quote, 80)}\"")
+            names: Dict[int, str] = {}
+            for th in dict.fromkeys(c.th for c in t.comments):
+                k += 1
+                names[th] = f"[¶x{k}] "
             for c in t.comments:
-                out.append(f"   > {c.by} {hm(c.t)}: {_comment(rd, c)}")
+                out.append(f"   > {names[c.th]}{c.by} {hm(c.t)}: {_comment(rd, c)}")
     return "\n".join(out) + "\n"
 
 

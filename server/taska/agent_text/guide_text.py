@@ -42,6 +42,7 @@ GRAMMAR = (
     '                            sounds, videos and pictures in it: upload each (as above) and name it BASE/f/<its f>\n'
     '                            (<audio src="BASE/f/f12-a.mp3">); never write them into the page (it gets too big to open)\n'
     '  D1 reply ¶3 <text>        answer the comments on paragraph 3 of D1 (¶3.2: its second thread, as /D1 names it)\n'
+    '                            (¶x1: the first thread whose paragraph was rewritten or removed, as /D1 names it)\n'
     '  B03 archive|unarchive     hide a done/dropped item from the default lists (reopening unarchives)\n'
     '  rules propose <why>       propose a change to the project rules (the user approves or declines it); indented\n'
     '                            under it, each change: replace ## <section> / add ## <section> [after ## <section>]\n'

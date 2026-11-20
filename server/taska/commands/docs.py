@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from ..domain import events as ev
 from ..domain.markdown import block_key, blocks as md_blocks
-from ..domain.rules import doc_at, doc_view, is_proposal_key, item_at
+from ..domain.rules import detached_threads, doc_at, doc_view, is_proposal_key, item_at
 from ..domain.vocab import DOC_KEY, MAX_TEXT, PEOPLE, TASKA, Refused
 from .base import Args, Outcome, Run, handles
 from .inputs import sent_files, voice_words
@@ -94,7 +94,13 @@ def comment(r: Run, a: Args) -> Outcome:
         elif a.get("key") != DOC_KEY and not a.text("key").startswith("h:"):
             raise Refused("a part of a web page is named h:<its place>")
         paras = [("html", a.text("quote"))] if a.get("key") != DOC_KEY else []
-    if str(a.get("para", "")) == "0" or a.get("key") == DOC_KEY:
+    if a.get("detached") is not None and not d.is_page:  # ¶xK: a thread whose paragraph was rewritten (B837)
+        k, gone = str(a.get("detached")), detached_threads(d)
+        if not k.isdigit() or not 1 <= int(k) <= len(gone):
+            raise Refused(f"D{d.d} has threads x1-x{len(gone)}" if gone else f"D{d.d} has no comments whose paragraph was rewritten")
+        key, th0, text = gone[int(k) - 1]
+        a = a.with_(quote=text, th=str(th0))
+    elif str(a.get("para", "")) == "0" or a.get("key") == DOC_KEY:
         key, text = DOC_KEY, ""
     elif a.get("para"):
         k = int(a.get("para"))

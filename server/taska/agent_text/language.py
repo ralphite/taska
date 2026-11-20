@@ -203,6 +203,9 @@ def _doc_command(word: str, rest: str, cont: str) -> Command:
     if v == "html":  # the document as a web page (HTML, scripts too)
         return {"op": "doc", "d": word[1:], "title": rest2.strip(), "md": cont, "fmt": "html"}
     if v == "reply":
+        x = re.match(r"¶?x(\d+)\s+(.*)", rest2.strip(), re.S)
+        if x:  # ¶x2: the second thread whose paragraph was rewritten or removed (B837)
+            return {"op": "dc", "d": word[1:], "detached": x.group(1), "text": (x.group(2) + ("\n" + cont if cont else "")).strip()}
         m = re.match(r"¶?(\d+)(?:\.(\d+))?\s+(.*)", rest2.strip(), re.S)
         if not m:
             raise Refused(f"use: {word} reply ¶3 <text>")
