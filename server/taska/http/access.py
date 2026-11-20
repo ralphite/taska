@@ -56,8 +56,10 @@ class Access:
         if framed and hmac.compare_digest(framed.group(2), self.files_cap(framed.group(1))):
             req.prefix = ""
             return req
+        # a visit from another app opens the page (B841: one app's browser says its visits are for "empty"); a frame
+        # in another site is not one
         visit = req.method in ("GET", "HEAD") and req.header("Sec-Fetch-Mode") == "navigate" \
-            and req.headers.get("Sec-Fetch-Dest") in ("document", None)
+            and req.headers.get("Sec-Fetch-Dest") in ("document", "empty", None)
         if req.header("Sec-Fetch-Site") == "cross-site" and not visit:
             return text(403, "cross-site request refused\n")
         req.prefix = ""
