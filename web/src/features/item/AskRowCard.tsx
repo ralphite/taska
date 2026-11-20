@@ -71,12 +71,14 @@ export function AskRowCard({ it, row, env, on, going = null }: {
     if (left >= 0) setPage(left)
   }
   const pick = (k: number, many: boolean) => {
+    // the one picked, tapped again, is unpicked, as a ticked one is (B835)
+    const again = mine[at].picked.has(k)
     const next = new Set(many ? mine[at].picked : [])
-    if (many && next.has(k)) next.delete(k)
+    if (again) next.delete(k)
     else next.add(k)
     set(at, { picked: next })
     // one choice: on to the next question still to answer (D132)
-    if (!many) {
+    if (!many && !again) {
       const after = row.findIndex((_, i) => i > at && !sent(i) && !filled(i))
       if (after >= 0) setTimeout(() => setPage(after), 250)
     }

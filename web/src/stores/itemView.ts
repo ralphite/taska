@@ -77,8 +77,10 @@ export function createItemViewStore(kv: KeyValueStore): ItemViewStore {
         if (picked.has(i)) picked.delete(i)
         else picked.add(i)
       } else {
+        // the one picked, tapped again, is unpicked (B835): a slip can be taken back
+        const was = picked.has(i)
         picked.clear()
-        picked.add(i)
+        if (!was) picked.add(i)
       }
       const choice = { n, picked }
       keep(get().slug, choice, labels)
