@@ -122,7 +122,7 @@ export function sessionGroups(m: ProjectModel): Pick<AgentsFacts, 'groups' | 'st
           .slice(0, 5)
           .map((x) => ({ id: x.id, when: ago(x.t, at, 'short'), item: x.item, text: x.text })),
         link: linkOf(a.name, s.sid),
-        reconnect: state === 'gone' && s.sid && !s.worker && RECONNECT.includes(a.name) ? s.sid : '',
+        reconnect: state === 'gone' && s.sid && RECONNECT.includes(a.name) ? s.sid : '',
       }
       return { app: a.name, s, f }
     }),

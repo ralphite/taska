@@ -558,10 +558,8 @@ class AgentActivity:
                 row["session"] = v.session
             rows = [self._session(k, n, t, v.sids.get(n, ""), holds, waking)
                     for n, t in sorted(v.sessions.items(), key=lambda x: -x[1])
+                    # I833: one lost (it waited for work before the restart and is not back) shows however long ago
                     if t > day or v.sids.get(n, "") in lost or self.found.get(v.sids.get(n, "")) and self.found[v.sids[n]].status == "waiting"]
-            for r in rows:  # I833: it waited for work before the restart and is not back
-                if r.get("sid") in lost:
-                    r["lost"] = True
             if v.sids.get("") and v.sids[""] not in {sid for n, sid in v.sids.items() if n}:
                 rows.append(self._session(k, "", v.t, v.sids[""], holds, waking))
             if rows:

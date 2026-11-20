@@ -45,10 +45,10 @@ class LostOverARestart(ProjectCase):
         ag = self.p.agents
         self.assertEqual(ag.lostness.lost(ag.lostness.started + 60), set())  # a minute on: it may still come back by itself
         self.assertEqual(ag.lostness.lost(ag.lostness.started + 200), {B})
-        self.assertEqual([r.get("lost") for a in ag.presence() for r in a.get("sessions", [])], [None])  # not marked yet...
+        ag.agents["claude-code"].sessions["Export work"] -= 2 * 86400  # heard of two days ago: listed only while lost
+        self.assertEqual([r["sid"] for a in ag.presence() for r in a.get("sessions", [])], [])
         ag.lostness.started -= 200
-        rows = [r for a in ag.presence() for r in a.get("sessions", [])]
-        self.assertEqual([(r["sid"], r.get("lost")) for r in rows], [(B, True)])  # ...then marked lost
+        self.assertEqual([r["sid"] for a in ag.presence() for r in a.get("sessions", [])], [B])
         ag.saw("claude-code", 0, "Export work", B)  # it called: back
         self.assertEqual(ag.lostness.lost(), set())
 
