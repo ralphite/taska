@@ -2,14 +2,15 @@
 // (add files; a voice note, or Send once there are words). Past one line on the desktop the words take the box's
 // whole width and the buttons go to a row under them. Props only.
 
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import type { BoxLine, BoxRight, FeedbackLine } from '../../model/boxFoot'
 import { VC_MARK } from '../../model/voiceComments'
-import { fits, pickedSkill, skillMenu, type Skill } from '../../model/skills'
+import { pickedSkill, skillMenu, type Skill } from '../../model/skills'
 import { OUT_ACT_WORD, type OutTone } from '../../model/outgoingStates'
 import { INPUT_ACT_WORD, INPUT_STATES, type InputAct, type InputState, type InputTone } from '../../model/inputStates'
 import { Icon, type IconName } from '../../ui/Icon'
 import { RecBar } from '../../ui/PlaceVoice'
+import { SkillMenu, type AddRow } from './SkillMenu'
 import { HIT, MUTED } from '../../ui/tones'
 
 /** What the line's buttons do: stop what the box is in, let go of what is picked in the document, send or clear the
@@ -121,66 +122,6 @@ export interface ComposerProps {
   }
 }
 
-/** The skills that fit the "/" being typed (I821): each its name and what it is for; ↑↓ to choose, ↵ or ⇥ to take. */
-/** A skill's name as Codex lists it, without its "/", the letters typed standing out. */
-function SkillName({ name, typed }: { name: string; typed: string }) {
-  const at = new Set(fits(name, typed) ?? [])
-  return (
-    <span className="shrink-0 text-zinc-900 dark:text-zinc-100">
-      {[...name].map((c, i) => (i === 0 ? null : at.has(i) ? <b key={i} className="font-semibold">{c}</b> : c))}
-    </span>
-  )
-}
-
-/** The skills to pick from, as Codex shows its commands: a card over the box (under it on the desktop's New input
- * page, where the box is at the top), a row each: its name, what it is for. */
-export function SkillMenu({ menu, sel, typed, files, cardRef, on }: { menu: readonly Skill[]; sel: number; typed: string; files?: () => void; cardRef?: Ref<HTMLDivElement>; on: { pick(s: Skill): void; select(i: number): void } }) {
-  return (
-    <div
-      ref={cardRef}
-      role="listbox"
-      aria-label={files ? 'Add' : 'Skills'}
-      className="absolute inset-x-0 bottom-full z-20 mb-2 flex max-h-80 lg:group-data-[compose]/app:top-full lg:group-data-[compose]/app:bottom-auto lg:group-data-[compose]/app:mt-2 lg:group-data-[compose]/app:mb-0 flex-col gap-px overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-800 dark:bg-zinc-900"
-    >
-      {files ? (
-        // I834: + opens this card: files first, the skills under them (as ChatGPT's and Claude's apps do)
-        <>
-          <button
-            role="option"
-            aria-selected={sel === -1}
-            onMouseMove={() => sel !== -1 && on.select(-1)}
-            onClick={files}
-            className="flex min-h-11 w-full shrink-0 items-center gap-2.5 rounded-xl px-2.5 text-left text-[15px] text-zinc-900 aria-selected:bg-zinc-100 lg:min-h-8 lg:text-sm dark:text-zinc-100 dark:aria-selected:bg-zinc-800"
-          >
-            <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
-              <Icon n="file" c="size-[18px] lg:size-4" />
-            </span>
-            Photos and files
-          </button>
-          {menu.length ? <div className="mx-2.5 my-1 shrink-0 border-t border-zinc-200 dark:border-zinc-800" /> : null}
-        </>
-      ) : null}
-      {menu.map((s, i) => (
-        <button
-          key={s.name}
-          role="option"
-          aria-selected={i === sel}
-          onMouseDown={(e) => e.preventDefault()} // the words keep the caret
-          onMouseMove={() => i !== sel && on.select(i)}
-          onClick={() => on.pick(s)}
-          className="flex min-h-11 w-full min-w-0 shrink-0 items-center gap-2.5 rounded-xl px-2.5 text-left text-[15px] aria-selected:bg-zinc-100 lg:min-h-8 lg:text-sm dark:aria-selected:bg-zinc-800"
-        >
-          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
-            <Icon n="book" c="size-[18px] lg:size-4" />
-          </span>
-          <SkillName name={s.name} typed={typed} />
-          <span className="min-w-0 flex-1 truncate text-zinc-500 dark:text-zinc-400">{s.what}</span>
-        </button>
-      ))}
-    </div>
-  )
-}
-
 interface Btn {
   label: string
   tip: string
@@ -190,6 +131,9 @@ interface Btn {
   run(): void
 }
 const btn = (label: string, tip: string, icon: IconName, run: () => void, iconCls = 'size-6 lg:size-5', sw = '1.75'): Btn => ({ label, tip, icon, iconCls, sw, run })
+
+/** +'s card with none of its rows chosen (I834) */
+const NONE = -100
 
 /** Where words were put in, when that is all that changed (null: more than that changed). */
 function insertedAt(was: string, now: string): number | null {
@@ -202,7 +146,7 @@ function insertedAt(was: string, now: string): number | null {
 export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, text, desk, composePage, micTip, files, doubts, words, hasFiles = false, attach = true, addOpen = false, boxRef, fieldRef, rec = null, skills = [], on }: ComposerProps) {
   const area = useRef<HTMLTextAreaElement | null>(null)
   // I821: the skills that fit the "/" being typed, the one chosen, and the words Esc closed the list for
-  const [skillSel, setSkillSel] = useState(addOpen ? -2 : 0)
+  const [skillSel, setSkillSel] = useState(addOpen ? NONE : 0)
   const [skillsOff, setSkillsOff] = useState(false) // Esc or leaving the box closed it, until the words change
   // I834: + opens a card of files and the skills (the phone has no easy "/"); it closes on a pick, Esc or a tap elsewhere
   const [plus, setPlus] = useState(addOpen)
@@ -257,6 +201,22 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
   // the quote lines of comments on a document ("> “…”") are drawn quieter, as quotes, behind the words you edit
   const quoted = text.split('\n').some((l) => VC_MARK.test(l))
   const picker = useRef<HTMLInputElement>(null)
+  // I834 r1438: the phone's ways to add files, each opened at once where the phone lets it (the camera, the Files
+  // app); its photos come through the phone's own menu (a page cannot open them alone). The desktop has one.
+  const camera = useRef<HTMLInputElement>(null)
+  const photos = useRef<HTMLInputElement>(null)
+  const anyFile = useRef<HTMLInputElement>(null)
+  const open = (way: 'files' | 'camera' | 'photos' | 'any') => {
+    setPlus(false)
+    ;({ files: picker, camera, photos, any: anyFile })[way].current?.click()
+  }
+  const adds: AddRow[] = desk
+    ? [{ label: 'Files', icon: 'file', run: () => open('files') }]
+    : [
+        { label: 'Camera', icon: 'camera', run: () => open('camera') },
+        { label: 'Photos', icon: 'image', run: () => open('photos') },
+        { label: 'Files', icon: 'file', run: () => open('any') },
+      ]
   const has = !!text.trim() || hasFiles
   // where you were in the words: words put in from elsewhere (a voice note's, another tab's) keep your place in
   // yours, as typing there would
@@ -326,14 +286,7 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
           sel={plusMenu ? skillSel : sel}
           typed={plusMenu ? '' : text}
           cardRef={plusCard}
-          files={
-            plusMenu
-              ? () => {
-                  setPlus(false)
-                  picker.current?.click()
-                }
-              : undefined
-          }
+          adds={plusMenu ? adds : undefined}
           on={{ pick: pickSkill, select: setSkillSel }}
         />
       ) : null}
@@ -347,7 +300,7 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
           onClick={() => {
             if (rec) return on.recCancel?.()
             if (!skills.length) return picker.current?.click() // no skills: + is files, as before
-            setSkillSel(-2) // none chosen until pointed at (-1 is the files row)
+            setSkillSel(NONE) // none chosen until pointed at (-1, -2 ...: the rows that add files)
             setPlus(!plus)
           }}
           className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 group-data-[multi]/box:mr-auto hover:bg-zinc-100 aria-expanded:bg-zinc-100 aria-expanded:text-zinc-800 dark:aria-expanded:bg-zinc-800 dark:aria-expanded:text-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
@@ -470,16 +423,27 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
           )
         })()}
       </div>
-      <input
-        ref={picker}
-        type="file"
-        multiple
-        hidden
-        onChange={(e) => {
-          on.attach([...(e.target.files || [])])
-          e.target.value = ''
-        }}
-      />
+      {(
+        [
+          [picker, {}],
+          [camera, { accept: 'image/*', capture: 'environment' }],
+          [photos, { accept: 'image/*,video/*' }],
+          [anyFile, { accept: '*/*' }],
+        ] as const
+      ).map(([ref, how], k) => (
+        <input
+          key={k}
+          ref={ref}
+          type="file"
+          multiple={!('capture' in how)}
+          hidden
+          {...how}
+          onChange={(e) => {
+            on.attach([...(e.target.files || [])])
+            e.target.value = ''
+          }}
+        />
+      ))}
     </div>
   )
 }

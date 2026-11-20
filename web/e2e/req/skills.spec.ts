@@ -56,16 +56,19 @@ test('I821: Esc closes the list; other words show none', async ({ page, request 
   await expect(page.getByRole('option').filter({ visible: true })).toHaveCount(0)
 })
 
-// I834 (r1428): + opens a card of photos and files and, under them, the skills; picking one puts its name in the box,
-// as "/" does; Photos and files picks files as + did; a tap elsewhere closes the card.
+// I834 (r1428 r1438): + opens a card of the ways to add files (the phone: Camera, Photos, Files, each its own row;
+// the desktop: Files) and, under them, the skills; picking one puts its name in the box, as "/" does; Files picks
+// files; a tap elsewhere closes the card.
 test('I834: + opens files and the skills; a skill picked goes in the box', async ({ page, request }) => {
   const name = await skill(request, 'Answer only.')
   const p = await project(request)
   await open(page, p, '')
   const plus = page.getByRole('button', { name: 'Add files' }).filter({ visible: true })
   await plus.click()
-  const files = page.getByRole('option', { name: 'Photos and files' }).filter({ visible: true })
+  const files = page.getByRole('option', { name: 'Files', exact: true }).filter({ visible: true })
   await expect(files).toBeVisible()
+  const phone = test.info().project.name.startsWith('phone')
+  for (const way of ['Camera', 'Photos']) await expect(page.getByRole('option', { name: way, exact: true }).filter({ visible: true })).toHaveCount(phone ? 1 : 0)
   await page.getByRole('option', { name: new RegExp(name.slice(1)) }).filter({ visible: true }).click()
   await expect(box(page)).toHaveValue(`${name} `)
   await expect(page.getByRole('option').filter({ visible: true })).toHaveCount(0)
