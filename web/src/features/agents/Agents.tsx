@@ -236,7 +236,7 @@ function SessionPage({ s, on, onPick, resume, reconnecting }: { s: SessionFacts;
           // own link opens one with them filled in)
           <div className="order-last mt-1 flex basis-full flex-col gap-2 rounded-lg bg-zinc-100 p-3 dark:bg-zinc-800">
             <p className="text-[13px] font-medium">Start a new {whoName(s.app)} session with this</p>
-            <code className="font-mono text-[12.5px] break-all">{start}</code>
+            <code className="font-mono text-[12.5px] wrap-anywhere">{start}</code>
             <div className="flex gap-2">
               {s.app === 'claude-code' ? (
                 <a href={`claude://code/new?q=${encodeURIComponent(start)}`} className={`${CHIP} hidden h-7 bg-white px-2 text-xs font-medium lg:inline-flex dark:bg-zinc-700`}>
@@ -254,7 +254,7 @@ function SessionPage({ s, on, onPick, resume, reconnecting }: { s: SessionFacts;
         {s.reconnect && why ? <p className="order-last basis-full text-[13px] text-red-600 dark:text-red-400">{why}</p> : null}
         {shown && s.link?.kind === 'resume' ? (
           <div className="order-last mt-1 flex basis-full items-center gap-2 rounded-lg bg-zinc-100 py-1.5 pr-1.5 pl-3 dark:bg-zinc-800">
-            <code className="min-w-0 flex-1 font-mono text-[12.5px] break-all">{s.link.cmd}</code>
+            <code className="min-w-0 flex-1 font-mono text-[12.5px] wrap-anywhere">{s.link.cmd}</code>
             <button onClick={() => s.link?.kind === 'resume' && on.copy(s.link.cmd)} className={`${CHIP} h-7 bg-white px-2 text-xs font-medium dark:bg-zinc-700`}>
               <Icon n="copy" c="size-3.5" />
               Copy
