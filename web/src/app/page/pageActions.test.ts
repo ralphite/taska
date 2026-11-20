@@ -3,6 +3,7 @@ import { Http } from '../../api/http'
 import { createOutboxStore } from '../../stores/outbox'
 import { createRouteStore, type History } from '../../stores/route'
 import { createSheetStore } from '../../stores/sheet'
+import { SWIPED } from '../../ui/rowSwipe'
 import { memoryStore } from '../../stores/storage'
 import { keyOf, PageActions } from './pageActions'
 
@@ -92,6 +93,26 @@ describe('PageActions (B791: what you do on the page is logged)', () => {
     sheet.getState().close()
     log.send(false)
     expect(sent[0].filter((e) => e.kind === 'sheet')).toEqual([expect.objectContaining({ kind: 'sheet', what: 'item-menu', arm: 't' })])
+  })
+
+  test('a swipe on a row is logged with the way it went and what it did (F846: swipes were not in the log)', () => {
+    const { log, sent } = page(async () => new Response('{}'))
+    document.body.innerHTML = `<article data-n="12"><div data-swipe-left hidden>Done</div><div data-swipe-right hidden><button>Later</button><button>Won't do</button></div><div data-swipe="12">Fix the export</div></article>`
+    const row = document.body.getElementsByTagName('article')[0].lastElementChild as HTMLElement
+    const swipe = (dir: string, did: boolean) => row.dispatchEvent(new CustomEvent(SWIPED, { bubbles: true, detail: { dir, did } }))
+    swipe('right', true)
+    swipe('left', true)
+    swipe('right', false)
+    document.body.getElementsByTagName('button')[0].click()
+    log.send(false)
+    const rows = sent[0].filter((e) => e.kind === 'swipe' || e.kind === 'tap')
+    expect(rows).toEqual([
+      expect.objectContaining({ kind: 'swipe', dir: 'right', what: 'Done', n: '12' }),
+      expect.objectContaining({ kind: 'swipe', dir: 'left', what: "Later Won't do", n: '12' }),
+      expect.objectContaining({ kind: 'swipe', dir: 'right', what: 'nothing' }),
+      expect.objectContaining({ kind: 'tap', what: 'Later', from: 'swipe' }),
+    ])
+    document.body.innerHTML = ''
   })
 
   test('the keys that act are told apart from typing', () => {

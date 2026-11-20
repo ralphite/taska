@@ -45,6 +45,7 @@ class LogWords(unittest.TestCase):
         self.assertEqual(page_line("net", {"why": "failed", "msg": "Taska is unreachable"}), "page net Taska is unreachable")
         self.assertEqual(page_line("sheet", {"what": "item-menu", "arm": "t", "where": "/p/sd/T10"}), "page sheet item-menu")
         self.assertEqual(page_line("view", {"where": "/p/sd/T10"}), "page view /p/sd/T10")
+        self.assertEqual(page_line("swipe", {"dir": "right", "what": "Done", "n": "12"}), "page swipe right Done")  # F846
 
 if __name__ == "__main__":
     unittest.main()

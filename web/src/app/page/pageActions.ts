@@ -9,6 +9,7 @@ import type { TaskaApi } from '../../api/taska'
 import type { OutboxStore } from '../../stores/outbox'
 import type { SheetStore } from '../../stores/sheet'
 import type { RouteStore } from '../../stores/route'
+import { SWIPED, type Swiped } from '../../ui/rowSwipe'
 
 /** a request slower than this is noted (ms) */
 export const SLOW = 3000
@@ -59,9 +60,16 @@ export class PageActions {
       const at = e.target instanceof Element ? e.target : null
       const el = at?.closest(CONTROL)
       const row = el ? null : at?.closest(ROW)
-      if (el) this.note({ kind: 'tap', what: nameOf(el), role: el.getAttribute('role') || el.tagName.toLowerCase(), where: where() })
+      if (el) this.note({ kind: 'tap', what: nameOf(el), role: el.getAttribute('role') || el.tagName.toLowerCase(), from: el.closest('[data-swipe-right]') ? 'swipe' : undefined, where: where() })
       // the row itself, not the phone's swipe layers under it
       else if (row) this.note({ kind: 'tap', what: nameOf(row.querySelector('[data-swipe]') ?? row), role: 'row', n: row.getAttribute('data-n'), where: where() })
+    }
+    // a swipe on a row (the phone, F846): right, the way forward it did (or none); left, the ways back it opened
+    const onSwipe = (e: Event) => {
+      const { dir, did } = (e as CustomEvent<Swiped>).detail
+      const el = e.target instanceof HTMLElement ? e.target : null
+      const shown = el?.parentElement?.querySelector(dir === 'right' ? '[data-swipe-left]' : '[data-swipe-right]')
+      this.note({ kind: 'swipe', dir, what: did && shown ? nameOf(shown) : 'nothing', n: el?.closest(ROW)?.getAttribute('data-n') ?? el?.dataset.swipe, where: where() })
     }
     const onKey = (e: KeyboardEvent) => {
       const at = e.target instanceof Element ? e.target : null
@@ -108,6 +116,7 @@ export class PageActions {
     }
     document.addEventListener('click', onClick, { capture: true, passive: true })
     document.addEventListener('keydown', onKey, { capture: true, passive: true })
+    document.addEventListener(SWIPED, onSwipe)
     document.addEventListener('visibilitychange', onShown)
     window.addEventListener('pagehide', onHide)
     const timer = window.setInterval(() => this.send(false), EVERY)
@@ -119,6 +128,7 @@ export class PageActions {
       d.api.http.watch = undefined
       document.removeEventListener('click', onClick, { capture: true })
       document.removeEventListener('keydown', onKey, { capture: true })
+      document.removeEventListener(SWIPED, onSwipe)
       document.removeEventListener('visibilitychange', onShown)
       window.removeEventListener('pagehide', onHide)
       clearInterval(timer)

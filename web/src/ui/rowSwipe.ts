@@ -25,6 +25,12 @@ export interface RowSwipe {
 const still = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 const layer = (el: HTMLElement, which: 'left' | 'right') => el.parentElement?.querySelector<HTMLElement>(`[data-swipe-${which}]`) ?? null
 
+/** A swipe that ended (F846): right, whether the row had a way forward; left, the ways back opened. The page's log
+ * listens for it (app/page/pageActions), as it does for taps. */
+export const SWIPED = 'rowswipe'
+export type Swiped = { dir: 'right' | 'left'; did: boolean }
+const swiped = (el: HTMLElement, dir: Swiped['dir'], did: boolean) => el.dispatchEvent(new CustomEvent<Swiped>(SWIPED, { bubbles: true, detail: { dir, did } }))
+
 function slideTo(el: HTMLElement, x: number): void {
   el.style.transform = x ? `translateX(${x}px)` : ''
   if (!x)
@@ -150,6 +156,7 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
       el.style.transition = ''
       if (w.dx > el.offsetWidth * 0.33) {
         const r = told.current.right(el.dataset.swipe ?? '')
+        swiped(el, 'right', !!r)
         if (!r) return slideTo(el, 0)
         if (!r.slide) {
           slideTo(el, 0)
@@ -158,6 +165,7 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
         slideTo(el, el.offsetWidth)
         setTimeout(r.run, still() ? 0 : 180) // the row slides out first
       } else if (w.dx < -w.reveal / 2) {
+        if (w.open !== el) swiped(el, 'left', true)
         slideTo(el, -w.reveal)
         w.open = el
       } else {
