@@ -190,9 +190,13 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
     mine.current = { text: v, start: v.length, end: v.length } // the caret after the space, where you go on
     on.text(v)
     setSkillSel(0)
+    // the caret is placed as the words are put in (below); here only back into the box, and not over a key typed
+    // since (the check found a key typed at once put before the space)
     requestAnimationFrame(() => {
-      area.current?.focus()
-      area.current?.setSelectionRange(v.length, v.length)
+      const t = area.current
+      if (!t) return
+      if (document.activeElement !== t) t.focus()
+      if (t.value === v) t.setSelectionRange(v.length, v.length)
     })
   }
   const box = useRef<HTMLDivElement | null>(null)
@@ -212,7 +216,11 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
   useLayoutEffect(() => {
     const t = area.current
     const was = mine.current
-    if (!t || text === was.text) return
+    if (!t) return
+    if (text === was.text) { // words put in here (a skill picked): the caret where they said, at once
+      if (t.selectionStart !== was.start || t.selectionEnd !== was.end) t.setSelectionRange(was.start, was.end)
+      return
+    }
     const at = insertedAt(was.text, text)
     if (was.text && at != null) {
       const by = text.length - was.text.length
