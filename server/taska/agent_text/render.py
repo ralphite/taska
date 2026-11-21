@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import hashlib
 import textwrap
+import time
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Mapping, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from ..domain import includes, rules, sections, skills, versions
 from . import guide_text
@@ -34,6 +35,8 @@ class Reading:
     file_ref: FileRefText  # for this caller
     file_path: FileRefText  # always the path on this machine
     skills: Mapping[str, str] = field(default_factory=dict)  # I821: the skills, by name, whose text comes with words that apply one
+    # the agent session on an item, and since when (T858): ("claude-code · worker", unix time), or None
+    holder: Callable[[Item], Optional[Tuple[str, float]]] = field(default=lambda it: None)
 
 
 def _others(rd: Reading, files: Sequence[FileRef], path: bool = False) -> List[str]:
@@ -59,6 +62,17 @@ def _comment(rd: Reading, c: Comment) -> str:
 def when(it: Item) -> str:
     """Now or later, and the day a Later ends (D115 #21): "later until 2026-11-10"."""
     return f"later until {it.later_until}" if it.when == "later" and it.later_until else it.when
+
+
+def on_it(rd: Reading, it: Item) -> Optional[Tuple[str, str]]:
+    """The session on an item and how it is, as an agent reads it (T858): ("claude-code · worker", "claude-code · worker
+    (working, heard 3 min ago)"), or None."""
+    h = rd.holder(it)
+    if not h:
+        return None
+    mins = max(0, int((time.time() - h[1]) // 60))
+    state = "waiting on the user" if rules.waiting(rd.state, it) else "working"
+    return h[0], f"{h[0]} ({state}, heard {'just now' if mins < 1 else f'{mins} min ago'})"
 
 
 def finished(st: ProjectState, it: Item) -> str:
@@ -155,6 +169,10 @@ def card(rd: Reading, it: Item) -> str:
                         "blocks " + " ".join(st.code(k.n) for k in rules.holds_up(st, it)) if rules.holds_up(st, it) else "") if x]
     if meta:
         out.append(" · ".join(meta))
+    on = on_it(rd, it)
+    if on:  # T858: who is on it, how it is, and how to reach it
+        ses = on[0].split(" · ", 1)[1] if " · " in on[0] else on[0]
+        out.append(f"on it: {on[1]}: if that is not you, leave it to that session, or write to it with `{c} say @{ses} ...`")
     ws = rules.waits_for(st, it)
     if ws:  # T857
         out.append("waits for " + ", ".join(f"{st.code(w.n)} ({w.status})" for w in ws)

@@ -11,7 +11,7 @@ import { laterOn } from '../../model/time'
 import type { Command } from '../../model/commands'
 import { codeOf, docsOf, filesOf, findRef, liveN, sourceCount, type ProjectModel } from '../../model/project'
 import { ticksNotSent } from '../../model/docTicks'
-import { holdsUp, lastAgentMessage, waitsFor } from '../../model/items'
+import { holdsUp, lastAgentMessage, waitsFor, workNews } from '../../model/items'
 import { answerOf, latestMessage } from '../../model/talk'
 import type { Item } from '../../model/types'
 import { inTab, tabOf } from '../../model/visible'
@@ -126,7 +126,11 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     files: filesOf(m, it),
     sources: sourceCount(m, it),
     laterOn: laterOn(it, m.at),
-    workers: sessionsOn(m.facts.agents, n, m.at),
+    // the sessions on it, at the top of its page (T858): what it said last, from the one that wrote last
+    workers: sessionsOn(m.facts.agents, n, m.at).map((s) => {
+      const news = it.agent?.ses === s.name ? workNews(it, m.at) : null
+      return { ...s, text: news?.text ?? '', age: news?.age ?? '' }
+    }),
     docs: docsOf(m, n),
     docWaiting: Object.fromEntries(docsOf(m, n).map((d) => [d.d, ticksNotSent(ticks, d)])),
     remodify: view.remodify === n,

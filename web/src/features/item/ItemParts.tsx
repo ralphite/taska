@@ -11,16 +11,14 @@ import { overflows } from '../../ui/scroller'
 import { CHIP, FIELD, NEED, PRIMARY, SECOND, CODE_TEXT } from '../../ui/tones'
 import type { ItemEvents, ItemFacts } from './ItemPage'
 
-const WORKER_DOT = { working: 'bg-emerald-500', idle: 'bg-zinc-400', waiting: 'bg-orange-500' } as const
-const WORKER_TIP = { working: 'Working on it', idle: 'Idle', waiting: 'Waits on you' } as const
 const caret = <Icon n="down" c="size-3 opacity-50 group-data-ro/item:hidden" sw="2.25" /> // none read only (data-ro)
 // the Agents sheet's dots (D152 prototype: at work, waits on you, stopped)
-const LINE_DOT = { working: 'bg-emerald-500 dark:bg-emerald-400', waiting: 'bg-amber-500 dark:bg-amber-400', gone: 'border border-zinc-300 dark:border-zinc-600' } as const
-const LINE_TIP = { working: 'At work', waiting: 'Waits on you', gone: 'Stopped' } as const
+const LINE_DOT = { working: 'bg-emerald-500 dark:bg-emerald-400', waiting: 'bg-amber-500 dark:bg-amber-400', idle: 'bg-zinc-400 dark:bg-zinc-500' } as const
+const LINE_TIP = { working: 'At work', waiting: 'Waits on you', idle: 'Idle' } as const
 
-/** D152 prototype: the agent session on the item, at the top of its page: its app's icon, its name, a dot for how it
- * is (no words), what it said last and how long ago. It opens the Agents sheet on that session. */
-export function WorkerLine({ w, onOpen }: { w: NonNullable<ItemFacts['worker']>; onOpen(): void }) {
+/** An agent session on the item, at the top of its page (T858): its app's icon, its name, a dot for how it is (no
+ * words), what it said last and how long ago. It opens the Agents sheet. */
+export function WorkerLine({ w, onOpen }: { w: NonNullable<ItemFacts['workers']>[number]; onOpen(): void }) {
   return (
     <button
       onClick={onOpen}
@@ -97,13 +95,6 @@ export function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents })
           {caret}
         </button>
       )}
-      {/* who works on it now (I810): each session by its title, a dot saying how it is; it opens the Agents sheet */}
-      {f.workers?.map((w) => (
-        <button key={w.name} title={WORKER_TIP[w.state]} onClick={() => on.agents?.()} className={`${CHIP} max-w-56 min-w-0 text-zinc-700 dark:text-zinc-200`}>
-          <span className={`size-1.5 shrink-0 rounded-full ${WORKER_DOT[w.state]}`} />
-          <span className="truncate">{w.name}</span>
-        </button>
-      ))}
       {it.archived ? (
         <span className={`${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300`}>
           <Icon n="archive" c="size-3.5 opacity-60" />

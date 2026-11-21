@@ -143,13 +143,13 @@ export function lastAgent(agents: readonly AgentSeen[] | undefined, now: number)
 
 /** The sessions working on item `n` now (I810: a manager's worker, found by its title, among them), each with how it
  * is: what the item's page shows of who works on it. Gone ones are left out. */
-export function sessionsOn(agents: readonly AgentSeen[] | undefined, n: number, at: number): { name: string; state: Exclude<SessionState, 'gone'> }[] {
-  const out: { name: string; state: Exclude<SessionState, 'gone'> }[] = []
+export function sessionsOn(agents: readonly AgentSeen[] | undefined, n: number, at: number): { by: string; name: string; state: Exclude<SessionState, 'gone'> }[] {
+  const out: { by: string; name: string; state: Exclude<SessionState, 'gone'> }[] = []
   for (const a of agents || [])
     for (const s of a.sessions || []) {
       if (s.on?.n !== n) continue
       const st = sessionState(a.name, s, !!a.blocked?.some((b) => b.session === s.name), at)
-      if (st !== 'gone') out.push({ name: s.name, state: st })
+      if (st !== 'gone') out.push({ by: a.name, name: s.name, state: st })
     }
   return out
 }

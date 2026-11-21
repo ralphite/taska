@@ -107,7 +107,7 @@ describe('who works on an item (I810)', () => {
         ],
       },
     ]
-    expect(sessionsOn(agents, 28, now)).toEqual([{ name: 'T28：系统设计专用 tutor 技能', state: 'waiting' }])
-    expect(sessionsOn(agents, 3, now)).toEqual([{ name: 'B3 other', state: 'working' }])
+    expect(sessionsOn(agents, 28, now)).toEqual([{ by: expect.any(String), name: 'T28：系统设计专用 tutor 技能', state: 'waiting' }])
+    expect(sessionsOn(agents, 3, now)).toEqual([{ by: expect.any(String), name: 'B3 other', state: 'working' }])
   })
 })

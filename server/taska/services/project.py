@@ -118,7 +118,8 @@ class Project:
 
     def reading(self, file_ref: Optional[Callable[[str], str]] = None) -> Reading:
         return Reading(state=self.state, held=self.voice.held, organizer_on=self.organizing.on,
-                       file_ref=file_ref or self.file_path, file_path=self.file_path, skills=self.skills())
+                       file_ref=file_ref or self.file_path, file_path=self.file_path, skills=self.skills(),
+                       holder=lambda it: self.agents.holder(self.state, it))
 
     def file_path(self, fid: str) -> str:
         return self.files.path(fid)

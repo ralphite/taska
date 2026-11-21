@@ -15,7 +15,7 @@ from ..domain import history, rules
 from ..domain.model import Item, Message
 from ..domain.state import ident
 from ..domain.vocab import CLOSED
-from .render import Reading, card, doc_text, input_card, proposal_text, proposals_for, rules_head
+from .render import on_it, Reading, card, doc_text, input_card, proposal_text, proposals_for, rules_head
 
 Holder = Callable[[Item], Optional[Tuple[str, float]]]
 Calls = Callable[[], List[Tuple[Item, Message, bool]]]
@@ -120,7 +120,7 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
     if me:  # what another session is on is theirs; each gets its own next item
         theirs = [(i, c[0]) for i in queue for c in [asker.holder(i)] if c and c[0] != me]
         if theirs:
-            out.append("others are on (skip): " + " ".join(f"{st.code(i.n)} ({a})" for i, a in theirs))
+            out.append("others are on (skip): " + " ".join(f"{st.code(i.n)} ({(on_it(rd, i) or (a, a))[1]})" for i, a in theirs))
             head = "\n".join(out)
             queue = [i for i in queue if all(i is not x for x, _ in theirs)]
     if fresh and (not queue or (queue[0].status != "doing" and fresh.pri <= queue[0].pri)):

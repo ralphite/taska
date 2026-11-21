@@ -143,7 +143,7 @@ export function Proto({ desk, start = {} }: { desk: boolean; start?: Start }) {
       blocks: Object.entries(after)
         .filter(([, ns]) => ns.includes(it.n))
         .map(([n]) => byN(Number(n))),
-      ...(news ? { worker: { by: 'claude-code', name: SESSION, state, text: news.text, age: news.age } } : {}),
+      ...(news ? { workers: [{ by: 'claude-code', name: SESSION, state, text: news.text, age: news.age }] } : {}),
     }
     return {
       others: m.items.filter((x) => x.n !== it.n),

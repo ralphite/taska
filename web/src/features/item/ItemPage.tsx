@@ -78,13 +78,10 @@ export interface ItemFacts {
   /** a subitem title you started before */
   subDraft?: string
   /** the sessions working on it now, and how each is (I810) */
-  workers?: { name: string; state: 'working' | 'idle' | 'waiting' }[]
+  workers?: { by: string; name: string; state: 'working' | 'idle' | 'waiting'; text: string; age: string }[]
   /** D152 prototype: the items it waits for, and the items it holds up */
   waitsFor?: Item[]
   blocks?: Item[]
-  /** D152 prototype: the agent session on it, at the top of its page: its app, its name, how it is, what it said last
-   * and how long ago */
-  worker?: { by: string; name: string; state: 'working' | 'waiting' | 'gone'; text: string; age: string }
 }
 
 /** The talk fades at its bottom while more of it is below, and at its top while some of it is above. */
@@ -194,7 +191,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     <Editor key={it.n} it={it} kept={f.editDraft ?? null} on={on} />
   ) : (
     <div className="flex flex-col gap-3">
-      {f.worker ? <WorkerLine w={f.worker} onOpen={() => on.agents?.()} /> : null}
+      {f.workers?.map((w) => <WorkerLine key={w.name} w={w} onOpen={() => on.agents?.()} />)}
       <h1 data-part="item-title" className={`text-[22px] leading-[1.35] font-semibold break-words ${it.status === 'dropped' ? 'line-through' : ''}`}>{readOnly ? <span className={`mr-2 font-mono text-lg font-bold ${CODE_TEXT}`}>{f.code(it.n)}</span> : null}{it.title}</h1>
       <div className="flex flex-wrap items-center gap-2">
         <Chips it={it} f={f} on={on} />
