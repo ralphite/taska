@@ -101,6 +101,8 @@ AGENT = (
     '      finish the step you are on, then GET /next. Handle pushed messages at the normal message boundary.\n'
     '      Big items have subitems (parent=B03): /next gives you the subitems first and the parent once they are\n'
     '      finished; split big work the same way with `new ... parent=B03`.\n'
+    '      A subitem\'s card has every level it is part of, up to the top ("part of", each body whole, its decisions\n'
+    '      and docs) and the items beside it: what is written there applies to it too, follow it (T853).\n'
     '      Always call /next and /do with ?by=<your name>: with several agents on one project, /next gives each of you\n'
     '      its own item and lists "others are on (skip)": another agent holds those, leave them. A hold lapses after\n'
     '      30 minutes without a word from that agent. An item another session holds (Taska says so, also when you\n'

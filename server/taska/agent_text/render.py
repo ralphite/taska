@@ -137,14 +137,7 @@ def card(rd: Reading, it: Item) -> str:
         out.append(" · ".join(meta))
     if it.next:
         out.append("next: " + it.next)
-    par = st.items.get(it.parent) if it.parent else None
-    if par:  # what the item is part of, short: its title, how it starts, what was decided there, its documents
-        out.append(f"part of {st.code(par.n)} ({par.status}): {par.title}")
-        out.extend("  " + first_line(ln, 200) for ln in [ln for ln in (par.body or "").splitlines() if ln.strip()][:4])
-        out.extend(f"  decided: {first_line(x.text, 200)}" for x in [x for x in par.thread if x.kind == "decide"][-2:])
-        pdocs = st.docs_of(par.n)
-        if pdocs:
-            out.append("  docs: " + "; ".join(f"D{d.d} {d.title}" for d in pdocs))
+    out.extend(_above(st, it))
     asks = rules.open_asks(st, it)
     if asks and rules.replied(it):  # answered in part: the rest still waits (B749)
         out.append("< the user answered some of the questions (see thread); still waiting on: "
@@ -200,6 +193,43 @@ def _reference(rd: Reading, it: Item) -> List[str]:
             if fs:
                 out.append("  files: " + " ".join(fs))
         out.extend("  " + ln for ln in skills.applied(one_line(st, inp.text, inp.files), rd.skills))
+    return out
+
+
+ABOVE_BODY = 2000  # characters of each level's body; past it the agent is told to read that item for the rest
+SIBLINGS = 20
+
+
+def _above(st: ProjectState, it: Item) -> List[str]:
+    """T853 (r1458): everything the item is part of, from its parent up to the top, so instructions written for
+    everything under a level reach every item below it: each level's whole body (cut long ones and say so), every
+    decision there, its documents; then the items beside it, one line each, so the agent knows what is next to it."""
+    out: List[str] = []
+    seen = {it.n}
+    par = st.items.get(it.parent) if it.parent else None
+    while par and par.n not in seen:
+        seen.add(par.n)
+        c = st.code(par.n)
+        out.append(f"part of {c} ({par.status}): {par.title}")
+        body = (par.body or "").strip()
+        if body:
+            cut = len(body) > ABOVE_BODY
+            out.extend("  " + ln for ln in body[:ABOVE_BODY].splitlines() if ln.strip())
+            if cut:
+                out.append(f"  … (cut: read {c} for the rest)")
+        out.extend(f"  decided: {first_line(x.text, 300)}" for x in par.thread if x.kind == "decide")
+        pdocs = st.docs_of(par.n)
+        if pdocs:
+            out.append("  docs (read the ones that bear on this item first): "
+                       + "; ".join(f"D{d.d} {d.title}" for d in pdocs))
+        par = st.items.get(par.parent) if par.parent else None
+    if it.parent:
+        sibs = [k for k in st.live_items() if k.parent == it.parent and k.n != it.n]
+        if sibs:
+            out.append(f"beside it under {st.code(it.parent)}:")
+            out.extend(f"  {st.code(k.n)} {k.status} {first_line(k.title, 80)}" for k in sibs[:SIBLINGS])
+            if len(sibs) > SIBLINGS:
+                out.append(f"  … and {len(sibs) - SIBLINGS} more (read {st.code(it.parent)})")
     return out
 
 
