@@ -14,3 +14,10 @@ test('a group: Archive forward, Later back, never Done or Won\'t do; not in the 
   expect(queuedNow(group)).toBe(false)
   expect(queuedNow(item({ n: 2, status: 'open' }))).toBe(true)
 })
+
+test('made a group, or a task again: said in words, never "undefined" (the desktop threw on it)', async () => {
+  const { heldWord, saidOf } = await import('../app/items/itemActions')
+  const m = { byN: new Map(), width: 1 } as unknown as Parameters<typeof saidOf>[0]
+  expect([saidOf(m, 'group', true, false), saidOf(m, 'group', false, true)]).toEqual(['is now a group', 'is a task again'])
+  expect(heldWord('group', true, saidOf(m, 'group', true, false))).toBe('A group')
+})

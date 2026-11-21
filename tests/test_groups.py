@@ -50,6 +50,7 @@ class Groups(ProjectCase):
 
     def test_no_status_on_a_group_and_back_to_a_task(self) -> None:
         self.assertIn("is a group: it has no status", self.do("T1 done\n")[0])
+        self.assertIn("is a group: it has no status", self.do("T1 open\n")[0])  # the same answer, whatever status
         self.assertEqual(self.do("T1 task\n"), ["ok T1 task (/next gives it again once its subitems are finished)"])
         self.assertEqual(self.do("T2 group\n", "you"), ["ok T2 group (/next no longer gives it; its subitems stay under it)"])
 

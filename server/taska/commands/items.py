@@ -224,7 +224,7 @@ def set_fields(r: Run, a: Args) -> Outcome:
     if f.get("when") == "now" and f.get("later_until"):
         raise Refused(f"{code}: later until a day is later; say `{code} later until <day>` or `{code} now`")
     note = ""
-    if "status" in f and f.get("group", it.group):
+    if "status" in dict(a.get("f") or {}) and f.get("group", it.group):
         raise Refused(f"{code} is a group: it has no status (it is never done by itself: archive it when you are "
                       f"finished with it)")
     if f.get("group") and it.status != "open":  # made a group: it holds items, open, whatever it was

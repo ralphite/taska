@@ -38,10 +38,11 @@ export function saidOf(m: ProjectModel, f: string, v: unknown, before: unknown):
   if (f === 'status' && v === 'done' && before === 'review') return 'accepted'
   if (f === 'status' && v === 'open' && before === 'proposed') return 'approved'
   if (f === 'pri') return `is now ${String(v)}`
+  if (f === 'group') return v ? 'is now a group' : 'is a task again'
   if (f === 'tags') return Array.isArray(v) && v.length ? `is now ${v.map((t) => '#' + String(t)).join(' ')}` : 'has no tags'
   if (f === 'parent') return v ? `is now under ${codeOf(m, v as number)}` : 'stands on its own'
   if (f === 'rank') return v == null ? 'is back in order' : 'goes next in its priority'
-  return DID[String(v)]
+  return DID[String(v)] ?? `${f} changed`
 }
 
 /** What a row you just changed says where it stays a moment: a few words, done (Approved, Won't do, Moved to Later),
