@@ -81,7 +81,7 @@ test('D115 #42: on the phone an input swiped left shows Move and Delete; Delete 
 
 test('T589 #10486: on the phone a row swiped open closes as its Won’t do acts, and is closed when Undo puts it back', async ({ page, request }) => {
   test.skip(isDesk(page), "the phone's rows swipe")
-  const p = await project(request, { agent: 'new task P1 now Tidy the readme\nnew task P1 now Rename the export\n', approve: ['T1', 'T2'] })
+  const p = await project(request, { agent: 'new P1 now Tidy the readme\nnew P1 now Rename the export\n', approve: ['T1', 'T2'] })
   await open(page, p)
   const r = page.locator('[data-swipe]').filter({ hasText: 'Tidy the readme' }).first()
   const under = r.locator('xpath=..').locator('[data-swipe-right]')

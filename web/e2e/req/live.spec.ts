@@ -9,7 +9,7 @@ test('r4: what an agent writes shows on the open page by itself, no reload', asy
   const p = await project(request, LOOP)
   await open(page, p, 'T4')
   await page.evaluate(() => ((window as unknown as { still: boolean }).still = true)) // gone if the page reloads
-  await p.doAs('T4 say The docs outline is ready\nnew task P2 now Fresh from the agent\n')
+  await p.doAs('T4 say The docs outline is ready\nnew P2 now Fresh from the agent\n')
   await expect(page.getByText('The docs outline is ready').filter({ visible: true }).first()).toBeVisible({
     timeout: 20000,
   })

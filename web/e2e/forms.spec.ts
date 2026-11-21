@@ -10,8 +10,8 @@ test('r637 r140 r349: a question answered by a reply shows Replied; a proposal r
   request,
 }) => {
   const p = await project(request, {
-    agent: `new task P2 now Pick a colour
-new idea P2 now A proposal
+    agent: `new P2 now Pick a colour
+new P2 now A proposal
 `,
     approve: ['T1'],
     then: `T1 ask Which one?
@@ -24,8 +24,8 @@ new idea P2 now A proposal
   await open(page, p, 'T1')
   await expect(page.getByText(/^Replied/).filter({ visible: true }).first()).toBeVisible()
   // a proposal you replied on is approved (B818 r1401): open, its card decided in place
-  await open(page, p, 'I2')
-  await expect.poll(async () => p.read('I2')).toMatch(/^I2 \w+ P\d \w+ open/)
+  await open(page, p, 'T2')
+  await expect.poll(async () => p.read('T2')).toMatch(/^T2 P\d \w+ open/)
   await expect(page.getByText('Skipped · you replied').filter({ visible: true })).toHaveCount(0)
 })
 
@@ -34,7 +34,7 @@ test('choices in a document you were sent to, answered by a reply on the item, s
   request,
 }) => {
   const p = await project(request, {
-    agent: 'new task P2 now Pick a colour\n',
+    agent: 'new P2 now Pick a colour\n',
     approve: ['T1'],
     then: `T1 doc Colour plan
   Colour plan
@@ -57,11 +57,11 @@ test('B818 r1401: a reply on a proposal approves it; its card stays where it was
   request,
 }) => {
   const p = await project(request, {
-    agent: 'new idea P2 now A proposal\n',
+    agent: 'new P2 now A proposal\n',
   })
   await p.op({ op: 'input', text: 'Let us talk first', scope: 1 })
-  await expect.poll(async () => p.read('I1')).toMatch(/^I1 \w+ P\d \w+ open/)
-  await open(page, p, 'I1')
+  await expect.poll(async () => p.read('T1')).toMatch(/^T1 P\d \w+ open/)
+  await open(page, p, 'T1')
   const approve = page.getByRole('button', { name: /^Approve/ }).filter({ visible: true }).first()
   await expect(approve).toBeVisible()
   await expect(approve).toBeDisabled()
@@ -70,7 +70,7 @@ test('B818 r1401: a reply on a proposal approves it; its card stays where it was
 
 test('B607: replying to finished work resumes it; Accept returns when the agent hands it over again', async ({ page, request }) => {
   const p = await project(request, {
-    agent: 'new task P2 now Some work\n',
+    agent: 'new P2 now Some work\n',
     approve: ['T1'],
     then: 'T1 done Finished: it works.\n',
   })
@@ -80,7 +80,7 @@ test('B607: replying to finished work resumes it; Accept returns when the agent 
   await box(page).fill('The sort still needs fixing.')
   await box(page).press('Shift+Enter')
   // back to open: the agent's turn (Yadong r961), no word of its own
-  await expect.poll(async () => p.read('T1')).toMatch(/^T1 \w+ P\d \w+ open/)
+  await expect.poll(async () => p.read('T1')).toMatch(/^T1 P\d \w+ open/)
   // the card keeps its buttons where they were, greyed and not to be pressed (r1003, r1007)
   await expect(accept).toBeDisabled()
   await expect(page.getByText('Skipped · you replied', { exact: true }).filter({ visible: true })).toHaveCount(0)
@@ -88,5 +88,5 @@ test('B607: replying to finished work resumes it; Accept returns when the agent 
   await expect(accept).toBeVisible()
   await expect(accept).toBeEnabled()
   await accept.click()
-  await expect.poll(async () => p.read('T1')).toMatch(/^T1 \w+ P\d \w+ done/)
+  await expect.poll(async () => p.read('T1')).toMatch(/^T1 P\d \w+ done/)
 })

@@ -353,7 +353,7 @@ test("D81 #20: Done is one icon wherever it is offered: the item bar's is the sa
   page,
   request,
 }) => {
-  const p = await project(request, { agent: 'new task P2 now Some work\n', approve: ['T1'] })
+  const p = await project(request, { agent: 'new P2 now Some work\n', approve: ['T1'] })
   await open(page, p, 'T1')
   const svg = (l: ReturnType<typeof page.locator>) =>
     l
@@ -374,7 +374,7 @@ test('D77 #3: editing an item with a long description and a long talk, its next 
     (_, i) => `  Line ${i + 1} of a long description, with enough words to fill the line.`,
   ).join('\n')
   const p = await project(request, {
-    agent: `new task P2 now A long one\n${long}\n`,
+    agent: `new P2 now A long one\n${long}\n`,
     approve: ['T1'],
     then:
       Array.from(
@@ -400,7 +400,7 @@ test('B739: a long talk ends at the top of the box, so its scrollbar is never un
   request,
 }) => {
   const p = await project(request, {
-    agent: 'new task P2 now A long talk\n',
+    agent: 'new P2 now A long talk\n',
     approve: ['T1'],
     then:
       Array.from(

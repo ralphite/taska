@@ -35,10 +35,10 @@ test('what scrolls shows only around the top of the box: from its middle down th
 }) => {
   const many = Array.from(
     { length: 30 },
-    (_, i) => `new task P2 now Item number ${i + 1} with a title long enough`,
+    (_, i) => `new P2 now Item number ${i + 1} with a title long enough`,
   ).join('\n')
   const p = await project(request, {
-    agent: `${many}\nnew task P1 now A long one\n${Array.from({ length: 60 }, (_, i) => `  Line ${i + 1} of the body.`).join('\n')}\n`,
+    agent: `${many}\nnew P1 now A long one\n${Array.from({ length: 60 }, (_, i) => `  Line ${i + 1} of the body.`).join('\n')}\n`,
     approve: Array.from({ length: 31 }, (_, i) => `T${String(i + 1).padStart(2, '0')}`),
   })
   await open(page, p, isDesk(page) ? 'T31' : '')
@@ -82,7 +82,7 @@ test('in two columns the line between them is one line to the bottom of the scre
   test.skip(!isDesk(page), 'two columns are for a wide desktop pane')
   await page.setViewportSize({ width: 1920, height: 1000 })
   const p = await project(request, {
-    agent: `new task P1 now A long one\n${Array.from({ length: 60 }, (_, i) => `  Line ${i + 1} of the body.`).join('\n')}\n`,
+    agent: `new P1 now A long one\n${Array.from({ length: 60 }, (_, i) => `  Line ${i + 1} of the body.`).join('\n')}\n`,
     approve: ['T1'],
   })
   await open(page, p, 'T1')

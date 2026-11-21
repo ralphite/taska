@@ -31,7 +31,7 @@ async function aboveBox(page: Page) {
 }
 
 test('T711: a blocked session floats a bar above the box on every page; Open opens Agents; it goes when the session goes on', async ({ page, request }) => {
-  const p = await project(request, { agent: 'new task P1 now Pick the export format' })
+  const p = await project(request, { agent: 'new P1 now Pick the export format' })
   session('busy')
   expect((await request.get(`${p.url}next?by=claude-code&session=Shop%20work&sid=${SID}`)).ok()).toBe(true)
   await open(page, p)
@@ -59,7 +59,7 @@ test('T711: a blocked session floats a bar above the box on every page; Open ope
 })
 
 test('F768: Agents lists each session by its app, a worker under its manager; an item it is on opens from there', async ({ page, request }) => {
-  const p = await project(request, { agent: 'new task P1 now Pick the export format', approve: ['T1'] })
+  const p = await project(request, { agent: 'new P1 now Pick the export format', approve: ['T1'] })
   session('busy')
   expect((await request.get(`${p.url}next?by=claude-code&session=Manager&sid=${SID}`)).ok()).toBe(true)
   const worker = await request.post(`${p.url}do?by=claude-code&session=worker-1&parent=Manager`, { data: 'T1 doing\nT1 progress Started on the format.\n', headers: { 'Content-Type': 'text/plain' } })

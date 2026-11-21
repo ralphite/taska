@@ -48,7 +48,7 @@ test('r445 r451 R337: archiving an item takes its finished subitems with it; one
 }) => {
   test.skip(!isDesk(page), 'E is the desktop key; the phone archives from the menu')
   const p = await project(request, {
-    agent: 'new task P1 now Plan the launch\nnew task P2 now parent=T1 Book the venue\nnew task P2 now parent=T1 Print the posters\n',
+    agent: 'new P1 now Plan the launch\nnew P2 now parent=T1 Book the venue\nnew P2 now parent=T1 Print the posters\n',
     approve: ['T1', 'T2', 'T3'],
   })
   await p.op({ op: 'set', ref: 'T2', f: { status: 'done' } })
@@ -60,7 +60,7 @@ test('r445 r451 R337: archiving an item takes its finished subitems with it; one
 })
 
 test('D115 #21: Later offers Tomorrow, Next week, a day picked; the row then says which day', async ({ page, request }) => {
-  const p = await project(request, { agent: 'new task P1 now Ship the export\n', approve: ['T1'] })
+  const p = await project(request, { agent: 'new P1 now Ship the export\n', approve: ['T1'] })
   await open(page, p, 'T1')
   await page.getByRole('button', { name: /^Now/ }).filter({ visible: true }).first().click()
   const sheet = page.locator('[role="dialog"]').filter({ visible: true }).last()
@@ -74,7 +74,7 @@ test('D115 #21: Later offers Tomorrow, Next week, a day picked; the row then say
 })
 
 test('R6-3 #3: Pick a date is a row like the others; the day picked is said on its right', async ({ page, request }) => {
-  const p = await project(request, { agent: 'new task P1 now Ship the export\n', approve: ['T1'] })
+  const p = await project(request, { agent: 'new P1 now Ship the export\n', approve: ['T1'] })
   await open(page, p, 'T1')
   await page.getByRole('button', { name: /^Now/ }).filter({ visible: true }).first().click()
   const sheet = page.locator('[role="dialog"]').filter({ visible: true }).last()
@@ -90,7 +90,7 @@ test('R6-3 #3: Pick a date is a row like the others; the day picked is said on i
 })
 
 test('D115 #30: work in progress says on its row what its agent last said and how long ago', async ({ page, request }) => {
-  const p = await project(request, { agent: 'new task P1 now Ship the export\n', approve: ['T1'], then: 'T1 doing\nT1 progress Testing with three filters\n' })
+  const p = await project(request, { agent: 'new P1 now Ship the export\n', approve: ['T1'], then: 'T1 doing\nT1 progress Testing with three filters\n' })
   await open(page, p)
   const r = row(page, 'Ship the export').first()
   await expect(r).toContainText('Testing with three filters')

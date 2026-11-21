@@ -12,7 +12,7 @@ test('D80 #17: on the phone, speaking into a document, the hint reads on a line 
 }) => {
   test.skip(isDesk(page), 'the phone, where the line is narrow')
   const p = await project(request, {
-    agent: 'new task P2 now Plan the export\n',
+    agent: 'new P2 now Plan the export\n',
     approve: ['T1'],
     then: 'T1 doc The plan\n  Ship option A today.\n',
   })

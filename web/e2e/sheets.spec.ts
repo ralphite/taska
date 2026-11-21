@@ -49,18 +49,34 @@ test('T529: Delete asked again soon after an Undo keeps asking for its own 3 sec
   await expect(del).toHaveText('Delete')
 })
 
-test("D115: the desktop's item menu has Status…, Priority… and Type…, each opening its choices", async ({ page, request }) => {
+test("D115 T855: the desktop's item menu has Status…, Priority… and Tags…, each opening its choices; a new tag is typed in its field", async ({ page, request }) => {
   test.skip(!isDesk(page), "the phone's menu shows the three fields in the sheet")
   const p = await project(request, LOOP)
+  const first = async () => (await p.read('T4')).split('\n')[0]
   await open(page, p, 'T4')
   await itemMenu(page).click()
   await menuChoice(page, /^Priority…/).click()
   await menuChoice(page, /^P0\b/).click()
-  await expect.poll(async () => (await p.read('T4')).split('\n')[0]).toContain(' P0 ')
+  await expect.poll(first).toContain(' P0 ')
   await itemMenu(page).click()
   await menuChoice(page, /^Status…/).click()
   await menuChoice(page, /^Done\b/).click()
-  await expect.poll(async () => (await p.read('T4')).split('\n')[0]).toMatch(/\bdone\b/i)
+  await expect.poll(first).toMatch(/\bdone\b/i)
+  // Tags…: the project's tags (T2's #bug) put on by a click, a new one typed in "#new tag" and put on with Enter
+  await itemMenu(page).click()
+  await menuChoice(page, /Tags…/).click()
+  await menuChoice(page, /^#bug$/).click()
+  await expect.poll(first).toMatch(/ #bug\b/)
+  const field = sheetBody(page).getByPlaceholder('#new tag')
+  await field.fill('#Docs')
+  await field.press('Enter')
+  await expect.poll(first).toMatch(/ #bug #docs\b/)
+  await expect(field).toHaveValue('')
+  await expect(menuChoice(page, /^#docs$/)).toHaveAttribute('aria-pressed', 'true')
+  // clicked again it comes off
+  await menuChoice(page, /^#bug$/).click()
+  await expect.poll(first).not.toContain('#bug')
+  await expect.poll(first).toContain('#docs')
 })
 
 test('T529, R4-5 #8: Put under… says No matches for the words when the search finds no item', async ({ page, request }) => {

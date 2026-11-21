@@ -35,7 +35,7 @@ test('B802: on the phone, Send answer keeps the answered card in view (no jump t
   test.skip(isDesk(page), 'phone layout only')
   const notes = Array.from({ length: 12 }, (_, i) => `T1 progress Step ${i + 1}: ${'a long line of progress '.repeat(5)}`).join('\n')
   const p = await project(request, {
-    agent: 'new task P1 now Pick the export format\n',
+    agent: 'new P1 now Pick the export format\n',
     approve: ['T1'],
     then: `${notes}
 T1 ask Which format should the export use?

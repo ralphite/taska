@@ -10,7 +10,7 @@ test('r68 r326 T646: work an agent is stuck on asks you for what it needs: in Ne
   request,
 }) => {
   const p = await project(request, {
-    agent: 'new task P1 now Ship the export\nnew task P2 now Still going\n',
+    agent: 'new P1 now Ship the export\nnew P2 now Still going\n',
     approve: ['T1', 'T2'],
     then: 'T1 doing\nT2 doing\nT1 ask I need the export key\n',
   })
@@ -44,7 +44,7 @@ for (const [kind, words] of [['ask', 'Which export key should I use?']] as const
     request,
   }) => {
     const p = await project(request, {
-      agent: 'new task P1 now Ship the export\n',
+      agent: 'new P1 now Ship the export\n',
       approve: ['T1'],
       then: `T1 doing\nT1 ${kind} ${words}\n`,
     })
@@ -84,7 +84,7 @@ for (const [kind, words] of [['ask', 'Which export key should I use?']] as const
     request,
   }) => {
     const p = await project(request, {
-      agent: 'new task P1 now Ship the export\n',
+      agent: 'new P1 now Ship the export\n',
       approve: ['T1'],
       then: `T1 doing\nT1 ${kind} ${words}\n`,
     })
@@ -98,7 +98,7 @@ test('r802: in a list sorted another way (Filters › Sort) what waits on you is
   request,
 }) => {
   const p = await project(request, {
-    agent: 'new task P1 now Ship the export\nnew task P2 now Still going\n',
+    agent: 'new P1 now Ship the export\nnew P2 now Still going\n',
     approve: ['T2'],
   })
   for (const at of ['', '?sort=new', '?sort=upd']) {
@@ -118,7 +118,7 @@ test("r802: the card an item's code shows under the pointer says its status in o
 }) => {
   test.skip(!isDesk(page), 'a pointer on the desktop')
   const p = await project(request, {
-    agent: 'new task P1 now Ship the export\nnew task P2 now Write the notes\n',
+    agent: 'new P1 now Ship the export\nnew P2 now Write the notes\n',
     approve: ['T1', 'T2'],
     then: 'T1 doing\nT1 ask I need the export key\nT2 progress Waiting for T1 before the notes.\n',
   })
@@ -134,7 +134,7 @@ test('D115 #8: a proposal you decline and work you send back from the list say s
 }) => {
   test.skip(!isDesk(page), "the desktop's row buttons under the pointer")
   const p = await project(request, {
-    agent: 'new task P2 now Some work\nnew idea P2 now A proposal\n',
+    agent: 'new P2 now Some work\nnew P2 now A proposal\n',
     approve: ['T1'],
     then: 'T1 done Finished: it works.\n',
   })

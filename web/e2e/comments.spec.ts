@@ -9,7 +9,7 @@ const LONG = 'The export keeps every column the filter shows, in the order the l
 /** A document whose first paragraph has a comment of yours on some of its words, open, the comment in sight. */
 async function commented(page: Page, request: APIRequestContext) {
   const p = await project(request, {
-    agent: 'new task P2 now Plan the export\n',
+    agent: 'new P2 now Plan the export\n',
     approve: ['T1'],
     then: `T1 doc The plan\n  ${LONG}\n\n  Second part.\n`,
   })

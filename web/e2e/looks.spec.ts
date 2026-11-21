@@ -12,7 +12,7 @@ const ACTS = '[data-row-acts] button'
 
 test.beforeEach(({ page }) => test.skip(!isDesk(page), 'a pointer and a keyboard: the desktop'))
 const SEED = {
-  agent: 'new task P2 now First\nnew task P2 now Second\nnew task P2 now Third\nnew idea P2 now An idea\n',
+  agent: 'new P2 now First\nnew P2 now Second\nnew P2 now Third\nnew P2 now An idea\n',
   approve: ['T1', 'T2', 'T3'],
 }
 
@@ -44,8 +44,8 @@ test('D84 #2: a row dragged over another shows where it would go, drawn over tha
 test('F479: in the search, the keys and the pointer move the one highlighted row', async ({ page, request }) => {
   test.skip(!isDesk(page), 'the search dialog is the desktop')
   const p = await project(request, SEED)
-  await open(page, p, 'B2')
-  await open(page, p, 'B1')
+  await open(page, p, 'T2')
+  await open(page, p, 'T1')
   await page.keyboard.press('ControlOrMeta+k')
   // nothing typed: Recent, the first highlighted
   const rows = page.locator('[data-part="search"] [data-recent]')

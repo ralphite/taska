@@ -10,11 +10,11 @@ test('r760 r733 r734: a subitem the Active view hides is not lost: its parent ge
   request,
 }) => {
   const p = await project(request, {
-    agent: `new task P1 now Plan the launch
-new task P2 now parent=T1 Book the venue
-new task P1 now Write the press kit
-new task P2 now parent=T3 Draft the release
-new task P2 now parent=T3 Collect the quotes
+    agent: `new P1 now Plan the launch
+new P2 now parent=T1 Book the venue
+new P1 now Write the press kit
+new P2 now parent=T3 Draft the release
+new P2 now parent=T3 Collect the quotes
 `,
     approve: ['T1', 'T2', 'T3', 'T4', 'T5'],
   })

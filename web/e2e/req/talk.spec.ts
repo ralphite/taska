@@ -19,7 +19,7 @@ test('r479: the latest message is open in full up to 50 lines; longer, it is cut
   request,
 }) => {
   const p = await project(request, {
-    agent: 'new task P1 now Notes from the call\n',
+    agent: 'new P1 now Notes from the call\n',
     approve: ['T1'],
     then: `T1 say Here is what we agreed\n${lines(39, 'Agreed')}\n`,
   })
@@ -39,19 +39,19 @@ test('r368: a code in a message is a link to its item, and pointing at it shows 
   request,
 }) => {
   const p = await project(request, {
-    agent: 'new task P1 now Notes from the call\nnew bug P0 now Export ignores the filter\n',
-    approve: ['T1', 'B2'],
-    then: 'T1 say The export bug is B2, fixed next\n',
+    agent: 'new P1 now Notes from the call\nnew #bug P0 now Export ignores the filter\n',
+    approve: ['T1', 'T2'],
+    then: 'T1 say The export bug is T2, fixed next\n',
   })
   await open(page, p, 'T1')
-  const code = pane(page).locator('[data-ref="B2"]').filter({ visible: true }).first()
+  const code = pane(page).locator('[data-ref="T2"]').filter({ visible: true }).first()
   await expect(code).toBeVisible()
   if (isDesk(page)) {
     await code.hover()
     await expect(tip(page).and(page.locator('[data-card]'))).toContainText('Export ignores the filter')
   }
   await code.click()
-  await expect(page).toHaveURL(/\/B0*2(\?|$)/)
+  await expect(page).toHaveURL(/\/T0*2(\?|$)/)
 })
 
 // B507: how far down the talk a thing is drawn
@@ -62,10 +62,10 @@ test('r693: a card you replied on instead of deciding stays where it was, update
   request,
 }) => {
   const p = await project(request, {
-    agent: `new idea P2 now Proposed with no words
-new task P2 now Some work
-new idea P2 now A proposal
-new task P2 now Still waits
+    agent: `new P2 now Proposed with no words
+new P2 now Some work
+new P2 now A proposal
+new P2 now Still waits
 `,
     approve: ['T2', 'T4'],
     then: 'I3 propose Do it this way.\nT2 done Finished: it works.\nT4 say Started.\n',
@@ -82,7 +82,7 @@ new task P2 now Still waits
   // (a proposal you reply on is approved, B818 r1401; finished work you reply on goes back to work, B607/B606: its
   // card says Sent back)
   for (const [code, said, shown] of [
-    ['I3', 'Do it this way.', 'Approved'],
+    ['T3', 'Do it this way.', 'Approved'],
     ['T2', 'Finished: it works.', 'Sent back'],
   ]) {
     await open(page, p, code)
@@ -92,10 +92,10 @@ new task P2 now Still waits
     await above(words(said), words('Let us talk first'), `${code}: what the agent said above your reply`)
   }
   // an agent's item with no words of its own: its card heads the talk, before your reply, approved by it (B818)
-  await open(page, p, 'I1')
-  await expect.poll(async () => p.read('I1')).toMatch(/^I0*1 \w+ P\d \w+ open/)
+  await open(page, p, 'T1')
+  await expect.poll(async () => p.read('T1')).toMatch(/^T0*1 P\d \w+ open/)
   await expect(card('proposed this').getByRole('button', { name: 'Approved', exact: true })).toBeVisible()
-  await above(card('proposed this'), words('Let us talk first'), 'I1 approved: the card above your reply')
+  await above(card('proposed this'), words('Let us talk first'), 'T1 approved: the card above your reply')
   // nothing said after it: the card still waits, last, after all that came before it
   await open(page, p, 'T4')
   const waits = card('Finished too.')
@@ -109,7 +109,7 @@ test('T589 #10486: an item opens at its latest message, and what you send and th
 }) => {
   const steps = Array.from({ length: 8 }, (_, i) => `T1 say Step ${i + 1} done\n${lines(6, `Step ${i + 1}`)}`).join('\n')
   const p = await project(request, {
-    agent: `new task P1 now Notes from the call\n${lines(30, 'Body')}\n`,
+    agent: `new P1 now Notes from the call\n${lines(30, 'Body')}\n`,
     approve: ['T1'],
     then: `${steps}\nT1 say The last word so far\n`,
   })
@@ -191,7 +191,7 @@ test('B719 r1178: replying keeps the talk at its end and it never jumps: the box
 }) => {
   const steps = Array.from({ length: 8 }, (_, i) => `T1 say Step ${i + 1} done\n${lines(6, `Step ${i + 1}`)}`).join('\n')
   const p = await project(request, {
-    agent: `new task P1 now Notes from the call\n${lines(30, 'Body')}\n`,
+    agent: `new P1 now Notes from the call\n${lines(30, 'Body')}\n`,
     approve: ['T1'],
     then: `${steps}\nT1 say The last word so far\n`,
   })
@@ -299,7 +299,7 @@ test('B770 r1292: replying by voice at the talk’s end keeps it at its end: rec
 }) => {
   const steps = Array.from({ length: 8 }, (_, i) => `T1 say Step ${i + 1} done\n${lines(6, `Step ${i + 1}`)}`).join('\n')
   const p = await project(request, {
-    agent: `new task P1 now Notes from the call\n${lines(30, 'Body')}\n`,
+    agent: `new P1 now Notes from the call\n${lines(30, 'Body')}\n`,
     approve: ['T1'],
     then: `${steps}\nT1 say The last word so far\n`,
   })
@@ -319,7 +319,7 @@ test('B770 r1292: scrolled up to read, replying by voice moves the talk once, do
 }) => {
   const steps = Array.from({ length: 8 }, (_, i) => `T1 say Step ${i + 1} done\n${lines(6, `Step ${i + 1}`)}`).join('\n')
   const p = await project(request, {
-    agent: `new task P1 now Notes from the call\n${lines(30, 'Body')}\n`,
+    agent: `new P1 now Notes from the call\n${lines(30, 'Body')}\n`,
     approve: ['T1'],
     then: `${steps}\nT1 say The last word so far\n`,
   })
@@ -371,7 +371,7 @@ const ASKED = 'Before we start: the scope, the goal and where to spend the time?
 const NEXT = 'Cold start: walk me through your whole design in ten sentences.'
 async function tutorTalk(request: Parameters<typeof project>[0]) {
   return project(request, {
-    agent: `new task P1 now Ticket booking deep dive\n  Practise the problem question by question.\n`,
+    agent: `new P1 now Ticket booking deep dive\n  Practise the problem question by question.\n`,
     approve: ['T1'],
     then: `${Array.from({ length: 6 }, (_, i) => lesson(i + 1)).join('\n')}\nT1 ask ${ASKED}\n`,
   })
@@ -446,7 +446,7 @@ test('B721 r1183: scrolled up right after an item opens, the talk stays where yo
 }) => {
   const steps = Array.from({ length: 8 }, (_, i) => `T1 say Step ${i + 1} done\n${lines(6, `Step ${i + 1}`)}`).join('\n')
   const p = await project(request, {
-    agent: `new task P1 now Notes from the call\n${lines(30, 'Body')}\n`,
+    agent: `new P1 now Notes from the call\n${lines(30, 'Body')}\n`,
     approve: ['T1'],
     then: `${steps}\nT1 say The last word so far\n`,
   })
@@ -485,7 +485,7 @@ test('r978 (B640 #8700, B801): an edited input says "edited", and pointing at it
 }) => {
   test.skip(!isDesk(page), 'pointing is the desktop')
   const p = await project(request, {
-    agent: 'new task P1 now Notes from the call\n',
+    agent: 'new P1 now Notes from the call\n',
     approve: ['T1'],
   })
   const made = await p.op({ op: 'input', text: 'The first words of mine', scope: 1 })

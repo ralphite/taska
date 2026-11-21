@@ -262,7 +262,7 @@ test('r1052: what the pane shows never moves the list: on the New input page the
     if (!bar || !views) throw new Error('not drawn')
     return views.y - (bar.y + bar.height)
   }
-  for (const filters of ['', '?type=task']) {
+  for (const filters of ['', '?tag=bug']) {
     const withItem = await gap('T1' + filters)
     if (!filters) expect(Math.abs(withItem), 'nothing between the bar and the views').toBeLessThan(1)
     else expect(withItem, 'the filters between them').toBeGreaterThan(20)

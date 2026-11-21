@@ -41,7 +41,7 @@ const linesOf = (parts: Locator) =>
 
 test('T529: on the phone a message header wraps between its parts, never inside one', async ({ page, request }) => {
   test.skip(isDesk(page), 'the phone is where the header has too little room')
-  const p = await project(request, { agent: 'new task P2 now Ship the export\n', approve: ['T1'] })
+  const p = await project(request, { agent: 'new P2 now Ship the export\n', approve: ['T1'] })
   await doAs(request, p, 'claude-code', 'T1 decide @manager CSV first, JSON next week\n', 'worker')
   await open(page, p, 'T1')
   // the header's words are in its first part; More stands apart at its end (D115 #4)
@@ -65,13 +65,13 @@ test("T529: a decision kept on an answered question's card shows that choice's o
   request,
 }) => {
   const p = await project(request, {
-    agent: 'new task P2 now Some work\nnew idea P2 now A proposal\n',
+    agent: 'new P2 now Some work\nnew P2 now A proposal\n',
     approve: ['T1'],
     then: `T1 done Finished: it works.
 T1 ask Ship it today?
   - ( ) Yes
   - ( ) Next week
-I2 ask Worth doing?
+T2 ask Worth doing?
   - ( ) Yes
   - ( ) No
 `,
@@ -80,7 +80,7 @@ I2 ask Worth doing?
   await op(request, p, { op: 'input', text: '✓ Next week', scope: 1 })
   await op(request, p, { op: 'input', text: '✓ No', scope: 2 })
   await op(request, p, { op: 'set', ref: 'T1', f: { status: 'open' } })
-  await op(request, p, { op: 'set', ref: 'I2', f: { status: 'dropped' } })
+  await op(request, p, { op: 'set', ref: 'T2', f: { status: 'dropped' } })
   const icon = async (code: string, label: string) => {
     await open(page, p, code)
     // by its name (its button holds its other words unseen, to keep its width: R4-2 #1)
@@ -96,7 +96,7 @@ I2 ask Worth doing?
   const notYet = await icon('T1', 'Sent back')
   expect(notYet).toContain('M3 3v5h5') // the reopen arrow, as on its button
   expect(notYet).not.toContain(tick)
-  const wontDo = await icon('I2', 'Declined')
+  const wontDo = await icon('T2', 'Declined')
   expect(wontDo).toContain('m4.9 4.9 14.2 14.2') // the ban sign, as on its button
   expect(wontDo).not.toContain(tick)
 })
@@ -106,7 +106,7 @@ test('D77 #10 r1003 r1007: finished work sent back with Not yet keeps both butto
   request,
 }) => {
   const p = await project(request, {
-    agent: 'new task P2 now Some work\n',
+    agent: 'new P2 now Some work\n',
     approve: ['T1'],
     then: 'T1 done Finished: it works.\n',
   })
@@ -125,7 +125,7 @@ test('T529: two agents never share a mark, and an agent Taska has no name for is
   page,
   request,
 }) => {
-  const p = await project(request, { agent: 'new task P2 now Ship the export\n', approve: ['T1'] })
+  const p = await project(request, { agent: 'new P2 now Ship the export\n', approve: ['T1'] })
   await doAs(request, p, 'antigravity', 'T1 say Antigravity looked at it\n')
   await doAs(request, p, 'agent', 'T1 say An agent looked at it\n')
   await doAs(request, p, 'gemini', 'T1 say Gemini looked at it\n')
@@ -148,7 +148,7 @@ test('T529: two agents never share a mark, and an agent Taska has no name for is
 
 test('T529: the line under your comment on a document has even gaps between its words', async ({ page, request }) => {
   const p = await project(request, {
-    agent: 'new task P2 now Plan the export\n',
+    agent: 'new P2 now Plan the export\n',
     approve: ['T1'],
     then: 'T1 doc The plan\n  Ship option A today.\n',
   })
@@ -243,7 +243,7 @@ test('D115 #5: while a new answer is on its way the card shows no Edit; it is ba
   request,
 }) => {
   const p = await project(request, {
-    agent: 'new task P2 now Some work\n',
+    agent: 'new P2 now Some work\n',
     approve: ['T1'],
     then: `T1 ask Which format?
   - ( ) CSV

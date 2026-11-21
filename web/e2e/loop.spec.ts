@@ -19,7 +19,7 @@ test('Accept on a row finishes the work at once', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   await needAct(page, 'accept').click()
-  await expect.poll(async () => (await p.read('B2')).split('\n')[0]).toMatch(/ done /)
+  await expect.poll(async () => (await p.read('T2')).split('\n')[0]).toMatch(/ done /)
 })
 
 test('a question is answered by picking a choice and sending it', async ({ page, request }) => {

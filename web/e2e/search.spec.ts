@@ -10,7 +10,7 @@ const searchPage = (page: Page) => page.locator('[data-part="search"]').filter({
 test('the phone: say or type what to find, open a result, come back to the same search, leave', async ({ page, request }) => {
   test.skip(isDesk(page), "phone only: the desktop keeps the list's search")
   const p = await project(request, LOOP)
-  const other = await project(request, { agent: 'new task P2 now Export the invoices with the filter\n' })
+  const other = await project(request, { agent: 'new P2 now Export the invoices with the filter\n' })
   await open(page, p)
   await page.getByRole('button', { name: 'Search', exact: true }).filter({ visible: true }).first().click()
   await expect(searchPage(page)).toBeVisible()
@@ -27,7 +27,7 @@ test('the phone: say or type what to find, open a result, come back to the same 
   await expect(searchPage(page)).toContainText('Export ignores the filter')
   // a result opens its page; its Back comes back to the same search
   await searchPage(page).getByText('Export ignores the filter').first().click()
-  await expect(page).toHaveURL(/\/B2$/)
+  await expect(page).toHaveURL(/\/T2$/)
   await page.getByRole('button', { name: 'Back', exact: true }).filter({ visible: true }).first().click()
   await expect(searchPage(page)).toContainText('Export ignores the filter')
   await expect(field).toHaveValue('export filter')

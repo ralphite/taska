@@ -57,17 +57,17 @@ export async function project(request: APIRequestContext, seed: Seed = {}): Prom
 }
 // A project with one item in each place: a question, work to accept, a proposal, the queue, later.
 export const LOOP: Seed = {
-  agent: `new task P1 now Pick the export format
-new bug P0 now Export ignores the filter
-new idea P2 now Dark mode for the reports
-new task P2 now Write the user docs
-new task P3 later Clean up old branches
+  agent: `new P1 now Pick the export format
+new #bug P0 now Export ignores the filter
+new P2 now Dark mode for the reports
+new P2 now Write the user docs
+new P3 later Clean up old branches
 `,
-  approve: ['T1', 'B2', 'T4', 'T5'],
+  approve: ['T1', 'T2', 'T4', 'T5'],
   then: `T1 ask Which format should the export use?
   - ( ) CSV
   - ( ) JSON
-B2 done Fixed: the export now uses the active filter
+T2 done Fixed: the export now uses the active filter
 `,
 }
 export const isDesk = (page: Page) => (page.viewportSize()?.width || 0) >= 1024
