@@ -23,12 +23,14 @@ class ItemAdded(Event):
     next: str = ""
     parent: Optional[int] = None
     keep: bool = False  # linked to src, but src stays unhandled
+    group: bool = False  # a group (T856)
 
     def body(self) -> Row:
         row: Row = {"n": self.n, "by": self.by, "title": self.title, "src": self.src, "tags": list(self.tags),
                     "pri": self.pri, "when": self.when, "status": self.status, "body": self.body_text,
                     "next": self.next, "parent": self.parent}
         opt(row, "keep", True, self.keep)
+        opt(row, "group", True, self.group)
         return row
 
     @property
@@ -251,7 +253,7 @@ READERS: Dict[str, Reader] = {
     "add": lambda r: ItemAdded(n=need(r, "n"), title=need(r, "title"), src=r.get("src"), tags=_tags_of(r),
                                pri=need(r, "pri"), when=need(r, "when"), status=need(r, "status"),
                                body_text=r.get("body", ""), next=r.get("next", ""), parent=r.get("parent"),
-                               keep=bool(r.get("keep")), **common(r)),
+                               keep=bool(r.get("keep")), group=bool(r.get("group")), **common(r)),
     "set": lambda r: FieldsSet(n=need(r, "n"), f=_fields(need(r, "f")), was=_fields(r.get("was")), src=r.get("src"),
                                keep=bool(r.get("keep")), undo_of=r.get("undo_of"), cascade=r.get("cascade"),
                                **common(r)),

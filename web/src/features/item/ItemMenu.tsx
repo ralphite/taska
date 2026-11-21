@@ -33,8 +33,8 @@ export interface ItemMenuEvents {
   field(arm: 's' | 'p' | 't'): void
   /** a # tag put on, or taken off when it has it (T855) */
   tag(t: string): void
-  /** D152 prototype: made a group, or a task again */
-  group?(on: boolean): void
+  /** made a group, or a task again (T856) */
+  group(on: boolean): void
   /** D152 prototype: what it waits for, picked (`from`: the row it was chosen on) */
   waitFor?(from?: HTMLElement): void
 }
@@ -78,8 +78,7 @@ export interface ItemMenuFacts {
   keys: MenuKeys
   /** the project's tags, the most used first (T855) */
   allTags: readonly string[]
-  /** D152 prototype: whether it is a group, the codes of what it waits for */
-  group?: boolean
+  /** D152 prototype: the codes of what it waits for */
   waitsFor?: readonly string[]
 }
 
@@ -139,7 +138,8 @@ function TagChoices({ all, it, on }: { all: readonly string[]; it: Item; on: Ite
 
 /** The phone's sheet. */
 
-export function itemMenuSheet({ it, code, parentCode, asking, arm, allTags, group, waitsFor }: ItemMenuFacts, on: ItemMenuEvents): SheetParts {
+export function itemMenuSheet({ it, code, parentCode, asking, arm, allTags, waitsFor }: ItemMenuFacts, on: ItemMenuEvents): SheetParts {
+  const group = !!it.group
   const tile = (key: string, icon: IconName, label: ReactNode, run: () => void, sub = '') => (
     <button
       key={key}
@@ -205,8 +205,8 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm, allTags, grou
               {tile('reparent', 'indent', 'Put under…', () => on.reparent(), parentCode ? `now under ${parentCode}` : 'stands on its own')}
             </>
           )}
-          {group === undefined || group ? null : tile('wait', 'hourglass', 'Wait for…', () => on.waitFor?.(), waitsFor?.length ? `now ${waitsFor.join(', ')}` : '')}
-          {group === undefined ? null : group ? tile('group', 'items', 'Make a task', () => on.group?.(false)) : tile('group', 'folder', 'Make a group', () => on.group?.(true))}
+          {waitsFor === undefined || group ? null : tile('wait', 'hourglass', 'Wait for…', () => on.waitFor?.(), waitsFor?.length ? `now ${waitsFor.join(', ')}` : '')}
+          {group ? tile('group', 'items', 'Make a task', () => on.group(false)) : tile('group', 'folder', 'Make a group', () => on.group(true))}
           {state}
           {next}
           {tile('move', 'arrow', 'Move to…', on.moveProject)}
@@ -226,7 +226,8 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm, allTags, grou
 }
 
 /** The desktop's menu: rows with their keys, or one field's choices. */
-export function itemMenuPop({ it, code, parentCode, asking, arm, keys, allTags, group, waitsFor }: ItemMenuFacts, on: ItemMenuEvents): SheetParts {
+export function itemMenuPop({ it, code, parentCode, asking, arm, keys, allTags, waitsFor }: ItemMenuFacts, on: ItemMenuEvents): SheetParts {
+  const group = !!it.group
   const row = (key: string, icon: IconName | ReactNode, label: ReactNode, k: string, run: (from: HTMLElement) => void, sub = '', danger = false) => (
     <button key={key} onClick={(e) => run(e.currentTarget)} className={`flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm ${danger ? `${DANGER} hover:bg-red-50 dark:hover:bg-red-400/10` : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
       {typeof icon === 'string' ? <Icon n={icon as IconName} c={`size-[18px] ${danger ? '' : 'text-zinc-500 dark:text-zinc-400'}`} /> : icon}
@@ -319,8 +320,8 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys, allTags, 
               {row('reparent', 'indent', 'Put under…', keys.reparent, on.reparent, parentCode ? 'now under ' + parentCode : 'stands on its own')}
             </>
           )}
-          {group === undefined || group ? null : row('wait', 'hourglass', 'Wait for…', '', (from) => on.waitFor?.(from), waitsFor?.length ? 'now ' + waitsFor.join(', ') : '')}
-          {group === undefined ? null : group ? row('group', 'items', 'Make a task', '', () => on.group?.(false)) : row('group', 'folder', 'Make a group', '', () => on.group?.(true))}
+          {waitsFor === undefined || group ? null : row('wait', 'hourglass', 'Wait for…', '', (from) => on.waitFor?.(from), waitsFor?.length ? 'now ' + waitsFor.join(', ') : '')}
+          {group ? row('group', 'items', 'Make a task', '', () => on.group(false)) : row('group', 'folder', 'Make a group', '', () => on.group(true))}
           {state}
           {next}
           {row('move', 'arrow', 'Move to project…', '', on.moveProject)}

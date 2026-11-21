@@ -146,6 +146,8 @@ def command(head: str, cont: str) -> Union[Command, List[Command]]:
         return {"op": "merge", "ref": word, "into": rest2.strip().split()[0] if rest2.strip() else ""}
     if verb_l == "delete" and not rest2.strip():
         return {"op": "idel", "ref": word}
+    if verb_l in ("group", "task") and not rest2.strip():  # T797 group: holds items, no work of its own (T856)
+        return {"op": "set", "ref": word, "f": {"group": verb_l == "group"}, "src": None}
     if verb_l == "take" and not rest2.strip():  # doing, taken from the session that holds it, as the user asked (T772)
         return {"op": "set", "ref": word, "f": {"status": "doing"}, "src": None, "take": True}
     until = re.fullmatch(r"(?i)later\s+until\s+(\S+)(?:\s+(.*))?", rest, re.S)
@@ -172,6 +174,9 @@ def command(head: str, cont: str) -> Union[Command, List[Command]]:
 
 
 def _new(rest: str, cont: str) -> Command:
+    group = re.match(r"(?i)group\s+", rest)  # new group <title>: a group (T856)
+    if group:
+        rest = rest[group.end():]
     opts, title = options(rest, before_title=True)
     m = _END_OPTION.search(title)
     while m:  # "new Write the docs [src=r12]": the option at the end counts too
@@ -183,6 +188,8 @@ def _new(rest: str, cont: str) -> Command:
     if not title:
         raise Refused("new needs a title")
     out: Command = {"op": "new", "title": title, "body": cont}
+    if group:
+        out["group"] = True
     for k in ("tags", "pri", "when", "status", "parent", "src"):
         if k in opts:
             out[k] = opts[k]

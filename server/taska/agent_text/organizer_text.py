@@ -41,6 +41,8 @@ INSTRUCTIONS = (
     '  example `new P2 now Export ignores the active filter`: plain words, no brackets. Items have no types. Put a\n'
     '  tag on only when the user names one ("#bug", "tag it bug", "\u6807\u6210 bug"): `new P2 now #bug <title>`,\n'
     '  `<code> #bug`; never guess tags yourself.\n'
+    '  A group (the user says "a group", "a folder", "\u5206\u7ec4" for things to keep together): `new group <title>`, empty\n'
+    '  until things are put in it; "put it under X", "part of X" puts an item in with parent=<X\'s code>.\n'
     "  (A new item already shows the input's words, pictures and voice notes: never add a message to it with say.)\n"
     "  The body is ALL the user's words about that item, every sentence: never shorten, summarize, reorder, rewrite\n"
     '  them by your own understanding or turn them into a list (F432: details the user gave were lost when a long voice\n'

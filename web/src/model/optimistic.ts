@@ -130,6 +130,7 @@ function value(w: Work, name: string, v: unknown, me: Item): { ok: boolean; v?: 
     case 'next':
       return { ok: true, v: s.trim() }
     case 'archived':
+    case 'group':
       return { ok: true, v: typeof v === 'boolean' ? v : ['1', 'true', 'yes', 'on'].includes(s.toLowerCase()) }
     case 'later_until':
       if (v == null || NONE.includes(s.trim().toLowerCase())) return { ok: true, v: null }
@@ -206,6 +207,8 @@ function set(w: Work, c: CommandOf<'set'>): void {
   if (it.later_until && !('later_until' in f) && 'when' in f) f.later_until = null
   if (f.when === 'now' && f.later_until) return
   // any item can be archived; only setting it open again brings it back
+  if ('status' in f && (f.group ?? it.group)) return // a group has no status (T856)
+  if (f.group && it.status !== 'open') f.status = 'open'
   if (it.archived && 'status' in f && !closed(String(f.status)) && !('archived' in f)) f.archived = false
   if (!Object.keys(f).length) return
   setOn(w, it, f)
@@ -233,7 +236,7 @@ function newItem(w: Work, c: CommandOf<'new'>): void {
   const n = STAND + (w.at % 1e11) + w.out.patches.length
   const t = new Date(w.at).toISOString()
   const add: Item = {
-    n, code: '…', tags: tagsValue(c.tags ?? []) ?? [], title, body: (c.body || '').trim(), pri: c.pri || DEFAULT_PRI, when: c.when || 'now',
+    n, code: '…', tags: tagsValue(c.tags ?? []) ?? [], group: !!c.group, title, body: (c.body || '').trim(), pri: c.pri || DEFAULT_PRI, when: c.when || 'now',
     status: (c.status || 'open') as Status, parent: parent?.n ?? null, next: (c.next || '').trim(), srcs: [], mergedInto: null, archived: false,
     t0: t, t1: t, by: 'you', thread: [], wait: null, talked: false, rank: null, decided: null,
   }

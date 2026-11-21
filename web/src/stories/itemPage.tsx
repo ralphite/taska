@@ -87,7 +87,7 @@ const toggle = (set: ReadonlySet<number>, n: number) => {
   if (!next.delete(n)) next.add(n)
   return next
 }
-const itemMenuActs = acts('Item menu', ['edit', 'copy', 'agent', 'newDoc', 'addSub', 'reparent', 'later', 'archive', 'doNext', 'moveProject', 'remove', 'set', 'tag'] as const, {
+const itemMenuActs = acts('Item menu', ['edit', 'copy', 'agent', 'newDoc', 'addSub', 'reparent', 'later', 'archive', 'doNext', 'moveProject', 'remove', 'set', 'tag', 'group'] as const, {
   agent: 'Sheets › An item: what agents see',
   reparent: 'Move and pick › Put under',
   moveProject: 'Move and pick › Item to another project',
@@ -176,7 +176,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
       field: (a) => menu.change({ arm: a, asking: false }, { narrow: true }),
       ...o.menuOn,
       tag: o.menuOn?.tag ?? itemMenuActs.tag,
-      group: o.menuOn?.group && ((v) => (menu.close(), o.menuOn?.group?.(v))),
+      group: (v) => (menu.close(), (o.menuOn?.group ?? itemMenuActs.group)(v)),
       waitFor: () => menu.change({ wait: true }, { narrow: false }),
     }
     const mf = { ...itemMenuFacts(m, it, w.asking, w.arm), ...o.menu }
@@ -225,8 +225,8 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
         menu
         duo={o.duo}
         toEnd={talk}
-        head={<ItemHead it={it} code={facts.code(it.n)} titled={o.titled} group={facts.group} />}
-        acts={<ItemActs it={it} group={facts.group} on={on} />}
+        head={<ItemHead it={it} code={facts.code(it.n)} titled={o.titled} />}
+        acts={<ItemActs it={it} on={on} />}
         nav={<ItemNav full={full} on={{ prev: paneActs.prev, next: paneActs.next, full: () => setFull(!full) }} />}
         onBack={o.onBack ?? paneActs.back}
         onMenu={(from) => openMenu(null, from)}

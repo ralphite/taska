@@ -109,7 +109,7 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         return Work(f"{head}\nresume {st.code(it.n)}: {ident(x.by, x.ses)} {what} (#{x.id})\n" + card(rd, it), True,
                     given=it.n)
     me = ident(asker.who, asker.session) if asker.who else None
-    queue = rules.queue_order([i for i in live if i.when == "now" and i.status in ("open", "doing")
+    queue = rules.queue_order([i for i in live if i.when == "now" and not i.group and i.status in ("open", "doing")
                                and not rules.waiting(st, i) and not rules.open_kids(st, i)])
     if me:  # what another session is on is theirs; each gets its own next item
         theirs = [(i, c[0]) for i in queue for c in [asker.holder(i)] if c and c[0] != me]

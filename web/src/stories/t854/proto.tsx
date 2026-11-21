@@ -126,11 +126,10 @@ export function Proto({ desk, start = {} }: { desk: boolean; start?: Start }) {
   const [tag, setTag] = useState<string | null>(start.tag ?? null)
   const [sheet, setSheet] = useState<null | 'agents' | 'session' | 'filters'>(null)
   const agents = agentsOf(state)
-  const m = modelOf(withTags(tags), [], { title: 'Shop', agents, work: true })
+  const m = modelOf(withTags(tags).map((it) => ({ ...it, group: groups.includes(it.n) })), [], { title: 'Shop', agents, work: true })
   const tagsOf = (it: Item) => tags[it.n] ?? []
   const byN = (n: number) => m.byN.get(n) as Item
   const rowFacts = (it: Item): Partial<RowFacts> => ({
-    group: groups.includes(it.n),
     ...(after[it.n]?.length ? { waitsFor: after[it.n].map((n) => ({ n, code: 'T' + n })) } : {}),
     // a group's agent mark: none (no agent is handed a group)
     ...(groups.includes(it.n) ? { worker: null } : {}),
@@ -140,7 +139,6 @@ export function Proto({ desk, start = {} }: { desk: boolean; start?: Start }) {
   const page = (it: Item) => {
     const news = it.agent && it.status === 'doing' ? workNews(it, m.at) : null
     const f: Partial<ItemFacts> = {
-      group: groups.includes(it.n),
       waitsFor: (after[it.n] ?? []).map(byN),
       blocks: Object.entries(after)
         .filter(([, ns]) => ns.includes(it.n))
@@ -151,7 +149,7 @@ export function Proto({ desk, start = {} }: { desk: boolean; start?: Start }) {
       others: m.items.filter((x) => x.n !== it.n),
       f,
       on: { agents: () => setSheet('session'), tag: pick, goto: (n: number) => setOpen(n) },
-      menu: { allTags: ALL_TAGS, group: groups.includes(it.n), waitsFor: (after[it.n] ?? []).map((n) => 'T' + n) },
+      menu: { allTags: ALL_TAGS, waitsFor: (after[it.n] ?? []).map((n) => 'T' + n) },
       menuOn: {
         tag: (t: string) => setTags({ ...tags, [it.n]: toggle(tagsOf(it), t) }),
         group: (on: boolean) => setGroups(on ? [...groups, it.n] : groups.filter((n) => n !== it.n)),

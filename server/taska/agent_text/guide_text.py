@@ -11,6 +11,9 @@ GRAMMAR = (
     '    <optional body, indented>\n'
     "  B03 P1 later doing        set priority / when / status, any mix (status: open|doing|done|drop; drop = won't do)\n"
     '  B03 #bug -#phone          put on or take off tags\n'
+    '  new group <title>         a group: it holds items (put them in with parent=) and gives them its words; it has\n'
+    '                            no status, /next never gives it, it is never done by itself (the user archives it)\n'
+    '  B03 group | B03 task      make it a group, or a task again (a task with subitems is done once they are)\n'
     '  B03 later until 2026-11-10    Later until that day: then it is back to now by itself\n'
     '  B03 done <text>           words after the fields (and indented lines) are posted as progress, e.g. the done report\n'
     '  B03 title|body|next <text>      replace that field (body may continue on indented lines)\n'
@@ -66,6 +69,7 @@ AGENT = (
     '  curl -s BASE/next         what to do now: the inbox first, items the user replied on, then the next item  <- start here\n'
     '  curl -s BASE/inbox        unprocessed user inputs: raw text, scoped item, files\n'
     '  curl -s BASE/items        open items, one line each: code pri when status [#tags] title [flag] [^parent]\n'
+    '                            a group shows "group 3/5" (finished of all) in place of a status\n'
     '                            flag: ? you asked (waits on the user) / < the user replied\n'
     '                            filters: ?q=word&tag=bug&pri=P0&when=now&status=all|open|doing|done|dropped&wait=1&reply=1&archived=1|all&limit=60\n'
     '  curl -s BASE/B03          full card: fields, body, thread, files (image/audio paths are readable from disk)\n'

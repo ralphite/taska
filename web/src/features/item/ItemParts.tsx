@@ -54,7 +54,7 @@ export function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents })
   const shown = shownStatus(it)
   return (
     <>
-      {f.group ? (
+      {it.group ? (
         <button title="Group" onClick={(e) => on.menu(null, e.currentTarget)} className={`${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200`}>
           <Icon n="folder" c="size-3.5 opacity-60" />
           Group
@@ -242,6 +242,11 @@ export function Subitems({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents
               <span className="min-w-0 flex-1 text-[15px] leading-snug">
                 <span className={`mr-1.5 font-mono text-[13px] font-bold ${CODE_TEXT}`}>{f.code(k.n)}</span>
                 <span className={closed(k.status) ? 'line-through' : ''}>{k.title}</span>
+                {k.tags.map((t) => (
+                  <span key={t} className="ml-1.5 inline-flex h-5 translate-y-[-1px] items-center rounded-md bg-zinc-100 px-1.5 align-middle text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                    #{t}
+                  </span>
+                ))}
               </span>
               {k.when === 'later' && !closed(k.status) ? (
                 <span className="mt-0.5 flex shrink-0 text-xs font-medium">

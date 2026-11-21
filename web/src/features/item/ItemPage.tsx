@@ -79,8 +79,6 @@ export interface ItemFacts {
   subDraft?: string
   /** the sessions working on it now, and how each is (I810) */
   workers?: { name: string; state: 'working' | 'idle' | 'waiting' }[]
-  /** D152 prototype: a group (it holds items; no status of its own) */
-  group?: boolean
   /** D152 prototype: the items it waits for, and the items it holds up */
   waitsFor?: Item[]
   blocks?: Item[]
@@ -224,7 +222,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
           {left}
         </div>
       ) : (
-      <div data-item-top className={`flex flex-col lg:shrink-0 ${duo ? 'lg:h-full lg:w-[var(--duo-w,55%)]' : f.editing || f.group ? 'lg:max-h-full' : 'lg:h-(--top-h) lg:max-h-[var(--top-h,60%)]'}`}>
+      <div data-item-top className={`flex flex-col lg:shrink-0 ${duo ? 'lg:h-full lg:w-[var(--duo-w,55%)]' : f.editing || it.group ? 'lg:max-h-full' : 'lg:h-(--top-h) lg:max-h-[var(--top-h,60%)]'}`}>
         <div ref={clip} data-item-clip onScroll={(e) => e.currentTarget.toggleAttribute('data-over', overflows(e.currentTarget))} className="lg:min-h-0 lg:scrollbar-thin lg:overflow-y-auto outline-none lg:data-over:mask-b-from-[calc(100%-4rem)]">
           <div inert={readOnly} className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-7 lg:pb-6">
             {head}
@@ -331,12 +329,12 @@ export function ItemTalk({ it, f, env, facts, on }: { it: Item; f: ItemFacts; en
  * own, Yadong r961.) */
 /** The pane's bar: the item's mark and code; `titled`: its title has scrolled out of sight (the phone), so the bar says
  * it after the code, cut short (as iOS's large titles do, D115 R8 #5). */
-export function ItemHead({ it, code, titled = false, group = false }: { it: Item; code: string; titled?: boolean; group?: boolean }) {
+export function ItemHead({ it, code, titled = false }: { it: Item; code: string; titled?: boolean }) {
   return (
     <>
       <span className="hidden lg:inline">
-        {/* a group: its own icon (D152 prototype) */}
-        {group ? <Icon n="folder" c="size-[18px] text-zinc-500 dark:text-zinc-400" /> : <StateIcon {...shownStatus(it)} cls="size-[18px]" />}
+        {/* a group: its own icon (T856) */}
+        {it.group ? <Icon n="folder" c="size-[18px] text-zinc-500 dark:text-zinc-400" /> : <StateIcon {...shownStatus(it)} cls="size-[18px]" />}
       </span>
       <span className={`shrink-0 font-mono text-sm font-bold ${CODE_TEXT}`}>{code}</span>
       {/* after the code on one line, cut short to the space between Back and ⋯ (B696) */}
@@ -372,9 +370,9 @@ function BarIcon({ icon, title, onClick }: { icon: IconName; title: string; onCl
 /** The actions you use, with their words: the list row's, in its order (D115 #11): Done, Won't do, Later on what is
  * not finished; Archive and Reopen once it is done or won't be. What waits on you is decided in its card, as on its
  * row in Needs you. */
-export function ItemActs({ it, group = false, on }: { it: Item; group?: boolean; on: Pick<ItemEvents, 'set' | 'later'> }) {
-  // a group is never done by itself: you archive it (D152 prototype)
-  const slots = group ? ([['archived', 'true', 'archive']] as Slot[]) : deskSlots(it, needsYou(it)).filter((a): a is Slot => a !== null)
+export function ItemActs({ it, on }: { it: Item; on: Pick<ItemEvents, 'set' | 'later'> }) {
+  // a group is never done by itself: you archive it (T856)
+  const slots = it.group ? ([['archived', 'true', 'archive']] as Slot[]) : deskSlots(it, needsYou(it)).filter((a): a is Slot => a !== null)
   return (
     <>
       {slots.map(([f, v, act]) => (

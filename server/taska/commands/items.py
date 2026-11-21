@@ -68,7 +68,7 @@ def field_value(state: ProjectState, name: str, v: Any, ctx: Optional[RefContext
         v = v[:300]
     elif name in ("body", "next"):
         v = str(v).strip()[:MAX_TEXT]
-    elif name == "archived":
+    elif name in ("archived", "group"):
         v = v if isinstance(v, bool) else str(v).lower() in ("1", "true", "yes", "on")
     elif name == "later_until":  # Later until a day (D115 #21); none: Later with no day
         if v is None or str(v).strip().lower() in _NONE_WORDS:
@@ -110,6 +110,7 @@ def new_item(r: Run, a: Args) -> Outcome:
     if a.get("type"):
         field_value(s, "type", a.get("type"))
     tags = tags_value(a.get("tags") or [])
+    group = field_value(s, "group", a.get("group") or False)
     pri = field_value(s, "pri", a.get("pri") or DEFAULT_PRI)
     when = field_value(s, "when", a.get("when") or "now")
     body = field_value(s, "body", a.get("body") or "")
@@ -118,14 +119,19 @@ def new_item(r: Run, a: Args) -> Outcome:
     src = a.get("src") or r.ctx.src
     said = s.inputs.get(str(src)) if src else None
     asked_for = parent is not None and said is not None and said.by in PEOPLE  # a part the user asked for (B818)
-    status = item_states.starts(r.by, asked_for) if not r.person else field_value(s, "status", a.get("status") or "open")
+    # a group holds work and does none: an agent's group needs no approval (T856, D153)
+    status = item_states.starts(r.by, asked_for or group) if not r.person else field_value(s, "status", a.get("status") or "open")
     e = ev.ItemAdded(n=s.max_n + 1, by=r.by, title=title, src=src, tags=tags, pri=pri, when=when,
-                     status=status, body_text=body, next=nxt, parent=parent, keep=r.keep())
+                     status=status, body_text=body, next=nxt, parent=parent, keep=r.keep(), group=group)
     if r.by == "org" and e.status == "review":  # only an agent finishing its work puts an item in review
         e.status = "open"
     r.emit(e)
     r.ctx.last = e.n
     proposed = " (proposed: the user approves it before anyone works on it)" if e.status == "proposed" else ""
+    if group:
+        c = s.code(e.n)
+        return Outcome(f"ok {c} new group (a group holds items: put them in with parent={c}; /next never gives it)",
+                       "Created " + c)
     return Outcome(f"ok {s.code(e.n)} new{proposed}", "Created " + s.code(e.n))
 
 
@@ -181,7 +187,12 @@ def set_fields(r: Run, a: Args) -> Outcome:
     if f.get("when") == "now" and f.get("later_until"):
         raise Refused(f"{code}: later until a day is later; say `{code} later until <day>` or `{code} now`")
     note = ""
-    if "status" in f:  # the one place that says which changes of status are allowed (domain/item_states)
+    if "status" in f and f.get("group", it.group):
+        raise Refused(f"{code} is a group: it has no status (it is never done by itself: archive it when you are "
+                      f"finished with it)")
+    if f.get("group") and it.status != "open":  # made a group: it holds items, open, whatever it was
+        f["status"], was["status"] = "open", it.status
+    elif "status" in f:  # the one place that says which changes of status are allowed (domain/item_states)
         to = item_states.asked(it.status, f["status"], r.by)
         why = item_states.refusal(code, it.status, to, r.by, status_set_by(s, it))
         if why:
@@ -218,6 +229,12 @@ def set_fields(r: Run, a: Args) -> Outcome:
         note += " (its open question is taken back: the user only accepts the result now)"
     if r.person:  # what you do from the page goes to the subitems; an agent's changes stay as they were
         cascade(r, it, f, was, src)
+    if "group" in f:
+        what = ("group (/next no longer gives it; its subitems stay under it)" if f["group"] else
+                "task (/next gives it again once its subitems are finished)")
+        rest = {k: v for k, v in f.items() if k not in ("group", "status")}
+        more = " ".join(f"{k}={v}" for k, v in rest.items())
+        return Outcome(f"ok {code} {what}{(' ' + more) if more else ''}{r.gone_note(it)}", "Updated " + code)
     said = " ".join(f"{k}={v}" if k in ("pri", "when", "status", "parent", "archived", "later_until")
                     else f"tags={tag_words(v) or '-'}" if k == "tags" else k for k, v in f.items())
     return Outcome(f"ok {code} {said}{note}{r.gone_note(it)}", "Updated " + code)

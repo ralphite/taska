@@ -33,8 +33,6 @@ export interface RowFacts {
   news: { text: string; age: string; quiet: boolean } | null
   /** where the searched words were found, when not in the title */
   hitLine: string | null
-  /** a group (D152 prototype): its own icon, how many of its items are finished and a thin bar */
-  group?: boolean
   /** the items it waits for (D152 prototype: blocked by) */
   waitsFor?: readonly { n: number; code: string }[]
 }
@@ -110,7 +108,7 @@ function CodeTitle({ it, code, look, struck, tags, onTag }: { it: Item; code: st
   )
 }
 
-/** A group's items finished, as a number and a thin bar (D152 prototype). */
+/** A group's items finished, as a number and a thin bar (T856). */
 function GroupProgress({ done, all }: { done: number; all: number }) {
   return (
     <span className="flex shrink-0 items-center gap-1.5" title={`${done} of ${all} finished`}>
@@ -280,7 +278,7 @@ export function ItemRow(props: {
         Waits for {facts.waitsFor.map((w) => w.code).join(', ')}
       </button>
     ) : null,
-    facts.group ? (
+    it.group ? (
       <GroupProgress key="c" done={facts.kids?.done ?? 0} all={facts.kids?.all ?? 0} />
     ) : facts.kids ? (
       <Count key="c" icon="subitems" n={`${facts.kids.done}/${facts.kids.all}`} label="Subitems finished" />
@@ -297,7 +295,7 @@ export function ItemRow(props: {
         className={`group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 ${pad(depth)} ${(isClosed && !it.archived) || struck ? 'opacity-55' : ''} ${ROW_TINT}`}
       >
         {facts.unread ? <span className="absolute top-4.5 left-1 size-2 rounded-full bg-blue-600 dark:bg-blue-400" title="New from an agent" /> : null}
-        {facts.group ? <Icon n="folder" c="mt-px size-5 shrink-0 text-zinc-500 dark:text-zinc-400" /> : <StateIcon {...shownStatus(it)} />}
+        {it.group ? <Icon n="folder" c="mt-px size-5 shrink-0 text-zinc-500 dark:text-zinc-400" /> : <StateIcon {...shownStatus(it)} />}
         <div className="min-w-0 flex-1">
           <CodeTitle it={it} code={facts.code} look={look} struck={(isClosed && !it.archived) || struck} tags={it.tags} onTag={on.tag} />
           <HitLine text={facts.hitLine} words={look.words} />

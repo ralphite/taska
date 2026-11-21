@@ -156,7 +156,7 @@ class Decision:
         return {"from": self.from_, "to": self.to, "msg": self.msg, "t": self.t}
 
 
-ITEM_FIELDS = ("title", "body", "next", "pri", "when", "status", "tags", "parent", "archived", "rank", "later_until")
+ITEM_FIELDS = ("title", "body", "next", "pri", "when", "status", "tags", "group", "parent", "archived", "rank", "later_until")
 
 
 @dataclass
@@ -183,6 +183,9 @@ class Item:
     deleted_at: Optional[str] = None
     later_until: Optional[str] = None  # Later until this day (YYYY-MM-DD, local): then back to Now by itself (D115 #21)
     tags: List[str] = field(default_factory=list)  # #bug #手机: what it is, in place of the old types (T855)
+    # a group (T856): it holds items and gives them its words; no work of its own: /next never gives it, it is never
+    # done by itself (the user archives it)
+    group: bool = False
 
     def get(self, name: str) -> Any:
         """A field that a change can set (ITEM_FIELDS)."""
@@ -215,6 +218,8 @@ class Item:
             out["deleted_at"] = self.deleted_at
         if self.later_until:
             out["later_until"] = self.later_until
+        if self.group:
+            out["group"] = True
         return out
 
 

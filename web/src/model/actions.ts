@@ -51,6 +51,7 @@ export const whyNot = {
  * an item that waits on your answer the step forward is that answer (its pill), never Done. */
 export function forward(it: Item | undefined): readonly [field: string, value: string, act: ItemActId, said?: string] | null {
   if (!it || it.archived) return null
+  if (it.group) return ['archived', 'true', 'archive', 'archived'] // a group is never done: you archive it (T856)
   const step = yourStep(it)
   if (step && 'answer' in step) return ['need', 'answer', 'answer']
   if (step) return step.set
@@ -64,6 +65,7 @@ export function deskSlots(it: Item, needs: boolean): (Slot | null)[] {
   const later: Slot = it.when === 'now' ? ['when', 'later', 'later'] : ['when', 'now', 'now']
   const drop: Slot = ['status', 'dropped', 'drop']
   if (it.archived) return [['archived', 'false', 'unarchive'], null, null, null]
+  if (it.group) return [['archived', 'true', 'archive'], null, null, later]
   if (it.wait)
     return [
       null,
@@ -83,6 +85,7 @@ export function backward(it: Item): Slot[] {
   const drop: Slot = ['status', 'dropped', 'drop']
   const done: Slot[] = it.wait ? [['status', 'done', 'done']] : []
   if (it.archived) return [['archived', 'false', 'unarchive']]
+  if (it.group) return [later]
   if (it.status === 'proposed') return [drop, later]
   if (it.status === 'review') return [later, ['status', 'open', 'not-yet']]
   if (closed(it.status)) return [['status', 'open', 'reopen']]

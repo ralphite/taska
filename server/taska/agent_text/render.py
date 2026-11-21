@@ -61,9 +61,16 @@ def when(it: Item) -> str:
     return f"later until {it.later_until}" if it.when == "later" and it.later_until else it.when
 
 
+def finished(st: ProjectState, it: Item) -> str:
+    """A group's progress: its items finished, of all (3/5)."""
+    kids = [k for k in st.live_items() if k.parent == it.n]
+    return f"{sum(1 for k in kids if k.status in CLOSED)}/{len(kids)}"
+
+
 def line(st: ProjectState, it: Item) -> str:
     tags = "".join(f"#{t} " for t in it.tags)
-    out = f"{st.code(it.n)} {it.pri} {when(it)} {it.status} {tags}{it.title}"
+    status = f"group {finished(st, it)}" if it.group else it.status
+    out = f"{st.code(it.n)} {it.pri} {when(it)} {status} {tags}{it.title}"
     w = rules.waiting(st, it)
     if w:
         out += " ?"
@@ -126,14 +133,21 @@ def card(rd: Reading, it: Item) -> str:
     st = rd.state
     c = st.code(it.n)
     tags = "".join(f" #{t}" for t in it.tags)
-    out = [f"{c} {it.pri} {when(it)} {it.status}{' archived' if it.archived else ''}{tags}  {it.title}"]
+    if it.group:  # T856: what a group is, and its items one by one
+        out = [f"{c} group {it.pri} {when(it)}{' archived' if it.archived else ''}{tags}  {it.title}  ({finished(st, it)} "
+               "finished; a group is never given by /next and never done by itself)"]
+        kids = [k for k in st.live_items() if k.parent == it.n]
+        if kids:
+            out.append("items: " + " · ".join(f"{st.code(k.n)} {k.status}" for k in kids))
+    else:
+        out = [f"{c} {it.pri} {when(it)} {it.status}{' archived' if it.archived else ''}{tags}  {it.title}"]
     if it.deleted:
         out.append(f"deleted by the user together with input {it.deleted}: stop working on it")
     if it.merged_into:
         out.append(f"merged into {st.code(it.merged_into)}")
     kids = [st.code(i.n) for i in st.live_items() if i.parent == it.n]
     meta = [x for x in (f"parent {st.code(it.parent)}" if it.parent else "",
-                        "kids " + " ".join(kids) if kids else "",
+                        "kids " + " ".join(kids) if kids and not it.group else "",
                         "src " + " ".join(it.srcs) if it.srcs else "") if x]
     if meta:
         out.append(" · ".join(meta))
@@ -212,7 +226,7 @@ def _above(st: ProjectState, it: Item) -> List[str]:
     while par and par.n not in seen:
         seen.add(par.n)
         c = st.code(par.n)
-        out.append(f"part of {c} ({par.status}): {par.title}")
+        out.append(f"part of {c} ({f'group, {finished(st, par)} finished' if par.group else par.status}): {par.title}")
         body = (par.body or "").strip()
         if body:
             cut = len(body) > ABOVE_BODY

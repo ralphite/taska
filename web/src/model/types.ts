@@ -72,6 +72,8 @@ export interface Item {
   code: string
   /** what it is (#bug, #手机): tags in place of the old types (T855), without the #, in lower case */
   tags: string[]
+  /** a group (T856): it holds items and gives them its words; no status of its own, never done by itself */
+  group?: boolean
   title: string
   body: string
   pri: Pri

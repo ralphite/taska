@@ -49,7 +49,7 @@ export const SAMPLES = {
   ]
  },
  "view": {
-  "cursor": "1a1b1cd8b3d.39.55.2",
+  "cursor": "1a1b1cd8b99.39.55.2",
   "full": true,
   "items": [
    {
@@ -58,6 +58,7 @@ export const SAMPLES = {
     "tags": [
      "bug"
     ],
+    "group": false,
     "title": "Export ignores the active filter",
     "body": "The export should keep the filter I set.",
     "pri": "P1",
@@ -159,13 +160,14 @@ export const SAMPLES = {
      "t": "2026-11-06T09:00:00-08:00"
     },
     "readBy": {
-     "claude-code": 1793984400266
+     "claude-code": 1793984400358
     }
    },
    {
     "n": 2,
     "code": "T02",
     "tags": [],
+    "group": false,
     "title": "Read the filter from the address",
     "body": "",
     "pri": "P2",
@@ -192,6 +194,7 @@ export const SAMPLES = {
     "n": 3,
     "code": "T03",
     "tags": [],
+    "group": false,
     "title": "Export to Excel",
     "body": "",
     "pri": "P2",
@@ -226,6 +229,7 @@ export const SAMPLES = {
     "n": 4,
     "code": "T04",
     "tags": [],
+    "group": false,
     "title": "Pick the columns",
     "body": "",
     "pri": "P1",
@@ -318,6 +322,7 @@ export const SAMPLES = {
     "n": 5,
     "code": "T05",
     "tags": [],
+    "group": false,
     "title": "Sort the export by date",
     "body": "",
     "pri": "P2",
@@ -341,6 +346,7 @@ export const SAMPLES = {
     "n": 6,
     "code": "T06",
     "tags": [],
+    "group": false,
     "title": "Sort the export by date",
     "body": "",
     "pri": "P2",
@@ -364,6 +370,7 @@ export const SAMPLES = {
     "n": 9,
     "code": "T09",
     "tags": [],
+    "group": false,
     "title": "Sort the export by date",
     "body": "",
     "pri": "P2",
@@ -397,6 +404,7 @@ export const SAMPLES = {
     "n": 10,
     "code": "T10",
     "tags": [],
+    "group": false,
     "title": "Sort the export by date",
     "body": "",
     "pri": "P2",
@@ -792,17 +800,17 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400298,
+     "t": 1793984400399,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400298
+       "t": 1793984400399
       },
       {
        "name": "helper",
-       "t": 1793984400197,
+       "t": 1793984400288,
        "sid": "aaaaaaaa-1111-2222-3333-444444444444",
        "on": {
         "n": 3,
@@ -887,24 +895,24 @@ export const SAMPLES = {
    ],
    "phone": false,
    "base": "http://127.0.0.1:7340/p/shop",
-   "key": "bka7-r8hu",
+   "key": "5ckw-tajj",
    "remote": "",
    "lan": "",
-   "filesCap": "f5a0b762ae6f780327880770"
+   "filesCap": "32f7ea8ece5457329e880d7a"
   },
   "server": {
-   "page": "index-v3UV7Seq.js",
+   "page": "da39a3ee5e",
    "update": false,
-   "dev": true
+   "dev": false
   }
  },
  "changes": {
-  "cursor": "1a1b1cd8b3d.39.55.2",
+  "cursor": "1a1b1cd8b99.39.55.2",
   "same": true,
   "server": {
-   "page": "index-v3UV7Seq.js",
+   "page": "da39a3ee5e",
    "update": false,
-   "dev": true
+   "dev": false
   }
  },
  "commands": {
@@ -913,7 +921,7 @@ export const SAMPLES = {
    "ok T01 pri=P0"
   ],
   "changes": {
-   "cursor": "1a1b1cd8b3d.40.56.2",
+   "cursor": "1a1b1cd8b99.40.56.2",
    "full": false,
    "items": [
     {
@@ -922,6 +930,7 @@ export const SAMPLES = {
      "tags": [
       "bug"
      ],
+     "group": false,
      "title": "Export ignores the active filter",
      "body": "The export should keep the filter I set.",
      "pri": "P0",
@@ -1023,7 +1032,7 @@ export const SAMPLES = {
       "t": "2026-11-06T09:00:00-08:00"
      },
      "readBy": {
-      "claude-code": 1793984400266
+      "claude-code": 1793984400358
      }
     }
    ],
@@ -1054,17 +1063,17 @@ export const SAMPLES = {
     "agents": [
      {
       "name": "claude-code",
-      "t": 1793984400298,
+      "t": 1793984400399,
       "waiting": false,
       "session": "sample",
       "sessions": [
        {
         "name": "sample",
-        "t": 1793984400298
+        "t": 1793984400399
        },
        {
         "name": "helper",
-        "t": 1793984400197,
+        "t": 1793984400288,
         "sid": "aaaaaaaa-1111-2222-3333-444444444444",
         "on": {
          "n": 3,
@@ -1160,15 +1169,15 @@ export const SAMPLES = {
     ],
     "phone": false,
     "base": "http://127.0.0.1:7340/p/shop",
-    "key": "bka7-r8hu",
+    "key": "5ckw-tajj",
     "remote": "",
     "lan": "",
-    "filesCap": "f5a0b762ae6f780327880770"
+    "filesCap": "32f7ea8ece5457329e880d7a"
    },
    "server": {
-    "page": "index-v3UV7Seq.js",
+    "page": "da39a3ee5e",
     "update": false,
-    "dev": true
+    "dev": false
    }
   }
  },
@@ -1889,12 +1898,12 @@ export const SAMPLES = {
  },
  "newSharedRules": {
   "ok": true,
-  "slug": "~d8yzp",
+  "slug": "~e8mkg",
   "name": "Coding"
  },
  "sharedRules": [
   {
-   "slug": "~swhgt",
+   "slug": "~wn2d6",
    "name": "/bug",
    "md": "\u67e5\u539f\u56e0\u3001\u4fee\u597d\uff0c\u5728\u771f\u5b9e\u9875\u9762\u4e0a\u9a8c\u8bc1\u540e\u518d\u62a5\u3002\n\n- \u7528\u6237\u7528 /bug \u65f6\u662f\u5728\u62a5\u4e00\u4e2a\u574f\u4e86\u7684\u5730\u65b9\uff1a\u627e\u5230\u539f\u56e0\u5e76\u4fee\u597d\uff0c\u4e0d\u7528\u5148\u95ee\u3002\n- \u5148\u590d\u73b0\uff0c\u627e\u5230\u6839\u672c\u539f\u56e0\uff1b\u540c\u6837\u505a\u6cd5\u7684\u5730\u65b9\u4e00\u8d77\u67e5\u3001\u4e00\u8d77\u6539\uff0c\u5b8c\u6210\u65f6\u8bf4\u67e5\u4e86\u54ea\u4e9b\u3002\n- \u52a0\u80fd\u9501\u4f4f\u8fd9\u4e2a\u95ee\u9898\u7684\u6d4b\u8bd5\uff0c\u8dd1\u68c0\u67e5\u540e\u4e0a\u7ebf\u3002\n- \u5728\u7ebf\u4e0a\u670d\u52a1\u548c\u73b0\u6709\u6570\u636e\u4e0a\u786e\u8ba4\u786e\u5b9e\u597d\u4e86\u624d\u62a5\u5b8c\u6210\uff1b\u6d4f\u89c8\u5668\u6d4b\u8bd5\u6309\u9879\u76ee\u89c4\u5219\u4ea4\u7ed9\u6d4b\u8bd5\u5b50\u4f1a\u8bdd\u3002\n- \u62a5\u544a\u5199\uff1a\u539f\u56e0\u3001\u6539\u4e86\u4ec0\u4e48\u3001\u600e\u4e48\u9a8c\u8bc1\u7684\u3001\u8fd8\u6709\u54ea\u4e9b\u6ca1\u9a8c\u8bc1\u3002\n- \u4fee\u6cd5\u9700\u8981\u771f\u7684\u8bbe\u8ba1\u9009\u62e9\u65f6\uff0c\u624d\u505c\u4e0b\u6765\u95ee\u3002\n- \u6574\u7406\u5668\uff1a/bug \u7684\u8f93\u5165\u5efa\u6210\u5e26 #bug \u6807\u7b7e\u7684\u4e8b\u9879\uff0c\u6216\u5f52\u5230\u5df2\u6709\u7684\u540c\u4e00\u4e2a\u95ee\u9898\u4e0a\u3002",
    "parts": [],
@@ -1904,7 +1913,7 @@ export const SAMPLES = {
    "used": []
   },
   {
-   "slug": "~c6m8k",
+   "slug": "~3xccm",
    "name": "/doc",
    "md": "\u7ed3\u679c\u5199\u6210\u6587\u6863\uff0c\u6d88\u606f\u91cc\u53ea\u653e\u94fe\u63a5\u3002\n\n- \u7528\u6237\u7528 /doc \u65f6\uff0c\u628a\u56de\u7b54\u6216\u6210\u679c\u5199\u8fdb Taska \u6587\u6863\uff1a\u6709\u76f8\u5173\u7684\u90a3\u4efd\u5c31\u66f4\u65b0\uff0c\u6ca1\u6709\u5c31\u65b0\u5efa\u3002\n- \u4e8b\u9879\u7684\u6d88\u606f\u91cc\u53ea\u653e\u4e00\u4e24\u53e5\u7ed3\u8bba\u548c\u6587\u6863\u94fe\u63a5\uff0c\u4e0d\u628a\u5168\u6587\u8d34\u8fdb\u6d88\u606f\u3002\n- \u6587\u6863\u6709\u6807\u9898\u548c\u5c0f\u8282\uff0c\u76f4\u63a5\u5199\u7ed3\u8bba\u548c\u5185\u5bb9\uff0c\u4e0d\u5199\u8fc7\u7a0b\u3002\n- \u548c\u522b\u7684\u8bf4\u6cd5\u4e00\u8d77\u7528\u65f6\uff08\u6bd4\u5982\u201c/doc \u7814\u7a76\u4e00\u4e0b\u2026\u2026\u201d\uff09\uff0c\u7167\u90a3\u4e2a\u8981\u6c42\u505a\uff0c\u7ed3\u679c\u653e\u8fdb\u6587\u6863\u3002\n- \u6574\u7406\u5668\uff1a/doc \u7684\u8f93\u5165\u5f52\u5230\u76f8\u5173\u4e8b\u9879\uff08\u6ca1\u6709\u5c31\u65b0\u5efa\uff09\uff0c\u4ea4\u7ed9 agent \u65f6\u5199\u660e\u7ed3\u679c\u8981\u653e\u8fdb\u6587\u6863\u3002",
    "parts": [],
@@ -1914,7 +1923,7 @@ export const SAMPLES = {
    "used": []
   },
   {
-   "slug": "~83e27",
+   "slug": "~wtz3q",
    "name": "/plan",
    "md": "\u5148\u51fa\u65b9\u6848\uff0c\u4f60\u5b9a\u4e86\u518d\u52a8\u624b\u3002\n\n- \u7528\u6237\u7528 /plan \u65f6\uff0c\u5148\u53ea\u5199\u65b9\u6848\uff1a\u4e0d\u6539\u4ee3\u7801\u3001\u4e0d\u6539\u6570\u636e\u3001\u4e0d\u4e0a\u7ebf\u3002\n- \u65b9\u6848\u7528\u4e2d\u6587\u3001\u8bb2\u9ad8\u5c42\uff1a\u76ee\u6807\u3001\u505a\u6cd5\uff08\u4ea7\u54c1\u8bbe\u8ba1\u3001\u67b6\u6784\u3001\u5173\u952e\u9009\u62e9\u548c\u7406\u7531\uff09\u3001\u600e\u6837\u7b97\u505a\u5b8c\u3002\u7ec6\u8282\u7559\u5230\u5b9e\u73b0\u65f6\u81ea\u5df1\u5b9a\u3002\n- \u8981\u7528\u6237\u5b9a\u7684\u53ea\u5217\u771f\u6b63\u7684\u9009\u62e9\uff0c\u7528 ask\uff0c\u6bcf\u4e2a\u9009\u9879\u5199\u6e05\u695a\u8c01\u505a\u3001\u505a\u4ec0\u4e48\uff1b\u80fd\u81ea\u5df1\u5b9a\u7684\u76f4\u63a5\u5b9a\uff0c\u5728\u65b9\u6848\u91cc\u5199\u660e\u3002\n- \u65b9\u6848\u5341\u884c\u5199\u4e0d\u5b8c\u5c31\u5199\u6210\u6587\u6863\uff0c\u4e8b\u9879\u91cc\u653e\u7ed3\u8bba\u548c\u94fe\u63a5\u3002\n- \u7528\u6237\u5b9a\u4e86\u4e4b\u540e\u7167\u5b9a\u7684\u505a\uff0c\u4e0d\u518d\u53e6\u95ee\u7ec6\u8282\u3002\n- \u6574\u7406\u5668\uff1a/plan \u7684\u8f93\u5165\u5f52\u5230\u76f8\u5173\u4e8b\u9879\uff08\u6ca1\u6709\u5c31\u65b0\u5efa\uff09\uff0c\u4f5c\u4e3a\u201c\u5148\u51fa\u65b9\u6848\u201d\u7684\u8bf7\u6c42\u4ea4\u7ed9 agent\u3002",
    "parts": [],
@@ -1924,7 +1933,7 @@ export const SAMPLES = {
    "used": []
   },
   {
-   "slug": "~s7t2k",
+   "slug": "~cp7jr",
    "name": "/proto",
    "md": "\u5148\u5728 Storybook \u505a\u4e2a\u80fd\u70b9\u7684\u539f\u578b\u7ed9\u4f60\u770b\uff0c\u4f60\u9009\u597d\u518d\u505a\u3002\n\n- \u7528\u6237\u7528 /proto \u65f6\uff0c\u5148\u5728 Storybook \u91cc\u505a\u539f\u578b\uff1a\u7528\u4ea7\u54c1\u5df2\u6709\u7684\u7ec4\u4ef6\u548c\u9875\u9762\u62fc\uff0c\u6570\u636e\u548c\u771f\u5b9e\u7684\u4e00\u6837\uff1b\u4e0d\u6539\u4ea7\u54c1\u884c\u4e3a\u3001\u4e0d\u4e0a\u7ebf\u3002\n- \u53ea\u6539\u88ab\u8981\u6c42\u7684\u90a3\u4e00\u5757\uff0c\u5176\u4f59\u548c\u73b0\u5728\u4e00\u6a21\u4e00\u6837\u3002\u5148\u653e\u6b63\u5e38\u6d41\u7a0b\uff0c\u518d\u653e\u5176\u4ed6\u5173\u952e\u72b6\u6001\uff1b\u7535\u8111\u548c\u624b\u673a\u90fd\u8981\u80fd\u770b\u3002\n- \u6709\u51e0\u79cd\u505a\u6cd5\u65f6\u6bcf\u79cd\u4e00\u4e2a\u6545\u4e8b\uff0c\u53ea\u5728\u771f\u6b63\u7684\u53d6\u820d\u4e0a\u4e0d\u540c\uff0c\u6bcf\u79cd\u90fd\u662f\u80fd\u60f3\u5230\u7684\u6700\u597d\u505a\u6cd5\u3002\n- \u5728\u4e8b\u9879\u91cc\u653e Storybook \u94fe\u63a5\u548c\u622a\u56fe\uff0c\u7528 ask \u95ee\u80fd\u4e0d\u80fd\u8fd9\u6837\u505a\uff1b\u7528\u6237\u9009\u597d\u540e\u518d\u6539\u6210\u771f\u7684\u5b9e\u73b0\u5e76\u4e0a\u7ebf\u3002\n- \u6574\u7406\u5668\uff1a/proto \u7684\u8f93\u5165\u5f52\u5230\u76f8\u5173\u4e8b\u9879\uff08\u6ca1\u6709\u5c31\u65b0\u5efa\uff09\uff0c\u4f5c\u4e3a\u201c\u5148\u505a\u539f\u578b\u201d\u7684\u8bf7\u6c42\u4ea4\u7ed9 agent\u3002",
    "parts": [],
@@ -1934,7 +1943,7 @@ export const SAMPLES = {
    "used": []
   },
   {
-   "slug": "~cq89b",
+   "slug": "~99k9b",
    "name": "/qa",
    "md": "\u56de\u7b54\u95ee\u9898\uff0c\u53ea\u7b54\u4e0d\u505a\u3002\n\n- \u7528\u6237\u7528 /qa \u65f6\u662f\u5728\u95ee\u95ee\u9898\uff0c\u4e0d\u662f\u5728\u4e0b\u6307\u4ee4\uff1a\u53ea\u56de\u7b54\u3002\u4e0d\u6539\u4ee3\u7801\u3001\u4e0d\u6539\u6587\u6863\u3001\u4e0d\u6539\u52a8\u4e8b\u9879\uff08\u95ee\u7684\u4e0d\u662f\u54ea\u4e2a\u5177\u4f53\u4e8b\u9879\u65f6\uff0c\u53ea\u5efa\u4e00\u4e2a\u653e\u56de\u7b54\u7684 task\uff09\uff0c\u4e5f\u4e0d\u628a\u95ee\u9898\u5f53\u6210\u8981\u505a\u7684\u4e8b\u3002\n- \u95ee\u7684\u662f\u67d0\u4e2a\u6587\u6863\u6216\u4e8b\u9879\u65f6\uff0c\u5148\u8bfb\u5b83\uff08\u6587\u6863\u5168\u6587\u3001\u4e8b\u9879\u7684\u8ba8\u8bba\u3001\u76f8\u5173\u4ee3\u7801\uff09\uff0c\u518d\u56de\u7b54\u3002\u7b54\u6848\u5199\u5728\u95ee\u7684\u5730\u65b9\uff1a\u5728\u4e8b\u9879\u4e0a\u7528 say\uff0c\u5728\u6587\u6863\u4e0a\u7528 reply\u3002\n- \u5148\u7ed9\u76f4\u63a5\u7684\u7ed3\u8bba\uff0c\u518d\u7ed9\u4f9d\u636e\uff1a\u5f15\u7528\u6587\u6863\u6bb5\u843d\u3001\u4ee3\u7801\u4f4d\u7f6e\u6216\u6570\u636e\u3002\u4e0d\u786e\u5b9a\u7684\u5c31\u8bf4\u4e0d\u786e\u5b9a\uff0c\u4e0d\u8981\u731c\u3002\n- \u4e00\u6b21\u95ee\u4e86\u51e0\u4e2a\u95ee\u9898\uff0c\u9010\u6761\u56de\u7b54\u3002\n- \u56de\u7b54\u65f6\u53d1\u73b0\u503c\u5f97\u505a\u7684\u4e8b\uff0c\u53ea\u5728\u6700\u540e\u63d0\u4e00\u53e5\uff0c\u4e0d\u81ea\u5df1\u53bb\u505a\uff0c\u7531\u7528\u6237\u51b3\u5b9a\u3002\n- \u6574\u7406\u5668\uff1a/qa \u95ee\u7684\u662f\u67d0\u4e2a\u4e8b\u9879\u6216\u6587\u6863\u65f6\uff0c\u5f52\u5230\u90a3\u91cc\u4f5c\u4e3a\u95ee\u9898\u4ea4\u7ed9 agent\uff1b\u95ee\u7684\u4e0d\u662f\u54ea\u4e2a\u5177\u4f53\u4e8b\u9879\u65f6\uff0c\u65b0\u5efa\u4e00\u4e2a task\uff08\u6807\u9898\u5c31\u662f\u95ee\u9898\uff09\uff0c\u5728\u90a3\u91cc\u56de\u7b54\u3002",
    "parts": [],
@@ -1944,7 +1953,7 @@ export const SAMPLES = {
    "used": []
   },
   {
-   "slug": "~hkphp",
+   "slug": "~5ar4s",
    "name": "/quick",
    "md": "\u5c0f\u6539\u52a8\u76f4\u63a5\u6539\u5b8c\u4e0a\u7ebf\uff0c\u4e0d\u51fa\u65b9\u6848\u3001\u4e0d\u95ee\u3002\n\n- \u7528\u6237\u7528 /quick \u65f6\uff0c\u7167\u5b57\u9762\u610f\u601d\u76f4\u63a5\u505a\uff1a\u6539\u3001\u8dd1\u7c7b\u578b\u68c0\u67e5\u3001lint \u548c\u5355\u5143\u6d4b\u8bd5\u3001\u4e0a\u7ebf\uff0c\u7136\u540e\u62a5\u544a\u3002\n- \u4e0d\u51fa\u65b9\u6848\u3001\u4e0d\u53d1 ask\u3001\u4e0d\u8dd1\u91cd\u6d4b\u8bd5\u3002\n- \u53ea\u6539\u8bf4\u5230\u7684\u90a3\u4e00\u5904\uff0c\u522b\u5904\u4fdd\u6301\u4e0d\u53d8\u3002\n- \u505a\u7740\u53d1\u73b0\u5176\u5b9e\u4e0d\u5c0f\uff08\u8981\u771f\u7684\u8bbe\u8ba1\u9009\u62e9\u3001\u53ef\u80fd\u4e22\u6570\u636e\u3001\u52a8\u5230\u6838\u5fc3\u6d41\u7a0b\uff09\uff0c\u505c\u4e0b\u6765\u8bf4\u660e\u539f\u56e0\uff0c\u5f53\u666e\u901a\u4e8b\u9879\u5904\u7406\u3002\n- \u6574\u7406\u5668\uff1a/quick \u7684\u8f93\u5165\u5f52\u5230\u76f8\u5173\u4e8b\u9879\uff08\u6ca1\u6709\u5c31\u65b0\u5efa\uff09\uff0c\u4ea4\u7ed9 agent \u76f4\u63a5\u505a\u3002",
    "parts": [],
@@ -1954,7 +1963,7 @@ export const SAMPLES = {
    "used": []
   },
   {
-   "slug": "~pqw5v",
+   "slug": "~vrnxy",
    "name": "/research",
    "md": "\u591a\u4e2a\u6765\u6e90\u6df1\u5165\u7814\u7a76\uff0c\u5e26\u51fa\u5904\u3002\n\n- \u7528\u6237\u7528 /research \u65f6\u662f\u8981\u4e00\u4efd\u7814\u7a76\u7ed3\u8bba\uff1a\u4ece\u591a\u4e2a\u6765\u6e90\u67e5\uff0c\u4e0d\u6539\u4ee3\u7801\u3001\u4e0d\u6539\u6570\u636e\u3002\n- \u6765\u6e90\u591a\u3001\u8981\u6bd4\u8f83\u7684\uff08\u4ea7\u54c1\u5bf9\u6bd4\u3001\u4e00\u4e2a\u9886\u57df\u7684\u73b0\u72b6\u3001\u6587\u732e\uff09\u7528 ChatGPT \u6216 Gemini \u7684\u6df1\u5ea6\u7814\u7a76\uff1b\u4e5f\u81ea\u5df1\u67e5\u7f51\u9875\u548c\u672c\u5730\u8d44\u6599\u3002\n- \u6bcf\u4e2a\u7ed3\u8bba\u5e26\u51fa\u5904\u94fe\u63a5\uff1b\u5206\u6e05\u81ea\u5df1\u6838\u5b9e\u7684\u3001\u6765\u6e90\u8bf4\u7684\u548c\u63a8\u6d4b\u7684\u3002\n- \u7ed3\u679c\u5199\u6210\u6587\u6863\uff0c\u4e8b\u9879\u91cc\u653e\u7ed3\u8bba\u6458\u8981\u548c\u6587\u6863\u94fe\u63a5\u3002\n- \u4e0d\u82b1\u989d\u5916\u7684\u94b1\uff08credits\u3001\u4ed8\u8d39\u989d\u5ea6\uff09\u3002\n- \u6574\u7406\u5668\uff1a/research \u7684\u8f93\u5165\u5f52\u5230\u76f8\u5173\u4e8b\u9879\uff08\u6ca1\u6709\u5c31\u65b0\u5efa\uff09\uff0c\u4f5c\u4e3a\u7814\u7a76\u8bf7\u6c42\u4ea4\u7ed9 agent\u3002",
    "parts": [],
@@ -1964,7 +1973,7 @@ export const SAMPLES = {
    "used": []
   },
   {
-   "slug": "~b5bbx",
+   "slug": "~e2k7a",
    "name": "/why",
    "md": "\u67e5\u6e05\u695a\u600e\u4e48\u56de\u4e8b\uff0c\u8bb2\u539f\u56e0\u3001\u63d0\u529e\u6cd5\uff0c\u4e0d\u6539\u4ee3\u7801\u3002\n\n- \u7528\u6237\u7528 /why \u65f6\u662f\u5728\u95ee\u539f\u56e0\uff1a\u67e5\u6e05\u695a\u3001\u8bb2\u660e\u767d\u3001\u63d0\u529e\u6cd5\u3002\u4e0d\u6539\u4ee3\u7801\u3001\u4e0d\u6539\u6570\u636e\u3001\u4e0d\u4e0a\u7ebf\u3002\n- \u5148\u770b\u8bc1\u636e\uff1a\u65e5\u5fd7\u3001\u6570\u636e\u3001\u4ee3\u7801\uff0c\u80fd\u590d\u73b0\u5c31\u590d\u73b0\u3002\u7ed3\u8bba\u5199\u660e\u4f9d\u636e\uff0c\u5206\u6e05\u67e5\u5b9e\u7684\u548c\u63a8\u6d4b\u7684\u3002\n- \u5148\u7ed9\u76f4\u63a5\u7684\u7ed3\u8bba\uff0c\u518d\u7ed9\u4f9d\u636e\u3002\n- \u6700\u540e\u5217\u529e\u6cd5\uff0c\u6bcf\u4e2a\u4e00\u53e5\u8bdd\u5199\u505a\u4ec0\u4e48\u3001\u6709\u4ec0\u4e48\u4ee3\u4ef7\uff0c\u7528 ask \u8ba9\u7528\u6237\u9009\uff1b\u7528\u6237\u9009\u4e86\u518d\u505a\u3002\u6ca1\u6709\u503c\u5f97\u505a\u7684\u5c31\u76f4\u8bf4\u3002\n- \u6574\u7406\u5668\uff1a/why \u7684\u8f93\u5165\u5f52\u5230\u5b83\u95ee\u7684\u90a3\u4e2a\u4e8b\u9879\uff08\u6ca1\u6709\u5c31\u65b0\u5efa\uff09\uff0c\u4f5c\u4e3a\u95ee\u9898\u4ea4\u7ed9 agent\u3002",
    "parts": [],
@@ -1974,7 +1983,7 @@ export const SAMPLES = {
    "used": []
   },
   {
-   "slug": "~d8yzp",
+   "slug": "~e8mkg",
    "name": "Coding",
    "md": "## Tests (when to run them)\n\n- Run them.",
    "parts": [
@@ -2008,7 +2017,7 @@ export const SAMPLES = {
    "docs": 0,
    "agents": [],
    "work": false,
-   "t": 1795299434199
+   "t": 1795301532507
   },
   {
    "name": "garden",
@@ -2021,7 +2030,7 @@ export const SAMPLES = {
    "docs": 1,
    "agents": [],
    "work": true,
-   "t": 1795299434393
+   "t": 1795301532713
   },
   {
    "name": "shop",
@@ -2035,17 +2044,17 @@ export const SAMPLES = {
    "agents": [
     {
      "name": "claude-code",
-     "t": 1793984400298,
+     "t": 1793984400399,
      "waiting": false,
      "session": "sample",
      "sessions": [
       {
        "name": "sample",
-       "t": 1793984400298
+       "t": 1793984400399
       },
       {
        "name": "helper",
-       "t": 1793984400197,
+       "t": 1793984400288,
        "sid": "aaaaaaaa-1111-2222-3333-444444444444",
        "on": {
         "n": 3,
@@ -2057,7 +2066,7 @@ export const SAMPLES = {
     }
    ],
    "work": true,
-   "t": 1795299434491
+   "t": 1795301532808
   }
  ],
  "needs": [
@@ -2111,6 +2120,7 @@ export const SAMPLES = {
      "tags": [
       "bug"
      ],
+     "group": false,
      "title": "Export ignores the active filter",
      "body": "The export should keep the filter I set.",
      "pri": "P0",
@@ -2212,7 +2222,7 @@ export const SAMPLES = {
       "t": "2026-11-06T09:00:00-08:00"
      },
      "readBy": {
-      "claude-code": 1793984400266
+      "claude-code": 1793984400358
      }
     },
     "parentCode": null,
@@ -2230,6 +2240,7 @@ export const SAMPLES = {
      "n": 3,
      "code": "T03",
      "tags": [],
+     "group": false,
      "title": "Export to Excel",
      "body": "",
      "pri": "P2",
@@ -2282,6 +2293,7 @@ export const SAMPLES = {
      "n": 5,
      "code": "T05",
      "tags": [],
+     "group": false,
      "title": "Sort the export by date",
      "body": "",
      "pri": "P2",
@@ -2313,6 +2325,7 @@ export const SAMPLES = {
      "n": 6,
      "code": "T06",
      "tags": [],
+     "group": false,
      "title": "Sort the export by date",
      "body": "",
      "pri": "P2",
@@ -2344,6 +2357,7 @@ export const SAMPLES = {
      "n": 9,
      "code": "T09",
      "tags": [],
+     "group": false,
      "title": "Sort the export by date",
      "body": "",
      "pri": "P2",
@@ -2385,6 +2399,7 @@ export const SAMPLES = {
      "n": 10,
      "code": "T10",
      "tags": [],
+     "group": false,
      "title": "Sort the export by date",
      "body": "",
      "pri": "P2",
@@ -2416,6 +2431,7 @@ export const SAMPLES = {
      "n": 1,
      "code": "T1",
      "tags": [],
+     "group": false,
      "title": "Sort the export by date",
      "body": "",
      "pri": "P2",
@@ -2447,6 +2463,7 @@ export const SAMPLES = {
      "n": 2,
      "code": "T2",
      "tags": [],
+     "group": false,
      "title": "Export to Excel",
      "body": "",
      "pri": "P2",
@@ -2594,7 +2611,7 @@ export const SAMPLES = {
   "tidy": true
  },
  "pushKey": {
-  "key": "BESV8Dul-b7xPeQqXoEbwmrzsbjMfwu5FC7UUdGcP7IXJWpCJUxfRn0eEiEmAi3iEEOpXRHGIG_XepUEUwJVUzw",
+  "key": "BJmIyBVHBUK5h3lXh2SdlTwudvm6aRCNeb8yCJP5ebuB_0L17wlXdzB2RP09uoN-lj74DNzgbsknJ7d-Tw-pFXQ",
   "on": false
  },
  "setPush": {
@@ -2650,7 +2667,7 @@ export const SAMPLES = {
  },
  "newKey": {
   "ok": true,
-  "key": "6wtx-jvu8"
+  "key": "9qft-w2fz"
  },
  "login": {
   "ok": true
@@ -2823,6 +2840,7 @@ export const SERVER_READS = {
  ],
  "new": [
   "body",
+  "group",
   "next",
   "parent",
   "pri",

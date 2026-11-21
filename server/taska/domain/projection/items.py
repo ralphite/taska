@@ -18,7 +18,7 @@ def _add(state: ProjectState, e: ev.Event) -> None:
     state.max_n = max(state.max_n, e.n)
     title, named = clean_title(e.title)  # "[src=r246] ..." from an agent: the item gets the title without it
     state.items[e.n] = Item(n=e.n, tags=list(e.tags), title=title, body=e.body_text, pri=e.pri, when=e.when, status=e.status,
-                            parent=e.parent, next=e.next, t0=e.t, t1=e.t, by=e.by or None)
+                            parent=e.parent, next=e.next, t0=e.t, t1=e.t, by=e.by or None, group=e.group)
     link(state, e.n, e.src, handled=not e.keep)
     if named and not e.src and named in state.inputs:
         link(state, e.n, named, handled=False)  # the input it named is its source; handled stays as it was

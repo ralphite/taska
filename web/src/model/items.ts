@@ -65,7 +65,7 @@ export const canDone = (it: Item) =>
 /** In the agents' queue to be done now, by the server's own rule (agent_text/work.py next_work; T728 #4): work to do
  * now, open or in progress, not waiting on you. A proposal or work in review is not in it. */
 export const queuedNow = (it: Item) =>
-  !it.mergedInto && !it.archived && it.when === 'now' && (it.status === 'open' || it.status === 'doing') && !it.wait
+  !it.mergedInto && !it.archived && it.when === 'now' && !it.group && (it.status === 'open' || it.status === 'doing') && !it.wait
 
 /** The order agents take the work: now before later, in progress first; then the user's own order (rank) before
  * priority: what they never placed goes in by priority, just before the first ranked item of a lower priority. */
