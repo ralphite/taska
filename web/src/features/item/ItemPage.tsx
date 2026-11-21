@@ -22,13 +22,15 @@ import { FileRows } from '../../ui/Files'
 import { DocCard } from './DocCard'
 import { NeedsCard } from './NeedsCard'
 import { Talk, type TalkFacts, type TalkLineEvents } from './Talk'
-import { Chips, Editor, Subitems } from './ItemParts'
+import { Chips, Editor, Subitems, WorkerLine } from './ItemParts'
 import { TimesLine } from './TimesLine'
 import type { TalkEnv } from './talkEnv'
 
 export interface ItemEvents extends TalkLineEvents {
   /** the Agents sheet: the sessions, what each is on and how it is (I810) */
   agents?(): void
+  /** D152 prototype: a # tag tapped: the list of the items with it */
+  tag?(t: string): void
   /** the item's menu, or one of its fields' (status, priority, type) */
   menu(arm: 's' | 'p' | 't' | null, from: Element): void
   set(f: 'when' | 'archived' | 'status', v: string | boolean): void
@@ -77,6 +79,16 @@ export interface ItemFacts {
   subDraft?: string
   /** the sessions working on it now, and how each is (I810) */
   workers?: { name: string; state: 'working' | 'idle' | 'waiting' }[]
+  /** D152 prototype: its # tags, shown in place of its type */
+  tags?: readonly string[]
+  /** D152 prototype: a group (it holds items; no status of its own) */
+  group?: boolean
+  /** D152 prototype: the items it waits for, and the items it holds up */
+  waitsFor?: Item[]
+  blocks?: Item[]
+  /** D152 prototype: the agent session on it, at the top of its page: its app, its name, how it is, what it said last
+   * and how long ago */
+  worker?: { by: string; name: string; state: 'working' | 'waiting' | 'gone'; text: string; age: string }
 }
 
 /** The talk fades at its bottom while more of it is below, and at its top while some of it is above. */
@@ -186,6 +198,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     <Editor key={it.n} it={it} kept={f.editDraft ?? null} on={on} />
   ) : (
     <div className="flex flex-col gap-3">
+      {f.worker ? <WorkerLine w={f.worker} onOpen={() => on.agents?.()} /> : null}
       <h1 data-part="item-title" className={`text-[22px] leading-[1.35] font-semibold break-words ${it.status === 'dropped' ? 'line-through' : ''}`}>{readOnly ? <span className={`mr-2 font-mono text-lg font-bold ${TYPE_TEXT[it.type]}`}>{f.code(it.n)}</span> : null}{it.title}</h1>
       <div className="flex flex-wrap items-center gap-2">
         <Chips it={it} f={f} on={on} />
@@ -213,7 +226,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
           {left}
         </div>
       ) : (
-      <div data-item-top className={`flex flex-col lg:shrink-0 ${duo ? 'lg:h-full lg:w-[var(--duo-w,55%)]' : f.editing ? 'lg:max-h-full' : 'lg:h-(--top-h) lg:max-h-[var(--top-h,60%)]'}`}>
+      <div data-item-top className={`flex flex-col lg:shrink-0 ${duo ? 'lg:h-full lg:w-[var(--duo-w,55%)]' : f.editing || f.group ? 'lg:max-h-full' : 'lg:h-(--top-h) lg:max-h-[var(--top-h,60%)]'}`}>
         <div ref={clip} data-item-clip onScroll={(e) => e.currentTarget.toggleAttribute('data-over', overflows(e.currentTarget))} className="lg:min-h-0 lg:scrollbar-thin lg:overflow-y-auto outline-none lg:data-over:mask-b-from-[calc(100%-4rem)]">
           <div inert={readOnly} className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-7 lg:pb-6">
             {head}
@@ -320,11 +333,12 @@ export function ItemTalk({ it, f, env, facts, on }: { it: Item; f: ItemFacts; en
  * own, Yadong r961.) */
 /** The pane's bar: the item's mark and code; `titled`: its title has scrolled out of sight (the phone), so the bar says
  * it after the code, cut short (as iOS's large titles do, D115 R8 #5). */
-export function ItemHead({ it, code, titled = false }: { it: Item; code: string; titled?: boolean }) {
+export function ItemHead({ it, code, titled = false, group = false }: { it: Item; code: string; titled?: boolean; group?: boolean }) {
   return (
     <>
       <span className="hidden lg:inline">
-        <StateIcon {...shownStatus(it)} cls="size-[18px]" />
+        {/* a group: its own icon (D152 prototype) */}
+        {group ? <Icon n="folder" c="size-[18px] text-zinc-500 dark:text-zinc-400" /> : <StateIcon {...shownStatus(it)} cls="size-[18px]" />}
       </span>
       <span className={`shrink-0 font-mono text-sm font-bold ${TYPE_TEXT[it.type]}`}>{code}</span>
       {/* after the code on one line, cut short to the space between Back and ⋯ (B696) */}
@@ -360,8 +374,9 @@ function BarIcon({ icon, title, onClick }: { icon: IconName; title: string; onCl
 /** The actions you use, with their words: the list row's, in its order (D115 #11): Done, Won't do, Later on what is
  * not finished; Archive and Reopen once it is done or won't be. What waits on you is decided in its card, as on its
  * row in Needs you. */
-export function ItemActs({ it, on }: { it: Item; on: Pick<ItemEvents, 'set' | 'later'> }) {
-  const slots = deskSlots(it, needsYou(it)).filter((a): a is Slot => a !== null)
+export function ItemActs({ it, group = false, on }: { it: Item; group?: boolean; on: Pick<ItemEvents, 'set' | 'later'> }) {
+  // a group is never done by itself: you archive it (D152 prototype)
+  const slots = group ? ([['archived', 'true', 'archive']] as Slot[]) : deskSlots(it, needsYou(it)).filter((a): a is Slot => a !== null)
   return (
     <>
       {slots.map(([f, v, act]) => (

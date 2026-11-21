@@ -5,7 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { closed } from '../../model/items'
 import { shownStatus } from '../../model/needStates'
 import type { Item } from '../../model/types'
-import { SectionHead, Soft } from '../../ui/bits'
+import { Avatar, SectionHead, Soft } from '../../ui/bits'
 import { Icon, StateIcon } from '../../ui/Icon'
 import { overflows } from '../../ui/scroller'
 import { CHIP, FIELD, NEED, PRIMARY, SECOND, TYPE_TEXT } from '../../ui/tones'
@@ -14,11 +14,53 @@ import type { ItemEvents, ItemFacts } from './ItemPage'
 const WORKER_DOT = { working: 'bg-emerald-500', idle: 'bg-zinc-400', waiting: 'bg-orange-500' } as const
 const WORKER_TIP = { working: 'Working on it', idle: 'Idle', waiting: 'Waits on you' } as const
 const caret = <Icon n="down" c="size-3 opacity-50 group-data-ro/item:hidden" sw="2.25" /> // none read only (data-ro)
+// the Agents sheet's dots (D152 prototype: at work, waits on you, stopped)
+const LINE_DOT = { working: 'bg-emerald-500 dark:bg-emerald-400', waiting: 'bg-amber-500 dark:bg-amber-400', gone: 'border border-zinc-300 dark:border-zinc-600' } as const
+const LINE_TIP = { working: 'At work', waiting: 'Waits on you', gone: 'Stopped' } as const
+
+/** D152 prototype: the agent session on the item, at the top of its page: its app's icon, its name, a dot for how it
+ * is (no words), what it said last and how long ago. It opens the Agents sheet on that session. */
+export function WorkerLine({ w, onOpen }: { w: NonNullable<ItemFacts['worker']>; onOpen(): void }) {
+  return (
+    <button
+      onClick={onOpen}
+      title={`${w.name} · ${LINE_TIP[w.state]}`}
+      className="-mx-2 flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] hover:bg-zinc-100 group-data-ro/item:pointer-events-none dark:hover:bg-zinc-800/70"
+    >
+      <Avatar by={w.by} />
+      <span className="max-w-[45%] shrink-0 truncate font-medium text-zinc-800 dark:text-zinc-100">{w.name}</span>
+      <span aria-label={LINE_TIP[w.state]} className={`size-2 shrink-0 rounded-full ${LINE_DOT[w.state]}`} />
+      <span className="min-w-0 flex-1 truncate text-zinc-500 dark:text-zinc-400">{w.text}</span>
+      <span className="shrink-0 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">{w.age}</span>
+    </button>
+  )
+}
+
+/** D152 prototype: what it waits for and what it holds up, each opening that item. */
+function LinkChip({ to, label, f, on }: { to: Item; label: string; f: ItemFacts; on: ItemEvents }) {
+  return (
+    <button onClick={() => on.goto(to.n)} className={`${CHIP} min-w-0 flex-1 basis-40 text-zinc-700 dark:text-zinc-300`}>
+      <Icon n="hourglass" c="size-3.5 opacity-60" />
+      <span className="truncate">
+        <span className="mr-1 text-zinc-500 dark:text-zinc-400">{label}</span>
+        <span className={`mr-1 font-mono font-bold ${TYPE_TEXT[to.type]}`}>{f.code(to.n)}</span>
+        {to.title}
+      </span>
+    </button>
+  )
+}
 
 export function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
   const shown = shownStatus(it)
   return (
     <>
+      {f.group ? (
+        <button title="Group" onClick={(e) => on.menu(null, e.currentTarget)} className={`${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200`}>
+          <Icon n="folder" c="size-3.5 opacity-60" />
+          Group
+          {caret}
+        </button>
+      ) : (
       <button
         title="Status · S"
         onClick={(e) => on.menu('s', e.currentTarget)}
@@ -28,6 +70,7 @@ export function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents })
         {shown.label}
         {caret}
       </button>
+      )}
       {(
         <button
           title="Priority · P"
@@ -38,7 +81,19 @@ export function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents })
           {caret}
         </button>
       )}
-      {(
+      {f.tags ? (
+        // D152 prototype: its # tags in place of its type, each showing the items with it; # opens its tags
+        <>
+          {f.tags.map((t) => (
+            <button key={t} title={`Items with #${t}`} onClick={() => on.tag?.(t)} className={`${CHIP} shrink-0 font-medium text-zinc-700 dark:text-zinc-200`}>
+              #{t}
+            </button>
+          ))}
+          <button title="Tags · T" aria-label="Tags" onClick={(e) => on.menu('t', e.currentTarget)} className={`${CHIP} shrink-0 text-zinc-500 dark:text-zinc-400`}>
+            {f.tags.length ? <Icon n="plus" c="size-3.5" sw="2.25" /> : <>#<span className="text-zinc-700 dark:text-zinc-200">Tag</span></>}
+          </button>
+        </>
+      ) : (
         <button title="Type · T" onClick={(e) => on.menu('t', e.currentTarget)} className={`${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200`}>
           {it.type[0].toUpperCase() + it.type.slice(1)}
           {caret}
@@ -79,6 +134,8 @@ export function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents })
           </span>
         </button>
       ) : null}
+      {f.waitsFor?.map((w) => <LinkChip key={'w' + w.n} to={w} label="Waits for" f={f} on={on} />)}
+      {f.blocks?.map((b) => <LinkChip key={'b' + b.n} to={b} label="Blocks" f={f} on={on} />)}
     </>
   )
 }

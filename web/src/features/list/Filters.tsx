@@ -17,16 +17,39 @@ export interface FilterEvents {
   saveView(name: string): void
 }
 
-export function FilterControls({ tab, list, small = false, on }: { tab: Tab; list: ListQuery; small?: boolean; on: FilterEvents }) {
+/** D152 prototype: the project's # tags in place of the types: the one picked shows its items. */
+export interface TagFilter {
+  all: readonly string[]
+  on: string | null
+  pick(t: string | null): void
+}
+
+const PILL = (small: boolean) =>
+  `relative ${small ? 'h-7 px-2.5' : 'h-9 px-3.5'} rounded-full bg-zinc-100 text-[13px] font-medium text-zinc-700 after:absolute after:inset-x-0 after:-inset-y-1 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900`
+
+export function FilterControls({ tab, list, small = false, tags, on }: { tab: Tab; list: ListQuery; small?: boolean; tags?: TagFilter; on: FilterEvents }) {
   const [name, setName] = useState('')
   const lab = (t: string) => <div className={`px-1 ${small ? 'pb-1 text-[11px]' : 'pb-2 text-xs'} font-semibold text-zinc-500 dark:text-zinc-400`}>{t}</div>
   const statuses: [string, string][] = [['all', 'All'], ...(Object.entries(tab === 'archive' ? ARCHIVE_FILTER_WORD : STATUS_FILTER_WORD) as [string, string][])]
   return (
     <>
-      <div>
-        {lab('Type')}
-        <SegCtl opts={typeOpts(true)} on={list.type} small={small} pick={(v) => on.set('type', v)} />
-      </div>
+      {tags ? (
+        <div>
+          {lab('Tags')}
+          <div className="flex flex-wrap gap-1.5">
+            {[null, ...tags.all].map((t) => (
+              <button key={t ?? ''} onClick={() => tags.pick(t)} aria-pressed={tags.on === t} className={PILL(small)}>
+                {t == null ? 'All' : '#' + t}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div>
+          {lab('Type')}
+          <SegCtl opts={typeOpts(true)} on={list.type} small={small} pick={(v) => on.set('type', v)} />
+        </div>
+      )}
       {tab === 'archive' ? (
         <div>
           {lab('When')}
@@ -51,7 +74,7 @@ export function FilterControls({ tab, list, small = false, on }: { tab: Tab; lis
                 key={v}
                 onClick={() => on.set('status', v)}
                 aria-pressed={list.status === v}
-                className={`relative ${small ? 'h-7 px-2.5' : 'h-9 px-3.5'} rounded-full bg-zinc-100 text-[13px] font-medium text-zinc-700 after:absolute after:inset-x-0 after:-inset-y-1 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900`}
+                className={PILL(small)}
               >
                 {t}
               </button>
@@ -99,7 +122,7 @@ export function FilterControls({ tab, list, small = false, on }: { tab: Tab; lis
 }
 
 /** The phone's sheet: the controls, and Show with what it will show. */
-export function filtersSheet({ tab, list, filtered, shown, open }: { tab: Tab; list: ListQuery; filtered: boolean; shown: number; open: number }, on: FilterEvents & { close(): void }): SheetParts {
+export function filtersSheet({ tab, list, filtered, shown, open, tags }: { tab: Tab; list: ListQuery; filtered: boolean; shown: number; open: number; tags?: TagFilter }, on: FilterEvents & { close(): void }): SheetParts {
   return {
     title: 'Filters',
     extra: filtered ? (
@@ -109,7 +132,7 @@ export function filtersSheet({ tab, list, filtered, shown, open }: { tab: Tab; l
     ) : null,
     body: (
       <div className="flex flex-col gap-5">
-        <FilterControls tab={tab} list={list} on={on} />
+        <FilterControls tab={tab} list={list} tags={tags} on={on} />
         <button onClick={on.close} className={`${PRIMARY} w-full`}>
           Show {tab === 'items' && open !== shown ? `${open} open, ${shown - open} finished` : `${shown} item${shown === 1 ? '' : 's'}`}
         </button>
@@ -119,9 +142,10 @@ export function filtersSheet({ tab, list, filtered, shown, open }: { tab: Tab; l
 }
 
 /** The desktop's row under the search: what is set, Clear, and the controls when opened. */
-export function DeskFilters({ tab, list, set, open, place, hidden, on }: {
+export function DeskFilters({ tab, list, set, open, place, hidden, tags, on }: {
   tab: Tab
   list: ListQuery
+  tags?: TagFilter
   set: [ListKey, ReactNode][]
   open: boolean
   place: string
@@ -147,7 +171,7 @@ export function DeskFilters({ tab, list, set, open, place, hidden, on }: {
           </div>
           {open ? (
             <div className="flex flex-col gap-3 px-3 pb-3">
-              <FilterControls tab={tab} list={list} small on={on} />
+              <FilterControls tab={tab} list={list} small tags={tags} on={on} />
             </div>
           ) : null}
         </>

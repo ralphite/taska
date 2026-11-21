@@ -33,6 +33,12 @@ export interface RowFacts {
   news: { text: string; age: string; quiet: boolean } | null
   /** where the searched words were found, when not in the title */
   hitLine: string | null
+  /** its # tags, beside its title (D152 prototype); a tap filters the list by one */
+  tags?: readonly string[]
+  /** a group (D152 prototype): its own icon, how many of its items are finished and a thin bar */
+  group?: boolean
+  /** the items it waits for (D152 prototype: blocked by) */
+  waitsFor?: readonly { n: number; code: string }[]
 }
 
 export interface RowEvents {
@@ -45,6 +51,8 @@ export interface RowEvents {
   fold(n: number): void
   goto(n: number): void
   picture(group: string, f: string): void
+  /** a # tag tapped: the list shows the items with it (D152 prototype) */
+  tag?(t: string): void
 }
 
 export interface RowLook {
@@ -76,16 +84,43 @@ const marks = (look: RowLook) => ({
   ...(look.selected ? { 'data-sel': '' } : {}),
 })
 
-function CodeTitle({ it, code, look, struck }: { it: Item; code: string; look: RowLook; struck: boolean }) {
+/** A # tag beside a title: a tap shows the items with it (D152 prototype). */
+function TagMark({ t, onTag }: { t: string; onTag?(t: string): void }) {
   return (
-    <p className="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1">
-      <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}`}>
+    <button
+      title={`Items with #${t}`}
+      onClick={(e) => (e.stopPropagation(), onTag?.(t))}
+      className="ml-1.5 inline-flex h-5 shrink-0 translate-y-[-1px] items-center rounded-md bg-zinc-100 px-1.5 align-middle text-xs font-medium text-zinc-600 first-of-type:ml-2 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+    >
+      #{t}
+    </button>
+  )
+}
+
+function CodeTitle({ it, code, look, struck, tags, onTag }: { it: Item; code: string; look: RowLook; struck: boolean; tags?: readonly string[]; onTag?(t: string): void }) {
+  // the phone: two lines, the tags after the title's words; the desktop: one line, the title cut short before the tags
+  return (
+    <p className={`line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1 ${tags?.length ? 'lg:flex lg:items-baseline' : ''}`}>
+      <span className={`mr-1.5 font-mono text-[13px] font-bold lg:shrink-0 ${TYPE_TEXT[it.type]}`}>
         <Hit text={code} words={look.words} />
       </span>
-      <span className={struck ? 'line-through decoration-zinc-400' : ''}>
+      <span className={`${struck ? 'line-through decoration-zinc-400' : ''} ${tags?.length ? 'lg:min-w-0 lg:truncate' : ''}`}>
         <Hit text={it.title} words={look.words} />
       </span>
+      {tags?.map((t) => <TagMark key={t} t={t} onTag={onTag} />)}
     </p>
+  )
+}
+
+/** A group's items finished, as a number and a thin bar (D152 prototype). */
+function GroupProgress({ done, all }: { done: number; all: number }) {
+  return (
+    <span className="flex shrink-0 items-center gap-1.5" title={`${done} of ${all} finished`}>
+      {done}/{all}
+      <span className="h-1 w-12 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+        <span className="block h-full rounded-full bg-emerald-500 dark:bg-emerald-400" style={{ width: `${all ? Math.round((done / all) * 100) : 0}%` }} />
+      </span>
+    </span>
   )
 }
 
@@ -242,7 +277,14 @@ export function ItemRow(props: {
         ↳ {facts.parentCode}
       </button>
     ) : null,
-    facts.kids ? (
+    facts.waitsFor?.length ? (
+      <button key="b" className="shrink-0 hover:underline" onClick={(e) => (e.stopPropagation(), on.goto(facts.waitsFor?.[0]?.n ?? it.n))}>
+        Waits for {facts.waitsFor.map((w) => w.code).join(', ')}
+      </button>
+    ) : null,
+    facts.group ? (
+      <GroupProgress key="c" done={facts.kids?.done ?? 0} all={facts.kids?.all ?? 0} />
+    ) : facts.kids ? (
       <Count key="c" icon="subitems" n={`${facts.kids.done}/${facts.kids.all}`} label="Subitems finished" />
     ) : facts.talk ? (
       <Count key="c" icon="comment" n={facts.talk} label={plural(facts.talk, 'comment')} />
@@ -257,9 +299,9 @@ export function ItemRow(props: {
         className={`group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 ${pad(depth)} ${(isClosed && !it.archived) || struck ? 'opacity-55' : ''} ${ROW_TINT}`}
       >
         {facts.unread ? <span className="absolute top-4.5 left-1 size-2 rounded-full bg-blue-600 dark:bg-blue-400" title="New from an agent" /> : null}
-        <StateIcon {...shownStatus(it)} />
+        {facts.group ? <Icon n="folder" c="mt-px size-5 shrink-0 text-zinc-500 dark:text-zinc-400" /> : <StateIcon {...shownStatus(it)} />}
         <div className="min-w-0 flex-1">
-          <CodeTitle it={it} code={facts.code} look={look} struck={(isClosed && !it.archived) || struck} />
+          <CodeTitle it={it} code={facts.code} look={look} struck={(isClosed && !it.archived) || struck} tags={facts.tags} onTag={on.tag} />
           <HitLine text={facts.hitLine} words={look.words} />
           {meta.length ? (
             <div className="mt-1 flex items-center gap-x-2.5 overflow-hidden text-xs font-medium whitespace-nowrap text-zinc-500 dark:text-zinc-400">

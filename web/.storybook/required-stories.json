@@ -226,6 +226,14 @@
   "Prototype/About this section": [
    "About"
   ],
+  "Prototype/T854 Linear-style items": [
+   "List",
+   "Agent On Item",
+   "Agent Waiting",
+   "Group Open",
+   "Waits For",
+   "Filtered By Tag"
+  ],
   "UI/Search/Phone page/Walk through": [
    "Say, then say more"
   ],

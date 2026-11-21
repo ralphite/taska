@@ -24,6 +24,7 @@ import { inputMenuParts, type InputMenuAt } from './inputFixtures'
 import { createPortal } from 'react-dom'
 import { Tooltip } from '../app/Tooltip'
 import { refCard } from '../model/refCard'
+import { pickSheet } from '../ui/Pickers'
 
 /** The item's parent and a long talk, for the stories that need them. */
 export const PARENT = item({ n: 3, title: 'Exports that keep what you see' })
@@ -65,6 +66,14 @@ export interface PageOpts {
   duoDragged?: string
   /** the talk scrolled up this far (px) from its end */
   scrolledUp?: number
+  /** a prototype's additions (D152): to its page's events, to its menu's facts and events; `waitFor`: an item picked
+   * in the menu's Wait for… */
+  on?: Partial<ItemEvents>
+  menu?: Partial<ItemMenuFacts>
+  menuOn?: Partial<ItemMenuEvents>
+  waitFor?(n: number): void
+  /** what Wait for… does not offer besides the item itself (a group: never done) */
+  waitSkip?: number[]
 }
 
 export const pageOf = (it: Item, desk: boolean, o: PageOpts = {}) => <LiveItem it={it} desk={desk} o={o} />
@@ -108,7 +117,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
   // its talk, for the pane's button to its end (F716), as the page has it
   const [talk, setTalk] = useState<HTMLElement | null>(null)
   const media = useMedia(e0.url)
-  const menu = usePop<{ arm: ItemMenuFacts['arm']; asking: boolean } | { msg: number } | { times: true }>(desk, o.timesOpen ? { times: true } : undefined)
+  const menu = usePop<{ arm: ItemMenuFacts['arm']; asking: boolean } | { msg: number } | { times: true } | { wait: true }>(desk, o.timesOpen ? { times: true } : undefined)
   const inputMenu = usePop<InputMenuAt>(desk)
   // the page's one tooltip (a voice note's words, icon buttons' names), over the whole window as the page has it; the
   // phone has none
@@ -144,6 +153,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
     times: () => menu.open({ times: true }),
     // your message's ⋯: the menu of the input its words came from, as the page opens it
     inputMore: (id, from) => inputMenu.open({ id, asked: {} }, from),
+    ...o.on,
   }
   // the item's menu as the page's ItemMenuSheet runs it: a row does its thing and the menu closes; Status..., Priority...,
   // Type... show that field's choices in its place; Delete asks again
@@ -151,6 +161,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
   const menuParts = (w: NonNullable<typeof menu.what>) => {
     if ('msg' in w) return messageMenuSheet(done(() => hideMessage(w.msg)))
     if ('times' in w) return timesSheet(itemTimes(it, env.now))
+    if ('wait' in w) return pickSheet({ head: 'Wait for…', items: m.items, skip: [it.n, ...(o.waitSkip ?? [])], code: facts.code, desk }, (n) => (menu.close(), o.waitFor?.(n)))
     const mOn: ItemMenuEvents = {
       ...itemMenuActs,
       edit: done(() => setEditing(true)),
@@ -163,8 +174,11 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
       remove: () => (w.asking ? (menu.close(), itemMenuActs.remove()) : menu.change({ ...w, asking: true })),
       set: (f, v) => (w.arm ? menu.close() : undefined, itemMenuActs.set(f, v)),
       field: (a) => menu.change({ arm: a, asking: false }, { narrow: true }),
+      ...o.menuOn,
+      group: o.menuOn?.group && ((v) => (menu.close(), o.menuOn?.group?.(v))),
+      waitFor: () => menu.change({ wait: true }, { narrow: false }),
     }
-    const mf = itemMenuFacts(m, it, w.asking, w.arm)
+    const mf = { ...itemMenuFacts(m, it, w.asking, w.arm), ...o.menu }
     return desk ? itemMenuPop(mf, mOn) : itemMenuSheet(mf, mOn)
   }
   const sized = { ...gripVars({ side: 0, list: 0, top: sizes.top, duo: sizes.duo }), ...(o.duoDragged ? { '--duo-w': o.duoDragged } : {}) } as CSSProperties
@@ -210,8 +224,8 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
         menu
         duo={o.duo}
         toEnd={talk}
-        head={<ItemHead it={it} code={facts.code(it.n)} titled={o.titled} />}
-        acts={<ItemActs it={it} on={on} />}
+        head={<ItemHead it={it} code={facts.code(it.n)} titled={o.titled} group={facts.group} />}
+        acts={<ItemActs it={it} group={facts.group} on={on} />}
         nav={<ItemNav full={full} on={{ prev: paneActs.prev, next: paneActs.next, full: () => setFull(!full) }} />}
         onBack={o.onBack ?? paneActs.back}
         onMenu={(from) => openMenu(null, from)}

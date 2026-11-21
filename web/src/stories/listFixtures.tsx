@@ -4,7 +4,8 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { EmptyList, ItemList, type ListEvents } from '../features/list/ItemList'
 import { SelBar } from '../features/list/SelBar'
-import { DeskFilters, FiltersButton, FilterStrip, type FilterEvents } from '../features/list/Filters'
+import { DeskFilters, FiltersButton, FilterStrip, type FilterEvents, type TagFilter } from '../features/list/Filters'
+import type { RowFacts } from '../features/list/ListRows'
 import { drawRows, listViews } from '../features/list/drawRows'
 import { heldMark, heldRows, listBody } from '../features/list/rows'
 import { queueHead, type DropHow } from '../model/items'
@@ -65,6 +66,10 @@ export interface Holding {
   on?: Partial<ListEvents>
   /** an empty project's first steps, as done (D115 #20; else as its data says) */
   firstRun?: Partial<{ agent: boolean; input: boolean; phone: boolean }>
+  /** what a prototype adds to a row (D152: its tags, a group, what it waits for) */
+  facts?(it: Item): Partial<RowFacts>
+  /** D152 prototype: the # tags, the one the list shows and each item's (the filters' Tags, the row set over the list) */
+  tags?: TagFilter & { of(it: Item): readonly string[] }
 }
 
 /** The list as the page draws it, holding what the page holds for it (the route's tab and filters, stores.ui's folded
@@ -80,7 +85,10 @@ const toggle = (set: ReadonlySet<number>, n: number) => {
 }
 
 function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Tab; q: Partial<ListQuery>; desk: boolean; h: Holding }) {
-  const m = modelOf(items)
+  const all = modelOf(items)
+  // a tag picked (D152 prototype): only the items with it; each row still drawn from the whole project
+  const tag = h.tags?.on ?? null
+  const m = tag && h.tags ? modelOf(items.filter((it) => h.tags?.of(it).includes(tag))) : all
   const [where, setWhere] = useState<{ tab: Tab; query: ListQuery }>({ tab: tab0, query: { ...NO_FILTERS, ...q0 } })
   const { tab, query } = where
   const [folded, setFolded] = useState(() => new Set(h.folded))
@@ -96,7 +104,8 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
     const was = listBody(modelOf(h.held.before), tab, query, st)
     rows = heldRows(was.kind === 'rows' ? was.rows : [], m, tab, query, new Map(Object.entries(h.held.said).map(([n, s]) => [Number(n), heldMark({ said: s, f: 'status', v: m.byN.get(Number(n))?.status })])))  // struck when the change closed it (B766)
   }
-  const drawn = drawRows(m, rows, { slug: 'demo', openN: h.open ?? null, selected, words: [], desk, drafts: new Set(), head: queueHead(m.items), seen: { since: T }, drag: { n: h.drag?.n ?? null, at: h.drag?.at ?? null } })
+  const drawn0 = drawRows(all, rows, { slug: 'demo', openN: h.open ?? null, selected, words: [], desk, drafts: new Set(), head: queueHead(m.items), seen: { since: T }, drag: { n: h.drag?.n ?? null, at: h.drag?.at ?? null } })
+  const drawn = h.facts ? drawn0.map((r) => (r.kind === 'item' || r.kind === 'needs' ? { ...r, facts: { ...r.facts, ...h.facts?.(r.it) } } : r)) : drawn0
   const { views, ownViews } = listViews(m, tab, query, body, { list: h.saved ?? [], edit: -1 })
   const why = body.kind === 'empty' ? body.why : body.kind === 'rows' ? body.empty : undefined
   // the page's nav.view and nav.showFilters: Archive is its own tab, a view of items goes back to Items
@@ -127,15 +136,16 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
   const [filtersOpen, setFiltersOpen] = useState(false)
   // the desktop's views row: Filters at its start (opens the filters over the rows), ⌄ opens it onto all its lines
   const [viewsOpen, setViewsOpen] = useState(!!h.viewsOpen)
-  const set = filtersSet(tab, query)
+  const set: [ListKey, ReactNode][] = [...(tag ? [['type', '#' + tag] as [ListKey, string]] : []), ...filtersSet(tab, query)]
   const filterOn: FilterEvents = {
     set: (k, v) => setWhere({ tab, query: { ...query, [k]: v } }),
-    unset: (k) => setWhere({ tab, query: { ...query, [k]: NO_FILTERS[k] } }),
-    reset: () => setWhere({ tab, query: { ...query, type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' } }),
+    // the tag's chip takes the type's place (D152 prototype)
+    unset: (k) => (h.tags && k === 'type' ? h.tags.pick(null) : setWhere({ tab, query: { ...query, [k]: NO_FILTERS[k] } })),
+    reset: () => (h.tags?.pick(null), setWhere({ tab, query: { ...query, type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' } })),
     saveView: act('Filters: save as a view'),
   }
   const filters = desk ? (
-    <DeskFilters tab={tab} list={query} set={set} open={filtersOpen} place="" hidden={false} on={{ ...filterOn, toggle: () => setFiltersOpen(!filtersOpen) }} />
+    <DeskFilters tab={tab} list={query} set={set} open={filtersOpen} place="" hidden={false} tags={h.tags} on={{ ...filterOn, toggle: () => setFiltersOpen(!filtersOpen) }} />
   ) : (
     <FilterStrip set={set} hidden={false} onUnset={(k) => filterOn.unset(k as ListKey)} onReset={filterOn.reset} />
   )

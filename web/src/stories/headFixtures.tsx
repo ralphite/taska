@@ -7,7 +7,7 @@ import { DeskFilters, FilterStrip, type FilterEvents } from '../features/list/Fi
 import { ListHead, PhoneTabs, ProjectBar } from '../pages/Header'
 import { agentInfo, deskTabs, phoneTabs, tabCounts } from '../pages/headFacts'
 import { NO_FILTERS, type ListKey, type ListQuery } from '../model/route'
-import type { AgentSeen } from '../model/types'
+import type { AgentSeen, Item } from '../model/types'
 import { filtersSet } from '../model/visible'
 import type { Tab } from '../model/words'
 import { PROJECT_TONES } from '../ui/tones'
@@ -70,6 +70,11 @@ export interface HeadHere {
   pressed?: boolean
   /** the agent pill opens what the story shows (the page's Agents sheet); else its click shows in the Actions panel */
   onAgents?(): void
+  /** a prototype's project in place of Shop's demo items, and what the phone's Filters opens */
+  items?: Item[]
+  onFilters?(): void
+  /** a filter the prototype holds is set (D152: a tag) */
+  filtered?: boolean
 }
 
 const INPUTS = [input({ id: 'r3' }), input({ id: 'r2' }), input({ id: 'r1', acked: true })]
@@ -81,7 +86,7 @@ const on = acts('Head', ['menu', 'agents', 'notSaved', 'noKey', 'search', 'filte
 export const headOf = (desk: boolean, h: HeadHere = {}) => <LiveHead desk={desk} h={h} />
 
 function LiveHead({ desk, h }: { desk: boolean; h: HeadHere }) {
-  const m = modelOf(PROJECT, INPUTS, { title: 'Shop', agents: h.agents ?? AGENTS.ready, work: h.work ?? true })
+  const m = modelOf(h.items ?? PROJECT, INPUTS, { title: 'Shop', agents: h.agents ?? AGENTS.ready, work: h.work ?? true })
   const [tab, setTab] = useState<Tab>(h.tab ?? 'items')
   const [awayTab, setAwayTab] = useState(!!h.awayTab)
   const [list, setList] = useState<ListQuery>({ ...NO_FILTERS, ...h.list })
@@ -125,7 +130,7 @@ function LiveHead({ desk, h }: { desk: boolean; h: HeadHere }) {
           search: on.search,
         }}
       />
-      <PhoneTabs tabs={phoneTabs(counts, tab)} filtersSet={set.length > 0} showFilter={tab !== 'inputs'} on={{ tab: toTab, filters: on.filters }} />
+      <PhoneTabs tabs={phoneTabs(counts, tab)} filtersSet={set.length > 0 || !!h.filtered} showFilter={tab !== 'inputs'} on={{ tab: toTab, filters: h.onFilters ?? on.filters }} />
       <FilterStrip set={set} hidden={tab === 'inputs' || !set.length} onUnset={(k) => filterOn.unset(k as ListKey)} onReset={filterOn.reset} />
     </div>
   )

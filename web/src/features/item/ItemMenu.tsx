@@ -30,6 +30,12 @@ export interface ItemMenuEvents {
   set(f: 'type' | 'pri' | 'status', v: string): void
   /** the desktop's Status…, Priority…, Type…: that field's choices, in place of the menu */
   field(arm: 's' | 'p' | 't'): void
+  /** D152 prototype: a # tag put on or taken off */
+  tag?(t: string): void
+  /** D152 prototype: made a group, or a task again */
+  group?(on: boolean): void
+  /** D152 prototype: what it waits for, picked (`from`: the row it was chosen on) */
+  waitFor?(from?: HTMLElement): void
 }
 
 export const STAT_BTN =
@@ -69,6 +75,11 @@ export interface ItemMenuFacts {
   arm: 's' | 'p' | 't' | null
   /** the keys of the desktop's rows, as the keys sheet writes them */
   keys: MenuKeys
+  /** D152 prototype: # tags in place of its type (the project's, and the item's own), whether it is a group, the
+   * codes of what it waits for */
+  tags?: { all: readonly string[]; on: readonly string[] }
+  group?: boolean
+  waitsFor?: readonly string[]
 }
 
 export interface MenuKeys {
@@ -85,7 +96,20 @@ export interface MenuKeys {
 }
 
 /** The phone's sheet. */
-export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFacts, on: ItemMenuEvents): SheetParts {
+/** D152 prototype: the project's tags, each put on or taken off by a tap. */
+function TagChoices({ tags, on, small = false }: { tags: NonNullable<ItemMenuFacts['tags']>; on: ItemMenuEvents; small?: boolean }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {tags.all.map((t) => (
+        <button key={t} onClick={() => on.tag?.(t)} aria-pressed={tags.on.includes(t)} className={`${STAT_BTN} ${small ? 'h-8 rounded-lg px-2.5' : 'h-11 rounded-xl px-3.5'}`}>
+          #{t}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+export function itemMenuSheet({ it, code, parentCode, asking, arm, tags, group, waitsFor }: ItemMenuFacts, on: ItemMenuEvents): SheetParts {
   const tile = (key: string, icon: IconName, label: ReactNode, run: () => void, sub = '') => (
     <button
       key={key}
@@ -107,7 +131,12 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
       ? [act('archive', () => on.archive(true))]
       : [tile('later', actIcon('later'), ITEM_ACTS[it.when === 'now' ? 'later' : 'now'].label, on.later), act('archive', () => on.archive(true))]
   const lab = (t: string) => <div className="px-1 pb-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">{t}</div>
-  const type = (
+  const type = tags ? (
+    <div>
+      {lab('Tags')}
+      <TagChoices tags={tags} on={on} />
+    </div>
+  ) : (
     <div>
       {lab('Type')}
       <SegCtl opts={typeOpts(false)} on={it.type} pick={(v) => on.set('type', v)} />
@@ -151,13 +180,15 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
               {tile('reparent', 'indent', 'Put under…', () => on.reparent(), parentCode ? `now under ${parentCode}` : 'stands on its own')}
             </>
           )}
+          {group === undefined || group ? null : tile('wait', 'hourglass', 'Wait for…', () => on.waitFor?.(), waitsFor?.length ? `now ${waitsFor.join(', ')}` : '')}
+          {group === undefined ? null : group ? tile('group', 'items', 'Make a task', () => on.group?.(false)) : tile('group', 'folder', 'Make a group', () => on.group?.(true))}
           {state}
           {next}
           {tile('move', 'arrow', 'Move to…', on.moveProject)}
         </div>
         {type}
         {pri}
-        {status}
+        {group ? null : status}
         <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800">
           <button onClick={on.remove} className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-red-50 text-[15px] font-semibold hover:bg-red-100 dark:bg-red-400/10 dark:hover:bg-red-400/20 ${DANGER}`}>
             <Icon n="trash" c="size-4.5" />
@@ -170,7 +201,7 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
 }
 
 /** The desktop's menu: rows with their keys, or one field's choices. */
-export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMenuFacts, on: ItemMenuEvents): SheetParts {
+export function itemMenuPop({ it, code, parentCode, asking, arm, keys, tags, group, waitsFor }: ItemMenuFacts, on: ItemMenuEvents): SheetParts {
   const row = (key: string, icon: IconName | ReactNode, label: ReactNode, k: string, run: (from: HTMLElement) => void, sub = '', danger = false) => (
     <button key={key} onClick={(e) => run(e.currentTarget)} className={`flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm ${danger ? `${DANGER} hover:bg-red-50 dark:hover:bg-red-400/10` : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
       {typeof icon === 'string' ? <Icon n={icon as IconName} c={`size-[18px] ${danger ? '' : 'text-zinc-500 dark:text-zinc-400'}`} /> : icon}
@@ -181,6 +212,20 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
       {k ? <kbd className={`grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold ring-1 ring-zinc-300 dark:ring-zinc-600 ${MUTED}`}>{k}</kbd> : null}
     </button>
   )
+  if (arm === 't' && tags)
+    return {
+      menu: true,
+      body: (
+        <div className="-mx-1 -mt-1">
+          {tags.all.map((t) => (
+            <button key={t} onClick={() => on.tag?.(t)} aria-pressed={tags.on.includes(t)} className="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 aria-pressed:font-semibold dark:hover:bg-zinc-800">
+              <span className="min-w-0 flex-1 truncate">#{t}</span>
+              {tags.on.includes(t) ? <Icon n="check" c="size-4 text-blue-600 dark:text-blue-400" sw="2.5" /> : null}
+            </button>
+          ))}
+        </div>
+      ),
+    }
   if (arm) {
     const f = arm === 't' ? 'type' : arm === 'p' ? 'pri' : 'status'
     const cur = String(it[f])
@@ -235,9 +280,11 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
           {row('copy', 'copy', 'Copy for agent', keys.copy, on.copy)}
           {row('agent', 'bot', 'What agents see', '', on.agent)}
           <div className={MENU_SEP} />
-          {row('status', <StateIcon s={it.status} cls="size-[18px]" />, 'Status…', keys.status, () => on.field('s'), statusChoices(it).find(([s]) => s === it.status)?.[1] ?? '')}
+          {group ? null : row('status', <StateIcon s={it.status} cls="size-[18px]" />, 'Status…', keys.status, () => on.field('s'), statusChoices(it).find(([s]) => s === it.status)?.[1] ?? '')}
           {row('pri', 'up', 'Priority…', keys.pri, () => on.field('p'), it.pri)}
-          {row('type', 'items', 'Type…', keys.type, () => on.field('t'), it.type[0].toUpperCase() + it.type.slice(1))}
+          {tags
+            ? row('tags', <span className="grid size-[18px] place-items-center text-[15px] font-semibold text-zinc-500 dark:text-zinc-400">#</span>, 'Tags…', keys.type, () => on.field('t'), tags.on.map((t) => '#' + t).join(' '))
+            : row('type', 'items', 'Type…', keys.type, () => on.field('t'), it.type[0].toUpperCase() + it.type.slice(1))}
           <div className={MENU_SEP} />
           {(
             <>
@@ -246,6 +293,8 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
               {row('reparent', 'indent', 'Put under…', keys.reparent, on.reparent, parentCode ? 'now under ' + parentCode : 'stands on its own')}
             </>
           )}
+          {group === undefined || group ? null : row('wait', 'hourglass', 'Wait for…', '', (from) => on.waitFor?.(from), waitsFor?.length ? 'now ' + waitsFor.join(', ') : '')}
+          {group === undefined ? null : group ? row('group', 'items', 'Make a task', '', () => on.group?.(false)) : row('group', 'folder', 'Make a group', '', () => on.group?.(true))}
           {state}
           {next}
           {row('move', 'arrow', 'Move to project…', '', on.moveProject)}

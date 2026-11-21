@@ -17,9 +17,9 @@ import type { Item, ProjectRow } from '../model/types'
 import { ProjectBar } from '../pages/Header'
 import { agentInfo, deskTabs, tabCounts } from '../pages/headFacts'
 import { toneOf } from '../ui/tones'
-import { pageOf } from './itemPage'
+import { pageOf, type PageOpts } from './itemPage'
 import { itemFacts, noItemEvents, talkEnv, talkFacts } from './itemFixtures'
-import { listOf } from './listFixtures'
+import { listOf, type Holding } from './listFixtures'
 import { D1, HOME, SHOP } from './searchFixtures'
 import { sideOn } from './sideFixtures'
 
@@ -64,8 +64,8 @@ export function PageBox({ m, n, desk = true }: { m: ProjectModel; n: number | nu
 
 /** The desktop's project page: the sidebar (or its rail), the project's bar, the list, the item open in its pane.
  * `model`: the project's data in place of the demo's; `onAgents`: what the agent pill opens; `float`: what floats
- * just above the box (the blocked bar, T711). */
-export function DeskPage({ slug, n, rail, onSearch, model, onAgents, float }: { slug: string; n: number; rail: boolean; onSearch(): void; model?: ProjectModel; onAgents?(): void; float?: ReactNode }) {
+ * just above the box (the blocked bar, T711); `list`, `page`: what a prototype holds for the list and the item open. */
+export function DeskPage({ slug, n, rail, onSearch, model, onAgents, float, list, page }: { slug: string; n: number; rail: boolean; onSearch(): void; model?: ProjectModel; onAgents?(): void; float?: ReactNode; list?: Holding; page?: PageOpts }) {
   const m = model ?? modelFor(slug)
   const projects = sideProjects(ROWS, m, slug).list
   const sOn: SidebarEvents = { ...sideOn, search: onSearch }
@@ -87,9 +87,9 @@ export function DeskPage({ slug, n, rail, onSearch, model, onAgents, float }: { 
           place="col-span-2"
           on={{ tab() {}, agents: onAgents ?? (() => {}), notSaved() {} }}
         />
-        <section className="flex min-h-0 flex-col border-r border-zinc-200 dark:border-zinc-800">{listOf(m.items, 'items', {}, true, { open: n })}</section>
+        <section className="flex min-h-0 flex-col border-r border-zinc-200 dark:border-zinc-800">{listOf(m.items, 'items', {}, true, { open: n, ...list })}</section>
         <div className="flex min-h-0 min-w-0 flex-col">
-          <div className="min-h-0 flex-1">{pageOf(it, true, { docs: n === 1 && slug === 'shop' ? [D1] : [] })}</div>
+          <div className="min-h-0 flex-1">{pageOf(it, true, { docs: n === 1 && slug === 'shop' && !model ? [D1] : [], ...page })}</div>
           <div className="relative">
             {float}
             <PageBox m={m} n={n} />
