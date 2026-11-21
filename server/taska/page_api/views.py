@@ -62,7 +62,7 @@ def message_view(m: Message) -> View:
 
 def item_view(st: ProjectState, agents: AgentActivity, it: Item) -> View:
     w = rules.waiting(st, it)
-    out: View = {"n": it.n, "code": st.code(it.n), "tags": list(it.tags), "group": it.group, "title": it.title, "body": it.body, "pri": it.pri,
+    out: View = {"n": it.n, "code": st.code(it.n), "tags": list(it.tags), "group": it.group, "after": list(it.after), "title": it.title, "body": it.body, "pri": it.pri,
                  "when": it.when, "status": it.status, "parent": it.parent, "next": it.next, "srcs": list(it.srcs),
                  "mergedInto": it.merged_into, "archived": it.archived, "t0": it.t0, "t1": it.t1, "by": it.by,
                  "thread": [message_view(m) for m in it.thread],
