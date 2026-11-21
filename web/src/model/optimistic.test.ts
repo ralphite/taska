@@ -17,7 +17,7 @@ const itemSeen = (m: ProjectModel) =>
   Object.fromEntries(
     m.items.map((it) => [
       it.n >= STAND ? `new ${it.title}` : it.n,
-      { type: it.type, title: it.title, body: it.body, pri: it.pri, when: it.when, status: it.status, parent: it.parent, next: it.next, archived: it.archived, mergedInto: it.mergedInto, rank: it.rank ?? null, later_until: it.later_until ?? null, decided: it.decided ? [it.decided.from, it.decided.to, it.decided.msg] : null, wait: !!it.wait, hidden: it.thread.filter((x) => x.hidden).map((x) => x.id) },
+      { tags: it.tags, title: it.title, body: it.body, pri: it.pri, when: it.when, status: it.status, parent: it.parent, next: it.next, archived: it.archived, mergedInto: it.mergedInto, rank: it.rank ?? null, later_until: it.later_until ?? null, decided: it.decided ? [it.decided.from, it.decided.to, it.decided.msg] : null, wait: !!it.wait, hidden: it.thread.filter((x) => x.hidden).map((x) => x.id) },
     ]),
   )
 const inputSeen = (m: ProjectModel) => Object.fromEntries(m.inputs.map((r) => [r.id, { text: r.text, scope: r.scope, kind: r.kind ?? null, acked: r.acked, files: r.files.map((f) => f.f) }]))

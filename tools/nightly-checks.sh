@@ -65,7 +65,7 @@ if [[ -f "$LAST" && "$(cut -d' ' -f2 "$LAST")" == "$sig" ]]; then
   code=$(cut -d' ' -f1 "$LAST")
   printf '%s say Failed again tonight (%s), the same way.\n' "$code" "$(date '+%m-%d')" | post
 else
-  out=$(printf 'new bug P1 now The nightly checks failed (%s)\n  Every night at 03:30: the code checks (types, lint, architecture rules, unit tests) on the committed code, loading a copy of the data, the daily backup and the UI display check. What failed, and the lines that say why:\n%s\n' "$(date '+%m-%d')" "$body" | post)
+  out=$(printf 'new #bug P1 now The nightly checks failed (%s)\n  Every night at 03:30: the code checks (types, lint, architecture rules, unit tests) on the committed code, loading a copy of the data, the daily backup and the UI display check. What failed, and the lines that say why:\n%s\n' "$(date '+%m-%d')" "$body" | post)
   code=$(print -r -- "$out" | sed -n 's/^ok \([A-Z][0-9]*\) new.*/\1/p' | head -1)
   [[ -n "$code" ]] && echo "$code $sig" > "$LAST"
 fi

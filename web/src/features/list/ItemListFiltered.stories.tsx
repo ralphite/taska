@@ -11,4 +11,4 @@ const at = (q: Partial<ListQuery>): Story => ({
   render: () => <Frames phoneWidth={393} deskWidth={460} height={620}>{(layout) => listOf(PROJECT, 'items', q, layout === 'desk', { filters: true })}</Frames>,
 })
 
-export const Filtered: Story = { ...at({ type: 'bug', pri: 'P0' }), name: 'Filtered: bugs, P0' }
+export const Filtered: Story = { ...at({ tag: 'bug', pri: 'P0' }), name: 'Filtered: bugs, P0' }

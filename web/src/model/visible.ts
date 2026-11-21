@@ -5,15 +5,16 @@ import { closed } from './items'
 import { needsYou } from './needStates'
 import type { ListKey, ListQuery } from './route'
 import type { Item } from './types'
-import { ARCHIVE_FILTER_WORD, LETTER, SORT_WORDS, STATUS_FILTER_WORD, STATUS_WORD, WHEN_WORD, type Tab } from './words'
+import { OLD_LETTERS } from './vocab.gen'
+import { ARCHIVE_FILTER_WORD, SORT_WORDS, STATUS_FILTER_WORD, STATUS_WORD, WHEN_WORD, type Tab } from './words'
 
-/** An item's words, for picking one by them on the page: its code, title, text, next and talk (what the server finds
+/** An item's words, for picking one by them on the page: its code (and the older ones: B12 is T12), tags, title, text, next and talk (what the server finds
  * an item by is gathered in one place too: domain/finding.item_text). */
 const HAY = new WeakMap<Item, string>()
 export function hay(it: Item): string {
   let h = HAY.get(it)
   if (h === undefined) {
-    h = (it.code + ' ' + LETTER[it.type] + it.n + ' ' + it.title + ' ' + it.body + ' ' + it.next + ' ' + it.thread.map((x) => x.text).join(' ')).toLowerCase()
+    h = (it.code + ' ' + [...OLD_LETTERS].map((l) => l + it.n).join(' ') + ' ' + it.tags.map((t) => '#' + t).join(' ') + ' ' + it.title + ' ' + it.body + ' ' + it.next + ' ' + it.thread.map((x) => x.text).join(' ')).toLowerCase()
     HAY.set(it, h)
   }
   return h
@@ -24,7 +25,7 @@ export const statusIsView = (tab: Tab, list: ListQuery) => tab === 'items' && li
 
 /** Anything narrows the list: a filter. */
 export const filtered = (tab: Tab, list: ListQuery) =>
-  !!(list.type !== 'all' || list.when !== 'all' || (list.status !== 'all' && !statusIsView(tab, list)) || list.pri !== 'all')
+  !!(list.tag !== 'all' || list.when !== 'all' || (list.status !== 'all' && !statusIsView(tab, list)) || list.pri !== 'all')
 
 /** Items shows the work; Archive what was put away (the Rules tab is the rules document, I693: no items). */
 export const inTab = (it: Item, t: Tab | string) => (t === 'rules' ? false : t === 'archive' ? it.archived : !it.archived)
@@ -62,7 +63,7 @@ export function visible(items: readonly Item[], tab: Tab, list: ListQuery): Item
       (it) =>
         !it.mergedInto &&
         tabOk(it, tab) &&
-        (list.type === 'all' || it.type === list.type) &&
+        (list.tag === 'all' || it.tags.includes(list.tag)) &&
         (list.when === 'all' || it.when === list.when) &&
         (list.pri === 'all' || it.pri === list.pri) &&
         statusOk(it, tab, list),
@@ -76,10 +77,10 @@ export const openCount = (items: readonly Item[]) => items.filter((it) => !it.me
 /** 1234 reads 1k. */
 export const tabNumber = (n: number) => (n >= 1000 ? Math.floor(n / 1000) + 'k' : n || '')
 
-/** The filters set on a list, each with its word (a type, when, a status that is not the view, priority, sort). */
+/** The filters set on a list, each with its word (a tag, when, a status that is not the view, priority, sort). */
 export function filtersSet(tab: Tab, list: ListQuery): [ListKey, string][] {
   const out: [ListKey, string][] = []
-  if (list.type !== 'all') out.push(['type', list.type[0].toUpperCase() + list.type.slice(1)])
+  if (list.tag !== 'all') out.push(['tag', '#' + list.tag])
   if (list.when !== 'all') out.push(['when', WHEN_WORD[list.when as 'now'] ?? list.when])
   if (list.status !== 'all' && !statusIsView(tab, list))
     out.push(['status', STATUS_FILTER_WORD[list.status] || ARCHIVE_FILTER_WORD[list.status] || STATUS_WORD[list.status as 'open']])
@@ -88,8 +89,8 @@ export function filtersSet(tab: Tab, list: ListQuery): [ListKey, string][] {
   return out
 }
 
-/** Whether the list shows exactly one of your views (its type, when, status, priority and sort). */
-export const showsView = (list: Record<string, string>, v: Record<'type' | 'when' | 'status' | 'pri' | 'sort', string>) => (['type', 'when', 'status', 'pri', 'sort'] as const).every((k) => list[k] === v[k])
+/** Whether the list shows exactly one of your views (its tag, when, status, priority and sort). */
+export const showsView = (list: Record<string, string>, v: Record<'tag' | 'when' | 'status' | 'pri' | 'sort', string>) => (['tag', 'when', 'status', 'pri', 'sort'] as const).every((k) => list[k] === v[k])
 
 /** The list shows the work order (so a row dragged near another's top or bottom is put before or after it, B754):
  * Items in its own order, not the finished nor what waits on you. */

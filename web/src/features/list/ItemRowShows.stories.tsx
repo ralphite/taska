@@ -6,7 +6,7 @@ import { one } from '../../stories/itemRowFixtures'
 export default { title: 'UI/List pane/Item row/What it shows' } satisfies Meta
 type Story = StoryObj
 
-export const P0: Story = { ...one({ it: { type: 'bug', pri: 'P0', title: 'Saving drops the last word' }, f: { code: 'B012' } }), name: 'P0' }
+export const P0: Story = { ...one({ it: { tags: ['bug'], pri: 'P0', title: 'Saving drops the last word' }, f: { code: 'T012' } }), name: 'P0' }
 export const P3: Story = { ...one({ it: { pri: 'P3' } }), name: 'P3' }
 export const NewFromAnAgent: Story = { ...one({ f: { unread: true, talk: 2 } }), name: 'New from an agent' }
 export const WithADraft: Story = { ...one({ f: { draft: true } }), name: 'With a draft' }

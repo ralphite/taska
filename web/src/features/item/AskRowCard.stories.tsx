@@ -1,4 +1,4 @@
-// B749 / F750 (D132): an agent's questions in a row, one card: the page's own card (AskRowCard), each send answered
+// T749 / T750 (D132): an agent's questions in a row, one card: the page's own card (AskRowCard), each send answered
 // here as Taska would (the reply goes on the item, naming the questions it answers; the others keep waiting).
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'

@@ -54,7 +54,7 @@ export class SavedViews {
   /** It shows (on Archive the list goes back to Items: your views show items). */
   show(i: number): void {
     const v = this.d.store.getState().list[i]
-    if (v) this.d.nav.showFilters({ type: v.type, when: v.when, status: v.status, pri: v.pri, sort: v.sort })
+    if (v) this.d.nav.showFilters({ tag: v.tag, when: v.when, status: v.status, pri: v.pri, sort: v.sort })
   }
 
   /** The filters shown now, as a new view. */
@@ -65,7 +65,7 @@ export class SavedViews {
     if (!name) return this.d.toasts.show('Name the view first', null, { error: true })
     if (list.some((v) => v.name.toLowerCase() === name.toLowerCase())) return this.d.toasts.show(`View “${name}” already exists`, null, { error: true })
     if (!now) return
-    void this.save([...list, { name, type: now.type, when: now.when, status: now.status, pri: now.pri, sort: now.sort }], `Saved view ${name}`)
+    void this.save([...list, { name, tag: now.tag, when: now.when, status: now.status, pri: now.pri, sort: now.sort }], `Saved view ${name}`)
   }
 
   rename(i: number, name: string): void {
@@ -88,7 +88,7 @@ export class SavedViews {
     const now = this.d.list()
     if (v && now)
       void this.save(
-        list.map((o, j) => (j === i ? { ...o, type: now.type, when: now.when, status: now.status, pri: now.pri, sort: now.sort } : o)),
+        list.map((o, j) => (j === i ? { ...o, tag: now.tag, when: now.when, status: now.status, pri: now.pri, sort: now.sort } : o)),
         `${v.name} updated`,
       )
   }

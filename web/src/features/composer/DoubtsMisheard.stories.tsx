@@ -32,7 +32,7 @@ export const MaybeMisheardOnTheNewInputPage: Story = {
         <>
           {boxAt({ text: HEARD_TEXT, files: HEARD_FILES, heard: {} }, true)}
           <div className="px-3 pb-3">
-            {/* the card counts the words to check as the box does, from the same note (B723) */}
+            {/* the card counts the words to check as the box does, from the same note (T723) */}
             <DraftCard voice={1} ms={VOICE.ms ?? 0} files={0} state="words" words={<LiveWords text={HEARD_TEXT} heard={HEARD} className={DRAFT_WORDS} />} hint={{ kind: 'check', n: toCheckOf(spotsIn(HEARD_TEXT, HEARD_FILES)) }} />
           </div>
         </>
@@ -50,7 +50,7 @@ export const AWordOneModelWasUnsureOf: Story = { name: 'A word one model was uns
  * two versions side by side in the box, to pick from. */
 export const MisheardInSeveralPlaces: Story = {
   name: 'Misheard in several places',
-  render: () => <Frames phone={false} deskWidth={640}>{() => boxAt({ at: 'F012', text: AGAIN, files: AGAIN_HEARD.map((h) => ({ ...VOICE, ...h })), heard: { showing: true } }, true)}</Frames>,
+  render: () => <Frames phone={false} deskWidth={640}>{() => boxAt({ at: 'T012', text: AGAIN, files: AGAIN_HEARD.map((h) => ({ ...VOICE, ...h })), heard: { showing: true } }, true)}</Frames>,
 }
 export const MisheardWordsAllPickedPhone: Story = {
   name: 'Phone: Misheard words all picked',

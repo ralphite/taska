@@ -45,7 +45,7 @@ class RefusedLogged(ProjectCase):
         log.setLevel(logging.INFO)
         pages = ProjectPages()
         ctx = SimpleNamespace(log=log, pages=lambda p: pages, status=SimpleNamespace(note_lock_wait=lambda req, ms: None))
-        self.p.run([(0, {"op": "new", "type": "task", "title": "A thing"})], "you")
+        self.p.run([(0, {"op": "new", "title": "A thing"})], "you")
         body = json.dumps({"id": "c2", "commands": [{"op": "set", "ref": "T1", "f": {"pri": "P2", "body": "my private words"}}]}).encode()
         req = Request("POST", "/p/demo/api/commands", {"Content-Type": "application/json"}, "127.0.0.1", read_body=lambda limit: body)
         self.assertEqual(page_routes._commands(ctx, req, self.p).status, 200)

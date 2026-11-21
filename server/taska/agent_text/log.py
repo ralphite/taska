@@ -67,7 +67,7 @@ def _facts(st: ProjectState, e: ev.Event) -> "tuple[str, str, Entry]":
         return who, k, {"id": e.id, **({"to": e.scope} if e.scope else {}),
                         "text": first_line(one_line(st, e.text, e.files))}
     if isinstance(e, ev.ItemAdded):
-        return who, k, {"n": e.n, "type": e.type, "pri": e.pri, "when": e.when, "title": first_line(e.clean), **src}
+        return who, k, {"n": e.n, "tags": list(e.tags), "pri": e.pri, "when": e.when, "title": first_line(e.clean), **src}
     if isinstance(e, ev.FieldsSet):
         changes = [{"field": a, **({"was": _value(e.was[a])} if a in e.was else {}), "now": _value(b)}
                    for a, b in e.fields.items()]
@@ -165,7 +165,8 @@ def said(x: Entry) -> str:
     if k == "in":
         return f"in {x['id']}" + (f" →{c(x['to'])}" if x.get("to") else "") + f" {x['text']!r}"
     if k == "add":
-        return (f"new {c(x['n'])} {x['type']} {x['pri']} {x['when']} {x['title']!r}"
+        tags = "".join(f"#{t} " for t in x.get("tags") or [])
+        return (f"new {c(x['n'])} {tags}{x['pri']} {x['when']} {x['title']!r}"
                 + (f" ←{x['src']}" if x.get("src") else ""))
     if k == "set":
         return (f"{c(x['n'])} " + ", ".join(f"{s['field']} {first_line(s.get('was', ''), 24)}→{first_line(s['now'], 24)}"

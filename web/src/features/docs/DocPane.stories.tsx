@@ -16,7 +16,7 @@ const bar = (children: React.ReactNode) => (
 );
 
 /** Reading a document, a web page in Comment mode with Delete asking, and editing: as wide as the pane in a 1440
- * window, and as narrow as in a 1100 one (B547: the buttons keep their icons, their words under the pointer). */
+ * window, and as narrow as in a 1100 one (T547: the buttons keep their icons, their words under the pointer). */
 const bars = (width: number) => (
   <Frame
     layout="desk"
@@ -26,7 +26,7 @@ const bars = (width: number) => (
   >
     {bar(
       <>
-        <DocPaneNav to="F012" onBack={act("Document pane: back")} />
+        <DocPaneNav to="T012" onBack={act("Document pane: back")} />
         <DocPaneHead
           d={{ d: 12, title: "The rewrite plan", fmt: "md" }}
           editing={false}

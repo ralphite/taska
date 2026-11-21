@@ -78,7 +78,7 @@ class Place:
 
 
 def task(title: str, **f: Any) -> Dict[str, Any]:
-    return {"op": "new", "type": "task", "title": title, **f}
+    return {"op": "new", "title": title, **f}
 
 
 Seed = Callable[[Place], Any]
@@ -87,7 +87,7 @@ Seed = Callable[[Place], Any]
 def _effects() -> List[Tuple[str, Seed, Callable[[Place, Any], List[Dict[str, Any]]]]]:
     """(name, seed, the commands you send) for each case."""
     def proposed(x: Place) -> None:
-        x.agent({"op": "new", "type": "bug", "title": "Export ignores the filter"},
+        x.agent({"op": "new", "tags": ["bug"], "title": "Export ignores the filter"},
                 {"op": "say", "ref": "B1", "kind": "progress", "text": "Found it."})
 
     def review(x: Place) -> None:
@@ -108,7 +108,7 @@ def _effects() -> List[Tuple[str, Seed, Callable[[Place, Any], List[Dict[str, An
 
     def input_with_item(x: Place) -> None:
         x.you({"op": "input", "text": "Export to Excel"})
-        x.run("org", {"op": "new", "type": "feature", "title": "Export to Excel"}, src="r1")
+        x.run("org", {"op": "new", "title": "Export to Excel"}, src="r1")
         x.you({"op": "input", "text": "And keep the sort"})
 
     def doc(x: Place) -> None:
@@ -149,7 +149,7 @@ def _effects() -> List[Tuple[str, Seed, Callable[[Place, Any], List[Dict[str, An
         ("won't do: the unfinished subitems too", family, lambda x, _: [{"op": "set", "ref": "T1", "f": {"status": "dropped"}}]),
         ("archived: the finished subitems too", done_family, lambda x, _: [{"op": "set", "ref": "T1", "f": {"archived": True}}]),
         ("fields as the server keeps them", three,
-         lambda x, _: [{"op": "set", "ref": "T1", "f": {"pri": "P0", "type": "bug", "title": "  Many   spaces  ", "body": "  Trimmed.  "}}]),
+         lambda x, _: [{"op": "set", "ref": "T1", "f": {"pri": "P0", "tags": ["bug"], "title": "  Many   spaces  ", "body": "  Trimmed.  "}}]),
         ("under another item, and on its own", three,
          lambda x, _: [{"op": "set", "ref": "T2", "f": {"parent": "1"}}, {"op": "set", "ref": "T3", "f": {"parent": "T2"}},
                        {"op": "set", "ref": "T2", "f": {"parent": "none"}}]),
@@ -164,7 +164,7 @@ def _effects() -> List[Tuple[str, Seed, Callable[[Place, Any], List[Dict[str, An
         ("deleting an item with its subitems", family, lambda x, _: [{"op": "idel", "ref": "T1"}]),
         ("hiding an agent's message", lambda x: (proposed(x), agent_message(x))[1],
          lambda x, mid: [{"op": "hide", "ref": "B1", "id": mid, "on": True}]),
-        ("a new subitem", family, lambda x, _: [{"op": "new", "title": "Sand it first", "parent": "T1", "type": "task", "pri": "P2", "when": "now"}]),
+        ("a new subitem", family, lambda x, _: [{"op": "new", "title": "Sand it first", "parent": "T1", "pri": "P2", "when": "now"}]),
         ("merging into another item takes its subitems along", lambda x: (family(x), x.you(task("Fence and gate"))),
          lambda x, _: [{"op": "merge", "ref": "T1", "into": "T4"}]),
         ("taking a merged item out", lambda x: (three(x), x.you({"op": "merge", "ref": "T1", "into": "T2"})),
@@ -228,7 +228,7 @@ def needs(ws: Workspace) -> Dict[str, Any]:
                 for archived in (False, True):
                     n += 1
                     ref = str(n)
-                    x.agent({"op": "new", "type": "task", "title": f"{status} asked={asked} answered={answered} archived={archived}"})
+                    x.agent({"op": "new", "title": f"{status} asked={asked} answered={answered} archived={archived}"})
                     if status != "proposed":
                         x.you({"op": "set", "ref": ref, "f": {"status": "open"}})
                         if status in ("doing", "review"):
@@ -243,7 +243,7 @@ def needs(ws: Workspace) -> Dict[str, Any]:
                         x.you({"op": "say", "ref": ref, "text": "This one."})
                     if archived:
                         x.you({"op": "set", "ref": ref, "f": {"archived": True}})
-    x.agent({"op": "new", "type": "task", "title": "merged"}, {"op": "merge", "ref": str(n + 1), "into": "1"})
+    x.agent({"op": "new", "title": "merged"}, {"op": "merge", "ref": str(n + 1), "into": "1"})
     with x.p.lock:
         want = {str(it.n): rules.needs_you(x.p.state, it) for it in x.p.state.items.values()}
     return {"items": _views(x), "needs": want}
@@ -289,39 +289,39 @@ def next_up(ws: Workspace) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
 
     def place(name: str, rows: List[Tuple[str, str, str]]) -> Place:
-        """(pri, when, type) per item, open."""
+        """(pri, when, tag) per item, open."""
         x = Place(ws, name)
-        for k, (pri, when, kind) in enumerate(rows, 1):
-            x.you({"op": "new", "type": kind, "title": f"Item {k}", "pri": pri, "when": when})
+        for k, (pri, when, tag) in enumerate(rows, 1):
+            x.you({"op": "new", "tags": [tag] if tag else [], "title": f"Item {k}", "pri": pri, "when": when})
         return x
 
-    x = place("next-0", [("P2", "now", "task"), ("P1", "now", "bug"), ("P0", "later", "task"), ("P1", "now", "idea")])
+    x = place("next-0", [("P2", "now", ""), ("P1", "now", "bug"), ("P0", "later", ""), ("P1", "now", "")])
     out.append(_next(x, []))  # the queue's head: now, by priority, oldest first
-    x = place("next-1", [("P1", "now", "task"), ("P1", "now", "task"), ("P2", "now", "task")])
+    x = place("next-1", [("P1", "now", ""), ("P1", "now", ""), ("P2", "now", "")])
     x.agent({"op": "say", "ref": "3", "text": "Started on it."})
     x.you({"op": "say", "ref": "3", "text": "Look at this first."})
     out.append(_next(x, []))  # you replied on a P2: the P1 queue head is more urgent
     x.you({"op": "set", "ref": "1", "f": {"pri": "P2"}}, {"op": "set", "ref": "2", "f": {"pri": "P2"}})
     out.append(_next(x, []))  # you replied on it, and it is as urgent as the head: it comes first
-    x = place("next-2", [("P1", "now", "task"), ("P2", "now", "task")])
+    x = place("next-2", [("P1", "now", ""), ("P2", "now", "")])
     x.agent({"op": "set", "ref": "2", "f": {"status": "doing"}}, {"op": "say", "ref": "2", "kind": "progress", "text": "Halfway."})
     x.you({"op": "say", "ref": "2", "text": "Stop: not like that."})
     out.append(_next(x, []))  # you replied on work in progress: it is resumed first
-    x = place("next-3", [("P1", "now", "task"), ("P2", "now", "task")])
+    x = place("next-3", [("P1", "now", ""), ("P2", "now", "")])
     x.you({"op": "input", "text": "", "scope": "1", "files": [x.file("note.webm", "audio/webm")]})
     out.append(_next(x, ["r1"]))  # your voice note on it is still being worked out: it waits, it comes next
-    x = place("next-4", [("P1", "now", "task"), ("P2", "now", "task"), ("P0", "now", "task")])
+    x = place("next-4", [("P1", "now", ""), ("P2", "now", ""), ("P0", "now", "")])
     x.you(task("Sub", parent="1", pri="P3"))
     x.agent({"op": "say", "ref": "3", "kind": "ask", "text": "Which one?"})
     out.append(_next(x, []))  # asked: it waits on you; a parent waits for its subitem
-    x = place("next-5", [("P1", "later", "task")])
+    x = place("next-5", [("P1", "later", "")])
     x.agent({"op": "say", "ref": "1", "text": "Done?"})
     x.you({"op": "say", "ref": "1", "text": "Not yet: one more thing."})
     out.append(_next(x, []))  # the queue is empty: an item you replied on, even Later
-    x = place("next-6", [("P0", "now", "task"), ("P1", "now", "task")])
+    x = place("next-6", [("P0", "now", ""), ("P1", "now", "")])
     x.agent({"op": "set", "ref": "1", "f": {"status": "doing"}})
     out.append(_next(x, []))  # in progress is another session's: the next one
-    x = place("next-7", [("P0", "now", "task")])
+    x = place("next-7", [("P0", "now", "")])
     x.you(task("Middle", parent="1", pri="P1"), task("Deep", parent="2", pri="P3"))
     x.you({"op": "set", "ref": "2", "f": {"status": "done"}})
     out.append(_next(x, []))  # an open subitem at any depth, under a finished one, comes before its parent
@@ -336,8 +336,8 @@ def vocab_text() -> str:
     """domain/vocab.py's words, for the page (model/vocab.gen.ts)."""
     v = vocab
     rows = [
-        ("LETTER", "Each item type and the letter of its code (the order of the page's type menus).", v.LETTER),
-        ("TYPES", "The item types.", list(v.LETTER)),
+        ("CODE_LETTER", "The letter of every item's code (T855: items have no types).", v.CODE_LETTER),
+        ("OLD_LETTERS", "Letters an older code may have: B838 names the same item as T838.", v.OLD_LETTERS),
         ("PRIORITIES", "Priorities, the most urgent first.", list(v.PRIORITIES)),
         ("DEFAULT_PRI", "A new item's priority when nobody says one (r10, r1072).", v.DEFAULT_PRI),
         ("WHENS", "Now or later.", list(v.WHENS)),
@@ -350,7 +350,6 @@ def vocab_text() -> str:
         ("NOTES", "Neither side's word: the organizer's own notes, and Taska's.", list(v.NOTES)),
         ("MESSAGE_KINDS", "The kinds of a message on an item.", list(v.MESSAGE_KINDS)),
         ("USER_KINDS", "What the organizer files from an input as the user's own: their words, decision, idea.", list(v.USER_KINDS)),
-        ("WORK_TYPES", "The types of work /next hands out.", list(v.WORK_TYPES)),
         ("DOC_KEY", "The comment thread on a document as a whole.", v.DOC_KEY),
     ]
     body = "".join(f"/** {doc} */\nexport const {name} = {_ts(val)} as const\n\n" for name, doc, val in rows)

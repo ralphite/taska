@@ -1,15 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames, Hold, States } from '../stories/Frames'
-import { priOpts, SegCtl, typeOpts } from './Segments'
+import { priOpts, SegCtl } from './Segments'
 
 const meta: Meta = { title: 'Base components/Buttons/Segmented choices' }
 export default meta
 type Story = StoryObj
 
 /** a choice that picks, as the page's filters and fields do */
-const seg = (opts: ReturnType<typeof typeOpts>, start: string, small = false) => <Hold start={start}>{(v, set) => <SegCtl opts={opts} on={v} small={small} pick={set} />}</Hold>
+const seg = (opts: ReturnType<typeof priOpts>, start: string, small = false) => <Hold start={start}>{(v, set) => <SegCtl opts={opts} on={v} small={small} pick={set} />}</Hold>
 
-/** A type, a priority (P0 in red), each with and without All or Any; the small one of the desktop's filters. */
+/** A priority (P0 in red), with and without Any; the small one of the desktop's filters. */
 export const Segments: Story = {
   name: 'The segmented choices',
   render: () => (
@@ -17,8 +17,6 @@ export const Segments: Story = {
       {() => (
         <States
           items={[
-            ['type', <div className="p-3">{seg(typeOpts(false), 'bug')}</div>],
-            ['type, a filter', <div className="p-3">{seg(typeOpts(true), 'all')}</div>],
             ['priority', <div className="p-3">{seg(priOpts(false), 'P0')}</div>],
             ['priority, a small filter', <div className="p-3">{seg(priOpts(true), 'all', true)}</div>],
           ]}
@@ -28,4 +26,4 @@ export const Segments: Story = {
   ),
 }
 // ---- more states (T639)
-export const SegmentsPointer: Story = { name: 'The segmented choices: one under the pointer', parameters: { pseudo: { hover: ['button:nth-of-type(2)'] } }, render: () => <Frames phone={false} deskWidth={460}>{() => <div className="p-3">{seg(typeOpts(false), 'bug')}</div>}</Frames> }
+export const SegmentsPointer: Story = { name: 'The segmented choices: one under the pointer', parameters: { pseudo: { hover: ['button:nth-of-type(2)'] } }, render: () => <Frames phone={false} deskWidth={460}>{() => <div className="p-3">{seg(priOpts(false), 'P1')}</div>}</Frames> }

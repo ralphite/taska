@@ -24,7 +24,7 @@ const STEPS = 'To make it happen: filter by Paid, open an order, go back to the 
 export const WithAVoiceNote: Story = { ...at([mine()], { inputs: [r4({ files: [voice] })] }), name: 'With a voice note' }
 export const NothingHeard: Story = { ...at([mine({ text: '' })], { inputs: [r4({ text: '', files: [note('0-03', '')] })] }), name: 'Nothing heard: the bubble is the voice note' }
 export const VoiceNoteBeingTranscribed: Story = { ...at([mine({ text: '' })], { inputs: [r4({ text: '', files: [note('0-12')] })] }), name: 'Its voice note being written out' }
-// B626: the voice note's words came in after it was sent; nothing was changed, so it is not marked edited
+// T626: the voice note's words came in after it was sent; nothing was changed, so it is not marked edited
 export const WordsAndAVoiceNoteItsWordsInLater: Story = {
   ...at([mine({ text: LINK_AND_WORDS })], { inputs: [r4({ text: LINK_AND_WORDS, files: [{ ...voice, voice: record(voice.f, 'Sync it to its three subpages.', 'Sync it to its, um, three subpages.') }] })] }),
   name: 'Words and a voice note, its words in after sending: not edited',

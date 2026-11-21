@@ -14,11 +14,11 @@ from taska.agent_text.language import parse  # noqa: E402
 class AgentDelete(ProjectCase):
     def setUp(self):
         super().setUp()
-        self.p.run(parse("new bug P0 now The phone link is down\n"), "claude-code")  # B1, proposed by the agent
+        self.p.run(parse("new #bug P0 now The phone link is down\n"), "claude-code")  # T1, proposed by the agent
 
     def test_the_agent_deletes_its_own_untouched_proposal(self):
         lines, _ = self.p.run(parse("B1 delete\n"), "claude-code")
-        self.assertEqual(lines, ["ok B1 deleted"])
+        self.assertEqual(lines, ["ok T1 deleted"])
         self.assertTrue(self.p.state.items[1].deleted)
 
     def test_not_once_the_user_answered(self):
@@ -30,13 +30,13 @@ class AgentDelete(ProjectCase):
     def test_not_another_agents_and_not_an_approved_one(self):
         lines, _ = self.p.run(parse("B1 delete\n"), "codex")
         self.assertTrue(lines[0].startswith("err"), lines)
-        self.p.run(parse("new task P1 now Mine\n"), "you")  # T2, the user's
+        self.p.run(parse("new P1 now Mine\n"), "you")  # T2, the user's
         lines, _ = self.p.run(parse("T2 delete\n"), "claude-code")
         self.assertTrue(lines[0].startswith("err"), lines)
 
     def test_the_user_still_deletes_anything(self):
         lines, _ = self.p.run(parse("B1 delete\n"), "you")
-        self.assertEqual(lines, ["ok B1 deleted"])
+        self.assertEqual(lines, ["ok T1 deleted"])
 
 
 if __name__ == "__main__":

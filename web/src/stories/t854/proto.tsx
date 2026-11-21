@@ -72,11 +72,14 @@ export const ITEMS: Item[] = [
   item({ n: 847, pri: 'P1', title: '订单列表按日期分组显示', t0: iso(9 * 24 * 60) }),
   item({ n: 848, pri: 'P3', when: 'later', title: '打印订单时用浅色', t0: iso(12 * 24 * 60) }),
   item({ n: 836, status: 'done', title: '订单按金额排序', t0: iso(14 * 24 * 60) }),
-].map((it) => ({ ...it, type: 'task' as const, code: 'T' + it.n }))
+].map((it) => ({ ...it, code: 'T' + it.n }))
 
 /** What the server would hold for them: their tags, the groups, what waits for what. */
 export const TAGS: Record<number, string[]> = { 841: ['bug'], 842: ['ux'], 843: ['bug', '手机'], 845: ['ux'], 838: ['bug'], 848: ['打印'] }
 export const ALL_TAGS = ['bug', 'ux', '手机', '打印']
+
+/** The shop's items with these tags. */
+const withTags = (tags: Record<number, string[]>) => ITEMS.map((it) => ({ ...it, tags: tags[it.n] ?? [] }))
 export const GROUPS = [840]
 export const AFTER: Record<number, number[]> = { 845: [843], 846: [838] }
 
@@ -123,23 +126,20 @@ export function Proto({ desk, start = {} }: { desk: boolean; start?: Start }) {
   const [tag, setTag] = useState<string | null>(start.tag ?? null)
   const [sheet, setSheet] = useState<null | 'agents' | 'session' | 'filters'>(null)
   const agents = agentsOf(state)
-  const m = modelOf(ITEMS, [], { title: 'Shop', agents, work: true })
+  const m = modelOf(withTags(tags), [], { title: 'Shop', agents, work: true })
   const tagsOf = (it: Item) => tags[it.n] ?? []
   const byN = (n: number) => m.byN.get(n) as Item
-  const tagFilter = { all: ALL_TAGS, on: tag, pick: setTag, of: tagsOf }
   const rowFacts = (it: Item): Partial<RowFacts> => ({
-    tags: tagsOf(it),
     group: groups.includes(it.n),
     ...(after[it.n]?.length ? { waitsFor: after[it.n].map((n) => ({ n, code: 'T' + n })) } : {}),
     // a group's agent mark: none (no agent is handed a group)
     ...(groups.includes(it.n) ? { worker: null } : {}),
   })
   const pick = (t: string | null) => (setTag(t), desk ? null : setOpen(null))
-  const list = { tags: { ...tagFilter, pick }, facts: rowFacts, filters: true, on: { open: (n: number) => setOpen(n), goto: (n: number) => setOpen(n), tag: pick } }
+  const list = { tags: { on: tag, pick }, facts: rowFacts, filters: true, on: { open: (n: number) => setOpen(n), goto: (n: number) => setOpen(n), tag: pick } }
   const page = (it: Item) => {
     const news = it.agent && it.status === 'doing' ? workNews(it, m.at) : null
     const f: Partial<ItemFacts> = {
-      tags: tagsOf(it),
       group: groups.includes(it.n),
       waitsFor: (after[it.n] ?? []).map(byN),
       blocks: Object.entries(after)
@@ -151,7 +151,7 @@ export function Proto({ desk, start = {} }: { desk: boolean; start?: Start }) {
       others: m.items.filter((x) => x.n !== it.n),
       f,
       on: { agents: () => setSheet('session'), tag: pick, goto: (n: number) => setOpen(n) },
-      menu: { tags: { all: ALL_TAGS, on: tagsOf(it) }, group: groups.includes(it.n), waitsFor: (after[it.n] ?? []).map((n) => 'T' + n) },
+      menu: { allTags: ALL_TAGS, group: groups.includes(it.n), waitsFor: (after[it.n] ?? []).map((n) => 'T' + n) },
       menuOn: {
         tag: (t: string) => setTags({ ...tags, [it.n]: toggle(tagsOf(it), t) }),
         group: (on: boolean) => setGroups(on ? [...groups, it.n] : groups.filter((n) => n !== it.n)),
@@ -186,7 +186,7 @@ export function Proto({ desk, start = {} }: { desk: boolean; start?: Start }) {
     <>
       {open == null ? (
         <div className="flex h-full flex-col">
-          {headOf(false, { items: ITEMS, agents, onAgents: () => setSheet('agents'), onFilters: () => setSheet('filters'), filtered: !!tag })}
+          {headOf(false, { items: m.items, agents, onAgents: () => setSheet('agents'), onFilters: () => setSheet('filters'), filtered: !!tag })}
           {listOf(m.items, 'items', {}, false, list)}
         </div>
       ) : (
@@ -201,7 +201,7 @@ export function Proto({ desk, start = {} }: { desk: boolean; start?: Start }) {
 
 /** The phone's Filters sheet with Tags in place of Type. */
 function phoneFilters(tag: string | null, pick: (t: string | null) => void, close: () => void) {
-  const shown = modelOf(tag ? ITEMS.filter((it) => (TAGS[it.n] ?? []).includes(tag)) : ITEMS)
-  const on = { set: act('Filters: set'), unset: act('Filters: unset'), reset: () => pick(null), saveView: act('Filters: save as a view'), close }
-  return filtersSheet({ ...filterFacts(shown, 'items', NO_FILTERS), filtered: !!tag, tags: { all: ALL_TAGS, on: tag, pick } }, on)
+  const list = { ...NO_FILTERS, tag: tag ?? 'all' }
+  const on = { set: (k: string, v: string) => (k === 'tag' ? pick(v === 'all' ? null : v) : act('Filters: set')()), unset: act('Filters: unset'), reset: () => pick(null), saveView: act('Filters: save as a view'), close }
+  return filtersSheet({ ...filterFacts(modelOf(withTags(TAGS)), 'items', list), tags: ALL_TAGS }, on)
 }

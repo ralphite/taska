@@ -9,7 +9,7 @@ import { hay } from '../model/visible'
 import { Icon, StateIcon } from './Icon'
 import { CurrentMark } from './bits'
 import type { SheetParts } from './Sheet'
-import { FIELD, TYPE_TEXT } from './tones'
+import { FIELD, CODE_TEXT } from './tones'
 import { noMatches } from '../model/words'
 
 export function Picker({ items, code, placeholder, skip, sort, current, desk, extra, query = '', onPick }: {
@@ -41,7 +41,7 @@ export function Picker({ items, code, placeholder, skip, sort, current, desk, ex
               className="flex h-12 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[15px] hover:bg-zinc-100 lg:h-9 lg:text-sm dark:hover:bg-zinc-800"
             >
               <StateIcon {...shownStatus(c)} cls="size-4" />
-              <span className={`font-mono text-xs font-bold ${TYPE_TEXT[c.type]}`}>{code(c.n)}</span>
+              <span className={`font-mono text-xs font-bold ${CODE_TEXT}`}>{code(c.n)}</span>
               <span className="min-w-0 flex-1 truncate">{c.title}</span>
               {current === c.n ? <CurrentMark /> : null}
             </button>

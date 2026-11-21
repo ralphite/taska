@@ -120,7 +120,7 @@ export function listBody(m: ProjectModel | null, tab: Tab, list: ListQuery, st: 
   const done = (r: Row[], views: boolean): ListBody => ({ kind: 'rows', views, rows: r, shown: rows.length })
   const none = !m.items.length
   // a proposed change to the rules waits on you first in Items' own order (and in Needs you), as the items do
-  const proposals: Row[] = tab === 'items' && list.sort === 'all' && (list.status === 'all' || list.status === 'wait') && list.type === 'all' && list.pri === 'all' && list.when === 'all' ? waitingProposals(rulesDoc(m)).map((p) => ({ kind: 'proposal', p })) : []
+  const proposals: Row[] = tab === 'items' && list.sort === 'all' && (list.status === 'all' || list.status === 'wait') && list.tag === 'all' && list.pri === 'all' && list.when === 'all' ? waitingProposals(rulesDoc(m)).map((p) => ({ kind: 'proposal', p })) : []
   if (none && proposals.length) return done(proposals, true)
   if (none && tab === 'archive') return { kind: 'empty', why: 'nothing-archived', status: list.status }
   if (none) return { kind: 'empty', why: 'no-items', status: list.status }
@@ -132,7 +132,7 @@ export function listBody(m: ProjectModel | null, tab: Tab, list: ListQuery, st: 
       out.push({ kind: 'archive-all', n: ordered.filter((it) => !it.archived && closed(it.status)).length })
     out.push(...proposals)
     if (!ordered.length) {
-      const why = list.type !== 'all' || list.pri !== 'all' ? 'no-match' : 'nothing'
+      const why = list.tag !== 'all' || list.pri !== 'all' ? 'no-match' : 'nothing'
       return { kind: 'rows', views: true, rows: out, shown: 0, ...(out.length ? {} : { empty: why }) }
     }
     out.push(...tree(group, st, { hidden, needs: true }))
@@ -172,9 +172,9 @@ export function viewChips(m: ProjectModel, tab: Tab, list: ListQuery): ViewChip[
       const n = visible(m.items, 'archive', tab === 'archive' ? list : { ...list, status: 'all' }).length
       return { value, label, count: n, on: tab === 'archive', needs: false }
     }
-    const asItems = tab !== 'items' ? { type: 'all', when: 'all', status: value, pri: 'all', sort: 'all' } : { ...list, status: value }
+    const asItems = tab !== 'items' ? { tag: 'all', when: 'all', status: value, pri: 'all', sort: 'all' } : { ...list, status: value }
     // a proposed change to the rules is in Needs you too (I693)
-    const n = visible(m.items, 'items', asItems).length + (value === 'wait' && asItems.type === 'all' && asItems.pri === 'all' && asItems.when === 'all' ? waitingProposals(rulesDoc(m)).length : 0)
+    const n = visible(m.items, 'items', asItems).length + (value === 'wait' && asItems.tag === 'all' && asItems.pri === 'all' && asItems.when === 'all' ? waitingProposals(rulesDoc(m)).length : 0)
     return { value, label, count: n, on: tab === 'items' && list.status === value, needs: value === 'wait' && n > 0 }
   })
 }

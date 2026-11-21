@@ -50,7 +50,7 @@ function Flow() {
       <Arrow />
       <Step head="Organizer">Waits for the final words, 150 s at most</Step>
       <Arrow />
-      <Step head="What it became">Created B014, Added to F012, For an agent, Handled</Step>
+      <Step head="What it became">Created T014, Added to T012, For an agent, Handled</Step>
     </section>
   )
 }

@@ -128,7 +128,7 @@ class Waker:
 
     def _say(self, sid: str) -> None:
         lines, _ = self.p.run([(0, {
-            "op": "new", "type": "bug", "pri": "P1", "when": "now",
+            "op": "new", "tags": ["bug"], "pri": "P1", "when": "now",
             "title": "Antigravity does not hear from Taska",
             "body": ("The Antigravity session that runs this project has not waited for Taska for over 15 minutes: "
                      "what you write does not reach it. Say a word in that session and it connects again; then this "

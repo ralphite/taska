@@ -52,7 +52,7 @@ export const SpeakOrCorrect: Story = {
   ),
 }
 
-/** Recording a comment about them: the bar is its recording strip, where it was (✕, ✓, ↑; B498). Under it, Correct,
+/** Recording a comment about them: the bar is its recording strip, where it was (✕, ✓, ↑; T498). Under it, Correct,
  * for a voice note's words. */
 export const Recording: Story = {
   name: "Recording; Correct on a voice note's words",

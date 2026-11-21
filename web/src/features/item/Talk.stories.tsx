@@ -23,7 +23,7 @@ export const EveryMessageWithDocumentComments: Story = {
   ...whole(
     [
       you(1, 0, 'The export should keep the filter I set.', 'r4'),
-      message({ id: 2, by: 'org', kind: 'say', src: 'r4', text: 'Added to F012: keep the filter', t: at(0) }),
+      message({ id: 2, by: 'org', kind: 'say', src: 'r4', text: 'Added to T012: keep the filter', t: at(0) }),
       agent(3, 2, 'Reproduced it: the export reads the list before the filter.'),
       agent(4, 4, 'Put the filter in the file name too.', { kind: 'propose' }),
       agent(5, 8, 'The plan is in D1.', { by: 'codex', ses: 'tests' }),
@@ -58,7 +58,7 @@ export const LongBackAndForth: Story = { ...whole(
   {},
   900,
 ), name: 'Long back and forth' }
-// ---- more states (B636)
+// ---- more states (T636)
 export const CardOnTopProposedThenYourWords: Story = {
   ...whole([you(1, 2, 'Can it also keep the sort?')], { status: 'proposed', by: 'claude-code', body: 'The export writes the rows the list shows.' }),
   name: 'Card on top: proposed, then your words',

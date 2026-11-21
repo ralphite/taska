@@ -12,7 +12,7 @@ import type { Item, RuleProposal } from '../../model/types'
 import { plural, whoName } from '../../model/words'
 import { Avatar, Count, DraftMark, Hit, Pic, Soft, Who } from '../../ui/bits'
 import { Icon, StateIcon } from '../../ui/Icon'
-import { ACTION_PILL, MUTED, NEED, PRI_TEXT, TYPE_TEXT, actBg, actIcon, actText, needOfAct } from '../../ui/tones'
+import { ACTION_PILL, MUTED, NEED, PRI_TEXT, CODE_TEXT, actBg, actIcon, actText, needOfAct } from '../../ui/tones'
 
 /** What a row needs to know beyond its item. */
 export interface RowFacts {
@@ -33,8 +33,6 @@ export interface RowFacts {
   news: { text: string; age: string; quiet: boolean } | null
   /** where the searched words were found, when not in the title */
   hitLine: string | null
-  /** its # tags, beside its title (D152 prototype); a tap filters the list by one */
-  tags?: readonly string[]
   /** a group (D152 prototype): its own icon, how many of its items are finished and a thin bar */
   group?: boolean
   /** the items it waits for (D152 prototype: blocked by) */
@@ -51,8 +49,8 @@ export interface RowEvents {
   fold(n: number): void
   goto(n: number): void
   picture(group: string, f: string): void
-  /** a # tag tapped: the list shows the items with it (D152 prototype) */
-  tag?(t: string): void
+  /** a # tag tapped: the list shows the items with it (T855) */
+  tag(t: string): void
 }
 
 export interface RowLook {
@@ -84,7 +82,7 @@ const marks = (look: RowLook) => ({
   ...(look.selected ? { 'data-sel': '' } : {}),
 })
 
-/** A # tag beside a title: a tap shows the items with it (D152 prototype). */
+/** A # tag beside a title: a tap shows the items with it (T855). */
 function TagMark({ t, onTag }: { t: string; onTag?(t: string): void }) {
   return (
     <button
@@ -101,7 +99,7 @@ function CodeTitle({ it, code, look, struck, tags, onTag }: { it: Item; code: st
   // the phone: two lines, the tags after the title's words; the desktop: one line, the title cut short before the tags
   return (
     <p className={`line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1 ${tags?.length ? 'lg:flex lg:items-baseline' : ''}`}>
-      <span className={`mr-1.5 font-mono text-[13px] font-bold lg:shrink-0 ${TYPE_TEXT[it.type]}`}>
+      <span className={`mr-1.5 font-mono text-[13px] font-bold lg:shrink-0 ${CODE_TEXT}`}>
         <Hit text={code} words={look.words} />
       </span>
       <span className={`${struck ? 'line-through decoration-zinc-400' : ''} ${tags?.length ? 'lg:min-w-0 lg:truncate' : ''}`}>
@@ -301,7 +299,7 @@ export function ItemRow(props: {
         {facts.unread ? <span className="absolute top-4.5 left-1 size-2 rounded-full bg-blue-600 dark:bg-blue-400" title="New from an agent" /> : null}
         {facts.group ? <Icon n="folder" c="mt-px size-5 shrink-0 text-zinc-500 dark:text-zinc-400" /> : <StateIcon {...shownStatus(it)} />}
         <div className="min-w-0 flex-1">
-          <CodeTitle it={it} code={facts.code} look={look} struck={(isClosed && !it.archived) || struck} tags={facts.tags} onTag={on.tag} />
+          <CodeTitle it={it} code={facts.code} look={look} struck={(isClosed && !it.archived) || struck} tags={it.tags} onTag={on.tag} />
           <HitLine text={facts.hitLine} words={look.words} />
           {meta.length ? (
             <div className="mt-1 flex items-center gap-x-2.5 overflow-hidden text-xs font-medium whitespace-nowrap text-zinc-500 dark:text-zinc-400">
@@ -355,7 +353,7 @@ export function NeedsRow({ it, depth, facts, look, excerpt, said, struck = false
         </span>
         <div className="min-w-0 flex-1">
           <p className="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1">
-            <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}`}>{facts.code}</span>
+            <span className={`mr-1.5 font-mono text-[13px] font-bold ${CODE_TEXT}`}>{facts.code}</span>
             <span className={struck ? 'text-zinc-500 line-through decoration-zinc-400 dark:text-zinc-400' : ''}>{it.title}</span>
           </p>
           <div className="mt-1 flex min-w-0 items-center gap-2 text-xs font-medium">

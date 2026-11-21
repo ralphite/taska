@@ -21,9 +21,9 @@ const row = (it: Item) => {
   )
 }
 const ask = { wait: { id: 1, kind: 'ask' as const, text: 'Which format?', by: 'claude-code', files: [] } }
-const statuses = (type: Item['type']) => statusChoices(item({ n: 1, type, status: 'proposed' })).map(([s], i) => item({ n: i + 1, type, status: s as Item['status'] }))
+const statuses = () => statusChoices(item({ n: 1, status: 'proposed' })).map(([s], i) => item({ n: i + 1, status: s as Item['status'] }))
 
 export const ItemStatuses: Story = {
   name: 'Every item status',
-  render: () => <Frames phoneWidth={393} deskWidth={360}>{() => <div className="py-2">{[...statuses('feature').map(row), row(item({ n: 9, status: 'open', ...ask }))]}</div>}</Frames>,
+  render: () => <Frames phoneWidth={393} deskWidth={360}>{() => <div className="py-2">{[...statuses().map(row), row(item({ n: 9, status: 'open', ...ask }))]}</div>}</Frames>,
 }

@@ -1,4 +1,4 @@
-// What agents read (F628, F768): in the Agents sheet, the guide an agent follows, laid out. The page's own sheet with
+// What agents read (T628, T768): in the Agents sheet, the guide an agent follows, laid out. The page's own sheet with
 // what the page's own agentsFacts makes of the demo project, What agents read picked.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ITEMS, WORKING, AGENTS_ON } from '../../stories/agentsFixtures'

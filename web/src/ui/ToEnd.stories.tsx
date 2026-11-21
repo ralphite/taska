@@ -1,6 +1,6 @@
-// The button to the talk's end (F716, Yadong r1171): a round button with a down arrow just above the box, over the
+// The button to the talk's end (T716, Yadong r1171): a round button with a down arrow just above the box, over the
 // middle of the talk. Scrolled up it points down; a tap scrolls to the end. At the end it points up, Back to top, and a
-// tap goes to the top (F752 r1250).
+// tap goes to the top (T752 r1250).
 // The page's own item pane (PaneFrame, ItemPage) and box, with an item's real talk.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { boxAt } from '../stories/boxFixtures'
@@ -31,7 +31,7 @@ const page = (up: boolean): Story => ({
       {(layout) => (
         <div className="flex h-full flex-col">
           <div className="flex min-h-0 flex-1 flex-col">{pageOf(it({ thread: talk }), layout === 'desk', up ? { scrolledUp: 600 } : {})}</div>
-          {boxAt({ at: 'F012' }, layout === 'desk')}
+          {boxAt({ at: 'T012' }, layout === 'desk')}
         </div>
       )}
     </Frames>

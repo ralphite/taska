@@ -17,12 +17,13 @@ import { itemMoveProjectSheet } from '../../ui/ProjectSheets'
 import { useOtherProjects } from '../../app/projectLists'
 import { itemMenuPop, itemMenuSheet, type ItemMenuEvents } from './ItemMenu'
 import { itemMenuFacts } from './itemMenuFacts'
+import { toggledTag } from '../../model/items'
 import { useItemWorld } from '../../app/hooks'
 import { moveParentSheet } from '../../ui/Pickers'
 
 type Req<K extends SheetRequest['kind']> = { req: Extract<SheetRequest, { kind: K }> }
 
-const FIELD_OF = { s: 'status', p: 'pri', t: 'type' } as const
+const FIELD_OF = { s: 'status', p: 'pri', t: 'tags' } as const
 
 /** The open project, and the item the sheet is about (closing the sheet when it went). */
 function useSubject(n: number) {
@@ -90,6 +91,7 @@ export function ItemMenuSheet({ req }: Req<'item-menu'>) {
       void app.items.change(n, f, v)
     },
     field: (a) => app.sheets.open({ kind: 'item-menu', n, arm: a }, { pop: true, focus: false, at, narrow: true }),
+    tag: (t) => void app.items.change(n, 'tags', toggledTag(it.tags, t)),
   }
   const facts = itemMenuFacts(m, it, asking, arm)
   return desk ? <SheetLayout {...itemMenuPop(facts, on)} /> : <SheetLayout {...itemMenuSheet(facts, on)} />

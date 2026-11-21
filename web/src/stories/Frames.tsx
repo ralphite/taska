@@ -1,5 +1,5 @@
 // Frames for stories: a part drawn on the phone and on the desktop, side by side. Light or dark is Storybook's toolbar
-// switch, one at a time (R598). The phone's frame is the phone (393 by 852, B593 #7615: its width and its height); the
+// switch, one at a time (R598). The phone's frame is the phone (393 by 852, T593 #7615: its width and its height); the
 // desktop's starts at the size the story gives and Yadong resizes it from its corner, as a window (#7615). Each frame
 // is a layout container ("@container/frame"), so the part lays itself out as it does on a screen of that size; the
 // layout mode comes with it.
@@ -24,9 +24,9 @@ export const PHONE = { width: 393, height: 852 }
 export function Frame({ layout, width, height, label, page = false, children }: FrameProps) {
   const phone = layout === 'phone'
   // the phone: its screen (a part narrower than the screen, as the drawer, says its own width); the desktop: where the
-  // story starts it (F554: no one desktop width), its height its content's unless the story says
+  // story starts it (T554: no one desktop width), its height its content's unless the story says
   const size = phone ? { width: width ?? PHONE.width, height: PHONE.height } : { width, height }
-  // how wide the desktop is now, as Yadong resizes it (F554)
+  // how wide the desktop is now, as Yadong resizes it (T554)
   const box = useRef<HTMLDivElement>(null)
   const [now, setNow] = useState<number | null>(null)
   useLayoutEffect(() => {
@@ -64,7 +64,7 @@ export function inFrame(box: { top: number; bottom: number; left: number; width:
   return { top: box.top - o.top, bottom: box.bottom - o.top, left: box.left - o.left, width: box.width, height: box.height }
 }
 
-/** The same part in each frame: phone and desktop. The desktop's width is the story's own: what its part needs (F554:
+/** The same part in each frame: phone and desktop. The desktop's width is the story's own: what its part needs (T554:
  * there is no one desktop width), Yadong resizes it from there. */
 export function Frames({ children, phone = true, desk = true, deskWidth, phoneWidth, height, page = false }: {
   children: (layout: Layout) => ReactNode

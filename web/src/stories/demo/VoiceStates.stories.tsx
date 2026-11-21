@@ -1,4 +1,4 @@
-// Demo (F731): every state of a voice message, one click to the next. On the left the tree of its states, made from
+// Demo (T731): every state of a voice message, one click to the next. On the left the tree of its states, made from
 // the state machine (model/voiceStates, through voiceTree.ts): a new state or step shows in it by itself. On the right
 // the state chosen, drawn by the product's own parts in the four places it shows (stories/voiceWorkflowFixtures, as
 // the overview draws them). Next (→) goes the normal way; where it branches, a button per way; Back (←); Start again.

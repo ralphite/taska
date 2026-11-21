@@ -27,7 +27,7 @@ const drag = (label: string, h: Holding, drop?: string): Story => ({
 export const PickedUp: Story = { ...drag('Picked up: the row you hold fades', { drag: { n: 6 } }), name: 'Picked up' }
 export const BeforeARow: Story = { ...drag('Over the top of a row: it goes before it in the queue', { drag: { n: 6, at: { n: 5, how: 'before' } } }), name: 'Before a row' }
 export const AfterARow: Story = { ...drag('Over the bottom of a row: it goes after it in the queue', { drag: { n: 5, at: { n: 6, how: 'after' } } }), name: 'After a row' }
-export const InReviewBeforeARow: Story = { ...drag('Work in review goes in order too: over the top of a row in its group, before it (B754)', { drag: { n: 4, at: { n: 2, how: 'before' } } }), name: 'In review, before a row' }
+export const InReviewBeforeARow: Story = { ...drag('Work in review goes in order too: over the top of a row in its group, before it (T754)', { drag: { n: 4, at: { n: 2, how: 'before' } } }), name: 'In review, before a row' }
 export const UnderARow: Story = { ...drag('Over the middle of a row: it becomes its subitem', { drag: { n: 6, at: { n: 2, how: 'into' } } }), name: 'Under a row' }
 export const OffEveryRow: Story = { ...drag('A subitem off every row: it comes out from under its parent', { drag: { n: 14, at: { how: 'out' } } }), name: 'Off every row' }
 export const OverAProject: Story = { ...drag('Over a project in the sidebar: it moves to that project', { drag: { n: 6 } }, 'home'), name: 'Over a project' }

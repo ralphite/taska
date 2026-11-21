@@ -1,5 +1,5 @@
 // The sidebar's New input button (T701), on the desktop only (the phone's drawer has none): its mic always at its end
-// (New input by voice; F777 r1301: no key there, the key is in the tip), its centre in line with the projects' marks
+// (New input by voice; T777 r1301: no key there, the key is in the tip), its centre in line with the projects' marks
 // and the fold button above; lit while the New input page is open.
 // The page's own sidebar, its top.
 import type { Meta, StoryObj } from '@storybook/react-vite'

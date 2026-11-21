@@ -40,7 +40,7 @@ export const SidebarLooks: Story = {
     </div>
   ),
 }
-// ---- more states (B636)
+// ---- more states (T636)
 export const ProjectsLoading: Story = { name: 'Projects loading (phone drawer)', render: () => <Frames desk={false} phoneWidth={320} height={420}>{() => side(true, { loading: true })}</Frames> }
 /** Before the projects were ever listed in this browser. */
 export const NotListedYet: Story = {

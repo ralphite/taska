@@ -4,7 +4,7 @@
 // api/samples.gen.ts lists what each server handler reads (tools/api_samples.py writes it); api/commands.test.ts holds
 // this list to that one.
 
-import type { ItemType, Kind, Pri, Status, When } from './types'
+import type { Kind, Pri, Status, When } from './types'
 
 /** A file a command brings along, uploaded first (POST /api/file): Taska's name for it, and what the page knows. */
 export interface SentFile {
@@ -22,7 +22,8 @@ export type SentWords = Record<string, string>
 /** The fields `set` changes, as the server takes them (commands/items.py field_value): a parent by its code, or
  * 'none'; a day as YYYY-MM-DD, or null for none; a rank, or null for the usual order. */
 export interface SetFields {
-  type?: ItemType
+  /** every tag it has, without the # (T855) */
+  tags?: string[]
   pri?: Pri
   when?: When
   status?: Status
@@ -58,8 +59,9 @@ interface From {
 export type Command = From &
   (
     // items (commands/items.py)
-    | { op: 'new'; title: string; type?: ItemType; pri?: Pri; when?: When; status?: Status; body?: string; next?: string; parent?: string }
+    | { op: 'new'; title: string; tags?: string[]; pri?: Pri; when?: When; status?: Status; body?: string; next?: string; parent?: string }
     | { op: 'set'; ref: string; f: SetFields; undo_of?: number }
+    | { op: 'tag'; ref: string; add?: string[]; del?: string[] }
     | { op: 'say'; ref: string; text: string; kind?: Kind; files?: (SentFile | string)[] }
     | { op: 'merge'; ref: string; into: string }
     | { op: 'unmerge'; ref: string }
@@ -108,6 +110,7 @@ export type Op = Command['op']
 export const OPS = {
   new: true,
   set: true,
+  tag: true,
   say: true,
   merge: true,
   unmerge: true,

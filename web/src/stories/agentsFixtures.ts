@@ -1,4 +1,4 @@
-// The Agents sheet's demo sessions (F768): the demo project Shop with the sessions an agent app would report, as the
+// The Agents sheet's demo sessions (T768): the demo project Shop with the sessions an agent app would report, as the
 // server sends them (each session's app id, what its app says of it, the item it is on, who started it), and what
 // each session wrote on the items. Used by the Agents sheet's stories.
 
@@ -45,7 +45,7 @@ const THREADS: Record<number, Message[]> = {
 /** Shop, with what its sessions wrote on its items. */
 export const ITEMS: Item[] = PROJECT.map((it) => (THREADS[it.n] ? { ...it, thread: [...it.thread, ...THREADS[it.n]] } : it))
 
-/** One session works now (on F001) and a Codex session was here hours ago. */
+/** One session works now (on T001) and a Codex session was here hours ago. */
 export const WORKING: AgentSeen[] = [
   {
     name: 'claude-code',
@@ -72,7 +72,7 @@ export const WAITING: AgentSeen[] = [
   WORKING[1],
 ]
 
-/** A manager with two workers (one on F005, one idle), a Codex session and an Antigravity session gone a while. */
+/** A manager with two workers (one on T005, one idle), a Codex session and an Antigravity session gone a while. */
 export const MANAGER: AgentSeen[] = [
   {
     name: 'claude-code',
@@ -101,11 +101,11 @@ export const ALL_GONE: AgentSeen[] = [
 export const sessionKey = (app: string, name: string) => `${app}\u0000${name}`
 
 /** What the Agents sheet does, for its stories: each in the Actions panel; Reconnect is handed to a connected
- * session of its app (I833). */
+ * session of its app (T833). */
 export const AGENTS_ON: AgentsActs = {
   ...acts('Agents', ['copy', 'help', 'open'], { help: 'Help › Topics › Connect an agent', open: 'the item' }),
   reconnect: () => new Promise((done) => setTimeout(() => done({ relay: true }), 300)),
 }
 
-/** I833: what the page gives a new Claude session when none is connected to bring the lost one back. */
+/** T833: what the page gives a new Claude session when none is connected to bring the lost one back. */
 export const NEW_SESSION_TEXT = 'Bring back the Taska sessions that lost their connection: run curl -s "http://127.0.0.1:7340/api/reconnects?app=claude-code" and do what it says. Then you are done.'

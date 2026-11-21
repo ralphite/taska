@@ -43,5 +43,5 @@ export function refCard(m: ProjectModel, ref: string): RefCard | null {
   }
   const it = m.byN.get(Number(ref.slice(1)))
   if (!it) return null
-  return { top: top([`${it.type[0].toUpperCase() + it.type.slice(1)} ${codeOf(m, it.n)}`, it.pri, shownStatus(it).label, it.archived && 'Archived']), name: it.title, gist: clip(it.body, 200) }
+  return { top: top([[codeOf(m, it.n), ...it.tags.map((t) => '#' + t)].join(' '), it.pri, shownStatus(it).label, it.archived && 'Archived']), name: it.title, gist: clip(it.body, 200) }
 }

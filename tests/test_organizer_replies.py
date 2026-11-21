@@ -18,7 +18,7 @@ from taska.services import organizer as org  # noqa: E402
 class Replies(ProjectCase):
     def setUp(self):
         super().setUp()
-        self.p.run([(0, {"op": "new", "type": "bug", "pri": "P1", "when": "now", "title": "Book is missing"})], "you")
+        self.p.run([(0, {"op": "new", "tags": ["bug"], "pri": "P1", "when": "now", "title": "Book is missing"})], "you")
         self.p.run([(0, {"op": "input", "text": "I mean this problem is gone now. Urgent.", "q": "q1", "scope": 1})],
                    "you")
         self.o = org.Organizer(self.p)
@@ -37,7 +37,7 @@ class Replies(ProjectCase):
         self.assertIn("Left for agent", inp.org.msg)
 
     def test_a_reply_may_still_make_items_for_other_things(self):
-        self.organize("new task P1 now Check the other shelf\nack r1")
+        self.organize("new P1 now Check the other shelf\nack r1")
         self.assertFalse(self.p.state.inputs["r1"].acked)
         self.assertIn("Check the other shelf", [i.title for i in self.p.state.items.values()])
 

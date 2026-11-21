@@ -25,9 +25,9 @@ const missing = (what: string, loading: boolean, away: boolean): Story => ({
   ),
 })
 
-export const LoadingAfterAReload: Story = { ...missing('F012', true, false), name: 'Loading (after a reload)' }
-export const TaskaOutOfReach: Story = { ...missing('F012', true, true), name: 'Taska out of reach' }
-export const NotInThisProject: Story = { ...missing('F099', false, false), name: 'Not in this project' }
+export const LoadingAfterAReload: Story = { ...missing('T012', true, false), name: 'Loading (after a reload)' }
+export const TaskaOutOfReach: Story = { ...missing('T012', true, true), name: 'Taska out of reach' }
+export const NotInThisProject: Story = { ...missing('T099', false, false), name: 'Not in this project' }
 /** Nothing picked: the desktop's pane beside a side list (on the phone the list shows instead). */
 const deskPane = (node: React.ReactNode): Story => ({ render: () => <Frames phone={false} deskWidth={720} height={260}>{() => node}</Frames> })
 export const NothingPickedDocuments: Story = { ...deskPane(<NoSelection side="docs" />), name: 'Nothing picked: documents' }

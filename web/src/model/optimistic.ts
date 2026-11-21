@@ -11,8 +11,8 @@ import type { Command, CommandOf, Op } from './commands'
 import { allComments, sameText } from './docs'
 import { closed } from './items'
 import { STAND, type DocPatch, type InputPatch, type ItemPatch, type ProjectModel } from './project'
-import type { Comment, Doc, FileRef, Input, Item, ItemType, Status } from './types'
-import { DECISIONS as DECIDE, DEFAULT_PRI, PEOPLE as WHO, PRIORITIES, STATUSES as ALL, TASKA, TYPES as KINDS, WHENS } from './vocab.gen'
+import type { Comment, Doc, FileRef, Input, Item, Status } from './types'
+import { DECISIONS as DECIDE, DEFAULT_PRI, PEOPLE as WHO, PRIORITIES, STATUSES as ALL, TASKA, WHENS } from './vocab.gen'
 import { saidText } from './voices'
 
 /** What a change shows: its items', inputs' and documents' changes over the server's data. */
@@ -24,7 +24,6 @@ export interface Shown {
 
 const PEOPLE: readonly string[] = WHO
 const DECISIONS: Record<string, readonly string[]> = DECIDE
-const TYPES: readonly string[] = KINDS
 const STATUSES: readonly string[] = ALL
 const NONE = ['', '-', 'none', 'null']
 
@@ -93,12 +92,28 @@ class Work {
 
 // -- items (commands/items.py) ---------------------------------------------------------------------------------
 
+/** Tags as sent (a list, or words with or without #) -> as the server keeps them (commands/items.py tags_value): lower
+ * case, without the #, each once, at most 10; null: refused. */
+export function tagsValue(v: unknown): string[] | null {
+  const words = Array.isArray(v) ? v.map(String) : String(v ?? '').replace(/,/g, ' ').split(/\s+/)
+  const out: string[] = []
+  for (const w of words) {
+    const t = w.trim().replace(/^#+/, '').toLowerCase()
+    if (!t) continue
+    if (!/^[\p{L}\p{N}\p{M}_-]{1,30}$/u.test(t)) return null
+    if (!out.includes(t)) out.push(t)
+  }
+  return out.length > 10 ? null : out
+}
+
 /** A field's value as sent -> as the server keeps it (commands/items.py field_value); undefined: refused. */
 function value(w: Work, name: string, v: unknown, me: Item): { ok: boolean; v?: unknown } {
   const s = String(v ?? '')
   switch (name) {
-    case 'type':
-      return TYPES.includes(s.toLowerCase()) ? { ok: true, v: s.toLowerCase() } : { ok: false }
+    case 'tags': {
+      const t = tagsValue(v)
+      return t ? { ok: true, v: t } : { ok: false }
+    }
     case 'pri':
       return (PRIORITIES as readonly string[]).includes(s.toUpperCase()) ? { ok: true, v: s.toUpperCase() } : { ok: false }
     case 'when':
@@ -167,6 +182,16 @@ function cascade(w: Work, it: Item, f: Partial<Item>): void {
   }
 }
 
+/** Tags put on and taken off (commands/items.py tag). */
+function tag(w: Work, c: CommandOf<'tag'>): void {
+  const it = w.item(c.ref)
+  const add = tagsValue(c.add ?? [])
+  const off = tagsValue(c.del ?? [])
+  if (!it || !add || !off) return
+  const now = tagsValue([...it.tags.filter((t) => !off.includes(t)), ...add])
+  if (now && !same(now, it.tags)) setOn(w, it, { tags: now })
+}
+
 function set(w: Work, c: CommandOf<'set'>): void {
   const it = w.item(c.ref)
   if (!it) return
@@ -208,7 +233,7 @@ function newItem(w: Work, c: CommandOf<'new'>): void {
   const n = STAND + (w.at % 1e11) + w.out.patches.length
   const t = new Date(w.at).toISOString()
   const add: Item = {
-    n, code: '…', type: (c.type || 'idea') as ItemType, title, body: (c.body || '').trim(), pri: c.pri || DEFAULT_PRI, when: c.when || 'now',
+    n, code: '…', tags: tagsValue(c.tags ?? []) ?? [], title, body: (c.body || '').trim(), pri: c.pri || DEFAULT_PRI, when: c.when || 'now',
     status: (c.status || 'open') as Status, parent: parent?.n ?? null, next: (c.next || '').trim(), srcs: [], mergedInto: null, archived: false,
     t0: t, t1: t, by: 'you', thread: [], wait: null, talked: false, rank: null, decided: null,
   }
@@ -375,6 +400,7 @@ const later = () => {}
 const PREVIEW: { [K in Op]: (w: Work, c: CommandOf<K>) => void } = {
   new: newItem,
   set,
+  tag,
   say: later,
   merge,
   unmerge,

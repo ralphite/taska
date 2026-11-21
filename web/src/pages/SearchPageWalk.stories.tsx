@@ -1,4 +1,4 @@
-// F479: searching by voice on the phone, walked through: say what to find, fix a misheard word, say more, open a
+// T479: searching by voice on the phone, walked through: say what to find, fix a misheard word, say more, open a
 // result, come back, leave. Every journey: stories/searchPhone.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { SearchPhone } from '../stories/searchPhone'
@@ -14,7 +14,7 @@ const TOUR: Tour = {
     { say: 'Tap the right word.', target: marked('side', 'alt', { label: 'The other word' }) },
     { say: 'To add more, tap the mic.', target: button('Say more') },
     { say: 'Say “only on the phone”, then ↑.', target: button('Stop and search') },
-    { say: 'Tap B018.', target: marked('swipe', undefined, { within: row(18), label: 'B018' }), wait: 5000 },
+    { say: 'Tap T018.', target: marked('swipe', undefined, { within: row(18), label: 'T018' }), wait: 5000 },
     { say: 'Back.', target: button('Back') },
     { say: 'Leave search.', target: button('Leave search') },
   ],

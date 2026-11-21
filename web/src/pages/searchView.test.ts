@@ -37,7 +37,7 @@ describe("the phone search's page", () => {
 describe('Recent, a project not loaded', () => {
   it('draws the visit as a whole item row', async () => {
     const { visitFound } = await import('./searchDialogView')
-    const f = visitFound({ project: 'home', kind: 'items', n: 21, code: 'F021', title: 'Export contacts', type: 'feature', status: 'open', pri: 'P1' }, () => null)
+    const f = visitFound({ project: 'home', kind: 'items', n: 21, code: 'F021', title: 'Export contacts', status: 'open', pri: 'P1' }, () => null)
     expect(f.item?.thread).toEqual([])
     expect([f.item?.code, f.item?.pri]).toEqual(['F021', 'P1'])
   })

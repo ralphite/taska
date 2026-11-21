@@ -4,11 +4,13 @@ script (/connect, with {name}, {base}, {host})."""
 
 GRAMMAR = (
     "WRITE (plain text, one command per line; indented lines continue the previous command's text):\n"
-    '  new bug P1 now parent=B03 src=r12 Export ignores the active filter\n'
-    '                            type (feature|bug|idea|task), priority (P0-P3), now|later, parent= and src= are\n'
-    '                            each optional and go before the title as plain words, no brackets\n'
+    '  new P1 now #bug #phone parent=B03 src=r12 Export ignores the active filter\n'
+    '                            priority (P0-P3), now|later, #tags, parent= and src= are each optional and go\n'
+    '                            before the title as plain words, no brackets. Items have no types: a tag says\n'
+    '                            what it is (#bug), only when it helps\n'
     '    <optional body, indented>\n'
-    "  B03 P1 later doing        set priority / when / status / type, any mix (status: open|doing|done|drop; drop = won't do)\n"
+    "  B03 P1 later doing        set priority / when / status, any mix (status: open|doing|done|drop; drop = won't do)\n"
+    '  B03 #bug -#phone          put on or take off tags\n'
     '  B03 later until 2026-11-10    Later until that day: then it is back to now by itself\n'
     '  B03 done <text>           words after the fields (and indented lines) are posted as progress, e.g. the done report\n'
     '  B03 title|body|next <text>      replace that field (body may continue on indented lines)\n'
@@ -56,15 +58,16 @@ GRAMMAR = (
 )
 
 AGENT = (
-    "Taska is the user's tracker for features, bugs, ideas and tasks. BASE={base}\n"
-    'Item code = type letter (F/B/I/T) + number; padding may change as the list grows, B3 = B03.\n'
+    "Taska is the user's tracker of the work in a project: items, with tags (#bug) instead of types. BASE={base}\n"
+    'Item code = T + a number (T853); padding may change as the list grows, T3 = T03. Older codes still work:\n'
+    '  B838 and T838 are the same item.\n'
     '\n'
     'READ  (plain text)\n'
     '  curl -s BASE/next         what to do now: the inbox first, items the user replied on, then the next item  <- start here\n'
     '  curl -s BASE/inbox        unprocessed user inputs: raw text, scoped item, files\n'
-    '  curl -s BASE/items        open items, one line each: code pri when status title [flag] [^parent]\n'
+    '  curl -s BASE/items        open items, one line each: code pri when status [#tags] title [flag] [^parent]\n'
     '                            flag: ? you asked (waits on the user) / < the user replied\n'
-    '                            filters: ?q=word&type=bug&pri=P0&when=now&status=all|open|doing|done|dropped&wait=1&reply=1&archived=1|all&limit=60\n'
+    '                            filters: ?q=word&tag=bug&pri=P0&when=now&status=all|open|doing|done|dropped&wait=1&reply=1&archived=1|all&limit=60\n'
     '  curl -s BASE/B03          full card: fields, body, thread, files (image/audio paths are readable from disk)\n'
     '  curl -s BASE/rules        project rules: one document of standing instructions; follow the parts that apply\n'
     '                            (when they change while you work, your next /next or /do reply says so once, with\n'
@@ -109,10 +112,10 @@ AGENT = (
     '      mark it doing) is theirs: take the next one; write to them with `B03 say @<session> ...` when you need\n'
     '      something from them; never change it without the user\'s word, and take it only with `B03 take` when the\n'
     '      user asked you to. /next also says which other sessions are here and what each is on.\n'
-    '      /next picks items marked now, ideas included: an idea is something to think through; do it when small\n'
-    '      and clear, otherwise propose a plan and ask.\n'
+    '      /next picks items marked now. Unclear, or more than one way to go: think it through first; post your\n'
+    '      plan (B03 propose ...) and ask before building. Small and clear: do it.\n'
     'YOURS Items you create start as proposed: the user approves them before anyone works on them. A subitem the\n'
-    '      user asked for (they said to split B03 into parts) starts open when you name their words: `new task\n'
+    '      user asked for (they said to split B03 into parts) starts open when you name their words: `new\n'
     '      parent=B03 src=r12 <title>`. `B03 done`\n'
     "      from you puts the item in review; the user accepts it. Write item content in the user's language.\n"
     '      A question left: ask it instead of done. One after done: set the item back to doing, then ask (r809).\n'
@@ -133,7 +136,7 @@ AGENT = (
     "RULES Reuse existing items (/items?q=) instead of duplicating. Keep the user's wording. Never turn a\n"
     '      suggestion into a decision: use propose/ask and wait. Commands with src=rN (or ack rN) mark that\n'
     '      input handled. An input that is a question for you: answer it in its item with src=rN (`B03 say src=r12 ...`),\n'
-    '      so the input links to the answer; when no item fits, `new task src=r12 <the question>` and answer there (B845).\n'
+    '      so the input links to the answer; when no item fits, `new src=r12 <the question>` and answer there (B845).\n'
     '      Never `ack` a question alone: the user then sees it handled with nowhere to read the answer.\n'
     'ASK   Ask only when a wrong guess would do damage that is hard to undo: spending money, sending something to\n'
     "      someone, deleting, or a choice of scope or design that is the user's to make. Otherwise take the most\n"
@@ -193,7 +196,7 @@ AGENT = (
 SKILL = (
     '---\n'
     'name: taska\n'
-    "description: Work with Taska, the user's per-project tracker of features, bugs, ideas, tasks and rules (a small local web app). Use when the user mentions Taska or item codes like B03 or F12, asks you to work on, continue or keep working through the tasks, or when the project folder has a .taska file.\n"
+    "description: Work with Taska, the user's per-project tracker of the work in each project: items with tags, and its rules (a small local web app). Use when the user mentions Taska or item codes like T03 or B12, asks you to work on, continue or keep working through the tasks, or when the project folder has a .taska file.\n"
     '---\n'
     '\n'
     '# Taska\n'

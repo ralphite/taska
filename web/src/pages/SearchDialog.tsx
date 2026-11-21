@@ -16,7 +16,7 @@ import { Hit, ProjTile } from '../ui/bits'
 import { Icon, StateIcon } from '../ui/Icon'
 import { Rich } from '../ui/Markdown'
 import type { InlineWorld } from '../ui/markdown/inline'
-import { TYPE_TEXT } from '../ui/tones'
+import { CODE_TEXT } from '../ui/tones'
 import { SearchBody, type SearchEvents, type SearchView } from './SearchPage'
 import { isFound, type ActionLine, type FoundLine, type SearchDialogView } from './searchDialogView'
 
@@ -90,7 +90,7 @@ function FoundRow({ l, i, sel, marks, recent, on }: { l: FoundLine; i: number; s
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate leading-5">
-          {l.code ? <span className={`mr-1.5 font-mono text-xs font-bold ${l.mark.kind === 'item' ? TYPE_TEXT[l.mark.type] : 'text-zinc-500 dark:text-zinc-400'}`}>{l.code}</span> : null}
+          {l.code ? <span className={`mr-1.5 font-mono text-xs font-bold ${CODE_TEXT}`}>{l.code}</span> : null}
           <Hit text={l.title} words={marks} />
         </span>
         <span className="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
@@ -422,7 +422,7 @@ export function FoundPreview({ l, text, meta }: { l: FoundLine; /** its words (M
           <Mark l={l} />
         </span>
         <span>
-          {l.code ? <span className={`mr-2 font-mono text-base font-bold ${l.mark.kind === 'item' ? TYPE_TEXT[l.mark.type] : 'text-zinc-500 dark:text-zinc-400'}`}>{l.code}</span> : null}
+          {l.code ? <span className={`mr-2 font-mono text-base font-bold ${CODE_TEXT}`}>{l.code}</span> : null}
           {l.title}
         </span>
       </h2>

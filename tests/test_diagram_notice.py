@@ -54,7 +54,7 @@ class DiagramNotice(ServerCase):
         return [x for x in it["thread"] if x["by"] == "taska"]
 
     def test_the_writer_hears_once_per_version(self) -> None:
-        code = self.do("new task P1 now Draw the flow\n").split()[1]
+        code = self.do("new P1 now Draw the flow\n").split()[1]
         out = self.do(f"{code} doc Flow\n" + doc_lines(f"# Flow\n\nHow it goes:\n\n{BROKEN}\n"))
         d = int(out.split()[1].lstrip("D"))
         self.assertIn("told writer-1", self.report(d))
@@ -81,7 +81,7 @@ class DiagramNotice(ServerCase):
         self.assertEqual(len(self.notes(code)), 2)
 
     def test_nothing_goes_when_the_user_wrote_the_diagram(self) -> None:
-        code = self.do("new task P1 now Sketch it\n").split()[1]
+        code = self.do("new P1 now Sketch it\n").split()[1]
         self.post("/api/commands", {"id": f"t-{time.time()}", "commands": [
             {"op": "doc", "ref": code, "md": f"# Sketch\n\n{BROKEN}\n"}]})
         d = max(x["d"] for x in self.view("docs"))
@@ -92,7 +92,7 @@ class DiagramNotice(ServerCase):
 class TaskaNoteIsNoAgentsWord(ProjectCase):
     def setUp(self) -> None:
         super().setUp()
-        self.p.run(parse("new task P1 now Draw the flow\nT1 doc Flow\n" + doc_lines(f"# Flow\n\n{BROKEN}\n")), "claude-code", session="w")
+        self.p.run(parse("new P1 now Draw the flow\nT1 doc Flow\n" + doc_lines(f"# Flow\n\n{BROKEN}\n")), "claude-code", session="w")
 
     def test_a_reply_before_the_note_still_waits_for_an_agent(self) -> None:
         self.p.run(parse("T1 progress Drew the flow.\n"), "claude-code", session="w")

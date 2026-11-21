@@ -1,4 +1,4 @@
-// Pictures agents set on projects (F743, `project icon f12-logo.png`), for the stories: a filled app icon (Taska's own),
+// Pictures agents set on projects (T743, `project icon f12-logo.png`), for the stories: a filled app icon (Taska's own),
 // another filled one (Home), a see-through favicon (the notes: a dark glyph, on the tile's light plate in either theme)
 // and one whose file is gone (the long one: its letter again, as when a picture does not load). The page reads each from
 // the project's file (`/p/<slug>/f/<f>`); a story has no Taska, so it names these copies instead.

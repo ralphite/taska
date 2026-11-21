@@ -30,7 +30,7 @@ export const LONG = [
   '- export columns follow the list (unit);',
   '- export of an empty list writes nothing (unit);',
   '- orders page: filter, sort, export, open the file (end to end).',
-  'Not done yet: Export on the phone still does nothing; that is B014.',
+  'Not done yet: Export on the phone still does nothing; that is T014.',
   'One question for later: should Refunded orders show their refund date too?',
   'Ready for you to try on the orders page.',
 ].join('\n')
@@ -39,6 +39,6 @@ export const at = (thread: Message[], o: PageOpts = {}, f: Partial<Item> = {}): 
 })
 export const after = (x: Message) => [x, you(9, 'Thanks.')].map((m, i) => (i ? { ...m, t: later(5) } : m))
 
-// ---- more states (B636)
+// ---- more states (T636)
 export const pdf = { f: 'f5-report.pdf', name: 'report.pdf', mime: 'application/pdf' }
 export const voiceNote = { f: 'f6-voice_0-09.webm', name: 'voice_0-09.webm', mime: 'audio/webm' }

@@ -1,4 +1,4 @@
-// F479: the desktop's search (pages/SearchDialog): narrowing what it found (a kind, a project, a status), and the
+// T479: the desktop's search (pages/SearchDialog): narrowing what it found (a kind, a project, a status), and the
 // actions its words name. The journeys: stories/searchDesk.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { deskStory } from '../stories/searchDesk'

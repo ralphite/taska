@@ -16,7 +16,7 @@ SOUND = "A" * 1_200_000  # a sound written into the page, as the lecture pages c
 
 class BigPage(ServerCase):
     def test_a_big_web_page_is_not_in_the_view_and_comes_when_asked(self) -> None:
-        self.do("new task Lecture")
+        self.do("new Lecture")
         page = f"<html><head><title>Lecture</title></head><body><audio src='data:audio/mp3;base64,{SOUND}'></audio></body></html>"
         self.do("T1 html\n" + "\n".join("  " + x for x in page.split("\n")))
         self.do("T1 doc\n  # Notes\n\n  short")

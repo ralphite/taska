@@ -16,5 +16,5 @@ export const FinishedReport: Story = { ...at(
   { status: 'review' },
 ), name: 'Finished: its report' }
 export const Proposal = at([message({ id: 2, kind: 'propose', text: 'Put the filter in the file name.' }), { ...message({ id: 3, text: 'Started on it.' }), t: later(3) }])
-export const Decision = at([message({ id: 2, kind: 'decide', text: 'CSV it is; Excel later (F016).' })])
+export const Decision = at([message({ id: 2, kind: 'decide', text: 'CSV it is; Excel later (T016).' })])
 export const QuestionAnsweredSince: Story = { ...at([message({ id: 2, kind: 'ask', text: 'I need the API key for staging. Where is it?' }), { ...you(3, 'It is in the vault, under staging.'), t: later(4) }]), name: 'A question (answered since)' }

@@ -43,7 +43,7 @@ class VoiceEverywhere(unittest.TestCase):
         return lines[0]
 
     def item(self):
-        self.run_one({"op": "new", "title": "Export", "type": "feature"})
+        self.run_one({"op": "new", "title": "Export"})
         return 1
 
     def test_an_input_by_voice_keeps_only_what_was_typed_and_agents_read_its_words(self):

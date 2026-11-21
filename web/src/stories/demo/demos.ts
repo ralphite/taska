@@ -223,14 +223,14 @@ export const replyOnItem: Demo = {
   recordings: { phone: replyPhone, desk: replyDesk },
 }
 
-// Answer the tutor's question on T1 of System design by voice, at the end of its long talk (B786 r1337: system-design
+// Answer the tutor's question on T1 of System design by voice, at the end of its long talk (T786 r1337: system-design
 // T27 on Yadong's iPhone, the talk jumping as the words came); its reply asks the next one (replyLongTalk.json).
 const teaching = title(1, 'T1')
 const yourWords = words(/边练边定/, 'Your words')
 const nextQuestion = words(/冷启动（不计分/, 'The next question')
 
 /** Reply by voice at the end of a long talk whose last message asks you; the words come, the agent asks the next
- * question; the talk stays at its end all along (B786). */
+ * question; the talk stays at its end all along (T786). */
 export const replyLongTalk: Demo = {
   id: 'replyLongTalk',
   start: '/p/system-design/',

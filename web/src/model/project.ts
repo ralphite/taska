@@ -4,7 +4,7 @@
 
 import { closed } from './items'
 import type { Comment, Doc, FileRef, Input, Item, Message, NoNews, ProjectFacts, ServerFacts, ViewAnswer, Voice } from './types'
-import { LETTER } from './words'
+import { CODE_LETTER, OLD_LETTERS } from './vocab.gen'
 import { draftKey, draftTarget } from './draftTarget'
 import { isVoice, saidText, withVoice } from './voices'
 
@@ -245,7 +245,7 @@ export function codeOf(m: Pick<ProjectModel, 'byN' | 'width'>, n: number | null 
   if (n == null) return ''
   if (n >= STAND) return '\u2026'
   const it = m.byN.get(n)
-  return (it ? LETTER[it.type] : '?') + String(n).padStart(m.width, '0')
+  return (it ? CODE_LETTER : '?') + String(n).padStart(m.width, '0')
 }
 
 /** The item a merged one went into, and on. */
@@ -276,7 +276,7 @@ export const sourceCount = (m: Pick<ProjectModel, 'byId'>, it: Item) => it.srcs.
 /** An item's documents (not deleted). */
 export const docsOf = (m: Pick<ProjectModel, 'docs'>, n: number) => m.docs.filter((d) => d.n === n)
 
-/** What a code in some words names in this project: an item (its letter must match), a document, an input. */
+/** What a code in some words names in this project: an item (T12, or an older code: B12), a document, an input. */
 export function findRef(m: Pick<ProjectModel, 'byN' | 'byId' | 'docs'>, c: string): { kind: 'item'; n: number } | { kind: 'doc'; d: number } | { kind: 'input'; id: string } | null {
   if (/^[r#]\d+$/.test(c)) {
     const r = 'r' + c.slice(1)
@@ -285,7 +285,7 @@ export function findRef(m: Pick<ProjectModel, 'byN' | 'byId' | 'docs'>, c: strin
   const n = Number(c.slice(1))
   if (c[0] === 'D') return m.docs.some((d) => d.d === n) ? { kind: 'doc', d: n } : null
   const it = m.byN.get(n)
-  return it && LETTER[it.type] === c[0] ? { kind: 'item', n } : null
+  return it && OLD_LETTERS.includes(c[0]) ? { kind: 'item', n } : null
 }
 
 /** The items with a draft not sent: words in any tab of this browser, or files waiting (a draft of a comment on a

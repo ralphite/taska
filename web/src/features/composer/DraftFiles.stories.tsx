@@ -28,7 +28,7 @@ export const TwoPictures: Story = { ...files([pic(1), pic(2)]), name: 'Two pictu
 export const APictureGoingUp: Story = { ...files([pic(1, false)]), name: 'A picture going up' }
 export const AFile: Story = { ...files([{ key: 'c', f: 'f3-report.pdf', name: 'Quarterly report.pdf', mime: 'application/pdf' }]), name: 'A file' }
 export const MoreThanFitTheyScrollSideways: Story = { ...files(Array.from({ length: 9 }, (_, i) => pic(i + 1))), name: 'More than fit: they scroll sideways' }
-// ---- more states (B636)
+// ---- more states (T636)
 export const AFileGoingUp: Story = { ...files([{ key: 'c', f: '', name: 'Quarterly report.pdf', mime: 'application/pdf' }]), name: 'A file going up' }
 /** Taska refused them (T728 #10): red, not faded as one still going up; a voice note says Upload failed in its words */
 export const UploadsFailed: Story = {

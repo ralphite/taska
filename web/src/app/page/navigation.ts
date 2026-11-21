@@ -171,6 +171,15 @@ export class Navigation {
     this.go(r.tab, r.place, list, false)
   }
 
+  /** The items with a tag (T855: a # tag tapped on a row or an item): the list filtered by it, beside the item open
+   * on the desktop, in place of it on the phone. */
+  showTag(t: string): void {
+    const r = this.here()
+    if (!r) return
+    const tab = r.tab === 'archive' ? 'archive' : 'items'
+    this.go(tab, this.desk() ? r.place : { kind: 'tab' }, { ...r.list, tag: t }, !this.desk() && r.place.kind !== 'tab')
+  }
+
   /** One of your views: its filters on Items (from Archive too). */
   showFilters(f: ListQuery): void {
     const r = this.here()
@@ -186,7 +195,7 @@ export class Navigation {
     if (!r) return
     if (value === 'archive') return this.go('archive', this.desk() ? { kind: 'new' } : { kind: 'tab' }, { ...r.list, status: 'all' }, true)
     const list = { ...r.list, status: value }
-    if (r.tab !== 'items') return this.go('items', this.desk() ? { kind: 'new' } : { kind: 'tab' }, { ...list, type: 'all', when: 'all', pri: 'all', sort: 'all' }, true)
+    if (r.tab !== 'items') return this.go('items', this.desk() ? { kind: 'new' } : { kind: 'tab' }, { ...list, tag: 'all', when: 'all', pri: 'all', sort: 'all' }, true)
     this.go('items', r.place, list, false)
   }
 

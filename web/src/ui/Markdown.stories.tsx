@@ -11,7 +11,7 @@ const meta: Meta = { title: 'Base components/Markdown' }
 export default meta
 type Story = StoryObj
 
-const m = modelOf([item({ n: 12 }), item({ n: 3, type: 'bug', code: 'B003' })])
+const m = modelOf([item({ n: 12 }), item({ n: 3, tags: ['bug'], code: 'T003' })])
 const world = talkEnv(m, true).world
 /** words as a message draws them: its choices pick (one, or any), a code opens what it names (the Actions panel), a
  * picture opens in the page's viewer */
@@ -43,7 +43,7 @@ export const Blocks: Story = {
       {() => (
         <States
           items={[
-            ['words: **bold**, *italic*, `code`, a link, a web address, codes', rich('The export *ignores* the **active filter**: see `export.ts`.\nIt still writes every order. Docs: [the guide](https://example.com/guide), https://example.com/a/b.\nF012 and B003 are links; F099 names nothing.')],
+            ['words: **bold**, *italic*, `code`, a link, a web address, codes', rich('The export *ignores* the **active filter**: see `export.ts`.\nIt still writes every order. Docs: [the guide](https://example.com/guide), https://example.com/a/b.\nF012 and T003 are links; T099 names nothing.')],
             ['headings', rich('# Plan\n\n## Steps\n\n### Keep the sort')],
             ['a quote', rich('> The export should keep the filter I set.\n> Every time.')],
             ['lists, nested by their indent', rich('- Read the filter\n  - from the address\n  - or the saved view\n- Write the rows\n\n1. Fix the filter\n2. Then the sort')],

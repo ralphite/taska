@@ -61,7 +61,7 @@ class CancelledRecordingThroughTheServer(ServerCase):
         self.assertIn("sent already", refused["results"][0])
 
     def test_a_reply_cannot_be_kept_as_cancelled(self) -> None:
-        code = urllib.request.urlopen(urllib.request.Request(self.p + "/do?by=claude-code", data=b"new task P2 now Sort\n"),
+        code = urllib.request.urlopen(urllib.request.Request(self.p + "/do?by=claude-code", data=b"new P2 now Sort\n"),
                                       timeout=10).read().decode().split()[1]
         self.assertFalse(self.page({"op": "input", "text": "words", "scope": code, "kind": "cancelled"})["ok"])
 

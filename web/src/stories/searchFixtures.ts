@@ -1,4 +1,4 @@
-// The phone's search (F479): the demo project Shop (and Home), and what each thing you might say finds, in the shape
+// The phone's search (T479): the demo project Shop (and Home), and what each thing you might say finds, in the shape
 // the server sends (/api/find): the words heard first (one word misheard), set right, then with more said.
 import type { HeardFile } from '../model/doubts'
 import type { FindAnswer, Found } from '../model/find'
@@ -17,7 +17,7 @@ const F1: Item = {
 }
 const B18 = item({
   n: 18,
-  type: 'bug',
+  tags: ['bug'],
   pri: 'P1',
   title: 'On the phone the export ignores the filter',
   body: 'On the phone the export writes every row again, whatever the filter.',
@@ -36,14 +36,14 @@ export const HOME = modelOf([H21], [], { title: 'Home' })
 export const ORDER = ['shop', 'home']
 
 const it = (n: number): Found => ({ project: 'shop', kind: 'items', key: 'i' + n, n })
-/** a section of the rules (I693) */
+/** a section of the rules (T693) */
 const RULES0: Found = { project: 'shop', kind: 'rules', key: 's0', n: null, code: 'Rules', title: 'Exports write what the list shows' }
-const SAID8: Found = { project: 'shop', kind: 'inputs', key: 'r8', n: 1, code: '#8', title: 'The export should keep the filter I set.', t: '2026-10-23T14:10:00-07:00', became: 'F001' }
-const SAID12: Found = { project: 'shop', kind: 'inputs', key: 'r12', n: 18, code: '#12', title: 'On my phone the export gives me every row again.', t: '2026-11-02T09:12:00-08:00', became: 'B018' }
-const DOC1: Found = { project: 'shop', kind: 'docs', key: 'd1', n: 1, code: 'D1', d: 1, title: D1.title, on: 'F001' }
+const SAID8: Found = { project: 'shop', kind: 'inputs', key: 'r8', n: 1, code: '#8', title: 'The export should keep the filter I set.', t: '2026-10-23T14:10:00-07:00', became: 'T001' }
+const SAID12: Found = { project: 'shop', kind: 'inputs', key: 'r12', n: 18, code: '#12', title: 'On my phone the export gives me every row again.', t: '2026-11-02T09:12:00-08:00', became: 'T018' }
+const DOC1: Found = { project: 'shop', kind: 'docs', key: 'd1', n: 1, code: 'D1', d: 1, title: D1.title, on: 'T001' }
 // another project's item comes with what the list shows of it
-const HOME21: Found = { project: 'home', kind: 'items', key: 'i21', n: 21, item: { ...H21, code: 'F021' }, parentCode: null, kids: null }
-const HOME4: Found = { project: 'home', kind: 'inputs', key: 'r4', n: 21, code: '#4', title: 'When I export contacts the order is gone', t: '2026-10-20T19:02:00-07:00', became: 'F021' }
+const HOME21: Found = { project: 'home', kind: 'items', key: 'i21', n: 21, item: { ...H21, code: 'T021' }, parentCode: null, kids: null }
+const HOME4: Found = { project: 'home', kind: 'inputs', key: 'r4', n: 21, code: '#4', title: 'When I export contacts the order is gone', t: '2026-10-20T19:02:00-07:00', became: 'T021' }
 
 const answer = (q: string, marks: string[], found: Found[]): FindAnswer => ({ q, by: 'meaning', marks, found, titles: { shop: 'Shop', home: 'Home' } })
 export const MISHEARD = answer('where the expert loses my filter', ['filter'], [it(1), SAID8, DOC1, it(3), it(14), RULES0, HOME21, HOME4])

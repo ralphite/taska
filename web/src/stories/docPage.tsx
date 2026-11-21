@@ -27,7 +27,7 @@ import { inFrame, inLayout } from './Frames'
 import { acts } from './acts'
 import { useMedia } from './liveParts'
 
-/** A voice comment recording: how long, as the page's own clock writes it, and its level lately (B498's strip). */
+/** A voice comment recording: how long, as the page's own clock writes it, and its level lately (T498's strip). */
 const LEVELS = [0.3, 0.75, 0.5, 0.95, 0.4, 0.65, 0.2, 0.85, 0.55, 0.35, 0.9, 0.6]
 export const recMeter = (desk: boolean) => <RecBar time={clock(2000)} levels={LEVELS.slice(-(desk ? PLACE_LEVELS.desk : PLACE_LEVELS.phone))} />
 
@@ -62,7 +62,7 @@ export interface DocHere {
   viewOnly?: boolean
   /** its contents opened */
   contentsOpen?: boolean
-  /** a web page over all of the window (F751) */
+  /** a web page over all of the window (T751) */
   full?: boolean
   /** the pointer on an item of a list (the desktop) */
   pointing?: { key: string; li: number }
@@ -71,7 +71,7 @@ export interface DocHere {
   /** the browser's selection on some words of a paragraph, as a drag over them leaves it (`recording`: the bar's mic
    * pressed: it records a comment about them) */
   selected?: { key: string; words: string; recording?: boolean }
-  /** a paragraph drawn otherwise (the rules' lines that put shared rules in, I779) */
+  /** a paragraph drawn otherwise (the rules' lines that put shared rules in, T779) */
   lines?: (text: string) => ReactNode | null
 }
 
@@ -110,7 +110,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
   const seen = h.seen ?? { since: T }
   const env0 = envOf(m, desk)
   const media = useMedia(env0.url)
-  // the browser's selection, followed as the page's SelectionBarContainer follows it (B708 r1149)
+  // the browser's selection, followed as the page's SelectionBarContainer follows it (T708 r1149)
   const words = useSelectedWords(d.d, v.circle, !!speaking, !!speaking?.bar)
   // the words selected when it is drawn: the browser's selection on them (and the bar's mic pressed)
   const box = useRef<HTMLDivElement>(null)
@@ -218,7 +218,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
     )
   }
   // the page's bar over words selected in this frame: the mic speaks about them (pressed again it is ✓), Comment
-  // makes them what the box comments on (B584)
+  // makes them what the box comments on (T584)
   const layout = desk ? 'desk' : 'phone'
   const mine = () => {
     const p = selected(d.d, v.circle)
@@ -310,7 +310,7 @@ function LiveEdit({ d, text: start, desk, f }: { d: Doc | null; text: string; de
     )
   return (
     <Sheet open look={{ tall: true }} desk={desk} onClose={editActs.discard}>
-      <SheetLayout title={d ? `D${d.d}` : 'New doc on F012'} body={edit} />
+      <SheetLayout title={d ? `D${d.d}` : 'New doc on T012'} body={edit} />
     </Sheet>
   )
 }

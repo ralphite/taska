@@ -1,11 +1,10 @@
 // What the server sends: a project's view (GET /p/<project>/api/view) and the workspace's answers. The shapes are
 // the server's page_api/views.py.
 
-import type { MESSAGE_KINDS, PRIORITIES, STATUSES, TYPES, WHENS } from './vocab.gen'
+import type { MESSAGE_KINDS, PRIORITIES, STATUSES, WHENS } from './vocab.gen'
 import type { RecordState } from './voiceStates'
 
 // the server's words (domain/vocab.py, by model/vocab.gen.ts)
-export type ItemType = (typeof TYPES)[number]
 export type Status = (typeof STATUSES)[number]
 export type Pri = (typeof PRIORITIES)[number]
 export type When = (typeof WHENS)[number]
@@ -71,7 +70,8 @@ export interface Wait {
 export interface Item {
   n: number
   code: string
-  type: ItemType
+  /** what it is (#bug, #手机): tags in place of the old types (T855), without the #, in lower case */
+  tags: string[]
   title: string
   body: string
   pri: Pri
@@ -332,7 +332,7 @@ export type LogRow = {
   codes?: Record<string, string>
 } & (
   | { kind: 'in'; id: string; to?: number; text: string }
-  | { kind: 'add'; n: number; type: string; pri: string; when: string; title: string; src?: string }
+  | { kind: 'add'; n: number; tags?: string[]; pri: string; when: string; title: string; src?: string }
   | { kind: 'set'; n: number; set: LogField[]; undo?: number }
   | { kind: 'say'; n: number; as: string; text: string }
   | { kind: 'merge' | 'unmerge'; n: number; into: number }
@@ -378,8 +378,8 @@ export interface DeletedInput {
   text: string
   files: number
   scope: number | null
-  items: { n: number; code: string; title: string; type: ItemType }[]
-  kept: { n: number; code: string; title: string; type: ItemType; why: string }[]
+  items: { n: number; code: string; title: string; tags: string[] }[]
+  kept: { n: number; code: string; title: string; tags: string[]; why: string }[]
 }
 
 export interface DeletedThing {
@@ -492,7 +492,7 @@ export interface Need {
 /** One of your views of the item list: the filters it sets, with a name (the same in every project). */
 export interface SavedView {
   name: string
-  type: string
+  tag: string
   when: string
   status: string
   pri: string

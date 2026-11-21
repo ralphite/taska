@@ -1,6 +1,6 @@
 // Each state of a voice message (model/voiceStates, T726) drawn in the four places it shows: the New input and an
 // item, each on the desktop and the phone. Shared by the overview (UI/Input box/Voice/Whole workflow, T722) and the
-// Demo that steps through the states (Demo/Voice message, F731). Every cell is drawn as the state's own story draws it
+// Demo that steps through the states (Demo/Voice message, T731). Every cell is drawn as the state's own story draws it
 // (the box, the New input page's list, the line over the phone's box, the item's talk), with the same fixtures; where
 // a state shows nothing, the cell says so.
 import type { ReactNode } from 'react'
@@ -32,7 +32,7 @@ const N1_HEARD = 'So the coupon box, um, it hides behind the keyboard on the pho
 const N1_EDITED = 'The coupon box hides behind the keyboard on the iPhone.'
 const N2_FAST = 'Keep the filter and, um, the sort as well'
 const N2 = 'Keep the filter, and the sort as well.'
-// a reply said in F012 (r4): one that also made a new bug (B714 #10594), and one sent before its words were final
+// a reply said in T012 (r4): one that also made a new bug (T714 #10594), and one sent before its words were final
 const I1_FAST = 'The export should keep the filter I set also on the phone the export button does nothing at all'
 const I1 = 'The export should keep the filter I set. Also, on the phone the Export button does nothing at all.'
 const I1_HEARD = 'The export should keep the filter I set. And also, um, on the phone the Export button does nothing at all.'
@@ -44,7 +44,7 @@ const NOTE: FileRef = { f: VOICE.f, name: VOICE.name, mime: VOICE.mime }
 const NOTE2: FileRef = { f: 'f6-voice_0-05.webm', name: 'voice_0-05.webm', mime: 'audio/webm' }
 const NOTE_R4: FileRef = { f: voice.f, name: voice.name, mime: voice.mime }
 
-/** an input said by voice alone, its words its note's (B682) */
+/** an input said by voice alone, its words its note's (T682) */
 const voiced = (r: Partial<Input> & { id: string }, note: FileRef, words: string, heard = words): Input =>
   shown(input({ ...r, text: '', files: [note] }), record(note.f, words, heard))
 /** sent before its words were final: the fast words while the strong model works (T687) */
@@ -53,22 +53,22 @@ const early = (r: Partial<Input> & { id: string }, note: FileRef, fast: string):
 // the New input's inputs, as each state has them
 const GOING = outgoing({ text: '', files: [NOTE], words: { [NOTE.f]: N1 } })
 const ORGANIZING = voiced({ id: 'r25' }, NOTE, N1, N1_HEARD)
-const MADE = voiced({ id: 'r25', acked: true, touched: [14], org: org(true, 'Created B014') }, NOTE, N1, N1_HEARD)
+const MADE = voiced({ id: 'r25', acked: true, touched: [14], org: org(true, 'Created T014') }, NOTE, N1, N1_HEARD)
 const SENT_BARE = shown(input({ id: 'r26', text: '', files: [NOTE2] }), waiting(NOTE2.f))
 const EARLY = early({ id: 'r26' }, NOTE2, N2_FAST)
 const SWAPPED = voiced({ id: 'r26' }, NOTE2, N2, N2_FAST)
-const ADDED = voiced({ id: 'r26', acked: true, touched: [12], org: org(true, 'Noted on F012') }, NOTE2, N2, N2_FAST)
+const ADDED = voiced({ id: 'r26', acked: true, touched: [12], org: org(true, 'Noted on T012') }, NOTE2, N2, N2_FAST)
 const LEFT = voiced({ ...ONE.left, t: T }, NOTE2, ONE.left.text, 'Look at, hmm, why the build takes so long.')
 const HANDLED = voiced({ ...ONE.handled, t: T }, NOTE2, ONE.handled.text, 'Look at, hmm, why the build takes so long.')
 const NOT_ORGANIZED = voiced({ id: 'r25', org: org(false, 'Gemini HTTP 503: overloaded') }, NOTE, N1, N1_HEARD)
-const EDITED = voiced({ id: 'r25', acked: true, touched: [14], org: org(true, 'Created B014'), history: [{ text: N1, t: T, mode: 'edit' }], updated: later(3) }, NOTE, N1_EDITED, N1_HEARD)
+const EDITED = voiced({ id: 'r25', acked: true, touched: [14], org: org(true, 'Created T014'), history: [{ text: N1, t: T, mode: 'edit' }], updated: later(3) }, NOTE, N1_EDITED, N1_HEARD)
 
 // the item's talk: an agent asked, you answered by voice
 const ASKED = message({ id: 1, by: 'claude-code', kind: 'say', text: 'Which filter should the export keep?' })
 const you = (text: string, f: Partial<Message> = {}) => mine({ id: 2, text, ...f })
 const r4Said = (words: string, heard: string, f: Partial<Input> = {}) => r4({ text: '', files: [{ ...NOTE_R4, voice: record(NOTE_R4.f, words, heard) }], ...f })
-const PHONE_BUG = item({ n: 16, type: 'bug', pri: 'P1', title: 'Export does nothing on the phone', srcs: ['r4'], t0: later(1), body: I1 })
-const MADE_HERE = r4Said(I1, I1_HEARD, { scope: 12, touched: [16], acked: true, org: { ...org(true, 'Created B016'), t: later(1) } })
+const PHONE_BUG = item({ n: 16, tags: ['bug'], pri: 'P1', title: 'Export does nothing on the phone', srcs: ['r4'], t0: later(1), body: I1 })
+const MADE_HERE = r4Said(I1, I1_HEARD, { scope: 12, touched: [16], acked: true, org: { ...org(true, 'Created T016'), t: later(1) } })
 
 // ---------------------------------------------------------------- the cells
 
@@ -77,7 +77,7 @@ type Two = [Cell, Cell]
 
 /** The box with a voice note in it, where you are (a toast over it, when one says what happened): on the desktop's
  * New input page its Draft card over the list, as the page passes it. */
-function inBox(at: '' | 'F012', note: Partial<DraftFile>, text = '', heard?: HeardFile[], said?: string): Two {
+function inBox(at: '' | 'T012', note: Partial<DraftFile>, text = '', heard?: HeardFile[], said?: string): Two {
   const draw = (desk: boolean) => {
     // the item's note is the one its talk plays (0:12)
     const files = [{ ...VOICE, ...(at ? { ms: 12_000 } : {}), ...note, ...(heard ? heard[0] : {}) }]
@@ -119,11 +119,11 @@ const newBoxAnd = (h: Here, s: Said, said?: string): Two => [
   { where: 'the box', node: <>{said ? toastOver(said) : null}{boxAt(h, false)}</> },
 ]
 
-/** The item's box (F012), as `h` has it. */
+/** The item's box (T012), as `h` has it. */
 const itemBox = (h: Here, said?: { text: string; action?: string }): Two =>
-  [true, false].map((desk) => ({ where: 'the box', node: <>{said ? toastOver(said.text, said.action) : null}{boxAt({ at: 'F012', ...h }, desk)}</> })) as Two
+  [true, false].map((desk) => ({ where: 'the box', node: <>{said ? toastOver(said.text, said.action) : null}{boxAt({ at: 'T012', ...h }, desk)}</> })) as Two
 
-/** The item's talk (F012), its messages and the inputs they came from. */
+/** The item's talk (T012), its messages and the inputs they came from. */
 const inTalk = (thread: Message[], o: Parameters<typeof talkOf>[2] = {}, f: Partial<Item> = {}): Two =>
   [true, false].map((desk) => ({ where: 'its talk', node: talkOf(item({ n: 12, thread, ...f }), desk, { inputs: [r4()], ...o }) })) as Two
 
@@ -173,36 +173,36 @@ export const ROWS: Record<VoiceState, Row[]> = {
       ],
     },
   ],
-  uploading: [{ section: 'normal', note: 'shows as transcribing', cells: [...inBox('', { f: '', uploading: true, transcript: 'wait' }), ...inBox('F012', { f: '', uploading: true, transcript: 'wait' })] }],
-  transcribing: [{ section: 'normal', note: 'both models start', cells: [...inBox('', { transcript: 'wait' }), ...inBox('F012', { transcript: 'wait' })] }],
-  fastWords: [{ section: 'normal', note: 'about 2 s', cells: [...inBox('', { transcript: 'fast' }, N1_FAST), ...inBox('F012', { transcript: 'fast' }, I1_FAST)] }],
+  uploading: [{ section: 'normal', note: 'shows as transcribing', cells: [...inBox('', { f: '', uploading: true, transcript: 'wait' }), ...inBox('T012', { f: '', uploading: true, transcript: 'wait' })] }],
+  transcribing: [{ section: 'normal', note: 'both models start', cells: [...inBox('', { transcript: 'wait' }), ...inBox('T012', { transcript: 'wait' })] }],
+  fastWords: [{ section: 'normal', note: 'about 2 s', cells: [...inBox('', { transcript: 'fast' }, N1_FAST), ...inBox('T012', { transcript: 'fast' }, I1_FAST)] }],
   words: [
     {
       section: 'normal',
       label: 'Strong words replace them',
       via: { on: 'strong', from: ['fastWords'] },
       note: 'with a toast',
-      cells: [...inBox('', {}, N1, undefined, toast('fastWords', 'strong')), ...inBox('F012', {}, I1, undefined, toast('fastWords', 'strong'))],
+      cells: [...inBox('', {}, N1, undefined, toast('fastWords', 'strong')), ...inBox('T012', {}, I1, undefined, toast('fastWords', 'strong'))],
     },
-    { section: 'words', label: 'Maybe misheard', via: { on: 'strong', from: ['transcribing'] }, note: 'first words final', cells: [...inBox('', {}, HEARD_TEXT, HEARD), ...inBox('F012', {}, AGAIN, AGAIN_HEARD)] },
-    { section: 'words', label: 'Strong model failed', via: { on: 'fastKept' }, note: 'fast words kept', cells: [...inBox('', {}, N1_FAST), ...inBox('F012', {}, I1_FAST)] },
+    { section: 'words', label: 'Maybe misheard', via: { on: 'strong', from: ['transcribing'] }, note: 'first words final', cells: [...inBox('', {}, HEARD_TEXT, HEARD), ...inBox('T012', {}, AGAIN, AGAIN_HEARD)] },
+    { section: 'words', label: 'Strong model failed', via: { on: 'fastKept' }, note: 'fast words kept', cells: [...inBox('', {}, N1_FAST), ...inBox('T012', {}, I1_FAST)] },
   ],
   noWords: [
     {
       section: 'words',
-      cells: [...inBox('', { transcript: 'none' }, '', undefined, toast('transcribing', 'nothing')), ...inBox('F012', { transcript: 'none' }, '', undefined, toast('transcribing', 'nothing'))],
+      cells: [...inBox('', { transcript: 'none' }, '', undefined, toast('transcribing', 'nothing')), ...inBox('T012', { transcript: 'none' }, '', undefined, toast('transcribing', 'nothing'))],
     },
   ],
   wordsFailed: [
     {
       section: 'words',
-      cells: [...inBox('', { transcript: 'failed' }, '', undefined, toast('transcribing', 'failed')), ...inBox('F012', { transcript: 'failed' }, '', undefined, toast('transcribing', 'failed'))],
+      cells: [...inBox('', { transcript: 'failed' }, '', undefined, toast('transcribing', 'failed')), ...inBox('T012', { transcript: 'failed' }, '', undefined, toast('transcribing', 'failed'))],
     },
   ],
   uploadFailed: [
     {
       section: 'words',
-      cells: [...inBox('', { f: '', failed: true }, '', undefined, toast('uploading', 'uploadRefused')), ...inBox('F012', { f: '', failed: true }, '', undefined, toast('uploading', 'uploadRefused'))],
+      cells: [...inBox('', { f: '', failed: true }, '', undefined, toast('uploading', 'uploadRefused')), ...inBox('T012', { f: '', failed: true }, '', undefined, toast('uploading', 'uploadRefused'))],
     },
   ],
   sending: [{ section: 'normal', cells: [...sentNew({ mine: [GOING] }), ...replyGoing('Sending…', I1)] }],

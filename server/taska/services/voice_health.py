@@ -141,7 +141,7 @@ class VoiceHealth:
                 if it is not None and it.status not in CLOSED and not it.archived:
                     return
             title, body = said
-            lines, _ = project.run([(0, {"op": "new", "type": "bug", "pri": "P1", "when": "now", "title": title,
+            lines, _ = project.run([(0, {"op": "new", "tags": ["bug"], "pri": "P1", "when": "now", "title": title,
                                          "body": body})], "taska")
             got = lines[0].split()[1] if lines and lines[0].startswith("ok ") else None
             project.store.db.put(KEY, {"ref": got})

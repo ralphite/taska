@@ -18,7 +18,7 @@ class WaitOwnItem(ServerCase):
         return text, time.time() - t0
 
     def test_a_wait_holds_over_its_own_doing_item_and_wakes_for_new_work(self) -> None:
-        self.do("new task P1 now Ship the export\n", session="main")
+        self.do("new P1 now Ship the export\n", session="main")
         self.page({"op": "set", "ref": "T1", "f": {"status": "open"}})
         first, _ = self.next()
         self.assertIn("next T1", first)

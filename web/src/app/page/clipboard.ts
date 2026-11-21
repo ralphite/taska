@@ -16,8 +16,6 @@ export async function copyText(text: string): Promise<void> {
   }
 }
 
-/** A task to carry out, or an item to work on, for a coding agent: with where to read it. */
+/** An item to work on, for a coding agent: with where to read it (its card has everything it is part of, T853). */
 export const forAgent = (it: Item, code: string, base: string) =>
-  it.type === 'task'
-    ? `${it.title}\n\n${it.body}\n\nCarry this out in the current project. Write the result and how you checked it back to Taska item ${code} (usage: curl -s ${base}/agent).`
-    : `Work on Taska item ${code}: ${it.title}\nDetails: curl -s ${base}/${code}\nUsage: curl -s ${base}/agent`
+  `Work on Taska item ${code}: ${it.title}\nDetails: curl -s ${base}/${code}\nUsage: curl -s ${base}/agent`

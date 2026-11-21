@@ -1,4 +1,4 @@
-// I779 (D134): Settings › Shared rules, after Organizer: New shared rules first, then each shared rule's name, how many
+// T779 (D134): Settings › Shared rules, after Organizer: New shared rules first, then each shared rule's name, how many
 // projects put it in and when it last changed; a row opens its page (Pages › A shared rule's page). No switches: a
 // project puts one in by a line of its rules. Drawn by the page's Settings with the stories' shared rules.
 import type { Meta, StoryObj } from '@storybook/react-vite'

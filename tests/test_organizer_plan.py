@@ -18,7 +18,7 @@ class IndentStrays(unittest.TestCase):
         self.assertTrue(body.endswith("\u8fd9\u4e2a\u6539\u6210 P0\u3002"), body)
 
     def test_commands_stay_commands(self):
-        plan = "new bug P1 now Title\n  body\nB03 P0\nack r12\npass"
+        plan = "new #bug P1 now Title\n  body\nB03 P0\nack r12\npass"
         self.assertEqual(indent_strays(plan), plan)
 
     def test_a_stray_after_a_command_without_text_is_left_to_fail(self):

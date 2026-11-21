@@ -16,7 +16,7 @@ const foot = (
   </>
 )
 
-/** The card an item's need and a rules proposal are drawn in (B763): to decide, decided, and with no buttons. */
+/** The card an item's need and a rules proposal are drawn in (T763): to decide, decided, and with no buttons. */
 export const Card: Story = {
   name: 'The card: to decide, decided, no buttons',
   render: () => (

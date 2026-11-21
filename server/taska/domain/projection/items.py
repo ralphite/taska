@@ -17,7 +17,7 @@ def _add(state: ProjectState, e: ev.Event) -> None:
     assert isinstance(e, ev.ItemAdded)
     state.max_n = max(state.max_n, e.n)
     title, named = clean_title(e.title)  # "[src=r246] ..." from an agent: the item gets the title without it
-    state.items[e.n] = Item(n=e.n, type=e.type, title=title, body=e.body_text, pri=e.pri, when=e.when, status=e.status,
+    state.items[e.n] = Item(n=e.n, tags=list(e.tags), title=title, body=e.body_text, pri=e.pri, when=e.when, status=e.status,
                             parent=e.parent, next=e.next, t0=e.t, t1=e.t, by=e.by or None)
     link(state, e.n, e.src, handled=not e.keep)
     if named and not e.src and named in state.inputs:

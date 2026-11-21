@@ -66,9 +66,6 @@ def inspect(path: Path) -> Tuple[Dict[str, int], List[str]]:
     if unknown:
         warnings.append(f"changes of kinds this version does not know: {' '.join(unknown)}")
     voices(state, warnings)
-    rules = [n for n, i in state.items.items() if i.type == "rule"]
-    if rules:  # the rules are one document (I693)
-        warnings.append(f"{len(rules)} rule items: {rules[:5]}")
     return {"events": len(stored), "items": len(state.items), "inputs": len(state.inputs), "docs": len(state.docs),
             "voices": len(state.voices)}, warnings
 

@@ -25,7 +25,7 @@ const r = input({
 
 /** Before its words were tidied: as the models heard them, then every step that worked them out (T697: its model,
  * its time, its words; a check on those chosen). Only the phone has this sheet (the desktop shows the same under the
- * pointer, B640: Floating › Tip › On a voice note). */
+ * pointer, T640: Floating › Tip › On a voice note). */
 const sheetAt = (heard: string, tr: string, height = 360, s: VoiceStep[] = []) => () => <Frames height={height} desk={false} phoneWidth={393}>{() => opened(asSaidSheet(heard, tr, s), false)}</Frames>
 const HEARD = 'Keep the filter, um, in the export, and, uh, the sort. The sort too.'
 const TIDIED = 'Keep the filter and the sort in the export.'

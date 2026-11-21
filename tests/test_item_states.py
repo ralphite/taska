@@ -53,7 +53,7 @@ class Commands(ServerCase):
         return self.get(f"/next?by={by}" + (f"&session={session}" if session else ""))
 
     def new(self, title: str) -> str:
-        return self.page({"op": "new", "title": title, "type": "task"})["results"][0].split()[1]
+        return self.page({"op": "new", "title": title})["results"][0].split()[1]
 
     def test_a_done_takes_back_the_agents_open_question(self) -> None:
         code = self.new("ask then finish")
@@ -84,7 +84,7 @@ class Commands(ServerCase):
         self.assertNotIn(f"stop {code}", self.nxt(session="worker-one"))  # once
 
     def test_an_approval_joins_the_queue_without_a_notice(self) -> None:
-        out = self.do("new task proposed thing")
+        out = self.do("new proposed thing")
         code = out.split()[1]
         self.assertNotIn(f"next {code}", self.nxt())
         self.page({"op": "set", "ref": code, "f": {"status": "open"}})
@@ -92,7 +92,7 @@ class Commands(ServerCase):
 
     def test_your_reply_on_a_proposal_approves_it(self) -> None:
         # B818 r1401: replying on an agent's proposal approves it; the agent's own words do not
-        code = self.do("new task proposed by an agent").split()[1]
+        code = self.do("new proposed by an agent").split()[1]
         self.do(f"{code} say should I start with the export?")
         self.assertIn("proposed", self.get(f"/{code}").split("\n")[0])
         n = int(code[1:])
@@ -105,13 +105,13 @@ class Commands(ServerCase):
         parent = self.new("a big feature")
         rid = self.page({"op": "input", "text": "split it into subtasks so we can track them", "scope": int(parent[1:])}
                         )["results"][0].split()[1]
-        out = self.do(f"new task P1 now parent={parent} src={rid} the export part")
+        out = self.do(f"new P1 now parent={parent} src={rid} the export part")
         self.assertNotIn("proposed", out)
         code = out.split()[1]
         self.assertIn("open", self.get(f"/{code}").split("\n")[0])
         # without the user's words, or not under an item, it is a proposal
-        self.assertIn("proposed", self.do(f"new task P1 now parent={parent} another part"))
-        self.assertIn("proposed", self.do(f"new task P1 now src={rid} not a subitem"))
+        self.assertIn("proposed", self.do(f"new P1 now parent={parent} another part"))
+        self.assertIn("proposed", self.do(f"new P1 now src={rid} not a subitem"))
         self.page({"op": "set", "ref": code, "f": {"status": "dropped"}})  # out of the other tests' queue
 
     def test_words_on_your_items(self) -> None:

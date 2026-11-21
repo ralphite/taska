@@ -1,4 +1,4 @@
-// A project's card (F667): beside its row while a mouse is on it (its left edge over the sidebar's, r1066), and while
+// A project's card (T667): beside its row while a mouse is on it (its left edge over the sidebar's, r1066), and while
 // the mouse moved into it; the same beside its icon on the folded rail; one with nothing open; dark; and the card alone
 // in each of its states.
 import type { Meta, StoryObj } from '@storybook/react-vite'

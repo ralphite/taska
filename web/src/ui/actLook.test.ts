@@ -20,7 +20,7 @@ test('an action looks as before, read by its id', () => {
   expect([actIcon('accept'), actIcon('accept', true)]).toEqual(['done', 'check'])
 })
 
-test('the hints of S, P and T come from what they set (no removed type R)', () => {
+test('the hints of S and P come from what they set (T opens the tags, T855)', () => {
   const it = item({ n: 1 })
-  expect([armHint('s', it), armHint('p', it), armHint('t', it)]).toEqual(['Status: 1–6', 'Priority: 0–3', 'Type: F B I T'])
+  expect([armHint('s', it), armHint('p', it), armHint(null, it)]).toEqual(['Status: 1–6', 'Priority: 0–3', 'First S or P: then a digit'])
 })

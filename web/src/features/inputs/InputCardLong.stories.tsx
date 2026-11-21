@@ -9,5 +9,5 @@ type Story = StoryObj
 /** A long one: folded to a few lines, More opens it. */
 export const Long: Story = { ...one(ONE.long), name: 'Long' }
 export const LongOpened: Story = { ...one(ONE.long, { opened: ['r9'] }), name: 'Long, opened' }
-// ---- more states (B636)
+// ---- more states (T636)
 export const JumpedToAnInput: Story = { ...one(ONE.made, { lit: ONE.made.id }), name: 'Jumped to an input' }

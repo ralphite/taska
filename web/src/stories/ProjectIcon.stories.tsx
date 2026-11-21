@@ -1,4 +1,4 @@
-// A project's picture (F743): an agent sets it (`project icon f12-logo.png`, an image it uploaded) and the page draws it
+// A project's picture (T743): an agent sets it (`project icon f12-logo.png`, an image it uploaded) and the page draws it
 // wherever the project's tile is, in the same square; a project without one, or whose picture does not load, keeps its
 // letter on its colour. Every place, through the page's own parts: the tile at each size, the sidebar folded to icons
 // and open (desktop and phone), a project's card, Home, Switch project, Settings › Projects, a search's project heads.

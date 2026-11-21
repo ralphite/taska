@@ -13,7 +13,7 @@ export const InProgressWithItsTalk: Story = {
 }
 /** the agent asked in words, you replied: its turn */
 export const AgentsTurnYouReplied: Story = { ...at({ talked: true, thread: [said, message({ id: 2, text: 'Should the export keep the sort too?' }), { ...said, id: 3, text: 'Yes, the sort too.' }] }), name: 'Open, you replied' }
-// ---- more states (B636)
+// ---- more states (T636)
 export const P0: Story = { ...at({ pri: 'P0', thread: [said] }), name: 'P0' }
 export const Later = at({ when: 'later', thread: [said] })
 /** Later until a day: its chip says the day; then it is back to Now by itself (D115 #21) */

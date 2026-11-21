@@ -1,4 +1,4 @@
-// Commenting on a place picked in a page (B498), as the page draws it: a Markdown paragraph or a part of a web page,
+// Commenting on a place picked in a page (T498), as the page draws it: a Markdown paragraph or a part of a web page,
 // on the desktop or the phone, at each step. The document is the page's own (docAt: factsOf, DocView, BlockActs,
 // WebPage, the control in ui/PlaceVoice), the box under it the page's own (boxAt: boxRole, shownBox, Composer), and
 // the toast the page's Toast. Used by Document › Commenting › Voice and words on a place.
@@ -47,7 +47,7 @@ function hereOf(kind: Kind, step: Step): DocHere {
   return { ...place, typing: step === 'typing' }
 }
 
-/** The box under the document: the desktop's always; the phone's only to write (B643, B498). */
+/** The box under the document: the desktop's always; the phone's only to write (T643, T498). */
 function boxOf(kind: Kind, step: Step, desk: boolean): ReactNode {
   const at = kind === 'md' ? 'D1' : 'D2'
   const quote = { key: KEY[kind], text: QUOTE[kind] }

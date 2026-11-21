@@ -1,8 +1,8 @@
-// How a document behaves on the phone (B643 and B498, Yadong's rules; the stories are its record): it opens with no
+// How a document behaves on the phone (T643 and T498, Yadong's rules; the stories are its record): it opens with no
 // box under it; a part picked (a tap, words selected, an area drawn) has Voice and Comment floating under it, over
-// the text below (B715 r1169: they never push the text down). Voice turns them into a recording strip (✕ cancels, ✓
+// the text below (T715 r1169: they never push the text down). Voice turns them into a recording strip (✕ cancels, ✓
 // posts it: no ↑ on the phone, r1062); Comment opens the box to write about it. Nothing at the document's end
-// (B715: no hint and no button for the whole document). The box comes only to write: that Comment, or an edit of a
+// (T715: no hint and no button for the whole document). The box comes only to write: that Comment, or an edit of a
 // comment of yours or of the document.
 // The page's own facts and DocView, in the page's own phone sheet, with a demo document. Its ⋯ is with the bar's
 // stories, in DocOnThePhoneMenu.stories.

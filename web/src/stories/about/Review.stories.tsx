@@ -1,4 +1,4 @@
-// What the Review section is for (B510, #6676).
+// What the Review section is for (T510, #6676).
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { SectionAbout } from './Section'
 

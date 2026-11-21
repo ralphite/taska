@@ -17,7 +17,7 @@ import { atEnd, holdHeight, keepsEnd, overflows, scrollerOf, toEnd, yourScroll }
 import type { IconName } from '../../ui/icon-paths'
 import { Rich } from '../../ui/Markdown'
 import { clean, inlineHtml } from '../../ui/markdown/inline'
-import { TYPE_TEXT, actIcon } from '../../ui/tones'
+import { CODE_TEXT, actIcon } from '../../ui/tones'
 import { FileRows } from '../../ui/Files'
 import { DocCard } from './DocCard'
 import { NeedsCard } from './NeedsCard'
@@ -29,9 +29,9 @@ import type { TalkEnv } from './talkEnv'
 export interface ItemEvents extends TalkLineEvents {
   /** the Agents sheet: the sessions, what each is on and how it is (I810) */
   agents?(): void
-  /** D152 prototype: a # tag tapped: the list of the items with it */
-  tag?(t: string): void
-  /** the item's menu, or one of its fields' (status, priority, type) */
+  /** a # tag tapped: the list of the items with it (T855) */
+  tag(t: string): void
+  /** the item's menu, or one of its fields' (status, priority, tags) */
   menu(arm: 's' | 'p' | 't' | null, from: Element): void
   set(f: 'when' | 'archived' | 'status', v: string | boolean): void
   /** Later's choices: until a day, none, or back to now (D115 #21), from its chip or the bar's Later */
@@ -79,8 +79,6 @@ export interface ItemFacts {
   subDraft?: string
   /** the sessions working on it now, and how each is (I810) */
   workers?: { name: string; state: 'working' | 'idle' | 'waiting' }[]
-  /** D152 prototype: its # tags, shown in place of its type */
-  tags?: readonly string[]
   /** D152 prototype: a group (it holds items; no status of its own) */
   group?: boolean
   /** D152 prototype: the items it waits for, and the items it holds up */
@@ -199,7 +197,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
   ) : (
     <div className="flex flex-col gap-3">
       {f.worker ? <WorkerLine w={f.worker} onOpen={() => on.agents?.()} /> : null}
-      <h1 data-part="item-title" className={`text-[22px] leading-[1.35] font-semibold break-words ${it.status === 'dropped' ? 'line-through' : ''}`}>{readOnly ? <span className={`mr-2 font-mono text-lg font-bold ${TYPE_TEXT[it.type]}`}>{f.code(it.n)}</span> : null}{it.title}</h1>
+      <h1 data-part="item-title" className={`text-[22px] leading-[1.35] font-semibold break-words ${it.status === 'dropped' ? 'line-through' : ''}`}>{readOnly ? <span className={`mr-2 font-mono text-lg font-bold ${CODE_TEXT}`}>{f.code(it.n)}</span> : null}{it.title}</h1>
       <div className="flex flex-wrap items-center gap-2">
         <Chips it={it} f={f} on={on} />
       </div>
@@ -340,7 +338,7 @@ export function ItemHead({ it, code, titled = false, group = false }: { it: Item
         {/* a group: its own icon (D152 prototype) */}
         {group ? <Icon n="folder" c="size-[18px] text-zinc-500 dark:text-zinc-400" /> : <StateIcon {...shownStatus(it)} cls="size-[18px]" />}
       </span>
-      <span className={`shrink-0 font-mono text-sm font-bold ${TYPE_TEXT[it.type]}`}>{code}</span>
+      <span className={`shrink-0 font-mono text-sm font-bold ${CODE_TEXT}`}>{code}</span>
       {/* after the code on one line, cut short to the space between Back and ⋯ (B696) */}
       {titled ? <span className="min-w-0 truncate text-[13px] font-medium text-zinc-600 dark:text-zinc-300">{it.title}</span> : null}
     </>

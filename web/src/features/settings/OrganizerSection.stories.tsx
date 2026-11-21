@@ -1,4 +1,4 @@
-// Settings' Organizer: on with its key set here or from the environment, off with no key (F765), a key being saved.
+// Settings' Organizer: on with its key set here or from the environment, off with no key (T765), a key being saved.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { one } from '../../stories/sectionsFixtures'
 

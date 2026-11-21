@@ -11,7 +11,7 @@ import unittest
 from check_data import databases, inspect
 
 
-EVENT = {"k": "add", "n": 1, "type": "task", "title": "Keep history", "pri": "P1", "when": "now", "status": "open",
+EVENT = {"k": "add", "n": 1, "title": "Keep history", "pri": "P1", "when": "now", "status": "open",
          "by": "you", "t": "2026-01-01T00:00:00+00:00"}
 
 

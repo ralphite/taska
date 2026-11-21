@@ -12,4 +12,4 @@ export const view = (tab: Tab, q: Partial<ListQuery>, items = PROJECT, saved: re
   render: () => <Frames phoneWidth={393} deskWidth={460} height={760}>{(layout) => listOf(items, tab, q, layout === 'desk', { saved })}</Frames>,
 })
 
-export const bugs: SavedView = { name: 'Bugs first', type: 'bug', when: 'all', status: 'all', pri: 'all', sort: 'all' }
+export const bugs: SavedView = { name: 'Bugs first', tag: 'bug', when: 'all', status: 'all', pri: 'all', sort: 'all' }

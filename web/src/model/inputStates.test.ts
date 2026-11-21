@@ -29,9 +29,9 @@ import { VOICE_STATES } from './voiceStates'
 
 const PLACES = Object.keys(INPUT_PLACES) as InputPlace[]
 const org = (msg: string, f: Partial<OrgNote> = {}): OrgNote => ({ ok: true, msg, t: '', keep: false, changed: true, undone: false, ...f })
-const m = (on = true, busy: string[] = []) => modelOf([item({ n: 14, type: 'bug' }), item({ n: 12 })], [], { organizer: { on, model: '', busy } })
+const m = (on = true, busy: string[] = []) => modelOf([item({ n: 14, tags: ['bug'] }), item({ n: 12 })], [], { organizer: { on, model: '', busy } })
 const of = (f: Partial<Input> & { id: string }, mm = m()) => becameOf(input(f), mm, (s) => (s === 'mobile-app' ? 'Mobile app' : s))
-const FILING = { can: true, what: 'removes B014', why: '' }
+const FILING = { can: true, what: 'removes T014', why: '' }
 
 describe('the states', () => {
   test('every state has a rule for every place', () => {
@@ -73,7 +73,7 @@ describe('the states', () => {
     const seen: Partial<Record<InputState, Became>> = {
       transcribing: of({ id: 'r1', files: [{ f: 'f1.webm', name: 'v.webm', mime: 'audio/webm', voice: waiting('f1.webm') }] }),
       organizing: of({ id: 'r1' }),
-      filed: of({ id: 'r1', acked: true, touched: [14], org: org('Created B014') }),
+      filed: of({ id: 'r1', acked: true, touched: [14], org: org('Created T014') }),
       answer: of({ id: 'r1', acked: true, kind: 'answer', scope: 12 }),
       agent: of({ id: 'r1', org: org('Left for agent', { keep: true }) }),
       note: of({ id: 'r1', acked: true, org: org('Nothing to file: a thank-you') }),
@@ -101,8 +101,8 @@ describe('a voice message: its state is the one its input names', () => {
     }
   })
   test('one that made an item is Created; its words to come are as Taska has them', () => {
-    expect(voiceStateOf(of({ id: 'r1', acked: true, touched: [14], org: org('Created B014') }))).toBe('created')
-    expect(voiceStateOf(of({ id: 'r1', acked: true, touched: [12], org: org('Noted on F012') }))).toBe('added')
+    expect(voiceStateOf(of({ id: 'r1', acked: true, touched: [14], org: org('Created T014') }))).toBe('created')
+    expect(voiceStateOf(of({ id: 'r1', acked: true, touched: [12], org: org('Noted on T012') }))).toBe('added')
     expect(voiceStateOf({ k: 'transcribing', state: 'sentFastWords' })).toBe('sentFastWords')
     expect(voiceStateOf({ k: 'undone', retry: true })).toBeNull()
   })
@@ -120,13 +120,13 @@ describe('T728: the line over the box says and offers what the lists do', () => 
     expect(line(input({ id: 'r1' }), m(false))?.text).toBe('For an agent')
     expect(line(input({ id: 'r1', org: org('Undone', { undone: true }) }))).toEqual({ text: 'Undone', acts: ['organize'], final: true })
     // the organizer's own words for what it did, as the lists say them
-    expect(line(input({ id: 'r1', acked: true, touched: [14, 12], org: org('Created B014 · noted on F012') }))?.text).toBe('Created B014 · Added to F012')
+    expect(line(input({ id: 'r1', acked: true, touched: [14, 12], org: org('Created T014 · noted on T012') }))?.text).toBe('Created T014 · Added to T012')
   })
   test('Undo only where Taska would take the filing back (it was offered without its filing)', () => {
-    const filed = { id: 'r1', acked: true, touched: [14], org: org('Created B014') }
+    const filed = { id: 'r1', acked: true, touched: [14], org: org('Created T014') }
     expect(line(input(filed))?.acts).toEqual(['open'])
     expect(line(input({ ...filed, filing: FILING }))?.acts).toEqual(['open', 'undo'])
-    expect(line(input({ ...filed, filing: { ...FILING, can: false, why: 'B014 changed since' } }))?.acts).toEqual(['open'])
+    expect(line(input({ ...filed, filing: { ...FILING, can: false, why: 'T014 changed since' } }))?.acts).toEqual(['open'])
   })
   test('Retry only where it can help: the organizer on, and not asking again by itself', () => {
     const failed = (f: Partial<OrgNote> = {}) => input({ id: 'r1', org: org('Gemini HTTP 401: API key not valid', { ok: false, ...f }) })
@@ -142,7 +142,7 @@ describe('T728: the line over the box says and offers what the lists do', () => 
 describe('T728: the menu, as the lists', () => {
   const sheet = (b: Became, others = true) => actsIn(b, 'sheet', { others })
   test('Undo as the server allows it; no Move while Taska works on it', () => {
-    expect(sheet(of({ id: 'r1', acked: true, touched: [14], org: org('Created B014'), filing: FILING }))).toEqual(['undo', 'move'])
+    expect(sheet(of({ id: 'r1', acked: true, touched: [14], org: org('Created T014'), filing: FILING }))).toEqual(['undo', 'move'])
     expect(sheet(of({ id: 'r1' }))).toEqual([])
     expect(sheet(of({ id: 'r1' }, m(true, ['r1'])))).toEqual([])
     expect(sheet(of({ id: 'r1', kind: 'cancelled' }))).toEqual(['send', 'move'])

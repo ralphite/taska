@@ -4,7 +4,8 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { EmptyList, ItemList, type ListEvents } from '../features/list/ItemList'
 import { SelBar } from '../features/list/SelBar'
-import { DeskFilters, FiltersButton, FilterStrip, type FilterEvents, type TagFilter } from '../features/list/Filters'
+import { DeskFilters, FiltersButton, FilterStrip, type FilterEvents } from '../features/list/Filters'
+import { projectTags } from '../model/items'
 import type { RowFacts } from '../features/list/ListRows'
 import { drawRows, listViews } from '../features/list/drawRows'
 import { heldMark, heldRows, listBody } from '../features/list/rows'
@@ -30,18 +31,18 @@ const ask = (id: number, text: string) => ({ wait: { id, kind: 'ask' as const, t
 /** A project as it is on a usual day: what waits on you, work in progress with its subitems, the queue, later, finished. */
 export const PROJECT: Item[] = [
   item({ n: 1, status: 'doing', pri: 'P1', title: 'Export keeps the filter you set', agent }),
-  item({ n: 2, type: 'bug', pri: 'P0', title: 'Saving drops the last word', ...ask(21, 'Is it every time, or only after a voice note?') }),
+  item({ n: 2, tags: ['bug'], pri: 'P0', title: 'Saving drops the last word', ...ask(21, 'Is it every time, or only after a voice note?') }),
   item({ n: 3, status: 'proposed', by: 'claude-code', title: 'Keep the filter in the export file name' }),
-  item({ n: 4, type: 'task', status: 'review', title: 'Sort by priority, then by number', thread: [message({ id: 41, text: 'Done: the list sorts by priority, then by number.' })] }),
+  item({ n: 4, status: 'review', title: 'Sort by priority, then by number', thread: [message({ id: 41, text: 'Done: the list sorts by priority, then by number.' })] }),
   item({ n: 5, pri: 'P1', title: 'Search finds words in the talk' }),
   item({ n: 6, title: 'Excel export as well' }),
-  item({ n: 7, type: 'idea', pri: 'P3', when: 'later', title: 'A dark theme for printing' }),
+  item({ n: 7, pri: 'P3', when: 'later', title: 'A dark theme for printing' }),
   item({ n: 8, status: 'done', title: 'Undo puts the row back' }),
-  item({ n: 9, type: 'bug', status: 'dropped', title: 'Export button too small on the phone' }),
+  item({ n: 9, tags: ['bug'], status: 'dropped', title: 'Export button too small on the phone' }),
   item({ n: 10, status: 'done', archived: true, title: 'Rename projects' }),
-  item({ n: 14, type: 'task', parent: 1, title: 'Read the filter from the address' }),
-  item({ n: 15, type: 'task', parent: 1, status: 'done', title: 'Write the rows the list shows' }),
-  item({ n: 16, type: 'task', parent: 1, when: 'later', title: 'Keep the sort too' }),
+  item({ n: 14, parent: 1, title: 'Read the filter from the address' }),
+  item({ n: 15, parent: 1, status: 'done', title: 'Write the rows the list shows' }),
+  item({ n: 16, parent: 1, when: 'later', title: 'Keep the sort too' }),
 ]
 
 /** What the page holds besides the project: the item open, rows picked, parents folded or showing their hidden
@@ -57,7 +58,7 @@ export interface Holding {
   top?: ReactNode
   /** the filters set show over the rows (and take themselves off) */
   filters?: boolean
-  /** the desktop's views opened onto all their lines from the start (⌄, F670) */
+  /** the desktop's views opened onto all their lines from the start (⌄, T670) */
   viewsOpen?: boolean
   /** a row being dragged (`out`: off every row) */
   dragging?: { out: boolean }
@@ -68,8 +69,8 @@ export interface Holding {
   firstRun?: Partial<{ agent: boolean; input: boolean; phone: boolean }>
   /** what a prototype adds to a row (D152: its tags, a group, what it waits for) */
   facts?(it: Item): Partial<RowFacts>
-  /** D152 prototype: the # tags, the one the list shows and each item's (the filters' Tags, the row set over the list) */
-  tags?: TagFilter & { of(it: Item): readonly string[] }
+  /** a prototype's own tag the list shows (else the filters' own) */
+  tags?: { on: string | null; pick(t: string | null): void }
 }
 
 /** The list as the page draws it, holding what the page holds for it (the route's tab and filters, stores.ui's folded
@@ -86,9 +87,9 @@ const toggle = (set: ReadonlySet<number>, n: number) => {
 
 function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Tab; q: Partial<ListQuery>; desk: boolean; h: Holding }) {
   const all = modelOf(items)
-  // a tag picked (D152 prototype): only the items with it; each row still drawn from the whole project
+  // a prototype's tag picked: only the items with it; each row still drawn from the whole project
   const tag = h.tags?.on ?? null
-  const m = tag && h.tags ? modelOf(items.filter((it) => h.tags?.of(it).includes(tag))) : all
+  const m = tag ? modelOf(items.filter((it) => it.tags.includes(tag))) : all
   const [where, setWhere] = useState<{ tab: Tab; query: ListQuery }>({ tab: tab0, query: { ...NO_FILTERS, ...q0 } })
   const { tab, query } = where
   const [folded, setFolded] = useState(() => new Set(h.folded))
@@ -102,7 +103,7 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
   const moved = tab !== tab0 || JSON.stringify(query) !== JSON.stringify({ ...NO_FILTERS, ...q0 })
   if (h.held && !moved) {
     const was = listBody(modelOf(h.held.before), tab, query, st)
-    rows = heldRows(was.kind === 'rows' ? was.rows : [], m, tab, query, new Map(Object.entries(h.held.said).map(([n, s]) => [Number(n), heldMark({ said: s, f: 'status', v: m.byN.get(Number(n))?.status })])))  // struck when the change closed it (B766)
+    rows = heldRows(was.kind === 'rows' ? was.rows : [], m, tab, query, new Map(Object.entries(h.held.said).map(([n, s]) => [Number(n), heldMark({ said: s, f: 'status', v: m.byN.get(Number(n))?.status })])))  // struck when the change closed it (T766)
   }
   const drawn0 = drawRows(all, rows, { slug: 'demo', openN: h.open ?? null, selected, words: [], desk, drafts: new Set(), head: queueHead(m.items), seen: { since: T }, drag: { n: h.drag?.n ?? null, at: h.drag?.at ?? null } })
   const drawn = h.facts ? drawn0.map((r) => (r.kind === 'item' || r.kind === 'needs' ? { ...r, facts: { ...r.facts, ...h.facts?.(r.it) } } : r)) : drawn0
@@ -128,7 +129,7 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
     view: (value) => (value === 'archive' ? setWhere({ tab: 'archive', query: { ...query, status: 'all' } }) : show({ status: value }, true)),
     ownView: (i) => {
       const v = h.saved?.[i]
-      if (v) show({ type: v.type, when: v.when, status: v.status, pri: v.pri, sort: v.sort }, false)
+      if (v) show({ tag: v.tag, when: v.when, status: v.status, pri: v.pri, sort: v.sort }, false)
     },
     ...h.on,
   }
@@ -136,16 +137,15 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
   const [filtersOpen, setFiltersOpen] = useState(false)
   // the desktop's views row: Filters at its start (opens the filters over the rows), ⌄ opens it onto all its lines
   const [viewsOpen, setViewsOpen] = useState(!!h.viewsOpen)
-  const set: [ListKey, ReactNode][] = [...(tag ? [['type', '#' + tag] as [ListKey, string]] : []), ...filtersSet(tab, query)]
+  const set: [ListKey, ReactNode][] = [...(tag ? [['tag', '#' + tag] as [ListKey, string]] : []), ...filtersSet(tab, query)]
   const filterOn: FilterEvents = {
-    set: (k, v) => setWhere({ tab, query: { ...query, [k]: v } }),
-    // the tag's chip takes the type's place (D152 prototype)
-    unset: (k) => (h.tags && k === 'type' ? h.tags.pick(null) : setWhere({ tab, query: { ...query, [k]: NO_FILTERS[k] } })),
-    reset: () => (h.tags?.pick(null), setWhere({ tab, query: { ...query, type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' } })),
+    set: (k, v) => (h.tags && k === 'tag' ? h.tags.pick(v === 'all' ? null : v) : setWhere({ tab, query: { ...query, [k]: v } })),
+    unset: (k) => (h.tags && k === 'tag' ? h.tags.pick(null) : setWhere({ tab, query: { ...query, [k]: NO_FILTERS[k] } })),
+    reset: () => (h.tags?.pick(null), setWhere({ tab, query: { ...query, tag: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' } })),
     saveView: act('Filters: save as a view'),
   }
   const filters = desk ? (
-    <DeskFilters tab={tab} list={query} set={set} open={filtersOpen} place="" hidden={false} tags={h.tags} on={{ ...filterOn, toggle: () => setFiltersOpen(!filtersOpen) }} />
+    <DeskFilters tab={tab} list={h.tags ? { ...query, tag: tag ?? 'all' } : query} set={set} open={filtersOpen} place="" hidden={false} tags={projectTags(items)} on={{ ...filterOn, toggle: () => setFiltersOpen(!filtersOpen) }} />
   ) : (
     <FilterStrip set={set} hidden={false} onUnset={(k) => filterOn.unset(k as ListKey)} onReset={filterOn.reset} />
   )
@@ -168,7 +168,7 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
               why={why}
               status={query.status}
               organizerOn={m.facts.organizer.on}
-              onReset={() => setWhere({ tab, query: { ...query, type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' } })}
+              onReset={() => setWhere({ tab, query: { ...query, tag: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' } })}
               onConnect={act('List: connect an agent → Agents')}
               firstRun={{ ...firstSteps(m), ...h.firstRun, on: firstActs }}
             />

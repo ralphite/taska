@@ -1,4 +1,4 @@
-// F479: the desktop's search (pages/SearchDialog): saying what to find with the mic at the field's end. The
+// T479: the desktop's search (pages/SearchDialog): saying what to find with the mic at the field's end. The
 // journeys: stories/searchDesk.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { deskStory } from '../stories/searchDesk'

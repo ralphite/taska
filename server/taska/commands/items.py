@@ -13,19 +13,42 @@ from ..domain.history import followed, last_archive, status_set_by
 from ..domain.model import FileRef, Item
 from ..domain.rules import RefContext, descendants, item_at, open_kids, replied, user_word, waiting
 from ..domain.state import ProjectState
-from ..domain.vocab import CLOSED, DEFAULT_PRI, LETTER, MAX_TEXT, MESSAGE_KINDS, PEOPLE, PRIORITIES, STATUSES, WHENS, Refused
+from ..domain.vocab import CLOSED, DEFAULT_PRI, MAX_TEXT, MESSAGE_KINDS, PEOPLE, PRIORITIES, STATUSES, TAG, WHENS, Refused
 from .base import Args, Outcome, Run, handles
 
 _NONE_WORDS = ("", "-", "none", "null")
 _DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
+MAX_TAGS = 10
+NO_TYPES = "there are no types any more: write a tag instead"
+
+
+def tags_value(v: Any) -> List[str]:
+    """Tags as sent (a list, or words with or without #), checked: lower case, without the #, each once."""
+    words = v if isinstance(v, (list, tuple)) else str(v or "").replace(",", " ").split()
+    out: List[str] = []
+    for w in words:
+        t = str(w).strip().lstrip("#").lower()
+        if not t:
+            continue
+        if not TAG.fullmatch("#" + t):
+            raise Refused(f"bad tag '{w}': a tag is letters, digits, - and _ (up to 30), like #bug or #手机")
+        if t not in out:
+            out.append(t)
+    if len(out) > MAX_TAGS:
+        raise Refused(f"at most {MAX_TAGS} tags")
+    return out
+
+
+def tag_words(tags: List[str]) -> str:
+    return " ".join("#" + t for t in tags)
 
 
 def field_value(state: ProjectState, name: str, v: Any, ctx: Optional[RefContext] = None, me: Optional[Item] = None) -> Any:
     """A field's value as sent, checked and in its stored form."""
     if name == "type":
-        v = str(v).lower()
-        if v not in LETTER:
-            raise Refused(f"type must be one of {'/'.join(LETTER)}")
+        raise Refused(f"{NO_TYPES} (#bug)")
+    elif name == "tags":
+        return tags_value(v)
     elif name == "pri":
         v = str(v).upper()
         if v not in PRIORITIES:
@@ -84,7 +107,9 @@ def field_value(state: ProjectState, name: str, v: Any, ctx: Optional[RefContext
 def new_item(r: Run, a: Args) -> Outcome:
     s = r.state
     title = field_value(s, "title", a.get("title", ""))  # checked in this order, so the first problem is the one told
-    kind = field_value(s, "type", a.get("type") or "idea")
+    if a.get("type"):
+        field_value(s, "type", a.get("type"))
+    tags = tags_value(a.get("tags") or [])
     pri = field_value(s, "pri", a.get("pri") or DEFAULT_PRI)
     when = field_value(s, "when", a.get("when") or "now")
     body = field_value(s, "body", a.get("body") or "")
@@ -94,7 +119,7 @@ def new_item(r: Run, a: Args) -> Outcome:
     said = s.inputs.get(str(src)) if src else None
     asked_for = parent is not None and said is not None and said.by in PEOPLE  # a part the user asked for (B818)
     status = item_states.starts(r.by, asked_for) if not r.person else field_value(s, "status", a.get("status") or "open")
-    e = ev.ItemAdded(n=s.max_n + 1, by=r.by, title=title, src=src, type=kind, pri=pri, when=when,
+    e = ev.ItemAdded(n=s.max_n + 1, by=r.by, title=title, src=src, tags=tags, pri=pri, when=when,
                      status=status, body_text=body, next=nxt, parent=parent, keep=r.keep())
     if r.by == "org" and e.status == "review":  # only an agent finishing its work puts an item in review
         e.status = "open"
@@ -193,8 +218,24 @@ def set_fields(r: Run, a: Args) -> Outcome:
         note += " (its open question is taken back: the user only accepts the result now)"
     if r.person:  # what you do from the page goes to the subitems; an agent's changes stay as they were
         cascade(r, it, f, was, src)
-    said = " ".join(f"{k}={v}" if k in ("pri", "when", "status", "type", "parent", "archived", "later_until") else k for k, v in f.items())
+    said = " ".join(f"{k}={v}" if k in ("pri", "when", "status", "parent", "archived", "later_until")
+                    else f"tags={tag_words(v) or '-'}" if k == "tags" else k for k, v in f.items())
     return Outcome(f"ok {code} {said}{note}{r.gone_note(it)}", "Updated " + code)
+
+
+@handles("tag")
+def tag(r: Run, a: Args) -> Outcome:
+    """Tags put on and taken off (`B03 #bug -#手机`): {"op": "tag", "ref": "B03", "add": ["bug"], "del": ["手机"]}."""
+    s = r.state
+    it = item_at(s, a.get("ref", ""), r.ctx)
+    code = s.code(it.n)
+    add, off = tags_value(a.get("add") or []), tags_value(a.get("del") or [])
+    now = tags_value([t for t in it.tags if t not in off] + add)
+    said = " ".join([f"+#{t}" for t in add] + [f"-#{t}" for t in off])
+    if now == it.tags:
+        return Outcome(f"ok {code} no change (tags now: {tag_words(now) or 'none'})", "")
+    r.emit(ev.FieldsSet(n=it.n, by=r.by, f={"tags": now}, was={"tags": list(it.tags)}, src=_src(r, a), keep=r.keep()))
+    return Outcome(f"ok {code} {said} (tags now: {tag_words(now) or 'none'}){r.gone_note(it)}", "Updated " + code)
 
 
 def _message_files(r: Run, a: Args) -> List[FileRef]:

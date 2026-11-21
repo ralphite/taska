@@ -14,7 +14,7 @@ from . import events as ev, input_states
 from .markdown import blocks as md_blocks, block_key
 from .model import Comment, Doc, Input, Item, Message
 from .state import ProjectState
-from .vocab import CLOSED, DOC_KEY, NOTES, PEOPLE, TYPE_OF, USER_KINDS, Refused
+from .vocab import CLOSED, DOC_KEY, NOTES, OLD_LETTERS, PEOPLE, USER_KINDS, Refused
 
 Held = Callable[[Input], bool]
 
@@ -173,7 +173,7 @@ def item_at(state: ProjectState, ref: object, ctx: Optional[RefContext] = None, 
             raise Refused("$ is empty: no item created earlier in this request")
         s = str(ctx.last)
     m = _ITEM_REF.fullmatch(s)
-    if not m or (m.group(1) and m.group(1).upper() not in TYPE_OF):
+    if not m or (m.group(1) and m.group(1).upper() not in OLD_LETTERS):
         raise Refused(f"bad item ref '{s}'")
     it = state.items.get(int(m.group(2)))
     if not it:

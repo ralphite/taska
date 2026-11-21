@@ -1,4 +1,4 @@
-// A guided tour through a story (F566, D105): one config per tour, the steps in order. Each step says what to do,
+// A guided tour through a story (T566, D105): one config per tour, the steps in order. Each step says what to do,
 // names the part to tap (by its role and name, as a screen reader finds it, or by a data-* mark the page already has;
 // never a mark added for tours) and, when tapping it is not the whole of it, what the screen shows once it is done.
 // TourFrame draws it; engine.ts decides which step it is on.

@@ -1,4 +1,4 @@
-// F479: the desktop's search (pages/SearchDialog): the Search button in the sidebar's head, and each state of
+// T479: the desktop's search (pages/SearchDialog): the Search button in the sidebar's head, and each state of
 // finding by typing. The journeys: stories/searchDesk.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Pointed } from '../stories/tipFixtures'

@@ -8,7 +8,7 @@ import type { Item } from '../../model/types'
 import { Avatar, SectionHead, Soft } from '../../ui/bits'
 import { Icon, StateIcon } from '../../ui/Icon'
 import { overflows } from '../../ui/scroller'
-import { CHIP, FIELD, NEED, PRIMARY, SECOND, TYPE_TEXT } from '../../ui/tones'
+import { CHIP, FIELD, NEED, PRIMARY, SECOND, CODE_TEXT } from '../../ui/tones'
 import type { ItemEvents, ItemFacts } from './ItemPage'
 
 const WORKER_DOT = { working: 'bg-emerald-500', idle: 'bg-zinc-400', waiting: 'bg-orange-500' } as const
@@ -43,7 +43,7 @@ function LinkChip({ to, label, f, on }: { to: Item; label: string; f: ItemFacts;
       <Icon n="hourglass" c="size-3.5 opacity-60" />
       <span className="truncate">
         <span className="mr-1 text-zinc-500 dark:text-zinc-400">{label}</span>
-        <span className={`mr-1 font-mono font-bold ${TYPE_TEXT[to.type]}`}>{f.code(to.n)}</span>
+        <span className={`mr-1 font-mono font-bold ${CODE_TEXT}`}>{f.code(to.n)}</span>
         {to.title}
       </span>
     </button>
@@ -81,24 +81,15 @@ export function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents })
           {caret}
         </button>
       )}
-      {f.tags ? (
-        // D152 prototype: its # tags in place of its type, each showing the items with it; # opens its tags
-        <>
-          {f.tags.map((t) => (
-            <button key={t} title={`Items with #${t}`} onClick={() => on.tag?.(t)} className={`${CHIP} shrink-0 font-medium text-zinc-700 dark:text-zinc-200`}>
-              #{t}
-            </button>
-          ))}
-          <button title="Tags · T" aria-label="Tags" onClick={(e) => on.menu('t', e.currentTarget)} className={`${CHIP} shrink-0 text-zinc-500 dark:text-zinc-400`}>
-            {f.tags.length ? <Icon n="plus" c="size-3.5" sw="2.25" /> : <>#<span className="text-zinc-700 dark:text-zinc-200">Tag</span></>}
-          </button>
-        </>
-      ) : (
-        <button title="Type · T" onClick={(e) => on.menu('t', e.currentTarget)} className={`${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200`}>
-          {it.type[0].toUpperCase() + it.type.slice(1)}
-          {caret}
+      {/* its # tags (T855), each showing the items with it; # opens its tags */}
+      {it.tags.map((t) => (
+        <button key={t} title={`Items with #${t}`} onClick={() => on.tag(t)} className={`${CHIP} shrink-0 font-medium text-zinc-700 dark:text-zinc-200`}>
+          #{t}
         </button>
-      )}
+      ))}
+      <button title="Tags · T" aria-label="Tags" onClick={(e) => on.menu('t', e.currentTarget)} className={`${CHIP} shrink-0 text-zinc-500 dark:text-zinc-400`}>
+        {it.tags.length ? <Icon n="plus" c="size-3.5" sw="2.25" /> : <>#<span className="text-zinc-700 dark:text-zinc-200">Tag</span></>}
+      </button>
       {closed(it.status) || (
         <button title="Later · L" onClick={(e) => on.later(e.currentTarget)} className={`${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200`}>
           <Icon n="clock" c="size-3.5 opacity-60" />
@@ -129,7 +120,7 @@ export function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents })
           <Icon n="link" c="size-3.5 opacity-60" />
           <span className="truncate">
             <span className="mr-1 text-zinc-500 dark:text-zinc-400">Part of</span>
-            <span className={`mr-1 font-mono font-bold ${TYPE_TEXT[f.parent.type]}`}>{f.code(f.parent.n)}</span>
+            <span className={`mr-1 font-mono font-bold ${CODE_TEXT}`}>{f.code(f.parent.n)}</span>
             {f.parent.title}
           </span>
         </button>
@@ -249,7 +240,7 @@ export function Subitems({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents
             >
               <StateIcon {...shownStatus(k)} />
               <span className="min-w-0 flex-1 text-[15px] leading-snug">
-                <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[k.type]}`}>{f.code(k.n)}</span>
+                <span className={`mr-1.5 font-mono text-[13px] font-bold ${CODE_TEXT}`}>{f.code(k.n)}</span>
                 <span className={closed(k.status) ? 'line-through' : ''}>{k.title}</span>
               </span>
               {k.when === 'later' && !closed(k.status) ? (

@@ -92,8 +92,8 @@ class InEveryProject(unittest.TestCase):
         self.addCleanup(self.ws.close)
         for name in ("shop", "home"):
             p = self.ws.add(name)
-            text = (f"new feature P2 Export {'contacts with the sort kept' if name == 'home' else 'keeps the filter'}\n"
-                    "new feature P2 Saving drops the last word\n")
+            text = (f"new P2 Export {'contacts with the sort kept' if name == 'home' else 'keeps the filter'}\n"
+                    "new P2 Saving drops the last word\n")
             lines, _ = p.run(parse(text), "claude-code")
             self.assertNotIn("err", " ".join(lines))
 
@@ -138,7 +138,7 @@ class InEveryProject(unittest.TestCase):
         self.assertEqual([(x["project"], x["item"]["title"]) for x in view["found"][:2]],
                          [("shop", "Saving drops the last word"), ("home", "Saving drops the last word")])
         self.assertEqual(embed.texts("RETRIEVAL_QUERY"), ["the thing that drops words"])
-        self.assertIn(self.line("shop", "F2 "), embed.texts("RETRIEVAL_DOCUMENT"))
+        self.assertIn(self.line("shop", "T2 "), embed.texts("RETRIEVAL_DOCUMENT"))
 
     def test_vectors_are_kept_and_reused(self) -> None:
         embed = FakeEmbed()
@@ -162,14 +162,14 @@ class InEveryProject(unittest.TestCase):
         find_view(self.ws, "the thing that drops words", "shop")
         embed.calls.clear()
         shop = self.ws.projects["shop"]
-        shop.run(parse("new bug P1 Words go missing after a pause\n"), "claude-code")
+        shop.run(parse("new #bug P1 Words go missing after a pause\n"), "claude-code")
         view = find_view(self.ws, "missing words after a pause", "shop")
         self.assertEqual(view["found"][0]["item"]["title"], "Words go missing after a pause")
-        self.assertEqual(embed.texts("RETRIEVAL_DOCUMENT"), [self.line("shop", "B3 ")])
+        self.assertEqual(embed.texts("RETRIEVAL_DOCUMENT"), [self.line("shop", "T3 ")])
         embed.calls.clear()
         shop.run(parse("F1 title Export keeps the sort you set\n"), "claude-code")
         view = find_view(self.ws, "export with the sort", "shop")
-        self.assertEqual(embed.texts("RETRIEVAL_DOCUMENT"), [self.line("shop", "F1 ")])
+        self.assertEqual(embed.texts("RETRIEVAL_DOCUMENT"), [self.line("shop", "T1 ")])
         self.assertEqual(view["found"][0]["item"]["title"], "Export keeps the sort you set")
 
     def test_warm_up_embeds_and_lets_go_of_old_lines(self) -> None:
@@ -185,13 +185,13 @@ class InEveryProject(unittest.TestCase):
         assert m._thread is not None
         m._thread.join(2)
         store = Vectors(os.path.join(self.ws.root, "meaning.db"))
-        old = meaning.hash_of(self.line("shop", "F1 "))
+        old = meaning.hash_of(self.line("shop", "T1 "))
         self.assertIn(old, store.all(meaning.MODEL))
         self.ws.projects["shop"].run(parse("F1 title Export keeps every filter\n"), "claude-code")
         m.warm()
         kept = store.all(meaning.MODEL)
         self.assertNotIn(old, kept)
-        self.assertIn(meaning.hash_of(self.line("shop", "F1 ")), kept)
+        self.assertIn(meaning.hash_of(self.line("shop", "T1 ")), kept)
         self.assertEqual(len(kept), len({w for _, _, short in self.ws.short_lists() for _, w in short}))
 
     def test_nothing_close_enough_finds_nothing_by_meaning(self) -> None:

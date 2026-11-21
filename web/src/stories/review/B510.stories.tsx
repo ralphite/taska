@@ -1,4 +1,4 @@
-// B510 (#6652, #6730, #6738, #7013): an item the agent finished that also asks Yadong a question. Only its talk is
+// T510 (#6652, #6730, #6738, #7013): an item the agent finished that also asks Yadong a question. Only its talk is
 // drawn (#6730), with the items as the real server leaves them after the agent's and Yadong's commands.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ItemTalk } from '../../features/item/ItemPage'

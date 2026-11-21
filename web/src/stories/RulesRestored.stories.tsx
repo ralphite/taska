@@ -1,4 +1,4 @@
-// I693 (r1128): a restore is the next version, and Undo in the toast takes it back. The page's Rules screen with the
+// T693 (r1128): a restore is the next version, and Undo in the toast takes it back. The page's Rules screen with the
 // page's toast over it, as after Restore v4.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ruleWho } from '../model/rules'

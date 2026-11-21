@@ -37,7 +37,7 @@ function page(vault = memoryVault(), sending = false) {
 describe('a draft whose item went to another project (B799)', () => {
   it('its voice note goes along: kept for the item there, not up there yet, and back in its box when that project opens', async () => {
     const a = page()
-    const there = { ...model, width: 1, byN: new Map([[5, { n: 5, type: 'task' }]]) } as unknown as ProjectModel
+    const there = { ...model, width: 1, byN: new Map([[5, { n: 5 }]]) } as unknown as ProjectModel
     await a.kept.restore('q', there) // that project had opened in this page before
     const rid = a.kept.id()
     a.kept.hold(rid, new Blob(['sound'], { type: 'audio/webm' }))

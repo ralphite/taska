@@ -1,6 +1,6 @@
 """The command language agents write to /do: one command per line; indented lines continue the command above.
 
-    new bug P1 now parent=B03 src=r12 Export ignores the active filter
+    new P1 now #bug parent=B03 src=r12 Export ignores the active filter
     B03 doing
     B03 ask Keep the old export?
       - ( ) Yes
@@ -22,7 +22,8 @@ Parsed = List[Tuple[int, Union[Command, Refused]]]
 
 _OPTION = re.compile(
     r"(?i)(?P<open>\[)?(?:(?P<kv>(?:src|parent|pri|when|status|type|files)=[^\s\]]+)|(?P<pri>P[0-3])|(?P<when>now|later)"
-    r"|(?P<st>open|doing|review|done|drop|dropped)|(?P<type>feature|bug|idea|task|rule)|(?P<arch>archive|unarchive))"
+    r"|(?P<st>open|doing|review|done|drop|dropped)|(?P<type>feature|bug|idea|task|rule)|(?P<arch>archive|unarchive)"
+    r"|(?P<tag>-?#[\w-]{1,30}))"
     r"(?(open)\])(?=\s|$)")  # [P1] reads as P1
 _END_OPTION = re.compile(r"(?i)\s+\[?(src|parent)=([^\s\]]+)\]?\s*$")  # an option at the end of a title
 _ITEM_WORD = re.compile(r"\$|[A-Za-z]?\d+")
@@ -31,7 +32,7 @@ _DOC_WORD = re.compile(r"[Dd]\d+")
 
 def options(s: str, before_title: bool = False) -> Tuple[Dict[str, Any], str]:
     """The option words at the start of `s` -> (options, the rest). Before a title, a lone status word, a
-    capitalized word or a second word of a kind already given starts the title: "new task P1 now Review the pages"
+    capitalized word or a second word of a kind already given starts the title: "new P1 now Review the pages"
     is titled "Review the pages" (status= still counts)."""
     out: Dict[str, Any] = {}
     pos = 0
@@ -39,14 +40,19 @@ def options(s: str, before_title: bool = False) -> Tuple[Dict[str, Any], str]:
         m = _OPTION.match(s, pos)
         if not m:
             break
-        if before_title and not m["kv"] and not m["pri"]:
+        if before_title and not m["kv"] and not m["pri"] and not m["tag"]:
             word = m.group(0).strip("[]")
             kind = "status" if m["st"] else "when" if m["when"] else "archived" if m["arch"] else "type"
             if m["st"] or word != word.lower() or kind in out:
                 break
-        if m["kv"]:
+        if m["tag"]:
+            t = m["tag"]
+            out.setdefault("del" if t.startswith("-") else "tags", []).append(t.lstrip("-#").lower())
+        elif m["kv"]:
             k, v = m["kv"].split("=", 1)
             out[k.lower()] = v
+            if k.lower() == "type":
+                out["_type"] = (m.start(), m.end(), v.lower())
         elif m["pri"]:
             out["pri"] = m["pri"]
         elif m["when"]:
@@ -57,10 +63,19 @@ def options(s: str, before_title: bool = False) -> Tuple[Dict[str, Any], str]:
             out["archived"] = m["arch"].lower() == "archive"
         else:
             out["type"] = m["type"].lower()
+            out["_type"] = (m.start(), m.end(), out["type"])
         pos = m.end()
         while pos < len(s) and s[pos].isspace():
             pos += 1
     return out, s[pos:]
+
+
+def _no_type(head: str, words: str, opts: Dict[str, Any]) -> None:
+    """Items have no types (T855): a type word is refused with the same command written with a tag instead."""
+    start, end, kind = opts["_type"]
+    tag = "#bug " if kind == "bug" else ""
+    rewritten = " ".join((head + " " + words[:start] + tag + words[end:].lstrip()).split())
+    raise Refused(f"there are no types any more: write a tag instead: {rewritten}")
 
 
 def parse(text: str) -> Parsed:
@@ -141,24 +156,34 @@ def command(head: str, cont: str) -> Union[Command, List[Command]]:
     opts, left = options(rest)
     if not opts:
         raise Refused(f"cannot read '{rest or '(nothing)'}' after {word}")
+    if "_type" in opts:
+        _no_type(word, rest, opts)
     src = opts.pop("src", None)
-    change = {"op": "set", "ref": word, "f": opts, "src": src}
+    add, off = opts.pop("tags", []), opts.pop("del", [])
+    out: List[Command] = []
+    if opts:
+        out.append({"op": "set", "ref": word, "f": opts, "src": src})
+    if add or off:  # B03 #bug -#手机
+        out.append({"op": "tag", "ref": word, "add": add, "del": off, "src": src})
     words = (left + ("\n" + cont if cont else "")).strip()
-    # "B03 done <what changed>" says it too
-    return [change, {"op": "say", "ref": word, "kind": "progress", "text": words}] if words else change
+    if words:  # "B03 done <what changed>" says it too
+        out.append({"op": "say", "ref": word, "kind": "progress", "text": words})
+    return out[0] if len(out) == 1 else out
 
 
 def _new(rest: str, cont: str) -> Command:
     opts, title = options(rest, before_title=True)
     m = _END_OPTION.search(title)
-    while m:  # "new task Write the docs [src=r12]": the option at the end counts too
+    while m:  # "new Write the docs [src=r12]": the option at the end counts too
         opts.setdefault(m[1].lower(), m[2])
         title = title[:m.start()]
         m = _END_OPTION.search(title)
+    if "_type" in opts:
+        _no_type("new", rest, opts)
     if not title:
         raise Refused("new needs a title")
     out: Command = {"op": "new", "title": title, "body": cont}
-    for k in ("type", "pri", "when", "status", "parent", "src"):
+    for k in ("tags", "pri", "when", "status", "parent", "src"):
         if k in opts:
             out[k] = opts[k]
     return out

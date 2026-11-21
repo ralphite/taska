@@ -3,7 +3,7 @@
 // keystroke: a change you make shows at once, before the server has it.
 
 import type { Input, Item, Message, Status } from './types'
-import { CLOSED, NOTES, TASKA, USER_KINDS, WORK_TYPES } from './vocab.gen'
+import { CLOSED, NOTES, TASKA, USER_KINDS } from './vocab.gen'
 import { ago } from './time'
 import { STATUS_WORD } from './words'
 
@@ -65,7 +65,7 @@ export const canDone = (it: Item) =>
 /** In the agents' queue to be done now, by the server's own rule (agent_text/work.py next_work; T728 #4): work to do
  * now, open or in progress, not waiting on you. A proposal or work in review is not in it. */
 export const queuedNow = (it: Item) =>
-  !it.mergedInto && !it.archived && it.when === 'now' && (WORK_TYPES as readonly string[]).includes(it.type) && (it.status === 'open' || it.status === 'doing') && !it.wait
+  !it.mergedInto && !it.archived && it.when === 'now' && (it.status === 'open' || it.status === 'doing') && !it.wait
 
 /** The order agents take the work: now before later, in progress first; then the user's own order (rank) before
  * priority: what they never placed goes in by priority, just before the first ranked item of a lower priority. */
@@ -169,3 +169,13 @@ export function ranksFor(items: readonly Item[], byN: ReadonlyMap<number, Item>,
   group.splice(group.indexOf(to) + (after ? 1 : 0), 0, it)
   return group.map((x, i) => ({ n: x.n, rank: i, was: x.rank ?? null })).filter((p) => p.was !== p.rank)
 }
+
+/** The project's tags (T855): every tag on its items, the most used first, then by name. */
+export function projectTags(items: readonly Item[]): string[] {
+  const count = new Map<string, number>()
+  for (const it of items) if (!it.mergedInto) for (const t of it.tags) count.set(t, (count.get(t) ?? 0) + 1)
+  return [...count.keys()].sort((a, b) => (count.get(b) ?? 0) - (count.get(a) ?? 0) || a.localeCompare(b))
+}
+
+/** An item's tags with `t` put on, or taken off when it has it. */
+export const toggledTag = (tags: readonly string[], t: string) => (tags.includes(t) ? tags.filter((x) => x !== t) : [...tags, t])

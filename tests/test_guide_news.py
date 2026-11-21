@@ -44,19 +44,19 @@ class GuideNews(ProjectCase):
             self.assertIn("  -   curl -s BASE/log?n=30     recent changes", out)
             self.assertIn("  +   curl -s BASE/log?n=30     recent changes, newest last", out)
             self.assertNotIn(HEAD, self.call("/next?by=codex&session=one"))  # once
-            self.assertNotIn(HEAD, self.call("/do?by=codex&session=one", "new task Tidy up\n"))
+            self.assertNotIn(HEAD, self.call("/do?by=codex&session=one", "new Tidy up\n"))
 
     def test_the_do_reply_tells_it_too(self) -> None:
-        self.call("/do?by=codex&session=two", "new task Tidy up\n")
+        self.call("/do?by=codex&session=two", "new Tidy up\n")
         with changed_guide():
-            out = self.call("/do?by=codex&session=two", "new task Tidy up more\n")
+            out = self.call("/do?by=codex&session=two", "new Tidy up more\n")
         self.assertIn("\n" + HEAD + "\n", out)
 
     def test_a_new_session_gets_none(self) -> None:
         self.call("/next?by=codex&session=old")
         with changed_guide():
             self.assertNotIn(HEAD, self.call("/next?by=codex&session=new"))
-            self.assertNotIn(HEAD, self.call("/do?by=claude-code", "new task Tidy up\n"))
+            self.assertNotIn(HEAD, self.call("/do?by=claude-code", "new Tidy up\n"))
 
     def test_reading_the_guide_marks_it_read(self) -> None:
         self.call("/next?by=codex&session=one")

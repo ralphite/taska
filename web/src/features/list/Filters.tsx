@@ -1,4 +1,4 @@
-// The list's filters: type, when (Archive), status (not on Items, whose views are its status), priority and sort,
+// The list's filters: tags, when (Archive), status (not on Items, whose views are its status), priority and sort,
 // and saving them as a view of your own (Items). On the phone a sheet with Show N items; on the desktop the Filters
 // button at the end of the views' row, and a row over the list with what is set, opening to the controls. Props only.
 
@@ -8,7 +8,7 @@ import { ARCHIVE_FILTER_WORD, SORT_WORDS, STATUS_FILTER_WORD, type Tab } from '.
 import { Icon } from '../../ui/Icon'
 import type { SheetParts } from '../../ui/Sheet'
 import { DISABLED, FIELD, HIT, PRIMARY } from '../../ui/tones'
-import { priOpts, SegCtl, typeOpts } from '../../ui/Segments'
+import { priOpts, SegCtl } from '../../ui/Segments'
 
 export interface FilterEvents {
   set(k: ListKey, v: string): void
@@ -17,39 +17,28 @@ export interface FilterEvents {
   saveView(name: string): void
 }
 
-/** D152 prototype: the project's # tags in place of the types: the one picked shows its items. */
-export interface TagFilter {
-  all: readonly string[]
-  on: string | null
-  pick(t: string | null): void
-}
-
 const PILL = (small: boolean) =>
   `relative ${small ? 'h-7 px-2.5' : 'h-9 px-3.5'} rounded-full bg-zinc-100 text-[13px] font-medium text-zinc-700 after:absolute after:inset-x-0 after:-inset-y-1 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900`
 
-export function FilterControls({ tab, list, small = false, tags, on }: { tab: Tab; list: ListQuery; small?: boolean; tags?: TagFilter; on: FilterEvents }) {
+/** `tags`: the project's, the most used first (T855); the one picked shows its items. */
+export function FilterControls({ tab, list, small = false, tags, on }: { tab: Tab; list: ListQuery; small?: boolean; tags: readonly string[]; on: FilterEvents }) {
   const [name, setName] = useState('')
   const lab = (t: string) => <div className={`px-1 ${small ? 'pb-1 text-[11px]' : 'pb-2 text-xs'} font-semibold text-zinc-500 dark:text-zinc-400`}>{t}</div>
   const statuses: [string, string][] = [['all', 'All'], ...(Object.entries(tab === 'archive' ? ARCHIVE_FILTER_WORD : STATUS_FILTER_WORD) as [string, string][])]
   return (
     <>
-      {tags ? (
+      {tags.length || list.tag !== 'all' ? (
         <div>
           {lab('Tags')}
           <div className="flex flex-wrap gap-1.5">
-            {[null, ...tags.all].map((t) => (
-              <button key={t ?? ''} onClick={() => tags.pick(t)} aria-pressed={tags.on === t} className={PILL(small)}>
-                {t == null ? 'All' : '#' + t}
+            {['all', ...(tags.includes(list.tag) || list.tag === 'all' ? tags : [list.tag, ...tags])].map((t) => (
+              <button key={t} onClick={() => on.set('tag', t)} aria-pressed={list.tag === t} className={PILL(small)}>
+                {t === 'all' ? 'All' : '#' + t}
               </button>
             ))}
           </div>
         </div>
-      ) : (
-        <div>
-          {lab('Type')}
-          <SegCtl opts={typeOpts(true)} on={list.type} small={small} pick={(v) => on.set('type', v)} />
-        </div>
-      )}
+      ) : null}
       {tab === 'archive' ? (
         <div>
           {lab('When')}
@@ -122,7 +111,7 @@ export function FilterControls({ tab, list, small = false, tags, on }: { tab: Ta
 }
 
 /** The phone's sheet: the controls, and Show with what it will show. */
-export function filtersSheet({ tab, list, filtered, shown, open, tags }: { tab: Tab; list: ListQuery; filtered: boolean; shown: number; open: number; tags?: TagFilter }, on: FilterEvents & { close(): void }): SheetParts {
+export function filtersSheet({ tab, list, filtered, shown, open, tags }: { tab: Tab; list: ListQuery; filtered: boolean; shown: number; open: number; tags: readonly string[] }, on: FilterEvents & { close(): void }): SheetParts {
   return {
     title: 'Filters',
     extra: filtered ? (
@@ -145,7 +134,7 @@ export function filtersSheet({ tab, list, filtered, shown, open, tags }: { tab: 
 export function DeskFilters({ tab, list, set, open, place, hidden, tags, on }: {
   tab: Tab
   list: ListQuery
-  tags?: TagFilter
+  tags: readonly string[]
   set: [ListKey, ReactNode][]
   open: boolean
   place: string

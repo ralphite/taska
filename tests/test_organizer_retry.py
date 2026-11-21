@@ -118,11 +118,11 @@ class BothModels(unittest.TestCase):
             return org.first_plan([{"text": "x"}], 0)
 
     def test_the_first_answer_wins(self):
-        self.assertEqual(self.ask({"pro": (0.2, "new task P1 now slow"), "flash": (0.0, "new task P1 now fast")}), "new task P1 now fast")
+        self.assertEqual(self.ask({"pro": (0.2, "new P1 now slow"), "flash": (0.0, "new P1 now fast")}), "new P1 now fast")
 
     def test_an_empty_or_failed_answer_waits_for_the_other(self):
-        self.assertEqual(self.ask({"pro": (0.1, "new task P1 now pro"), "flash": (0.0, "")}), "new task P1 now pro")
-        self.assertEqual(self.ask({"pro": (0.1, "new task P1 now pro"), "flash": (0.0, Refused("Gemini HTTP 503"))}), "new task P1 now pro")
+        self.assertEqual(self.ask({"pro": (0.1, "new P1 now pro"), "flash": (0.0, "")}), "new P1 now pro")
+        self.assertEqual(self.ask({"pro": (0.1, "new P1 now pro"), "flash": (0.0, Refused("Gemini HTTP 503"))}), "new P1 now pro")
 
     def test_both_failing_fails(self):
         with self.assertRaisesRegex(Refused, "503"):

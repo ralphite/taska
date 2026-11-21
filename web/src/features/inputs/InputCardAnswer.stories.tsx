@@ -1,5 +1,5 @@
 // An input that is your answer to an agent's question, one you moved to another project, and a recording you
-// cancelled, kept to send later (B627).
+// cancelled, kept to send later (T627).
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ONE } from '../../stories/inputFixtures'
 import { one } from '../../stories/inputCardFixtures'

@@ -16,7 +16,7 @@ import { voiceMark } from '../model/inputs'
 import { OUT_ACT_WORD, type OutAct, type OutShow, type OutTone } from '../model/outgoingStates'
 import { Icon, Spinner, StateIcon } from './Icon'
 import { PLACE_BUTTON, PlaceVoice } from './PlaceVoice'
-import { TYPE_TEXT } from './tones'
+import { CODE_TEXT } from './tones'
 
 export interface InputRowEvents {
   goto(n: number): void
@@ -65,7 +65,7 @@ function ItemLink({ it, narrow, on }: { it: ItemRef; narrow: boolean; on: Pick<I
   return (
     <button onClick={() => on.goto(it.n)} title={it.title} className="inline-flex min-w-0 items-center gap-1.5 text-left text-zinc-800 hover:underline dark:text-zinc-200">
       <StateIcon {...it.status} cls="size-4 shrink-0" />
-      <span className={`font-mono font-bold ${TYPE_TEXT[it.type]}`}>{it.code}</span>
+      <span className={`font-mono font-bold ${CODE_TEXT}`}>{it.code}</span>
       <span className={`truncate ${narrow ? 'max-w-[150px] sm:max-w-[180px]' : 'max-w-[260px] sm:max-w-[420px]'}`}>{it.title}</span>
     </button>
   )

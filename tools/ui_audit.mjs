@@ -167,7 +167,7 @@ async function file(url, problems, filed) {
     }
     const where = p.label ? `: "${p.label.slice(0, 30)}"` : ''
     const title = `UI audit: ${KINDS[p.kind]}${where} (${p.stories[0].title.split(' › ')[0].split('/').slice(-1)[0]})`
-    const body = [`new bug P1 now ${title.replace(/\n/g, ' ')}`, ...bugText(p).map((l) => '  ' + l)].join('\n') + '\n'
+    const body = [`new #bug P1 now ${title.replace(/\n/g, ' ')}`, ...bugText(p).map((l) => '  ' + l)].join('\n') + '\n'
     const r = await fetch(`${at}/do?by=ui-audit&session=nightly`, { method: 'POST', body })
     const said = await r.text()
     const code = /^ok ([A-Z]\d+) new/m.exec(said)?.[1]

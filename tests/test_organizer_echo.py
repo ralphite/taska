@@ -20,7 +20,7 @@ from taska.services.organizer import echo  # noqa: E402
 class Echo(ProjectCase):
     def setUp(self):
         super().setUp()
-        self.p.run([(0, {"op": "new", "type": "task", "pri": "P1", "when": "now", "title": "Demo plan"})], "you")
+        self.p.run([(0, {"op": "new", "pri": "P1", "when": "now", "title": "Demo plan"})], "you")
         self.p.run([(0, {"op": "input", "text": "Update this task from the latest code.", "q": "q1", "scope": 1})], "you")
         self.inp = self.p.state.inputs["r1"]
 
@@ -39,7 +39,7 @@ class Echo(ProjectCase):
 
     def test_any_message_on_that_item_is_dropped_one_elsewhere_stays(self):
         self.assertTrue(echo(self.p, self.inp, self.say("T001", "Noted: the plan follows the code.")))
-        self.p.run([(0, {"op": "new", "type": "task", "pri": "P1", "when": "now", "title": "Other"})], "you")
+        self.p.run([(0, {"op": "new", "pri": "P1", "when": "now", "title": "Other"})], "you")
         self.assertFalse(echo(self.p, self.inp, self.say("T002", "The part about the other task.")))
 
     def test_a_question_to_the_user_stays_on_those_items(self):

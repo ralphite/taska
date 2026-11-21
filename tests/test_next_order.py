@@ -23,15 +23,15 @@ class NextOrder(ServerCase):
         return code
 
     def test_replies_on_started_work_first_new_work_by_priority(self) -> None:
-        low = self.new("task P2 now Tidy the footer")
-        high = self.new("bug P0 now Saving drops the last word")
+        low = self.new("P2 now Tidy the footer")
+        high = self.new("#bug P0 now Saving drops the last word")
         self.do(f"{low} progress Looked at the footer: the colours are off.\n")
         self.page({"op": "say", "ref": low, "text": "Use the grey from the header."})
         self.assertIn(f"next {high}", self.next())  # a reply on work not begun waits for the P0
         self.do(f"{high} doing\n{high} done\n")
         self.assertIn(f"resume {low}: the user replied", self.next())  # then its turn comes, with the reply shown
         self.do(f"{low} doing\n{low} progress Tried the header's grey.\n")
-        other = self.new("bug P0 now Export ignores the filter")
+        other = self.new("#bug P0 now Export ignores the filter")
         self.page({"op": "say", "ref": low, "text": "Darker, please."})
         self.assertIn(f"resume {low}: the user replied", self.next())  # begun: his reply comes before the new P0
         self.assertNotIn(f"next {other}", self.next())

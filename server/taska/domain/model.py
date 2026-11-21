@@ -156,13 +156,12 @@ class Decision:
         return {"from": self.from_, "to": self.to, "msg": self.msg, "t": self.t}
 
 
-ITEM_FIELDS = ("title", "body", "next", "pri", "when", "status", "type", "parent", "archived", "rank", "later_until")
+ITEM_FIELDS = ("title", "body", "next", "pri", "when", "status", "tags", "parent", "archived", "rank", "later_until")
 
 
 @dataclass
 class Item:
     n: int
-    type: str
     title: str
     body: str
     pri: str
@@ -183,6 +182,7 @@ class Item:
     deleted: Optional[str] = None  # the input it was deleted with, or "#item" when deleted by itself
     deleted_at: Optional[str] = None
     later_until: Optional[str] = None  # Later until this day (YYYY-MM-DD, local): then back to Now by itself (D115 #21)
+    tags: List[str] = field(default_factory=list)  # #bug #手机: what it is, in place of the old types (T855)
 
     def get(self, name: str) -> Any:
         """A field that a change can set (ITEM_FIELDS)."""
@@ -198,7 +198,7 @@ class Item:
         return self.merged_into is None and not self.deleted
 
     def to_row(self) -> Row:
-        out: Row = {"n": self.n, "type": self.type, "title": self.title, "body": self.body, "pri": self.pri,
+        out: Row = {"n": self.n, "tags": list(self.tags), "title": self.title, "body": self.body, "pri": self.pri,
                     "when": self.when, "status": self.status, "parent": self.parent, "next": self.next,
                     "thread": [m.to_row() for m in self.thread], "srcs": list(self.srcs),
                     "merged_into": self.merged_into, "archived": self.archived, "t0": self.t0, "t1": self.t1,

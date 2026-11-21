@@ -67,8 +67,8 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   useEffect(() => (preview ? undefined : app.seen.see(slug, n, lastAgentT, !!it.archived)), [app, slug, n, lastAgentT, it.archived, preview])
   // opened: one of the search's Recent
   useEffect(() => {
-    if (!preview) stores.recent.getState().saw({ project: slug, kind: 'items', n, code: ref, title: it.title, type: it.type, status: it.status, pri: it.pri })
-  }, [stores, preview, slug, n, ref, it.title, it.type, it.status, it.pri])
+    if (!preview) stores.recent.getState().saw({ project: slug, kind: 'items', n, code: ref, title: it.title, status: it.status, pri: it.pri })
+  }, [stores, preview, slug, n, ref, it.title, it.status, it.pri])
 
   // the open question's choices: picked here, or before a reload (kept by their words)
   void view.choice
@@ -143,6 +143,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   }
   const send = (command: Command, said: string) => app.runner.change(slug, command, said)
   const on: ItemEvents = {
+    tag: (t) => app.nav.showTag(t),
     decide: (k, status) => {
       iv().setRemodify(null)
       void app.items.change(k, 'status', status)
@@ -195,7 +196,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     subTyped: (title) => app.itemEdits.subTyped(n, title),
     subAdd: (title) => {
       // same kind, priority and now/later as the parent; it shows under its parent at once (its code "…")
-      void send({ op: 'new', title, parent: ref, type: it.type, pri: it.pri, when: it.when }, `adding “${title}” under ${ref}`)
+      void send({ op: 'new', title, parent: ref, pri: it.pri, when: it.when }, `adding “${title}” under ${ref}`)
       app.itemEdits.subAdded(n)
       stores.ui.getState().unfold(n)
     },

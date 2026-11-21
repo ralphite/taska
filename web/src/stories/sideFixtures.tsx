@@ -39,7 +39,7 @@ const projects = (drop?: string, look?: SideFacts['look'], icons?: boolean) => {
   const list = sideProjects(ROWS, modelOf(PROJECT, [], { title: 'Shop' }), 'shop', AT).list
   return list?.map((p) => ({ ...(icons ? withIcon(p) : p), ...(p.slug === drop ? { drop: true } : {}), ...(look && p.slug === look.slug ? { look: look.as } : {}) })) ?? null
 }
-type SideFacts = { look?: { slug: string; as: NonNullable<SideProject['look']> }; /** projects with pictures (F743) */ icons?: boolean; brandPressed?: boolean; side?: 'docs' | 'log' | 'deleted'; undo?: string; composing?: boolean; drop?: string; naming?: string; namingValue?: string; width?: number; loading?: boolean; settings?: boolean; noLinks?: boolean }
+type SideFacts = { look?: { slug: string; as: NonNullable<SideProject['look']> }; /** projects with pictures (T743) */ icons?: boolean; brandPressed?: boolean; side?: 'docs' | 'log' | 'deleted'; undo?: string; composing?: boolean; drop?: string; naming?: string; namingValue?: string; width?: number; loading?: boolean; settings?: boolean; noLinks?: boolean }
 // naming: New project being named (and why it was not made: '' none yet); noLinks: no project open, so no Documents, Activity, Deleted
 
 /** The sidebar with the state the page keeps for it (stores.ui's sideHidden and naming, stores.grips' side width),

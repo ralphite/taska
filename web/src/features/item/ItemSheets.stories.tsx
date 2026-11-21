@@ -1,5 +1,5 @@
 // What an item came from (T591: Menus and sheets > Sheets): the page's own sheet with the inputs that made it, from
-// its chip in the item's head; what an agent reading it gets (F568), from its menu. A message's menu is in
+// its chip in the item's head; what an agent reading it gets (T568), from its menu. A message's menu is in
 // stories/MessageMenu.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
@@ -29,13 +29,13 @@ export const Sources: Story = {
     <Frames height={520} deskWidth={900} phoneWidth={393}>
       {(layout) => {
         const env = talkEnv(m, layout === 'desk')
-        return opened(sourcesSheet({ code: 'F012', inputs, world: env.world, now: m.at, files: (f) => <Thumbs files={f} url={env.url} play={env.play} tidy on={fileOn} /> }, act('What an item came from: go to input')), layout === 'desk')
+        return opened(sourcesSheet({ code: 'T012', inputs, world: env.world, now: m.at, files: (f) => <Thumbs files={f} url={env.url} play={env.play} tidy on={fileOn} /> }, act('What an item came from: go to input')), layout === 'desk')
       }}
     </Frames>
   ),
 }
 
-const CARD = `F012 bug P1 now open  Export keeps the filter
+const CARD = `T012 bug P1 now open  Export keeps the filter
 src r12 r15
 body:
 The export should keep the filter I set.
@@ -47,16 +47,16 @@ r15 10-30 13:20: in the thread above (#40)
 `
 export const WhatAgentsSee: Story = {
   name: 'What agents see',
-  render: () => <Frames height={420} deskWidth={900} phoneWidth={393}>{(layout) => opened(agentCardSheet('F012', CARD), layout === 'desk')}</Frames>,
+  render: () => <Frames height={420} deskWidth={900} phoneWidth={393}>{(layout) => opened(agentCardSheet('T012', CARD), layout === 'desk')}</Frames>,
 }
 export const WhatAgentsSeeLoading: Story = {
   name: 'What agents see: loading',
-  render: () => <Frames height={220} deskWidth={900} phoneWidth={393}>{(layout) => opened(agentCardSheet('F012', null), layout === 'desk')}</Frames>,
+  render: () => <Frames height={220} deskWidth={900} phoneWidth={393}>{(layout) => opened(agentCardSheet('T012', null), layout === 'desk')}</Frames>,
 }
 // ---- more states (T639): what the organizer made of each input, and an input that is only a voice note
 const filed = [
-  input({ id: 'r12', t: at(90), acked: true, touched: [12], text: 'The export should keep the filter I set.', org: { ok: true, msg: 'Created F012', t: '', keep: false, changed: true, undone: false } }),
-  shown(input({ id: 'r15', t: at(30), acked: true, touched: [12], text: '', files: [{ f: 'f4-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm' }], org: { ok: true, msg: 'Noted on F012', t: '', keep: false, changed: true, undone: false } }), record('f4-voice_0-07.webm', 'And the sort, please.', 'And the, um, the sort, please.')),
+  input({ id: 'r12', t: at(90), acked: true, touched: [12], text: 'The export should keep the filter I set.', org: { ok: true, msg: 'Created T012', t: '', keep: false, changed: true, undone: false } }),
+  shown(input({ id: 'r15', t: at(30), acked: true, touched: [12], text: '', files: [{ f: 'f4-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm' }], org: { ok: true, msg: 'Noted on T012', t: '', keep: false, changed: true, undone: false } }), record('f4-voice_0-07.webm', 'And the sort, please.', 'And the, um, the sort, please.')),
 ]
 const mf = modelOf([item({ n: 12, srcs: ['r12', 'r15'] })], filed)
 export const SourcesFiled: Story = {
@@ -65,7 +65,7 @@ export const SourcesFiled: Story = {
     <Frames height={520} deskWidth={900} phoneWidth={393}>
       {(layout) => {
         const env = talkEnv(mf, layout === 'desk')
-        return opened(sourcesSheet({ code: 'F012', inputs: filed, world: env.world, now: mf.at, files: (f) => <Thumbs files={f} url={env.url} play={env.play} tidy on={fileOn} /> }, act('What an item came from: go to input')), layout === 'desk')
+        return opened(sourcesSheet({ code: 'T012', inputs: filed, world: env.world, now: mf.at, files: (f) => <Thumbs files={f} url={env.url} play={env.play} tidy on={fileOn} /> }, act('What an item came from: go to input')), layout === 'desk')
       }}
     </Frames>
   ),
@@ -76,7 +76,7 @@ const days = laterDays(Date.parse(T))
 const later = (f: { later: boolean; until: string | null }): Story => ({
   render: () => (
     <Frames height={420} deskWidth={900} phoneWidth={393}>
-      {(layout) => opened(laterSheet('F012', { ...f, days, say: (d) => laterDay(d, Date.parse(T)) }, laterOn), layout === 'desk', { look: layout === 'desk' ? { pop: true, at: AT_BUTTON } : {} })}
+      {(layout) => opened(laterSheet('T012', { ...f, days, say: (d) => laterDay(d, Date.parse(T)) }, laterOn), layout === 'desk', { look: layout === 'desk' ? { pop: true, at: AT_BUTTON } : {} })}
     </Frames>
   ),
 })

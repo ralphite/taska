@@ -1,4 +1,4 @@
-// Shared rules (I779) as the page has them: three shared rules (通用, 编程, 写作) with their sections as the server
+// Shared rules (T779) as the page has them: three shared rules (通用, 编程, 写作) with their sections as the server
 // lists them, the projects that put them in, and Taska's rules that start with {{通用}} and {{编程}}; what an agent
 // reads for them is the server's own text (sharedRules.json, held to the server's code by tests/test_shared_rules.py).
 // The stories of the Rules tab's shared rules and of Settings › Shared rules draw these.

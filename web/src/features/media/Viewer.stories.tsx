@@ -10,7 +10,7 @@ export default { title: 'UI/Floating/Picture viewer' } satisfies Meta
 type Story = StoryObj
 
 /** a real screenshot larger than the window (1600×1001), so fitted and at 100% differ; not a drawing that reads as a
- * loading placeholder (B709) */
+ * loading placeholder (T709) */
 const BIG = SHOT
 const one = (fit: boolean, idx: number, count: number): Story => ({
   render: () => (

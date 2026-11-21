@@ -25,8 +25,8 @@ class TakeOutOfAMerge(ServerCase):
         return urllib.request.urlopen(self.p + f"/{code}?ui=1", timeout=10).read().decode()
 
     def test_taken_out_and_retired(self) -> None:
-        old = self.do("new task P1 now Long replies go in a document\n").split()[1]
-        new = self.do("new task P0 now How we talk\n").split()[1]
+        old = self.do("new P1 now Long replies go in a document\n").split()[1]
+        new = self.do("new P0 now How we talk\n").split()[1]
         self.do(f"{old} merge {new}\n")
         self.assertIn(f"merged into {new}", self.card(old))
         self.page({"op": "unmerge", "ref": old}, {"op": "set", "ref": old, "f": {"status": "dropped"}})

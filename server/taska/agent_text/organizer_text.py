@@ -37,8 +37,10 @@ INSTRUCTIONS = (
     "  input there: the user's own words stay where they said them, and agents read them with the item (B452).\n"
     '- A question or request addressed to the coding agent (how something works, "explain", "can you..."):\n'
     '  reply `pass` so the input stays in the inbox for the agent. Still create items for anything else it says.\n'
-    "- If it is new, `new <type> <P0-P3> <now|later> <short title>` with the user's own wording as the body, for\n"
-    '  example `new bug P2 now Export ignores the active filter`: plain words, no brackets.\n'
+    "- If it is new, `new <P0-P3> <now|later> <short title>` with the user's own wording as the body, for\n"
+    '  example `new P2 now Export ignores the active filter`: plain words, no brackets. Items have no types. Put a\n'
+    '  tag on only when the user names one ("#bug", "tag it bug", "\u6807\u6210 bug"): `new P2 now #bug <title>`,\n'
+    '  `<code> #bug`; never guess tags yourself.\n'
     "  (A new item already shows the input's words, pictures and voice notes: never add a message to it with say.)\n"
     "  The body is ALL the user's words about that item, every sentence: never shorten, summarize, reorder, rewrite\n"
     '  them by your own understanding or turn them into a list (F432: details the user gave were lost when a long voice\n'
@@ -70,7 +72,7 @@ INSTRUCTIONS = (
     '- Merge only clear duplicates. Prefer fewer, accurate changes. If nothing needs changing, reply: ack <input id>\n'
     '- When the user asks the agents to look at something and find the problems themselves (often with a screenshot:\n'
     '  "look at this, find what is wrong, fix it"), do not work out the problems yourself: create one item whose title\n'
-    "  only says what to look at, in the user's words (for example `new bug P2 now Problems on this screen`), with the\n"
+    "  only says what to look at, in the user's words (for example `new P2 now Problems on this screen`), with the\n"
     "  user's words as the body and nothing you read into the picture. The coding agent finds the problems and names\n"
     '  the item.\n'
     '\n'

@@ -17,7 +17,7 @@ class QuestionsInARow(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.p = Project(self.tmp.name, "demo")
-        self.run_one({"op": "new", "title": "Export", "type": "feature"}, "claude")
+        self.run_one({"op": "new", "title": "Export"}, "claude")
         self.asks = [self.ask(q) for q in ("Turn the page by itself?\n- ( ) Yes\n- ( ) No", "Send a part?\n- ( ) Yes\n- ( ) No", "What else?")]
 
     def tearDown(self):

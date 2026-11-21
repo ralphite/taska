@@ -26,7 +26,7 @@ const bar = (on: string, o: { needs?: number; own?: Own[]; list?: { open: boolea
       <ViewBar
         views={views(v.own >= 0 ? '' : v.on, o.needs)}
         own={o.own?.map((x, i) => ({ ...x, on: i === v.own }))}
-        // the desktop list's: Filters first, ⌄ / ⌃ last (F670)
+        // the desktop list's: Filters first, ⌄ / ⌃ last (T670)
         {...(o.list
           ? { lead: <FiltersButton set={false} open={v.filters} onClick={() => set({ ...v, filters: !v.filters })} />, more: { open: v.open, toggle: () => set({ ...v, open: !v.open }) } }
           : {})}
@@ -59,7 +59,7 @@ export const Views: Story = {
     </Frames>
   ),
 }
-/** The desktop's list (F670): Filters at the far left; when the views do not fit, ⌄ at the far right opens the row onto
+/** The desktop's list (T670): Filters at the far left; when the views do not fit, ⌄ at the far right opens the row onto
  * as many lines as it takes, your own views too, and ⌃ closes it to one line (kept in this browser). All fitting: no ⌄. */
 export const DesktopList: Story = {
   name: 'Desktop list: Filters first, ⌄ shows all',
@@ -81,7 +81,7 @@ export const DesktopListAllFit: Story = {
   name: 'Desktop list: all fit, no ⌄',
   render: () => <Frames phone={false} deskWidth={1100}>{() => bar('all', { list: { open: false } })}</Frames>,
 }
-// ---- more states (B636)
+// ---- more states (T636)
 export const YourOwnViewShownBeingRenamed: Story = {
   name: 'Your own view: shown, being renamed',
   render: () => (

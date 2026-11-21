@@ -18,7 +18,7 @@ PAGE = """<!doctype html><html><head><style>.card{font-size:14px;border-radius:8
 
 class VoiceContext(ProjectCase):
     def test_a_web_page_gives_its_words_not_its_markup(self) -> None:
-        self.p.run([(0, {"op": "new", "type": "task", "pri": "P1", "when": "now", "title": "Design ticket booking"})], "you")
+        self.p.run([(0, {"op": "new", "pri": "P1", "when": "now", "title": "Design ticket booking"})], "you")
         self.p.run([(0, {"op": "doc", "ref": "T1", "title": "Lecture", "md": PAGE, "fmt": "html"})], "you")
         words, items, _ = voice_context(self.p.state, 1)
         self.assertIn("Redis", words)

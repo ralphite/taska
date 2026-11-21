@@ -46,7 +46,7 @@ export const SaidLooks: Story = {
     </Frames>
   ),
 }
-/** Voice on a line (F657): pressed, it turns into the recording strip right there (B498's: ✕, the time and level, ✓
+/** Voice on a line (T657): pressed, it turns into the recording strip right there (T498's: ✕, the time and level, ✓
  * where Voice was), which stays while the pointer is elsewhere; ✓ stops it: transcribing on that line until its words
  * are in, then they are added at the end as Add more adds them. */
 export const SaidVoice: Story = {
@@ -77,7 +77,7 @@ const SAID = [
   'The orders list loads slowly when the filter is Last year.',
   'Search should find words in the talk too.',
   'The app icon looks blurry on the home screen.',
-  'Close B014 once the fix is on the phone.',
+  'Close T014 once the fix is on the phone.',
   'The total at the bottom of the cart is cut off on small screens.',
   'Look at why the build takes so long on the release branch.',
   'The Pay button stays grey after the card is filled in.',

@@ -1,4 +1,4 @@
-// F768 (Yadong r1290, r1296): the Agents sheet lists every session by its app, a manager's workers under it, each as it
+// T768 (Yadong r1290, r1296): the Agents sheet lists every session by its app, a manager's workers under it, each as it
 // is now; the one working or waiting for you is picked as it opens; each app's way back to its session.
 import { expect, test } from 'vitest'
 import { ALL_GONE, ITEMS, MANAGER, SID, WAITING, WORKING, sessionKey } from '../../stories/agentsFixtures'
@@ -17,7 +17,7 @@ test('grouped by app in a fixed order; workers right under their manager; waitin
   ])
   const manager = agentsFacts(at(MANAGER), null).groups[0].sessions[1]
   expect(manager.workers.map((w) => [w.name, w.state, w.on?.code ?? null])).toEqual([
-    ['worker-1', 'working', 'F005'],
+    ['worker-1', 'working', 'T005'],
     ['worker-2', 'idle', null],
   ])
 })
@@ -47,12 +47,12 @@ test('states: as the app says; else by when last heard of and whether on an item
 test('a session waiting for you says on what and how long; its pill how long it has been as it is', () => {
   const [s] = agentsFacts(at(WAITING), null).groups[0].sessions
   expect(s.waits).toEqual({ what: 'approve Bash: npm --prefix web run check', for: '4m' })
-  expect(s.on).toEqual({ n: 1, code: 'F001', title: 'Export keeps the filter you set' })
+  expect(s.on).toEqual({ n: 1, code: 'T001', title: 'Export keeps the filter you set' })
   expect(s.folder).toBe('~/dev/shop')
   expect(agentsFacts(at(WORKING), null).groups[0].sessions[0].pill).toBe('Working · 20m')
 })
 
-// B784: the list row says the same time as the session's pill, and a session idle and listening for work is Ready,
+// T784: the list row says the same time as the session's pill, and a session idle and listening for work is Ready,
 // as the project's pill says it.
 test('the row and the pill tell one time; idle and listening for work is Ready', () => {
   const [w] = agentsFacts(at(WORKING), null).groups[0].sessions
@@ -72,8 +72,8 @@ test("each app's way back: Claude Code's link by the session's id, Codex's resum
 test("recent activity: the session's own last messages, the latest first, each with its item", () => {
   const w1 = agentsFacts(at(MANAGER), null).groups[0].sessions.find((s) => s.name === 'worker-1')
   expect(w1?.activity.map((a) => [a.when, a.item.code, a.text])).toEqual([
-    ['6m', 'F005', 'Found words in the talk now show under the item, marked.'],
-    ['20m', 'F005', 'Started: the search reads the talk as well as the titles.'],
+    ['6m', 'T005', 'Found words in the talk now show under the item, marked.'],
+    ['20m', 'T005', 'Started: the search reads the talk as well as the titles.'],
   ])
 })
 
@@ -97,13 +97,13 @@ test('agents Taska has no app for are one group, Others, after the known apps (n
   expect(rows(seen)[1][1].length).toBe(2)
 })
 
-test('F768 r1305: one text to paste connects the agent: its folder once, then the work; no command apart', () => {
+test('T768 r1305: one text to paste connects the agent: its folder once, then the work; no command apart', () => {
   const f = agentsFacts(at([]), null)
   expect(f.ask).toMatch(/connect \| sh`.*\/agent`.*\/next`/)
   expect(f).not.toHaveProperty('cmd')
 })
 
-// I833 (Yadong r1433 r1435): a gone session another session of its app can bring back has Reconnect (by the id its
+// T833 (Yadong r1433 r1435): a gone session another session of its app can bring back has Reconnect (by the id its
 // app knows it by); Codex is woken through its own queue, and one at work has none
 test('Reconnect: a gone Claude Code or Antigravity session, by its id; not Codex, not one connected', () => {
   const by = (agents: AgentSeen[]) => Object.fromEntries(agentsFacts(at(agents), null).groups.flatMap((g) => g.sessions.map((s) => [`${s.app} ${s.name}`, s.reconnect])))

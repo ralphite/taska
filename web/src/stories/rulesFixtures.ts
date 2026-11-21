@@ -1,4 +1,4 @@
-// A project's rules document with versions (I693): who wrote each version, when, why, the text it left, an agent's
+// A project's rules document with versions (T693): who wrote each version, when, why, the text it left, an agent's
 // proposal on the current one, and the document as the page has it. The stories of the Rules tab draw these.
 
 import { comment, doc } from './docFixtures'

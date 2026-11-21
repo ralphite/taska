@@ -9,5 +9,5 @@ type Story = StoryObj
 
 export const Recording = recording()
 export const RecordingPointingAtTheCheck: Story = { ...recording({ hover: ['[aria-label="Stop and put words in the box"]'] }), name: 'Pointing at the check' }
-// ---- more states (B636)
+// ---- more states (T636)
 export const RecordingFromTheSecondMic: Story = { name: 'From the second mic', render: () => <Frames phoneWidth={393} deskWidth={640}>{(layout) => boxAt({ rec: true, recAux: true }, layout === 'desk')}</Frames> }

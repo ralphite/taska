@@ -1,4 +1,4 @@
-// The one shell of a guided tour (F566, D105): the phone or desktop frame, the spot on the part to tap next on a layer
+// The one shell of a guided tour (T566, D105): the phone or desktop frame, the spot on the part to tap next on a layer
 // that takes no clicks, and the line under the frame (the step, what to do, Next, a missing part, Start again). You
 // tap; nothing plays by itself. It looks at the screen once a frame and engine.ts says which step it is on. A Demo
 // (T589) draws the same shell round its page, with Play in the line.
@@ -9,7 +9,7 @@ import { finished } from './engine'
 import type { Tour } from './tour'
 import { useTour, type Spot, type TourView } from './useTour'
 
-/** Where to tap next, as guided tours on the web mark it (F566, r970/r1004): a round, see-through yellow spot laid over
+/** Where to tap next, as guided tours on the web mark it (T566, r970/r1004): a round, see-through yellow spot laid over
  * the part, a colour and shape Taska itself never uses: no frame, no words, nothing dimmed. It takes no clicks (they
  * reach the part under it). */
 export const Mark = ({ at }: { at: Spot }) => (

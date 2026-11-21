@@ -1,6 +1,6 @@
 // Words selected in a document (T591: Commenting > Words selected, Bar over selected words): the page's own document
 // with the browser's selection on some of its words, and the page's bar over them (SelectionBar), which the document
-// draws where they are as the page does (B708 r1149). Select other words in it and the bar follows them.
+// draws where they are as the page does (T708 r1149). Select other words in it and the bar follows them.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from './Frames'
 import { doc } from './docFixtures'

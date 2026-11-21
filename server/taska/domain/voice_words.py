@@ -10,7 +10,7 @@ import re
 from collections import Counter
 from typing import Any, Dict, List, Optional, Tuple
 
-from .vocab import LETTER
+from .vocab import CODE_LETTER
 from .state import ProjectState
 from .rules import by_priority
 from .text import page_text
@@ -90,7 +90,7 @@ def voice_context(st: ProjectState, scope: Optional[int]) -> Tuple["Counter[str]
     for it in pool:
         words.update(re.findall(r"[A-Za-z_][A-Za-z0-9_./\-]{2,}", it.title + " " + it.body))
     # B73, not B073: the way people say it; no "src=r119" left over in a title
-    items = [f"{LETTER[it.type]}{it.n} " + " ".join(re.sub(r"\bsrc=r\d+", " ", it.title).split())[:100] for it in pool[:30]]
+    items = [f"{CODE_LETTER}{it.n} " + " ".join(re.sub(r"\bsrc=r\d+", " ", it.title).split())[:100] for it in pool[:30]]
     if it0 is not None:
         kids = [k for k in st.items.values() if k.parent == scope]
         docs = [d for d in st.docs.values() if d.n == scope][-3:]
@@ -103,7 +103,7 @@ def voice_context(st: ProjectState, scope: Optional[int]) -> Tuple["Counter[str]
             for part in re.split(r"[\s\uff0c\u3002\u3001\uff1a:\uff1b;\uff08\uff09()\uff0f/\u00b7|+\uff0b-]+", w):
                 if re.search(r"[\u4e00-\u9fff]", part) and 2 <= len(part) <= 12:
                     words[part] += 3
-        items.insert(0, f"{LETTER[it0.type]}{it0.n} (the item being discussed: its text, thread, subitems and documents) "
+        items.insert(0, f"{CODE_LETTER}{it0.n} (the item being discussed: its text, thread, subitems and documents) "
                      + " ".join(re.sub(r"[#*`>|_-]+", " ", text).split())[-6000:])
     return words, items, [it.title for it in pool[:40]]
 

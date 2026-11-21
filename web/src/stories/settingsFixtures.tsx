@@ -54,7 +54,7 @@ const GONE: DeletedProject[] = [{ name: 'old', title: 'Old notes', t: at(60 * 24
 export const LOG: LogRow[] = [
   { seq: 41, t: at(5), who: 'claude-code', kind: 'say', n: 1, as: 'progress', text: 'Reproduced it: the export reads the list before the filter', ses: 'claude-code' },
   { seq: 40, t: at(20), who: 'you', kind: 'set', n: 4, set: [{ field: 'status', was: 'review', now: 'done' }] },
-  { seq: 39, t: at(60), who: 'claude-code', kind: 'add', n: 3, type: 'feature', pri: 'P1', when: 'now', title: 'Keep the filter in the export file name' },
+  { seq: 39, t: at(60), who: 'claude-code', kind: 'add', n: 3, pri: 'P1', when: 'now', title: 'Keep the filter in the export file name' },
 ]
 const FIXES: Spelling[] = [{ wrong: 'tasker', right: 'Taska' }, { wrong: 'cloud code', right: 'Claude Code' }, { right: 'Storybook' }]
 
@@ -75,13 +75,13 @@ export interface SettingsHere {
   navPressed?: SectionKey
   /** Voice spellings: none yet */
   noSpellings?: boolean
-  /** no Gemini API key: the organizer off (F765) */
+  /** no Gemini API key: the organizer off (T765) */
   organizerOff?: boolean
-  /** where the key comes from: Settings (the default when on) or the environment (F765) */
+  /** where the key comes from: Settings (the default when on) or the environment (T765) */
   keyFrom?: 'settings' | 'env'
   /** a key being checked and saved */
   keySaving?: boolean
-  /** projects with pictures (F743) */
+  /** projects with pictures (T743) */
   icons?: boolean
   /** each list still to load, or with nothing in it (T639) */
   projectsLoading?: boolean
@@ -96,7 +96,7 @@ export interface SettingsHere {
   noDocs?: boolean
   log?: 'loading' | 'empty' | 'asking' | 'more'
   nothingDeleted?: boolean
-  /** Shared rules (I779): still to load, or none yet */
+  /** Shared rules (T779): still to load, or none yet */
   shared?: 'loading' | 'none'
 }
 
@@ -112,9 +112,9 @@ export const shopWithHistory = (agents: AgentSeen[] = SEEN, o: { work?: boolean;
     key: 'a1b2-c3d4',
     organizer: { on: true, model: 'gemini-flash-latest', busy: [] },
     undo: [{ seq: 40, n: 4, f: { status: 'done' }, was: { status: 'review' }, t: at(20) }],
-    deleted: [{ kind: 'item', n: 9, code: 'B009', title: 'Export button too small on the phone', at: at(90), more: 2 }, { kind: 'doc', d: 3, title: 'Old export notes', at: at(200), on: 'F001' }],
+    deleted: [{ kind: 'item', n: 9, code: 'T009', title: 'Export button too small on the phone', at: at(90), more: 2 }, { kind: 'doc', d: 3, title: 'Old export notes', at: at(200), on: 'T001' }],
     deletedInputs: [
-      { id: 'r8', t: at(60 * 3), at: at(70), text: 'The coupons page should list the expired ones too', files: 0, scope: null, items: [{ n: 15, code: 'F015', title: 'Expired coupons on the coupons page', type: 'feature' }], kept: [] },
+      { id: 'r8', t: at(60 * 3), at: at(70), text: 'The coupons page should list the expired ones too', files: 0, scope: null, items: [{ n: 15, code: 'T015', title: 'Expired coupons on the coupons page', tags: [] }], kept: [] },
       { id: 'r6', t: at(60 * 26), at: at(120), text: 'the drawer jumps when it opens', files: 0, scope: null, items: [], kept: [] },
       { id: 'r5', t: at(60 * 30), at: at(150), text: '', files: 2, scope: null, items: [], kept: [] },
     ],

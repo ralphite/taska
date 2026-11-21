@@ -1,4 +1,4 @@
-// The rules' parts alone (I693), each state side by side: the bar's name, an agent's proposal (waiting, opened,
+// The rules' parts alone (T693), each state side by side: the bar's name, an agent's proposal (waiting, opened,
 // approved, declined, sent back), the text with a version's changes marked and the unchanged runs folded, the versions
 // by day, the why line, a version's tools, the phone's Restore, the question a restore asks, no rules yet.
 import type { Meta, StoryObj } from '@storybook/react-vite'

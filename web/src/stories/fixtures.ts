@@ -14,8 +14,8 @@ export const DIAGRAMS = new Diagrams()
 
 export function item(f: Partial<Item> & { n: number }): Item {
   return {
-    code: 'F' + String(f.n).padStart(3, '0'),
-    type: 'feature',
+    code: 'T' + String(f.n).padStart(3, '0'),
+    tags: [],
     title: 'Export ignores the active filter',
     body: '',
     pri: 'P2',
@@ -42,7 +42,7 @@ export function message(f: Partial<Message> & { id: number }): Message {
   return { by, kind: 'progress', text: 'Reproduced it: the export reads the list before the filter.', t: T, src: null, files: [], ...(by === 'you' || by === 'org' ? {} : { ses: 'Shop project work' }), ...f }
 }
 
-/** A voice note's words as Taska keeps them: its one record (B682). A story gives a note words only this way. */
+/** A voice note's words as Taska keeps them: its one record (T682). A story gives a note words only this way. */
 export const record = (f: string, tidied: string, said = tidied, state: Voice['state'] = tidied ? 'done' : 'none'): Voice => ({ f, state, said, tidied })
 
 /** The steps that worked out a note's words, as the server keeps them (T697): the strong and the speech model at
@@ -74,7 +74,7 @@ export function input(f: Partial<Input> & { id: string }): Input {
 }
 
 export function facts(f: Partial<RowFacts> = {}): RowFacts {
-  return { code: 'F012', parentCode: null, image: null, kids: null, openKids: 0, talk: 0, draft: false, next: false, unread: false, worker: null, news: null, hitLine: null, ...f }
+  return { code: 'T012', parentCode: null, image: null, kids: null, openKids: 0, talk: 0, draft: false, next: false, unread: false, worker: null, news: null, hitLine: null, ...f }
 }
 
 export const look = (desk: boolean, f: Partial<RowLook> = {}): RowLook => ({ current: false, selected: false, words: [], desk, ...f })
@@ -88,13 +88,14 @@ export const noRowEvents: RowEvents = {
   reopen: fn().mockName('Row: reopen'),
   fold: fn().mockName('Row: fold'),
   goto: fn().mockName('Row: goto'),
+  tag: fn().mockName('Row: tag'),
   picture: fn().mockName('Row: picture'),
 }
 
 /** A small picture for a thumbnail: a real screenshot of Taska (its demo data), as people send them; never a drawing
- * that reads as a loading placeholder (B709). */
+ * that reads as a loading placeholder (T709). */
 export const PICTURE = SHOT_SMALL
-/** a short video as Storybook serves the shop's files (F747) */
+/** a short video as Storybook serves the shop's files (T747) */
 export const VIDEO = '/p/shop/f/f8-demo.mp4'
 
 /** A project's facts as Taska is normally used: the organizer on, a coding agent around and waiting for work,
@@ -122,7 +123,7 @@ export function projectFacts(f: Partial<ProjectFacts> = {}): ProjectFacts {
 }
 
 /** A project's model made of these items and inputs, as the page would have it; a voice note's words come only from
- * its record (`voices`), as on the page (B682). */
+ * its record (`voices`), as on the page (T682). */
 export function modelOf(items: Item[], inputs: Input[] = [], f: Partial<ProjectFacts> = {}, docs: Doc[] = [], voices: Voice[] = []): ProjectModel {
   return project({
     cursor: '',

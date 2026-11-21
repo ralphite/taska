@@ -35,7 +35,7 @@ class SessionsInPresence(ProjectCase):
         return {s["name"]: s for s in rows[agent].get("sessions", [])}
 
     def test_worker_names_its_parent_and_holds_its_item(self) -> None:
-        self.p.run([(0, {"op": "new", "type": "task", "pri": "P1", "when": "now", "title": "Export loses the filter"})], "you")
+        self.p.run([(0, {"op": "new", "pri": "P1", "when": "now", "title": "Export loses the filter"})], "you")
         self.call(f"/next?by=claude-code&session=Manager&sid={CC}")
         self.call(f"/do?by=claude-code&session=worker-1&parent=Manager&sid={W1}", b"T1 doing\n")
         s = self.sessions("claude-code")

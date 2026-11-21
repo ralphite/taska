@@ -1,5 +1,5 @@
 // A row that needs you, by what it needs: a question, a checklist, proposed, waits for review, a change to the rules
-// proposed (I693).
+// proposed (T693).
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { T } from '../../stories/fixtures'
@@ -13,7 +13,7 @@ export const Question = one(question)
 export const ChecklistQuestion: StoryObj = { ...one({ it: ask('Which formats should the export offer?\n- [ ] CSV\n- [ ] Excel\n- [ ] JSON'), excerpt: 'Which formats should the export offer?' }), name: 'A checklist question' }
 export const Proposed = one({ it: { status: 'proposed', by: 'claude-code' }, excerpt: 'Proposed by Claude Code' })
 export const WaitsForReview: StoryObj = { ...one({ it: { status: 'review' }, excerpt: 'Done: the export keeps the filter now' }), name: 'Waits for review' }
-/** An agent's change to the rules waits on you: first in Needs you; View opens it, its changes marked (I693) */
+/** An agent's change to the rules waits on you: first in Needs you; View opens it, its changes marked (T693) */
 export const RulesProposed: StoryObj = {
   name: 'A change to the rules proposed',
   render: () => (

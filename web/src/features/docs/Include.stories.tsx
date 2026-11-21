@@ -1,4 +1,4 @@
-// I779 (D134): the parts that show shared rules in the rules, each state side by side on the phone and the desktop: a
+// T779 (D134): the parts that show shared rules in the rules, each state side by side on the phone and the desktop: a
 // line's block closed, opened in place, its name not found, the shared rules still coming; the editor's Shared
 // button and what is not found beside it; the list Insert picks from (none yet too); who uses a shared rule.
 import type { Meta, StoryObj } from '@storybook/react-vite'

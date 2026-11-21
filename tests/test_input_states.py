@@ -104,7 +104,7 @@ class UndoOfAFiling(ProjectCase):
         return "\n".join(self.p.run([(0, {"op": "filing-undo", "id": "r1"})], "you")[0])
 
     def file(self, ok: bool, msg: str) -> None:
-        self.p.run(parse("new bug Export ignores the filter"), "org", src="r1")
+        self.p.run(parse("new #bug Export ignores the filter"), "org", src="r1")
         self.p.emit(ev.Organized(src="r1", ok=ok, msg=msg, changed=True, by="org"))
         if ok:
             self.p.emit(ev.InputsAcked(ids=["r1"], by="org"))

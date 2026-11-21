@@ -93,11 +93,11 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
   }
 }
 
-/** A key in the desktop's item menu: the arrows walk it; with S, P or T shown, the key sets that field (as the
- * menu numbers it); S, P or T show that field. -> whether it was the menu's */
+/** A key in the desktop's item menu: the arrows walk it; with S or P shown, the key sets that field (as the menu
+ * numbers it); S, P or T show that field (T: its tags, whose field takes the keys typed in it). -> whether it was the menu's */
 function menuKey(app: App, e: KeyboardEvent, it: Item | undefined, arm: 's' | 'p' | 't' | null): boolean {
   const box = app.fields.get('sheet')
-  if (!box || !it) return false
+  if (!box || !it || e.target instanceof HTMLInputElement) return false
   const k = e.key
   if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(k)) {
     const btns = [...box.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')]
@@ -109,7 +109,7 @@ function menuKey(app: App, e: KeyboardEvent, it: Item | undefined, arm: 's' | 'p
   }
   if (k.length !== 1 || (e.shiftKey && k !== k.toLowerCase())) return false // C, D, A with Shift: the menu's own keys
   const statuses = pageStatuses(it)
-  const to = arm ? armedSet(arm, k, statuses) : null
+  const to = arm && arm !== 't' ? armedSet(arm, k, statuses) : null
   if (to) {
     e.preventDefault()
     app.sheets.close()
@@ -125,7 +125,7 @@ function menuKey(app: App, e: KeyboardEvent, it: Item | undefined, arm: 's' | 'p
   }
   if (/^[0-9]$/.test(k)) {
     e.preventDefault()
-    app.toasts.show(armHint(arm, it))
+    app.toasts.show(armHint(arm === 't' ? null : arm, it))
     return true
   }
   return false

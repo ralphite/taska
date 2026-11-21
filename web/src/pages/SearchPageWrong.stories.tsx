@@ -1,4 +1,4 @@
-// F479: the phone's search page (pages/SearchPage), each state of something going wrong. The journeys: stories/searchPhone.tsx.
+// T479: the phone's search page (pages/SearchPage), each state of something going wrong. The journeys: stories/searchPhone.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { stateStory } from '../stories/searchPhone'
 

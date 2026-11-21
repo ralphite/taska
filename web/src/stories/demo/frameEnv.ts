@@ -80,7 +80,7 @@ export function fixClock(w: Win, at: number) {
 export function fixMic(w: Win, clip?: string) {
   if (!w.navigator.mediaDevices) return
   // on what every MediaDevices has: in Safari's engine one set on the frame's own was not what the page called, and
-  // the real microphone was asked (B786)
+  // the real microphone was asked (T786)
   Object.defineProperty(w.MediaDevices.prototype, 'getUserMedia', { configurable: true, writable: true, value: getUserMedia })
   async function getUserMedia() {
     if (!clip) throw new DOMException('This Demo has no microphone', 'NotFoundError')

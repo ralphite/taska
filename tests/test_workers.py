@@ -29,7 +29,7 @@ class Workers(unittest.TestCase):
         self.ws = Workspace(os.path.join(self.tmp.name, "data"), "", gemini=False)
         self.a, self.b = self.ws.add("sysd"), self.ws.add("other")
         for p in (self.a, self.b):
-            p.run([(0, {"op": "new", "title": "Write the tutor skill", "type": "task"})], "you")
+            p.run([(0, {"op": "new", "title": "Write the tutor skill"})], "you")
             # the project's own manager, heard of by its id, working in /work
             p.agents.saw("claude-code", 0, "manager", MANAGER)
         self.a.run([(0, {"op": "set", "ref": "T1", "f": {"status": "doing"}})], "you")
@@ -104,7 +104,7 @@ class CodexWorkers(unittest.TestCase):
         os.environ["TASKA_CLAUDE_SESSIONS"] = os.path.join(self.tmp.name, "none")
         self.ws = Workspace(os.path.join(self.tmp.name, "data"), "", gemini=False)
         self.p = self.ws.add("sysd")
-        self.p.run([(0, {"op": "new", "title": "Write the tutor skill", "type": "task"})], "you")
+        self.p.run([(0, {"op": "new", "title": "Write the tutor skill"})], "you")
         self.p.agents.saw("claude-code", 0, "manager", MANAGER)
         self.p.agents.see_sessions({MANAGER: ses(MANAGER, "manager")})
 
@@ -153,7 +153,7 @@ class Listening(unittest.TestCase):
 
     def test_a_session_with_an_item_in_progress_is_not_asked_to_listen(self) -> None:
         self.p.agents.saw("claude-code", 0, "main", MANAGER)
-        self.p.run([(0, {"op": "new", "title": "Redo the brainstorm", "type": "task"})], "you")
+        self.p.run([(0, {"op": "new", "title": "Redo the brainstorm"})], "you")
         self.p.run([(0, {"op": "set", "ref": "T1", "f": {"status": "doing"}})], "you")
         self.assertEqual(self.ws.listening(MANAGER), {"known": True, "listening": True})
 

@@ -1,6 +1,6 @@
-// The control on a place picked to comment on (B498), alone: Voice and Comment; speaking, the recording strip (✕, the
+// The control on a place picked to comment on (T498), alone: Voice and Comment; speaking, the recording strip (✕, the
 // time and level, ✓, and on the desktop ↑; the phone's ✓ sends, r1062). The desktop's beside the place, the phone's a
-// row floating under it, over the words below, which never move (B715 r1169). Where each sits on a page:
+// row floating under it, over the words below, which never move (T715 r1169). Where each sits on a page:
 // Document › Commenting › Voice and words on a place.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
@@ -53,7 +53,7 @@ const picked = (rec: boolean) => (
 )
 
 export const PhoneFloating: Story = {
-  name: 'Phone: floating under a place, over the words below (B715)',
+  name: 'Phone: floating under a place, over the words below (T715)',
   render: () => (
     <div className="flex flex-wrap items-start gap-6 bg-zinc-100 p-6 dark:bg-zinc-900">
       {picked(false)}

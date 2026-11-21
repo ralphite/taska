@@ -1,6 +1,6 @@
-// S, P or T, then the key that says what to set (a status's digit, a priority's, a type's letter), within 3 seconds.
+// S or P, then the key that says what to set (a status's digit, a priority's), within 3 seconds.
 
-export type ArmKey = 's' | 'p' | 't'
+export type ArmKey = 's' | 'p'
 
 export class KeyArm {
   private armed: { k: ArmKey; n: number; t: number } | null = null

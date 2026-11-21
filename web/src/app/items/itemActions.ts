@@ -9,7 +9,7 @@ import { codeOf, type ProjectModel } from '../../model/project'
 import { decidedWord } from '../../model/needStates'
 import { laterDay } from '../../model/time'
 import type { Item, Status } from '../../model/types'
-import { DID, LETTER, STATUS_WORD, plural } from '../../model/words'
+import { DID, STATUS_WORD, plural } from '../../model/words'
 import type { UiStore } from '../../stores/ui'
 import type { ChangeRunner } from '../changeRunner'
 import type { Toasts } from '../page/toasts'
@@ -33,12 +33,12 @@ export interface ItemActionsDeps {
 }
 
 /** What a change did, in words, after the item's code. */
-export function saidOf(m: ProjectModel, f: string, v: unknown, before: unknown, ref: string): string {
+export function saidOf(m: ProjectModel, f: string, v: unknown, before: unknown): string {
   if (f === 'archived') return v ? 'archived' : 'unarchived'
   if (f === 'status' && v === 'done' && before === 'review') return 'accepted'
   if (f === 'status' && v === 'open' && before === 'proposed') return 'approved'
   if (f === 'pri') return `is now ${String(v)}`
-  if (f === 'type') return `is now ${LETTER[v as Item['type']]}${ref.slice(1)}, ${/^[aeiou]/.test(String(v)) ? 'an' : 'a'} ${String(v)}`
+  if (f === 'tags') return Array.isArray(v) && v.length ? `is now ${v.map((t) => '#' + String(t)).join(' ')}` : 'has no tags'
   if (f === 'parent') return v ? `is now under ${codeOf(m, v as number)}` : 'stands on its own'
   if (f === 'rank') return v == null ? 'is back in order' : 'goes next in its priority'
   return DID[String(v)]
@@ -69,7 +69,7 @@ export class ItemActions {
     const dec = f === 'status' ? decision(it, String(v)) : null
     const words =
       opts.said ||
-      saidOf(m, f, v, before, ref)
+      saidOf(m, f, v, before)
     const undo = this.d.toasts.undoable(`${ref} ${words}`, async () => {
       const now = this.d.model()?.byN.get(n) as (Item & Record<string, unknown>) | undefined
       if (job.saved && now && JSON.stringify(now[f]) !== JSON.stringify(v)) {

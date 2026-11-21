@@ -27,8 +27,10 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "B1",
-     "type": "bug",
+     "code": "T1",
+     "tags": [
+      "bug"
+     ],
      "title": "Export ignores the filter",
      "body": "",
      "pri": "P1",
@@ -80,8 +82,10 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "B1",
-     "type": "bug",
+     "code": "T1",
+     "tags": [
+      "bug"
+     ],
      "title": "Export ignores the filter",
      "body": "",
      "pri": "P1",
@@ -145,8 +149,10 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "B1",
-     "type": "bug",
+     "code": "T1",
+     "tags": [
+      "bug"
+     ],
      "title": "Export ignores the filter",
      "body": "",
      "pri": "P1",
@@ -198,8 +204,10 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "B1",
-     "type": "bug",
+     "code": "T1",
+     "tags": [
+      "bug"
+     ],
      "title": "Export ignores the filter",
      "body": "",
      "pri": "P1",
@@ -263,8 +271,10 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "B1",
-     "type": "bug",
+     "code": "T1",
+     "tags": [
+      "bug"
+     ],
      "title": "Export ignores the filter",
      "body": "",
      "pri": "P1",
@@ -334,8 +344,10 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "B1",
-     "type": "bug",
+     "code": "T1",
+     "tags": [
+      "bug"
+     ],
      "title": "Export ignores the filter",
      "body": "",
      "pri": "P1",
@@ -394,7 +406,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Write the export",
      "body": "",
      "pri": "P1",
@@ -447,7 +459,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Write the export",
      "body": "",
      "pri": "P1",
@@ -512,7 +524,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Write the export",
      "body": "",
      "pri": "P1",
@@ -565,7 +577,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Write the export",
      "body": "",
      "pri": "P1",
@@ -630,7 +642,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Old",
      "body": "",
      "pri": "P1",
@@ -680,7 +692,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Old",
      "body": "",
      "pri": "P1",
@@ -726,7 +738,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Paint the fence",
      "body": "",
      "pri": "P1",
@@ -747,7 +759,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Buy the paint",
      "body": "",
      "pri": "P1",
@@ -768,7 +780,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Pick a colour",
      "body": "",
      "pri": "P1",
@@ -818,7 +830,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Paint the fence",
      "body": "",
      "pri": "P1",
@@ -840,7 +852,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Buy the paint",
      "body": "",
      "pri": "P1",
@@ -861,7 +873,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Pick a colour",
      "body": "",
      "pri": "P1",
@@ -929,7 +941,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Wait",
      "body": "",
      "pri": "P1",
@@ -982,7 +994,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Wait",
      "body": "",
      "pri": "P1",
@@ -1028,7 +1040,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Wait",
      "body": "",
      "pri": "P1",
@@ -1082,7 +1094,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Wait",
      "body": "",
      "pri": "P1",
@@ -1137,7 +1149,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Paint the fence",
      "body": "",
      "pri": "P1",
@@ -1158,7 +1170,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Buy the paint",
      "body": "",
      "pri": "P1",
@@ -1179,7 +1191,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Pick a colour",
      "body": "",
      "pri": "P1",
@@ -1229,7 +1241,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Paint the fence",
      "body": "",
      "pri": "P1",
@@ -1250,7 +1262,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Buy the paint",
      "body": "",
      "pri": "P1",
@@ -1271,7 +1283,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Pick a colour",
      "body": "",
      "pri": "P1",
@@ -1337,7 +1349,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Paint the fence",
      "body": "",
      "pri": "P1",
@@ -1358,7 +1370,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Buy the paint",
      "body": "",
      "pri": "P1",
@@ -1379,7 +1391,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Pick a colour",
      "body": "",
      "pri": "P1",
@@ -1440,7 +1452,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Paint the fence",
      "body": "",
      "pri": "P1",
@@ -1461,7 +1473,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Buy the paint",
      "body": "",
      "pri": "P1",
@@ -1482,7 +1494,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Pick a colour",
      "body": "",
      "pri": "P1",
@@ -1559,7 +1571,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "One",
      "body": "",
      "pri": "P1",
@@ -1580,7 +1592,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Two",
      "body": "",
      "pri": "P1",
@@ -1601,7 +1613,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Three",
      "body": "",
      "pri": "P1",
@@ -1631,7 +1643,9 @@ export const EFFECTS: EffectCase[] = [
     "ref": "T1",
     "f": {
      "pri": "P0",
-     "type": "bug",
+     "tags": [
+      "bug"
+     ],
      "title": "  Many   spaces  ",
      "body": "  Trimmed.  "
     }
@@ -1641,8 +1655,10 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "B1",
-     "type": "bug",
+     "code": "T1",
+     "tags": [
+      "bug"
+     ],
      "title": "Many spaces",
      "body": "Trimmed.",
      "pri": "P0",
@@ -1663,7 +1679,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Two",
      "body": "",
      "pri": "P1",
@@ -1684,7 +1700,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Three",
      "body": "",
      "pri": "P1",
@@ -1712,13 +1728,15 @@ export const EFFECTS: EffectCase[] = [
      "n": 1,
      "f": {
       "pri": "P0",
-      "type": "bug",
+      "tags": [
+       "bug"
+      ],
       "title": "Many spaces",
       "body": "Trimmed."
      },
      "was": {
       "pri": "P1",
-      "type": "task",
+      "tags": [],
       "title": "One",
       "body": ""
      },
@@ -1734,7 +1752,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "One",
      "body": "",
      "pri": "P1",
@@ -1755,7 +1773,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Two",
      "body": "",
      "pri": "P1",
@@ -1776,7 +1794,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Three",
      "body": "",
      "pri": "P1",
@@ -1828,7 +1846,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "One",
      "body": "",
      "pri": "P1",
@@ -1849,7 +1867,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Two",
      "body": "",
      "pri": "P1",
@@ -1870,7 +1888,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Three",
      "body": "",
      "pri": "P1",
@@ -1925,7 +1943,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "One",
      "body": "",
      "pri": "P1",
@@ -1946,7 +1964,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Two",
      "body": "",
      "pri": "P1",
@@ -1967,7 +1985,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Three",
      "body": "",
      "pri": "P1",
@@ -2019,7 +2037,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "One",
      "body": "",
      "pri": "P1",
@@ -2041,7 +2059,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Two",
      "body": "",
      "pri": "P1",
@@ -2062,7 +2080,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Three",
      "body": "",
      "pri": "P1",
@@ -2117,7 +2135,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Paint the fence",
      "body": "",
      "pri": "P1",
@@ -2138,7 +2156,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Buy the paint",
      "body": "",
      "pri": "P1",
@@ -2159,7 +2177,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Pick a colour",
      "body": "",
      "pri": "P1",
@@ -2180,7 +2198,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 4,
      "code": "T4",
-     "type": "task",
+     "tags": [],
      "title": "Open one",
      "body": "",
      "pri": "P1",
@@ -2201,7 +2219,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 5,
      "code": "T5",
-     "type": "task",
+     "tags": [],
      "title": "Done one",
      "body": "",
      "pri": "P1",
@@ -2275,7 +2293,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Paint the fence",
      "body": "",
      "pri": "P1",
@@ -2296,7 +2314,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Buy the paint",
      "body": "",
      "pri": "P1",
@@ -2317,7 +2335,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Pick a colour",
      "body": "",
      "pri": "P1",
@@ -2338,7 +2356,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 4,
      "code": "T4",
-     "type": "task",
+     "tags": [],
      "title": "Open one",
      "body": "",
      "pri": "P1",
@@ -2359,7 +2377,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 5,
      "code": "T5",
-     "type": "task",
+     "tags": [],
      "title": "Done one",
      "body": "",
      "pri": "P1",
@@ -2425,7 +2443,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "One",
      "body": "",
      "pri": "P1",
@@ -2446,7 +2464,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Two",
      "body": "",
      "pri": "P1",
@@ -2467,7 +2485,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Three",
      "body": "",
      "pri": "P1",
@@ -2517,7 +2535,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "One",
      "body": "",
      "pri": "P1",
@@ -2538,7 +2556,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Two",
      "body": "",
      "pri": "P1",
@@ -2559,7 +2577,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Three",
      "body": "",
      "pri": "P1",
@@ -2603,7 +2621,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Paint the fence",
      "body": "",
      "pri": "P1",
@@ -2624,7 +2642,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Buy the paint",
      "body": "",
      "pri": "P1",
@@ -2645,7 +2663,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Pick a colour",
      "body": "",
      "pri": "P1",
@@ -2701,8 +2719,10 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "B1",
-     "type": "bug",
+     "code": "T1",
+     "tags": [
+      "bug"
+     ],
      "title": "Export ignores the filter",
      "body": "",
      "pri": "P1",
@@ -2753,8 +2773,10 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "B1",
-     "type": "bug",
+     "code": "T1",
+     "tags": [
+      "bug"
+     ],
      "title": "Export ignores the filter",
      "body": "",
      "pri": "P1",
@@ -2802,7 +2824,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Paint the fence",
      "body": "",
      "pri": "P1",
@@ -2823,7 +2845,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Buy the paint",
      "body": "",
      "pri": "P1",
@@ -2844,7 +2866,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Pick a colour",
      "body": "",
      "pri": "P1",
@@ -2885,7 +2907,6 @@ export const EFFECTS: EffectCase[] = [
     "op": "new",
     "title": "Sand it first",
     "parent": "T1",
-    "type": "task",
     "pri": "P2",
     "when": "now"
    }
@@ -2895,7 +2916,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Paint the fence",
      "body": "",
      "pri": "P1",
@@ -2916,7 +2937,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Buy the paint",
      "body": "",
      "pri": "P1",
@@ -2937,7 +2958,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Pick a colour",
      "body": "",
      "pri": "P1",
@@ -2958,7 +2979,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 4,
      "code": "T4",
-     "type": "task",
+     "tags": [],
      "title": "Sand it first",
      "body": "",
      "pri": "P2",
@@ -3002,7 +3023,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Paint the fence",
      "body": "",
      "pri": "P1",
@@ -3023,7 +3044,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Buy the paint",
      "body": "",
      "pri": "P1",
@@ -3044,7 +3065,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Pick a colour",
      "body": "",
      "pri": "P1",
@@ -3065,7 +3086,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 4,
      "code": "T4",
-     "type": "task",
+     "tags": [],
      "title": "Fence and gate",
      "body": "",
      "pri": "P1",
@@ -3113,7 +3134,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Paint the fence",
      "body": "",
      "pri": "P1",
@@ -3134,7 +3155,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Buy the paint",
      "body": "",
      "pri": "P1",
@@ -3155,7 +3176,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Pick a colour",
      "body": "",
      "pri": "P1",
@@ -3176,7 +3197,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 4,
      "code": "T4",
-     "type": "task",
+     "tags": [],
      "title": "Fence and gate",
      "body": "",
      "pri": "P1",
@@ -3252,7 +3273,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "One",
      "body": "",
      "pri": "P1",
@@ -3273,7 +3294,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Two",
      "body": "",
      "pri": "P1",
@@ -3304,7 +3325,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Three",
      "body": "",
      "pri": "P1",
@@ -3339,7 +3360,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "One",
      "body": "",
      "pri": "P1",
@@ -3360,7 +3381,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Two",
      "body": "",
      "pri": "P1",
@@ -3400,7 +3421,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Three",
      "body": "",
      "pri": "P1",
@@ -3432,7 +3453,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "One",
      "body": "",
      "pri": "P3",
@@ -3453,7 +3474,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Two",
      "body": "",
      "pri": "P1",
@@ -3474,7 +3495,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Three",
      "body": "",
      "pri": "P1",
@@ -3521,7 +3542,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "One",
      "body": "",
      "pri": "P1",
@@ -3542,7 +3563,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Two",
      "body": "",
      "pri": "P1",
@@ -3563,7 +3584,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 3,
      "code": "T3",
-     "type": "task",
+     "tags": [],
      "title": "Three",
      "body": "",
      "pri": "P1",
@@ -3595,7 +3616,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Write the export",
      "body": "",
      "pri": "P1",
@@ -3646,7 +3667,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Write the export",
      "body": "",
      "pri": "P1",
@@ -3737,8 +3758,8 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "F1",
-     "type": "feature",
+     "code": "T1",
+     "tags": [],
      "title": "Export to Excel",
      "body": "",
      "pri": "P1",
@@ -3833,8 +3854,8 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "F1",
-     "type": "feature",
+     "code": "T1",
+     "tags": [],
      "title": "Export to Excel",
      "body": "",
      "pri": "P1",
@@ -3908,8 +3929,8 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "F1",
-     "type": "feature",
+     "code": "T1",
+     "tags": [],
      "title": "Export to Excel",
      "body": "",
      "pri": "P1",
@@ -3985,8 +4006,8 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "F1",
-     "type": "feature",
+     "code": "T1",
+     "tags": [],
      "title": "Export to Excel",
      "body": "",
      "pri": "P1",
@@ -4059,8 +4080,8 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "F1",
-     "type": "feature",
+     "code": "T1",
+     "tags": [],
      "title": "Export to Excel",
      "body": "",
      "pri": "P1",
@@ -4136,8 +4157,8 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "F1",
-     "type": "feature",
+     "code": "T1",
+     "tags": [],
      "title": "Export to Excel",
      "body": "",
      "pri": "P1",
@@ -4211,8 +4232,8 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "F1",
-     "type": "feature",
+     "code": "T1",
+     "tags": [],
      "title": "Export to Excel",
      "body": "",
      "pri": "P1",
@@ -4288,8 +4309,8 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "F1",
-     "type": "feature",
+     "code": "T1",
+     "tags": [],
      "title": "Export to Excel",
      "body": "",
      "pri": "P1",
@@ -4312,7 +4333,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Sorting",
      "body": "",
      "pri": "P1",
@@ -4382,8 +4403,8 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "F1",
-     "type": "feature",
+     "code": "T1",
+     "tags": [],
      "title": "Export to Excel",
      "body": "",
      "pri": "P1",
@@ -4406,7 +4427,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Sorting",
      "body": "",
      "pri": "P1",
@@ -4598,8 +4619,8 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "F1",
-     "type": "feature",
+     "code": "T1",
+     "tags": [],
      "title": "Export to Excel",
      "body": "",
      "pri": "P1",
@@ -4673,8 +4694,8 @@ export const EFFECTS: EffectCase[] = [
    "items": [
     {
      "n": 1,
-     "code": "F1",
-     "type": "feature",
+     "code": "T1",
+     "tags": [],
      "title": "Export to Excel",
      "body": "",
      "pri": "P1",
@@ -4743,7 +4764,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Plan the export",
      "body": "",
      "pri": "P1",
@@ -4764,7 +4785,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Ship it",
      "body": "",
      "pri": "P1",
@@ -4857,7 +4878,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Plan the export",
      "body": "",
      "pri": "P1",
@@ -4878,7 +4899,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Ship it",
      "body": "",
      "pri": "P1",
@@ -4961,7 +4982,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Plan the export",
      "body": "",
      "pri": "P1",
@@ -4982,7 +5003,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Ship it",
      "body": "",
      "pri": "P1",
@@ -5074,7 +5095,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Plan the export",
      "body": "",
      "pri": "P1",
@@ -5095,7 +5116,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Ship it",
      "body": "",
      "pri": "P1",
@@ -5127,7 +5148,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Plan the export",
      "body": "",
      "pri": "P1",
@@ -5148,7 +5169,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Ship it",
      "body": "",
      "pri": "P1",
@@ -5241,7 +5262,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Plan the export",
      "body": "",
      "pri": "P1",
@@ -5262,7 +5283,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Ship it",
      "body": "",
      "pri": "P1",
@@ -5351,7 +5372,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Plan the export",
      "body": "",
      "pri": "P1",
@@ -5372,7 +5393,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Ship it",
      "body": "",
      "pri": "P1",
@@ -5466,7 +5487,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Plan the export",
      "body": "",
      "pri": "P1",
@@ -5487,7 +5508,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Ship it",
      "body": "",
      "pri": "P1",
@@ -5578,7 +5599,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Plan the export",
      "body": "",
      "pri": "P1",
@@ -5599,7 +5620,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Ship it",
      "body": "",
      "pri": "P1",
@@ -5700,7 +5721,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Plan the export",
      "body": "",
      "pri": "P1",
@@ -5721,7 +5742,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Ship it",
      "body": "",
      "pri": "P1",
@@ -5831,7 +5852,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Plan the export",
      "body": "",
      "pri": "P1",
@@ -5852,7 +5873,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Ship it",
      "body": "",
      "pri": "P1",
@@ -5946,7 +5967,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Plan the export",
      "body": "",
      "pri": "P1",
@@ -5967,7 +5988,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Ship it",
      "body": "",
      "pri": "P1",
@@ -6057,7 +6078,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Plan the export",
      "body": "",
      "pri": "P1",
@@ -6078,7 +6099,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Ship it",
      "body": "",
      "pri": "P1",
@@ -6171,7 +6192,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 1,
      "code": "T1",
-     "type": "task",
+     "tags": [],
      "title": "Plan the export",
      "body": "",
      "pri": "P1",
@@ -6192,7 +6213,7 @@ export const EFFECTS: EffectCase[] = [
     {
      "n": 2,
      "code": "T2",
-     "type": "task",
+     "tags": [],
      "title": "Ship it",
      "body": "",
      "pri": "P1",
@@ -6410,7 +6431,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 1,
    "code": "T01",
-   "type": "task",
+   "tags": [],
    "title": "proposed asked=False answered=False archived=False",
    "body": "",
    "pri": "P1",
@@ -6446,7 +6467,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 2,
    "code": "T02",
-   "type": "task",
+   "tags": [],
    "title": "proposed asked=False answered=False archived=True",
    "body": "",
    "pri": "P1",
@@ -6472,7 +6493,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 3,
    "code": "T03",
-   "type": "task",
+   "tags": [],
    "title": "proposed asked=False answered=True archived=False",
    "body": "",
    "pri": "P1",
@@ -6508,7 +6529,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 4,
    "code": "T04",
-   "type": "task",
+   "tags": [],
    "title": "proposed asked=False answered=True archived=True",
    "body": "",
    "pri": "P1",
@@ -6544,7 +6565,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 5,
    "code": "T05",
-   "type": "task",
+   "tags": [],
    "title": "proposed asked=True answered=False archived=False",
    "body": "",
    "pri": "P1",
@@ -6587,7 +6608,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 6,
    "code": "T06",
-   "type": "task",
+   "tags": [],
    "title": "proposed asked=True answered=False archived=True",
    "body": "",
    "pri": "P1",
@@ -6630,7 +6651,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 7,
    "code": "T07",
-   "type": "task",
+   "tags": [],
    "title": "proposed asked=True answered=True archived=False",
    "body": "",
    "pri": "P1",
@@ -6675,7 +6696,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 8,
    "code": "T08",
-   "type": "task",
+   "tags": [],
    "title": "proposed asked=True answered=True archived=True",
    "body": "",
    "pri": "P1",
@@ -6720,7 +6741,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 9,
    "code": "T09",
-   "type": "task",
+   "tags": [],
    "title": "open asked=False answered=False archived=False",
    "body": "",
    "pri": "P1",
@@ -6752,7 +6773,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 10,
    "code": "T10",
-   "type": "task",
+   "tags": [],
    "title": "open asked=False answered=False archived=True",
    "body": "",
    "pri": "P1",
@@ -6784,7 +6805,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 11,
    "code": "T11",
-   "type": "task",
+   "tags": [],
    "title": "open asked=False answered=True archived=False",
    "body": "",
    "pri": "P1",
@@ -6826,7 +6847,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 12,
    "code": "T12",
-   "type": "task",
+   "tags": [],
    "title": "open asked=False answered=True archived=True",
    "body": "",
    "pri": "P1",
@@ -6868,7 +6889,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 13,
    "code": "T13",
-   "type": "task",
+   "tags": [],
    "title": "open asked=True answered=False archived=False",
    "body": "",
    "pri": "P1",
@@ -6917,7 +6938,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 14,
    "code": "T14",
-   "type": "task",
+   "tags": [],
    "title": "open asked=True answered=False archived=True",
    "body": "",
    "pri": "P1",
@@ -6966,7 +6987,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 15,
    "code": "T15",
-   "type": "task",
+   "tags": [],
    "title": "open asked=True answered=True archived=False",
    "body": "",
    "pri": "P1",
@@ -7017,7 +7038,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 16,
    "code": "T16",
-   "type": "task",
+   "tags": [],
    "title": "open asked=True answered=True archived=True",
    "body": "",
    "pri": "P1",
@@ -7068,7 +7089,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 17,
    "code": "T17",
-   "type": "task",
+   "tags": [],
    "title": "doing asked=False answered=False archived=False",
    "body": "",
    "pri": "P1",
@@ -7100,7 +7121,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 18,
    "code": "T18",
-   "type": "task",
+   "tags": [],
    "title": "doing asked=False answered=False archived=True",
    "body": "",
    "pri": "P1",
@@ -7132,7 +7153,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 19,
    "code": "T19",
-   "type": "task",
+   "tags": [],
    "title": "doing asked=False answered=True archived=False",
    "body": "",
    "pri": "P1",
@@ -7174,7 +7195,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 20,
    "code": "T20",
-   "type": "task",
+   "tags": [],
    "title": "doing asked=False answered=True archived=True",
    "body": "",
    "pri": "P1",
@@ -7216,7 +7237,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 21,
    "code": "T21",
-   "type": "task",
+   "tags": [],
    "title": "doing asked=True answered=False archived=False",
    "body": "",
    "pri": "P1",
@@ -7265,7 +7286,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 22,
    "code": "T22",
-   "type": "task",
+   "tags": [],
    "title": "doing asked=True answered=False archived=True",
    "body": "",
    "pri": "P1",
@@ -7314,7 +7335,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 23,
    "code": "T23",
-   "type": "task",
+   "tags": [],
    "title": "doing asked=True answered=True archived=False",
    "body": "",
    "pri": "P1",
@@ -7365,7 +7386,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 24,
    "code": "T24",
-   "type": "task",
+   "tags": [],
    "title": "doing asked=True answered=True archived=True",
    "body": "",
    "pri": "P1",
@@ -7416,7 +7437,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 25,
    "code": "T25",
-   "type": "task",
+   "tags": [],
    "title": "review asked=False answered=False archived=False",
    "body": "",
    "pri": "P1",
@@ -7448,7 +7469,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 26,
    "code": "T26",
-   "type": "task",
+   "tags": [],
    "title": "review asked=False answered=False archived=True",
    "body": "",
    "pri": "P1",
@@ -7480,7 +7501,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 27,
    "code": "T27",
-   "type": "task",
+   "tags": [],
    "title": "review asked=False answered=True archived=False",
    "body": "",
    "pri": "P1",
@@ -7522,7 +7543,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 28,
    "code": "T28",
-   "type": "task",
+   "tags": [],
    "title": "review asked=False answered=True archived=True",
    "body": "",
    "pri": "P1",
@@ -7564,7 +7585,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 29,
    "code": "T29",
-   "type": "task",
+   "tags": [],
    "title": "review asked=True answered=False archived=False",
    "body": "",
    "pri": "P1",
@@ -7613,7 +7634,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 30,
    "code": "T30",
-   "type": "task",
+   "tags": [],
    "title": "review asked=True answered=False archived=True",
    "body": "",
    "pri": "P1",
@@ -7662,7 +7683,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 31,
    "code": "T31",
-   "type": "task",
+   "tags": [],
    "title": "review asked=True answered=True archived=False",
    "body": "",
    "pri": "P1",
@@ -7713,7 +7734,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 32,
    "code": "T32",
-   "type": "task",
+   "tags": [],
    "title": "review asked=True answered=True archived=True",
    "body": "",
    "pri": "P1",
@@ -7764,7 +7785,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 33,
    "code": "T33",
-   "type": "task",
+   "tags": [],
    "title": "done asked=False answered=False archived=False",
    "body": "",
    "pri": "P1",
@@ -7796,7 +7817,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 34,
    "code": "T34",
-   "type": "task",
+   "tags": [],
    "title": "done asked=False answered=False archived=True",
    "body": "",
    "pri": "P1",
@@ -7828,7 +7849,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 35,
    "code": "T35",
-   "type": "task",
+   "tags": [],
    "title": "done asked=False answered=True archived=False",
    "body": "",
    "pri": "P1",
@@ -7870,7 +7891,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 36,
    "code": "T36",
-   "type": "task",
+   "tags": [],
    "title": "done asked=False answered=True archived=True",
    "body": "",
    "pri": "P1",
@@ -7912,7 +7933,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 37,
    "code": "T37",
-   "type": "task",
+   "tags": [],
    "title": "done asked=True answered=False archived=False",
    "body": "",
    "pri": "P1",
@@ -7961,7 +7982,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 38,
    "code": "T38",
-   "type": "task",
+   "tags": [],
    "title": "done asked=True answered=False archived=True",
    "body": "",
    "pri": "P1",
@@ -8010,7 +8031,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 39,
    "code": "T39",
-   "type": "task",
+   "tags": [],
    "title": "done asked=True answered=True archived=False",
    "body": "",
    "pri": "P1",
@@ -8061,7 +8082,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 40,
    "code": "T40",
-   "type": "task",
+   "tags": [],
    "title": "done asked=True answered=True archived=True",
    "body": "",
    "pri": "P1",
@@ -8112,7 +8133,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 41,
    "code": "T41",
-   "type": "task",
+   "tags": [],
    "title": "dropped asked=False answered=False archived=False",
    "body": "",
    "pri": "P1",
@@ -8144,7 +8165,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 42,
    "code": "T42",
-   "type": "task",
+   "tags": [],
    "title": "dropped asked=False answered=False archived=True",
    "body": "",
    "pri": "P1",
@@ -8176,7 +8197,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 43,
    "code": "T43",
-   "type": "task",
+   "tags": [],
    "title": "dropped asked=False answered=True archived=False",
    "body": "",
    "pri": "P1",
@@ -8218,7 +8239,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 44,
    "code": "T44",
-   "type": "task",
+   "tags": [],
    "title": "dropped asked=False answered=True archived=True",
    "body": "",
    "pri": "P1",
@@ -8260,7 +8281,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 45,
    "code": "T45",
-   "type": "task",
+   "tags": [],
    "title": "dropped asked=True answered=False archived=False",
    "body": "",
    "pri": "P1",
@@ -8309,7 +8330,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 46,
    "code": "T46",
-   "type": "task",
+   "tags": [],
    "title": "dropped asked=True answered=False archived=True",
    "body": "",
    "pri": "P1",
@@ -8358,7 +8379,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 47,
    "code": "T47",
-   "type": "task",
+   "tags": [],
    "title": "dropped asked=True answered=True archived=False",
    "body": "",
    "pri": "P1",
@@ -8409,7 +8430,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 48,
    "code": "T48",
-   "type": "task",
+   "tags": [],
    "title": "dropped asked=True answered=True archived=True",
    "body": "",
    "pri": "P1",
@@ -8460,7 +8481,7 @@ export const NEEDS: NeedsCase = {
   {
    "n": 49,
    "code": "T49",
-   "type": "task",
+   "tags": [],
    "title": "merged",
    "body": "",
    "pri": "P1",
@@ -8834,7 +8855,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 1,
     "code": "T1",
-    "type": "task",
+    "tags": [],
     "title": "Item 1",
     "body": "",
     "pri": "P2",
@@ -8855,7 +8876,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 2,
     "code": "T2",
-    "type": "task",
+    "tags": [],
     "title": "Item 2",
     "body": "",
     "pri": "P1",
@@ -8876,7 +8897,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 3,
     "code": "T3",
-    "type": "task",
+    "tags": [],
     "title": "Item 3",
     "body": "",
     "pri": "P2",
@@ -8902,7 +8923,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 4,
     "code": "T4",
-    "type": "task",
+    "tags": [],
     "title": "Item 4",
     "body": "",
     "pri": "P3",
@@ -8924,7 +8945,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 5,
     "code": "T5",
-    "type": "task",
+    "tags": [],
     "title": "Item 5",
     "body": "",
     "pri": "P0",
@@ -8956,7 +8977,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 1,
     "code": "T1",
-    "type": "task",
+    "tags": [],
     "title": "Item 1",
     "body": "",
     "pri": "P1",
@@ -8978,7 +8999,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 2,
     "code": "T2",
-    "type": "task",
+    "tags": [],
     "title": "Item 2",
     "body": "",
     "pri": "P1",
@@ -8999,7 +9020,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 3,
     "code": "T3",
-    "type": "task",
+    "tags": [],
     "title": "Item 3",
     "body": "",
     "pri": "P0",
@@ -9020,7 +9041,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 4,
     "code": "T4",
-    "type": "task",
+    "tags": [],
     "title": "Item 4",
     "body": "",
     "pri": "P2",
@@ -9042,7 +9063,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 5,
     "code": "T5",
-    "type": "task",
+    "tags": [],
     "title": "Item 5",
     "body": "",
     "pri": "P3",
@@ -9063,7 +9084,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 6,
     "code": "T6",
-    "type": "task",
+    "tags": [],
     "title": "Item 6",
     "body": "",
     "pri": "P1",
@@ -9097,7 +9118,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 1,
     "code": "T1",
-    "type": "task",
+    "tags": [],
     "title": "Item 1",
     "body": "",
     "pri": "P2",
@@ -9124,7 +9145,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 2,
     "code": "T2",
-    "type": "task",
+    "tags": [],
     "title": "Item 2",
     "body": "",
     "pri": "P0",
@@ -9150,7 +9171,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 3,
     "code": "T3",
-    "type": "task",
+    "tags": [],
     "title": "Item 3",
     "body": "",
     "pri": "P1",
@@ -9172,7 +9193,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 4,
     "code": "T4",
-    "type": "task",
+    "tags": [],
     "title": "Item 4",
     "body": "",
     "pri": "P1",
@@ -9193,7 +9214,7 @@ export const QUEUE: QueueCase[] = [
    {
     "n": 5,
     "code": "T5",
-    "type": "task",
+    "tags": [],
     "title": "Item 5",
     "body": "",
     "pri": "P1",
@@ -9234,7 +9255,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 1,
     "code": "T1",
-    "type": "task",
+    "tags": [],
     "title": "Item 1",
     "body": "",
     "pri": "P2",
@@ -9254,8 +9275,10 @@ export const NEXT: NextCase[] = [
    },
    {
     "n": 2,
-    "code": "B2",
-    "type": "bug",
+    "code": "T2",
+    "tags": [
+     "bug"
+    ],
     "title": "Item 2",
     "body": "",
     "pri": "P1",
@@ -9276,7 +9299,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 3,
     "code": "T3",
-    "type": "task",
+    "tags": [],
     "title": "Item 3",
     "body": "",
     "pri": "P0",
@@ -9296,8 +9319,8 @@ export const NEXT: NextCase[] = [
    },
    {
     "n": 4,
-    "code": "I4",
-    "type": "idea",
+    "code": "T4",
+    "tags": [],
     "title": "Item 4",
     "body": "",
     "pri": "P1",
@@ -9325,7 +9348,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 1,
     "code": "T1",
-    "type": "task",
+    "tags": [],
     "title": "Item 1",
     "body": "",
     "pri": "P1",
@@ -9346,7 +9369,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 2,
     "code": "T2",
-    "type": "task",
+    "tags": [],
     "title": "Item 2",
     "body": "",
     "pri": "P1",
@@ -9367,7 +9390,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 3,
     "code": "T3",
-    "type": "task",
+    "tags": [],
     "title": "Item 3",
     "body": "",
     "pri": "P2",
@@ -9419,7 +9442,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 1,
     "code": "T1",
-    "type": "task",
+    "tags": [],
     "title": "Item 1",
     "body": "",
     "pri": "P2",
@@ -9440,7 +9463,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 2,
     "code": "T2",
-    "type": "task",
+    "tags": [],
     "title": "Item 2",
     "body": "",
     "pri": "P2",
@@ -9461,7 +9484,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 3,
     "code": "T3",
-    "type": "task",
+    "tags": [],
     "title": "Item 3",
     "body": "",
     "pri": "P2",
@@ -9513,7 +9536,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 1,
     "code": "T1",
-    "type": "task",
+    "tags": [],
     "title": "Item 1",
     "body": "",
     "pri": "P1",
@@ -9534,7 +9557,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 2,
     "code": "T2",
-    "type": "task",
+    "tags": [],
     "title": "Item 2",
     "body": "",
     "pri": "P2",
@@ -9586,7 +9609,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 1,
     "code": "T1",
-    "type": "task",
+    "tags": [],
     "title": "Item 1",
     "body": "",
     "pri": "P1",
@@ -9619,7 +9642,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 2,
     "code": "T2",
-    "type": "task",
+    "tags": [],
     "title": "Item 2",
     "body": "",
     "pri": "P2",
@@ -9672,7 +9695,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 1,
     "code": "T1",
-    "type": "task",
+    "tags": [],
     "title": "Item 1",
     "body": "",
     "pri": "P1",
@@ -9693,7 +9716,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 2,
     "code": "T2",
-    "type": "task",
+    "tags": [],
     "title": "Item 2",
     "body": "",
     "pri": "P2",
@@ -9714,7 +9737,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 3,
     "code": "T3",
-    "type": "task",
+    "tags": [],
     "title": "Item 3",
     "body": "",
     "pri": "P0",
@@ -9757,7 +9780,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 4,
     "code": "T4",
-    "type": "task",
+    "tags": [],
     "title": "Sub",
     "body": "",
     "pri": "P3",
@@ -9785,7 +9808,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 1,
     "code": "T1",
-    "type": "task",
+    "tags": [],
     "title": "Item 1",
     "body": "",
     "pri": "P1",
@@ -9837,7 +9860,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 1,
     "code": "T1",
-    "type": "task",
+    "tags": [],
     "title": "Item 1",
     "body": "",
     "pri": "P0",
@@ -9863,7 +9886,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 2,
     "code": "T2",
-    "type": "task",
+    "tags": [],
     "title": "Item 2",
     "body": "",
     "pri": "P1",
@@ -9891,7 +9914,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 1,
     "code": "T1",
-    "type": "task",
+    "tags": [],
     "title": "Item 1",
     "body": "",
     "pri": "P0",
@@ -9912,7 +9935,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 2,
     "code": "T2",
-    "type": "task",
+    "tags": [],
     "title": "Middle",
     "body": "",
     "pri": "P1",
@@ -9933,7 +9956,7 @@ export const NEXT: NextCase[] = [
    {
     "n": 3,
     "code": "T3",
-    "type": "task",
+    "tags": [],
     "title": "Deep",
     "body": "",
     "pri": "P3",

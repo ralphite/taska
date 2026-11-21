@@ -24,7 +24,7 @@ class DefaultPriority(unittest.TestCase):
             p = Project(tmp, "demo")
             try:
                 for by in ("you", "claude-code", "org"):
-                    p.run(parse("new task now Something to do\n"), by)
+                    p.run(parse("new now Something to do\n"), by)
                 self.assertEqual({it.pri for it in p.state.items.values()}, {"P1"})
             finally:
                 p.close()

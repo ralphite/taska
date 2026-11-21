@@ -1,4 +1,4 @@
-"""The words of Taska's data: item types and their letters, priorities, statuses, message kinds, who is a person.
+"""The words of Taska's data: item codes and tags, priorities, statuses, message kinds, who is a person.
 
 These are part of the stored format and of the agent interface: they never change.
 """
@@ -7,9 +7,13 @@ from __future__ import annotations
 
 import re
 
-# the project's rules are one document, not items (I693, r1118): "rule" is no type, R no code
-LETTER = {"feature": "F", "bug": "B", "idea": "I", "task": "T"}
-TYPE_OF = {letter: kind for kind, letter in LETTER.items()}
+# items have no types (T855, D152): every code is T and a number; the letters of the old types still name the same
+# item (B838 is T838). The project's rules are one document, not items (I693, r1118): R is no code
+CODE_LETTER = "T"
+OLD_LETTERS = "FBIT"
+OLD_TYPES = ("feature", "bug", "idea", "task")  # what `new bug ...` and `B03 bug` once said: refused with a rewrite
+# a tag is #word: letters of any language, digits, - and _ (#bug, #手机); stored without the #, in lower case
+TAG = re.compile(r"#([\w-]{1,30})")
 PRIORITIES = ("P0", "P1", "P2", "P3")
 # a new item's priority when nobody says one: P1, the user's rule (r10, r1072); tests/test_default_priority.py holds it
 DEFAULT_PRI = "P1"
@@ -24,7 +28,6 @@ PEOPLE = ("you", "org")
 TASKA = "taska"
 NOTES = ("org", TASKA)
 MESSAGE_KINDS = ("say", "ask", "withdraw", "propose", "decide", "progress")
-WORK_TYPES = ("bug", "feature", "task", "idea")  # what /next hands out
 TEXT_VERBS = MESSAGE_KINDS + ("title", "body", "next")
 USER_KINDS = ("say", "decide", "propose")  # what the organizer files from an input: the user's words, decision, idea
 DOC_KEY = "doc"  # the comment thread on a document as a whole; a paragraph's key is 10 hex digits

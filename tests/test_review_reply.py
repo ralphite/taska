@@ -15,7 +15,7 @@ class ReplyOnAnItemInReview(ServerCase):
         return urllib.request.urlopen(self.p + f"/{code}?ui=1", timeout=10).read().decode().split("\n", 1)[0]
 
     def test_yadongs_words_take_it_back_to_open(self) -> None:
-        code = self.do("new task P1 now Export keeps the filter\n").split()[1]
+        code = self.do("new P1 now Export keeps the filter\n").split()[1]
         self.page({"op": "set", "ref": code, "f": {"status": "open"}})  # Yadong approves it
         self.do(f"{code} doing\n")
         self.do(f"{code} done\n")
@@ -26,7 +26,7 @@ class ReplyOnAnItemInReview(ServerCase):
         self.assertIn("open", self.status(code))
 
     def test_a_reply_on_a_done_item_opens_it(self) -> None:
-        code = self.do("new task P1 now Import keeps the order\n").split()[1]
+        code = self.do("new P1 now Import keeps the order\n").split()[1]
         self.page({"op": "set", "ref": code, "f": {"status": "done"}})  # Yadong marks it done
         self.assertIn("done", self.status(code))
         self.do(f"{code} say Noted.\n")  # an agent's words leave it done

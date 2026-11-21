@@ -1,7 +1,7 @@
 // T456 (D75): a prototype of the new phone layout, to look at before anything is built. One screen Yadong taps through
 // himself (#6909: no autoplay, everything in one): the bar at the bottom by the levels (Projects, Items, the voice
 // button in the very middle, Comments, Search; no Needs you), an opened item as two pages (its detail under Items, its
-// talk under Comments), a document one level inside its item, Search that listens at once (F479).
+// talk under Comments), a document one level inside its item, Search that listens at once (T479).
 // What is not built yet is drawn here: the bar, the top line with only the project and its agent, the line saying
 // where the words go, the line after sending, the listening panel. Every page in between is the page's own component
 // with the demo project's data. Nothing here changes Taska itself.
@@ -146,7 +146,7 @@ function Scope({ item, onItem, onAll }: { item: boolean; onItem(): void; onAll()
   return (
     <div className="flex shrink-0 gap-2 px-4 pt-3">
       <button onClick={onItem} className={chip(item)}>
-        F001
+        T001
       </button>
       <button onClick={onAll} className={chip(!item)}>
         All in Shop
@@ -155,7 +155,7 @@ function Scope({ item, onItem, onAll }: { item: boolean; onItem(): void; onAll()
   )
 }
 
-/** Search listens at once: what you say shows as you say it (F479). */
+/** Search listens at once: what you say shows as you say it (T479). */
 function Listening({ onDone, onCancel }: { onDone(): void; onCancel(): void }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
@@ -177,7 +177,7 @@ function Listening({ onDone, onCancel }: { onDone(): void; onCancel(): void }) {
   )
 }
 
-// ---------------------------------------------------------------- the tour: where to tap next (R488, B524, F566)
+// ---------------------------------------------------------------- the tour: where to tap next (R488, T524, T566)
 
 const ITEMS_TAB = marked('tab', 'Items', { label: 'Items' })
 const MIC = button('Say something')
@@ -188,7 +188,7 @@ const TOUR: Tour = {
     { say: 'Tap ↑.', target: marked('box', 'main', { label: '↑' }) },
     { say: 'Tap See.', target: button('See') },
     { say: 'Tap Items.', target: ITEMS_TAB },
-    { say: 'Tap F001.', target: row(1) },
+    { say: 'Tap T001.', target: row(1) },
     { say: 'Tap Comments.', target: marked('tab', 'Comments', { label: 'Comments' }) },
     { say: 'Tap the mic to reply.', target: MIC },
     { say: 'Tap ↑.', target: button('Stop and send') },
@@ -246,16 +246,16 @@ function Phone({ mic }: { mic: boolean }) {
       .map((x, i) => ({ ...SAID[0], r: input({ id: 'r' + (20 + i), text: x.text }), code: '#' + (20 + i), when: '15:02', day: 'Today', time: '15:02' })),
     ...SAID,
   ]
-  const to = place === 'doc' ? 'Comment D1' : inItem ? 'Reply F001' : 'New input'
+  const to = place === 'doc' ? 'Comment D1' : inItem ? 'Reply T001' : 'New input'
   // where the box writes, as the page works it out: a new input on a list, a reply in an item, a comment in its document
-  const at = place === 'doc' ? '/p/shop/D1' : place === 'comments' || place === 'detail' ? '/p/shop/F001' : '/p/shop/'
+  const at = place === 'doc' ? '/p/shop/D1' : place === 'comments' || place === 'detail' ? '/p/shop/T001' : '/p/shop/'
   const route = parseRoute(at, '')
   const role = route.page === 'project' ? boxRole(M, route, false, 'Shop', null, { reply: null, quote: null, sel: new Set(sel ? [sel] : []) }, { mine: {}, going: {}, open: new Set() }) : null
   const shown = role ? shownBox(role, { mode: null, text, key: '', recordingFor: null }) : null
-  const where: BoxLine = shown?.line ?? (inItem ? { icon: 'reply', label: 'Reply to F001' } : { icon: 'newinput', label: 'New input to Shop' })
+  const where: BoxLine = shown?.line ?? (inItem ? { icon: 'reply', label: 'Reply to T001' } : { icon: 'newinput', label: 'New input to Shop' })
   const send = () => {
     const words = text || 'Voice note 0:05'
-    const line = place === 'doc' ? `Comment sent on D1${sel ? '' : ' · whole document'}` : inItem ? 'Reply sent to F001' : 'Sent to Shop'
+    const line = place === 'doc' ? `Comment sent on D1${sel ? '' : ' · whole document'}` : inItem ? 'Reply sent to T001' : 'Sent to Shop'
     setMine((m) => [...m, place === 'doc' ? { to: 'item', text: `On D1${sel ? ' “the export keeps the filter”' : ''}: ${words}` } : { to: inItem ? 'item' : 'shop', text: words }])
     setRec(false)
     setText('')
@@ -288,10 +288,10 @@ function Phone({ mic }: { mic: boolean }) {
     top = <Top back={false} code="Shop" sub="" onBack={() => {}} />
     body = listOf(ITEMS, 'items', { status: 'all' }, false, { on: { open: (n) => n === 1 && go('detail') } })
   } else if (place === 'detail') {
-    top = <Top back code="F001" sub="" onBack={() => go('items')} />
+    top = <Top back code="T001" sub="" onBack={() => go('items')} />
     body = <ItemPage it={{ ...F1, thread: [] }} f={facts} env={env} facts={talkFacts(M)} on={itemOn} />
   } else if (place === 'comments') {
-    top = <Top back code="F001" sub={F1.title} onBack={() => go('items')} />
+    top = <Top back code="T001" sub={F1.title} onBack={() => go('items')} />
     body = (
       <div className="flex flex-col gap-6 px-4 py-4">
         <div className="-mx-4 -mt-4">
@@ -301,9 +301,9 @@ function Phone({ mic }: { mic: boolean }) {
       </div>
     )
   } else if (place === 'doc') {
-    top = <Top back code="D1" sub="in F001" onBack={() => go('detail')} />
+    top = <Top back code="D1" sub="in T001" onBack={() => go('detail')} />
     // a part picked is commented on through the box (the bar's voice button), so the document's own floating voice
-    // button (B643) stays away: as when you type into the box
+    // button (T643) stays away: as when you type into the box
     const look = { threads: new Set<string>(), sel: new Set(sel ? [sel] : []), quote: null, reply: null, circle: false, typing: !!sel }
     body = (
       <div className="px-4 pt-2 pb-6">

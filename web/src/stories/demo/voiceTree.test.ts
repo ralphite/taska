@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { VOICE_STATE_LIST, VOICE_STEPS } from '../../model/voiceStates'
 import { nextOf, voiceTree, type StateNode } from './voiceTree'
 
-describe('the voice states tree (F731)', () => {
+describe('the voice states tree (T731)', () => {
   const t = voiceTree()
   const all: StateNode[] = []
   const walk = (n: StateNode) => (all.push(n), n.children.forEach(walk))

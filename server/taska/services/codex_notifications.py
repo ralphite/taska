@@ -101,7 +101,7 @@ class CodexNotifications:
         if ref:
             command = {"op": "say", "ref": ref, "text": body, "kind": "progress"}
         else:
-            command = {"op": "new", "type": "bug", "pri": "P1", "when": "now",
+            command = {"op": "new", "tags": ["bug"], "pri": "P1", "when": "now",
                        "title": "Codex \u6d88\u606f\u53d1\u9001\u5931\u8d25", "body": body}
         lines, _ = self.project.run([(0, command)], "codex-notifier")
         if not ref and lines and lines[0].startswith("ok "):

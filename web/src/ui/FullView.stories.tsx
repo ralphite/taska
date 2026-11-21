@@ -1,4 +1,4 @@
-// F839 (Yadong r1441 r1443): a document's diagram or table seen on the whole window. Its button at the top right shows
+// T839 (Yadong r1441 r1443): a document's diagram or table seen on the whole window. Its button at the top right shows
 // when it is pointed at on the desktop and always on the phone; it opens it over everything, the width of the window,
 // scrolling either way; × or Esc closes it. On the whole window a table reads as a table on the phone too.
 import type { Meta, StoryObj } from '@storybook/react-vite'

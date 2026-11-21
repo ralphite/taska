@@ -132,7 +132,7 @@ class Commands(ProjectCase):
         self.assertEqual(self.p.agents.rule_news(self.p.state, "codex"), [])  # once
 
     def test_a_rule_item_is_refused(self) -> None:
-        self.assertIn("type must be one of feature/bug/idea/task", self.page(op="new", type="rule", title="Commits"))
+        self.assertIn("there are no types any more", self.page(op="new", type="rule", title="Commits"))
 
 
 if __name__ == "__main__":

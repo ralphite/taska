@@ -50,7 +50,7 @@ class Agents(unittest.TestCase):
         self.assertEqual(self.p.skills(), {"/qa": "Answer, change nothing."})
 
     def test_words_applying_it_come_with_its_text(self) -> None:
-        self.p.run([(0, {"op": "new", "title": "Export plan", "type": "task"})], "you")
+        self.p.run([(0, {"op": "new", "title": "Export plan"})], "you")
         lines, _ = self.p.run([(0, {"op": "input", "text": "/qa what does the plan say about filters?", "scope": 1})], "you")
         rid = lines[0].split()[1]
         with self.p.lock:

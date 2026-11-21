@@ -1,4 +1,4 @@
-// The box where it is, as the page works it out: a demo project (F012 with its documents D1 and D2, a voice note's
+// The box where it is, as the page works it out: a demo project (T012 with its documents D1 and D2, a voice note's
 // input r7), where you are, what is picked or ticked in a document, what the box is in and holds; the box's line,
 // placeholder and Send come from the page's own boxRole and shownBox, and the page's Composer draws it with the state
 // the page keeps for it. Used by the input box's stories.
@@ -36,7 +36,7 @@ export const REC = { time: '0:04', levels: [0.2, 0.5, 0.8, 0.4, 0.6, 0.3, 0.7, 0
 
 /** Where you are and what the box holds. */
 export interface Here {
-  /** the address: '' a list (New input), 'F012' an item, 'D1' a document, 'new' the New input page */
+  /** the address: '' a list (New input), 'T012' an item, 'D1' a document, 'new' the New input page */
   at?: string
   sel?: string[]
   quote?: { key: string; text: string }

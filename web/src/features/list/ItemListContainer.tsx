@@ -97,6 +97,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     blocked: () => stores.route.getState().layers.includes('drawer'),
   }
   const on: ListEvents = {
+    tag: (t) => app.nav.showTag(t),
     open: (n, how) => (desk && how && (how.metaKey || how.ctrlKey || how.shiftKey) ? app.selection.pick(n, how.shiftKey) : app.nav.openItem(codeOf(m as ProjectModel, n))),
     act: (n, f, v, _label, from) => {
       // Later asks until when (D115 #21): at its button on the desktop, a sheet on the phone
@@ -134,7 +135,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
         why={body.kind === 'empty' ? body.why : (body.empty as string)}
         status={route.list.status}
         organizerOn={!!m?.facts.organizer.on}
-        onReset={() => app.nav.setList({ type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' })}
+        onReset={() => app.nav.setList({ tag: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' })}
         onConnect={() => app.sheets.open({ kind: 'agents' }, { tall: true, wide: true })}
         firstRun={
           m

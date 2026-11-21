@@ -32,6 +32,7 @@ export function SearchContainer({ route, hidden }: { route: ProjectRoute; hidden
       open: () => open(x),
       goto: () => (x.parentCode ? app.nav.fromSearch(`/p/${encodeURIComponent(x.project)}/${encodeURIComponent(x.parentCode)}`) : open(x)),
       act() {},
+      tag() {},
       need: () => open(x),
       reopen() {},
       fold() {},

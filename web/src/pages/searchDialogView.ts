@@ -12,7 +12,7 @@ import { closed } from '../model/items'
 import { shownStatus } from '../model/needStates'
 import { codeOf, type ProjectModel } from '../model/project'
 import { clock } from '../model/time'
-import type { Item, ItemType } from '../model/types'
+import type { Item } from '../model/types'
 import type { ViewChip } from '../features/list/rows'
 import type { SearchNow } from './searchView'
 
@@ -23,7 +23,7 @@ export interface FoundLine {
   key: string
   found: Found
   /** what its mark is: an item's state, a document, an input */
-  mark: { kind: 'item'; s: string; label: string; type: ItemType } | { kind: 'doc'; web: boolean } | { kind: 'input' } | { kind: 'rules' }
+  mark: { kind: 'item'; s: string; label: string } | { kind: 'doc'; web: boolean } | { kind: 'input' } | { kind: 'rules' }
   code: string
   title: string
   /** where it is: its project, and the item it is under or on */
@@ -109,7 +109,7 @@ export function lineOf(x: Found, p: DialogPlace): FoundLine {
   if (x.kind === 'items' && it) {
     const code = x.item?.code ?? (m ? codeOf(m, it.n) : String(it.n))
     const under = it.parent && m ? codeOf(m, it.parent) : (x.parentCode ?? '')
-    return { ...base, mark: { kind: 'item', ...shownStatus(it), type: it.type }, code, title: it.title, path: [base.projectTitle, under].filter(Boolean).join(' / ') }
+    return { ...base, mark: { kind: 'item', ...shownStatus(it) }, code, title: it.title, path: [base.projectTitle, under].filter(Boolean).join(' / ') }
   }
   const on = x.kind === 'docs' ? x.on : x.became
   const web = x.kind === 'docs' && m?.docs.find((d) => d.d === x.d)?.fmt === 'html'
@@ -127,7 +127,7 @@ export function visitFound(v: Visit, model: (slug: string) => ProjectModel | nul
   const it = m?.byN.get(v.n)
   // a project whose model is not here: the row drawn from what was kept of the visit, a whole item (B710: a partial
   // one, cast, had no thread, and the phone's search went white opening on its Recent)
-  const item: Item = it ?? { n: v.n, code: v.code, type: v.type ?? 'feature', title: v.title, body: '', pri: v.pri ?? 'P2', when: 'now', status: v.status ?? 'open', parent: null, next: '', srcs: [], mergedInto: null, archived: false, t0: '', t1: '', by: null, thread: [], wait: null, talked: false }
+  const item: Item = it ?? { n: v.n, code: v.code, tags: [], title: v.title, body: '', pri: v.pri ?? 'P2', when: 'now', status: v.status ?? 'open', parent: null, next: '', srcs: [], mergedInto: null, archived: false, t0: '', t1: '', by: null, thread: [], wait: null, talked: false }
   return { project: v.project, kind: 'items', key: 'i' + v.n, n: v.n, item: it ? undefined : { ...item, code: v.code } }
 }
 

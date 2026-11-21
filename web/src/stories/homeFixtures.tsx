@@ -19,8 +19,8 @@ export const PROJECTS: ProjectRow[] = [
   { name: 'long', title: 'A project with a very long name that does not fit anywhere at all', open: 0, needs: 0, pos: 3 },
 ]
 export const NEEDS: Need[] = [
-  { project: 'taska', ptitle: 'taska', n: 581, code: 'F581', title: 'Rewrite Taska from scratch', kind: 'ask', pri: 'P1', t: '' },
-  { project: 'home', ptitle: 'Home', n: 12, code: 'B012', title: 'The garden tap drips when it is turned off all the way', kind: 'review', pri: 'P2', t: '' },
+  { project: 'taska', ptitle: 'taska', n: 581, code: 'T581', title: 'Rewrite Taska from scratch', kind: 'ask', pri: 'P1', t: '' },
+  { project: 'home', ptitle: 'Home', n: 12, code: 'T012', title: 'The garden tap drips when it is turned off all the way', kind: 'review', pri: 'P2', t: '' },
 ]
 export const rows = homeRows(PROJECTS, NEEDS, now)
 export const facts: HomeFacts = { rows, needs: 13, away: false, gone: null, none: null, q: '', search: { phase: 'ready', answer: null } }
@@ -32,10 +32,10 @@ export const answer: FindAnswer = {
   marks: ['rewrite'],
   titles: { taska: 'taska', home: 'Home' },
   found: [
-    { project: 'taska', kind: 'items', key: 'i581', n: 581, item: item({ n: 581, code: 'F581', title: 'Rewrite Taska from scratch', status: 'doing' }) },
-    { project: 'home', kind: 'items', key: 'i3', n: 3, item: item({ n: 3, code: 'B3', type: 'bug', title: 'Fix the rewrite of the shelf', status: 'done' }) },
-    { project: 'home', kind: 'items', key: 'i9', n: 9, item: item({ n: 9, code: 'T9', type: 'task', title: 'Rewrite the shopping list', status: 'dropped' }) },
-    { project: 'taska', kind: 'items', key: 'i40', n: 40, item: item({ n: 40, code: 'T40', type: 'task', title: 'Old rewrite notes', archived: true }) },
+    { project: 'taska', kind: 'items', key: 'i581', n: 581, item: item({ n: 581, code: 'T581', title: 'Rewrite Taska from scratch', status: 'doing' }) },
+    { project: 'home', kind: 'items', key: 'i3', n: 3, item: item({ n: 3, code: 'B3', tags: ['bug'], title: 'Fix the rewrite of the shelf', status: 'done' }) },
+    { project: 'home', kind: 'items', key: 'i9', n: 9, item: item({ n: 9, code: 'T9', title: 'Rewrite the shopping list', status: 'dropped' }) },
+    { project: 'taska', kind: 'items', key: 'i40', n: 40, item: item({ n: 40, code: 'T40', title: 'Old rewrite notes', archived: true }) },
     { project: 'taska', kind: 'inputs', key: 'r315', n: null, code: '#315', title: 'the rewrite should keep every word the agents read', t: T, became: null },
   ],
 }

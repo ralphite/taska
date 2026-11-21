@@ -1,5 +1,5 @@
 // The New input page's latest inputs while one is on its way or being handled: not sent and sending (× cancels each:
-// it goes), a voice note being written out, organizing, an edit not saved, a recording cancelled (B627).
+// it goes), a voice note being written out, organizing, an edit not saved, a recording cancelled (T627).
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { out } from '../../stories/boxFixtures'

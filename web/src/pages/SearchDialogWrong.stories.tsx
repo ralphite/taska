@@ -1,4 +1,4 @@
-// F479: the desktop's search (pages/SearchDialog): each state of something going wrong (the phone's words), then
+// T479: the desktop's search (pages/SearchDialog): each state of something going wrong (the phone's words), then
 // the dialog in dark and on a narrower desktop. The journeys: stories/searchDesk.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { deskStory } from '../stories/searchDesk'

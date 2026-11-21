@@ -7,6 +7,7 @@ import { useBackSwipe, useDrawerPull } from './phoneGestures'
 import { gripVars } from '../stores/grips'
 import { useLayout, useServices, useStores, useStoreValue } from '../app/context'
 import { useAway, useProjectModel, type ProjectRoute } from '../app/hooks'
+import { projectTags } from '../model/items'
 import { usePaneRef } from '../app/panes'
 import { blockedAgent } from '../model/agents'
 import { needsYou } from '../model/needStates'
@@ -96,6 +97,8 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const duo = useStoreValue(stores.ui, (s) => s.duo)
   const compose = composing(route)
   const filtersOpen = useStoreValue(stores.ui, (s) => s.deskFilters)
+  const model = useProjectModel(route.slug)
+  const tags = useMemo(() => (model ? projectTags(model.items) : []), [model])
   const set = filtersSet(route.tab, route.list)
   // the foot's height and its box's middle (from the foot's top): what scrolls runs on under the box to its middle in
   // dark, where the box floats over the talk, and stops at the foot's top in light, so a scrollbar is never under it (B739)
@@ -134,6 +137,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
             open={filtersOpen}
             place="shrink-0"
             hidden={side || !(filtersOpen || set.length)}
+            tags={tags}
             on={{ ...filterEvents(app), toggle: () => stores.ui.getState().setDeskFilters(!filtersOpen) }}
           />
           <section data-part="items" className="@container/list flex min-h-0 flex-1 flex-col">

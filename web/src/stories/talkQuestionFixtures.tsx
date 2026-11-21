@@ -19,5 +19,5 @@ export const at = (thread: Message[], f: Partial<Item> = {}, o: PageOpts = {}): 
 })
 export const answered = [ask(), said('✓ CSV')]
 
-// ---- more states (B636)
+// ---- more states (T636)
 export const FORM = doc({ d: 14, n: 12, title: 'Export formats', md: '- [ ] CSV\n- [ ] Excel', blocks: [{ key: 'c1', kind: 'list', text: '- [ ] CSV\n- [ ] Excel', comments: [] }] })

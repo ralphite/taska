@@ -1,4 +1,4 @@
-// Which step a tour is on, when that step is done, when its part is missing (F566, D105): pure, from what the screen
+// Which step a tour is on, when that step is done, when its part is missing (T566, D105): pure, from what the screen
 // showed this frame. TourFrame looks at the screen once a frame and hands it here.
 import type { Tour } from './tour'
 

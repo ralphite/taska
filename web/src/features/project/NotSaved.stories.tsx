@@ -13,8 +13,8 @@ type Story = StoryObj
 
 const at = (min: number) => Date.parse(T) - min * 60_000
 const LIST: NotSaved[] = [
-  { sid: 'a', what: 'F012 marked done', why: 'Taska said no: it was archived', at: at(28), slug: 'taska', go: '/p/taska/F012' },
-  { sid: 'b', what: 'Reply to B003', why: 'Connection lost', at: at(32), slug: 'home', said: 'Keep the old filter' },
+  { sid: 'a', what: 'T012 marked done', why: 'Taska said no: it was archived', at: at(28), slug: 'taska', go: '/p/taska/T012' },
+  { sid: 'b', what: 'Reply to T003', why: 'Connection lost', at: at(32), slug: 'home', said: 'Keep the old filter' },
   { sid: 'c', what: 'Comment on D4', why: 'Connection lost', at: at(60 * 18), slug: 'taska' },
 ]
 const sheet = (list: NotSaved[], desk: boolean) => opened(notSavedSheet(notSavedRows(list, 'taska', (s) => ({ home: 'Home' })[s] ?? s, Date.parse(T)), acts('Not saved', ['go', 'drop'])) ?? { body: null }, desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} })

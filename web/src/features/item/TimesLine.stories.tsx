@@ -1,4 +1,4 @@
-// When an item was made and when it last changed (F704 r1157): one quiet line under its chips, "Oct 20 by Organizer ·
+// When an item was made and when it last changed (T704 r1157): one quiet line under its chips, "Oct 20 by Organizer ·
 // Updated 2h ago" (who made it when known; how long ago it changed). On the phone a tap opens both in full in a sheet;
 // on the desktop the pointer shows them in the page's tip. "Updated" is its last change of any kind (a field, a
 // message, a document); none when it has not changed since it was made. TimesLine, in the page's own pane and ItemPage.

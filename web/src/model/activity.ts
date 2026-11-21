@@ -20,6 +20,9 @@ export interface LogSentence {
   time: string
 }
 
+/** Tags as words: #bug #手机. */
+const tagWords = (v: unknown) => (Array.isArray(v) ? v.map((t) => '#' + String(t)).join(' ') : '')
+
 type World = Pick<ProjectModel, 'byN' | 'byId' | 'docs' | 'width' | 'at'>
 
 /** What a message of each kind says it did. */
@@ -33,12 +36,10 @@ const SAYS: Record<string, string> = {
 }
 /** The changes to an item that name its title after its code, so what Undo would undo is plain (D115 r1079 #2). */
 const TITLED: readonly string[] = ['status', 'when', 'pri', 'archived']
-const cap = (s: string) => s.replace(/^./, (c) => c.toUpperCase())
 const word = (map: Record<string, string>, v: unknown) => {
   const s = v == null ? '' : String(v)
   return Object.hasOwn(map, s) ? map[s] : s
 }
-const an = (s: string) => (/^[aeiou]/.test(s) ? 'an' : 'a')
 
 /** Words someone wrote, plain: no Markdown marks, no source tags, no checkboxes. */
 const plain = (s: string) =>
@@ -80,7 +81,7 @@ function sentence(m: World, e: LogRow): LogPart[] {
     if (f === 'when') return [`${word(WHEN_WORD, was)} → ${word(WHEN_WORD, now)}`]
     if (f === 'archived') return [now === true ? 'archived' : 'unarchived']
     if (f === 'pri') return [`priority ${String(was ?? '')} → ${String(now)}`]
-    if (f === 'type') return [`type ${cap(String(was ?? ''))} → ${cap(String(now))}`]
+    if (f === 'tags') return [`tags ${tagWords(was) || 'none'} → ${tagWords(now) || 'none'}`]
     if (f === 'parent') return typeof now === 'number' ? ['moved under ', item(now)] : typeof was === 'number' ? ['taken out from under ', item(was)] : ['parent changed']
     if (f === 'title') return ['renamed ', ...quoted(String(now ?? ''), '“”')]
     if (f === 'body') return ['description edited']
@@ -91,7 +92,7 @@ function sentence(m: World, e: LogRow): LogPart[] {
     case 'in':
       return ['wrote ', input(e.id), ...(e.to ? [' to ', item(e.to)] : []), ' ', ...quoted(e.text)]
     case 'add':
-      return ['made ', item(e.n), `, ${an(e.type)} ${e.type} (${e.pri}${e.when === 'later' ? ', later' : ''}): `, ...quoted(e.title, '“”'), ...(e.src ? [' from ', input(e.src)] : [])]
+      return ['made ', item(e.n), `${e.tags?.length ? ' ' + tagWords(e.tags) : ''} (${e.pri}${e.when === 'later' ? ', later' : ''}): `, ...quoted(e.title, '“”'), ...(e.src ? [' from ', input(e.src)] : [])]
     case 'set': {
       const head: LogPart[] = [item(e.n)]
       const it = m.byN.get(e.n)
@@ -232,7 +233,7 @@ export function undoLabel(m: World, u: UndoEntry): string {
   if ('archived' in f) return `${c} ${f.archived ? 'archived' : 'unarchived'}`
   if ('when' in f) return `${c} ${DID[String(f.when)]}`
   if ('pri' in f) return `${c} ${String(w.pri)} → ${String(f.pri)}`
-  if ('type' in f) return `${c} became a ${String(f.type)}`
+  if ('tags' in f) return `${c} tags now ${tagWords(f.tags) || 'none'}`
   if ('parent' in f) return f.parent ? `${c} moved under ${codeOf(m, f.parent as number)}` : `${c} stands on its own`
   return `${c} ${Object.keys(f).join(' and ')} edited`
 }

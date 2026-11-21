@@ -18,7 +18,7 @@ from taska.domain import events as ev  # noqa: E402
 class ChangeLog(ProjectCase):
     def setUp(self):
         super().setUp()
-        self.p.run(parse("new bug P1 now Export loses the filter\n"), "you")
+        self.p.run(parse("new #bug P1 now Export loses the filter\n"), "you")
 
     def test_a_change_is_facts_not_words(self):
         self.p.emit(ev.FieldsSet(n=1, by="you", f={"title": "A → B, it's", "archived": True},
@@ -26,18 +26,18 @@ class ChangeLog(ProjectCase):
         x = change_log.entries(self.p.state, 1)[0]
         self.assertEqual(x["kind"], "set")
         self.assertEqual(x["n"], 1)
-        self.assertEqual(x["codes"], {"1": "B1"})
+        self.assertEqual(x["codes"], {"1": "T1"})
         self.assertEqual(x["set"], [{"field": "title", "was": "Export loses the filter", "now": "A → B, it's"},
                                     {"field": "archived", "was": False, "now": True}])
         json.dumps(x)
         # agents read it in the log's words, as before
-        self.assertEqual(change_log.said(x), "B1 title Export loses the filter→A → B, it's, archived False→True")
+        self.assertEqual(change_log.said(x), "T1 title Export loses the filter→A → B, it's, archived False→True")
 
     def test_the_log_words_stay(self):
         self.p.run(parse("B1 ask Which export?\n"), "codex")
         text = change_log.text(self.p.state, 2)
-        self.assertIn("you new B1 bug P1 now 'Export loses the filter'", text)
-        self.assertIn("codex B1 ask 'Which export?'", text)
+        self.assertIn("you new T1 #bug P1 now 'Export loses the filter'", text)
+        self.assertIn("codex T1 ask 'Which export?'", text)
 
 
 if __name__ == "__main__":

@@ -97,8 +97,8 @@ class ApiContractTest(unittest.TestCase):
         return answer
 
     def test_reads_writes_files_and_sync_survive_restart(self) -> None:
-        made = self.do("new bug P1 now Export keeps the filter\n  Keep the selected rows.\n")
-        self.assertIn("ok B1 new (proposed", made)
+        made = self.do("new #bug P1 now Export keeps the filter\n  Keep the selected rows.\n")
+        self.assertIn("ok T1 new (proposed", made)
         self.assertIn("only the user can approve", self.do("B1 doing\n"))
         self.page({"op": "set", "ref": "B1", "f": {"status": "open"}})
         self.assertIn("status=doing", self.do("B1 doing\n"))
@@ -109,10 +109,10 @@ class ApiContractTest(unittest.TestCase):
                          "B1 ask Which format?\n  - ( ) CSV\n  - ( ) JSON\n"
                          "B1 doc Export plan\n  # Export plan\n\n  Keep the selected rows.\n"
                          "D1 reply \u00b61 Checked the plan.\n"
-                         "new task P2 later parent=B1 Keep the name\n"
+                         "new P2 later parent=B1 Keep the name\n"
                          "rules propose Keep all attachments\n  add ## Attachments\n    Keep all attachments.\n")
         self.assertNotIn("err ", answer)
-        self.assertIn("ok D1 new on B1", answer)
+        self.assertIn("ok D1 new on T1", answer)
         self.page({"op": "input", "text": "Use CSV.", "scope": "B1", "id": "answer-1"})
         self.page({"op": "set", "ref": "T2", "f": {"status": "open"}})
         rules = self.get(self.project + "/api/view")["docs"]
@@ -148,7 +148,7 @@ class ApiContractTest(unittest.TestCase):
         self.assertEqual(self.call(self.project + "/f/" + fid), (200, b"kept attachment"))
 
     def test_command_retries_and_errors_do_not_duplicate_changes(self) -> None:
-        command = {"op": "new", "type": "task", "title": "One item"}
+        command = {"op": "new", "title": "One item"}
         first = self.page(command, request_id="same-request")
         self.assertEqual(self.page(command, request_id="same-request"), first)
         self.assertEqual(len(self.get(self.project + "/api/view")["items"]), 1)

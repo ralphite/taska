@@ -20,8 +20,8 @@ const said = input({
   touched: [12],
   text: 'The export should keep the filter I set.',
   files: [VOICE, SHOT],
-  org: { ok: true, msg: 'Created F012', t: '', keep: false, changed: true, undone: false },
-  filing: { can: true, what: 'created F012', why: '' },
+  org: { ok: true, msg: 'Created T012', t: '', keep: false, changed: true, undone: false },
+  filing: { can: true, what: 'created T012', why: '' },
   history: [{ text: 'The export should keep it.', t: '2026-10-23T14:00:00-07:00', mode: 'edit' }],
   deletion: { go: [12], keep: [] },
 })
@@ -52,9 +52,9 @@ export const InputMenuPlain: Story = { ...both(inputMenu(plain, 0), 420), name: 
 /** a file's Take off asking again */
 export const InputMenuTakeOffAsks: Story = { ...both(inputMenu(said, 2, { [`unfile ${said.id} ${SHOT.f}`]: 1 }), 720), name: "A file's Take it off? asking" }
 /** Delete clicked once: it asks again in place (Delete?); the second click deletes it, and Deleted brings it back
- * (B666: any input, the one just sent too) */
+ * (T666: any input, the one just sent too) */
 export const InputMenuDeleteAsks: Story = { ...both(inputMenu(plain, 0, { [inputDeleteAsk(plain.id)]: 1 }), 420), name: 'Delete? asking' }
-/** a recording cancelled with Esc (B627): Send first; it goes with no item until it is sent */
+/** a recording cancelled with Esc (T627): Send first; it goes with no item until it is sent */
 export const InputMenuCancelled: Story = { ...both(inputMenu(input({ id: 'r24', kind: 'cancelled', text: 'Maybe the export should keep the columns too.', files: [VOICE] }), 2), 560), name: 'A cancelled recording: Send' }
 /** voice notes not tidied (Settings): the phone's menu has no Original words either */
 export const InputMenuTidyOff: Story = { ...both(inputMenu(said, 2, {}, false), 720), name: 'Voice notes not tidied' }

@@ -24,8 +24,8 @@ class LaterUntil(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.ws = Workspace(os.path.join(self.tmp.name, "data"), "", gemini=False)
         self.p = self.ws.add("demo")
-        self.run_as("you", {"op": "new", "title": "Paint the fence", "type": "task"},
-                    {"op": "new", "title": "Buy the paint", "type": "task", "parent": "T1"})
+        self.run_as("you", {"op": "new", "title": "Paint the fence"},
+                    {"op": "new", "title": "Buy the paint", "parent": "T1"})
 
     def tearDown(self) -> None:
         self.ws.close()

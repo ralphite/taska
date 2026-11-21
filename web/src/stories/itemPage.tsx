@@ -60,7 +60,7 @@ export interface PageOpts {
   doc?: Doc
   /** the steps that worked out its voice notes' words, for the tooltip (T697) */
   steps?: VoiceStep[]
-  /** its times in full, open (the phone's sheet, F704) */
+  /** its times in full, open (the phone's sheet, T704) */
   timesOpen?: boolean
   /** the line between the two columns being dragged, the left one this wide ("40%") */
   duoDragged?: string
@@ -87,7 +87,7 @@ const toggle = (set: ReadonlySet<number>, n: number) => {
   if (!next.delete(n)) next.add(n)
   return next
 }
-const itemMenuActs = acts('Item menu', ['edit', 'copy', 'agent', 'newDoc', 'addSub', 'reparent', 'later', 'archive', 'doNext', 'moveProject', 'remove', 'set'] as const, {
+const itemMenuActs = acts('Item menu', ['edit', 'copy', 'agent', 'newDoc', 'addSub', 'reparent', 'later', 'archive', 'doNext', 'moveProject', 'remove', 'set', 'tag'] as const, {
   agent: 'Sheets › An item: what agents see',
   reparent: 'Move and pick › Put under',
   moveProject: 'Move and pick › Item to another project',
@@ -98,7 +98,7 @@ const hideMessage = act('Message menu: hide')
  * it): Change your decision and its Cancel, answering a question again, its choices picked, Show more and Show
  * earlier, a hidden message peeked at, adding a subitem and editing (their Cancel), Full width, the lines between its
  * parts dragged, voice notes playing, pictures opened, the item's menu and its Status, Priority and Type, a message's
- * menu (T662), its times in full (F704). What needs Taska or the rest of the page (deciding, sending, opening another item) shows in the
+ * menu (T662), its times in full (T704). What needs Taska or the rest of the page (deciding, sending, opening another item) shows in the
  * Actions panel. */
 function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; o: PageOpts; talkOnly?: boolean }) {
   const m = modelOf([...(o.others ?? []), it], o.inputs ?? [], {}, o.docs ?? [])
@@ -114,7 +114,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
   const [addingSub, setAddingSub] = useState(start.addingSub)
   const [full, setFull] = useState(!!o.full)
   const [sizes, setSizes] = useState({ top: 0, duo: 0 })
-  // its talk, for the pane's button to its end (F716), as the page has it
+  // its talk, for the pane's button to its end (T716), as the page has it
   const [talk, setTalk] = useState<HTMLElement | null>(null)
   const media = useMedia(e0.url)
   const menu = usePop<{ arm: ItemMenuFacts['arm']; asking: boolean } | { msg: number } | { times: true } | { wait: true }>(desk, o.timesOpen ? { times: true } : undefined)
@@ -149,14 +149,14 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
     view: (f, all) => media.on.view(f, all),
     menu: (arm, from) => openMenu(arm, from),
     msgMenu: (id, from) => menu.open({ msg: id }, from),
-    // the line under its chips: both times in full, the phone's sheet (F704)
+    // the line under its chips: both times in full, the phone's sheet (T704)
     times: () => menu.open({ times: true }),
     // your message's ⋯: the menu of the input its words came from, as the page opens it
     inputMore: (id, from) => inputMenu.open({ id, asked: {} }, from),
     ...o.on,
   }
   // the item's menu as the page's ItemMenuSheet runs it: a row does its thing and the menu closes; Status..., Priority...,
-  // Type... show that field's choices in its place; Delete asks again
+  // Tags... show that field's choices in its place; Delete asks again
   const done = (run: () => void) => () => (menu.close(), run())
   const menuParts = (w: NonNullable<typeof menu.what>) => {
     if ('msg' in w) return messageMenuSheet(done(() => hideMessage(w.msg)))
@@ -175,6 +175,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
       set: (f, v) => (w.arm ? menu.close() : undefined, itemMenuActs.set(f, v)),
       field: (a) => menu.change({ arm: a, asking: false }, { narrow: true }),
       ...o.menuOn,
+      tag: o.menuOn?.tag ?? itemMenuActs.tag,
       group: o.menuOn?.group && ((v) => (menu.close(), o.menuOn?.group?.(v))),
       waitFor: () => menu.change({ wait: true }, { narrow: false }),
     }

@@ -1,4 +1,4 @@
-// Commenting on a place picked in a page (B498, approved r1047): a Markdown paragraph, words selected or a part of a
+// Commenting on a place picked in a page (T498, approved r1047): a Markdown paragraph, words selected or a part of a
 // web page, on the desktop and the phone. Picked, it has two buttons beside it (on the phone a row under it): Voice
 // and Comment. Voice turns them, where they are, into a small recording strip: ✕ at the far left cancels, Voice
 // becomes ✓. On the desktop ✓ stops it and its words go into the box below, at this place, and Comment becomes ↑

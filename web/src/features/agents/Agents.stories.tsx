@@ -1,4 +1,4 @@
-// What the agent pill opens (F768, Gemini's "compact" design, Yadong's choice): every agent session seen in the
+// What the agent pill opens (T768, Gemini's "compact" design, Yadong's choice): every agent session seen in the
 // project by its app, a manager's workers under it; the one picked beside them. The page's own sheet with what the
 // page's own agentsFacts makes of the demo project Shop and the sessions its agents report.
 import type { Meta, StoryObj } from '@storybook/react-vite'
@@ -23,7 +23,7 @@ const sheet = (agents: AgentSeen[], start: AgentsStart = {}, o: { work?: boolean
   ),
 })
 
-/** One session works on F001, picked as the sheet opens; a Codex session left hours ago. */
+/** One session works on T001, picked as the sheet opens; a Codex session left hours ago. */
 export const OneWorking: Story = { ...sheet(WORKING), name: 'One working' }
 /** A session asks to run a command: picked as the sheet opens, its amber block says what it waits on. */
 export const WaitingForYou: Story = { ...sheet(WAITING), name: 'A session waiting for you' }
@@ -46,7 +46,7 @@ export const PhoneList: Story = { ...sheet(MANAGER, { page: false }), name: 'Pho
 /** The phone: a session's page, Back to the list (it opens there when a session waits for you). */
 export const PhoneSessionPage: Story = { ...sheet(MANAGER), name: "Phone: a session's page" }
 
-// I833 (Yadong r1433 r1435): a session that lost its connection (the machine restarted) comes back by a message from
+// T833 (Yadong r1433 r1435): a session that lost its connection (the machine restarted) comes back by a message from
 // another session of its app. Reconnect hands that to a connected one; with none connected, a new session does it
 // with the words shown (on the desktop Claude's own link opens one with them in). Codex needs none: Taska wakes it.
 const LOST = sessionKey('claude-code', 'Export keeps the filter')

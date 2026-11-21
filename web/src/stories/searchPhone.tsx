@@ -1,4 +1,4 @@
-// F479: searching by voice on the phone, for its stories: the product's search page (features/search) drawn from the
+// T479: searching by voice on the phone, for its stories: the product's search page (features/search) drawn from the
 // demo project Shop (searchFixtures.ts) in each of its states, and walked through as the Finder takes it (here with
 // the demo's answers and a pause in place of the microphone and the server).
 //
@@ -66,7 +66,7 @@ export const AT: Record<string, Partial<Flow>> = {
 
 const visit = (m: ProjectModel, slug: string, n: number): Visit | null => {
   const it = m.byN.get(n)
-  return it ? { project: slug, kind: 'items', n, code: codeOf(m, n), title: it.title, type: it.type, status: it.status } : null
+  return it ? { project: slug, kind: 'items', n, code: codeOf(m, n), title: it.title, status: it.status } : null
 }
 /** The page's data around the search: the project you are in is Shop. */
 const PLACE: SearchPlace = {
@@ -189,7 +189,7 @@ const Keyboard = () => (
 )
 
 /** The phone through the search, from the state `start` names; `still`: it stays in that state (a state's story). */
-export function SearchPhone({ start = {}, still = false, icons = false }: { start?: Partial<Flow>; still?: boolean; /** projects with pictures (F743) */ icons?: boolean }) {
+export function SearchPhone({ start = {}, still = false, icons = false }: { start?: Partial<Flow>; still?: boolean; /** projects with pictures (T743) */ icons?: boolean }) {
   const { f, on, openSearch, back } = useFlow(start, still)
   if (f.at === 'list') return <ListPage onSearch={openSearch} />
   if (f.at === 'open' && f.open) return <OpenPage x={f.open} onBack={back} />

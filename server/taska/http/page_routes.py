@@ -170,8 +170,9 @@ def _what(c: Any) -> Dict[str, Any]:
     if not isinstance(c, dict):
         return {"op": "?"}
     out: Dict[str, Any] = {k: c[k] for k in ("op", "ref", "id", "d", "n", "mode", "kind", "to", "v") if k in c and not isinstance(c[k], (dict, list))}
+    out.update({k: c[k] for k in ("tags", "add", "del") if isinstance(c.get(k), list)})  # tags are labels, not words
     if isinstance(c.get("f"), dict):
-        out["fields"] = {k: v for k, v in c["f"].items() if isinstance(v, (bool, int)) or k in ("status", "pri", "when", "type", "parent")}
+        out["fields"] = {k: v for k, v in c["f"].items() if isinstance(v, (bool, int)) or k in ("status", "pri", "when", "tags", "parent")}
     return out
 
 

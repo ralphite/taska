@@ -46,7 +46,7 @@ class Waker(ProjectCase):
         return res.body.decode() if isinstance(res.body, bytes) else str(res.body)
 
     def work(self, title: str = "Export loses the filter") -> None:
-        self.p.run([(0, {"op": "new", "type": "task", "pri": "P1", "when": "now", "title": title})], "you")
+        self.p.run([(0, {"op": "new", "pri": "P1", "when": "now", "title": title})], "you")
 
     def test_an_idle_session_is_woken_once_for_work_not_again_while_it_works(self) -> None:
         self.assertIn("nothing to do now", self.call(f"/next?by=antigravity&sid={A}&lead=1"))

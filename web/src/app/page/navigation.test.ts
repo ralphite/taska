@@ -68,11 +68,11 @@ describe("the phone's Filters sheet", () => {
     for (const close of ['button', 'back'] as const) {
       const { route, nav } = page('/p/shop/', false)
       route.getState().openLayer('sheet')
-      nav.setList({ type: 'bug' })
+      nav.setList({ tag: 'bug' })
       if (close === 'button') route.getState().shutLayer('sheet')
       else route.getState().backBy(1)
       route.getState().read() // the browser says the history moved
-      expect([close, route.getState().url, route.getState().layers]).toEqual([close, '/p/shop/?type=bug', []])
+      expect([close, route.getState().url, route.getState().layers]).toEqual([close, '/p/shop/?tag=bug', []])
     }
   })
 })

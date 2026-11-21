@@ -22,5 +22,5 @@ export const ItemLater: Story = { ...both({ n: 7 }), name: 'For later' }
 /** Under another: Put under says which. */
 export const Subitem: Story = { ...both({ n: 14 }), name: 'A subitem' }
 export const ItemArchived: Story = { ...both({ n: 10 }), name: 'Archived' }
-// ---- more states (B636)
+// ---- more states (T636)
 export const ItemPlacedFirstInTheQueue: Story = { ...both({ n: 5, rank: 0 }), name: 'Placed first in the queue: Back in order' }

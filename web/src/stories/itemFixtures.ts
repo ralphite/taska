@@ -65,7 +65,7 @@ export const noItemEvents: ItemEvents = acts('Item', [
   'decide', 'notYet', 'modify', 'cancelModify', 'sendAnswer', 'sendRow', 'reask', 'cancelReask', 'later',
   'ref', 'picture', 'more', 'play', 'words', 'view', 'topSize', 'duoSize',
   'inputMore', 'inputHistory', 'goInput', 'moved', 'msgMenu', 'peek', 'unhide', 'docAt', 'cancel', 'outboxRetry', 'outboxEdit',
-  'menu', 'set', 'sources', 'times', 'goto', 'doc', 'subNew', 'subAdd', 'subCancel', 'subTyped', 'editSave', 'editCancel', 'editTyped',
+  'menu', 'set', 'tag', 'sources', 'times', 'goto', 'doc', 'subNew', 'subAdd', 'subCancel', 'subTyped', 'editSave', 'editCancel', 'editTyped',
 ] as const, { sources: 'Sheets › An item: what it came from', inputMore: 'What you said: its menu', inputHistory: 'Sheets › An input: its words and history' })
 
 /** A comment, yours unless said: an agent's names its session, as a connected agent's does (T711). */

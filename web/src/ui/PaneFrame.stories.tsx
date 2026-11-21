@@ -10,7 +10,7 @@ type Story = StoryObj
 
 const head = (
   <span className="flex items-center gap-2 text-sm font-semibold">
-    <span className="font-mono text-purple-600 dark:text-purple-400">F012</span>
+    <span className="font-mono text-purple-600 dark:text-purple-400">T012</span>
     Export ignores the active filter
   </span>
 )

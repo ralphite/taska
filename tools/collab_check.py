@@ -64,8 +64,8 @@ def main() -> int:
     work = os.path.join("/tmp", f"taska-collab-{slug}")
     os.makedirs(work, exist_ok=True)
     print(f"project {slug}: {base}", flush=True)
-    http("POST", f"{base}/do?by=you", "new task P1 now Pick the export format\nnew task P1 now Sort the list by date\n"
-                                       "new task P2 now Write the changelog\n")
+    http("POST", f"{base}/do?by=you", "new P1 now Pick the export format\nnew task P1 now Sort the list by date\n"
+                                       "new P2 now Write the changelog\n")
     item = lambda code: http("GET", f"{base}/{code}?ui=1")  # noqa: E731
 
     def sessions() -> dict:

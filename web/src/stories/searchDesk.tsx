@@ -1,4 +1,4 @@
-// The desktop's search (F479) as the stories show it: the page's own dialog (pages/SearchDialog, drawn from
+// The desktop's search (T479) as the stories show it: the page's own dialog (pages/SearchDialog, drawn from
 // searchDialogView) over the desktop's project page (searchDeskPage.tsx), fed by the demo projects Shop and Home
 // (searchFixtures.ts), with a pause in place of the microphone and the server: ⌘K (or /, or the sidebar's magnifier)
 // opens it on the last words, selected; typing searches a moment after you stop; the mic records, writes out and
@@ -126,12 +126,12 @@ function useDesk(start: Partial<Desk>, still: boolean) {
 
 // ---------------------------------------------------------------- the dialog
 
-/** What you opened lately: F001, its document D1, B002, B018, and Home's F021. */
+/** What you opened lately: T001, its document D1, T002, T018, and Home's T021. */
 const visit = (slug: string, n: number): Visit => {
   const it = modelFor(slug).byN.get(n)
-  return { project: slug, kind: 'items', n, code: codeOf(modelFor(slug), n), title: it?.title ?? '', type: it?.type, status: it?.status }
+  return { project: slug, kind: 'items', n, code: codeOf(modelFor(slug), n), title: it?.title ?? '', status: it?.status }
 }
-const RECENT: Visit[] = [visit('shop', 1), { project: 'shop', kind: 'docs', n: 1, d: 1, code: 'D1', title: 'Plan: the export keeps the filter', on: 'F001' }, visit('shop', 2), visit('shop', 18), visit('home', 21)]
+const RECENT: Visit[] = [visit('shop', 1), { project: 'shop', kind: 'docs', n: 1, d: 1, code: 'D1', title: 'Plan: the export keeps the filter', on: 'T001' }, visit('shop', 2), visit('shop', 18), visit('home', 21)]
 const ACTIONS = [...listedActions(true), ...listedActions(false)]
 const NOW = Date.parse('2026-11-02T18:00:00-08:00')
 

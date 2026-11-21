@@ -118,7 +118,7 @@ type Action = PageAction | ItemAction
 const item = <K extends Uses = never>(uses: readonly K[], a: Omit<ItemAction<K>, 'item' | 'uses'>): ItemAction<K> => ({ ...a, uses, item: true })
 const page = <K extends Uses = never>(uses: readonly K[], a: Omit<PageAction<K>, 'uses'>): PageAction<K> => ({ ...a, uses })
 const set = (w: Pick<ActionWorld, 'items'>, h: OnItem, f: string, v: unknown, o: { said?: string } = {}) => void w.items.change(h.it.n, f, v, o)
-const arm = (k: 's' | 'p' | 't') => (w: Pick<ActionWorld, 'keyArm' | 'toasts'>, h: OnItem) => {
+const arm = (k: 's' | 'p') => (w: Pick<ActionWorld, 'keyArm' | 'toasts'>, h: OnItem) => {
   w.keyArm.set(k, h.it.n)
   w.toasts.show(armHint(k, h.it))
 }
@@ -173,7 +173,7 @@ export const ACTIONS = {
   edit: item(['itemEdits'], { label: 'Edit', keys: 'i', listed: true, run: (w, h) => w.itemEdits.start(h.it.n) }),
   status: item(['keyArm', 'toasts'], { label: 'Status…', keys: 's', listed: true, run: arm('s') }),
   priority: item(['keyArm', 'toasts'], { label: 'Priority…', keys: 'p', listed: true, run: arm('p') }),
-  type: item(['keyArm', 'toasts'], { label: 'Type…', keys: 't', listed: true, run: arm('t') }),
+  tags: item(['sheets'], { label: 'Tags…', keys: 't', listed: true, run: (w, h) => w.sheets.open({ kind: 'item-menu', n: h.it.n, arm: 't' }, { pop: true, focus: false, narrow: true }) }),
   // beside its row in the list, as its right-click menu is (B801, B640 #8700: it was in the window's corner)
   'put-under': item(['sheets', 'fields'], {
     label: 'Put under…',
@@ -462,7 +462,7 @@ const HELP: [string, HelpRow[]][] = [
       { keys: '1–9, ⌘↵', text: 'Pick a choice, send the answer' },
       { ids: ['done', 'drop', 'later'], sep: ' · ', text: `${ITEM_ACTS.done.label} · ${ITEM_ACTS.drop.label} · ${ITEM_ACTS.later.label} / Now` },
       { ids: ['archive', 'archive-all'], sep: ' / ', text: 'Archive or unarchive / archive every finished item' },
-      { ids: ['status', 'priority', 'type'], sep: ' · ', text: "Status, priority, type (then the menu's digit)" },
+      { ids: ['status', 'priority', 'tags'], sep: ' · ', text: "Status, priority (then the menu's digit), tags" },
       { ids: ['put-under', 'copy'], sep: ' · ', text: 'Put under… · Copy for agent' },
       { ids: ['edit', 'new-doc', 'add-sub'], sep: ' · ', text: 'Edit · New doc · Add subitem' },
       { ids: ['menu'], sep: '', text: 'All actions' },

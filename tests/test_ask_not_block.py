@@ -13,7 +13,7 @@ from taska.domain import rules
 class AskNotBlock(ProjectCase):
     def setUp(self):
         super().setUp()
-        self.p.run(parse("new task P1 now Ship the export\n"), "you")
+        self.p.run(parse("new P1 now Ship the export\n"), "you")
 
     def test_an_agent_that_is_stuck_asks(self):
         lines, _ = self.p.run(parse("T1 ask I need the export key\n"), "claude-code")

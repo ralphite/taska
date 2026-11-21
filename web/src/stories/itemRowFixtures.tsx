@@ -34,9 +34,9 @@ export const one = (r: Row): Story => ({ render: () => <Frames phoneWidth={393} 
 
 export const agent = { by: 'claude-code', t: '2026-10-23T14:30:00-07:00' }
 
-// ---- more states (B636): the quick actions under the pointer, by status
+// ---- more states (T636): the quick actions under the pointer, by status
 export const hover = { parameters: { pseudo: { hover: ['.group'] } } }
-// ---- the phone's swipe on a row, drawn mid-swipe by the swipe's own code (B636)
+// ---- the phone's swipe on a row, drawn mid-swipe by the swipe's own code (T636)
 /** `dx` right: mid-swipe forward; left: the ways back left open, as wide as their buttons (as the page leaves them). */
 export const swiped = (r: Row, dx: number): Story => ({
   render: () => (

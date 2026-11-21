@@ -20,7 +20,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from ..domain import finding, rules, versions
 from ..domain.text import project_title, slug_of
 from ..domain.state import ProjectState
-from ..domain.vocab import CLOSED, LETTER, PROJECT_NAME, SLUG_CHARS, Refused
+from ..domain.vocab import CLOSED, PROJECT_NAME, SLUG_CHARS, Refused
 from ..agent_text import reconnect as reconnect_text
 from ..infra.agent_sessions import Session, claude_desktop
 from ..infra.project_db import ProjectDb
@@ -270,13 +270,13 @@ class Workspace:
                     own = s.id in p.agents.sids(own=True)
                     if own:  # one of its own sessions: its app's title says the item it is on (when nothing else does)
                         it = p.state.items.get(int(m.group(2)))
-                        if it and LETTER.get(it.type) == m.group(1) and it.status not in CLOSED:
+                        if it and it.status not in CLOSED:
                             titled[name][s.id] = it.n
                         continue
                     if s.cwd not in p.agents.folders():
                         continue
                     it = p.state.items.get(int(m.group(2)))
-                    if it and not it.deleted and not it.merged_into and LETTER.get(it.type) == m.group(1) and it.status not in CLOSED:
+                    if it and not it.deleted and not it.merged_into and it.status not in CLOSED:
                         fits.append((name, it.n, it.status == "doing"))
             doing = [f for f in fits if f[2]]
             pick = fits if len(fits) == 1 else doing if len(doing) == 1 else []

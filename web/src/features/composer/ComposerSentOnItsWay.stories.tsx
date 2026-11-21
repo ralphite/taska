@@ -1,5 +1,5 @@
 // The line under the box while what you sent is on its way: sending, uploading, several at once, waiting for Taska, not
-// sent. Its × cancels what it names: it is not sent (B666).
+// sent. Its × cancels what it names: it is not sent (T666).
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { out } from '../../stories/boxFixtures'
 import { at } from '../../stories/composerSentFixtures'
@@ -11,7 +11,7 @@ export const Sending = at({ mine: [out()] })
 export const UploadingThenSending: Story = { ...at({ mine: [out({ text: '', files: [{ f: '', name: 'shot.png', mime: 'image/png', uploading: true }] })] }), name: 'Uploading' }
 export const SeveralOnTheirWay: Story = { ...at({ mine: [out(), out({ q: 'q2', text: 'And on the tablet' }), out({ q: 'q3', text: 'Keep the sort too' })] }), name: 'Several on their way' }
 export const WaitingForTaska: Story = { ...at({ mine: [out({ state: 'failed', net: true })] }), name: 'Taska out of reach: waiting for it' }
-// ---- more states (B636)
+// ---- more states (T636)
 export const NotSent: Story = { ...at({ mine: [out({ state: 'failed' })] }), name: 'Not sent' }
 /** going out while Taska has not answered for a while: Waiting for Taska, as every list says it (T728) */
 export const WaitingWhileGoingOut: Story = { ...at({ mine: [out()], away: 2 }), name: 'Taska not answering while it goes out' }

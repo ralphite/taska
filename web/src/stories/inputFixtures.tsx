@@ -25,42 +25,42 @@ const org = (msg: string, f: Partial<OrgNote> = {}): OrgNote => ({ ok: true, msg
 export const SHOT: FileRef = { f: 'f3-export.png', name: 'export.png', mime: 'image/png' }
 /** a voice note before its words are in (still being written out) */
 export const VOICE: FileRef = { f: 'f4-voice_0-12.webm', name: 'voice_0-12.webm', mime: 'audio/webm' }
-/** a voice note with its words: its record (B682), as the page's model puts it with the note */
+/** a voice note with its words: its record (T682), as the page's model puts it with the note */
 export const said = (tr: string, heard?: string): FileRef => ({ ...VOICE, voice: record(VOICE.f, tr, heard ?? tr) })
 
 /** The items what you said made or changed. */
 export const ITEMS: Item[] = [
   item({ n: 12, title: 'Export keeps the filter you set' }),
-  item({ n: 14, type: 'bug', pri: 'P1', title: 'Coupon box hidden behind the keyboard' }),
-  item({ n: 7, type: 'task', title: 'Which formats should the export offer?' }),
+  item({ n: 14, tags: ['bug'], pri: 'P1', title: 'Coupon box hidden behind the keyboard' }),
+  item({ n: 7, title: 'Which formats should the export offer?' }),
 ]
 
 /** One input in each state it can be in. */
 export const ONE = {
   waiting: input({ id: 'r23', t: at(2), text: 'The export button does nothing on the orders page.', files: [SHOT] }),
-  voice: shown(input({ id: 'r22', t: at(6), acked: true, touched: [12], text: '', files: [said('Keep the filter, and the sort as well.', 'Keep the filter, and, um, the sort as well.')], org: org('Noted on F012') })),
+  voice: shown(input({ id: 'r22', t: at(6), acked: true, touched: [12], text: '', files: [said('Keep the filter, and the sort as well.', 'Keep the filter, and, um, the sort as well.')], org: org('Noted on T012') })),
   transcribing: shown(input({ id: 'r21', t: at(1), text: '', files: [VOICE] }), waiting(VOICE.f)),
   organizing: input({ id: 'r20', t: at(1), text: 'The coupon box hides behind the keyboard.' }),
-  made: input({ id: 'r19', t: at(20), acked: true, touched: [14], text: 'The coupon box hides behind the keyboard on the phone.', org: org('Created B014') }),
-  added: input({ id: 'r18', t: at(25), acked: true, touched: [12], text: 'It should keep the sort too, not only the filter.', org: org('Noted on F012') }),
+  made: input({ id: 'r19', t: at(20), acked: true, touched: [14], text: 'The coupon box hides behind the keyboard on the phone.', org: org('Created T014') }),
+  added: input({ id: 'r18', t: at(25), acked: true, touched: [12], text: 'It should keep the sort too, not only the filter.', org: org('Noted on T012') }),
   left: input({ id: 'r17', t: at(30), text: 'Look at why the build takes so long.', org: org('Left for your coding agent', { keep: true, changed: false }) }),
   handled: input({ id: 'r16', t: at(35), acked: true, text: 'Look at why the build takes so long.', org: org('Left for your coding agent', { keep: true, changed: false }) }),
   failed: input({ id: 'r14', t: at(45), text: 'The coupon box is in the way.', org: org('No changes needed · Some commands failed: err: B99 not found', { ok: false, changed: false }) }),
   keyRefused: input({ id: 'r14', t: at(45), text: 'The coupon box is in the way.', org: org('Gemini HTTP 401: API key not valid', { ok: false, changed: false }) }),
-  undone: input({ id: 'r13', t: at(50), text: 'The coupon box hides behind the keyboard.', org: org('Created B015', { undone: true }) }),
+  undone: input({ id: 'r13', t: at(50), text: 'The coupon box hides behind the keyboard.', org: org('Created T015', { undone: true }) }),
   edited: input({
     id: 'r12',
     t: at(55),
     acked: true,
     touched: [12],
     text: 'The export should keep the filter and the sort I set.',
-    org: org('Noted on F012'),
+    org: org('Noted on T012'),
     history: [{ text: 'The export should keep the filter I set.', t: at(55), mode: 'edit' }],
     updated: at(50),
   }),
   moved: input({ id: 'r11', t: at(60), acked: true, text: 'The app icon looks blurry on the home screen.', moved: { to: 'mobile-app', as: 'r4' } }),
   answer: input({ id: 'r10', t: at(65), acked: true, kind: 'answer', scope: 7, text: 'CSV and Excel.' }),
-  /** a recording cancelled with Esc, kept with its words: no one's work until it is sent (B627) */
+  /** a recording cancelled with Esc, kept with its words: no one's work until it is sent (T627) */
   cancelled: shown(input({ id: 'r24', t: at(3), kind: 'cancelled', text: '', files: [said('Maybe the export should keep the columns too.', 'Maybe the export should, hmm, keep the columns too.')] })),
   long: input({ id: 'r9', t: at(60 * 24), acked: true, touched: [7], org: org('Created T007'), text: [
       'Work out which formats the export should offer.',

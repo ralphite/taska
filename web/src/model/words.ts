@@ -1,8 +1,6 @@
-// The words the page uses for Taska's data: item types and their letters, statuses, priorities, agents' names.
+// The words the page uses for Taska's data: statuses, priorities, agents' names.
 
 import type { Status, When } from './types'
-
-export { LETTER } from './vocab.gen'
 
 export const STATUS_WORD: Record<Status, string> = {
   proposed: 'Proposed',

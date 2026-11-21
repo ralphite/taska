@@ -18,7 +18,7 @@ from taska.http.messages import Request  # noqa: E402
 class HeldItems(ProjectCase):
     def setUp(self) -> None:
         super().setUp()
-        self.p.run([(0, {"op": "new", "type": "task", "pri": "P1", "when": "now", "title": "Export loses the filter"})], "you")
+        self.p.run([(0, {"op": "new", "pri": "P1", "when": "now", "title": "Export loses the filter"})], "you")
 
     def get(self, path: str) -> str:
         req = Request("GET", path, {}, "127.0.0.1", read_body=lambda limit: b"")
@@ -62,7 +62,7 @@ class WhoIsHere(HeldItems):
         first = self.get("/next?by=claude-code&session=alpha")
         self.assertIn("other agent sessions here: codex · main (on T1, heard just now)", first)
         self.assertNotIn("other agent sessions here", self.get("/next?by=claude-code&session=alpha"))
-        self.p.run([(0, {"op": "new", "type": "task", "pri": "P1", "when": "now", "title": "Sort by date"})], "you")
+        self.p.run([(0, {"op": "new", "pri": "P1", "when": "now", "title": "Sort by date"})], "you")
         self.do("beta", "T2 doing\n")
         self.assertIn("claude-code · beta (on T2, heard just now)", self.get("/next?by=claude-code&session=alpha"))
 

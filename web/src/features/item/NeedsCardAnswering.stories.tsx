@@ -6,7 +6,7 @@ import { askOf, at, proposal, q, repliedOnProposal, report } from '../../stories
 export default { title: 'UI/Item pane/Talk/Needs-you card/While you answer' } satisfies Meta
 type Story = StoryObj
 
-// ---- more states (B636)
+// ---- more states (T636)
 export const QuestionAChoicePicked: Story = { ...at(q('Which format should the export use?\n- ( ) CSV\n- ( ) Excel'), { picked: [0] }), name: 'Question, a choice picked' }
 export const ProposalYouReplied: Story = { ...at(repliedOnProposal), name: 'Proposal, you replied' }
 export const ProposalYouRepliedPointerOnApprove: Story = {
@@ -14,7 +14,7 @@ export const ProposalYouRepliedPointerOnApprove: Story = {
   name: 'Proposal, you replied, pointer on Approve',
   parameters: { pseudo: { hover: ['button'] } },
 }
-/** Words on an item in review set it back to open (B606); a comment on one of its documents still answers it here. */
+/** Words on an item in review set it back to open (T606); a comment on one of its documents still answers it here. */
 export const FinishedYouCommented: Story = { ...at({ status: 'review', talked: true, thread: [report] }), name: 'Finished, you commented on its document' }
 /** you approved the proposal while its question still waits: ✓ Approve beside Send answer */
 export const ApprovedQuestionWaits: Story = {

@@ -20,7 +20,7 @@ def rows(late: bool, amend: bool = False):
     words = {"k": "voice", "f": VOICE["f"], "state": "done", "src": "r1", "tidied": WORDS, "said": WORDS, "late": late,
              "by": "taska", "t": T % 22}
     out = [
-        {"k": "add", "n": 1, "by": "claude-code", "title": "Sync", "type": "task", "pri": "P2", "when": "now", "status": "open", "body": "", "t": T % 0},
+        {"k": "add", "n": 1, "by": "claude-code", "title": "Sync", "pri": "P2", "when": "now", "status": "open", "body": "", "t": T % 0},
         {"k": "in", "id": "r1", "by": "you", "text": LINK, "scope": 1, "files": [VOICE], "q": "q1", "t": T % 14},
         {"k": "ack", "ids": ["r1"], "by": "claude-code", "t": T % 15},
         words,

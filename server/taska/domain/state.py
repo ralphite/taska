@@ -10,7 +10,7 @@ from typing import Dict, List, NamedTuple, Optional, Set, Union
 
 from .events import Event
 from .model import Doc, Input, Item, Message, Voice
-from .vocab import LETTER
+from .vocab import CODE_LETTER
 
 
 class Claim(NamedTuple):
@@ -70,13 +70,13 @@ class ProjectState:
     first_acts: Dict[str, Dict[int, int]] = field(default_factory=dict)  # agent session -> item -> its first change
 
     def code(self, n: Optional[int]) -> str:
-        """An item's code: its type's letter and its number, padded to the width of the largest number."""
+        """An item's code: T and its number, padded to the width of the largest number."""
         it = self.items.get(n) if n is not None else None
-        return (LETTER.get(it.type, "?") if it else "?") + str(n).zfill(len(str(self.max_n)))
+        return (CODE_LETTER if it else "?") + str(n).zfill(len(str(self.max_n)))
 
     def bare_code(self, n: Optional[int]) -> Optional[str]:
         it = self.items.get(n) if n is not None else None
-        return f"{LETTER.get(it.type, '?')}{it.n}" if it else None
+        return f"{CODE_LETTER}{it.n}" if it else None
 
     @property
     def rules(self) -> Optional[Doc]:

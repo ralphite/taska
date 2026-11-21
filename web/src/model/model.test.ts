@@ -40,7 +40,7 @@ describe("the copy of the server's data", () => {
 
 describe('the address', () => {
   test("places and the list's settings read back the way they were written", () => {
-    const list = { ...NO_FILTERS, type: 'bug', status: 'wait' }
+    const list = { ...NO_FILTERS, tag: 'bug', status: 'wait' }
     for (const place of [{ kind: 'tab' }, { kind: 'item', ref: 'F12' }, { kind: 'doc', d: 3 }, { kind: 'new' }] as const) {
       const path = projectPath('taska', 'items', place, list)
       const [p, s] = path.split('?')
@@ -88,13 +88,13 @@ describe('which items a list shows', () => {
   const items = [
     item({ n: 1, title: 'Export ignores the filter' }),
     item({ n: 2, status: 'done', title: 'Sort by priority' }),
-    item({ n: 3, type: 'task', when: 'later', title: 'Commit in English' }),
+    item({ n: 3, when: 'later', title: 'Commit in English' }),
     item({ n: 4, archived: true, title: 'Old export' }),
     item({ n: 5, title: 'Talk', thread: [message({ id: 1, text: 'the CSV export keeps every row' })] }),
   ]
   const ns = (tab: Parameters<typeof visible>[1], list: Partial<typeof NO_FILTERS>) => visible(items, tab, { ...NO_FILTERS, ...list }).map((x) => x.n)
 
-  test('Items shows open work now; the archive has its own tab; the rules are a document, no items (I693, r1118)', () => {
+  test('Items shows open work now; the archive has its own tab; the rules are a document, no items (T693, r1118)', () => {
     expect(ns('items', {})).toEqual([1, 5])
     expect(ns('items', { status: 'done' })).toEqual([2])
     expect(ns('items', { status: 'open' })).toEqual([1, 5])
@@ -103,7 +103,7 @@ describe('which items a list shows', () => {
   })
 })
 
-describe('a recording cancelled with Esc, kept in the inputs (B627)', () => {
+describe('a recording cancelled with Esc, kept in the inputs (T627)', () => {
   const organizer = { on: true, busy: [] as string[] }
   const kept = { t: '', by: 'you', text: 'Keep the columns too', scope: null, files: [], acked: false, touched: [], org: null, seq: 1, v: 0, id: 'r4', kind: 'cancelled' as const }
 
@@ -122,7 +122,7 @@ describe('a recording cancelled with Esc, kept in the inputs (B627)', () => {
     expect(actsIn(b, 'sheet', { others: true })).toEqual([])
   })
 
-  test('B684: an input the organizer has not finished reads Organizing whether it is on it, next or trying again', () => {
+  test('T684: an input the organizer has not finished reads Organizing whether it is on it, next or trying again', () => {
     const copy = { cursor: '', items: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), voices: new Map(), facts: projectFacts(), server: { page: '', update: false, dev: false }, at: 0 }
     const sent = project(copy, [], 0, [{ id: kept.id, f: { kind: undefined } }]).byId.get(kept.id)!
     for (const busy of [[sent.id], ['r999'], []])
@@ -130,15 +130,15 @@ describe('a recording cancelled with Esc, kept in the inputs (B627)', () => {
   })
 })
 
-describe('what became of an input, in one set of words (B629)', () => {
-  const m = modelOf([item({ n: 14, type: 'bug' }), item({ n: 12 }), item({ n: 7, type: 'task' })], [], { organizer: { on: true, model: '', busy: [] } })
+describe('what became of an input, in one set of words (T629)', () => {
+  const m = modelOf([item({ n: 14, tags: ['bug'] }), item({ n: 12 }), item({ n: 7 })], [], { organizer: { on: true, model: '', busy: [] } })
   const org = (msg: string, f = {}) => ({ ok: true, msg, t: '', keep: false, changed: true, undone: false, ...f })
   const of = (f: Parameters<typeof input>[0]) => becameOf(input(f), m, (s) => (s === 'mobile-app' ? 'Mobile app' : s))
 
   test("the organizer's note says what was done to each item, and what else it says stays as a note", () => {
-    const b = of({ id: 'r1', acked: true, touched: [14, 12, 7], org: org('Created B014; added to F012 and T007 · asked about the sort') })
+    const b = of({ id: 'r1', acked: true, touched: [14, 12, 7], org: org('Created T014; added to T012 and T007 · asked about the sort') })
     expect(b).toMatchObject({ k: 'filed', note: 'asked about the sort' })
-    expect(b.k === 'filed' && b.items.map((x) => [x.item.code, x.did])).toEqual([['B014', 'Created'], ['F012', 'Added to'], ['T007', 'Added to']])
+    expect(b.k === 'filed' && b.items.map((x) => [x.item.code, x.did])).toEqual([['T014', 'Created'], ['T012', 'Added to'], ['T007', 'Added to']])
   })
 
   test('where one stands when no item came of it', () => {
@@ -147,25 +147,25 @@ describe('what became of an input, in one set of words (B629)', () => {
     expect(of({ id: 'r2', org: org('Gemini HTTP 503: overloaded', { ok: false }) })).toMatchObject({ k: 'failed', why: 'busy' })
     // its key refused: where to fix it, and Retry once it is fixed (nothing asks again by itself)
     expect(of({ id: 'r2', org: org('Gemini HTTP 401: API key not valid', { ok: false }) })).toMatchObject({ k: 'failed', why: 'Gemini key not accepted · check GEMINI_API_KEY on the server', retry: true })
-    expect(of({ id: 'r2', org: org('B500 is not in this project', { ok: false }) })).toMatchObject({ k: 'failed', why: 'B500 is not in this project' })
+    expect(of({ id: 'r2', org: org('T500 is not in this project', { ok: false }) })).toMatchObject({ k: 'failed', why: 'T500 is not in this project' })
     expect(of({ id: 'r3', org: org('Left for your agent', { keep: true }) })).toEqual({ k: 'agent' })
     expect(of({ id: 'r4', acked: true, org: org('Left for your agent', { keep: true }) })).toEqual({ k: 'handled' })
     expect(of({ id: 'r5', acked: true, org: org('Nothing to file: a thank-you') })).toEqual({ k: 'note', text: 'Nothing to file: a thank-you' })
     expect(of({ id: 'r6', acked: true, kind: 'answer', scope: 7 })).toMatchObject({ k: 'answer', item: { code: 'T007' } })
     expect(of({ id: 'r7', acked: true, moved: { to: 'mobile-app', as: 'r4' } })).toEqual({ k: 'moved', to: 'Mobile app', as: '#4', href: '/p/mobile-app/' })
   })
-  test('B714 #10594: an input said in F012 that made B014 and T007 shows "Created" for those two, not for F012 or an older item', () => {
+  test('T714 #10594: an input said in T012 that made T014 and T007 shows "Created" for those two, not for T012 or an older item', () => {
     const said = '2026-10-23T14:30:00-07:00'
     const later = '2026-10-23T14:31:00-07:00'
     const made = modelOf([
       item({ n: 12, srcs: ['r1'], t0: '2026-10-22T09:00:00-07:00' }),
-      item({ n: 14, type: 'bug', srcs: ['r1'], t0: later }),
-      item({ n: 7, type: 'task', srcs: ['r1'], t0: later }),
+      item({ n: 14, tags: ['bug'], srcs: ['r1'], t0: later }),
+      item({ n: 7, srcs: ['r1'], t0: later }),
       item({ n: 9, srcs: ['r1'], t0: '2026-10-22T09:00:00-07:00' }), // made before, by an agent: only added to
       item({ n: 3, srcs: ['r0', 'r1'], t0: later }), // made from another input
     ])
     const r = input({ id: 'r1', t: said, scope: 12, touched: [12, 14, 9, 3, 7] })
-    expect(madeFrom(r, made).map((x) => x.code)).toEqual(['B014', 'T007'])
+    expect(madeFrom(r, made).map((x) => x.code)).toEqual(['T014', 'T007'])
     expect(madeFrom({ ...r, touched: [12] }, made)).toEqual([])
   })
 })

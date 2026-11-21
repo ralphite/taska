@@ -103,9 +103,9 @@ class Spellings:
 
 
 class ListViews:
-    """Your own views of the item list ({name, type, when, status, pri, sort}), the same in every project."""
+    """Your own views of the item list ({name, tag, when, status, pri, sort}), the same in every project."""
 
-    KEYS = ("type", "when", "status", "pri", "sort")
+    KEYS = ("tag", "when", "status", "pri", "sort")
 
     def __init__(self, root: str):
         self._path = os.path.join(root, "views.json")
@@ -123,11 +123,11 @@ class ListViews:
         out: List[Dict[str, str]] = []
         for v in views[:30]:
             if not isinstance(v, dict):
-                raise Refused("each view is {name, type, when, status, pri, sort}")
+                raise Refused("each view is {name, tag, when, status, pri, sort}")
             name = " ".join(str(v.get("name") or "").split())[:40]
             if not name or any(o["name"].lower() == name.lower() for o in out):
                 raise Refused("each view needs a name of its own")
-            out.append(dict({"name": name}, **{k: str(v.get(k) or "all")[:20] for k in cls.KEYS}))
+            out.append(dict({"name": name}, **{k: str(v.get(k) or "all")[:30] for k in cls.KEYS}))
         return out
 
     def all(self) -> List[Dict[str, str]]:

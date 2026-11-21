@@ -1,4 +1,4 @@
-// The desktop's search (F479) in its stories: the page around it (stories/searchDesk.tsx), each part the page's own
+// The desktop's search (T479) in its stories: the page around it (stories/searchDesk.tsx), each part the page's own
 // component with the demo projects Shop and Home (searchFixtures.ts): the sidebar with its Search button (or the rail
 // with its magnifier), the project's bar, the list (its filter at the end of the views' row), the item open in its
 // pane, the box under it; and an item's preview, drawn as its page draws it.

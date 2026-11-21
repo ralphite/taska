@@ -15,7 +15,7 @@ class ItemAdded(Event):
     KIND: ClassVar[str] = "add"
     n: int = 0
     title: str = ""  # as written; `clean` is what the item gets
-    type: str = "idea"
+    tags: List[str] = field(default_factory=list)
     pri: str = "P1"  # DEFAULT_PRI (r1072); stored events always say theirs
     when: str = "now"
     status: str = "open"
@@ -25,7 +25,7 @@ class ItemAdded(Event):
     keep: bool = False  # linked to src, but src stays unhandled
 
     def body(self) -> Row:
-        row: Row = {"n": self.n, "by": self.by, "title": self.title, "src": self.src, "type": self.type,
+        row: Row = {"n": self.n, "by": self.by, "title": self.title, "src": self.src, "tags": list(self.tags),
                     "pri": self.pri, "when": self.when, "status": self.status, "body": self.body_text,
                     "next": self.next, "parent": self.parent}
         opt(row, "keep", True, self.keep)
@@ -231,12 +231,28 @@ class ProjectIconSet(Event):
         return {"f": self.f, "by": self.by}
 
 
+def _tags_of(r: Row) -> List[str]:
+    """An item's tags as a change wrote them. Changes from before T855 wrote a type instead: bug reads as the tag bug,
+    the other types as no tag (the user's choice, r1459)."""
+    if "tags" in r:
+        return [str(x) for x in r["tags"] or []]
+    return ["bug"] if r.get("type") == "bug" else []
+
+
+def _fields(d: Any) -> Dict[str, Any]:
+    """The fields a set changed (or what they were), an old type read as tags (see _tags_of)."""
+    out = dict(d or {})
+    if "type" in out:
+        out["tags"] = _tags_of({"type": out.pop("type")})
+    return out
+
+
 READERS: Dict[str, Reader] = {
-    "add": lambda r: ItemAdded(n=need(r, "n"), title=need(r, "title"), src=r.get("src"), type=need(r, "type"),
+    "add": lambda r: ItemAdded(n=need(r, "n"), title=need(r, "title"), src=r.get("src"), tags=_tags_of(r),
                                pri=need(r, "pri"), when=need(r, "when"), status=need(r, "status"),
                                body_text=r.get("body", ""), next=r.get("next", ""), parent=r.get("parent"),
                                keep=bool(r.get("keep")), **common(r)),
-    "set": lambda r: FieldsSet(n=need(r, "n"), f=dict(need(r, "f")), was=dict(r.get("was") or {}), src=r.get("src"),
+    "set": lambda r: FieldsSet(n=need(r, "n"), f=_fields(need(r, "f")), was=_fields(r.get("was")), src=r.get("src"),
                                keep=bool(r.get("keep")), undo_of=r.get("undo_of"), cascade=r.get("cascade"),
                                **common(r)),
     "say": lambda r: MessagePosted(n=need(r, "n"), kind=need(r, "kind"), text=need(r, "text"), src=r.get("src"),

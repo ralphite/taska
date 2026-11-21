@@ -59,7 +59,7 @@ assert "<div id=\"root\"" in html, "no page"
 projects = json.loads(get("/api/projects"))
 assert "default" in json.dumps(projects), projects
 title = sys.argv[1]
-print(get("/p/default/do?by=linux-test", ("new task P2 " + title + "\n").encode()).strip())
+print(get("/p/default/do?by=linux-test", ("new P2 " + title + "\n").encode()).strip())
 items = get("/p/default/items")
 assert title in items, items
 print("ok:", sys.version.split()[0], "| page", len(html), "bytes | projects", json.dumps(projects)[:80])

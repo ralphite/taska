@@ -4,14 +4,10 @@
 import { ITEM_ACTS, type ActTone, type ItemActId } from '../model/itemActs'
 import { newSlug } from '../model/projects'
 import type { IconName } from './icon-paths'
-import type { ItemType, Pri, Status } from '../model/types'
+import type { Pri, Status } from '../model/types'
 
-export const TYPE_TEXT: Record<ItemType, string> = {
-  feature: 'text-blue-700 dark:text-blue-300',
-  bug: 'text-red-700 dark:text-red-300',
-  idea: 'text-violet-700 dark:text-violet-300',
-  task: 'text-teal-700 dark:text-teal-300',
-}
+/** An item's code, before its title (one colour for all: items have no types, T855). */
+export const CODE_TEXT = 'text-zinc-500 dark:text-zinc-400'
 
 export const PRI_TEXT: Record<Pri, string> = {
   P0: 'font-semibold text-red-600 dark:text-red-400',

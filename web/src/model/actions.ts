@@ -1,23 +1,18 @@
 // What can be done to an item, and why not: its next step for you, what Done, Won't do and Later do and why they
 // cannot (in a few words, said instead); and what a row offers: the desktop's quick actions (shown on hover) and the
-// phone's swipes, as (field, value, action: model/itemActs); and what S, P or T then a key sets, and says.
+// phone's swipes, as (field, value, action: model/itemActs); and what S or P then a key sets, and says.
 
 import type { ItemActId } from './itemActs'
 import { canDone, closed, statusChoices } from './items'
 import { yourStep } from './needStates'
 import type { Item } from './types'
-import { LETTER, TYPES } from './vocab.gen'
 
 export type Slot = readonly [field: string, value: string, act: ItemActId]
 
-/** T then a type's letter */
-const TYPE_KEY: Record<string, string> = Object.fromEntries(TYPES.map((t) => [LETTER[t].toLowerCase(), t]))
-
-/** S, P or T was pressed, then `key`: the field it sets and the value (a status by its number in `statuses`, a
- * priority by its digit, a type by its letter); null: the key sets nothing. */
-export function armedSet(arm: 's' | 'p' | 't', key: string, statuses: readonly string[]): readonly [field: string, value: string] | null {
+/** S or P was pressed, then `key`: the field it sets and the value (a status by its number in `statuses`, a
+ * priority by its digit); null: the key sets nothing. (T opens the item's tags, a list to pick from.) */
+export function armedSet(arm: 's' | 'p', key: string, statuses: readonly string[]): readonly [field: string, value: string] | null {
   if (arm === 'p') return /^[0-3]$/.test(key) ? ['pri', 'P' + key] : null
-  if (arm === 't') return TYPE_KEY[key.toLowerCase()] ? ['type', TYPE_KEY[key.toLowerCase()]] : null
   const v = /^[1-9]$/.test(key) ? statuses[Number(key) - 1] : undefined
   return v ? ['status', v] : null
 }
@@ -25,12 +20,11 @@ export function armedSet(arm: 's' | 'p' | 't', key: string, statuses: readonly s
 /** What S then a digit counts on the page. */
 export const pageStatuses = (it: Item): readonly string[] => statusChoices(it).map(([v]) => v)
 
-/** What S, P or T says it waits for (and a digit pressed alone): the keys that follow, from what they set. */
-export function armHint(arm: 's' | 'p' | 't' | null, it: Item): string {
+/** What S or P says it waits for (and a digit pressed alone): the keys that follow, from what they set. */
+export function armHint(arm: 's' | 'p' | null, it: Item): string {
   if (arm === 's') return `Status: 1–${pageStatuses(it).length}`
   if (arm === 'p') return 'Priority: 0–3'
-  if (arm === 't') return 'Type: ' + TYPES.map((t) => LETTER[t]).join(' ')
-  return 'First S, P or T: then a digit'
+  return 'First S or P: then a digit'
 }
 
 /** What Done and Won't do set. */

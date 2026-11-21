@@ -30,18 +30,18 @@ export const PhonePressed: Story = {
   name: 'Phone: Back and ⋯ pressed',
   render: () => (
     <Frames desk={false} phoneWidth={393}>
-      {() => frame({ head: <span className="font-mono text-sm font-bold">F012</span>, menu: true, pressed: true, onMenu: act('Pane: menu → Menus and sheets › Item menu') }, false)}
+      {() => frame({ head: <span className="font-mono text-sm font-bold">T012</span>, menu: true, pressed: true, onMenu: act('Pane: menu → Menus and sheets › Item menu') }, false)}
     </Frames>
   ),
 }
 /** Scrolled on the phone: the title has gone up out of sight, so the bar says it after the code, on the code's one
- * line, cut short between Back and ⋯ (B696). */
+ * line, cut short between Back and ⋯ (T696). */
 export const ScrolledTitle: Story = {
   name: 'Phone: Scrolled: the title beside the code, one line',
   render: () => <Frames desk={false} phoneWidth={393} height={300}>{() => pageOf(it({ title: 'The export keeps the filter I set, also when it runs from the phone' }), false, { others: [PARENT], titled: true })}</Frames>,
 }
-export const BackToAnItem: Story = { name: 'Back to an item', render: () => <Frames phoneWidth={393} deskWidth={720} height={260}>{() => <BackTo label="F012" onBack={act('Pane: back to F012')} />}</Frames> }
+export const BackToAnItem: Story = { name: 'Back to an item', render: () => <Frames phoneWidth={393} deskWidth={720} height={260}>{() => <BackTo label="T012" onBack={act('Pane: back to T012')} />}</Frames> }
 /** New input opened from an item: its bar says New input and, at its end, the way back to that item */
-export const NewInputFromAnItem: Story = { name: 'New input, opened from an item: Back to F012', render: () => <Frames phone={false} deskWidth={720}>{() => frame({ head: newInputHead, nav: <BackTo label="F012" onBack={act('Pane: back to F012')} /> }, true)}</Frames> }
+export const NewInputFromAnItem: Story = { name: 'New input, opened from an item: Back to T012', render: () => <Frames phone={false} deskWidth={720}>{() => frame({ head: newInputHead, nav: <BackTo label="T012" onBack={act('Pane: back to T012')} /> }, true)}</Frames> }
 /** a side list open on the desktop and nothing picked: the pane has no bar */
 export const NoBarBesideASideList: Story = { name: 'Beside a side list: no bar', render: () => <Frames phone={false} deskWidth={720}>{() => frame({ bar: false }, true, <NoSelection side="docs" />)}</Frames> }

@@ -62,7 +62,8 @@ def when(it: Item) -> str:
 
 
 def line(st: ProjectState, it: Item) -> str:
-    out = f"{st.code(it.n)} {it.pri} {when(it)} {it.status} {it.title}"
+    tags = "".join(f"#{t} " for t in it.tags)
+    out = f"{st.code(it.n)} {it.pri} {when(it)} {it.status} {tags}{it.title}"
     w = rules.waiting(st, it)
     if w:
         out += " ?"
@@ -90,7 +91,7 @@ def listing(st: ProjectState, q: Mapping[str, Sequence[str]]) -> str:
             continue
         if status not in ("active", "all") and it.status != status:
             continue
-        if one("type") and it.type != one("type").lower():
+        if one("tag") and one("tag").lstrip("#").lower() not in it.tags:
             continue
         if one("pri") and it.pri != one("pri").upper():
             continue
@@ -124,7 +125,8 @@ def _files_of(rd: Reading, it: Item) -> List[str]:
 def card(rd: Reading, it: Item) -> str:
     st = rd.state
     c = st.code(it.n)
-    out = [f"{c} {it.type} {it.pri} {when(it)} {it.status}{' archived' if it.archived else ''}  {it.title}"]
+    tags = "".join(f" #{t}" for t in it.tags)
+    out = [f"{c} {it.pri} {when(it)} {it.status}{' archived' if it.archived else ''}{tags}  {it.title}"]
     if it.deleted:
         out.append(f"deleted by the user together with input {it.deleted}: stop working on it")
     if it.merged_into:

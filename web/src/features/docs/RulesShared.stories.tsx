@@ -1,4 +1,4 @@
-// I779 (D134, approved 11-15): a project's rules are a template. A line `{{编程}}` puts the shared rules 编程 there
+// T779 (D134, approved 11-15): a project's rules are a template. A line `{{编程}}` puts the shared rules 编程 there
 // (`{{编程 › 测试}}` only its section 测试); Taska keeps the line and gives agents the text in its place. Drawn by the
 // page's own Rules tab screens, DocView, DocEdit and Sheet with the stories' shared rules: the lines read as blocks
 // that open in place, the editor where they are words like the rest and Insert writes one at the caret (the phone: a

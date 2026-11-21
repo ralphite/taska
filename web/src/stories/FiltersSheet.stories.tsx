@@ -16,7 +16,7 @@ export const Filters: Story = {
   name: 'Bugs of P1, newest first',
   render: () => (
     <Frames desk={false} height={780} phoneWidth={393}>
-      {() => opened(filtersSheet(filterFacts(menuModel(), 'items', { ...NO_FILTERS, type: 'bug', pri: 'P1', sort: 'new' }), filtersOn), false, { under: underList(false) })}
+      {() => opened(filtersSheet(filterFacts(menuModel(), 'items', { ...NO_FILTERS, tag: 'bug', pri: 'P1', sort: 'new' }), filtersOn), false, { under: underList(false) })}
     </Frames>
   ),
 }

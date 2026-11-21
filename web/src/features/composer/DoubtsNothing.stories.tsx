@@ -1,4 +1,4 @@
-// A voice note whose words are still coming, with no words heard, with no transcript, or not uploaded (B725).
+// A voice note whose words are still coming, with no words heard, with no transcript, or not uploaded (T725).
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { voice } from '../../stories/doubtsFixtures'
 

@@ -143,7 +143,7 @@ class Moves:
                                     for words in [_message_words(here, x)] if words)
                 body = it.body + (f"\n\n---\nTalk in {named} {code}:\n\n{talk}" if talk else "")
                 plan.append((it.n, par, code, it.status, bool(it.archived), {
-                    "title": it.title, "body": body[:MAX_TEXT], "type": it.type, "pri": it.pri, "when": it.when, "next": it.next}))
+                    "title": it.title, "body": body[:MAX_TEXT], "tags": list(it.tags), "pri": it.pri, "when": it.when, "next": it.next}))
                 replies = {x.src for x in it.thread if x.by == "you" and x.src}
                 for rid in it.srcs:  # what it was made from goes along too, as one message there
                     inp = st.inputs.get(rid)

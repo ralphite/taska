@@ -1,4 +1,4 @@
-// I693 (r1116, r1118, r1128): the Rules tab is the project's rules as one Markdown document with versions. Each screen
+// T693 (r1116, r1118, r1128): the Rules tab is the project's rules as one Markdown document with versions. Each screen
 // on the phone and the desktop, drawn by the page's own screens (RulesScreens) with the page's DocView, DocEdit, Sheet
 // and Toast; the steps of what Yadong decided drawn one story each: every save is a version (who, when, why; one
 // writer's saves minutes apart are one version, every why kept); a version shows its changes marked in place (added

@@ -17,7 +17,7 @@ from taska.domain import rules  # noqa: E402
 class DocReplyThread(ProjectCase):
     def setUp(self):
         super().setUp()
-        self.p.run(parse("new task P1 now Ship the export\nT1 doc Plan\n  # Plan\n  \n  Ship the export as CSV.\n"), "claude-code")
+        self.p.run(parse("new P1 now Ship the export\nT1 doc Plan\n  # Plan\n  \n  Ship the export as CSV.\n"), "claude-code")
 
     def test_each_thread_on_a_paragraph_gets_its_answer(self):
         d = next(iter(self.p.state.docs.values()))

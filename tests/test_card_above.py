@@ -19,10 +19,10 @@ class Above(ProjectCase):
     def setUp(self) -> None:
         super().setUp()
         top_body = "All UI work.\nline two\nline three\nline four\nEvery UI item starts as a Storybook prototype."
-        self.run_as("you", {"op": "new", "title": "UI", "type": "task", "body": top_body},
-                    {"op": "new", "title": "List rows", "type": "task", "parent": "T1", "body": "Rows only."},
-                    {"op": "new", "title": "Row height", "type": "task", "parent": "T2"},
-                    {"op": "new", "title": "Row icons", "type": "task", "parent": "T2"})
+        self.run_as("you", {"op": "new", "title": "UI", "body": top_body},
+                    {"op": "new", "title": "List rows", "parent": "T1", "body": "Rows only."},
+                    {"op": "new", "title": "Row height", "parent": "T2"},
+                    {"op": "new", "title": "Row icons", "parent": "T2"})
         self.run_as("you", {"op": "say", "ref": "T1", "kind": "decide", "text": "Phone and desktop the same."},
                     {"op": "say", "ref": "T1", "kind": "decide", "text": "Tailwind only."},
                     {"op": "say", "ref": "T1", "kind": "decide", "text": "No new components."})

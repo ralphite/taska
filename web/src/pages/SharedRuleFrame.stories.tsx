@@ -1,4 +1,4 @@
-// I779 (D134): a shared rule's own page, opened from Settings › Shared rules. Its address is its own and it is the Rules
+// T779 (D134): a shared rule's own page, opened from Settings › Shared rules. Its address is its own and it is the Rules
 // tab of a project's rules (read, comments, History, Copy, Edit the same), with the way back to the list and, under
 // its text, who puts it in; the desktop keeps Settings' column of sections beside it. Drawn by the page's own
 // SharedRuleFrame, DeskNav, RulesReading, DocView and UsedBy with the stories' shared rules.

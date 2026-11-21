@@ -11,7 +11,7 @@ const WORDS = 'Keep the filter, and the sort as well.'
 const voiceFile = { f: F, name: 'voice_0-12.webm', mime: 'audio/webm' }
 const rec = (f: Partial<Voice> = {}): Voice => ({ f: F, state: 'done', said: 'Keep the filter, and, um, the sort as well.', tidied: WORDS, ...f })
 const input: Input = { id: 'r22', t: '', by: 'you', text: '', scope: 12, files: [voiceFile], acked: false, touched: [], org: null, seq: 5, v: 0 }
-const item = { n: 12, code: 'F12', type: 'feature', title: 'Export', body: '', pri: 'P2', when: 'now', status: 'open', parent: null, next: '', srcs: ['r22'], mergedInto: null, archived: false, t0: '', t1: '', by: 'you', wait: null, talked: true, thread: [{ id: 5, by: 'you', kind: 'say', text: '', t: '', src: 'r22', files: [] }] } as Item
+const item = { n: 12, code: 'T12', tags: [], title: 'Export', body: '', pri: 'P2', when: 'now', status: 'open', parent: null, next: '', srcs: ['r22'], mergedInto: null, archived: false, t0: '', t1: '', by: 'you', wait: null, talked: true, thread: [{ id: 5, by: 'you', kind: 'say', text: '', t: '', src: 'r22', files: [] }] } as Item
 const comment: Comment = { id: 9, key: 'doc', th: 9, quote: '', text: 'About this:', by: 'you', t: '', files: [{ ...voiceFile, f: 'f5-voice_0-03.webm' }] }
 const doc = { d: 1, n: 12, title: 'D', md: '', t0: '', t1: '', by: 'codex', versions: 1, fmt: 'md', blocks: [], detached: [], whole: [comment], unanswered: 0, resolved: {} } as Doc
 const answer = (voices: Voice[]): ViewAnswer =>

@@ -14,7 +14,7 @@ from typing import Callable, List, Optional, Tuple
 from ..domain import history, rules
 from ..domain.model import Item, Message
 from ..domain.state import ident
-from ..domain.vocab import CLOSED, WORK_TYPES
+from ..domain.vocab import CLOSED
 from .render import Reading, card, doc_text, input_card, proposal_text, proposals_for, rules_head
 
 Holder = Callable[[Item], Optional[Tuple[str, float]]]
@@ -42,10 +42,6 @@ class Asker:
     holder: Holder = field(default=lambda it: None)
     calls: Calls = field(default=lambda: [])
     told: Callable[[int], bool] = field(default=lambda seq: False)  # was it told of this change already
-
-
-IDEA = ("\nan idea: think it through first. Small and clear: do it. Bigger, or more than one way to go: "
-        "post your plan ({code} propose ...) and ask before building.")
 
 
 def _stop(st, asker: Asker) -> Optional[Tuple[int, int]]:
@@ -113,7 +109,7 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         return Work(f"{head}\nresume {st.code(it.n)}: {ident(x.by, x.ses)} {what} (#{x.id})\n" + card(rd, it), True,
                     given=it.n)
     me = ident(asker.who, asker.session) if asker.who else None
-    queue = rules.queue_order([i for i in live if i.when == "now" and i.type in WORK_TYPES and i.status in ("open", "doing")
+    queue = rules.queue_order([i for i in live if i.when == "now" and i.status in ("open", "doing")
                                and not rules.waiting(st, i) and not rules.open_kids(st, i)])
     if me:  # what another session is on is theirs; each gets its own next item
         theirs = [(i, c[0]) for i in queue for c in [asker.holder(i)] if c and c[0] != me]
@@ -125,8 +121,7 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         return Work(f"{head}\nresume {st.code(fresh.n)}: the user replied\n" + card(rd, fresh), True, given=fresh.n)
     if queue:
         it = queue[0]
-        how = IDEA.format(code=st.code(it.n)) if it.type == "idea" else ""
-        return Work(f"{head}\nnext {st.code(it.n)} ({len(queue)} in queue: doing first, then P0→P3, oldest first){how}\n"
+        return Work(f"{head}\nnext {st.code(it.n)} ({len(queue)} in queue: doing first, then P0→P3, oldest first)\n"
                     + card(rd, it), True, given=it.n, claim=(it.n, me) if me else None)
     end = "nothing to do now. End your turn (Claude Code: with the background wait from /agent running; never wait, poll or set a timer in the foreground)."
     if asker.who and asker.who.startswith("claude"):

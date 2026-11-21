@@ -1,6 +1,6 @@
 // The phone's head over the list (T591: Top bar and list head > List head): the menu with the project's name, the
 // agent, Search (it opens the search page). The desktop has no head over the list (its search is the
-// dialog, F479). From the page's own headFacts with the item list's demo project.
+// dialog, T479). From the page's own headFacts with the item list's demo project.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../stories/Frames'
 import { headOf } from '../stories/headFixtures'

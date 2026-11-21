@@ -43,7 +43,7 @@ export const VoiceCommentBeingSent: Story = {
   ...at([shownComment(comment({ id: -1, t: later(1), quote: 'keeps the filter', text: '', files: [{ f: 'f5-voice_0-05.webm', name: 'voice_0-05.webm', mime: 'audio/webm' }] }), record('f5-voice_0-05.webm', 'And the sort too?'))]),
   name: 'Voice comment, being sent',
 }
-// ---- more states (B636)
+// ---- more states (T636)
 const detachedAt = (comments: Comment[]): Story => ({
   render: () => (
     <Frames phoneWidth={393} deskWidth={720}>

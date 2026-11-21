@@ -1,4 +1,4 @@
-// Demo (B786 r1337): answer an agent's question by voice at the end of a long talk, as on system-design T27 on
+// Demo (T786 r1337): answer an agent's question by voice at the end of a long talk, as on system-design T27 on
 // Yadong's iPhone; the words come, the agent replies with its next question. The real page on the phone and the
 // desktop, answered by a real server's recorded answers (recordings/replyLongTalk.*.json).
 import type { Meta, StoryObj } from '@storybook/react-vite'

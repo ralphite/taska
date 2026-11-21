@@ -11,5 +11,5 @@ export const Sent: Story = { ...at({ at: 'D1' }), name: 'Sent (a comment, a voic
 /** Not sent (Taska said no): its words come back, with what it was on picked again (D83 #3). */
 export const NotSent: Story = { ...at({ ...one, text: 'Also keep the sort.' }), name: 'Not sent' }
 export const VoiceCommentsNotSent: Story = { ...at({ at: 'D1', text: '> “The export keeps the filter.”\nKeep the sort too.\n\n> “Its file name says which filter.”\nAnd the date.' }), name: 'Voice comments not sent' }
-// ---- more states (B636)
+// ---- more states (T636)
 export const OneVoiceCommentNotSent: Story = { ...at({ at: 'D1', text: '> “The export keeps the filter.”\nKeep the sort too.' }), name: 'One voice comment not sent' }

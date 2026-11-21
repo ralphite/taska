@@ -1,4 +1,4 @@
-// I821: "/" at the start of the box lists the skills (shared documents named /name), each with what it is for; the
+// T821: "/" at the start of the box lists the skills (shared documents named /name), each with what it is for; the
 // letters typed narrow the list (in order, apart too, as in Codex: "/pt" finds /proto) and stand out in the names; ↑↓ choose, ↵ or ⇥ (or a click) puts the skill's name and a space in the box, and
 // what you write or say after it comes to the agents with the skill's text. Esc closes the list; a space, other words
 // or none fitting show none.
@@ -31,7 +31,7 @@ export const Picked: Story = { ...at('/qa '), name: 'Picked: its name and a spac
 export const NoneFits: Story = { ...at('/x'), name: 'None fits: no list' }
 export const NotAtTheStart: Story = { ...at('what does /qa do'), name: 'Not at the start: no list' }
 
-/** I834 r1438: + opens a card: the ways to add files first, each its own row (the phone: Camera, Photos, Files; the
+/** T834 r1438: + opens a card: the ways to add files first, each its own row (the phone: Camera, Photos, Files; the
  * desktop: Files), the skills under them; picking one puts its name in the box, as "/" does. Without skills, + adds
  * files at once, as before. */
 export const PlusTapped: Story = {

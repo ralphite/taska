@@ -87,9 +87,9 @@ flowchart LR
     Items -->|needs you| You
 ```
 
-1. **Say it.** Type, paste a screenshot or record a voice note. You don't have to pick a type, a priority or a
+1. **Say it.** Type, paste a screenshot or record a voice note. You don't have to pick a tag, a priority or a
    project first.
-2. **It becomes items.** An organizer (Gemini, optional) turns what you said into features, bugs, ideas and tasks,
+2. **It becomes items.** An organizer (Gemini, optional) turns what you said into items, with the tags you name,
    or updates the ones that already exist. Without it, your agent does the organizing.
 3. **Agents do the work.** An agent asks `GET /next` for the most important item, does the work, and posts
    progress, questions and results back to that item.
@@ -249,7 +249,7 @@ Then:
 | `GET BASE/next` | What to do now; `?wait=540` waits for new work |
 | `GET BASE/rules` | The project's rules document, with its version |
 | `GET BASE/inbox` | Inputs not organized yet |
-| `GET BASE/items?q=&type=&pri=&when=&status=` | One line per item |
+| `GET BASE/items?q=&tag=&pri=&when=&status=` | One line per item |
 | `GET BASE/B03` | One item: fields, text, conversation, sources, images |
 | `GET BASE/D1` | A document with numbered paragraphs and your comments |
 | `GET BASE/log?n=30` | Recent changes |
@@ -264,7 +264,7 @@ B03 progress Found it: the export built its own query and skipped the filters.
 B03 ask Keep the old export as an option?
   - ( ) Yes, behind a setting
   - ( ) No, replace it
-new bug P1 parent=B03 The PDF export has the same problem
+new P1 #bug parent=T03 The PDF export has the same problem
 EOF
 ```
 
@@ -273,7 +273,8 @@ What `/do` does here:
 - When the work is done, `B03 done` puts the item in review until you accept it.
 - New items from an agent wait for your approval.
 
-Codes are a type letter and a number: **F**eature, **B**ug, **I**dea, **T**ask, **R**ule.
+Codes are T and a number (T03). Items have no types: a tag says what one is (`#bug`, `#phone`), only when it
+helps. Older codes with another letter (B838, F839) still name the same item.
 
 ## Use it on your phone
 

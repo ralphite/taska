@@ -1,5 +1,5 @@
 // A Demo's shell (T589, D124): the phone's frame and the desktop's side by side, each a page of its own (an iframe:
-// its keys, storage and address its own). Each is drawn by the guided tour's own shell (tour/TourFrame.tsx, F566):
+// its keys, storage and address its own). Each is drawn by the guided tour's own shell (tour/TourFrame.tsx, T566):
 // the yellow spot on what to press next, and under it the step, what to do, Next and Start again. It opens at step 1
 // and waits for you; Play, in the line, presses for you at a person's pace (or swipes a row, or types into a box), the
 // same spot on each part it presses (no mark of its own). Play is only here: a Demo is the only story that plays itself (scripts/check-architecture.mjs).

@@ -37,15 +37,15 @@ COMMANDS = os.path.join(ROOT, "server", "taska", "commands")
 KEYS = ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY", "GOOGLE_APPLICATION_CREDENTIALS")
 START = 1793984400  # 2026-11-06 09:00 PST: the clock's start, so the samples read alike each time
 WORDS = "Sort the export by date, please."
-PLAN = "new task P2 now Sort the export by date\n"
+PLAN = "new P2 now Sort the export by date\n"
 # a 1x1 PNG, for a picture's size
 PNG = bytes.fromhex("89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478da63f8cf"
                     "c0f01f0005000201a5b1d0b40000000049454e44ae426082")
 
-SEED = """new bug P1 now Export ignores the active filter
+SEED = """new #bug P1 now Export ignores the active filter
   The export should keep the filter I set.
-new task P2 later parent=$ Read the filter from the address
-new feature P2 now Export to Excel
+new P2 later parent=$ Read the filter from the address
+new P2 now Export to Excel
 B1 doing
 B1 progress Reproduced it: the export reads the list before the filter
 B1 ask Which format should the export use?
@@ -258,7 +258,7 @@ def record(base: str) -> Dict[str, Any]:
     logo = c.json(p + "file?name=logo.png", PNG, "image/png")
     agent(f"project icon {logo['f']}\n")  # the project's picture (F743): its rows and facts carry it
     agent(f"B1 say files={shot['f']} @helper the export as it is now\n"
-          f"new task P1 now Pick the columns\nT4 ask files={shot['f']} Which columns?\n  - [ ] Date\n  - [ ] Total\n")
+          f"new P1 now Pick the columns\nT4 ask files={shot['f']} Which columns?\n  - [ ] Date\n  - [ ] Total\n")
     c.raw(f"/p/{slug}/B1?by=claude-code&session=sample")  # an agent reads it: Read by
     page = lambda rid, *cmds: c.json(p + "commands", {"id": rid, "commands": list(cmds)})  # noqa: E731
     page("s1", {"op": "input", "text": "And the sort, please.", "scope": "B1", "q": "page-1"},
@@ -272,7 +272,7 @@ def record(base: str) -> Dict[str, Any]:
          {"op": "input", "text": "One more thing", "q": "page-5"})
     view = _settle(c, p)
     r = {i["q"]: i["id"] for i in view["inputs"] if i.get("q")}
-    told = next(x["id"] for it in view["items"] if it["code"] == "B1" for x in it["thread"] if x["kind"] == "progress")
+    told = next(x["id"] for it in view["items"] if it["code"] == "T1" for x in it["thread"] if x["kind"] == "progress")
     # questions in a row, one of them answered (B749): the answer names it (`of`), the other still waits
     agent(f"T4 ask files={shot['f']} Anything else?\n")
     first = next(x for it in _settle(c, p)["items"] if it["code"] == "T4" for x in it["thread"] if x["kind"] == "ask")
@@ -281,7 +281,7 @@ def record(base: str) -> Dict[str, Any]:
                 {"op": "delete", "id": r["page-5"]},
                 {"op": "filing-undo", "id": r["page-3"]},
                 {"op": "hide", "ref": "B1", "id": told, "on": True},
-                {"op": "new", "title": "Old idea", "type": "idea"})
+                {"op": "new", "title": "Old idea", "tags": ["idea"]})
     view = _settle(c, p)
     agent("B1 progress Sorting by date too.\n")  # someone wrote after it: editing it leaves a note (change)
     r1 = next(i for i in view["inputs"] if i["id"] == r["page-1"])

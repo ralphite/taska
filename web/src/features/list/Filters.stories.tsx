@@ -8,16 +8,16 @@ import { headOf } from '../../stories/headFixtures'
 export default { title: 'UI/List pane/Filters' } satisfies Meta
 type Story = StoryObj
 
-const BUGS = { type: 'bug', pri: 'P0', sort: 'new' }
+const BUGS = { tag: 'bug', pri: 'P0', sort: 'new' }
 
 export const PhoneStrip: Story = { name: 'Phone: Strip', render: () => <Frames desk={false} phoneWidth={393} height={200}>{() => headOf(false, { list: BUGS })}</Frames> }
 export const DeskPanel: Story = { name: 'Desktop: Panel', render: () => <Frames phone={false} deskWidth={1100} height={460}>{() => headOf(true, { list: BUGS, filtersOpen: true })}</Frames> }
 /** Set and folded: the chips, Clear, the dot on the filters button. */
 export const FilterChipsAndDot: Story = { name: 'Chips', render: () => <Frames deskWidth={1100} phoneWidth={393} height={220}>{(layout) => headOf(layout === 'desk', { list: BUGS })}</Frames> }
-// ---- more states (B636)
+// ---- more states (T636)
 export const PanelRules: Story = { name: 'Panel: rules', render: () => <Frames phone={false} deskWidth={1100} height={460}>{() => headOf(true, { tab: 'rules', filtersOpen: true })}</Frames> }
 export const PanelArchive: Story = { name: 'Panel: archive', render: () => <Frames phone={false} deskWidth={1100} height={460}>{() => headOf(true, { tab: 'archive', filtersOpen: true })}</Frames> }
 // ---- more states (T639)
 /** the phone's strip on Archive with every filter set: more than fit slide sideways under Clear, which stays at the
  * end; the sort shows last, with no × */
-export const PhoneStripMoreThanFit: Story = { name: 'Phone: Strip: every filter set', render: () => <Frames desk={false} phoneWidth={393} height={200}>{() => headOf(false, { tab: 'archive', list: { type: 'bug', when: 'later', status: 'done', pri: 'P1', sort: 'new' } })}</Frames> }
+export const PhoneStripMoreThanFit: Story = { name: 'Phone: Strip: every filter set', render: () => <Frames desk={false} phoneWidth={393} height={200}>{() => headOf(false, { tab: 'archive', list: { tag: 'bug', when: 'later', status: 'done', pri: 'P1', sort: 'new' } })}</Frames> }

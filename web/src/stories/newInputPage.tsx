@@ -31,7 +31,7 @@ import { record, waiting } from './fixtures'
 
 const at = (min: number) => new Date(Date.parse(T) - min * 60_000).toISOString()
 const org = (msg: string, f: Partial<OrgNote> = {}): OrgNote => ({ ok: true, msg, t: '', keep: false, changed: true, undone: false, ...f })
-/** a voice note and its words: its record (B682); none yet: still being written out */
+/** a voice note and its words: its record (T682); none yet: still being written out */
 const voice = (n: number, len: string, tr?: string): FileRef => {
   const f = `f${n}-voice_${len}.webm`
   return { f, name: `voice_${len}.webm`, mime: 'audio/webm', voice: tr === undefined ? waiting(f) : record(f, tr) }
@@ -40,12 +40,12 @@ const voice = (n: number, len: string, tr?: string): FileRef => {
 const ITEMS = [
   item({ n: 479, status: 'doing', title: '搜索默认语音输入进行语义匹配' }),
   item({ n: 659, status: 'done', title: 'Input item 布局从左右两栏改为上下结构' }),
-  item({ n: 642, type: 'task', status: 'doing', wait: { id: 1, kind: 'ask', text: 'Which first?', by: 'claude-code', files: [] }, title: 'Gemini 并行审查所有 Storybook 故事，按优先级列出设计缺陷' }),
-  item({ n: 656, type: 'bug', status: 'done', title: '关联的 session 不去做任务分析' }),
+  item({ n: 642, status: 'doing', wait: { id: 1, kind: 'ask', text: 'Which first?', by: 'claude-code', files: [] }, title: 'Gemini 并行审查所有 Storybook 故事，按优先级列出设计缺陷' }),
+  item({ n: 656, tags: ['bug'], status: 'done', title: '关联的 session 不去做任务分析' }),
   item({ n: 657, status: 'done', title: '悬浮菜单拆分为 comment 与原地录音 voice 两个按钮' }),
-  item({ n: 447, type: 'idea', status: 'open', title: '创建 manager session 监听 Taska 任务并做 task delegation，防止卡住并统计 token/耗时' }),
+  item({ n: 447, status: 'open', title: '创建 manager session 监听 Taska 任务并做 task delegation，防止卡住并统计 token/耗时' }),
   item({ n: 588, status: 'review', title: 'The export keeps the filter and the sort you set' }),
-  item({ n: 651, type: 'bug', status: 'proposed', title: 'CSV 导出的列顺序和页面不一致' }),
+  item({ n: 651, tags: ['bug'], status: 'proposed', title: 'CSV 导出的列顺序和页面不一致' }),
 ]
 
 const LONG =
@@ -57,10 +57,10 @@ const MANAGER =
 const INPUTS: Input[] = [
   input({ id: 'r1031', t: at(1), text: '', files: [voice(31, '0-12')] }),
   input({ id: 'r1030', t: at(2), text: 'The export button does nothing on the orders page, see the screenshot.', files: [{ f: 'f90-orders-error.png', name: 'orders-error.png', mime: 'image/png', size: 145_408 }] }),
-  input({ id: 'r1029', t: at(4), acked: true, touched: [479], text: '', files: [voice(29, '0-05', '加上，我现在做桌面版本的设计。')], org: org('Noted on F479') }),
+  input({ id: 'r1029', t: at(4), acked: true, touched: [479], text: '', files: [voice(29, '0-05', '加上，我现在做桌面版本的设计。')], org: org('Noted on T479') }),
   input({ id: 'r1028', t: at(12), text: '', files: [voice(28, '0-09', '把 T642 的结果按优先级排好，先给我看 P0 的。')], org: org('Some commands failed: err: 503 Service Unavailable', { ok: false, changed: false }) }),
-  input({ id: 'r1027', t: at(40), acked: true, touched: [659], text: '', files: [voice(27, '0-28', 'Input item 现在的设计还是很有问题。我们现在分成两栏，像右边的这个状态，放在右边我觉得不合适，应该放在下面。不是左右，而是上下。')], org: org('Created F659') }),
-  input({ id: 'r1026', t: at(55), acked: true, touched: [657], text: '', files: [voice(26, '1-00', LONG)], org: org('Created F657') }),
+  input({ id: 'r1027', t: at(40), acked: true, touched: [659], text: '', files: [voice(27, '0-28', 'Input item 现在的设计还是很有问题。我们现在分成两栏，像右边的这个状态，放在右边我觉得不合适，应该放在下面。不是左右，而是上下。')], org: org('Created T659') }),
+  input({ id: 'r1026', t: at(55), acked: true, touched: [657], text: '', files: [voice(26, '1-00', LONG)], org: org('Created T657') }),
   input({ id: 'r1025', t: at(70), kind: 'cancelled', text: '', files: [voice(25, '0-04', 'Maybe the inputs list should say each day once.')] }),
   input({
     id: 'r1024',
@@ -70,7 +70,7 @@ const INPUTS: Input[] = [
     scope: 642,
     text: 'Answered in D115:\n✓ 照建议改 (1. 事项页上半部分默认太矮，子事项被切掉)\n✓ 照建议改 (2. 手机上视图标签行两头的圆形箭头盖住标签)\n✓ 照建议改 (3. 手机输入框写多行时，文字被夹在按钮中间的窄条里)\n✗ 不改 (4. 侧栏项目颜色太接近)',
   }),
-  input({ id: 'r1023', t: at(907), acked: true, touched: [656], text: '', files: [voice(23, '0-28', MANAGER)], org: org('Noted on B656') }),
+  input({ id: 'r1023', t: at(907), acked: true, touched: [656], text: '', files: [voice(23, '0-28', MANAGER)], org: org('Noted on T656') }),
   input({
     id: 'r1022',
     t: at(913),
@@ -78,12 +78,12 @@ const INPUTS: Input[] = [
     touched: [656, 657],
     text: 'http://127.0.0.1:7340/p/dev2/F33\n为什么关联的 session 不去做这个，分析一下看是什么 bug。这个是 P0。',
     files: [{ f: 'f91-dev2-session.png', name: 'dev2-session.png', mime: 'image/png' }, voice(22, '0-07', '为什么关联的 session 不去做这个，分析一下看是什么 bug。'), voice(21, '0-03', '这个是 P0。')],
-    org: org('Created B656 · Noted on F657'),
+    org: org('Created T656 · Noted on T657'),
   }),
   input({ id: 'r1021', t: at(916), acked: true, text: '周末买菜：牛奶、鸡蛋、番茄。', moved: { to: 'home', as: 'r88' } }),
   input({ id: 'r1020', t: at(920), acked: true, kind: 'answer', scope: 447, text: '✓ 继续做 manager，在下面说要什么' }),
   input({ id: 'r1019', t: at(925), text: 'Look at why the build takes so long on the release branch.', org: org('Left for agent', { keep: true, changed: false }) }),
-  input({ id: 'r1018', t: at(930), text: '', files: [voice(18, '0-03', '把 coupon 那个 bug 关掉。')], org: org('Created B660', { undone: true }) }),
+  input({ id: 'r1018', t: at(930), text: '', files: [voice(18, '0-03', '把 coupon 那个 bug 关掉。')], org: org('Created T660', { undone: true }) }),
   input({ id: 'r1017', t: at(60 * 47), acked: true, text: 'Restart the nightly checks after the deploy.' }),
   input({
     id: 'r1016',
@@ -91,11 +91,11 @@ const INPUTS: Input[] = [
     acked: true,
     touched: [588],
     text: 'The export should keep the filter and the sort I set.',
-    org: org('Noted on F588'),
+    org: org('Noted on T588'),
     history: [{ text: 'The export should keep the filter I set.', t: at(60 * 48), mode: 'edit' }],
     updated: at(60 * 47),
   }),
-  input({ id: 'r1015', t: at(60 * 51 + 28), acked: true, touched: [651], text: '这个 CSV 导出来列的顺序不对，跟页面上的不一样。', files: [{ f: 'f92-orders-export.csv', name: 'orders-export.csv', mime: 'text/csv', size: 34_816 }], org: org('Created B651') }),
+  input({ id: 'r1015', t: at(60 * 51 + 28), acked: true, touched: [651], text: '这个 CSV 导出来列的顺序不对，跟页面上的不一样。', files: [{ f: 'f92-orders-export.csv', name: 'orders-export.csv', mime: 'text/csv', size: 34_816 }], org: org('Created T651') }),
 ]
 
 /** One on its way and one waiting for Taska (Edit); × cancels either. */
@@ -168,7 +168,7 @@ export function DeskPage({ float, height }: { float?: ReactNode; height?: number
         </div>
         <div className="min-w-0 flex-1 px-8 pt-12 pb-16">
           <ComposeHead title="taska" tone={toneOf(SIDE.tones, 'taska')} />
-          {/* the row's recording: its strip says it, the box adds no line over itself, so the list never moves (B720) */}
+          {/* the row's recording: its strip says it, the box adds no line over itself, so the list never moves (T720) */}
           <div className="[&>div]:bg-transparent [&>div]:p-0">{boxAt({ at: 'new', recordingFor: draftKey({ kind: 'amend', mode: 'append', id: ADDING }) }, true, { placeholder: 'Write to taska…' })}</div>
           <DeskList />
         </div>

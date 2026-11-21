@@ -56,7 +56,7 @@ export interface HeadHere {
   /** how long Taska has not answered */
   away?: number
   notSaved?: number
-  /** no Gemini API key (F765) */
+  /** no Gemini API key (T765) */
   noKey?: boolean
   /** another project needs you (the Needs you mark on the phone's menu) */
   otherNeeds?: boolean
@@ -102,14 +102,14 @@ function LiveHead({ desk, h }: { desk: boolean; h: HeadHere }) {
   const filterOn: FilterEvents = {
     set: (k, v) => setList({ ...list, [k]: v }),
     unset: (k) => setList({ ...list, [k]: NO_FILTERS[k] }),
-    reset: () => setList({ ...list, type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' }),
+    reset: () => setList({ ...list, tag: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' }),
     saveView: on.saveView,
   }
   if (desk)
     return (
       <div className="grid grid-cols-[420px_minmax(0,1fr)]">
         <ProjectBar title="Shop" tone={PROJECT_TONES[4]} tabs={deskTabs(counts, tab, awayTab)} agent={agent} notSaved={h.notSaved ?? 0} noKey={!!h.noKey} place="col-span-2" on={{ tab: toTab, agents: h.onAgents ?? on.agents, notSaved: on.notSaved, noKey: on.noKey }} />
-        <DeskFilters tab={tab} list={list} set={set} open={filtersOpen} place="col-start-1" hidden={!(filtersOpen || set.length)} on={{ ...filterOn, toggle: () => setFiltersOpen(!filtersOpen) }} />
+        <DeskFilters tab={tab} list={list} tags={[]} set={set} open={filtersOpen} place="col-start-1" hidden={!(filtersOpen || set.length)} on={{ ...filterOn, toggle: () => setFiltersOpen(!filtersOpen) }} />
       </div>
     )
   return (

@@ -7,14 +7,13 @@
 import { dayLabel, timeOf, when } from './time'
 import { shownStatus } from './needStates'
 import { codeOf, inputDraft, type ProjectModel } from './project'
-import type { Input, ItemType } from './types'
+import type { Input } from './types'
 import { sentNotes } from './voiceStates'
 import { inputCode } from './words'
 
 export interface ItemRef {
   n: number
   code: string
-  type: ItemType
   title: string
   status: { s: string; label: string }
 }
@@ -43,7 +42,7 @@ export type Became =
 
 export const itemRef = (m: ProjectModel, n: number): ItemRef | null => {
   const it = m.byN.get(n)
-  return it ? { n, code: codeOf(m, n), type: it.type, title: it.title, status: shownStatus(it) } : null
+  return it ? { n, code: codeOf(m, n), title: it.title, status: shownStatus(it) } : null
 }
 
 /** The items an input said in an item made (B714 #10594), as "→ Created B713" under your words there: those it is the

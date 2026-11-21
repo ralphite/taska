@@ -10,9 +10,9 @@ import { MsgText } from './MsgText'
 export default { title: 'Base components/Markdown' } satisfies Meta
 type Story = StoryObj
 
-// what the message names is in the project: D1 and F014 are links, as on the page
+// what the message names is in the project: D1 and T014 are links, as on the page
 const WORLD = modelOf([item({ n: 14 })], [], {}, [doc({ d: 1, n: 14 })])
-const MD = '**Result**: the export keeps the filter.\n\n- with the filter\n- with the sort\n\n`npm run check` passes; see [the plan](#D1) and F014.\n\n> The old export stays a week.'
+const MD = '**Result**: the export keeps the filter.\n\n- with the filter\n- with the sort\n\n`npm run check` passes; see [the plan](#D1) and T014.\n\n> The old export stays a week.'
 
 export const Markdown: Story = {
   name: "A message's words: Markdown, codes, links",

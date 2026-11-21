@@ -14,18 +14,18 @@ import { act, acts } from '../stories/acts'
 export default { title: 'UI/Inputs page/Input row/Every state of a line' } satisfies Meta
 type Story = StoryObj
 
-const it = (n: number, code: string, title: string, s: Status = 'open', type: ItemRef['type'] = 'bug'): ItemRef => ({ n, code, type, title, status: { s, label: STATUS_WORD[s] } })
-const B014 = it(14, 'B014', 'Coupon box hidden behind the keyboard')
-const F012 = it(12, 'F012', 'Export keeps the filter you set', 'doing', 'feature')
-const T007 = it(7, 'T007', 'Which formats should the export offer?', 'open', 'task')
+const it = (n: number, code: string, title: string, s: Status = 'open'): ItemRef => ({ n, code, title, status: { s, label: STATUS_WORD[s] } })
+const T014 = it(14, 'T014', 'Coupon box hidden behind the keyboard')
+const T012 = it(12, 'T012', 'Export keeps the filter you set', 'doing')
+const T007 = it(7, 'T007', 'Which formats should the export offer?', 'open')
 /** what the organizer said when it failed, as Taska keeps it (the line says it as failWhy does) */
 const FAILED = 'No changes needed · Some commands failed: err: B99 not found'
 const BECAME: [string, Became][] = [
-  ['made an item', { k: 'filed', items: [{ did: 'Created', item: B014 }], note: null, undo: true }],
-  ['made two, added to one', { k: 'filed', items: [{ did: 'Created', item: B014 }, { did: 'Created', item: it(43, 'F043', 'Close the keyboard by tapping outside it', 'open', 'feature') }, { did: 'Added to', item: F012 }], note: null, undo: true }],
-  ["an item, and the organizer's note", { k: 'filed', items: [{ did: 'Created', item: B014 }], note: 'Commented on D1', undo: true }],
-  ['an agent changed an item for it (no organizer)', { k: 'filed', items: [{ did: 'Changed', item: F012 }], note: null, undo: false }],
-  ['left for an agent, which changed an item', { k: 'filed', items: [{ did: '', item: F012 }], note: null, undo: false }],
+  ['made an item', { k: 'filed', items: [{ did: 'Created', item: T014 }], note: null, undo: true }],
+  ['made two, added to one', { k: 'filed', items: [{ did: 'Created', item: T014 }, { did: 'Created', item: it(43, 'T043', 'Close the keyboard by tapping outside it', 'open') }, { did: 'Added to', item: T012 }], note: null, undo: true }],
+  ["an item, and the organizer's note", { k: 'filed', items: [{ did: 'Created', item: T014 }], note: 'Commented on D1', undo: true }],
+  ['an agent changed an item for it (no organizer)', { k: 'filed', items: [{ did: 'Changed', item: T012 }], note: null, undo: false }],
+  ['left for an agent, which changed an item', { k: 'filed', items: [{ did: '', item: T012 }], note: null, undo: false }],
   ['an answer', { k: 'answer', item: T007, undo: false }],
   ["the organizer's note, no item", { k: 'note', text: 'No changes needed' }],
   ['transcribing', { k: 'transcribing', state: 'sentTranscribing' }],
@@ -71,7 +71,7 @@ export const OnItsWay: Story = {
       {() => (
         <div className="lg:px-6 lg:py-3">
           <div className="space-y-2 px-4 py-3 lg:px-0">
-            <OutgoingRow text="Also the sort, please." show={rowShow('sending')} scope="F012" on={outOn} />
+            <OutgoingRow text="Also the sort, please." show={rowShow('sending')} scope="T012" on={outOn} />
             <OutgoingRow text="The button here" show={rowShow('uploading')} on={outOn} />
             <OutgoingRow text="Make the export button bigger" show={rowShow('waiting')} on={outOn} />
             <OutgoingRow text="This one Taska refused" show={rowShow('notSent')} on={outOn} />

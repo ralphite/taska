@@ -36,7 +36,7 @@ class OffersServed(ServerCase):
         return text, time.time() - t0
 
     def test_a_session_that_does_not_take_its_work_lets_it_go_and_the_user_is_told(self) -> None:
-        self.do("new task P0 now Look up the nerve map\n", session="other")
+        self.do("new P0 now Look up the nerve map\n", session="other")
         self.page({"op": "set", "ref": "T1", "f": {"status": "open"}})
         for _ in range(3):
             text, took = self.wait("t31")
