@@ -110,6 +110,11 @@ export function tagsValue(v: unknown): string[] | null {
 function value(w: Work, name: string, v: unknown, me: Item): { ok: boolean; v?: unknown } {
   const s = String(v ?? '')
   switch (name) {
+    case 'after': {
+      const refs = Array.isArray(v) ? v.map(String) : s.split(/[\s,]+/).filter(Boolean)
+      const ns = refs.map((r) => w.item(r)?.n)
+      return ns.every((n) => n != null && n !== me.n) ? { ok: true, v: [...new Set(ns as number[])] } : { ok: false }
+    }
     case 'tags': {
       const t = tagsValue(v)
       return t ? { ok: true, v: t } : { ok: false }
@@ -181,6 +186,18 @@ function cascade(w: Work, it: Item, f: Partial<Item>): void {
     if (f.archived === true && closed(k.status) && !k.archived) g.archived = true
     if (Object.keys(g).length) setOn(w, k, g)
   }
+}
+
+/** What an item waits for, put on and taken off (commands/items.py after); what the server would refuse (itself, a
+ * group, waiting for each other) it leaves to the server's answer. */
+function after(w: Work, c: CommandOf<'after'>): void {
+  const it = w.item(c.ref)
+  if (!it) return
+  const add = (c.add ?? []).map((r) => w.item(r)?.n)
+  const off = (c.del ?? []).map((r) => w.item(r)?.n)
+  if (add.some((n) => n == null || n === it.n) || off.some((n) => n == null)) return
+  const now = [...(it.after ?? []).filter((n) => !off.includes(n)), ...(add as number[]).filter((n) => !(it.after ?? []).includes(n))]
+  if (!same(now, it.after ?? [])) setOn(w, it, { after: now })
 }
 
 /** Tags put on and taken off (commands/items.py tag). */
@@ -404,6 +421,7 @@ const PREVIEW: { [K in Op]: (w: Work, c: CommandOf<K>) => void } = {
   new: newItem,
   set,
   tag,
+  after,
   say: later,
   merge,
   unmerge,

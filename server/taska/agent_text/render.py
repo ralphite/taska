@@ -78,6 +78,9 @@ def line(st: ProjectState, it: Item) -> str:
         out += " <"
     if it.parent:
         out += f" ^{st.code(it.parent)}"
+    ws = rules.waits_for(st, it)
+    if ws:
+        out += " after " + " ".join(st.code(w.n) for w in ws)
     if it.archived:
         out += " [archived]"
     return out
@@ -148,9 +151,16 @@ def card(rd: Reading, it: Item) -> str:
     kids = [st.code(i.n) for i in st.live_items() if i.parent == it.n]
     meta = [x for x in (f"parent {st.code(it.parent)}" if it.parent else "",
                         "kids " + " ".join(kids) if kids and not it.group else "",
-                        "src " + " ".join(it.srcs) if it.srcs else "") if x]
+                        "src " + " ".join(it.srcs) if it.srcs else "",
+                        "blocks " + " ".join(st.code(k.n) for k in rules.holds_up(st, it)) if rules.holds_up(st, it) else "") if x]
     if meta:
         out.append(" · ".join(meta))
+    ws = rules.waits_for(st, it)
+    if ws:  # T857
+        out.append("waits for " + ", ".join(f"{st.code(w.n)} ({w.status})" for w in ws)
+                   + f": /next gives {c} once {'it is' if len(ws) == 1 else 'they are'} done")
+    elif it.after:
+        out.append("waited for " + ", ".join(f"{st.code(n)} ({st.items[n].status if n in st.items else 'gone'})" for n in it.after))
     if it.next:
         out.append("next: " + it.next)
     out.extend(_above(st, it))

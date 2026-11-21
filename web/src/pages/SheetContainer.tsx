@@ -9,7 +9,7 @@ import { usePaneRef } from '../app/panes'
 import { KeysSheet, SwitchProjectSheet } from '../features/find/FindersContainer'
 import { SearchSheet } from './SearchDialogContainer'
 import { AsSaidSheet, InputHistorySheet, InputMenuSheet, InputMoveSheet, InputRescopeSheet } from '../features/inputs/InputSheetsContainer'
-import { AgentCardSheet, ItemMenuSheet, LaterSheet, MessageMenuSheet, MoveItemProjectSheet, MoveParentSheet, SourcesSheet, TimesSheet } from '../features/item/ItemSheetsContainer'
+import { AgentCardSheet, ItemMenuSheet, LaterSheet, MessageMenuSheet, MoveItemProjectSheet, MoveParentSheet, SourcesSheet, TimesSheet, WaitForSheet } from '../features/item/ItemSheetsContainer'
 import { AgentsSheet } from '../features/agents/AgentsContainer'
 import { FiltersSheet } from '../features/list/FiltersContainer'
 import { ViewMenuSheet } from '../features/list/ViewMenuContainer'
@@ -23,6 +23,7 @@ const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { ki
   'agent-card': AgentCardSheet,
   later: LaterSheet,
   'item-move-parent': MoveParentSheet,
+  'item-wait-for': WaitForSheet,
   'item-move-project': MoveItemProjectSheet,
   'item-sources': SourcesSheet,
   'item-times': TimesSheet,

@@ -7,7 +7,7 @@ import { itemMenuFacts } from '../features/item/itemMenuFacts'
 
 type Story = StoryObj
 
-export const on: ItemMenuEvents = acts('Item menu', ['edit', 'copy', 'agent', 'newDoc', 'addSub', 'reparent', 'later', 'archive', 'doNext', 'moveProject', 'remove', 'set', 'field', 'tag', 'group'], {
+export const on: ItemMenuEvents = acts('Item menu', ['edit', 'copy', 'agent', 'newDoc', 'addSub', 'reparent', 'later', 'archive', 'doNext', 'moveProject', 'remove', 'set', 'field', 'tag', 'group', 'waitFor'], {
   agent: 'Sheets › An item: what agents see',
   reparent: 'Move and pick › Put under',
   moveProject: 'Move and pick › Item to another project',

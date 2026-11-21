@@ -156,7 +156,7 @@ class Decision:
         return {"from": self.from_, "to": self.to, "msg": self.msg, "t": self.t}
 
 
-ITEM_FIELDS = ("title", "body", "next", "pri", "when", "status", "tags", "group", "parent", "archived", "rank", "later_until")
+ITEM_FIELDS = ("title", "body", "next", "pri", "when", "status", "tags", "group", "after", "parent", "archived", "rank", "later_until")
 
 
 @dataclass
@@ -186,6 +186,7 @@ class Item:
     # a group (T856): it holds items and gives them its words; no work of its own: /next never gives it, it is never
     # done by itself (the user archives it)
     group: bool = False
+    after: List[int] = field(default_factory=list)  # the items it waits for: /next gives it once they are finished (T857)
 
     def get(self, name: str) -> Any:
         """A field that a change can set (ITEM_FIELDS)."""
@@ -220,6 +221,8 @@ class Item:
             out["later_until"] = self.later_until
         if self.group:
             out["group"] = True
+        if self.after:
+            out["after"] = list(self.after)
         return out
 
 

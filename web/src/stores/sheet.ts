@@ -12,6 +12,8 @@ export type SheetRequest =
   /** an item's actions (`arm`: opened on its status, priority or type menu) */
   | { kind: 'item-menu'; n: number; arm: Arm | null }
   | { kind: 'item-move-parent'; n: number }
+  /** what an item waits for (T857): an item picked, or picked again to stop waiting */
+  | { kind: 'item-wait-for'; n: number }
   | { kind: 'item-move-project'; n: number }
   /** the inputs an item came from */
   | { kind: 'item-sources'; n: number }

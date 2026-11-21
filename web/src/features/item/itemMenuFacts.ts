@@ -3,7 +3,7 @@
 // container and the stories both use it.
 
 import { keysShown } from '../../app/actions'
-import { projectTags } from '../../model/items'
+import { projectTags, waitsFor } from '../../model/items'
 import { codeOf, type ProjectModel } from '../../model/project'
 import type { Item } from '../../model/types'
 import type { ItemMenuFacts } from './ItemMenu'
@@ -16,4 +16,5 @@ export const itemMenuFacts = (m: ProjectModel, it: Item, asking: boolean, arm: I
   arm,
   keys: { edit: keysShown('edit'), copy: keysShown('copy'), newDoc: keysShown('new-doc'), addSub: keysShown('add-sub'), reparent: keysShown('put-under'), later: keysShown('later'), archive: keysShown('archive'), status: keysShown('status'), pri: keysShown('priority'), tags: keysShown('tags') },
   allTags: projectTags(m.items),
+  waitsFor: waitsFor(m.byN, it).map((x) => codeOf(m, x.n)),
 })

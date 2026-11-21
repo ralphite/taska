@@ -179,3 +179,17 @@ export function projectTags(items: readonly Item[]): string[] {
 
 /** An item's tags with `t` put on, or taken off when it has it. */
 export const toggledTag = (tags: readonly string[], t: string) => (tags.includes(t) ? tags.filter((x) => x !== t) : [...tags, t])
+
+/** The items it waits for that are not finished (T857: rules.waits_for), a merged one followed to where it went. */
+export function waitsFor(byN: ReadonlyMap<number, Item>, it: Item): Item[] {
+  const out: Item[] = []
+  for (const n of it.after ?? []) {
+    let w = byN.get(n)
+    for (let i = 0; w?.mergedInto && i < 50; i++) w = byN.get(w.mergedInto)
+    if (w && !closed(w.status) && !out.includes(w)) out.push(w)
+  }
+  return out
+}
+
+/** The unfinished items that wait for it (T857: rules.holds_up). */
+export const holdsUp = (items: readonly Item[], it: Item) => items.filter((k) => !k.mergedInto && (k.after ?? []).includes(it.n) && !closed(k.status))

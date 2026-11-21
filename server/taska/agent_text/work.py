@@ -109,8 +109,14 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         return Work(f"{head}\nresume {st.code(it.n)}: {ident(x.by, x.ses)} {what} (#{x.id})\n" + card(rd, it), True,
                     given=it.n)
     me = ident(asker.who, asker.session) if asker.who else None
-    queue = rules.queue_order([i for i in live if i.when == "now" and not i.group and i.status in ("open", "doing")
-                               and not rules.waiting(st, i) and not rules.open_kids(st, i)])
+    work = [i for i in live if i.when == "now" and not i.group and i.status in ("open", "doing")
+            and not rules.waiting(st, i) and not rules.open_kids(st, i)]
+    blocked = [(i, rules.waits_for(st, i)) for i in work]
+    blocked = [(i, ws) for i, ws in blocked if ws]
+    if blocked:  # waiting for other items (T857): given once they are finished
+        out.append("blocked (skip): " + ", ".join(f"{st.code(i.n)} ← {' '.join(st.code(w.n) for w in ws)}" for i, ws in blocked))
+        head = "\n".join(out)
+    queue = rules.queue_order([i for i in work if all(i is not b for b, _ in blocked)])
     if me:  # what another session is on is theirs; each gets its own next item
         theirs = [(i, c[0]) for i in queue for c in [asker.holder(i)] if c and c[0] != me]
         if theirs:
@@ -121,7 +127,8 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         return Work(f"{head}\nresume {st.code(fresh.n)}: the user replied\n" + card(rd, fresh), True, given=fresh.n)
     if queue:
         it = queue[0]
-        return Work(f"{head}\nnext {st.code(it.n)} ({len(queue)} in queue: doing first, then P0→P3, oldest first)\n"
+        waited = f": {' '.join(st.code(n) for n in it.after)} it waited for {'is' if len(it.after) == 1 else 'are'} done" if it.after else ""
+        return Work(f"{head}\nnext {st.code(it.n)}{waited} ({len(queue)} in queue: doing first, then P0→P3, oldest first)\n"
                     + card(rd, it), True, given=it.n, claim=(it.n, me) if me else None)
     end = "nothing to do now. End your turn (Claude Code: with the background wait from /agent running; never wait, poll or set a timer in the foreground)."
     if asker.who and asker.who.startswith("claude"):

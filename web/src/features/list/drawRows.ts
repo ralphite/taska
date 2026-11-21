@@ -2,7 +2,7 @@
 // talk, draft, whether it is next, new from an agent, who works on it, where a searched word was found) and how it
 // looks (open in the pane, picked, dragged). Pure: the container and the stories draw the same rows from the same data.
 
-import { closed, lastAgentMessage, workNews, type DropHow } from '../../model/items'
+import { closed, lastAgentMessage, waitsFor, workNews, type DropHow } from '../../model/items'
 import { needRow } from '../../model/needStates'
 import { codeOf, filesOf, type ProjectModel } from '../../model/project'
 import { laterOn } from '../../model/time'
@@ -65,6 +65,7 @@ export function rowFacts(m: ProjectModel, it: Item, w: DrawWith): RowFacts {
     news: it.status === 'doing' ? workNews(it, m.at) : null,
     ...(laterOn(it, m.at) ? { laterOn: laterOn(it, m.at) } : {}),
     hitLine: w.words.length ? hitLine(it, code, w.words) : null,
+    waitsFor: waitsFor(m.byN, it).map((x) => ({ n: x.n, code: codeOf(m, x.n) })),
   }
 }
 

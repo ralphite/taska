@@ -21,7 +21,7 @@ Command = Dict[str, Any]
 Parsed = List[Tuple[int, Union[Command, Refused]]]
 
 _OPTION = re.compile(
-    r"(?i)(?P<open>\[)?(?:(?P<kv>(?:src|parent|pri|when|status|type|files)=[^\s\]]+)|(?P<pri>P[0-3])|(?P<when>now|later)"
+    r"(?i)(?P<open>\[)?(?:(?P<kv>(?:src|parent|after|pri|when|status|type|files)=[^\s\]]+)|(?P<pri>P[0-3])|(?P<when>now|later)"
     r"|(?P<st>open|doing|review|done|drop|dropped)|(?P<type>feature|bug|idea|task|rule)|(?P<arch>archive|unarchive)"
     r"|(?P<tag>-?#[\w-]{1,30}))"
     r"(?(open)\])(?=\s|$)")  # [P1] reads as P1
@@ -146,6 +146,12 @@ def command(head: str, cont: str) -> Union[Command, List[Command]]:
         return {"op": "merge", "ref": word, "into": rest2.strip().split()[0] if rest2.strip() else ""}
     if verb_l == "delete" and not rest2.strip():
         return {"op": "idel", "ref": word}
+    if verb_l == "after":  # T13 after T12: waits for it (T857); after -T12: no longer
+        words = rest2.replace(",", " ").split()
+        if not words:
+            raise Refused(f"after needs an item: {word} after T12")
+        return {"op": "after", "ref": word, "add": [w for w in words if not w.startswith("-")],
+                "del": [w[1:] for w in words if w.startswith("-")]}
     if verb_l in ("group", "task") and not rest2.strip():  # T797 group: holds items, no work of its own (T856)
         return {"op": "set", "ref": word, "f": {"group": verb_l == "group"}, "src": None}
     if verb_l == "take" and not rest2.strip():  # doing, taken from the session that holds it, as the user asked (T772)
@@ -190,7 +196,7 @@ def _new(rest: str, cont: str) -> Command:
     out: Command = {"op": "new", "title": title, "body": cont}
     if group:
         out["group"] = True
-    for k in ("tags", "pri", "when", "status", "parent", "src"):
+    for k in ("tags", "pri", "when", "status", "parent", "after", "src"):
         if k in opts:
             out[k] = opts[k]
     return out

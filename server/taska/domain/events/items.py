@@ -24,6 +24,7 @@ class ItemAdded(Event):
     parent: Optional[int] = None
     keep: bool = False  # linked to src, but src stays unhandled
     group: bool = False  # a group (T856)
+    after: List[int] = field(default_factory=list)  # the items it waits for (T857)
 
     def body(self) -> Row:
         row: Row = {"n": self.n, "by": self.by, "title": self.title, "src": self.src, "tags": list(self.tags),
@@ -31,6 +32,7 @@ class ItemAdded(Event):
                     "next": self.next, "parent": self.parent}
         opt(row, "keep", True, self.keep)
         opt(row, "group", True, self.group)
+        opt(row, "after", list(self.after), bool(self.after))
         return row
 
     @property
@@ -38,7 +40,7 @@ class ItemAdded(Event):
         return clean_title(self.title)[0]
 
     def items_touched(self) -> List[int]:
-        return [x for x in (self.n, self.parent) if x]
+        return [x for x in (self.n, self.parent, *self.after) if x]
 
 
 @dataclass
@@ -253,7 +255,7 @@ READERS: Dict[str, Reader] = {
     "add": lambda r: ItemAdded(n=need(r, "n"), title=need(r, "title"), src=r.get("src"), tags=_tags_of(r),
                                pri=need(r, "pri"), when=need(r, "when"), status=need(r, "status"),
                                body_text=r.get("body", ""), next=r.get("next", ""), parent=r.get("parent"),
-                               keep=bool(r.get("keep")), group=bool(r.get("group")), **common(r)),
+                               keep=bool(r.get("keep")), group=bool(r.get("group")), after=[int(x) for x in r.get("after") or []], **common(r)),
     "set": lambda r: FieldsSet(n=need(r, "n"), f=_fields(need(r, "f")), was=_fields(r.get("was")), src=r.get("src"),
                                keep=bool(r.get("keep")), undo_of=r.get("undo_of"), cascade=r.get("cascade"),
                                **common(r)),

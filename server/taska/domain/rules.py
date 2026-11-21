@@ -137,6 +137,24 @@ def open_kids(state: ProjectState, it: Item) -> List[Item]:
     return out
 
 
+def waits_for(state: ProjectState, it: Item) -> List[Item]:
+    """The items it waits for that are not finished yet (T857), a merged one followed to what it went into: while there
+    are any, /next does not give it."""
+    out: List[Item] = []
+    for n in it.after:
+        w = state.items.get(n)
+        while w and w.merged_into:
+            w = state.items.get(w.merged_into)
+        if w and not w.deleted and w.status not in CLOSED and w not in out:
+            out.append(w)
+    return out
+
+
+def holds_up(state: ProjectState, it: Item) -> List[Item]:
+    """The unfinished items that wait for it (T857)."""
+    return [k for k in state.live_items() if it.n in k.after and k.status not in CLOSED]
+
+
 def descendants(state: ProjectState, n: int) -> List[Item]:
     """Every subitem under an item, at any depth."""
     out: List[Item] = []

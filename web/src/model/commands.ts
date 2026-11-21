@@ -25,6 +25,7 @@ export interface SetFields {
   /** every tag it has, without the # (T855) */
   tags?: string[]
   group?: boolean
+  after?: string[]
   pri?: Pri
   when?: When
   status?: Status
@@ -60,9 +61,10 @@ interface From {
 export type Command = From &
   (
     // items (commands/items.py)
-    | { op: 'new'; title: string; tags?: string[]; group?: boolean; pri?: Pri; when?: When; status?: Status; body?: string; next?: string; parent?: string }
+    | { op: 'new'; title: string; tags?: string[]; group?: boolean; after?: string[]; pri?: Pri; when?: When; status?: Status; body?: string; next?: string; parent?: string }
     | { op: 'set'; ref: string; f: SetFields; undo_of?: number }
     | { op: 'tag'; ref: string; add?: string[]; del?: string[] }
+    | { op: 'after'; ref: string; add?: string[]; del?: string[] }
     | { op: 'say'; ref: string; text: string; kind?: Kind; files?: (SentFile | string)[] }
     | { op: 'merge'; ref: string; into: string }
     | { op: 'unmerge'; ref: string }
@@ -112,6 +114,7 @@ export const OPS = {
   new: true,
   set: true,
   tag: true,
+  after: true,
   say: true,
   merge: true,
   unmerge: true,

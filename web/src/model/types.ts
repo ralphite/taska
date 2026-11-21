@@ -74,6 +74,8 @@ export interface Item {
   tags: string[]
   /** a group (T856): it holds items and gives them its words; no status of its own, never done by itself */
   group?: boolean
+  /** the items it waits for (T857): agents are given it once they are finished */
+  after?: number[]
   title: string
   body: string
   pri: Pri

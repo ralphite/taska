@@ -19,7 +19,7 @@ import { itemMenuPop, itemMenuSheet, type ItemMenuEvents } from './ItemMenu'
 import { itemMenuFacts } from './itemMenuFacts'
 import { toggledTag } from '../../model/items'
 import { useItemWorld } from '../../app/hooks'
-import { moveParentSheet } from '../../ui/Pickers'
+import { moveParentSheet, pickSheet } from '../../ui/Pickers'
 
 type Req<K extends SheetRequest['kind']> = { req: Extract<SheetRequest, { kind: K }> }
 
@@ -93,9 +93,26 @@ export function ItemMenuSheet({ req }: Req<'item-menu'>) {
     field: (a) => app.sheets.open({ kind: 'item-menu', n, arm: a }, { pop: true, focus: false, at, narrow: true }),
     tag: (t) => void app.items.change(n, 'tags', toggledTag(it.tags, t)),
     group: (on) => (close(), void app.items.change(n, 'group', on)),
+    waitFor: (from) => (desk && from ? app.sheets.openFrom(from, { kind: 'item-wait-for', n }, { focus: false }) : app.sheets.open({ kind: 'item-wait-for', n }, { pop: desk, focus: false, at })),
   }
   const facts = itemMenuFacts(m, it, asking, arm)
   return desk ? <SheetLayout {...itemMenuPop(facts, on)} /> : <SheetLayout {...itemMenuSheet(facts, on)} />
+}
+
+/** Wait for… (T857): any item but itself and the groups; one it waits for already, picked again, no longer. */
+export function WaitForSheet({ req }: Req<'item-wait-for'>) {
+  const app = useServices('runner', 'sheets')
+  const desk = useLayout() === 'desk'
+  const { slug, m, it, code } = useSubject(req.n)
+  if (!m || !it) return null
+  const now = it.after ?? []
+  const head = now.length ? `Wait for… (${now.map(code).join(', ')} now: pick again to stop)` : 'Wait for…'
+  const pick = (to: number) => {
+    app.sheets.close()
+    const ref = code(to)
+    void app.runner.change(slug, { op: 'after', ref: code(it.n), ...(now.includes(to) ? { del: [ref] } : { add: [ref] }) }, `${code(it.n)} waiting for ${ref}`)
+  }
+  return <SheetLayout {...pickSheet({ head, items: m.items, skip: [it.n, ...m.items.filter((x) => x.group).map((x) => x.n)], code, desk }, pick)} />
 }
 
 export function MoveParentSheet({ req }: Req<'item-move-parent'>) {

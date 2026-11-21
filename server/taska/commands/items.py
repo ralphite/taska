@@ -8,7 +8,7 @@ import re
 from datetime import date
 from typing import Any, Dict, List, Optional
 
-from ..domain import events as ev, item_states
+from ..domain import events as ev, item_states, rules
 from ..domain.history import followed, last_archive, status_set_by
 from ..domain.model import FileRef, Item
 from ..domain.rules import RefContext, descendants, item_at, open_kids, replied, user_word, waiting
@@ -37,6 +37,40 @@ def tags_value(v: Any) -> List[str]:
     if len(out) > MAX_TAGS:
         raise Refused(f"at most {MAX_TAGS} tags")
     return out
+
+
+def after_value(state: ProjectState, v: Any, ctx: Optional[RefContext], me: Optional[Item]) -> List[int]:
+    """What an item waits for, as sent (refs, a list or words), checked (T857): never itself, a group (never done) or
+    an item that waits for it, at any remove (they would wait for each other for ever)."""
+    refs = v if isinstance(v, (list, tuple)) else str(v or "").replace(",", " ").split()
+    out: List[int] = []
+    for ref in refs:
+        if str(ref).strip().lower() in _NONE_WORDS:
+            continue
+        w = item_at(state, ref, ctx)
+        code = state.code(w.n)
+        if me is not None and w.n == me.n:
+            raise Refused(f"{code} cannot wait for itself")
+        if w.group:
+            raise Refused(f"{code} is a group, never done by itself: wait for one of its items instead")
+        if me is not None and _waits_on(state, w, me.n):
+            raise Refused(f"{code} already waits for {state.code(me.n)}: they would wait for each other for ever")
+        if w.n not in out:
+            out.append(w.n)
+    return out
+
+
+def _waits_on(state: ProjectState, it: Item, n: int) -> bool:
+    seen: set = set()
+    todo = list(it.after)
+    while todo:
+        k = todo.pop()
+        if k == n:
+            return True
+        if k not in seen and k in state.items:
+            seen.add(k)
+            todo.extend(state.items[k].after)
+    return False
 
 
 def tag_words(tags: List[str]) -> str:
@@ -87,6 +121,8 @@ def field_value(state: ProjectState, name: str, v: Any, ctx: Optional[RefContext
             v = float(v)
         except ValueError:
             raise Refused("rank must be a number, or - for the usual order")
+    elif name == "after":
+        return after_value(state, v, ctx, me)
     elif name == "parent":
         if str(v).strip().lower() in _NONE_WORDS:
             return None
@@ -111,6 +147,7 @@ def new_item(r: Run, a: Args) -> Outcome:
         field_value(s, "type", a.get("type"))
     tags = tags_value(a.get("tags") or [])
     group = field_value(s, "group", a.get("group") or False)
+    after = after_value(s, a.get("after") or [], r.ctx, None)
     pri = field_value(s, "pri", a.get("pri") or DEFAULT_PRI)
     when = field_value(s, "when", a.get("when") or "now")
     body = field_value(s, "body", a.get("body") or "")
@@ -122,7 +159,7 @@ def new_item(r: Run, a: Args) -> Outcome:
     # a group holds work and does none: an agent's group needs no approval (T856, D153)
     status = item_states.starts(r.by, asked_for or group) if not r.person else field_value(s, "status", a.get("status") or "open")
     e = ev.ItemAdded(n=s.max_n + 1, by=r.by, title=title, src=src, tags=tags, pri=pri, when=when,
-                     status=status, body_text=body, next=nxt, parent=parent, keep=r.keep(), group=group)
+                     status=status, body_text=body, next=nxt, parent=parent, keep=r.keep(), group=group, after=after)
     if r.by == "org" and e.status == "review":  # only an agent finishing its work puts an item in review
         e.status = "open"
     r.emit(e)
@@ -238,6 +275,26 @@ def set_fields(r: Run, a: Args) -> Outcome:
     said = " ".join(f"{k}={v}" if k in ("pri", "when", "status", "parent", "archived", "later_until")
                     else f"tags={tag_words(v) or '-'}" if k == "tags" else k for k, v in f.items())
     return Outcome(f"ok {code} {said}{note}{r.gone_note(it)}", "Updated " + code)
+
+
+@handles("after")
+def after(r: Run, a: Args) -> Outcome:
+    """What an item waits for, put on and taken off (`T13 after T12`, `T13 after -T12`): /next gives it once they
+    are finished (T857). {"op": "after", "ref": "T13", "add": ["T12"], "del": []}."""
+    s = r.state
+    it = item_at(s, a.get("ref", ""), r.ctx)
+    code = s.code(it.n)
+    add = after_value(s, a.get("add") or [], r.ctx, it)
+    off = [item_at(s, x, r.ctx).n for x in a.get("del") or []]
+    now = [n for n in it.after if n not in off] + [n for n in add if n not in it.after]
+    if now == it.after:
+        return Outcome(f"ok {code} no change", "")
+    r.emit(ev.FieldsSet(n=it.n, by=r.by, f={"after": now}, was={"after": list(it.after)}, src=_src(r, a), keep=r.keep()))
+    left = rules.waits_for(s, it)
+    said = " ".join([f"after {s.code(n)}" for n in add] + [f"after -{s.code(n)}" for n in off])
+    how = (f"blocked: /next gives it once {' and '.join(s.code(w.n) for w in left)} "
+           f"{'is' if len(left) == 1 else 'are'} done") if left else "not blocked any more" if off else "its wait is done already"
+    return Outcome(f"ok {code} {said} ({how}){r.gone_note(it)}", "Updated " + code)
 
 
 @handles("tag")

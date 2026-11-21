@@ -11,7 +11,7 @@ import { laterOn } from '../../model/time'
 import type { Command } from '../../model/commands'
 import { codeOf, docsOf, filesOf, findRef, liveN, sourceCount, type ProjectModel } from '../../model/project'
 import { ticksNotSent } from '../../model/docTicks'
-import { lastAgentMessage } from '../../model/items'
+import { holdsUp, lastAgentMessage, waitsFor } from '../../model/items'
 import { answerOf, latestMessage } from '../../model/talk'
 import type { Item } from '../../model/types'
 import { inTab, tabOf } from '../../model/visible'
@@ -134,6 +134,8 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     editDraft: kept.edits[n] ?? null,
     subDraft: kept.subs[n],
     addingSub: view.subFor === n,
+    waitsFor: waitsFor(m.byN, it),
+    blocks: holdsUp(m.items, it),
   }
 
   const iv = () => stores.itemView.getState()

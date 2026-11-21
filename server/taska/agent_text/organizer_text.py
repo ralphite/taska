@@ -43,6 +43,7 @@ INSTRUCTIONS = (
     '  `<code> #bug`; never guess tags yourself.\n'
     '  A group (the user says "a group", "a folder", "\u5206\u7ec4" for things to keep together): `new group <title>`, empty\n'
     '  until things are put in it; "put it under X", "part of X" puts an item in with parent=<X\'s code>.\n'
+    '  "Do T13 after T12", "\u7b49 T12 \u505a\u5b8c\u518d\u505a T13": `T13 after T12`.\n'
     "  (A new item already shows the input's words, pictures and voice notes: never add a message to it with say.)\n"
     "  The body is ALL the user's words about that item, every sentence: never shorten, summarize, reorder, rewrite\n"
     '  them by your own understanding or turn them into a list (F432: details the user gave were lost when a long voice\n'

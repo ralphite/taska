@@ -35,8 +35,8 @@ export interface ItemMenuEvents {
   tag(t: string): void
   /** made a group, or a task again (T856) */
   group(on: boolean): void
-  /** D152 prototype: what it waits for, picked (`from`: the row it was chosen on) */
-  waitFor?(from?: HTMLElement): void
+  /** what it waits for, picked (`from`: the row it was chosen on; T857) */
+  waitFor(from?: HTMLElement): void
 }
 
 export const STAT_BTN =
@@ -78,8 +78,8 @@ export interface ItemMenuFacts {
   keys: MenuKeys
   /** the project's tags, the most used first (T855) */
   allTags: readonly string[]
-  /** D152 prototype: the codes of what it waits for */
-  waitsFor?: readonly string[]
+  /** the codes of what it waits for, not finished yet (T857) */
+  waitsFor: readonly string[]
 }
 
 export interface MenuKeys {
@@ -205,7 +205,7 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm, allTags, wait
               {tile('reparent', 'indent', 'Put under…', () => on.reparent(), parentCode ? `now under ${parentCode}` : 'stands on its own')}
             </>
           )}
-          {waitsFor === undefined || group ? null : tile('wait', 'hourglass', 'Wait for…', () => on.waitFor?.(), waitsFor?.length ? `now ${waitsFor.join(', ')}` : '')}
+          {group ? null : tile('wait', 'hourglass', 'Wait for…', () => on.waitFor(), waitsFor?.length ? `now ${waitsFor.join(', ')}` : '')}
           {group ? tile('group', 'items', 'Make a task', () => on.group(false)) : tile('group', 'folder', 'Make a group', () => on.group(true))}
           {state}
           {next}
@@ -320,7 +320,7 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys, allTags, 
               {row('reparent', 'indent', 'Put under…', keys.reparent, on.reparent, parentCode ? 'now under ' + parentCode : 'stands on its own')}
             </>
           )}
-          {waitsFor === undefined || group ? null : row('wait', 'hourglass', 'Wait for…', '', (from) => on.waitFor?.(from), waitsFor?.length ? 'now ' + waitsFor.join(', ') : '')}
+          {group ? null : row('wait', 'hourglass', 'Wait for…', '', (from) => on.waitFor(from), waitsFor?.length ? 'now ' + waitsFor.join(', ') : '')}
           {group ? row('group', 'items', 'Make a task', '', () => on.group(false)) : row('group', 'folder', 'Make a group', '', () => on.group(true))}
           {state}
           {next}
