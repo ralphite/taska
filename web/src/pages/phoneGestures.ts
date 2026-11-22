@@ -1,5 +1,5 @@
 // The phone's two page gestures. The drawer drags shut (it follows the finger; let go past 70% open it stays). On an
-// item's page a swipe right goes back: the page follows the finger with the list showing underneath, and goes when
+// task's page a swipe right goes back: the page follows the finger with the list showing underneath, and goes when
 // let go far or fast enough, else comes back. Scrolling up and down, a swipe the other way, the screen's left edge
 // (the phone's own Back), a sheet over the page and words in a field or code block keep their own touch.
 

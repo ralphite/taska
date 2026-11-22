@@ -64,7 +64,7 @@ export class Notices {
   private readonly kv: KeyValueStore
   private readonly changed: () => void
   private readonly d: NoticesDeps | null
-  private seenItems = false
+  private seenTasks = false
   private seenProjects = false
   private readonly pending = new Map<string, Ev>()
   private timer = 0
@@ -208,17 +208,17 @@ export class Notices {
 
   /** A project shown for the first time tells nothing about what was already waiting, as a fresh page. */
   fresh(): void {
-    this.seenItems = false
+    this.seenTasks = false
   }
 
   /** A project's news: what newly needs you there. */
-  items(slug: string, m: ProjectModel): void {
+  tasks(slug: string, m: ProjectModel): void {
     if (!this.d?.desk()) return
-    const saved = 'items.' + slug
+    const saved = 'tasks.' + slug
     const before = this.read<Record<string, unknown>>(saved, {})
     const next: Record<string, unknown> = {}
     const title = m.facts.title || slug
-    for (const it of m.items.filter(needsYou)) {
+    for (const it of m.tasks.filter(needsYou)) {
       const code = codeOf(m, it.n)
       const kinds = [...(it.wait ? [it.wait.kind] : []), ...(['proposed', 'review'].includes(it.status) ? [it.status] : [])]
       let e: Ev | null = null
@@ -226,13 +226,13 @@ export class Notices {
         const key = `${slug}:${code}:${kind}`
         const token = kind === it.wait?.kind ? it.wait.id : kind
         next[key] = token
-        if (this.seenItems && before[key] !== token && !e) e = { project: slug, title, code, kind, count: 1 }
+        if (this.seenTasks && before[key] !== token && !e) e = { project: slug, title, code, kind, count: 1 }
       }
       if (e) this.queue(`${slug}:${code}`, e)
     }
     for (const [key, e] of this.pending) if (e.project === slug && e.code && !(`${e.project}:${e.code}:${e.kind}` in next)) this.pending.delete(key)
     this.kv.setJson('taska.notifications.' + saved, next)
-    this.seenItems = true
+    this.seenTasks = true
   }
 
   /** The projects listed again: how many need you in the others. */

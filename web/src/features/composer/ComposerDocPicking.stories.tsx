@@ -5,9 +5,9 @@ import { at, one } from '../../stories/composerDocFixtures'
 export default { title: 'UI/Input box/Commenting on a document/Picking what to comment on' } satisfies Meta
 type Story = StoryObj
 
-/** Nothing picked: the desktop replies on the document's item; the phone comments on the whole document. */
+/** Nothing picked: the desktop replies on the document's task; the phone comments on the whole document. */
 export const NothingPicked: Story = { ...at({ at: 'D1' }), name: 'Nothing picked' }
-/** The phone, nothing picked: a comment on the whole document (Reply to its item instead). */
+/** The phone, nothing picked: a comment on the whole document (Reply to its task instead). */
 export const OnePicked: Story = { ...at(one), name: 'One paragraph picked' }
 export const OnePickedWordsInIt: Story = { ...at({ ...one, text: 'Also keep the sort.' }), name: 'One picked, typing' }
 export const SeveralPicked: Story = { ...at({ at: 'D1', sel: ['k1', 'k2'] }), name: 'Several picked' }

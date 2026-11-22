@@ -84,7 +84,7 @@ class Project:
 
     def _warn(self, seq: int, what: str) -> None:
         """A change in the log that could not be read or applied when the project opened: skipped. Logged, and counted
-        for the page, which says so (T806 #3: it was only printed, and an item gone from the page went unnoticed)."""
+        for the page, which says so (T806 #3: it was only printed, and a task gone from the page went unnoticed)."""
         self.damaged += 1
         print(f"taska: {self.slug}: change {seq} {what}", file=sys.stderr)
         log.error(f"change {seq} skipped: {what}"[:300], extra={"f": {"source": "server", "kind": "replay",
@@ -140,9 +140,9 @@ class Project:
                 self.shared.changed(self.slug)  # what is found by meaning catches up soon
 
     def bring_back_laters(self, today: str) -> int:
-        """Items Later until `today` (YYYY-MM-DD, local) or before go back to Now by themselves (D115 #21). -> how many."""
+        """Tasks Later until `today` (YYYY-MM-DD, local) or before go back to Now by themselves (D115 #21). -> how many."""
         with self.lock:
-            due = [self.state.code(i.n) for i in self.state.live_items() if i.when == "later" and i.later_until and i.later_until <= today]
+            due = [self.state.code(i.n) for i in self.state.live_tasks() if i.when == "later" and i.later_until and i.later_until <= today]
             if due:
                 self.run([(0, {"op": "due", "ref": c, "today": today}) for c in due], "taska")
             return len(due)
@@ -175,7 +175,7 @@ class Project:
             return
         audio = self.voice.notes_of(inp)
         said = [fid for fid in audio if self.voice.heard(fid, wrong)]
-        self.shared.note_voice_fix(wrong, right, project=self.slug, item=self.state.bare_code(inp.scope), input=inp.id,
+        self.shared.note_voice_fix(wrong, right, project=self.slug, task=self.state.bare_code(inp.scope), input=inp.id,
                                    who=by, via="input", file=" ".join(said or audio) or None)
 
     # -- the file ------------------------------------------------------------------------

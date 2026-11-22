@@ -20,7 +20,7 @@ describe("the projects' pictures", () => {
   test("this project's own data says its picture, before the list does", () => {
     const rows: ProjectRow[] = [{ name: 'taska', title: 'Taska', open: 3, needs: 0 }]
     // the little of a project's model the list reads
-    const m = { facts: { title: 'Taska', icon: 'f20-new.png' }, items: [], inputs: [], docs: [], at: 0 } as unknown as ProjectModel
+    const m = { facts: { title: 'Taska', icon: 'f20-new.png' }, tasks: [], inputs: [], docs: [], at: 0 } as unknown as ProjectModel
     const { list, icons } = sideProjects(rows, m, 'taska')
     expect(list?.[0].icon).toBe('/p/taska/f/f20-new.png')
     expect(icons.get('taska')).toBe('/p/taska/f/f20-new.png')

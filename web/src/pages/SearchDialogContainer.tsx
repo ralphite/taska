@@ -1,6 +1,6 @@
 // The desktop's search dialog (F479) with the page's data: where the search is, the projects (their models where the
-// page has them), what you opened lately, the actions the words may name (on the item open), and the highlighted
-// row's preview: an item of a project the page has, as its page draws it (read only); anything else, what the search
+// page has them), what you opened lately, the actions the words may name (on the task open), and the highlighted
+// row's preview: a task of a project the page has, as its page draws it (read only); anything else, what the search
 // knows of it.
 
 import { useEffect } from 'react'
@@ -8,13 +8,13 @@ import { useApp, useStores, useStoreValue } from '../app/context'
 import { useProjectRoute } from '../app/hooks'
 import { useSideProjects } from '../app/projectLists'
 import { listedActions } from '../app/actions'
-import { ItemPageContainer } from '../features/item/ItemPageContainer'
+import { TaskPageContainer } from '../features/task/TaskPageContainer'
 import { foundMeta, foundPath } from '../model/find'
-import { statusWord } from '../model/items'
+import { statusWord } from '../model/tasks'
 import type { SheetRequest } from '../stores/sheet'
 import { toneOf } from '../ui/tones'
 import { FoundPreview, SearchDialog, type DialogEvents } from './SearchDialog'
-import { isFound, itemOf, searchDialogView, type DialogPlace, type FoundLine } from './searchDialogView'
+import { isFound, taskOf, searchDialogView, type DialogPlace, type FoundLine } from './searchDialogView'
 import { docWords } from '../model/docs'
 import { rulesDoc } from '../model/rules'
 
@@ -23,8 +23,8 @@ const ACTIONS = [...listedActions(true), ...listedActions(false)]
 function Preview({ l, place, now }: { l: FoundLine; place: DialogPlace; now: number }) {
   const x = l.found
   const m = place.model(x.project)
-  const it = itemOf(x, place)
-  if (x.kind === 'items' && it && m?.byN.get(it.n) === it) return <ItemPageContainer it={it} m={m} slug={x.project} tab="items" desk preview />
+  const it = taskOf(x, place)
+  if (x.kind === 'tasks' && it && m?.byN.get(it.n) === it) return <TaskPageContainer it={it} m={m} slug={x.project} tab="tasks" desk preview />
   if (x.kind === 'docs') {
     const d = m?.docs.find((y) => y.d === x.d)
     return <FoundPreview l={l} text={d ? docWords(d).slice(0, 1500) : ''} meta={foundMeta(x, now)} />
@@ -56,7 +56,7 @@ export function SearchSheet(_: { req: Extract<SheetRequest, { kind: 'search' }> 
     projects: (list ?? []).map((p) => p.slug),
     recent,
     actions: route ? ACTIONS : [],
-    openCode: route?.place.kind === 'item' ? route.place.ref : null,
+    openCode: route?.place.kind === 'task' ? route.place.ref : null,
   }
   const v = searchDialogView(s, place)
   const on: DialogEvents = {

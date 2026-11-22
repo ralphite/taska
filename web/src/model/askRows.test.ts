@@ -1,7 +1,7 @@
 // B749 (D132): an agent's questions in a row are one card; your answer to some of them names them and says each on a
 // line, the others still wait; anything said after the row answers them all.
 import { describe, expect, test } from 'vitest'
-import { item, message } from '../stories/fixtures'
+import { task, message } from '../stories/fixtures'
 import { NEED_STATES, needOf, talkPlan } from './needStates'
 import { answerOf, askRows, rowAnswer } from './talk'
 
@@ -33,12 +33,12 @@ describe('questions in a row', () => {
   })
 
   test('the card goes where the last of the row is, even when an earlier one is what still waits', () => {
-    const it = item({ n: 1, thread: [a, b, c, message({ id: 5, by: 'you', kind: 'say', text: '- What else? → x', of: [3] })], wait: { id: 2, kind: 'ask', text: b.text, by: b.by, files: [] } })
+    const it = task({ n: 1, thread: [a, b, c, message({ id: 5, by: 'you', kind: 'say', text: '- What else? → x', of: [3] })], wait: { id: 2, kind: 'ask', text: b.text, by: b.by, files: [] } })
     expect(talkPlan(it).cardId).toBe(3)
   })
   test('approved before answering: once all are answered, Approved stays on the row card (B749 QA)', () => {
     const done = message({ id: 5, by: 'you', kind: 'say', text: '- What else? → x', of: [3] })
-    const it = item({ n: 1, status: 'open', talked: true, thread: [a, b, c, part, done], decided: { from: 'proposed', to: 'open', msg: 3, t: '' } })
+    const it = task({ n: 1, status: 'open', talked: true, thread: [a, b, c, part, done], decided: { from: 'proposed', to: 'open', msg: 3, t: '' } })
     expect(needOf(it).state).toBe('decidedOnAnswer')
     expect(NEED_STATES[needOf(it).state].card).toBe('onQuestion')
   })

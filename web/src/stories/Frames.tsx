@@ -90,10 +90,10 @@ export function Frames({ children, phone = true, desk = true, deskWidth, phoneWi
 }
 
 /** Several states of one part, each with its name. */
-export function States({ items }: { items: [string, ReactNode][] }) {
+export function States({ tasks }: { tasks: [string, ReactNode][] }) {
   return (
     <div className="flex flex-col">
-      {items.map(([name, node]) => (
+      {tasks.map(([name, node]) => (
         <section key={name} className="border-b border-dashed border-zinc-300 dark:border-zinc-700">
           <div className="px-2 pt-1 font-mono text-[10px] text-zinc-400">{name}</div>
           {node}

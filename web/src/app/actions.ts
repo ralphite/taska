@@ -1,28 +1,28 @@
 // What you can do in a project, each defined once: its words, its keys, when it can be done here (or why not, in a
 // few words, said instead) and what it does, with only the services it names. The keys (keys.ts), the search's
-// Actions, the keys sheet and the item's menu all read this table, so a key, an action row and a menu row always do
+// Actions, the keys sheet and the task's menu all read this table, so a key, an action row and a menu row always do
 // the same thing.
 
-import { closed } from '../model/items'
+import { closed } from '../model/tasks'
 import { visible } from '../model/visible'
 import { choiceMulti } from '../model/markdown'
 import { askRowOf } from '../model/talk'
 import { armHint, armedSet, doneTo, dropTo, pageStatuses, whyNot } from '../model/actions'
-import { ITEM_ACTS, type ItemActId } from '../model/itemActs'
+import { TASK_ACTS, type TaskActId } from '../model/taskActs'
 import { yourStep } from '../model/needStates'
 import { codeOf, liveN, type ProjectModel } from '../model/project'
-import type { Item } from '../model/types'
+import type { Task } from '../model/types'
 import type { Tab } from '../model/words'
 import { NEW_DRAFT } from '../model/draftTarget'
 import type { BoxStore } from '../stores/box'
 import type { DocViewStore } from '../stores/docView'
 import type { FeedbackStore } from '../stores/feedback'
 import type { Finder } from './search/finder'
-import type { ItemViewStore } from '../stores/itemView'
+import type { TaskViewStore } from '../stores/taskView'
 import type { RouteStore } from '../stores/route'
 import type { SheetStore } from '../stores/sheet'
 import type { UiStore } from '../stores/ui'
-import type { Answers } from './items/answers'
+import type { Answers } from './tasks/answers'
 import type { Box } from './inputs/box'
 import { copyText, forAgent } from './page/clipboard'
 import type { Docs } from './docs/docs'
@@ -32,21 +32,21 @@ import type { SharedRules } from './docs/sharedRules'
 import { isSharedSlug } from '../model/includes'
 import type { Fields } from './page/fields'
 import type { ProjectRoute } from './hooks'
-import type { ItemActions } from './items/itemActions'
-import type { ItemEdits } from './items/itemEdits'
+import type { TaskActions } from './tasks/taskActions'
+import type { TaskEdits } from './tasks/taskEdits'
 import type { KeyArm } from './page/keyArm'
-import type { ListOrder } from './items/listOrder'
+import type { ListOrder } from './tasks/listOrder'
 import type { Media } from './page/media'
 import type { Navigation } from './page/navigation'
-import type { Selection } from './items/selection'
+import type { Selection } from './tasks/selection'
 import type { Sheets } from './page/sheets'
 import type { Toasts } from './page/toasts'
 import type { Voice } from './voice/voice'
 
 /** What the actions do their work with; each action names the ones it uses and is given only those. */
 export interface ActionWorld {
-  items: ItemActions
-  itemEdits: ItemEdits
+  tasks: TaskActions
+  taskEdits: TaskEdits
   keyArm: KeyArm
   answers: Answers
   toasts: Toasts
@@ -66,7 +66,7 @@ export interface ActionWorld {
   ui: UiStore
   feedback: FeedbackStore
   sheet: SheetStore
-  itemView: ItemViewStore
+  taskView: TaskViewStore
   docView: DocViewStore
   boxStore: BoxStore
   /** the search: the phone's page, the desktop's dialog */
@@ -76,17 +76,17 @@ export interface ActionWorld {
 }
 type Uses = keyof ActionWorld
 
-/** Where an action is done: the project shown, its model, the open item. */
+/** Where an action is done: the project shown, its model, the open task. */
 export interface Here {
   r: ProjectRoute
   m: ProjectModel | null
-  it: Item | undefined
+  it: Task | undefined
   code: string
   /** the key that asked for it (Shift-Space scrolls back) */
   shift?: boolean
 }
-type OnItem = Here & { m: ProjectModel; it: Item }
-const onAnItem = (h: Here): h is OnItem => !!h.it && !!h.m
+type OnTask = Here & { m: ProjectModel; it: Task }
+const onAnTask = (h: Here): h is OnTask => !!h.it && !!h.m
 
 interface PageAction<K extends Uses = Uses> {
   uses: readonly K[]
@@ -101,35 +101,35 @@ interface PageAction<K extends Uses = Uses> {
   /** false: nothing to do after all (the key goes on as a key) */
   run(w: Pick<ActionWorld, K>, h: Here): void | boolean
 }
-interface ItemAction<K extends Uses = Uses> {
-  item: true
+interface TaskAction<K extends Uses = Uses> {
+  task: true
   uses: readonly K[]
-  /** said when no item is open (default: how to open one; '': nothing) */
+  /** said when no task is open (default: how to open one; '': nothing) */
   none?: string
   label: string
   keys?: string
   listed?: string | true
   desk?: true
-  why?(w: Pick<ActionWorld, K>, h: OnItem): string | null
-  run(w: Pick<ActionWorld, K>, h: OnItem): void | boolean
+  why?(w: Pick<ActionWorld, K>, h: OnTask): string | null
+  run(w: Pick<ActionWorld, K>, h: OnTask): void | boolean
 }
-type Action = PageAction | ItemAction
+type Action = PageAction | TaskAction
 
-const item = <K extends Uses = never>(uses: readonly K[], a: Omit<ItemAction<K>, 'item' | 'uses'>): ItemAction<K> => ({ ...a, uses, item: true })
+const task = <K extends Uses = never>(uses: readonly K[], a: Omit<TaskAction<K>, 'task' | 'uses'>): TaskAction<K> => ({ ...a, uses, task: true })
 const page = <K extends Uses = never>(uses: readonly K[], a: Omit<PageAction<K>, 'uses'>): PageAction<K> => ({ ...a, uses })
-const set = (w: Pick<ActionWorld, 'items'>, h: OnItem, f: string, v: unknown, o: { said?: string } = {}) => void w.items.change(h.it.n, f, v, o)
-const arm = (k: 's' | 'p') => (w: Pick<ActionWorld, 'keyArm' | 'toasts'>, h: OnItem) => {
+const set = (w: Pick<ActionWorld, 'tasks'>, h: OnTask, f: string, v: unknown, o: { said?: string } = {}) => void w.tasks.change(h.it.n, f, v, o)
+const arm = (k: 's' | 'p') => (w: Pick<ActionWorld, 'keyArm' | 'toasts'>, h: OnTask) => {
   w.keyArm.set(k, h.it.n)
   w.toasts.show(armHint(k, h.it))
 }
-/** an item action's words and key (model/itemActs) */
-const named = (id: ItemActId) => ({ label: ITEM_ACTS[id].label, keys: (ITEM_ACTS[id].key ?? '').toLowerCase() })
+/** a task action's words and key (model/taskActs) */
+const named = (id: TaskActId) => ({ label: TASK_ACTS[id].label, keys: (TASK_ACTS[id].key ?? '').toLowerCase() })
 const tab = (t: Tab) => (w: Pick<ActionWorld, 'nav'>) => w.nav.tab(t)
 const steps = (d: 1 | -1) => (w: Pick<ActionWorld, 'nav' | 'listOrder' | 'toasts'>, h: Here) => {
   const m = h.m
   if (m) w.nav.step(d, w.listOrder, (k) => codeOf(m, k), (words) => w.toasts.show(words))
 }
-const stepWhy = (_: unknown, h: Here) => (lists(h) ? null : h.r.place.kind === 'settings' || h.r.place.kind === 'help' ? 'Press Esc to return to the list' : 'J and K move in Items and Archive')
+const stepWhy = (_: unknown, h: Here) => (lists(h) ? null : h.r.place.kind === 'settings' || h.r.place.kind === 'help' ? 'Press Esc to return to the list' : 'J and K move in Tasks and Archive')
 
 /** always a fresh new input, written in the box */
 function newInput(w: Pick<ActionWorld, 'box' | 'route' | 'nav' | 'fields'>): void {
@@ -140,8 +140,8 @@ function newInput(w: Pick<ActionWorld, 'box' | 'route' | 'nav' | 'fields'>): voi
 }
 
 export const ACTIONS = {
-  // the item
-  next: item(['fields', 'items'], {
+  // the task
+  next: task(['fields', 'tasks'], {
     label: 'Accept or approve',
     keys: 'a',
     listed: true,
@@ -155,41 +155,41 @@ export const ACTIONS = {
       else w.fields.get('talk')?.querySelector<HTMLElement>('button[data-choice]')?.focus()
     },
   }),
-  reply: item(['fields'], { label: ITEM_ACTS.reply.label, keys: 'r', listed: true, run: (w) => w.fields.focus('box') }),
-  'not-yet': item(['items'], { ...named('not-yet'), listed: true, why: (_, h) => whyNot.notYet(h.it), run: (w, h) => set(w, h, 'status', 'open', { said: 'is back to open' }) }),
-  done: item(['items'], { ...named('done'), listed: true, why: (_, h) => whyNot.done(h.it, h.code), run: (w, h) => set(w, h, 'status', doneTo(h.it)) }),
+  reply: task(['fields'], { label: TASK_ACTS.reply.label, keys: 'r', listed: true, run: (w) => w.fields.focus('box') }),
+  'not-yet': task(['tasks'], { ...named('not-yet'), listed: true, why: (_, h) => whyNot.notYet(h.it), run: (w, h) => set(w, h, 'status', 'open', { said: 'is back to open' }) }),
+  done: task(['tasks'], { ...named('done'), listed: true, why: (_, h) => whyNot.done(h.it, h.code), run: (w, h) => set(w, h, 'status', doneTo(h.it)) }),
   // Later asks until when: Tomorrow, Next week, a day picked, or none (D115 #21); back to now at once
-  later: item(['items', 'sheets'], { ...named('later'), listed: 'Later or back to now', why: (_, h) => whyNot.later(h.it), run: (w, h) => (h.it.when === 'now' ? w.sheets.open({ kind: 'later', n: h.it.n }, { focus: false }) : set(w, h, 'when', 'now')) }),
-  archive: item(['items', 'nav'], {
+  later: task(['tasks', 'sheets'], { ...named('later'), listed: 'Later or back to now', why: (_, h) => whyNot.later(h.it), run: (w, h) => (h.it.when === 'now' ? w.sheets.open({ kind: 'later', n: h.it.n }, { focus: false }) : set(w, h, 'when', 'now')) }),
+  archive: task(['tasks', 'nav'], {
     ...named('archive'),
     listed: true,
     run: (w, h) => {
       const on = !h.it.archived
       set(w, h, 'archived', on)
-      if (on && h.r.place.kind === 'item') w.nav.closeItem()
+      if (on && h.r.place.kind === 'task') w.nav.closeTask()
     },
   }),
-  drop: item(['items'], { ...named('drop'), listed: true, why: (_, h) => whyNot.drop(h.it, h.code), run: (w, h) => set(w, h, 'status', dropTo()) }),
-  edit: item(['itemEdits'], { label: 'Edit', keys: 'i', listed: true, run: (w, h) => w.itemEdits.start(h.it.n) }),
-  status: item(['keyArm', 'toasts'], { label: 'Status…', keys: 's', listed: true, run: arm('s') }),
-  priority: item(['keyArm', 'toasts'], { label: 'Priority…', keys: 'p', listed: true, run: arm('p') }),
-  tags: item(['sheets'], { label: 'Tags…', keys: 't', listed: true, run: (w, h) => w.sheets.open({ kind: 'item-menu', n: h.it.n, arm: 't' }, { pop: true, focus: false, narrow: true }) }),
+  drop: task(['tasks'], { ...named('drop'), listed: true, why: (_, h) => whyNot.drop(h.it, h.code), run: (w, h) => set(w, h, 'status', dropTo()) }),
+  edit: task(['taskEdits'], { label: 'Edit', keys: 'i', listed: true, run: (w, h) => w.taskEdits.start(h.it.n) }),
+  status: task(['keyArm', 'toasts'], { label: 'Status…', keys: 's', listed: true, run: arm('s') }),
+  priority: task(['keyArm', 'toasts'], { label: 'Priority…', keys: 'p', listed: true, run: arm('p') }),
+  tags: task(['sheets'], { label: 'Tags…', keys: 't', listed: true, run: (w, h) => w.sheets.open({ kind: 'task-menu', n: h.it.n, arm: 't' }, { pop: true, focus: false, narrow: true }) }),
   // beside its row in the list, as its right-click menu is (B801, B640 #8700: it was in the window's corner)
-  'put-under': item(['sheets', 'fields'], {
+  'put-under': task(['sheets', 'fields'], {
     label: 'Put under…',
     keys: 'm',
     listed: true,
-    run: (w, h) => w.sheets.openFrom(w.fields.get('list')?.querySelector(`article[data-n="${h.it.n}"]`) ?? null, { kind: 'item-move-parent', n: h.it.n }, { focus: false }),
+    run: (w, h) => w.sheets.openFrom(w.fields.get('list')?.querySelector(`article[data-n="${h.it.n}"]`) ?? null, { kind: 'task-move-parent', n: h.it.n }, { focus: false }),
   }),
-  'add-sub': item(['itemEdits'], { label: 'Add subitem', keys: 'A', listed: true, run: (w, h) => w.itemEdits.subStart(h.it.n) }),
-  'new-doc': item(['docEditor'], { label: 'New doc', keys: 'D', listed: true, run: (w, h) => w.docEditor.create(h.it.n) }),
-  copy: item(['toasts'], { label: 'Copy for agent', keys: 'C', listed: true, run: (w, h) => void copyText(forAgent(h.it, h.code, h.m.facts.base)).then(() => w.toasts.show('Copied')) }),
-  full: item(['nav', 'route'], { none: 'First pick an item: J or a click', label: 'Full width', keys: 'o', listed: true, run: (w) => w.nav.full(!w.route.getState().full) }),
-  menu: item(['sheets'], { label: 'All actions', keys: '.', run: (w, h) => w.sheets.open({ kind: 'item-menu', n: h.it.n, arm: null }, { pop: true, focus: false }) }),
-  'send-answer': item(['answers'], { none: '', label: 'Send the answer', keys: 'Meta+Enter', run: (w, h) => w.answers.send(h.m, h.r.slug, h.it) }),
-  scroll: item(['fields'], {
+  'add-sub': task(['taskEdits'], { label: 'Add subtask', keys: 'A', listed: true, run: (w, h) => w.taskEdits.subStart(h.it.n) }),
+  'new-doc': task(['docEditor'], { label: 'New doc', keys: 'D', listed: true, run: (w, h) => w.docEditor.create(h.it.n) }),
+  copy: task(['toasts'], { label: 'Copy for agent', keys: 'C', listed: true, run: (w, h) => void copyText(forAgent(h.it, h.code, h.m.facts.base)).then(() => w.toasts.show('Copied')) }),
+  full: task(['nav', 'route'], { none: 'First pick a task: J or a click', label: 'Full width', keys: 'o', listed: true, run: (w) => w.nav.full(!w.route.getState().full) }),
+  menu: task(['sheets'], { label: 'All actions', keys: '.', run: (w, h) => w.sheets.open({ kind: 'task-menu', n: h.it.n, arm: null }, { pop: true, focus: false }) }),
+  'send-answer': task(['answers'], { none: '', label: 'Send the answer', keys: 'Meta+Enter', run: (w, h) => w.answers.send(h.m, h.r.slug, h.it) }),
+  scroll: task(['fields'], {
     none: '',
-    label: 'Scroll the item',
+    label: 'Scroll the task',
     keys: ' ',
     run: (w, h) => {
       const talk = w.fields.get('talk')
@@ -223,21 +223,21 @@ export const ACTIONS = {
   'voice-note': page(['voice', 'boxStore'], {
     label: 'Voice note',
     keys: 'v',
-    // into the box as it is now (the open item's reply); again: it stops into the box
+    // into the box as it is now (the open task's reply); again: it stops into the box
     run: (w, h) => {
       if (w.voice.recording()) return void w.voice.finish(false)
       const { key, scope } = w.boxStore.getState().shown
       void w.voice.start(h.r.slug, key, scope, 'main')
     },
   }),
-  items: page(['nav'], { label: 'Items', keys: 'g i', listed: true, run: tab('items') }),
+  tasks: page(['nav'], { label: 'Tasks', keys: 'g t', listed: true, run: tab('tasks') }),
   inputs: page(['nav'], { label: 'Inputs', keys: 'g n', listed: true, run: tab('inputs') }),
-  'archive-all': page(['items'], {
-    label: 'Archive every finished item',
+  'archive-all': page(['tasks'], {
+    label: 'Archive every finished task',
     keys: 'E',
     why: (_, h) => (h.m && h.r.tab !== 'archive' ? null : 'Nothing finished to archive here'),
     run: (w, h) => {
-      if (h.m) w.items.archiveAll(visible(h.m.items, h.r.tab, h.r.list).filter((it) => !it.archived && closed(it.status)).map((it) => it.n))
+      if (h.m) w.tasks.archiveAll(visible(h.m.tasks, h.r.tab, h.r.list).filter((it) => !it.archived && closed(it.status)).map((it) => it.n))
     },
   }),
   'archive-tab': page(['nav'], { label: 'Archive', keys: 'g a', listed: true, run: tab('archive') }),
@@ -256,9 +256,9 @@ export const ACTIONS = {
     run: (w) => void w.feedback.getState().undo.at(-1)?.run(),
   }),
   keys: page(['sheets'], { label: 'Keyboard shortcuts', keys: '?', listed: true, desk: true, run: (w) => w.sheets.open({ kind: 'keys' }) }),
-  back: page(['finder', 'route', 'nav', 'media', 'ui', 'sheet', 'sheets', 'selection', 'voice', 'desk', 'fields', 'boxStore', 'box', 'docs', 'docEditor', 'rules', 'sharedRules', 'itemEdits', 'itemView', 'docView'], { label: 'Step back one level', keys: 'Escape', run: (w, h) => stepBack(w, h) }),
-  step: page(['nav', 'listOrder', 'toasts'], { label: 'Next item', keys: 'j', why: stepWhy, run: steps(1) }),
-  'step-back': page(['nav', 'listOrder', 'toasts'], { label: 'Previous item', keys: 'k', why: stepWhy, run: steps(-1) }),
+  back: page(['finder', 'route', 'nav', 'media', 'ui', 'sheet', 'sheets', 'selection', 'voice', 'desk', 'fields', 'boxStore', 'box', 'docs', 'docEditor', 'rules', 'sharedRules', 'taskEdits', 'taskView', 'docView'], { label: 'Step back one level', keys: 'Escape', run: (w, h) => stepBack(w, h) }),
+  step: page(['nav', 'listOrder', 'toasts'], { label: 'Next task', keys: 'j', why: stepWhy, run: steps(1) }),
+  'step-back': page(['nav', 'listOrder', 'toasts'], { label: 'Previous task', keys: 'k', why: stepWhy, run: steps(-1) }),
 } satisfies Record<string, Action>
 
 export type ActionId = keyof typeof ACTIONS
@@ -268,10 +268,10 @@ export const ACTION_IDS = Object.keys(ACTIONS) as ActionId[]
 
 const typingIn = (el: Element | null) => /INPUT|TEXTAREA|SELECT/.test(el?.tagName || '') || !!(el as HTMLElement | null)?.isContentEditable
 
-type BackWorld = Pick<ActionWorld, 'finder' | 'route' | 'nav' | 'media' | 'ui' | 'sheet' | 'sheets' | 'selection' | 'voice' | 'desk' | 'fields' | 'boxStore' | 'box' | 'docs' | 'docEditor' | 'rules' | 'sharedRules' | 'itemEdits' | 'itemView' | 'docView'>
+type BackWorld = Pick<ActionWorld, 'finder' | 'route' | 'nav' | 'media' | 'ui' | 'sheet' | 'sheets' | 'selection' | 'voice' | 'desk' | 'fields' | 'boxStore' | 'box' | 'docs' | 'docEditor' | 'rules' | 'sharedRules' | 'taskEdits' | 'taskView' | 'docView'>
 
-/** Esc: one level back: the drawer, the sheet, a subitem being written, an edit, the search, a field, a web page over
- * the window, full width, the search's words, the item. */
+/** Esc: one level back: the drawer, the sheet, a subtask being written, an edit, the search, a field, a web page over
+ * the window, full width, the search's words, the task. */
 function stepBack(w: BackWorld, h: Here): void {
   const { r } = h
   const active = document.activeElement
@@ -286,9 +286,9 @@ function stepBack(w: BackWorld, h: Here): void {
   if (w.boxStore.getState().mode && !inBox) return w.box.stop()
   if (w.sheet.getState().spec?.req.kind === 'doc-edit') return w.docEditor.keep() // its text kept as a draft
   if (w.sheet.getState().spec) return w.sheets.close()
-  const view = w.itemView.getState()
-  if (view.subFor != null && typingIn(active)) return w.itemEdits.subLeave()
-  if (view.editing != null) return w.itemEdits.leave()
+  const view = w.taskView.getState()
+  if (view.subFor != null && typingIn(active)) return w.taskEdits.subLeave()
+  if (view.editing != null) return w.taskEdits.leave()
   if (r.tab === 'rules' && (r.place.kind === 'tab' || r.place.kind === 'rules')) {
     // the rules (I693): the editor (kept as a draft), what you picked, then a page of them back to the rules
     const doc = w.docView.getState()
@@ -318,18 +318,18 @@ function stepBack(w: BackWorld, h: Here): void {
     return w.nav.settingsBack()
   }
   if (w.desk()) {
-    // the New input page opened from an item or a document: Esc in the empty box goes back there
+    // the New input page opened from a task or a document: Esc in the empty box goes back there
     const boxEmpty = !(w.fields.get('box') as HTMLTextAreaElement | null)?.value.trim() && !w.boxStore.getState().files[w.boxStore.getState().shown.key]?.length
     if (r.place.kind === 'new' && w.fields.focused('box') && boxEmpty && w.nav.composeBack()) return
     if (typingIn(active)) return (active as HTMLElement).blur()
     if (w.route.getState().full) return w.nav.full(false)
     if (r.place.kind === 'new' && w.nav.composeBack()) return
-    if (r.place.kind === 'item' && r.tab !== 'inputs') return w.nav.closeItem()
+    if (r.place.kind === 'task' && r.tab !== 'inputs') return w.nav.closeTask()
     return
   }
-  // the phone's search page: Esc leaves it (an item opened from it goes back to it, below)
-  if (layers.includes('search') && r.place.kind !== 'item' && r.place.kind !== 'doc') return w.finder.leave()
-  if (r.place.kind === 'item' && !typingIn(active)) return w.nav.closeItem()
+  // the phone's search page: Esc leaves it (a task opened from it goes back to it, below)
+  if (layers.includes('search') && r.place.kind !== 'task' && r.place.kind !== 'doc') return w.finder.leave()
+  if (r.place.kind === 'task' && !typingIn(active)) return w.nav.closeTask()
 }
 
 const lists = (h: Here) => h.r.tab !== 'inputs' && h.r.place.kind !== 'settings' && h.r.place.kind !== 'help' && !!h.m
@@ -350,17 +350,17 @@ export class Actions {
     this.w = w
   }
 
-  /** The project and item the page shows now. */
+  /** The project and task the page shows now. */
   here(): Here | null {
     const r = this.w.route.getState().route
     if (r.page !== 'project') return null
     const m = this.w.model(r.slug)
-    const n = r.place.kind === 'item' && m ? liveN(m, Number(/\d+/.exec(r.place.ref)?.[0])) : null
+    const n = r.place.kind === 'task' && m ? liveN(m, Number(/\d+/.exec(r.place.ref)?.[0])) : null
     const it = n != null ? m?.byN.get(n) : undefined
     return { r, m, it, code: it && m ? codeOf(m, it.n) : '' }
   }
 
-  /** Here, about another item than the open one (the menu of a row). */
+  /** Here, about another task than the open one (the menu of a row). */
   hereFor(n: number): Here | null {
     const h = this.here()
     const it = h?.m?.byN.get(n)
@@ -370,8 +370,8 @@ export class Actions {
   /** Why it cannot be done here (said instead); null: it can. */
   why(id: ActionId, h: Here): string | null {
     const a = byId(id)
-    if ('item' in a) {
-      if (!onAnItem(h)) return a.none ?? (h.r.tab === 'inputs' || h.r.place.kind === 'new' ? 'Open an item in Items or Archive to use these keys' : 'First pick an item: J or a click')
+    if ('task' in a) {
+      if (!onAnTask(h)) return a.none ?? (h.r.tab === 'inputs' || h.r.place.kind === 'new' ? 'Open a task in Tasks or Archive to use these keys' : 'First pick a task: J or a click')
       return a.why?.(given(this.w, a.uses), h) ?? null
     }
     return a.why?.(given(this.w, a.uses), h) ?? null
@@ -386,23 +386,23 @@ export class Actions {
       return false
     }
     const a = byId(id)
-    if (!('item' in a)) return a.run(given(this.w, a.uses), h) !== false
-    return onAnItem(h) && a.run(given(this.w, a.uses), h) !== false
+    if (!('task' in a)) return a.run(given(this.w, a.uses), h) !== false
+    return onAnTask(h) && a.run(given(this.w, a.uses), h) !== false
   }
 
-  /** Do it on item `n`, open or not. */
+  /** Do it on task `n`, open or not. */
   runOn(id: ActionId, n: number): boolean {
     const h = this.hereFor(n)
     return !!h && this.run(id, h)
   }
 
-  /** S, P or T was pressed for this item: the key after it sets that field. -> whether it did */
+  /** S, P or T was pressed for this task: the key after it sets that field. -> whether it did */
   setArmed(h: Here, key: string): boolean {
     const it = h.it
     const k = it ? this.w.keyArm.take(it.n) : null
     const to = it && k ? armedSet(k, key, pageStatuses(it)) : null
     if (!it || !to) return false
-    void this.w.items.change(it.n, to[0], to[1])
+    void this.w.tasks.change(it.n, to[0], to[1])
     return true
   }
 
@@ -430,11 +430,11 @@ export function keysShown(id: ActionId): string {
     .join(' ')
 }
 
-/** The search's Actions: what can be done on the open item, then on the page, in the table's order. */
-export function listedActions(item: boolean): { id: ActionId; label: string; keys: string; item: boolean; desk: boolean }[] {
+/** The search's Actions: what can be done on the open task, then on the page, in the table's order. */
+export function listedActions(task: boolean): { id: ActionId; label: string; keys: string; task: boolean; desk: boolean }[] {
   return ACTION_IDS.map((id) => [id, byId(id)] as const)
-    .filter(([, a]) => a.listed && ('item' in a) === item)
-    .map(([id, a]) => ({ id, label: typeof a.listed === 'string' ? a.listed : a.label, keys: keysShown(id), item: 'item' in a, desk: !!a.desk }))
+    .filter(([, a]) => a.listed && ('task' in a) === task)
+    .map(([id, a]) => ({ id, label: typeof a.listed === 'string' ? a.listed : a.label, keys: keysShown(id), task: 'task' in a, desk: !!a.desk }))
 }
 
 /** The keys sheet (?): its groups of rows; a row made of actions shows their keys as the table has them. */
@@ -443,10 +443,10 @@ const HELP: [string, HelpRow[]][] = [
   [
     'Move',
     [
-      { ids: ['step', 'step-back'], sep: ' / ', text: 'Next or previous item' },
+      { ids: ['step', 'step-back'], sep: ' / ', text: 'Next or previous task' },
       { keys: 'O or ↵', text: 'Full width; Esc goes back' },
-      { keys: 'Space', text: 'Scroll the item' },
-      { keys: 'G then I N A R', text: 'Items, Inputs, Archive, Rules' },
+      { keys: 'Space', text: 'Scroll the task' },
+      { keys: 'G then I N A R', text: 'Tasks, Inputs, Archive, Rules' },
       { keys: 'G then P', text: 'Switch project' },
       { keys: 'G then S', text: 'Settings' },
       { keys: 'G then D H X', text: 'Documents, Activity, Deleted' },
@@ -454,17 +454,17 @@ const HELP: [string, HelpRow[]][] = [
     ],
   ],
   [
-    'Act on the selected item',
+    'Act on the selected task',
     [
-      { ids: ['next'], sep: '', text: "The item's next step: Accept, Approve, Answer or Reply" },
+      { ids: ['next'], sep: '', text: "The task's next step: Accept, Approve, Answer or Reply" },
       { ids: ['reply'], sep: '', text: 'Reply or add to it' },
       { ids: ['not-yet'], sep: '', text: 'Not yet: back to in progress at once' },
       { keys: '1–9, ⌘↵', text: 'Pick a choice, send the answer' },
-      { ids: ['done', 'drop', 'later'], sep: ' · ', text: `${ITEM_ACTS.done.label} · ${ITEM_ACTS.drop.label} · ${ITEM_ACTS.later.label} / Now` },
-      { ids: ['archive', 'archive-all'], sep: ' / ', text: 'Archive or unarchive / archive every finished item' },
+      { ids: ['done', 'drop', 'later'], sep: ' · ', text: `${TASK_ACTS.done.label} · ${TASK_ACTS.drop.label} · ${TASK_ACTS.later.label} / Now` },
+      { ids: ['archive', 'archive-all'], sep: ' / ', text: 'Archive or unarchive / archive every finished task' },
       { ids: ['status', 'priority', 'tags'], sep: ' · ', text: "Status, priority (then the menu's digit), tags" },
       { ids: ['put-under', 'copy'], sep: ' · ', text: 'Put under… · Copy for agent' },
-      { ids: ['edit', 'new-doc', 'add-sub'], sep: ' · ', text: 'Edit · New doc · Add subitem' },
+      { ids: ['edit', 'new-doc', 'add-sub'], sep: ' · ', text: 'Edit · New doc · Add subtask' },
       { ids: ['menu'], sep: '', text: 'All actions' },
       { ids: ['undo'], sep: '', text: 'Undo last action; older changes in Activity' },
     ],
@@ -473,7 +473,7 @@ const HELP: [string, HelpRow[]][] = [
     'Mouse',
     [
       { keys: 'Hover a row', text: 'Quick actions' },
-      { keys: 'Right-click a row', text: 'Item menu' },
+      { keys: 'Right-click a row', text: 'Task menu' },
       { keys: 'Click cut-off words', text: 'Show them all' },
       { keys: 'Drag a pane edge', text: 'Resize; double-click for the default' },
     ],
@@ -483,7 +483,7 @@ const HELP: [string, HelpRow[]][] = [
     [
       { keys: '⌘ / ⇧ click', text: 'Select multiple rows to act on together' },
       { ids: ['new-input'], sep: '', text: 'New input' },
-      { ids: ['voice-note'], sep: '', text: 'Voice note for the selected item; V again stops' },
+      { ids: ['voice-note'], sep: '', text: 'Voice note for the selected task; V again stops' },
       { ids: ['voice'], sep: '', text: 'New input by voice; ⇧V again stops and sends' },
       { keys: '⌥V', text: 'Voice note while typing' },
       { keys: '↵', text: 'While recording: stop, into the box' },

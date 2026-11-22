@@ -1,4 +1,4 @@
-// Activity, Settings' page on the phone (a list beside the items on the desktop, in Side lists): the page's own
+// Activity, Settings' page on the phone (a list beside the tasks on the desktop, in Side lists): the page's own
 // Settings with what it shows from settingsFacts.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { SectionKey } from './sectionList'

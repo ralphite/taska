@@ -13,7 +13,7 @@ type Story = StoryObj
  * it to the rail (Show sidebar unfolds it) and its right edge drags it wider or narrower (a double-click puts it back);
  * New project names one. What needs the rest of the page (a project, Settings, Search) shows in the Actions panel. */
 export const Projects: Story = { name: 'Sidebar and phone drawer', render: () => <Frames phoneWidth={320} deskWidth={240} height={760}>{(layout) => side(layout === 'phone', { composing: true })}</Frames> }
-/** A project under the pointer, from the keys, pressed, dragged to a new place, and one an item from the list is
+/** A project under the pointer, from the keys, pressed, dragged to a new place, and one a task from the list is
  * dragged over. */
 export const SidebarLooks: Story = {
   name: 'Pointer, keys, pressed, dragged: all side by side',
@@ -28,7 +28,7 @@ export const SidebarLooks: Story = {
           ['keys: Tab on Home', 'keys', {}],
           ['Home pressed', 'pressed', {}],
           ['Home dragged', 'dragged', {}],
-          ['an item dragged over Home', 'drop', { drop: 'home' }],
+          ['a task dragged over Home', 'drop', { drop: 'home' }],
         ] as const
       ).map(([label, look, f]) => (
         <Frame key={look} layout="desk" width={240} height={720} label={label}>

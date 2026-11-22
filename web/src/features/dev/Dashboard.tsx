@@ -1,6 +1,6 @@
 // The dashboard for making Taska, on this computer only (/dev/dashboard): what you did in Taska, from its log, worked
-// out each time it opens; the panels agents and scripts keep up to date, how long each item took and its tokens (F576),
-// what each item cost to make and the analyses agents wrote. Counts and times only, never your words. Props only.
+// out each time it opens; the panels agents and scripts keep up to date, how long each task took and its tokens (F576),
+// what each task cost to make and the analyses agents wrote. Counts and times only, never your words. Props only.
 
 import type { ReactNode } from 'react'
 import { minutes, ROUND_RANGES, roundFacts, roundsIn, short, type Dash, type Pair, type Round } from '../../model/dashboard'
@@ -52,7 +52,7 @@ function Bars({ rows }: { rows: Pair[] }) {
   )
 }
 
-/** Rounds of work, each a row: the item, a bar as long as its time (or tokens) against the longest shown, the number. */
+/** Rounds of work, each a row: the task, a bar as long as its time (or tokens) against the longest shown, the number. */
 function RoundBars({ rows, value, label }: { rows: Round[]; value(r: Round): number; label(r: Round): string }) {
   const max = Math.max(1, ...rows.map(value))
   return (
@@ -76,7 +76,7 @@ function RoundBars({ rows, value, label }: { rows: Round[]; value(r: Round): num
   )
 }
 
-/** How long each item took, from started to handed over, and its tokens (F576): the rounds of the time picked, how
+/** How long each task took, from started to handed over, and its tokens (F576): the rounds of the time picked, how
  * they spread over groups of time, and each one. */
 function Rounds({ all, range, now, onRange }: { all: Round[]; range: string; now: number; onRange(r: string): void }) {
   const rs = roundsIn(all, range, now)
@@ -90,8 +90,8 @@ function Rounds({ all, range, now, onRange }: { all: Round[]; range: string; now
       <section className={`${CARD} lg:col-span-2`}>
         <div className="mb-3 flex flex-wrap items-center gap-3">
           <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">How long each item took</h2>
-            <p className={`text-xs ${MUTED}`}>From started (In progress) to handed to you (Waits for review) or done; an item sent back counts again.</p>
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">How long each task took</h2>
+            <p className={`text-xs ${MUTED}`}>From started (In progress) to handed to you (Waits for review) or done; a task sent back counts again.</p>
           </div>
           <div className="w-full lg:w-[28rem]">
             <SegCtl small opts={ROUND_RANGES} on={range} pick={onRange} />
@@ -129,7 +129,7 @@ function Rounds({ all, range, now, onRange }: { all: Round[]; range: string; now
         )}
       </section>
       <section className={`${CARD} lg:col-span-2`}>
-        <h2 className={HEAD}>Tokens for each item</h2>
+        <h2 className={HEAD}>Tokens for each task</h2>
         <p className={`-mt-2 mb-3 text-xs ${MUTED}`}>
           {withTokens.length
             ? `${withTokens.length} of ${f.n} say their tokens (their agent's cost line) · middle ${short(f.tokens.middle)} · average ${short(f.tokens.average)} · ${short(f.tokens.total)} in all`
@@ -208,7 +208,7 @@ export function Dashboard({ d, err, range, onRange, rounds, now, onRounds, onRet
           <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
             <Stat n={d.actions.toLocaleString()} label="things you did" sub={`in ${d.tabs} tabs`} />
             <Stat n={d.voice.n.toLocaleString()} label="voice notes" sub={`${d.voice.minutes} min · about ${d.voice.median} s each`} />
-            <Stat n={d.opens.toLocaleString()} label="items opened" sub={`${d.opened} different items`} />
+            <Stat n={d.opens.toLocaleString()} label="tasks opened" sub={`${d.opened} different tasks`} />
             <Stat n={d.slow.n.toLocaleString()} label="answers over 1 s" sub={`middle ${(d.slow.median / 1000).toFixed(1)} s`} />
             <Stat n={d.reloads.toLocaleString()} label="reloads by hand" sub={`“Taska has an update” ${d.updates}×`} />
           </div>
@@ -245,10 +245,10 @@ export function Dashboard({ d, err, range, onRange, rounds, now, onRounds, onRet
             <Card title="What you did most">
               <Bars rows={d.top} />
             </Card>
-            <Card title="Items opened most">
-              {d.items.length ? (
+            <Card title="Tasks opened most">
+              {d.tasks.length ? (
                 <ul className="flex flex-col gap-1.5 text-sm">
-                  {d.items.map((i) => (
+                  {d.tasks.map((i) => (
                     <li key={i.project + i.code} className="flex items-baseline gap-2">
                       <a href={`/p/${encodeURIComponent(i.project)}/${i.code}`} className="shrink-0 font-mono text-xs font-bold text-blue-600 hover:underline dark:text-blue-400">
                         {i.code}
@@ -281,11 +281,11 @@ export function Dashboard({ d, err, range, onRange, rounds, now, onRounds, onRet
               <Bars rows={d.errors} />
             </Card>
             <Card
-              title="What each item cost"
+              title="What each task cost"
               wide
-              note={d.costs.items.length ? `${plural(d.costs.items.length, 'item')} · ${d.costs.minutes} min · ${short(d.costs.tokens)} tokens · middle ${d.costs.median_minutes} min, ${short(d.costs.median_tokens)} tokens` : undefined}
+              note={d.costs.tasks.length ? `${plural(d.costs.tasks.length, 'task')} · ${d.costs.minutes} min · ${short(d.costs.tokens)} tokens · middle ${d.costs.median_minutes} min, ${short(d.costs.median_tokens)} tokens` : undefined}
             >
-              {d.costs.items.length ? (
+              {d.costs.tasks.length ? (
                 <table className="w-full table-fixed text-sm">
                   <colgroup>
                     <col className="w-14" />
@@ -299,7 +299,7 @@ export function Dashboard({ d, err, range, onRange, rounds, now, onRounds, onRet
                   <thead className={`text-left text-xs ${MUTED}`}>
                     <tr>
                       <th colSpan={2} className="pb-2 font-medium">
-                        Item
+                        Task
                       </th>
                       <th className="pb-2 text-right font-medium">min</th>
                       <th className="pb-2 text-right font-medium">token</th>
@@ -309,7 +309,7 @@ export function Dashboard({ d, err, range, onRange, rounds, now, onRounds, onRet
                     </tr>
                   </thead>
                   <tbody className="tabular-nums">
-                    {d.costs.items.map((c) => (
+                    {d.costs.tasks.map((c) => (
                       <tr key={c.project + c.code} className="border-t border-zinc-100 dark:border-zinc-700">
                         <td className="py-1.5">
                           <a href={`/p/${encodeURIComponent(c.project)}/${c.code}`} className="font-mono text-xs font-bold text-blue-600 hover:underline dark:text-blue-400">

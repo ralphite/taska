@@ -26,7 +26,7 @@ export function projectsOf(
 ): ProjectsFacts {
   return {
     live: projects && side ? side.map((p) => ({ name: p.slug, title: p.title, tone: p.tone, icon: p.icon, open: typeof p.open === 'number' ? p.open : 0, here: p.current })) : null,
-    gone: (st.deleted || []).map((d) => ({ name: d.name, title: d.title, when: dayShort(d.t), items: d.items })),
+    gone: (st.deleted || []).map((d) => ({ name: d.name, title: d.title, when: dayShort(d.t), tasks: d.tasks })),
     file,
     pErr: st.pErr,
     renaming: st.renaming,
@@ -35,7 +35,7 @@ export function projectsOf(
   }
 }
 
-/** Documents, newest first, each with its item. */
+/** Documents, newest first, each with its task. */
 export const docRows = (m: ProjectModel): PhoneDocRow[] => listedDocs(m)
 
 /** Activity: each change in words, and whether it can be undone. */

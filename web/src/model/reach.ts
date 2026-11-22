@@ -12,7 +12,7 @@ export const awayAfter = (away: number, timedOut: boolean) => away + (timedOut ?
 /** Out of reach: say so (and what waits for Taska says it waits). */
 export const outOfReach = (away: number) => away >= AWAY
 
-/** The words: where something cannot show (a list, a search, an item still to come); the header's pill, short, in
+/** The words: where something cannot show (a list, a search, a task still to come); the header's pill, short, in
  * the agent pill's place; what of yours waits for Taska (on its way, a change asked again until Taska answers). */
 export const REACH_WORDS = {
   out: 'Taska is out of reach, retrying…',

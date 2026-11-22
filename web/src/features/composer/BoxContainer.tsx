@@ -45,7 +45,7 @@ export function BoxContainer({ route, composePage, boxRef, bare = false }: { rou
     if (mode?.kind === 'comment') return void app.docComments.saveComment(route.slug, mode.d, mode.id, key)
     if (shown.voiceComments && role.doc != null) return void app.docVoice.post(route.slug, role.doc, key) // each quote's words, a comment on its passage
     if (role.aim) return void app.docComments.comment(route.slug, role.aim.d, role.aim.target, key)
-    // on an item with its question's choices picked: they go with what you wrote, as one answer (B145)
+    // on a task with its question's choices picked: they go with what you wrote, as one answer (B145)
     const it = role.scope && m ? m.byN.get(liveN(m, Number(role.scope.slice(1)))) : undefined
     void app.box.send(route.slug, m, role.scope, key, it && m ? app.answers.picks(m, route.slug, it) : null)
   }
@@ -71,7 +71,7 @@ export function BoxContainer({ route, composePage, boxRef, bare = false }: { rou
       lineOn={{
         stop: () => app.box.stop(),
         unpick: () => app.docs.unpick(),
-        toItem: () => app.docs.toItem(),
+        toTask: () => app.docs.toTask(),
         discard: () => app.box.discard(route.slug, key),
         sendTicks: () => pick.d != null && void app.docChoices.sendTicks(route.slug, pick.d, key),
         clearTicks: () => pick.d != null && app.docChoices.clearTicks(pick.d),

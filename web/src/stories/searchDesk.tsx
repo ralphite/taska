@@ -63,7 +63,7 @@ export const AT: Record<string, Partial<Desk>> = {
   found: found(TYPED, RIGHT),
   previewInput: found(TYPED, RIGHT, { sel: 5 }),
   previewDoc: found(TYPED, RIGHT, { sel: 8 }),
-  oneKind: found(TYPED, RIGHT, { kind: 'items' }),
+  oneKind: found(TYPED, RIGHT, { kind: 'tasks' }),
   projectMenu: found(TYPED, RIGHT, { menu: 'project' }),
   inHome: found(TYPED, RIGHT, { project: 'home' }),
   statusOpen: found(TYPED, RIGHT, { status: 'open', menu: 'status' }),
@@ -129,16 +129,16 @@ function useDesk(start: Partial<Desk>, still: boolean) {
 /** What you opened lately: T001, its document D1, T002, T018, and Home's T021. */
 const visit = (slug: string, n: number): Visit => {
   const it = modelFor(slug).byN.get(n)
-  return { project: slug, kind: 'items', n, code: codeOf(modelFor(slug), n), title: it?.title ?? '', status: it?.status }
+  return { project: slug, kind: 'tasks', n, code: codeOf(modelFor(slug), n), title: it?.title ?? '', status: it?.status }
 }
 const RECENT: Visit[] = [visit('shop', 1), { project: 'shop', kind: 'docs', n: 1, d: 1, code: 'D1', title: 'Plan: the export keeps the filter', on: 'T001' }, visit('shop', 2), visit('shop', 18), visit('home', 21)]
 const ACTIONS = [...listedActions(true), ...listedActions(false)]
 const NOW = Date.parse('2026-11-02T18:00:00-08:00')
 
-/** The highlighted row's preview, as the page draws it: an item's page; anything else, what the search knows of it. */
+/** The highlighted row's preview, as the page draws it: a task's page; anything else, what the search knows of it. */
 function Preview({ l }: { l: FoundLine }) {
   const x = l.found
-  if (x.kind === 'items' || x.kind === 'rules') return previewOf(x)
+  if (x.kind === 'tasks' || x.kind === 'rules') return previewOf(x)
   return <FoundPreview l={l} text={x.kind === 'docs' ? (modelFor(x.project).docs.find((d) => d.d === x.d)?.md ?? '') : ''} meta={foundMeta(x, NOW)} />
 }
 

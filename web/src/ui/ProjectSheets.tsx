@@ -1,4 +1,4 @@
-// Sheets about projects: moving an item or an input to another project, and a project's menu. Props only.
+// Sheets about projects: moving a task or an input to another project, and a project's menu. Props only.
 
 import { Icon } from './Icon'
 import type { IconName } from './icon-paths'
@@ -14,7 +14,7 @@ export interface OtherProject {
   open: number | string
 }
 
-export function itemMoveProjectSheet({ code, others }: { code: string; others: OtherProject[] }, onPick: (slug: string) => void): SheetParts {
+export function taskMoveProjectSheet({ code, others }: { code: string; others: OtherProject[] }, onPick: (slug: string) => void): SheetParts {
   return {
     title: `Move ${code} to…`,
     body: (
@@ -28,7 +28,7 @@ export function itemMoveProjectSheet({ code, others }: { code: string; others: O
           ))}
         </div>
         <p className="mt-3 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">
-          It is made there with its text and its talk, and its subitems go along under it; here they are marked won&apos;t do and archived, with a note where each went.
+          It is made there with its text and its talk, and its subtasks go along under it; here they are marked won&apos;t do and archived, with a note where each went.
         </p>
       </>
     ),
@@ -40,10 +40,10 @@ export function moveInputSheet({ code, words, others, made, byOrganizer, scope }
   /** what was said, or how many files */
   words: string
   others: OtherProject[]
-  /** the items made of it here, as "F12 title" */
+  /** the tasks made of it here, as "F12 title" */
   made: string[]
   byOrganizer: boolean
-  /** the item it is in the talk of */
+  /** the task it is in the talk of */
   scope: string | null
 }, onPick: (slug: string) => void): SheetParts {
   const list = made.join(', ')
@@ -71,7 +71,7 @@ export function moveInputSheet({ code, words, others, made, byOrganizer, scope }
         </div>
         <p className="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">
           It goes there with its files and is organized again.
-          {made.length ? (byOrganizer ? ` Organizer changes here will be undone: ${list}.` : ` Items made here will stay: ${list}.`) : ''}
+          {made.length ? (byOrganizer ? ` Organizer changes here will be undone: ${list}.` : ` Tasks made here will stay: ${list}.`) : ''}
           {scope ? ` It also leaves the conversation of ${scope}.` : ''}
         </p>
       </div>

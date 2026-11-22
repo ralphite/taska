@@ -3,15 +3,15 @@ import { useState } from 'react'
 import { act } from '../stories/acts'
 import { useMedia } from '../stories/liveParts'
 import { Frames, States } from '../stories/Frames'
-import { item, modelOf } from '../stories/fixtures'
-import { talkEnv } from '../stories/itemFixtures'
+import { task, modelOf } from '../stories/fixtures'
+import { talkEnv } from '../stories/taskFixtures'
 import { Rich } from './Markdown'
 
 const meta: Meta = { title: 'Base components/Markdown' }
 export default meta
 type Story = StoryObj
 
-const m = modelOf([item({ n: 12 }), item({ n: 3, tags: ['bug'], code: 'T003' })])
+const m = modelOf([task({ n: 12 }), task({ n: 3, tags: ['bug'], code: 'T003' })])
 const world = talkEnv(m, true).world
 /** words as a message draws them: its choices pick (one, or any), a code opens what it names (the Actions panel), a
  * picture opens in the page's viewer */
@@ -42,7 +42,7 @@ export const Blocks: Story = {
     <Frames phoneWidth={393} deskWidth={640}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['words: **bold**, *italic*, `code`, a link, a web address, codes', rich('The export *ignores* the **active filter**: see `export.ts`.\nIt still writes every order. Docs: [the guide](https://example.com/guide), https://example.com/a/b.\nF012 and T003 are links; T099 names nothing.')],
             ['headings', rich('# Plan\n\n## Steps\n\n### Keep the sort')],
             ['a quote', rich('> The export should keep the filter I set.\n> Every time.')],
@@ -68,7 +68,7 @@ export const Choices: Story = {
     <Frames phoneWidth={393} deskWidth={640}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['shown only', rich(QUESTION)],
             ['open, nothing picked', rich(QUESTION, { choosing: { picked: new Set(), pick: () => {} } })],
             ['open, one picked', rich(QUESTION, { choosing: { picked: new Set([1]), pick: () => {} } })],
@@ -91,7 +91,7 @@ export const OnTheirWay: Story = {
     <Frames phoneWidth={393} deskWidth={640}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['a picture still loading', rich('The screen: ![the list](f3-shot.png)', { world: slow })],
             ['a picture that could not load', rich('The screen: ![the list](f3-shot.png)', { world: gone })],
             ['a picture from a web address (opens the address)', rich(`The icon: ![icon](${location.origin}/icon-192.png)`)],
@@ -110,7 +110,7 @@ export const ChoicesMore: Story = {
     <Frames phoneWidth={393} deskWidth={640}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['pick any, answered', rich('Which should it keep?\n\n- [ ] The filter\n- [ ] The sort\n- [ ] The columns', { done: ['The filter', 'The columns'] })],
             ['open, a choice under the pointer', <div data-look="pointer">{rich(QUESTION, { choosing: { picked: new Set(), pick: () => {} } })}</div>],
           ]}

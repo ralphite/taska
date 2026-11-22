@@ -40,7 +40,7 @@ export class PictureSizes {
   check(slug: string, m: ProjectModel): void {
     if (this.timer) return
     const known = this.d.data.getState().sizes[slug] || {}
-    const texts = [...m.items.flatMap((it) => [it.body, ...it.thread.map((x) => x.text)]), ...m.docs.map((x) => x.md), ...m.inputs.map((r) => r.text)]
+    const texts = [...m.tasks.flatMap((it) => [it.body, ...it.thread.map((x) => x.text)]), ...m.docs.map((x) => x.md), ...m.inputs.map((r) => r.text)]
     if (!texts.some((t) => t && t.includes('](') && picturesIn(t).some((f) => !known[f]))) return
     this.timer = window.setTimeout(() => {
       this.timer = 0

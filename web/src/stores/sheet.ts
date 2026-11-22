@@ -9,23 +9,23 @@ export type Arm = 's' | 'p' | 't'
 
 /** What a sheet is about: one kind each, with its own fields. Each feature draws its own kinds. */
 export type SheetRequest =
-  /** an item's actions (`arm`: opened on its status, priority or type menu) */
-  | { kind: 'item-menu'; n: number; arm: Arm | null }
-  | { kind: 'item-move-parent'; n: number }
-  /** what an item waits for (T857): an item picked, or picked again to stop waiting */
-  | { kind: 'item-wait-for'; n: number }
-  | { kind: 'item-move-project'; n: number }
-  /** the inputs an item came from */
-  | { kind: 'item-sources'; n: number }
-  /** when an item was made and last changed, in full (F704) */
-  | { kind: 'item-times'; n: number }
+  /** a task's actions (`arm`: opened on its status, priority or type menu) */
+  | { kind: 'task-menu'; n: number; arm: Arm | null }
+  | { kind: 'task-move-parent'; n: number }
+  /** what a task waits for (T857): a task picked, or picked again to stop waiting */
+  | { kind: 'task-wait-for'; n: number }
+  | { kind: 'task-move-project'; n: number }
+  /** the inputs a task came from */
+  | { kind: 'task-sources'; n: number }
+  /** when a task was made and last changed, in full (F704) */
+  | { kind: 'task-times'; n: number }
   | { kind: 'message-menu'; n: number; id: number }
   | { kind: 'input-menu'; id: string }
   | { kind: 'input-history'; id: string }
   | { kind: 'input-move'; id: string }
-  /** put an input with another item */
+  /** put an input with another task */
   | { kind: 'input-rescope'; id: string }
-  /** what an agent reading item n gets (F568) */
+  /** what an agent reading task n gets (F568) */
   | { kind: 'agent-card'; n: number }
   /** Later, until a day or with none (D115 #21) */
   | { kind: 'later'; n: number }
@@ -39,7 +39,7 @@ export type SheetRequest =
   | { kind: 'switch-project' }
   /** the desktop's search (F479) */
   | { kind: 'search' }
-  /** a document onto another item; a comment to another paragraph */
+  /** a document onto another task; a comment to another paragraph */
   | { kind: 'doc-move'; d: number }
   /** one of your views of the list */
   | { kind: 'view-menu'; i: number }
@@ -56,7 +56,7 @@ export type SheetRequest =
   | { kind: 'comment-menu'; d: number; id: number }
   /** the phone's menu of a document (D115 #41) */
   | { kind: 'doc-menu'; d: number }
-  /** a document's editor (the phone's, and a new one's): an existing one, or a new one on item n */
+  /** a document's editor (the phone's, and a new one's): an existing one, or a new one on task n */
   | { kind: 'doc-edit'; d: number }
   | { kind: 'doc-edit'; n: number }
   /** restoring a version of the rules asks once (I693) */
@@ -90,7 +90,7 @@ export interface SheetSpec extends SheetPlace {
 
 export interface SheetState {
   spec: SheetSpec | null
-  /** what the field menus of the desktop's item menu show now (S, P, T) */
+  /** what the field menus of the desktop's task menu show now (S, P, T) */
   arm: Arm | null
   /** the asks waiting for their second click, by key: when asked (ms) */
   asked: Readonly<Record<string, number>>

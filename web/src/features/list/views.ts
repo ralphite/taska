@@ -1,4 +1,4 @@
-// Your own views of the item list: the filters you set (type, when, status, priority, sort) with a name. A view sits
+// Your own views of the task list: the filters you set (type, when, status, priority, sort) with a name. A view sits
 // after Active, All… in the view row and is the same in every project. Saved, renamed, given the filters shown now
 // or deleted: it changes at once and Taska keeps it, with Undo.
 
@@ -51,7 +51,7 @@ export class SavedViews {
     }
   }
 
-  /** It shows (on Archive the list goes back to Items: your views show items). */
+  /** It shows (on Archive the list goes back to Tasks: your views show tasks). */
   show(i: number): void {
     const v = this.d.store.getState().list[i]
     if (v) this.d.nav.showFilters({ tag: v.tag, when: v.when, status: v.status, pri: v.pri, sort: v.sort })

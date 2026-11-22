@@ -2,7 +2,7 @@
 
     key                  the key for access from outside this machine and its network
     corrections.json     spellings for voice notes: wrong -> right, and words to hear right
-    views.json           your own views of the item list
+    views.json           your own views of the task list
     voice-prefs.txt      how voice notes are written down (absent: the default)
     voice-tidy-off       present: voice notes are not tidied
     project-order.json   the order you dragged the projects into
@@ -103,7 +103,7 @@ class Spellings:
 
 
 class ListViews:
-    """Your own views of the item list ({name, tag, when, status, pri, sort}), the same in every project."""
+    """Your own views of the task list ({name, tag, when, status, pri, sort}), the same in every project."""
 
     KEYS = ("tag", "when", "status", "pri", "sort")
 

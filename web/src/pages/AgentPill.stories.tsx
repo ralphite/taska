@@ -30,14 +30,14 @@ export const PillIdle: Story = { ...one({ agents: AGENTS.none, work: false }), n
 export const PillOffline: Story = { ...one({ away: 2 }), name: 'Offline' }
 /** Two changes could not be saved: their count opens them. */
 export const NotSaved: Story = { ...one({ notSaved: 2 }), name: 'Not saved count' }
-/** On the phone an item's page covers the list's head, so it says Offline, retrying under its own bar (D82 #5). */
-export const OfflineOnPhoneItem: Story = {
-  name: 'Phone: Offline over an item',
+/** On the phone a task's page covers the list's head, so it says Offline, retrying under its own bar (D82 #5). */
+export const OfflineOnPhoneTask: Story = {
+  name: 'Phone: Offline over a task',
   render: () => (
     <Frames desk={false} phoneWidth={393} height={220}>
       {() => (
         <div className="flex h-44 flex-col">
-          <PaneFrame place="" desk={false} head={<span className="font-mono text-sm font-bold">T012</span>} menu notice={<OfflinePill />} onBack={act('Pane: back')} onMenu={act('Pane: menu → Menus and sheets › Item menu')}>
+          <PaneFrame place="" desk={false} head={<span className="font-mono text-sm font-bold">T012</span>} menu notice={<OfflinePill />} onBack={act('Pane: back')} onMenu={act('Pane: menu → Menus and sheets › Task menu')}>
             <p className="px-4 py-4 text-[15px]">Export ignores the active filter</p>
           </PaneFrame>
         </div>

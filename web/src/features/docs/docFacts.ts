@@ -61,7 +61,7 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
   const wholeThreads = threadsOf(d.whole || [])
   return {
     d,
-    itemCode: codeOf(m, d.n),
+    taskCode: codeOf(m, d.n),
     by: d.by,
     when: when(d.t1, m.at),
     rows,

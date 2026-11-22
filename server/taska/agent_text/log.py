@@ -1,4 +1,4 @@
-"""The project's change log: each change as an entry of facts (who, when, what kind, the items, inputs and documents
+"""The project's change log: each change as an entry of facts (who, when, what kind, the tasks, inputs and documents
 it names, the values it set), and the same entry in the log's words for agents.
 
 An entry is data the page and agents each say in their own words: `entries` is what the page's Activity gets, `text`
@@ -16,7 +16,7 @@ from ..domain.voices import one_line
 
 Entry = Dict[str, Any]
 
-ARCHIVED_SHOWN = 12  # an archive of many items names its first ones
+ARCHIVED_SHOWN = 12  # an archive of many tasks names its first ones
 
 
 def text(st: ProjectState, n: int) -> str:
@@ -42,13 +42,13 @@ def entries(st: ProjectState, n: int, before: int = 0) -> List[Entry]:
 
 def entry(st: ProjectState, e: ev.Event) -> Entry:
     """One change as facts: {seq, t, who, ses?, kind, ...what it names, codes}. `kind` is the change's stored kind
-    ("other", with its `name`, for a kind the log has nothing to say about); `codes` names each item it mentions by
+    ("other", with its `name`, for a kind the log has nothing to say about); `codes` names each task it mentions by
     its code now."""
     who, kind, facts = _facts(st, e)
     x: Entry = {"seq": e.seq, "t": e.t, "who": who, "kind": kind, **facts}
     if e.ses:
         x["ses"] = e.ses
-    ns = _items_named(x)
+    ns = _tasks_named(x)
     if ns:
         x["codes"] = {str(k): st.code(k) for k in ns}
     return x
@@ -66,7 +66,7 @@ def _facts(st: ProjectState, e: ev.Event) -> "tuple[str, str, Entry]":
     if isinstance(e, ev.InputAdded):
         return who, k, {"id": e.id, **({"to": e.scope} if e.scope else {}),
                         "text": first_line(one_line(st, e.text, e.files))}
-    if isinstance(e, ev.ItemAdded):
+    if isinstance(e, ev.TaskAdded):
         return who, k, {"n": e.n, "tags": list(e.tags), "pri": e.pri, "when": e.when, "title": first_line(e.clean), **src}
     if isinstance(e, ev.FieldsSet):
         changes = [{"field": a, **({"was": _value(e.was[a])} if a in e.was else {}), "now": _value(b)}
@@ -74,7 +74,7 @@ def _facts(st: ProjectState, e: ev.Event) -> "tuple[str, str, Entry]":
         return who, k, {"n": e.n, "set": changes, **({"undo": e.undo_of} if e.undo_of else {})}
     if isinstance(e, ev.MessagePosted):
         return who, k, {"n": e.n, "as": e.kind, "text": first_line(e.text)}
-    if isinstance(e, (ev.ItemMerged, ev.ItemUnmerged)):
+    if isinstance(e, (ev.TaskMerged, ev.TaskUnmerged)):
         return who, k, {"n": e.n, "into": e.into}
     if isinstance(e, ev.LaterEnded):
         return who, k, {"n": e.n}
@@ -111,9 +111,9 @@ def _facts(st: ProjectState, e: ev.Event) -> "tuple[str, str, Entry]":
         return who, k, {"src": e.src, "ns": list(e.ns), "kept": [[n, why] for n, why in e.kept]}
     if isinstance(e, ev.InputRestored):
         return who, k, {"src": e.src, "ns": list(e.ns)}
-    if isinstance(e, ev.ItemsArchived):
+    if isinstance(e, ev.TasksArchived):
         return who, k, {"on": e.on, "ns": e.ns[:ARCHIVED_SHOWN], "count": len(e.ns)}
-    if isinstance(e, (ev.ItemsDeleted, ev.ItemsRestored)):
+    if isinstance(e, (ev.TasksDeleted, ev.TasksRestored)):
         return who, k, {"ns": list(e.ns)}
     if isinstance(e, ev.InputMoved):
         return who, k, {"src": e.src, "to": e.to, "as": e.as_}
@@ -135,8 +135,8 @@ def _facts(st: ProjectState, e: ev.Event) -> "tuple[str, str, Entry]":
     return who, "other", {"name": name, **({"id": str(raw_id)} if raw_id else {})}
 
 
-def _items_named(x: Entry) -> List[int]:
-    """The items an entry names, each once, in order."""
+def _tasks_named(x: Entry) -> List[int]:
+    """The tasks an entry names, each once, in order."""
     out: List[int] = []
     for key in ("n", "into"):
         if isinstance(x.get(key), int):

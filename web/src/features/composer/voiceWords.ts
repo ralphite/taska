@@ -49,7 +49,7 @@ export class VoiceWords {
   }
 
   /** Words corrected by hand: into the draft, and remembered (Undo puts the words back and forgets it). */
-  async fix(slug: string, key: DraftKey, at: { s: number; e: number; wrong: string }, right: string, item: string | null): Promise<void> {
+  async fix(slug: string, key: DraftKey, at: { s: number; e: number; wrong: string }, right: string, task: string | null): Promise<void> {
     const files = this.d.store.getState().files[key] || []
     const before = this.d.box.text(slug, key)
     const r = fixIn(before, files, at, right)
@@ -65,7 +65,7 @@ export class VoiceWords {
     const file = files.find((f) => r.files.some((x) => x.key === f.key))?.f || ''
     try {
       // the server keeps the fix for the developers too, with where it was heard
-      await this.d.delivery.until(() => this.d.api.setCorrection({ wrong: at.wrong, right, project: slug, item: item || '', file }), { waiting: () => this.d.toasts.show(REACH_WORDS.waits) })
+      await this.d.delivery.until(() => this.d.api.setCorrection({ wrong: at.wrong, right, project: slug, task: task || '', file }), { waiting: () => this.d.toasts.show(REACH_WORDS.waits) })
     } catch (ex) {
       return this.d.toasts.show(ex instanceof Refused ? ex.message || 'Not saved' : 'Not saved', null, { error: true }) // refused: the draft keeps your words
     }

@@ -1,6 +1,6 @@
 // The filters (T591: Top bar and list head > Filters): what is set as chips that take it off, on the phone a row under
 // the tabs, on the desktop a row under the search that opens to every control, from the page's own filtersSet with
-// the item list's demo project. The phone's sheet of controls is in Menus and sheets > Sheets.
+// the task list's demo project. The phone's sheet of controls is in Menus and sheets > Sheets.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { headOf } from '../../stories/headFixtures'

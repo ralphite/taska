@@ -18,7 +18,7 @@ desk or your phone.
 
 <p align="center">
   <a href="docs/media/taska-intro.mp4">
-    <img src="docs/media/taska-intro.gif" width="800" alt="The Taska intro: say it and it becomes an item, answer an agent and accept its work, reply to an agent, approve a change to the rules, handle rows, see every agent session">
+    <img src="docs/media/taska-intro.gif" width="800" alt="The Taska intro: say it and it becomes a task, answer an agent and accept its work, reply to an agent, approve a change to the rules, handle rows, see every agent session">
   </a>
   <br>
   <sub><a href="docs/media/taska-intro.mp4">Watch the intro (1 min 24 s)</a>: the real page on a phone and a desktop, side by side.
@@ -33,7 +33,7 @@ desk or your phone.
   &nbsp;
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/review-dark.png">
-    <img src="docs/screenshots/review.png" width="240" alt="An item the agent finished, with its report and Accept / Not yet">
+    <img src="docs/screenshots/review.png" width="240" alt="A task the agent finished, with its report and Accept / Not yet">
   </picture>
   &nbsp;
   <picture>
@@ -45,7 +45,7 @@ desk or your phone.
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/desktop-dark.png">
-    <img src="docs/screenshots/desktop.png" width="760" alt="On a desktop: projects on the left, the list in the middle, the selected item on the right">
+    <img src="docs/screenshots/desktop.png" width="760" alt="On a desktop: projects on the left, the list in the middle, the selected task on the right">
   </picture>
 </p>
 
@@ -74,26 +74,26 @@ Every change to Taska is measured against one goal: **you get more done with les
 - **What needs you is obvious and quick to handle**: one tap to answer, approve or accept.
 - **You always know where things stand**, without reading a transcript.
 - **Different agents work on one project together**, over weeks: each hears about its work, knows who else is
-  here, and never does an item another one holds without knowing ([Agents working together](docs/collaboration.md)).
+  here, and never does a task another one holds without knowing ([Agents working together](docs/collaboration.md)).
 
 ## How it works
 
 ```mermaid
 flowchart LR
     You(["You<br/>voice · text · screenshots"]) -->|say it| Inbox[Inbox]
-    Inbox -->|organizer| Items[Items<br/>features · bugs · ideas · tasks]
-    Items -->|GET /next| Agent(["Coding agent<br/>Claude Code · Codex · any agent"])
-    Agent -->|progress · questions · done| Items
-    Items -->|needs you| You
+    Inbox -->|organizer| Tasks[Tasks<br/>features · bugs · ideas · tasks]
+    Tasks -->|GET /next| Agent(["Coding agent<br/>Claude Code · Codex · any agent"])
+    Agent -->|progress · questions · done| Tasks
+    Tasks -->|needs you| You
 ```
 
 1. **Say it.** Type, paste a screenshot or record a voice note. You don't have to pick a tag, a priority or a
    project first.
-2. **It becomes items.** An organizer (Gemini, optional) turns what you said into items, with the tags you name,
+2. **It becomes tasks.** An organizer (Gemini, optional) turns what you said into tasks, with the tags you name,
    or updates the ones that already exist. Without it, your agent does the organizing.
-3. **Agents do the work.** An agent asks `GET /next` for the most important item, does the work, and posts
-   progress, questions and results back to that item.
-4. **You stay in control.** Finished work waits for you to accept it, and items an agent invents wait for your
+3. **Agents do the work.** An agent asks `GET /next` for the most important task, does the work, and posts
+   progress, questions and results back to that task.
+4. **You stay in control.** Finished work waits for you to accept it, and tasks an agent invents wait for your
    approval. When an agent is stuck, it says exactly what it needs.
 
 ## Features
@@ -102,9 +102,9 @@ flowchart LR
 
 - **Needs you, first.** The list puts what's waiting on you first. The action sits right on the row: Accept,
   Approve, Answer or Reply. The Needs you view keeps that work together.
-- **Built for the phone.** Swipe right to move an item forward and left for the rest. Tap a row to open it.
+- **Built for the phone.** Swipe right to move a task forward and left for the rest. Tap a row to open it.
   Every quick action can be undone.
-- **A desk on the desktop.** On a wide screen, Taska opens in three panes: your projects, the list, and the item
+- **A desk on the desktop.** On a wide screen, Taska opens in three panes: your projects, the list, and the task
   you are reading. Hover a row for its actions, and triage from the keyboard: `J`/`K` to move, `A` to accept or
   approve, `R` to reply. Press `?` for every shortcut.
 - **Voice in, words out.** Voice notes are transcribed with your project's own terms, so names, paths and
@@ -114,13 +114,13 @@ flowchart LR
   recording with Esc and it is kept in Inputs as cancelled, sent to no one, to listen to and send later.
 - **Answers in one tap.** Agents can ask multiple-choice questions, and you answer with a tap. Several questions in
   a row are one card, a page each.
-- **The whole story of an item.** Its description, subitems, screenshots and documents, and the conversation
+- **The whole story of a task.** Its description, subtasks, screenshots and documents, and the conversation
   with your agents: yours on the right, theirs on the left. Long reports fold to their first line.
 - **Documents.** Agents write plans and designs into documents, in Markdown or as a whole web page that can go full
   screen. You comment on a paragraph, on selected text, or on an area you circle.
 - **See every agent.** A pill in the header says whether an agent is working, waiting on you, or missing while work
   waits. Open it for **Agents**: every agent session in the project by its app (Claude Code, Codex, Antigravity),
-  each with its state (working, idle, waiting for you, gone), the item it is on, a manager's workers under it, and
+  each with its state (working, idle, waiting for you, gone), the task it is on, a manager's workers under it, and
   the way back to it (Open in Claude Code, or Codex's resume command). A session blocked on you shows a bar at the
   bottom of every page.
 - **Many projects.** One server holds them all, each with its own icon. A drawer switches between them and shows
@@ -129,16 +129,16 @@ flowchart LR
 
 **For your agents**
 
-- **A plain-text API that saves tokens.** One line per item, short commands, no JSON to parse.
-- **`/next` knows what's next.** New inputs come first, then items you replied on, then work in progress, then
-  priority (P0 to P3), then the oldest item. Subitems come before their parent. `?wait=540` holds the request until new
+- **A plain-text API that saves tokens.** One line per task, short commands, no JSON to parse.
+- **`/next` knows what's next.** New inputs come first, then tasks you replied on, then work in progress, then
+  priority (P0 to P3), then the oldest task. Subtasks come before their parent. `?wait=540` holds the request until new
   work arrives, so an agent can wait in the background.
-- **A loop that keeps going.** Agents take one item after another without stopping, and wait in the background
+- **A loop that keeps going.** Agents take one task after another without stopping, and wait in the background
   when there is nothing to do.
 - **Agents working together.** Several sessions of different agents can work on one project. `/next` gives each
-  session its own item and holds it; a session that tries an item another one holds is told who holds it. A
+  session its own task and holds it; a session that tries a task another one holds is told who holds it. A
   session's `/next` says who else is here and what each is on, sessions write to each other with `@session` on an
-  item, and `B03 take` hands an item over at your word (the one that had it is told to stop). See
+  task, and `B03 take` hands a task over at your word (the one that had it is told to stop). See
   [Agents working together](docs/collaboration.md).
 - **Works with any agent.** One command installs a skill for Claude Code, Codex and Antigravity. Claude Code waits
   on `/next` in the background, Codex gets a short message from Taska for each update, and Antigravity runs a
@@ -225,7 +225,7 @@ Then:
 1. **Open Taska.** Go to http://127.0.0.1:7340, open the `default` project, and write your first thought in the
    box at the bottom.
 2. **Organize automatically (optional).** Paste a Gemini API key in **Settings › Organizer** (or set
-   `GEMINI_API_KEY` before starting Taska). What you write is then organized into items, and voice notes are
+   `GEMINI_API_KEY` before starting Taska). What you write is then organized into tasks, and voice notes are
    transcribed.
 3. **Connect a coding agent.** Click the agent pill at the top right to open **Agents**, then **Connect new
    agent**: it copies what to paste to your agent, which connects its folder once and starts on the work. The
@@ -249,8 +249,8 @@ Then:
 | `GET BASE/next` | What to do now; `?wait=540` waits for new work |
 | `GET BASE/rules` | The project's rules document, with its version |
 | `GET BASE/inbox` | Inputs not organized yet |
-| `GET BASE/items?q=&tag=&pri=&when=&status=` | One line per item |
-| `GET BASE/B03` | One item: fields, text, conversation, sources, images |
+| `GET BASE/tasks?q=&tag=&pri=&when=&status=` | One line per task |
+| `GET BASE/B03` | One task: fields, text, conversation, sources, images |
 | `GET BASE/D1` | A document with numbered paragraphs and your comments |
 | `GET BASE/log?n=30` | Recent changes |
 | `POST BASE/do` | Write back, one command per line |
@@ -269,12 +269,12 @@ EOF
 ```
 
 What `/do` does here:
-- An `ask` waits for your answer. You tap an option on your phone, and `/next` brings the item back to the agent.
-- When the work is done, `B03 done` puts the item in review until you accept it.
-- New items from an agent wait for your approval.
+- An `ask` waits for your answer. You tap an option on your phone, and `/next` brings the task back to the agent.
+- When the work is done, `B03 done` puts the task in review until you accept it.
+- New tasks from an agent wait for your approval.
 
-Codes are T and a number (T03). Items have no types: a tag says what one is (`#bug`, `#phone`), only when it
-helps. Older codes with another letter (B838, F839) still name the same item.
+Codes are T and a number (T03). Tasks have no types: a tag says what one is (`#bug`, `#phone`), only when it
+helps. Older codes with another letter (B838, F839) still name the same task.
 
 ## Use it on your phone
 
@@ -315,7 +315,7 @@ folder to match your machine). It reads the public address from `$TASKA_PUBLIC` 
 ## Your data
 
 - **Where it lives.** Everything is on your machine, in `~/.taska/<project>/`:
-  - `taska.db` is one SQLite database: every input, item, message and change in an append-only log, plus the
+  - `taska.db` is one SQLite database: every input, task, message and change in an append-only log, plus the
     current state, so other tools can read it without Taska;
   - `taska-files/` holds images, files and voice notes, each voice note with its transcript (`<file>.tr.json`).
 - **What leaves your machine.** Only what you send to Gemini for organizing and transcription. That happens only

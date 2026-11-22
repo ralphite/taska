@@ -30,7 +30,7 @@ class DataCheckTest(unittest.TestCase):
             path = Path(temp) / "taska.db"
             make(path, "1", json.dumps(EVENT), json.dumps({"k": "tr", "src": "r1", "f": "f1", "tr": "words"}))
             _, warnings = inspect(path)
-            self.assertEqual(warnings, ["its log is in format 1, not 3", "changes of kinds this version does not know: tr"])
+            self.assertEqual(warnings, ["its log is in format 1, not 4", "changes of kinds this version does not know: tr"])
 
     def test_check_is_read_only_and_reports_bad_events(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -38,7 +38,7 @@ class DataCheckTest(unittest.TestCase):
             folder = root / "example"
             folder.mkdir()
             path = folder / "taska.db"
-            make(path, "3", json.dumps(EVENT), "bad JSON")
+            make(path, "4", json.dumps(EVENT), "bad JSON")
             before = path.read_bytes()
             counts, warnings = inspect(path)
             self.assertEqual(counts["events"], 2)

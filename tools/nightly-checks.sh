@@ -2,7 +2,7 @@
 # Check the committed source and a consistent copy of the current data. No models or live-data writes; Taska hears
 # what to fix through its agent interface.
 #   zsh tools/nightly-checks.sh [data root, default ~/.taska]
-# The LaunchAgent runs this at 03:30. Failures are grouped into one Taska item until they change; the UI audit files
+# The LaunchAgent runs this at 03:30. Failures are grouped into one Taska task until they change; the UI audit files
 # each new display problem as its own bug.
 set -u
 ROOT=${0:A:h:h}

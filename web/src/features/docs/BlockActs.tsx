@@ -1,6 +1,6 @@
 // Beside a paragraph, on the desktop: speak a comment (Voice turns the two buttons into a recording strip there: ✕,
 // ✓ into the box below, ↑ sent at once; B498) or write one (in the box below); each thread's count, level with the words it quotes and never on another, which opens its comments over the
-// text; in a list each item is its own place to comment on (pointing at one puts the buttons beside it). Props only.
+// text; in a list each task is its own place to comment on (pointing at one puts the buttons beside it). Props only.
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Icon } from '../../ui/Icon'
@@ -28,7 +28,7 @@ export interface BlockActsEvents {
   away(tk: string): void
 }
 
-/** How far down the paragraph the words a thread quotes start (an item of a list, or words inside the text). */
+/** How far down the paragraph the words a thread quotes start (a task of a list, or words inside the text). */
 function quoteTop(sec: HTMLElement, quote: string): number {
   const norm = (x: string) => x.replace(/\s+/g, ' ').trim()
   const q = norm(quote)
@@ -60,7 +60,7 @@ export function BlockActs({ counts, open, rec, picked = false, meter, pointing =
   picked?: boolean
   /** the recording's time and level */
   meter?: ReactNode
-  /** the item of a list the pointer is on when it opens (its place in the list) */
+  /** the task of a list the pointer is on when it opens (its place in the list) */
   pointing?: number | null
   /** the open comments */
   children?: ReactNode
@@ -76,7 +76,7 @@ export function BlockActs({ counts, open, rec, picked = false, meter, pointing =
     still.current = rec
   })
   useEffect(() => {
-    // pointing at an item of a list: the buttons go beside it, and what you say quotes it
+    // pointing at a task of a list: the buttons go beside it, and what you say quotes it
     const sec = box.current?.closest('section')
     if (!sec) return
     let lit: HTMLElement | null = null
@@ -89,7 +89,7 @@ export function BlockActs({ counts, open, rec, picked = false, meter, pointing =
     const move = (e: MouseEvent) => {
       if (still.current) return
       const li = (e.target as Element).closest<HTMLElement>('li')
-      if (!li || !sec.contains(li) || box.current?.contains(li)) return // between items or on the buttons: it stays
+      if (!li || !sec.contains(li) || box.current?.contains(li)) return // between tasks or on the buttons: it stays
       light(li)
       const top = Math.round(li.getBoundingClientRect().top - sec.getBoundingClientRect().top)
       setAt((a) => (a && a.top === top ? a : { top, quote: li.innerText.trim().slice(0, 500) }))

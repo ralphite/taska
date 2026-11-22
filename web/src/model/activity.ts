@@ -1,13 +1,13 @@
 // The project's change log as the page says it: each change, from its facts, as a sentence (who, then what it did),
-// the items and inputs in it that are here as links, and the time. Also what a line is about (its document, else its
-// item, else its input), and what an Undo of one of your changes says.
+// the tasks and inputs in it that are here as links, and the time. Also what a line is about (its document, else its
+// task, else its input), and what an Undo of one of your changes says.
 
 import { codeOf, type ProjectModel } from './project'
 import { when } from './time'
 import type { LogField, LogRow, UndoEntry } from './types'
 import { DID, STATUS_WORD, WHEN_WORD, inputCode } from './words'
 
-/** words, a code that opens its item or input, or (`faint`) an item's title after its code */
+/** words, a code that opens its task or input, or (`faint`) a task's title after its code */
 export type LogPart = string | { n: number; code: string } | { id: string; code: string } | { faint: string }
 
 export interface LogSentence {
@@ -34,7 +34,7 @@ const SAYS: Record<string, string> = {
   decide: 'decided',
   withdraw: 'took back the question:',
 }
-/** The changes to an item that name its title after its code, so what Undo would undo is plain (D115 r1079 #2). */
+/** The changes to a task that name its title after its code, so what Undo would undo is plain (D115 r1079 #2). */
 const TITLED: readonly string[] = ['status', 'when', 'pri', 'archived']
 const word = (map: Record<string, string>, v: unknown) => {
   const s = v == null ? '' : String(v)
@@ -48,7 +48,7 @@ const plain = (s: string) =>
     .replace(/\[src=[^\]]*\]/g, '')
     .replace(/(^|\s)- (?:\( \)|\[ \]) /g, '$1')
 
-/** The codes in words someone wrote that are here, as links (an item by its code as written now; an input as #12). */
+/** The codes in words someone wrote that are here, as links (a task by its code as written now; an input as #12). */
 function linked(m: World, text: string): LogPart[] {
   const out: LogPart[] = []
   let at = 0
@@ -69,9 +69,9 @@ function linked(m: World, text: string): LogPart[] {
 
 /** Words of one change: what it names, as parts. */
 function sentence(m: World, e: LogRow): LogPart[] {
-  const item = (n: number): LogPart => (m.byN.has(n) ? { n, code: codeOf(m, n) } : (e.codes?.[n] ?? codeOf(m, n)))
+  const task = (n: number): LogPart => (m.byN.has(n) ? { n, code: codeOf(m, n) } : (e.codes?.[n] ?? codeOf(m, n)))
   const input = (id: string | undefined): LogPart => (id && m.byId.has(id) ? { id, code: inputCode(id) } : id ? inputCode(id) : 'None')
-  const items = (ns: readonly number[]) => ns.flatMap((n, i) => (i ? [' ', item(n)] : [item(n)]))
+  const tasks = (ns: readonly number[]) => ns.flatMap((n, i) => (i ? [' ', task(n)] : [task(n)]))
   /** what someone wrote, in quotes; none: a voice note */
   const quoted = (s: string, none = 'a voice note'): LogPart[] => (s ? ['“', ...linked(m, plain(s)), '”'] : [none])
   const doc = (d: number) => `D${d}`
@@ -82,7 +82,7 @@ function sentence(m: World, e: LogRow): LogPart[] {
     if (f === 'archived') return [now === true ? 'archived' : 'unarchived']
     if (f === 'pri') return [`priority ${String(was ?? '')} → ${String(now)}`]
     if (f === 'tags') return [`tags ${tagWords(was) || 'none'} → ${tagWords(now) || 'none'}`]
-    if (f === 'parent') return typeof now === 'number' ? ['moved under ', item(now)] : typeof was === 'number' ? ['taken out from under ', item(was)] : ['parent changed']
+    if (f === 'parent') return typeof now === 'number' ? ['moved under ', task(now)] : typeof was === 'number' ? ['taken out from under ', task(was)] : ['parent changed']
     if (f === 'title') return ['renamed ', ...quoted(String(now ?? ''), '“”')]
     if (f === 'body') return ['description edited']
     if (f === 'next') return ['next step edited']
@@ -90,23 +90,23 @@ function sentence(m: World, e: LogRow): LogPart[] {
   }
   switch (e.kind) {
     case 'in':
-      return ['wrote ', input(e.id), ...(e.to ? [' to ', item(e.to)] : []), ' ', ...quoted(e.text)]
+      return ['wrote ', input(e.id), ...(e.to ? [' to ', task(e.to)] : []), ' ', ...quoted(e.text)]
     case 'add':
-      return ['made ', item(e.n), `${e.tags?.length ? ' ' + tagWords(e.tags) : ''} (${e.pri}${e.when === 'later' ? ', later' : ''}): `, ...quoted(e.title, '“”'), ...(e.src ? [' from ', input(e.src)] : [])]
+      return ['made ', task(e.n), `${e.tags?.length ? ' ' + tagWords(e.tags) : ''} (${e.pri}${e.when === 'later' ? ', later' : ''}): `, ...quoted(e.title, '“”'), ...(e.src ? [' from ', input(e.src)] : [])]
     case 'set': {
-      const head: LogPart[] = [item(e.n)]
+      const head: LogPart[] = [task(e.n)]
       const it = m.byN.get(e.n)
       if (it && TITLED.includes(e.set[0]?.field)) head.push({ faint: ' ' + it.title })
       return [...head, ' ', ...e.set.flatMap((x, i) => (i ? [', ', ...set(x)] : set(x))), ...(e.undo ? [` (undoing #${e.undo})`] : [])]
     }
     case 'say':
-      return [item(e.n), ` ${SAYS[e.as] ?? e.as} `, ...quoted(e.text)]
+      return [task(e.n), ` ${SAYS[e.as] ?? e.as} `, ...quoted(e.text)]
     case 'merge':
-      return [item(e.n), ' merged into ', item(e.into)]
+      return [task(e.n), ' merged into ', task(e.into)]
     case 'unmerge':
-      return [item(e.n), ' taken out of ', item(e.into)]
+      return [task(e.n), ' taken out of ', task(e.into)]
     case 'due':
-      return [item(e.n), ' back to now (its day came)']
+      return [task(e.n), ' back to now (its day came)']
     case 'ack':
       return ['saw ', ...e.ids.flatMap((id, i) => (i ? [', ', input(id)] : [input(id)]))]
     case 'cfg':
@@ -114,7 +114,7 @@ function sentence(m: World, e: LogRow): LogPart[] {
     case 'icon':
       return [e.f ? "set the project's icon" : "took off the project's icon"]
     case 'doc':
-      return [`wrote ${doc(e.d)} on `, item(e.n), ': ', ...quoted(e.title, '“”')]
+      return [`wrote ${doc(e.d)} on `, task(e.n), ': ', ...quoted(e.title, '“”')]
     case 'dc':
       return [`commented on ${doc(e.d)}: `, ...quoted(e.text)]
     case 'dcedit':
@@ -130,7 +130,7 @@ function sentence(m: World, e: LogRow): LogPart[] {
     case 'ddel':
       return [`${e.on ? 'deleted' : 'restored'} ${doc(e.d)}`]
     case 'dmove':
-      return [`${doc(e.d)} moved to `, item(e.to)]
+      return [`${doc(e.d)} moved to `, task(e.to)]
     case 'voice': {
       const note: LogPart[] = e.src ? [input(e.src), ' voice note'] : ['a voice note']
       if (e.state === 'wait') return e.text ? [...note, ' first words: ', ...quoted(e.text)] : [...note, ' being transcribed']
@@ -155,16 +155,16 @@ function sentence(m: World, e: LogRow): LogPart[] {
       return [
         input(e.src),
         e.kind === 'del' ? ' deleted' : ' restored',
-        ...(e.ns.length ? [' with ', ...items(e.ns)] : []),
-        ...(kept.length ? ['; kept ', ...kept.flatMap(([n, why], i) => [...(i ? [', '] : []), item(n), ` (${why})`])] : []),
+        ...(e.ns.length ? [' with ', ...tasks(e.ns)] : []),
+        ...(kept.length ? ['; kept ', ...kept.flatMap(([n, why], i) => [...(i ? [', '] : []), task(n), ` (${why})`])] : []),
       ]
     }
     case 'arch':
-      return [`${e.on ? 'archived' : 'unarchived'} ${e.count}: `, ...items(e.ns), ...(e.count > e.ns.length ? [' …'] : [])]
+      return [`${e.on ? 'archived' : 'unarchived'} ${e.count}: `, ...tasks(e.ns), ...(e.count > e.ns.length ? [' …'] : [])]
     case 'idel':
-      return ['deleted ', ...items(e.ns)]
+      return ['deleted ', ...tasks(e.ns)]
     case 'iundel':
-      return ['restored ', ...items(e.ns)]
+      return ['restored ', ...tasks(e.ns)]
     case 'moved':
       return [input(e.src), ` moved to ${e.to} as ${inputCode(e.as)}`]
     case 'amend':
@@ -172,9 +172,9 @@ function sentence(m: World, e: LogRow): LogPart[] {
     case 'unfile':
       return [`took ${e.f} off `, ...(e.d ? [`a comment on ${doc(e.d)}`] : [input(e.src)])]
     case 'hide':
-      return [`${e.on ? 'hid' : 'showed'} a message on `, item(e.n)]
+      return [`${e.on ? 'hid' : 'showed'} a message on `, task(e.n)]
     case 'rescope':
-      return [input(e.src), ' now goes with ', item(e.to)]
+      return [input(e.src), ' now goes with ', task(e.to)]
     case 'org':
       if (e.retry) return ['filed ', input(e.src), ' again']
       return [e.ok ? 'filed ' : 'could not file ', input(e.src), ': ', ...linked(m, plain(e.msg || ''))]
@@ -206,7 +206,7 @@ export function logSentence(m: World, e: LogRow): LogSentence {
   }
 }
 
-/** What a line is about, to open beside the list: the first item or document it names that is here, else the first
+/** What a line is about, to open beside the list: the first task or document it names that is here, else the first
  * input. */
 export function logTarget(m: World, e: LogRow): { n: number } | { d: number } | { id: string } | null {
   const parts = sentence(m, e)

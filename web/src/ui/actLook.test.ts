@@ -1,13 +1,13 @@
 import { expect, test } from 'vitest'
 import { armHint } from '../model/actions'
-import { ITEM_ACTS, actTip, type ItemActId } from '../model/itemActs'
-import { item } from '../stories/fixtures'
+import { TASK_ACTS, actTip, type TaskActId } from '../model/taskActs'
+import { task } from '../stories/fixtures'
 import { ICON } from './icon-paths'
 import { actBg, actIcon, actText, chosenTone } from './tones'
 
-const ids = Object.keys(ITEM_ACTS) as ItemActId[]
+const ids = Object.keys(TASK_ACTS) as TaskActId[]
 
-test("every item action's icons are icons there are", () => {
+test("every task action's icons are icons there are", () => {
   for (const id of ids) {
     expect(ICON).toHaveProperty(actIcon(id))
     expect(ICON).toHaveProperty(actIcon(id, true))
@@ -21,6 +21,6 @@ test('an action looks as before, read by its id', () => {
 })
 
 test('the hints of S and P come from what they set (T opens the tags, T855)', () => {
-  const it = item({ n: 1 })
+  const it = task({ n: 1 })
   expect([armHint('s', it), armHint('p', it), armHint(null, it)]).toEqual(['Status: 1–6', 'Priority: 0–3', 'First S or P: then a digit'])
 })

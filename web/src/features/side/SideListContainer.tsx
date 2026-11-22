@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
-import { useItemWorld, useProjectModel } from '../../app/hooks'
+import { useTaskWorld, useProjectModel } from '../../app/hooks'
 import { activityRows, logTarget } from '../../model/activity'
 import { codeOf, type ProjectModel } from '../../model/project'
 import { listedDocs } from '../../model/docs'
@@ -17,7 +17,7 @@ function useRestore(slug: string, m: ProjectModel | null) {
     const x = m.facts.deletedInputs.find((y) => y.id === key)
     if (x) return app.restores.input(slug, x.id)
     if (/^D\d+$/.test(key)) return void app.restores.doc(slug, Number(key.slice(1)))
-    void app.restores.item(slug, key)
+    void app.restores.task(slug, key)
   }
 }
 
@@ -40,7 +40,7 @@ export function SideListContainer({ slug, side }: { slug: string; side: Side }) 
   const activity = useMemo((): ActivityRow[] | null => (m && rows ? activityRows(m, rows) : null), [m, rows])
   const gone = useMemo(() => (m ? goneRows(m) : []), [m])
 
-  const openItem = (n: number) => m && app.nav.openItem(codeOf(m, n))
+  const openTask = (n: number) => m && app.nav.openTask(codeOf(m, n))
   const openInput = (id?: string) => (id ? app.nav.goInput(id) : app.nav.newInput())
   const count = side === 'docs' ? docs.length : side === 'deleted' ? gone.length : 0 // the log loads as you scroll
   return (
@@ -59,11 +59,11 @@ export function SideListContainer({ slug, side }: { slug: string; side: Side }) 
               const to = m && e ? logTarget(m, e) : null
               if (!to) return
               stores.ui.getState().setSideSel(key)
-              if ('n' in to) openItem(to.n)
+              if ('n' in to) openTask(to.n)
               else if ('d' in to) app.docs.open(to.d)
               else openInput(to.id)
             },
-            item: openItem,
+            task: openTask,
             input: openInput,
             undo: (seq) => app.sheets.confirm('revert ' + seq) && void app.restores.revert(slug, seq),
             more: () => void app.activity.more(slug),
@@ -92,7 +92,7 @@ export function DeletedPickContainer({ slug }: { slug: string }) {
   const m = useProjectModel(slug)
   const picked = useStoreValue(stores.ui, (s) => s.sideSel)
   const restore = useRestore(slug, m)
-  const world = useItemWorld(m, slug)
+  const world = useTaskWorld(m, slug)
   const x = m && picked ? goneRows(m).find((g) => g.key === picked) : undefined
   return x ? <DeletedView x={x} world={world} onRestore={() => restore(x.key)} /> : null
 }

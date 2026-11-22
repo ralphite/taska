@@ -20,7 +20,7 @@ export const About: StoryObj = {
         <b>Complete.</b> Every state the page can show has its story. The states of one part sit together, so they can be compared.
       </p>
       <p>
-        <b>Easy to find.</b> Grouped by what you see (item list, item page, conversation, input box, document, menus and sheets, top bar, sidebar,
+        <b>Easy to find.</b> Grouped by what you see (task list, task page, conversation, input box, document, menus and sheets, top bar, sidebar,
         settings), one story per state, named for what it shows, the most used first.
       </p>
       <p>

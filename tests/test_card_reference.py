@@ -1,4 +1,4 @@
-"""F568: an agent reading an item gets, last, every input it came from in time order: the words once, with one line
+"""F568: an agent reading a task gets, last, every input it came from in time order: the words once, with one line
 for those already in the body or the thread above."""
 
 import os
@@ -27,7 +27,7 @@ def reading():
 class Reference(unittest.TestCase):
     def test_last_and_in_time_order_once(self):
         rd = reading()
-        text = card(rd, rd.state.items[1])
+        text = card(rd, rd.state.tasks[1])
         ref = text[text.index("reference: the user's own words"):]
         self.assertTrue(text.rstrip().endswith(ref.rstrip()))  # the last section
         self.assertIn("r1 10-30 13:01: in the body above", ref)

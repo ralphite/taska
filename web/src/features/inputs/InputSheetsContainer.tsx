@@ -1,8 +1,8 @@
 // An input's sheets with the page's data: its menu, its versions, moving it to another project, putting it with
-// another item, and a voice note's words as said.
+// another task, and a voice note's words as said.
 
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
-import { useCloseSheetWhen, useItemWorld, useProjectModel, useProjectRoute } from '../../app/hooks'
+import { useCloseSheetWhen, useTaskWorld, useProjectModel, useProjectRoute } from '../../app/hooks'
 import { codeOf } from '../../model/project'
 import { inputCode } from '../../model/words'
 import type { SheetRequest } from '../../stores/sheet'
@@ -67,7 +67,7 @@ export function InputMenuSheet({ req }: Req<'input-menu'>) {
 
 export function InputHistorySheet({ req }: Req<'input-history'>) {
   const { slug, m, r } = useSubject(req.id)
-  const world = useItemWorld(m, slug)
+  const world = useTaskWorld(m, slug)
   return m && r ? <SheetLayout {...historySheet(r, m.at, world)} /> : null
 }
 
@@ -94,7 +94,7 @@ export function InputRescopeSheet({ req }: Req<'input-rescope'>) {
   const was = r.scope ? code(r.scope) : null
   return (
     <SheetLayout
-      {...pickSheet({ head: `Put ${inputCode(r.id)} with…`, items: m.items, skip: r.scope ? [r.scope] : [], code, desk }, (n) => {
+      {...pickSheet({ head: `Put ${inputCode(r.id)} with…`, tasks: m.tasks, skip: r.scope ? [r.scope] : [], code, desk }, (n) => {
         app.sheets.close()
         app.inputActions.rescope(slug, r.id, code(n), was)
       })}

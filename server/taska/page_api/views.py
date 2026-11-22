@@ -1,4 +1,4 @@
-"""The page's view of a project: its items, inputs and documents as the page draws them (with the facts the page's
+"""The page's view of a project: its tasks, inputs and documents as the page draws them (with the facts the page's
 rules need: what waits on the user, whether they spoke last, who read it, what organizing did, what deleting an input
 would take), and the project's own facts (agents, what can be undone, what is in Deleted).
 
@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 
 from ..domain import rules, sections, versions
 from ..domain.history import DeletionPlan, Filing, deletions, filings, undoable
-from ..domain.model import Comment, Doc, FileRef, Input, Item, Message, Voice
+from ..domain.model import Comment, Doc, FileRef, Input, Task, Message, Voice
 from ..domain.state import ProjectState
 from ..domain.vocab import Refused
 from ..services.agents import AgentActivity
@@ -60,7 +60,7 @@ def message_view(m: Message) -> View:
     return out
 
 
-def item_view(st: ProjectState, agents: AgentActivity, it: Item) -> View:
+def task_view(st: ProjectState, agents: AgentActivity, it: Task) -> View:
     w = rules.waiting(st, it)
     out: View = {"n": it.n, "code": st.code(it.n), "tags": list(it.tags), "group": it.group, "after": list(it.after), "title": it.title, "body": it.body, "pri": it.pri,
                  "when": it.when, "status": it.status, "parent": it.parent, "next": it.next, "srcs": list(it.srcs),
@@ -165,8 +165,8 @@ def deleted_inputs(st: ProjectState) -> List[View]:
     """Deleted inputs, newest deletion first, with what went with them."""
     rows = sorted((i for i in st.inputs.values() if i.deleted), key=lambda i: -(i.deleted.seq if i.deleted else 0))
 
-    def item(n: int) -> View:
-        it = st.items[n]
+    def task(n: int) -> View:
+        it = st.tasks[n]
         return {"n": n, "code": st.code(n), "title": it.title, "tags": list(it.tags)}
 
     out: List[View] = []
@@ -174,19 +174,19 @@ def deleted_inputs(st: ProjectState) -> List[View]:
         gone = i.deleted
         assert gone is not None
         out.append({"id": i.id, "t": i.t, "at": gone.t, "text": i.text, "files": len(i.files), "scope": i.scope,
-                    "items": [item(n) for n in gone.ns if n in st.items],
-                    "kept": [dict(item(n), why=why) for n, why in gone.kept if n in st.items]})
+                    "tasks": [task(n) for n in gone.ns if n in st.tasks],
+                    "kept": [dict(task(n), why=why) for n, why in gone.kept if n in st.tasks]})
     return out
 
 
 def deleted_things(st: ProjectState) -> List[View]:
-    """Items and documents deleted by themselves, newest first."""
-    items = [{"kind": "item", "n": g.ns[0], "code": st.code(g.ns[0]), "title": st.items[g.ns[0]].title, "at": g.t,
+    """Tasks and documents deleted by themselves, newest first."""
+    tasks = [{"kind": "task", "n": g.ns[0], "code": st.code(g.ns[0]), "title": st.tasks[g.ns[0]].title, "at": g.t,
               "more": len(g.ns) - 1}
-             for g in st.deleted_groups if g.ns and g.ns[0] in st.items and st.items[g.ns[0]].deleted == "#item"]
-    docs = [{"kind": "doc", "d": d.d, "title": d.title, "at": d.deleted, "on": st.code(d.n) if d.n in st.items else ""}
+             for g in st.deleted_groups if g.ns and g.ns[0] in st.tasks and st.tasks[g.ns[0]].deleted == "#task"]
+    docs = [{"kind": "doc", "d": d.d, "title": d.title, "at": d.deleted, "on": st.code(d.n) if d.n in st.tasks else ""}
             for d in st.docs.values() if d.deleted]
-    return sorted(items + docs, key=lambda x: str(x["at"]), reverse=True)
+    return sorted(tasks + docs, key=lambda x: str(x["at"]), reverse=True)
 
 
 def home_short(path: str) -> str:
@@ -195,14 +195,14 @@ def home_short(path: str) -> str:
 
 
 def entities(st: ProjectState, agents: AgentActivity) -> Dict[str, List[View]]:
-    """Every item, input and document the page shows, and the words of every voice note."""
+    """Every task, input and document the page shows, and the words of every voice note."""
     plans = deletions(st)
     filed = filings(st)
     return {
-        "items": [item_view(st, agents, it) for it in st.items.values() if not it.deleted],
+        "tasks": [task_view(st, agents, it) for it in st.tasks.values() if not it.deleted],
         "inputs": [input_view(i, filed.get(i.id), plans.get(i.id)) for i in st.inputs.values() if not i.deleted],
         "docs": [doc_view(d, st) for d in st.docs.values()
-                 if not d.deleted and not (st.items[d.n].deleted if d.n in st.items else None)],
+                 if not d.deleted and not (st.tasks[d.n].deleted if d.n in st.tasks else None)],
         "voices": [voice_view(v) for v in st.voices.values()],
     }
 

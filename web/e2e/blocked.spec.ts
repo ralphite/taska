@@ -58,7 +58,7 @@ test('T711: a blocked session floats a bar above the box on every page; Open ope
   await expect(bar(page)).toHaveCount(0, { timeout: 8000 })
 })
 
-test('F768: Agents lists each session by its app, a worker under its manager; an item it is on opens from there', async ({ page, request }) => {
+test('F768: Agents lists each session by its app, a worker under its manager; a task it is on opens from there', async ({ page, request }) => {
   const p = await project(request, { agent: 'new P1 now Pick the export format', approve: ['T1'] })
   session('busy')
   expect((await request.get(`${p.url}next?by=claude-code&session=Manager&sid=${SID}`)).ok()).toBe(true)

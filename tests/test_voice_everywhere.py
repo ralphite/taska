@@ -1,5 +1,5 @@
 """B682 (Yadong: every voice note has its words, bound to the voice, the same everywhere): wherever a voice note is
-(an input, a reply on an item, a document's comment), agents, the change log, search and moves read its one record;
+(an input, a reply on a task, a document's comment), agents, the change log, search and moves read its one record;
 what was typed stays only what was typed."""
 
 import os
@@ -42,7 +42,7 @@ class VoiceEverywhere(unittest.TestCase):
         self.assertTrue(lines[0].startswith("ok"), lines)
         return lines[0]
 
-    def item(self):
+    def task(self):
         self.run_one({"op": "new", "title": "Export"})
         return 1
 
@@ -57,14 +57,14 @@ class VoiceEverywhere(unittest.TestCase):
         self.assertIn(WORDS, change_log.text(st, 5))  # the change log says what was said
         self.assertEqual([f.key for f in by_words(st, "保留我设的筛选")], ["r1"])
 
-    def test_a_reply_by_voice_is_read_with_its_words_on_the_item(self):
-        n = self.item()
+    def test_a_reply_by_voice_is_read_with_its_words_on_the_task(self):
+        n = self.task()
         self.run_one({"op": "input", "text": "Also:", "scope": n, "files": [self.note()]})
-        card = render.card(self.p.reading(), self.p.state.items[n])
+        card = render.card(self.p.reading(), self.p.state.tasks[n])
         self.assertIn("you: Also:\nvoice 0:08: " + WORDS, card)
 
     def test_a_voice_comment_is_read_with_its_words_and_found(self):
-        n = self.item()
+        n = self.task()
         self.run_one({"op": "doc", "ref": "F1", "title": "Plan", "md": "# Plan\n\nThe export keeps the filter."})
         self.run_one({"op": "dc", "d": 1, "key": "doc", "text": "", "files": [self.note()]})
         st = self.p.state
@@ -85,36 +85,36 @@ class VoiceEverywhere(unittest.TestCase):
         self.assertEqual(self.p.state.voices[note["f"]].tidied, "导出时保留筛选和顺序")
         self.assertEqual(self.p.state.inputs["r1"].text, "typed")
 
-    def test_the_words_go_with_a_moved_input_and_a_moved_item(self):
+    def test_the_words_go_with_a_moved_input_and_a_moved_task(self):
         there = Project(os.path.join(self.tmp.name, "other"), "other")
         try:
             self.run_one({"op": "input", "text": "", "files": [self.note()]})
             got = Moves().input(self.p, there, "r1")
             moved = there.state.inputs[got["as"]]
             self.assertEqual([there.state.voices[f.f].tidied for f in moved.files], [WORDS])
-            n = self.item()
+            n = self.task()
             self.run_one({"op": "doc", "ref": "F1", "title": "Plan", "md": "# Plan\n\nThe export keeps the filter."})
             self.run_one({"op": "dc", "d": 1, "key": "doc", "text": "", "files": [self.note(words="还要保留排序")]})
-            Moves().item(self.p, there, f"F{n}")
+            Moves().task(self.p, there, f"F{n}")
             doc = next(d for d in there.state.docs.values())
             self.assertIn("还要保留排序", doc.md)  # a voice comment is not dropped
-            carried = [f for it in there.state.items.values() for x in it.thread for f in x.files]
+            carried = [f for it in there.state.tasks.values() for x in it.thread for f in x.files]
             self.assertIn("还要保留排序", [there.state.voices[f.f].tidied for f in carried if f.f in there.state.voices])
         finally:
             there.close()
 
-    def test_a_moved_web_page_stays_a_web_page_and_its_comments_go_on_the_item(self):
-        """T753: moving an item with a web page document (D37 in dev2) kept its HTML as Markdown, so it no longer showed."""
+    def test_a_moved_web_page_stays_a_web_page_and_its_comments_go_on_the_task(self):
+        """T753: moving a task with a web page document (D37 in dev2) kept its HTML as Markdown, so it no longer showed."""
         there = Project(os.path.join(self.tmp.name, "other"), "other")
         try:
-            n = self.item()
+            n = self.task()
             page = "<!doctype html><title>Contest</title><h1>Contest</h1><script>go()</script>"
             self.run_one({"op": "doc", "ref": f"F{n}", "md": page, "fmt": "html"})
             self.run_one({"op": "dc", "d": 1, "key": "doc", "text": "Bigger, please"})
-            Moves().item(self.p, there, f"F{n}")
+            Moves().task(self.p, there, f"F{n}")
             doc = next(d for d in there.state.docs.values())
             self.assertEqual((doc.is_page, doc.md, doc.title), (True, page, "Contest"))
-            talk = [x.text for it in there.state.items.values() for x in it.thread]
+            talk = [x.text for it in there.state.tasks.values() for x in it.thread]
             self.assertTrue(any("Bigger, please" in t for t in talk), talk)
         finally:
             there.close()

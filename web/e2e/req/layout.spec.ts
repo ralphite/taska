@@ -1,6 +1,6 @@
 // Yadong's requirements on the page's layout (D29; T475, D45): each check is named by the codes of his inputs, so a
 // change that breaks one is stopped before it ships with his own words.
-// guards: src/pages/ src/ui/PaneFrame.tsx src/ui/Sheet.tsx src/features/sidebar/ src/features/item/ItemPage.tsx src/features/docs/ src/stores/ui.ts src/app/page/navigation.ts src/app/panes.tsx src/index.css
+// guards: src/pages/ src/ui/PaneFrame.tsx src/ui/Sheet.tsx src/features/sidebar/ src/features/task/TaskPage.tsx src/features/docs/ src/stores/ui.ts src/app/page/navigation.ts src/app/panes.tsx src/index.css
 import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project, settled } from '../seed'
 import { FOOT, TALK, duo, pane, row } from '../ui'
@@ -97,7 +97,7 @@ test('r683: the desktop sidebar and phone drawer keep their own state across wid
   await expect(page.locator('#rail')).toBeHidden()
 })
 
-test('r743: once an item is in two columns it stays so: another item that would fit in one does not take it back (B539)', async ({
+test('r743: once a task is in two columns it stays so: another task that would fit in one does not take it back (B539)', async ({
   page,
   request,
 }) => {
@@ -109,7 +109,7 @@ test('r743: once an item is in two columns it stays so: another item that would 
   await page.setViewportSize({ width: 1920, height: 900 })
   await open(page, p, 'T4')
   await expect(duo(page)).toHaveCount(1)
-  // a short item, which alone would be one column
+  // a short task, which alone would be one column
   await row(page, 'Pick the export format').click()
   await expect(pane(page).locator('h1')).toContainText('Pick the export format')
   await settled(page)
@@ -129,11 +129,11 @@ const PARTS: [string, string][] = [
   ['projBar', 'nav[aria-label="This project"]'],
   ['mainHead', '[data-part="list-head"]'],
   ['tabs', '[data-part="tabs"]'],
-  ['itemsView', '[data-part="items"]'],
+  ['tasksView', '[data-part="tasks"]'],
   ['inputsView', '[data-part="inputs"]'],
   ['detailView', '[data-part="pane"]'],
-  ['itemTop', '[data-item-top]'],
-  ['itemTalk', TALK],
+  ['taskTop', '[data-task-top]'],
+  ['taskTalk', TALK],
   ['docBlocks', '[data-doc-blocks]'],
   ['projectView', '[data-part="settings"]'],
   ['foot', FOOT],
@@ -154,9 +154,9 @@ const shape = (page: Page) =>
   }, PARTS)
 const WALK = [1440, 1300, 1100, 1024, 1023, 800, 393, 800, 1023, 1024, 1100, 1300, 1440]
 for (const [name, path, fold] of [
-  ['an item open', 'T4', false],
+  ['a task open', 'T4', false],
   ['a document open', 'D1', false],
-  ['the sidebar folded, an item open', 'T4', true],
+  ['the sidebar folded, a task open', 'T4', true],
   ['the list alone', '', false],
 ] as const)
   test(`r749 #6525: at any width the page is the same however the width got there, only the width changing: ${name} (B496)`, async ({
@@ -191,7 +191,7 @@ for (const [name, path, fold] of [
     }
   })
 
-test('B669 r1065: the list\'s views row and the pane\'s bar are one height, their bottom borders one line (New input, Inputs, an item, a document)', async ({
+test('B669 r1065: the list\'s views row and the pane\'s bar are one height, their bottom borders one line (New input, Inputs, a task, a document)', async ({
   page,
   request,
 }) => {
@@ -245,7 +245,7 @@ test('F670 r1065: on the desktop Filters is first in the views row; ⌄ at its e
   await expect((await viewsRow.boundingBox())?.height).toBeLessThan(57)
 })
 
-test('r1052: what the pane shows never moves the list: on the New input page the views sit right under the bar and the filters, as with an item open (B663)', async ({
+test('r1052: what the pane shows never moves the list: on the New input page the views sit right under the bar and the filters, as with a task open (B663)', async ({
   page,
   request,
 }) => {
@@ -263,12 +263,12 @@ test('r1052: what the pane shows never moves the list: on the New input page the
     return views.y - (bar.y + bar.height)
   }
   for (const filters of ['', '?tag=bug']) {
-    const withItem = await gap('T1' + filters)
-    if (!filters) expect(Math.abs(withItem), 'nothing between the bar and the views').toBeLessThan(1)
-    else expect(withItem, 'the filters between them').toBeGreaterThan(20)
+    const withTask = await gap('T1' + filters)
+    if (!filters) expect(Math.abs(withTask), 'nothing between the bar and the views').toBeLessThan(1)
+    else expect(withTask, 'the filters between them').toBeGreaterThan(20)
     for (const path of ['', 'new']) {
       const here = await gap(path + filters)
-      expect(Math.abs(here - withItem), `${path || 'the list'}${filters}: the views where an item open has them`).toBeLessThan(1)
+      expect(Math.abs(here - withTask), `${path || 'the list'}${filters}: the views where a task open has them`).toBeLessThan(1)
     }
   }
 })

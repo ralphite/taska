@@ -9,7 +9,7 @@ export class KeyArm {
     this.armed = { k, n, t: Date.now() }
   }
 
-  /** The field armed for item `n`, once (null: none, or too long ago). */
+  /** The field armed for task `n`, once (null: none, or too long ago). */
   take(n: number): ArmKey | null {
     const a = this.armed
     this.armed = null

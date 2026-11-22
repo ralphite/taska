@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { inputMenuSheet } from '../features/inputs/InputSheets'
 import { inputDeleteAsk, inputMenuFacts } from '../features/inputs/inputSheetFacts'
 import { Frames } from './Frames'
-import { input, item, modelOf } from './fixtures'
+import { input, task, modelOf } from './fixtures'
 import { AT_BUTTON, acts, opened } from './menuFixtures'
 
 export default { title: 'UI/Inputs page/Its menu' } satisfies Meta
@@ -29,16 +29,16 @@ const on = acts('Input menu', ['send', 'edit', 'append', 'asSaid', 'undo', 'move
   asSaid: 'Sheets › An input: Original words',
   move: 'Move and pick › What you said, to another project',
   history: 'Sheets › An input: history',
-  rescope: 'Move and pick › What you said, with another item',
+  rescope: 'Move and pick › What you said, with another task',
   takeOff: "What you said: its menu › A file's Take it off? asking",
 })
-const m = modelOf([item({ n: 4, title: 'Exports that keep what you see' }), item({ n: 12, title: 'Export keeps the filter' })], [said])
+const m = modelOf([task({ n: 4, title: 'Exports that keep what you see' }), task({ n: 12, title: 'Export keeps the filter' })], [said])
 /** What you said's ⋯: Edit, Add details, Original words, Undo what the organizer did, Move, History, Put with another
- * item, a file's Take off, Delete (and what goes with it). Rows that open a next step:
+ * task, a file's Take off, Delete (and what goes with it). Rows that open a next step:
  * [Original words](?path=/story/components-around-the-page-menus-and-sheets-sheets-an-input-its-words-and-history--as-said),
  * [Move to…](?path=/story/components-around-the-page-menus-and-sheets-move-and-pick--move-input),
  * [History](?path=/story/components-around-the-page-menus-and-sheets-sheets-an-input-its-words-and-history--input-history),
- * [Put with item…](?path=/story/components-around-the-page-menus-and-sheets-move-and-pick--pick-an-item),
+ * [Put with task…](?path=/story/components-around-the-page-menus-and-sheets-move-and-pick--pick-an-task),
  * [Take off a file](?path=/story/components-around-the-page-menus-and-sheets-what-you-said-its-menu--input-menu-take-off-asks). */
 export const InputMenu: Story = {
   ...both((desk) => opened(inputMenuSheet(inputMenuFacts(m, said, 2, {}, desk, true), on), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} }), 720),
@@ -46,7 +46,7 @@ export const InputMenu: Story = {
 }
 const plain = input({ id: 'r13', acked: true, text: 'Look at why the build takes so long.' })
 const inputMenu = (r: typeof said, other: number, asked: Record<string, number> = {}, tidy = true) => (desk: boolean) =>
-  opened(inputMenuSheet(inputMenuFacts(modelOf([item({ n: 4 }), item({ n: 12 })], [r]), r, other, asked, desk, tidy), on), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} })
+  opened(inputMenuSheet(inputMenuFacts(modelOf([task({ n: 4 }), task({ n: 12 })], [r]), r, other, asked, desk, tidy), on), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} })
 /** a plain typed input with no other project: no Original words, Undo, History, files or Move */
 export const InputMenuPlain: Story = { ...both(inputMenu(plain, 0), 420), name: 'Typed, nothing filed, no other project' }
 /** a file's Take off asking again */
@@ -54,7 +54,7 @@ export const InputMenuTakeOffAsks: Story = { ...both(inputMenu(said, 2, { [`unfi
 /** Delete clicked once: it asks again in place (Delete?); the second click deletes it, and Deleted brings it back
  * (T666: any input, the one just sent too) */
 export const InputMenuDeleteAsks: Story = { ...both(inputMenu(plain, 0, { [inputDeleteAsk(plain.id)]: 1 }), 420), name: 'Delete? asking' }
-/** a recording cancelled with Esc (T627): Send first; it goes with no item until it is sent */
+/** a recording cancelled with Esc (T627): Send first; it goes with no task until it is sent */
 export const InputMenuCancelled: Story = { ...both(inputMenu(input({ id: 'r24', kind: 'cancelled', text: 'Maybe the export should keep the columns too.', files: [VOICE] }), 2), 560), name: 'A cancelled recording: Send' }
 /** voice notes not tidied (Settings): the phone's menu has no Original words either */
 export const InputMenuTidyOff: Story = { ...both(inputMenu(said, 2, {}, false), 720), name: 'Voice notes not tidied' }

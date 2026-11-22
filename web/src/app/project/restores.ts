@@ -1,4 +1,4 @@
-// Bringing back what was deleted (an item with its subitems, a document, an input), and undoing one of your older
+// Bringing back what was deleted (a task with its subtasks, a document, an input), and undoing one of your older
 // changes from the change log. Each waits for Taska, then says so. A second press right after the first does nothing.
 
 import type { Command } from '../../model/commands'
@@ -26,7 +26,7 @@ export class Restores {
     return this.d.runner.change(slug, command, said)
   }
 
-  async item(slug: string, ref: string): Promise<void> {
+  async task(slug: string, ref: string): Promise<void> {
     if (this.justNow()) return
     if (await this.send(slug, { op: 'iundel', ref }, `restoring ${ref}`)) this.d.toasts.show(`${ref} is back`)
   }

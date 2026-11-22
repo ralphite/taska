@@ -8,7 +8,7 @@ from ..domain.history import filings, redo_blocked, undoable as changes_undoable
 from ..domain.input_states import undoable
 from ..domain.vocab import Refused
 from .base import Args, Outcome, Run, handles
-from .items import set_fields
+from .tasks import set_fields
 from .rules import undo_filing as undo_rules
 
 

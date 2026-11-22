@@ -1,5 +1,5 @@
 """Commands on what you said: a new input or a reply, fixing or adding to one, marking inputs handled, deleting and
-restoring one, moving one to another item, taking a file off one, sending a cancelled recording after all."""
+restoring one, moving one to another task, taking a file off one, sending a cancelled recording after all."""
 
 from __future__ import annotations
 
@@ -7,10 +7,10 @@ import os
 from dataclasses import replace
 from typing import Dict, Iterable, List, Optional
 
-from ..domain import events as ev, item_states
+from ..domain import events as ev, task_states
 from ..domain.history import deletions
 from ..domain.model import FileRef
-from ..domain.rules import item_at
+from ..domain.rules import task_at
 from ..domain.state import ProjectState
 from ..domain.vocab import MAX_TEXT, PEOPLE, Refused
 from ..domain.voices import words_of
@@ -65,16 +65,16 @@ def voice_words(r: Run, a: Args, notes: Iterable[str], src: Optional[str] = None
 
 
 def answered_of(s: ProjectState, n: Optional[int], of: object) -> List[int]:
-    """An answer to some of the questions in a row (B749): the ids of the item's questions it answers, each one an
-    agent's ask on that item; the others keep waiting. None given: it answers them all, as anything you say does."""
+    """An answer to some of the questions in a row (B749): the ids of the task's questions it answers, each one an
+    agent's ask on that task; the others keep waiting. None given: it answers them all, as anything you say does."""
     if not of:
         return []
     if not isinstance(of, list) or not all(isinstance(x, int) for x in of):
         raise Refused("of: expected the ids of the questions answered")
-    asks = {x.id for x in s.items[n].thread if x.kind == "ask"} if n is not None else set()
+    asks = {x.id for x in s.tasks[n].thread if x.kind == "ask"} if n is not None else set()
     bad = [x for x in of if x not in asks]
     if bad:
-        raise Refused(f"of: {bad[0]} is not a question on this item")
+        raise Refused(f"of: {bad[0]} is not a question on this task")
     return list(dict.fromkeys(of))
 
 
@@ -88,9 +88,9 @@ def new_input(r: Run, a: Args) -> Outcome:
     files = placed(files, text)
     if not text and not files:
         raise Refused("empty input")
-    scope = item_at(s, a.get("scope")).n if a.get("scope") else None  # a merged item's replies go where it went
+    scope = task_at(s, a.get("scope")).n if a.get("scope") else None  # a merged task's replies go where it went
     rid = f"r{s.max_input + 1}"
-    answer = a.get("kind") == "answer" and scope is not None  # a form you sent: it goes to its item as it is
+    answer = a.get("kind") == "answer" and scope is not None  # a form you sent: it goes to its task as it is
     cancelled = a.get("kind") == "cancelled"  # a recording you cancelled: kept, not sent to anyone (B627)
     if cancelled and scope is not None:
         raise Refused("only a new input can be kept as cancelled")
@@ -101,10 +101,10 @@ def new_input(r: Run, a: Args) -> Outcome:
         r.emit(fix)
     if cancelled:
         return Outcome(f"ok {rid} kept as cancelled", "Kept in Inputs")
-    # your words on an item give the agent its turn: they approve a proposal (B818), take an item in review or done
-    # back to open (r961, r1082); see item_states.on_your_words
-    it = s.items.get(scope) if scope is not None else None
-    to = item_states.on_your_words(it.status) if it is not None and r.by == "you" else None
+    # your words on a task give the agent its turn: they approve a proposal (B818), take a task in review or done
+    # back to open (r961, r1082); see task_states.on_your_words
+    it = s.tasks.get(scope) if scope is not None else None
+    to = task_states.on_your_words(it.status) if it is not None and r.by == "you" else None
     if it is not None and to:
         r.emit(ev.FieldsSet(n=it.n, by=r.by, f={"status": to}, was={"status": it.status}, src=rid))
     return Outcome(f"ok {rid}", "Received")
@@ -210,7 +210,7 @@ def ack(r: Run, a: Args) -> Outcome:
 
 @handles("delete", "restore")
 def delete_input(r: Run, a: Args) -> Outcome:
-    """An input to Deleted with the items only it made, and back."""
+    """An input to Deleted with the tasks only it made, and back."""
     s = r.state
     rid = a.text("id")
     inp = s.inputs.get(rid)
@@ -245,6 +245,6 @@ def rescope(r: Run, a: Args) -> Outcome:
         raise Refused("no such input")
     if inp.kind == "cancelled":
         raise Refused(f"{inp.id} was not sent; send it first")
-    it = item_at(s, a.get("to"), r.ctx)
+    it = task_at(s, a.get("to"), r.ctx)
     r.emit(ev.InputRescoped(src=inp.id, to=it.n, by=r.by))
     return Outcome(f"ok {inp.id} now goes with {s.code(it.n)}", f"Moved {inp.id} to {s.code(it.n)}")

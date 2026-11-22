@@ -1,20 +1,20 @@
-// The item list's rows: an item (state icon, coloured code and title, one meta line), an item that waits on you (an
+// The task list's rows: a task (state icon, coloured code and title, one meta line), a task that waits on you (an
 // amber bar, what the agent said, its one action on the thumb side), a row you just acted on (one quiet line), and the
 // group heads. Props only: the list container works out what each row says.
 
 import { useRef, type ReactNode } from 'react'
 import { useSwiped } from '../../ui/rowSwipe'
 import { deskSlots, forward, backward, type Slot } from '../../model/actions'
-import { ITEM_ACTS, actTip } from '../../model/itemActs'
-import { closed, statusWord } from '../../model/items'
+import { TASK_ACTS, actTip } from '../../model/taskActs'
+import { closed, statusWord } from '../../model/tasks'
 import { needRow, shownStatus, type NeedAct } from '../../model/needStates'
-import type { Item, RuleProposal } from '../../model/types'
+import type { Task, RuleProposal } from '../../model/types'
 import { plural, whoName } from '../../model/words'
 import { Avatar, Count, DraftMark, Hit, Pic, Soft, Who } from '../../ui/bits'
 import { Icon, StateIcon } from '../../ui/Icon'
 import { ACTION_PILL, MUTED, NEED, PRI_TEXT, CODE_TEXT, actBg, actIcon, actText, needOfAct } from '../../ui/tones'
 
-/** What a row needs to know beyond its item. */
+/** What a row needs to know beyond its task. */
 export interface RowFacts {
   code: string
   parentCode: string | null
@@ -33,7 +33,7 @@ export interface RowFacts {
   news: { text: string; age: string; quiet: boolean } | null
   /** where the searched words were found, when not in the title */
   hitLine: string | null
-  /** the items it waits for (D152 prototype: blocked by) */
+  /** the tasks it waits for (D152 prototype: blocked by) */
   waitsFor?: readonly { n: number; code: string }[]
 }
 
@@ -47,7 +47,7 @@ export interface RowEvents {
   fold(n: number): void
   goto(n: number): void
   picture(group: string, f: string): void
-  /** a # tag tapped: the list shows the items with it (T855) */
+  /** a # tag tapped: the list shows the tasks with it (T855) */
   tag(t: string): void
 }
 
@@ -62,7 +62,7 @@ export interface RowLook {
   swiped?: number
 }
 
-/** A row's marks while an item is dragged. */
+/** A row's marks while a task is dragged. */
 const dragMarks = (look: RowLook) => (look.drag === 'dragging' ? { 'data-dragging': '' } : look.drag ? { 'data-drop': look.drag } : {})
 
 // The dark tints are opaque (the colours laid on the page's zinc-950): the row's buttons take the row's colour and
@@ -80,11 +80,11 @@ const marks = (look: RowLook) => ({
   ...(look.selected ? { 'data-sel': '' } : {}),
 })
 
-/** A # tag beside a title: a tap shows the items with it (T855). */
+/** A # tag beside a title: a tap shows the tasks with it (T855). */
 function TagMark({ t, onTag }: { t: string; onTag?(t: string): void }) {
   return (
     <button
-      title={`Items with #${t}`}
+      title={`Tasks with #${t}`}
       onClick={(e) => (e.stopPropagation(), onTag?.(t))}
       className="ml-1.5 inline-flex h-5 shrink-0 translate-y-[-1px] items-center rounded-md bg-zinc-100 px-1.5 align-middle text-xs font-medium text-zinc-600 first-of-type:ml-2 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
     >
@@ -93,7 +93,7 @@ function TagMark({ t, onTag }: { t: string; onTag?(t: string): void }) {
   )
 }
 
-function CodeTitle({ it, code, look, struck, tags, onTag }: { it: Item; code: string; look: RowLook; struck: boolean; tags?: readonly string[]; onTag?(t: string): void }) {
+function CodeTitle({ it, code, look, struck, tags, onTag }: { it: Task; code: string; look: RowLook; struck: boolean; tags?: readonly string[]; onTag?(t: string): void }) {
   // the phone: two lines, the tags after the title's words; the desktop: one line, the title cut short before the tags
   return (
     <p className={`line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1 ${tags?.length ? 'lg:flex lg:items-baseline' : ''}`}>
@@ -108,7 +108,7 @@ function CodeTitle({ it, code, look, struck, tags, onTag }: { it: Item; code: st
   )
 }
 
-/** A group's items finished, as a number and a thin bar (T856). */
+/** A group's tasks finished, as a number and a thin bar (T856). */
 function GroupProgress({ done, all }: { done: number; all: number }) {
   return (
     <span className="flex shrink-0 items-center gap-1.5" title={`${done} of ${all} finished`}>
@@ -128,7 +128,7 @@ function HitLine({ text, words }: { text: string | null; words: readonly string[
   ) : null
 }
 
-/** The agent working on an item in progress. */
+/** The agent working on a task in progress. */
 function WorkerMark({ worker }: { worker: NonNullable<RowFacts['worker']> }) {
   return (
     <span
@@ -142,7 +142,7 @@ function WorkerMark({ worker }: { worker: NonNullable<RowFacts['worker']> }) {
 }
 
 /** The desktop's quick actions, shown on hover over the end of the title, each in its own place. */
-function RowActs({ it, needs, on }: { it: Item; needs: boolean; on: RowEvents }) {
+function RowActs({ it, needs, on }: { it: Task; needs: boolean; on: RowEvents }) {
   const acts = deskSlots(it, needs).filter((a): a is Slot => a !== null)
   return (
     <div className="relative hidden shrink-0 self-stretch bg-inherit lg:block">
@@ -151,8 +151,8 @@ function RowActs({ it, needs, on }: { it: Item; needs: boolean; on: RowEvents })
           <button
             key={act}
             title={actTip(act)}
-            aria-label={ITEM_ACTS[act].label}
-            onClick={(e) => (e.stopPropagation(), f === 'reopen' ? on.reopen(it.n) : on.act(it.n, f, v, ITEM_ACTS[act].label, e.currentTarget))}
+            aria-label={TASK_ACTS[act].label}
+            onClick={(e) => (e.stopPropagation(), f === 'reopen' ? on.reopen(it.n) : on.act(it.n, f, v, TASK_ACTS[act].label, e.currentTarget))}
             className={`grid size-8 place-items-center rounded-lg hover:bg-zinc-900/7 dark:hover:bg-white/10 ${actText(act)}`}
           >
             <Icon n={actIcon(act)} c="size-[18px]" />
@@ -164,7 +164,7 @@ function RowActs({ it, needs, on }: { it: Item; needs: boolean; on: RowEvents })
 }
 
 /** The phone's swipe layers under a row: right, the step forward; left, the way back. */
-function SwipeLayers({ it, openKids, swiped, on, children }: { it: Item; openKids: number; swiped?: number; on: RowEvents; children: ReactNode }) {
+function SwipeLayers({ it, openKids, swiped, on, children }: { it: Task; openKids: number; swiped?: number; on: RowEvents; children: ReactNode }) {
   const row = useRef<HTMLDivElement>(null)
   useSwiped(row, swiped)
   const fwd = forward(it)
@@ -182,7 +182,7 @@ function SwipeLayers({ it, openKids, swiped, on, children }: { it: Item; openKid
           <>
             <Icon n={actIcon(fwd[2])} c="size-5" />
             <span className="flex flex-col leading-tight">
-              {ITEM_ACTS[fwd[2]].label}
+              {TASK_ACTS[fwd[2]].label}
               {left ? <span className="text-xs font-normal">{left} open</span> : null}
             </span>
           </>
@@ -192,11 +192,11 @@ function SwipeLayers({ it, openKids, swiped, on, children }: { it: Item; openKid
         {back.map(([f, v, act], i) => (
           <button
             key={act}
-            onClick={() => (act === 'not-yet' ? on.reopen(it.n) : on.act(it.n, f, v, ITEM_ACTS[act].label))}
+            onClick={() => (act === 'not-yet' ? on.reopen(it.n) : on.act(it.n, f, v, TASK_ACTS[act].label))}
             className={`flex w-19 flex-col items-center justify-center gap-1 text-xs font-semibold text-white ${actBg(act) || (i % 2 ? 'bg-zinc-500 dark:bg-zinc-600' : 'bg-zinc-600 dark:bg-zinc-700')}`}
           >
             <Icon n={actIcon(act)} c="size-5" />
-            {ITEM_ACTS[act].label}
+            {TASK_ACTS[act].label}
           </button>
         ))}
       </div>
@@ -207,7 +207,7 @@ function SwipeLayers({ it, openKids, swiped, on, children }: { it: Item; openKid
   )
 }
 
-function Shell({ it, look, facts, on, children }: { it: Item; look: RowLook; facts: RowFacts; on: RowEvents; children: ReactNode }) {
+function Shell({ it, look, facts, on, children }: { it: Task; look: RowLook; facts: RowFacts; on: RowEvents; children: ReactNode }) {
   return (
     <article data-n={it.n} {...dragMarks(look)} className={ARTICLE}>
       <SwipeLayers it={it} openKids={facts.openKids} swiped={look.swiped} on={on}>
@@ -224,8 +224,8 @@ export const NARROW_HIDE = '@max-[324px]/list:hidden wide:@max-[378px]/list:hidd
 export const NARROW_PILL =
   '@max-[324px]/list:w-8 @max-[324px]/list:min-w-0 @max-[324px]/list:px-0 wide:@max-[378px]/list:w-8 wide:@max-[378px]/list:min-w-0 wide:@max-[378px]/list:px-0 huge:@max-[414px]/list:w-8 huge:@max-[414px]/list:min-w-0 huge:@max-[414px]/list:px-0'
 
-export function ItemRow(props: {
-  it: Item
+export function TaskRow(props: {
+  it: Task
   depth: number
   band: string
   foldable: boolean
@@ -281,7 +281,7 @@ export function ItemRow(props: {
     it.group ? (
       <GroupProgress key="c" done={facts.kids?.done ?? 0} all={facts.kids?.all ?? 0} />
     ) : facts.kids ? (
-      <Count key="c" icon="subitems" n={`${facts.kids.done}/${facts.kids.all}`} label="Subitems finished" />
+      <Count key="c" icon="subtasks" n={`${facts.kids.done}/${facts.kids.all}`} label="Subtasks finished" />
     ) : facts.talk ? (
       <Count key="c" icon="comment" n={facts.talk} label={plural(facts.talk, 'comment')} />
     ) : null,
@@ -320,7 +320,7 @@ export function ItemRow(props: {
         {foldable ? (
           <button
             aria-expanded={!folded}
-            aria-label={`${folded ? 'Show' : 'Hide'} subitems`}
+            aria-label={`${folded ? 'Show' : 'Hide'} subtasks`}
             onClick={(e) => (e.stopPropagation(), on.fold(it.n))}
             className={`-my-2 -mr-1 grid size-11 shrink-0 place-items-center rounded-full hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 ${MUTED}`}
           >
@@ -335,10 +335,10 @@ export function ItemRow(props: {
 /** `said`: what you just did, while the list holds still: the same row, its button disabled saying it in the past tense
  * (B699, as a decided card, r1003); its title struck only when that closed it (Accepted, Declined), never when approved
  * (B766: it is work to do now). */
-export function NeedsRow({ it, depth, facts, look, excerpt, said, struck = false, act, on }: { it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; struck?: boolean; act?: NeedAct; on: RowEvents }) {
+export function NeedsRow({ it, depth, facts, look, excerpt, said, struck = false, act, on }: { it: Task; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; struck?: boolean; act?: NeedAct; on: RowEvents }) {
   // its pill: what it needs from you (model/needStates); held after you acted, as it was
   const v = act ?? needRow(it)?.act ?? 'accept'
-  const label = said ?? ITEM_ACTS[v].label
+  const label = said ?? TASK_ACTS[v].label
   return (
     <Shell it={it} look={look} facts={facts} on={on}>
       <div
@@ -396,7 +396,7 @@ export function NeedsRow({ it, depth, facts, look, excerpt, said, struck = false
   )
 }
 
-/** An agent's proposed change to the rules, waiting on you (I693): first in Needs you, as an item's proposal is; it
+/** An agent's proposed change to the rules, waiting on you (I693): first in Needs you, as a task's proposal is; it
  * opens the proposal, where its changes are seen before Approve. */
 export function ProposalRow({ p, onOpen }: { p: RuleProposal; onOpen(): void }) {
   return (
@@ -425,7 +425,7 @@ export function ProposalRow({ p, onOpen }: { p: RuleProposal; onOpen(): void }) 
   )
 }
 
-/** Under a parent, one line for its subitems in Later, which the view hides; a tap shows them. */
+/** Under a parent, one line for its subtasks in Later, which the view hides; a tap shows them. */
 export function HiddenKidsLine({ parent, depth, open, later, onToggle }: { parent: number; depth: number; open: boolean; later: number; onToggle(): void }) {
   return (
     <button
@@ -453,5 +453,5 @@ export function ArchiveAllLine({ n, onArchive }: { n: number; onArchive(): void 
   )
 }
 
-/** An item row's agent mark says who is on it, never the session (a list names no session, T711). */
+/** A task row's agent mark says who is on it, never the session (a list names no session, T711). */
 export const workerTip = (by: string) => `${whoName(by)} is on it`

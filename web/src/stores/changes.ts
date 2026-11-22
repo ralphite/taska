@@ -4,14 +4,14 @@
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { Command } from '../api/taska'
-import type { DocPatch, InputPatch, ItemPatch } from '../model/project'
+import type { DocPatch, InputPatch, TaskPatch } from '../model/project'
 import type { KeyValueStore } from './storage'
 
 export interface PendingChange {
   id: string
   slug: string
   commands: Command[]
-  patches: ItemPatch[]
+  patches: TaskPatch[]
   /** inputs shown changed meanwhile (an edit, details added); not kept over a reload */
   inputPatches?: InputPatch[]
   /** documents shown changed meanwhile; not kept over a reload */
@@ -41,7 +41,7 @@ const KEY = 'taska.pending.'
 interface Kept {
   id: string
   o: Command | Command[]
-  patches: ItemPatch[]
+  patches: TaskPatch[]
   t: number
 }
 
@@ -49,7 +49,7 @@ export function createChangesStore(kv: KeyValueStore): ChangesStore {
   const keep = (slug: string, list: PendingChange[]) => {
     const mine: Kept[] = list
       .filter((c) => c.slug === slug && c.mode !== 'show')
-      .map((c) => ({ id: c.id, o: c.commands.length === 1 ? c.commands[0] : c.commands, patches: c.patches.filter((x) => !x.add), t: c.t })) // a stand-in item is not kept
+      .map((c) => ({ id: c.id, o: c.commands.length === 1 ? c.commands[0] : c.commands, patches: c.patches.filter((x) => !x.add), t: c.t })) // a stand-in task is not kept
     kv.setJson(KEY + slug, mine.length ? mine : null)
   }
   return createStore<ChangesState>()((set, get) => ({

@@ -21,7 +21,7 @@ import { createDragStore, type DragStore } from '../stores/drag'
 import { createFeedbackStore, type FeedbackStore } from '../stores/feedback'
 import { createFindStore, type FindStore } from '../stores/find'
 import { createGripsStore, type GripsStore } from '../stores/grips'
-import { createItemViewStore, type ItemViewStore } from '../stores/itemView'
+import { createTaskViewStore, type TaskViewStore } from '../stores/taskView'
 import { createKeptEditsStore, type KeptEditsStore } from '../stores/keptEdits'
 import { createMediaStore, type MediaStore } from '../stores/media'
 import { createOutboxStore, type OutboxStore } from '../stores/outbox'
@@ -48,7 +48,7 @@ export interface Stores {
   outbox: OutboxStore
   feedback: FeedbackStore
   ui: UiStore
-  itemView: ItemViewStore
+  taskView: TaskViewStore
   /** the search (F479): Home's field, the desktop's dialog, the phone's page */
   find: FindStore
   recent: RecentStore
@@ -78,7 +78,7 @@ export function makeStores(kv: KeyValueStore, history: History, session: KeyValu
     outbox: createOutboxStore(kv),
     feedback: createFeedbackStore(kv),
     ui: createUiStore(kv),
-    itemView: createItemViewStore(kv),
+    taskView: createTaskViewStore(kv),
     find: createFindStore(),
     recent: createRecentStore(kv),
     drafts: createDraftsStore(kv),

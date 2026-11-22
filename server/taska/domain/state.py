@@ -9,26 +9,26 @@ from dataclasses import dataclass, field
 from typing import Dict, List, NamedTuple, Optional, Set, Union
 
 from .events import Event
-from .model import Doc, Input, Item, Message, Voice
+from .model import Doc, Input, Task, Message, Voice
 from .vocab import CODE_LETTER
 
 
 class Claim(NamedTuple):
-    """An agent session's hold on an item: who, since when (seconds)."""
+    """An agent session's hold on a task: who, since when (seconds)."""
 
     who: str
     since: float
 
 
 class TakenSource(NamedTuple):
-    """An input deletion took this input out of an item's sources, at this place."""
+    """An input deletion took this input out of a task's sources, at this place."""
 
     n: int
     at: int
 
 
 class TakenMessage(NamedTuple):
-    """An input deletion took this message of the user's off an item."""
+    """An input deletion took this message of the user's off a task."""
 
     n: int
     message: Message
@@ -39,7 +39,7 @@ Taken = Union[TakenSource, TakenMessage]
 
 @dataclass
 class DeletedGroup:
-    """Items deleted by themselves in one change (an item and its subitems)."""
+    """Tasks deleted by themselves in one change (a task and its subtasks)."""
 
     ns: List[int]
     t: str
@@ -48,7 +48,7 @@ class DeletedGroup:
 
 @dataclass
 class ProjectState:
-    items: Dict[int, Item] = field(default_factory=dict)
+    tasks: Dict[int, Task] = field(default_factory=dict)
     inputs: Dict[str, Input] = field(default_factory=dict)
     docs: Dict[int, Doc] = field(default_factory=dict)
     voices: Dict[str, Voice] = field(default_factory=dict)  # every voice note's words, by its file (B682)
@@ -65,17 +65,17 @@ class ProjectState:
     undo_took: Dict[int, List[int]] = field(default_factory=dict)  # each undo's list of them
     deletion_took: Dict[int, List[Taken]] = field(default_factory=dict)  # each input deletion: what it took off
     deleted_groups: List[DeletedGroup] = field(default_factory=list)
-    addressed_items: Set[int] = field(default_factory=set)  # items with a message to an agent session (@name)
+    addressed_tasks: Set[int] = field(default_factory=set)  # tasks with a message to an agent session (@name)
     claims: Dict[int, Claim] = field(default_factory=dict)
-    first_acts: Dict[str, Dict[int, int]] = field(default_factory=dict)  # agent session -> item -> its first change
+    first_acts: Dict[str, Dict[int, int]] = field(default_factory=dict)  # agent session -> task -> its first change
 
     def code(self, n: Optional[int]) -> str:
-        """An item's code: T and its number, padded to the width of the largest number."""
-        it = self.items.get(n) if n is not None else None
+        """A task's code: T and its number, padded to the width of the largest number."""
+        it = self.tasks.get(n) if n is not None else None
         return (CODE_LETTER if it else "?") + str(n).zfill(len(str(self.max_n)))
 
     def bare_code(self, n: Optional[int]) -> Optional[str]:
-        it = self.items.get(n) if n is not None else None
+        it = self.tasks.get(n) if n is not None else None
         return f"{CODE_LETTER}{it.n}" if it else None
 
     @property
@@ -84,15 +84,15 @@ class ProjectState:
         return self.docs.get(self.rules_d) if self.rules_d else None
 
     def docs_of(self, n: int) -> List[Doc]:
-        """The documents of an item that are not deleted."""
+        """The documents of a task that are not deleted."""
         return [d for d in self.docs.values() if d.n == n and not d.deleted]
 
-    def live_items(self) -> List[Item]:
-        """Items not merged and not deleted."""
-        return [i for i in self.items.values() if i.live]
+    def live_tasks(self) -> List[Task]:
+        """Tasks not merged and not deleted."""
+        return [i for i in self.tasks.values() if i.live]
 
-    def children(self, n: int) -> List[Item]:
-        return [k for k in self.items.values() if k.parent == n and k.live]
+    def children(self, n: int) -> List[Task]:
+        return [k for k in self.tasks.values() if k.parent == n and k.live]
 
     def event(self, seq: int) -> Event:
         return self.events[seq - 1]

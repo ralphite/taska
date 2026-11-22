@@ -48,6 +48,6 @@ describe('the Rules tab (r1128 #9)', () => {
     const m = { ...modelOf([]), docs: [rulesDocOf()] }
     expect(placeDoc({ tab: 'rules', place: { kind: 'tab' } }, m)).toBe(5)
     expect(placeDoc({ tab: 'rules', place: { kind: 'rules' } }, m)).toBe(5)
-    expect(placeDoc({ tab: 'items', place: { kind: 'tab' } }, m)).toBe(null)
+    expect(placeDoc({ tab: 'tasks', place: { kind: 'tab' } }, m)).toBe(null)
   })
 })

@@ -7,9 +7,9 @@ from __future__ import annotations
 
 from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 
-from ..domain.rules import RefContext, item_at
+from ..domain.rules import RefContext, task_at
 from ..domain.vocab import MAX_OPS, Refused
-from . import docs, filings, inputs, items, project, rules  # noqa: F401  (they register their handlers)
+from . import docs, filings, inputs, tasks, project, rules  # noqa: F401  (they register their handlers)
 from .base import HANDLERS, Args, Changes, Outcome, Run
 
 Command = Union[Mapping[str, Any], Refused]  # a command, or why its line could not be read
@@ -22,7 +22,7 @@ def run_one(r: Run, raw: Mapping[str, Any]) -> Outcome:
         raise Refused(f"unknown input {src}")
     handler = HANDLERS.get(str(a.name))
     if handler is None:
-        item_at(r.state, a.get("ref", ""), r.ctx)  # a bad reference is what is told first
+        task_at(r.state, a.get("ref", ""), r.ctx)  # a bad reference is what is told first
         raise Refused(f"unknown op '{a.name}'")
     return handler(r, a)
 

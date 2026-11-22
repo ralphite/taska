@@ -1,17 +1,17 @@
-// Which items a list shows: by tab, by the preset view (on Items the status is a view, not a filter) and by the
+// Which tasks a list shows: by tab, by the preset view (on Tasks the status is a view, not a filter) and by the
 // filters, in the list's order. Pure: from the project and the list's settings.
 
-import { closed } from './items'
+import { closed } from './tasks'
 import { needsYou } from './needStates'
 import type { ListKey, ListQuery } from './route'
-import type { Item } from './types'
+import type { Task } from './types'
 import { OLD_LETTERS } from './vocab.gen'
 import { ARCHIVE_FILTER_WORD, SORT_WORDS, STATUS_FILTER_WORD, STATUS_WORD, WHEN_WORD, type Tab } from './words'
 
-/** An item's words, for picking one by them on the page: its code (and the older ones: B12 is T12), tags, title, text, next and talk (what the server finds
- * an item by is gathered in one place too: domain/finding.item_text). */
-const HAY = new WeakMap<Item, string>()
-export function hay(it: Item): string {
+/** A task's words, for picking one by them on the page: its code (and the older ones: B12 is T12), tags, title, text, next and talk (what the server finds
+ * a task by is gathered in one place too: domain/finding.task_text). */
+const HAY = new WeakMap<Task, string>()
+export function hay(it: Task): string {
   let h = HAY.get(it)
   if (h === undefined) {
     h = (it.code + ' ' + [...OLD_LETTERS].map((l) => l + it.n).join(' ') + ' ' + it.tags.map((t) => '#' + t).join(' ') + ' ' + it.title + ' ' + it.body + ' ' + it.next + ' ' + it.thread.map((x) => x.text).join(' ')).toLowerCase()
@@ -20,19 +20,19 @@ export function hay(it: Item): string {
   return h
 }
 
-/** On Items with the usual order the status is the preset view the list shows, not a filter laid over it. */
-export const statusIsView = (tab: Tab, list: ListQuery) => tab === 'items' && list.sort === 'all'
+/** On Tasks with the usual order the status is the preset view the list shows, not a filter laid over it. */
+export const statusIsView = (tab: Tab, list: ListQuery) => tab === 'tasks' && list.sort === 'all'
 
 /** Anything narrows the list: a filter. */
 export const filtered = (tab: Tab, list: ListQuery) =>
   !!(list.tag !== 'all' || list.when !== 'all' || (list.status !== 'all' && !statusIsView(tab, list)) || list.pri !== 'all')
 
-/** Items shows the work; Archive what was put away (the Rules tab is the rules document, I693: no items). */
-export const inTab = (it: Item, t: Tab | string) => (t === 'rules' ? false : t === 'archive' ? it.archived : !it.archived)
+/** Tasks shows the work; Archive what was put away (the Rules tab is the rules document, I693: no tasks). */
+export const inTab = (it: Task, t: Tab | string) => (t === 'rules' ? false : t === 'archive' ? it.archived : !it.archived)
 
-export const tabOf = (it: Item): Tab => (it.archived ? 'archive' : 'items')
+export const tabOf = (it: Task): Tab => (it.archived ? 'archive' : 'tasks')
 
-function statusOk(it: Item, tab: Tab, list: ListQuery): boolean {
+function statusOk(it: Task, tab: Tab, list: ListQuery): boolean {
   const s = list.status
   if (tab === 'archive')
     return it.archived && (s === 'all' || s === 'archived' || (s === 'active' ? !closed(it.status) : it.status === s))
@@ -47,18 +47,18 @@ function statusOk(it: Item, tab: Tab, list: ListQuery): boolean {
   return it.status === s
 }
 
-function tabOk(_it: Item, tab: Tab): boolean {
+function tabOk(_it: Task, tab: Tab): boolean {
   return tab !== 'rules'
 }
 
-export function visible(items: readonly Item[], tab: Tab, list: ListQuery): Item[] {
+export function visible(tasks: readonly Task[], tab: Tab, list: ListQuery): Task[] {
   const order =
     list.sort === 'new'
-      ? (a: Item, b: Item) => b.n - a.n
+      ? (a: Task, b: Task) => b.n - a.n
       : list.sort === 'upd'
-        ? (a: Item, b: Item) => (b.t1 || '').localeCompare(a.t1 || '') || b.n - a.n
-        : (a: Item, b: Item) => a.pri.localeCompare(b.pri) || a.n - b.n // same priority: oldest first, like /next
-  return items
+        ? (a: Task, b: Task) => (b.t1 || '').localeCompare(a.t1 || '') || b.n - a.n
+        : (a: Task, b: Task) => a.pri.localeCompare(b.pri) || a.n - b.n // same priority: oldest first, like /next
+  return tasks
     .filter(
       (it) =>
         !it.mergedInto &&
@@ -71,8 +71,8 @@ export function visible(items: readonly Item[], tab: Tab, list: ListQuery): Item
     .sort(order)
 }
 
-/** Not finished, on Items. */
-export const openCount = (items: readonly Item[]) => items.filter((it) => !it.mergedInto && inTab(it, 'items') && !closed(it.status)).length
+/** Not finished, on Tasks. */
+export const openCount = (tasks: readonly Task[]) => tasks.filter((it) => !it.mergedInto && inTab(it, 'tasks') && !closed(it.status)).length
 
 /** 1234 reads 1k. */
 export const tabNumber = (n: number) => (n >= 1000 ? Math.floor(n / 1000) + 'k' : n || '')
@@ -93,6 +93,6 @@ export function filtersSet(tab: Tab, list: ListQuery): [ListKey, string][] {
 export const showsView = (list: Record<string, string>, v: Record<'tag' | 'when' | 'status' | 'pri' | 'sort', string>) => (['tag', 'when', 'status', 'pri', 'sort'] as const).every((k) => list[k] === v[k])
 
 /** The list shows the work order (so a row dragged near another's top or bottom is put before or after it, B754):
- * Items in its own order, not the finished nor what waits on you. */
+ * Tasks in its own order, not the finished nor what waits on you. */
 export const inWorkOrder = (tab: Tab, list: ListQuery) =>
-  tab === 'items' && list.sort === 'all' && !['done', 'dropped', 'wait'].includes(list.status)
+  tab === 'tasks' && list.sort === 'all' && !['done', 'dropped', 'wait'].includes(list.status)

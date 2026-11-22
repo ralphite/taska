@@ -1,12 +1,12 @@
 // T768 (Yadong r1290, r1296): the Agents sheet lists every session by its app, a manager's workers under it, each as it
 // is now; the one working or waiting for you is picked as it opens; each app's way back to its session.
 import { expect, test } from 'vitest'
-import { ALL_GONE, ITEMS, MANAGER, SID, WAITING, WORKING, sessionKey } from '../../stories/agentsFixtures'
+import { ALL_GONE, TASKS, MANAGER, SID, WAITING, WORKING, sessionKey } from '../../stories/agentsFixtures'
 import { modelOf } from '../../stories/fixtures'
 import type { AgentSeen } from '../../model/types'
 import { agentsFacts, sessionState } from './agentsFacts'
 
-const at = (agents: AgentSeen[]) => modelOf(ITEMS, [], { agents })
+const at = (agents: AgentSeen[]) => modelOf(TASKS, [], { agents })
 const rows = (agents: AgentSeen[]) => agentsFacts(at(agents), null).groups.map((g) => [g.name, g.sessions.map((s) => [s.name, s.state, s.worker])])
 
 test('grouped by app in a fixed order; workers right under their manager; waiting first, then the latest', () => {
@@ -30,7 +30,7 @@ test('the session waiting for you is picked as the sheet opens, else the one wor
   expect(agentsFacts(at([]), null)).toMatchObject({ groups: [], start: null })
 })
 
-test('states: as the app says; else by when last heard of and whether on an item; Codex idle and quiet is gone', () => {
+test('states: as the app says; else by when last heard of and whether on a task; Codex idle and quiet is gone', () => {
   const t = 1_800_000_000_000
   const s = (o: object) => ({ name: 'x', t: t - 60_000, ...o })
   expect(sessionState('claude-code', s({ status: 'busy' }), false, t)).toBe('working')
@@ -69,10 +69,10 @@ test("each app's way back: Claude Code's link by the session's id, Codex's resum
   expect(all.find((s) => s.name === 'Shop lead')?.link).toBeNull()
 })
 
-test("recent activity: the session's own last messages, the latest first, each with its item", () => {
+test("recent activity: the session's own last messages, the latest first, each with its task", () => {
   const w1 = agentsFacts(at(MANAGER), null).groups[0].sessions.find((s) => s.name === 'worker-1')
-  expect(w1?.activity.map((a) => [a.when, a.item.code, a.text])).toEqual([
-    ['6m', 'T005', 'Found words in the talk now show under the item, marked.'],
+  expect(w1?.activity.map((a) => [a.when, a.task.code, a.text])).toEqual([
+    ['6m', 'T005', 'Found words in the talk now show under the task, marked.'],
     ['20m', 'T005', 'Started: the search reads the talk as well as the titles.'],
   ])
 })

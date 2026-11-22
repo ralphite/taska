@@ -6,7 +6,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
 import { draftTarget } from '../../model/draftTarget'
 import { fileUrl } from '../../model/filesPass'
-import { useAway, useFiles, useItemWorld, useLitFades, useProjectModel, type ProjectRoute } from '../../app/hooks'
+import { useAway, useFiles, useTaskWorld, useLitFades, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import type { DraftKey } from '../../model/draftTarget'
 import { fixRange, voiceStretches } from '../../model/doubts'
 import { codeOf, findRef } from '../../model/project'
@@ -63,11 +63,11 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
   const said = useMemo(() => (m ? saidRows(m, { upTo, lit, opened, drafts, mode, title: (s) => projects?.find((p) => p.name === s)?.title || s, adding: new Set(onItsWay.split(' ')) }) : null), [m, upTo, lit, opened, drafts, mode, projects, onItsWay])
   useLitFades(lit, !!lit && !!said?.rows.some((x) => x.r.id === lit))
   const media = useFiles(route.slug)
-  const world = useItemWorld(m, route.slug)
+  const world = useTaskWorld(m, route.slug)
   // a code in its words opens what it names, as the Inputs tab's do
   const openRef = (c: string) => {
     const to = m ? findRef(m, c) : null
-    if (to?.kind === 'item' && m) app.nav.openItem(codeOf(m, to.n))
+    if (to?.kind === 'task' && m) app.nav.openTask(codeOf(m, to.n))
     else if (to?.kind === 'doc') app.docs.open(to.d)
   }
   if (!m || !said) return null
@@ -85,7 +85,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
         files={(f) => <FileChips files={f} url={url} play={media.play} tidy={media.tidy} on={media.on} />}
         words={inputWords(world, { ref: openRef, picture: (f, all) => media.on.view(f, all) })}
         on={{
-          goto: (n) => app.nav.openItem(codeOf(m, n)),
+          goto: (n) => app.nav.openTask(codeOf(m, n)),
           more: view.toggle,
           // Comment: the box at the top takes it, the cursor in it
           append: (id) => {

@@ -25,7 +25,7 @@ export interface GoneProject {
   name: string
   title: string
   when: string
-  items: number
+  tasks: number
 }
 
 export interface ProjectsFacts {
@@ -168,7 +168,7 @@ function PhoneMore({ k, title, on }: { k: string; title: string; on: ProjectsEve
  * each row's actions under its ⋯. */
 export function ProjectsBody({ f, on, desk }: { f: ProjectsFacts; on: ProjectsEvents; desk: boolean }) {
   if (!f.live) return desk ? <Loading /> : <Skeleton shape="tile" cls="px-2 py-3" />
-  const deleted = (d: GoneProject) => `Deleted ${d.when} · ${plural(d.items, 'item')}`
+  const deleted = (d: GoneProject) => `Deleted ${d.when} · ${plural(d.tasks, 'task')}`
   if (!desk)
     return (
       <>

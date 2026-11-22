@@ -1,5 +1,5 @@
-"""B607 (Yadong's choice, #7744): words Yadong writes on an item that waits for review, without Accept, take it back to
-in progress, so its mark and "Your agent's turn" agree. An agent's words, and Accept, do not. r1082: a reply on an item
+"""B607 (Yadong's choice, #7744): words Yadong writes on a task that waits for review, without Accept, take it back to
+in progress, so its mark and "Your agent's turn" agree. An agent's words, and Accept, do not. r1082: a reply on a task
 already done opens it again too. Change only on Yadong's explicit word."""
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ import urllib.request
 from support import ServerCase
 
 
-class ReplyOnAnItemInReview(ServerCase):
+class ReplyOnAnTaskInReview(ServerCase):
     def status(self, code: str) -> str:
         return urllib.request.urlopen(self.p + f"/{code}?ui=1", timeout=10).read().decode().split("\n", 1)[0]
 
@@ -25,7 +25,7 @@ class ReplyOnAnItemInReview(ServerCase):
         self.page({"op": "input", "text": "The sort is lost too.", "scope": code})
         self.assertIn("open", self.status(code))
 
-    def test_a_reply_on_a_done_item_opens_it(self) -> None:
+    def test_a_reply_on_a_done_task_opens_it(self) -> None:
         code = self.do("new P1 now Import keeps the order\n").split()[1]
         self.page({"op": "set", "ref": code, "f": {"status": "done"}})  # Yadong marks it done
         self.assertIn("done", self.status(code))

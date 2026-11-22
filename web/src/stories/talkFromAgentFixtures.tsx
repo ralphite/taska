@@ -1,9 +1,9 @@
 // The helpers TalkFromAgent's stories share: how each draws its part.
 import type { StoryObj } from '@storybook/react-vite'
-import type { Item, Message } from '../model/types'
+import type { Task, Message } from '../model/types'
 import { Frames } from './Frames'
-import { T, item } from './fixtures'
-import { talkOf, you, type PageOpts } from './itemPage'
+import { T, task } from './fixtures'
+import { talkOf, you, type PageOpts } from './taskPage'
 
 type Story = StoryObj
 
@@ -34,8 +34,8 @@ export const LONG = [
   'One question for later: should Refunded orders show their refund date too?',
   'Ready for you to try on the orders page.',
 ].join('\n')
-export const at = (thread: Message[], o: PageOpts = {}, f: Partial<Item> = {}): Story => ({
-  render: () => <Frames phoneWidth={393} deskWidth={720}>{(layout) => talkOf(item({ n: 12, thread, ...f }), layout === 'desk', o)}</Frames>,
+export const at = (thread: Message[], o: PageOpts = {}, f: Partial<Task> = {}): Story => ({
+  render: () => <Frames phoneWidth={393} deskWidth={720}>{(layout) => talkOf(task({ n: 12, thread, ...f }), layout === 'desk', o)}</Frames>,
 })
 export const after = (x: Message) => [x, you(9, 'Thanks.')].map((m, i) => (i ? { ...m, t: later(5) } : m))
 

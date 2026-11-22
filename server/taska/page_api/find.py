@@ -1,7 +1,7 @@
 """The search (F479: Home's, ⌘K, the phone's) as the page draws it: what was found in every project, closest first,
-each with its project. An item comes as the list has it (item_view, with its parent's code and its subitems
-counted); an input with its words (a voice note's too), when it was said and the item it became; a document with its
-title and its item; a section of the rules with its title."""
+each with its project. A task comes as the list has it (task_view, with its parent's code and its subtasks
+counted); an input with its words (a voice note's too), when it was said and the task it became; a document with its
+title and its task; a section of the rules with its title."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from ..domain.finding import Found, rule_sections, terms
 from ..domain.vocab import CLOSED
 from ..domain.voices import said
 from ..services.workspace import Workspace
-from .views import View, item_view
+from .views import View, task_view
 
 
 def find_view(ws: Workspace, q: str, here: str) -> Dict[str, Any]:
@@ -38,12 +38,12 @@ def find_view(ws: Workspace, q: str, here: str) -> Dict[str, Any]:
                     if d is None or not got:
                         continue
                     row.update(code="Rules", d=d.d, title=got[0][1])
-                elif f.kind == "items":
-                    it = st.items.get(f.n or 0)
+                elif f.kind == "tasks":
+                    it = st.tasks.get(f.n or 0)
                     if it is None:
                         continue
                     kids = st.children(it.n)
-                    row["item"] = item_view(st, p.agents, it)
+                    row["task"] = task_view(st, p.agents, it)
                     row["parentCode"] = st.code(it.parent) if it.parent else None
                     row["kids"] = {"done": sum(1 for k in kids if k.status in CLOSED), "all": len(kids)} if kids else None
                 elif f.kind == "inputs":

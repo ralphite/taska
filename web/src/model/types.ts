@@ -67,14 +67,14 @@ export interface Wait {
   files: FileRef[]
 }
 
-export interface Item {
+export interface Task {
   n: number
   code: string
   /** what it is (#bug, #手机): tags in place of the old types (T855), without the #, in lower case */
   tags: string[]
-  /** a group (T856): it holds items and gives them its words; no status of its own, never done by itself */
+  /** a group (T856): it holds tasks and gives them its words; no status of its own, never done by itself */
   group?: boolean
-  /** the items it waits for (T857): agents are given it once they are finished */
+  /** the tasks it waits for (T857): agents are given it once they are finished */
   after?: number[]
   title: string
   body: string
@@ -126,7 +126,7 @@ export interface Input {
   org: OrgNote | null
   seq: number
   v: number
-  /** answer: a form sent on its item; cancelled: a recording cancelled with Esc, kept, not sent (B627) */
+  /** answer: a form sent on its task; cancelled: a recording cancelled with Esc, kept, not sent (B627) */
   kind?: 'answer' | 'cancelled'
   /** the page's own id for it, as it was sent (its outbox entry's): one still on its way that Taska has shows once */
   q?: string
@@ -179,7 +179,7 @@ export interface Doc {
   whole: Comment[]
   unanswered: number
   resolved: Record<string, string>
-  /** the project's rules (I693): one document of the project, not of an item (n 0) */
+  /** the project's rules (I693): one document of the project, not of a task (n 0) */
   kind?: 'rules'
   proposals?: RuleProposal[]
   history?: RuleVersion[]
@@ -237,7 +237,7 @@ export interface RuleProposal {
 
 /** One session of an agent (F768): its name and last call; the id its app knows it by (sid) and what the app says
  * of it now (Claude Code and Codex: busy, idle, waiting on the user, exited; since when, what it waits on, its
- * folder); whether a waker waits for work for it (Antigravity); the item it is on and since when; the session that
+ * folder); whether a waker waits for work for it (Antigravity); the task it is on and since when; the session that
  * started it (a manager's worker). */
 export interface AgentSession {
   name: string
@@ -326,7 +326,7 @@ export interface LogField {
   now: string | number | boolean | null
 }
 
-/** One change of the project's log, as the server lists it: who, when, its stored kind and what it names (items by
+/** One change of the project's log, as the server lists it: who, when, its stored kind and what it names (tasks by
  * number, each named in `codes` by its code; inputs by id; documents by number). */
 export type LogRow = {
   seq: number
@@ -382,12 +382,12 @@ export interface DeletedInput {
   text: string
   files: number
   scope: number | null
-  items: { n: number; code: string; title: string; tags: string[] }[]
+  tasks: { n: number; code: string; title: string; tags: string[] }[]
   kept: { n: number; code: string; title: string; tags: string[]; why: string }[]
 }
 
 export interface DeletedThing {
-  kind: 'item' | 'doc'
+  kind: 'task' | 'doc'
   n?: number
   code?: string
   d?: number
@@ -445,12 +445,12 @@ export interface ViewAnswer {
   cursor: string
   full: boolean
   same?: never
-  items: Item[]
+  tasks: Task[]
   inputs: Input[]
   docs: Doc[]
   /** every voice note's words (B682) */
   voices?: Voice[]
-  removed?: { items: number[]; inputs: string[]; docs: number[]; voices?: string[] }
+  removed?: { tasks: number[]; inputs: string[]; docs: number[]; voices?: string[] }
   project: ProjectFacts
   server: ServerFacts
 }
@@ -470,7 +470,7 @@ export interface ProjectRow {
   icon?: string
   open: number
   needs: number
-  /** done or dropped on Items (F667: a list kept from before may not have these) */
+  /** done or dropped on Tasks (F667: a list kept from before may not have these) */
   closed?: number
   inputs?: number
   docs?: number
@@ -493,7 +493,7 @@ export interface Need {
   p?: number
 }
 
-/** One of your views of the item list: the filters it sets, with a name (the same in every project). */
+/** One of your views of the task list: the filters it sets, with a name (the same in every project). */
 export interface SavedView {
   name: string
   tag: string

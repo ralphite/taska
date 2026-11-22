@@ -31,23 +31,23 @@ export const form = (page: Page, words: string) => shown(docBlocks(page).locator
 /** The line over the box's Send choices. */
 /** Send choices: the box line's on the desktop, the document's own line on the phone (no box over it, B643). */
 export const sendChoices = (page: Page) => shown(page.getByRole('button', { name: 'Send choices', exact: true })).first()
-/** A document's card on its item's page. */
+/** A document's card on its task's page. */
 export const docCard = (page: Page, title: string) =>
   shown(page.getByRole('button', { name: new RegExp('^' + title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+D\\d+\\s+·') }))
-/** The page shows an item and its document in two columns of their own. */
+/** The page shows a task and its document in two columns of their own. */
 export const duo = (page: Page) => page.locator('[data-duo]')
-/** An item's conversation. */
-export const talk = (page: Page) => page.locator('[data-item-talk]')
+/** A task's conversation. */
+export const talk = (page: Page) => page.locator('[data-task-talk]')
 
-/** The list's rows (each item's row), shown. */
+/** The list's rows (each task's row), shown. */
 export const rows = (page: Page) => shown(page.locator('#list article[data-n]'))
 export const row = (page: Page, words: string) => rows(page).filter({ hasText: words })
 /** One of the views over the list (Active, Needs you, Done...), by its name. */
 export const view = (page: Page, name: string) => page.locator('#list').getByRole('button', { name: new RegExp('^' + name) }).first()
-/** The item (or document) open in its pane: its body, and the words of the line above it. */
+/** The task (or document) open in its pane: its body, and the words of the line above it. */
 export const pane = (page: Page) => shown(page.locator('section > header ~ [data-vc-area]')).last()
 export const paneHead = (page: Page) => shown(page.locator('[data-pane-head]')).last()
-/** The item's status, the chip on its page that opens the status menu. */
+/** The task's status, the chip on its page that opens the status menu. */
 // the page's tooltip moves a title into data-tip the first time the pointer is over it: either names the button
 export const statusChip = (page: Page) => shown(pane(page).locator('button:is([title="Status · S"], [data-tip="Status · S"])')).first()
 /** The card shown under the pointer. */
@@ -62,7 +62,7 @@ export const views = (page: Page) =>
 export const mic = (page: Page) => shown(page.getByRole('button', { name: 'Record a voice note', exact: true })).first()
 /** The recording, while the box records. */
 export const recording = (page: Page) => page.getByRole('status', { name: 'Recording', exact: true }).first()
-/** One of the project's tabs (Items, Inputs, Archive, Rules), by its name. */
+/** One of the project's tabs (Tasks, Inputs, Archive, Rules), by its name. */
 export const tab = (page: Page, name: string) =>
   shown(page.getByRole('tab', { name: new RegExp('^' + name) })).first()
 /** A voice note's play button: its length is its words. */
@@ -73,13 +73,13 @@ export const draftFiles = (page: Page) =>
 /** The words of what is at a point of the screen, as its button says them (its name). */
 export const buttonAt = (page: Page, at: { x: number; y: number }) =>
   page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest('button')?.getAttribute('aria-label'), at)
-/** A row's fold arrow (its subitems shown or hidden), by the row's number. */
-export const fold = (page: Page, n: number) => page.locator(`#list article[data-n="${n}"] button[aria-label$=" subitems"]`)
-/** The line under a parent for its subitems the view hides ("1 more in Later"), by the parent's number. */
+/** A row's fold arrow (its subtasks shown or hidden), by the row's number. */
+export const fold = (page: Page, n: number) => page.locator(`#list article[data-n="${n}"] button[aria-label$=" subtasks"]`)
+/** The line under a parent for its subtasks the view hides ("1 more in Later"), by the parent's number. */
 export const kidsLine = (page: Page, n: number) => page.locator(`#list [data-kids-of="${n}"]`)
-/** A subitem as its parent's page lists it, by its number and title. */
+/** A subtask as its parent's page lists it, by its number and title. */
 export const subRow = (page: Page, title: string) => pane(page).getByRole('button').filter({ hasText: title })
-/** A section's head on the item page (Subitems, Documents...), by its name. */
+/** A section's head on the task page (Subtasks, Documents...), by its name. */
 export const section = (page: Page, name: string) => pane(page).locator('h2').filter({ hasText: name })
 /** The sidebar's links for making Taska, and its foot (Documents, Settings...). */
 export const devLinks = (page: Page) => page.locator('[data-dev-links]')
@@ -87,8 +87,8 @@ export const sideFoot = (page: Page) => page.locator('[data-side-foot]')
 /** The strip at the foot of the page that holds the box. */
 export const FOOT = 'footer:has(#composer)'
 export const foot = (page: Page) => page.locator(FOOT).first()
-/** An item's conversation, as a CSS selector (for code run in the page). */
-export const TALK = '[data-item-talk]'
+/** A task's conversation, as a CSS selector (for code run in the page). */
+export const TALK = '[data-task-talk]'
 
 // ---------------------------------------------------------------- a web page document's parts
 /** The buttons by the part of a web page under the pointer (or picked): speak a comment, and comment. */
@@ -168,7 +168,7 @@ export const needAct = (page: Page, v: string) => page.locator(`#list [data-need
 export const needKind = (l: Locator) => l.evaluateAll((els) => els.map((e) => e.getAttribute('data-need')))
 /** The sheet over the page, for menus and dialogs. */
 export const sheetBody = (page: Page) => page.locator('[role="dialog"]').filter({ visible: true }).first()
-/** An item's priority, the chip on its page that opens its short list. */
+/** A task's priority, the chip on its page that opens its short list. */
 export const priChip = (page: Page) => shown(pane(page).locator('button:is([title="Priority · P"], [data-tip="Priority · P"])')).first()
 /** Taska says it runs other code than this page, as after a deploy: its answers name a newer page. */
 export const NEWS = /\/api\/(view|changes)\b/
@@ -184,8 +184,8 @@ export const refuseComments = (page: Page, why: string) =>
   })
 /** The desktop search's rows (F479): what it found, Recent, Actions. */
 export const searchRows = (page: Page) => page.locator('[data-part="search"] button[aria-selected]')
-/** An item's menu (the button that opens it), and one of its choices by its words. */
-export const itemMenu = (page: Page) => shown(page.getByRole('button', { name: 'Item actions', exact: true })).first()
+/** A task's menu (the button that opens it), and one of its choices by its words. */
+export const taskMenu = (page: Page) => shown(page.getByRole('button', { name: 'Task actions', exact: true })).first()
 export const menuChoice = (page: Page, words: RegExp) => sheetBody(page).getByRole('button', { name: words })
 /** The toast's Undo. */
 export const undo = (page: Page) => shown(page.getByRole('button', { name: /^Undo/ })).first()

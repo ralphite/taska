@@ -71,7 +71,7 @@ export class KeptNotes {
     return rid
   }
 
-  /** Files of a draft whose item went to another project (B799): kept for its draft there (`to`, `key`), not up
+  /** Files of a draft whose task went to another project (B799): kept for its draft there (`to`, `key`), not up
    * there yet; they come back into that draft, and go up to that project, when it opens. Taken out of here first, so
    * this project's drafts letting them go does not let the browser forget them. */
   carry(files: readonly DraftFile[], to: string, key: DraftKey): void {

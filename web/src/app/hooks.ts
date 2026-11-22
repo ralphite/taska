@@ -76,7 +76,7 @@ export function useFiles(slug: string): { play(src: string): PlayState; /** a vo
 }
 
 /** What the Markdown of a project knows: its codes, its files' addresses, its pictures' sizes. */
-export function useItemWorld(m: ProjectModel | null, slug: string): InlineWorld {
+export function useTaskWorld(m: ProjectModel | null, slug: string): InlineWorld {
   const { diagrams } = useApp()
   const stores = useStores('data')
   const sizes = useStoreValue(stores.data, (s) => s.sizes[slug])
@@ -95,7 +95,7 @@ export function useItemWorld(m: ProjectModel | null, slug: string): InlineWorld 
  * rules and web pages have no such diagrams. */
 export function useDocWorld(m: ProjectModel | null, slug: string, d: Doc | undefined): InlineWorld {
   const { diagrams } = useApp()
-  const world = useItemWorld(m, slug)
+  const world = useTaskWorld(m, slug)
   const blocks = d && d.fmt !== 'html' && d.kind !== 'rules' ? d.blocks : null
   const dn = d?.d ?? 0
   const v = d?.versions ?? 0

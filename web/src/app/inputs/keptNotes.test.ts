@@ -34,8 +34,8 @@ function page(vault = memoryVault(), sending = false) {
   return { box, outbox, kept, vault, pushed, resumed, toasts }
 }
 
-describe('a draft whose item went to another project (B799)', () => {
-  it('its voice note goes along: kept for the item there, not up there yet, and back in its box when that project opens', async () => {
+describe('a draft whose task went to another project (B799)', () => {
+  it('its voice note goes along: kept for the task there, not up there yet, and back in its box when that project opens', async () => {
     const a = page()
     const there = { ...model, width: 1, byN: new Map([[5, { n: 5 }]]) } as unknown as ProjectModel
     await a.kept.restore('q', there) // that project had opened in this page before
@@ -48,7 +48,7 @@ describe('a draft whose item went to another project (B799)', () => {
     await tick()
     await tick()
     expect((await a.vault.all()).map((n) => [n.project, n.key, n.f])).toEqual([['q', 'T5', null]])
-    // the other project opens again in this same page: the note is back in the item's box there
+    // the other project opens again in this same page: the note is back in the task's box there
     a.box.getState().show('q')
     await a.kept.restore('q', there)
     expect(a.box.getState().files.T5?.map((f) => [f.rid, f.f, f.uploading])).toEqual([[rid, '', true]])

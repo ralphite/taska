@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { input, item, modelOf, waiting } from '../stories/fixtures'
+import { input, task, modelOf, waiting } from '../stories/fixtures'
 import { feedbackLine } from './boxFoot'
 import { becameOf, type Became } from './became'
 import {
@@ -29,7 +29,7 @@ import { VOICE_STATES } from './voiceStates'
 
 const PLACES = Object.keys(INPUT_PLACES) as InputPlace[]
 const org = (msg: string, f: Partial<OrgNote> = {}): OrgNote => ({ ok: true, msg, t: '', keep: false, changed: true, undone: false, ...f })
-const m = (on = true, busy: string[] = []) => modelOf([item({ n: 14, tags: ['bug'] }), item({ n: 12 })], [], { organizer: { on, model: '', busy } })
+const m = (on = true, busy: string[] = []) => modelOf([task({ n: 14, tags: ['bug'] }), task({ n: 12 })], [], { organizer: { on, model: '', busy } })
 const of = (f: Partial<Input> & { id: string }, mm = m()) => becameOf(input(f), mm, (s) => (s === 'mobile-app' ? 'Mobile app' : s))
 const FILING = { can: true, what: 'removes T014', why: '' }
 
@@ -100,7 +100,7 @@ describe('a voice message: its state is the one its input names', () => {
       for (const p of ['row', 'line'] as const) expect(VOICE_STATES[v].show[p] === 'became', `${s} (${v}) in ${p}`).toBe(INPUT_STATES[s].show[p] !== null)
     }
   })
-  test('one that made an item is Created; its words to come are as Taska has them', () => {
+  test('one that made a task is Created; its words to come are as Taska has them', () => {
     expect(voiceStateOf(of({ id: 'r1', acked: true, touched: [14], org: org('Created T014') }))).toBe('created')
     expect(voiceStateOf(of({ id: 'r1', acked: true, touched: [12], org: org('Noted on T012') }))).toBe('added')
     expect(voiceStateOf({ k: 'transcribing', state: 'sentFastWords' })).toBe('sentFastWords')
@@ -113,7 +113,7 @@ describe('T728: the line over the box says and offers what the lists do', () => 
     const x = feedbackLine({ m: { ...mm, byId: new Map([[r.id, r]]) }, desk: false, scope: null, mine: [], away: 0, lastSent: r.id, others, title: (s) => s })
     return x?.line.kind === 'became' ? { text: x.line.text, acts: x.line.acts, final: !!x.final } : null
   }
-  test('one word per state: Organizing…, Handled, For an agent, Undone (not "Sent · organizing…", "Seen, no item made")', () => {
+  test('one word per state: Organizing…, Handled, For an agent, Undone (not "Sent · organizing…", "Seen, no task made")', () => {
     expect(line(input({ id: 'r1' }))?.text).toBe('Organizing…')
     expect(line(input({ id: 'r1', acked: true }), m(false))?.text).toBe('Handled')
     expect(line(input({ id: 'r1', org: org('Left for agent', { keep: true }) }))?.text).toBe('For an agent')

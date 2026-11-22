@@ -1,7 +1,7 @@
 // T456 (D75): a prototype of the new phone layout, to look at before anything is built. One screen Yadong taps through
-// himself (#6909: no autoplay, everything in one): the bar at the bottom by the levels (Projects, Items, the voice
-// button in the very middle, Comments, Search; no Needs you), an opened item as two pages (its detail under Items, its
-// talk under Comments), a document one level inside its item, Search that listens at once (T479).
+// himself (#6909: no autoplay, everything in one): the bar at the bottom by the levels (Projects, Tasks, the voice
+// button in the very middle, Comments, Search; no Needs you), an opened task as two pages (its detail under Tasks, its
+// talk under Comments), a document one level inside its task, Search that listens at once (T479).
 // What is not built yet is drawn here: the bar, the top line with only the project and its agent, the line saying
 // where the words go, the line after sending, the listening panel. Every page in between is the page's own component
 // with the demo project's data. Nothing here changes Taska itself.
@@ -11,7 +11,7 @@ import { Composer } from '../features/composer/Composer'
 import { SaidLately, type SaidEvents } from '../features/composer/SaidLately'
 import { factsOf } from '../features/docs/docFacts'
 import { DocView, type DocEvents } from '../features/docs/DocView'
-import { ItemPage, ItemTalk } from '../features/item/ItemPage'
+import { TaskPage, TaskTalk } from '../features/task/TaskPage'
 import { Sidebar, type SideLinkInfo, type SideProject } from '../features/sidebar/Sidebar'
 import { SIDE_KEYS } from '../features/sidebar/sideLinks'
 import { boxRole, shownBox, type BoxLine } from '../model/boxFoot'
@@ -29,7 +29,7 @@ import { TourFrame } from './tour/TourFrame'
 import { button, marked, row, type Tour } from './tour/tour'
 import { doc } from './docFixtures'
 import { T, input, message, modelOf } from './fixtures'
-import { itemFacts, noItemEvents, talkEnv, talkFacts } from './itemFixtures'
+import { taskFacts, noTaskEvents, talkEnv, talkFacts } from './taskFixtures'
 import { inputWords } from '../ui/Markdown'
 import { PROJECT, listOf } from './listFixtures'
 import { record, shown } from './fixtures'
@@ -48,13 +48,13 @@ const F1 = {
     message({ id: 4, text: 'Done the first part: the rows the list shows are written. The plan is in D1.', t: '2026-10-23T14:30:00-07:00' }),
   ],
 }
-const ITEMS = [F1, ...PROJECT.slice(1)]
+const TASKS = [F1, ...PROJECT.slice(1)]
 const INPUTS: Input[] = [
   input({ id: 'r9', text: 'Search should find words in the talk too.', acked: true, touched: [5] }),
   shown(input({ id: 'r8', text: '', acked: true, touched: [1], files: [{ f: 'f8-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm' }] }), record('f8-voice_0-07.webm', 'The export should keep the filter I set.')),
   input({ id: 'r7', text: 'Excel export as well, later.', acked: true, touched: [6] }),
 ]
-const M = modelOf(ITEMS, INPUTS, { title: 'Shop' }, [D1])
+const M = modelOf(TASKS, INPUTS, { title: 'Shop' }, [D1])
 const PROJECTS: SideProject[] = [
   { slug: 'shop', title: 'Shop', tone: PROJECT_TONES[1], needs: 4, open: 9, current: true, href: '#', card: projectCard({ needs: 4, open: 9 }, 0) },
   { slug: 'home', title: 'Home', tone: PROJECT_TONES[0], needs: 2, open: 13, current: false, href: '#', card: projectCard({ needs: 2, open: 13 }, 0) },
@@ -71,14 +71,14 @@ const noDoc = () => {}
 
 // ---------------------------------------------------------------- the parts not built yet
 
-type Tab = 'Projects' | 'Items' | 'Comments' | 'Search'
-type Place = 'items' | 'detail' | 'doc' | 'comments' | 'inputs' | 'projects' | 'search'
-const TAB_OF: Record<Place, Tab> = { items: 'Items', detail: 'Items', doc: 'Items', comments: 'Comments', inputs: 'Comments', projects: 'Projects', search: 'Search' }
-const ICON_OF: Record<Tab, IconName> = { Projects: 'folder', Items: 'items', Comments: 'comment', Search: 'search' }
+type Tab = 'Projects' | 'Tasks' | 'Comments' | 'Search'
+type Place = 'tasks' | 'detail' | 'doc' | 'comments' | 'inputs' | 'projects' | 'search'
+const TAB_OF: Record<Place, Tab> = { tasks: 'Tasks', detail: 'Tasks', doc: 'Tasks', comments: 'Comments', inputs: 'Comments', projects: 'Projects', search: 'Search' }
+const ICON_OF: Record<Tab, IconName> = { Projects: 'folder', Tasks: 'tasks', Comments: 'comment', Search: 'search' }
 
 /** The bar at the bottom: five equal places with the voice button in the very middle, or three (no voice button). */
 function Bar({ on, count, mic, to, onTap }: { on: Tab; count: number; mic: boolean; to: string; onTap(t: Tab | 'Mic'): void }) {
-  const places = mic ? (['Projects', 'Items', 'Mic', 'Comments', 'Search'] as const) : (['Projects', 'Items', 'Comments'] as const)
+  const places = mic ? (['Projects', 'Tasks', 'Mic', 'Comments', 'Search'] as const) : (['Projects', 'Tasks', 'Comments'] as const)
   return (
     <nav className={`grid shrink-0 border-t border-zinc-200 bg-white/95 pb-5 dark:border-zinc-800 dark:bg-zinc-950/95 ${mic ? 'grid-cols-5' : 'grid-cols-3'}`}>
       {places.map((t) =>
@@ -104,7 +104,7 @@ function Bar({ on, count, mic, to, onTap }: { on: Tab; count: number; mic: boole
   )
 }
 
-/** The top line: the project and its agent; or, inside an item or its document, the way back and where you are. */
+/** The top line: the project and its agent; or, inside a task or its document, the way back and where you are. */
 function Top({ back, code, sub, onBack }: { back: boolean; code: string; sub: string; onBack(): void }) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-zinc-100 px-3 dark:border-zinc-800/70">
@@ -140,15 +140,15 @@ const Sent = ({ said, onSee }: { said: string; onSee(): void }) => (
   </div>
 )
 
-/** The Comments tab has one meaning: talk, for the open item or for the whole project; this switch says which. */
-function Scope({ item, onItem, onAll }: { item: boolean; onItem(): void; onAll(): void }) {
+/** The Comments tab has one meaning: talk, for the open task or for the whole project; this switch says which. */
+function Scope({ task, onTask, onAll }: { task: boolean; onTask(): void; onAll(): void }) {
   const chip = (on: boolean) => `h-8 rounded-full px-3 text-[13px] font-medium ${on ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'}`
   return (
     <div className="flex shrink-0 gap-2 px-4 pt-3">
-      <button onClick={onItem} className={chip(item)}>
+      <button onClick={onTask} className={chip(task)}>
         T001
       </button>
-      <button onClick={onAll} className={chip(!item)}>
+      <button onClick={onAll} className={chip(!task)}>
         All in Shop
       </button>
     </div>
@@ -179,7 +179,7 @@ function Listening({ onDone, onCancel }: { onDone(): void; onCancel(): void }) {
 
 // ---------------------------------------------------------------- the tour: where to tap next (R488, T524, T566)
 
-const ITEMS_TAB = marked('tab', 'Items', { label: 'Items' })
+const TASKS_TAB = marked('tab', 'Tasks', { label: 'Tasks' })
 const MIC = button('Say something')
 const TOUR: Tour = {
   steps: [
@@ -187,13 +187,13 @@ const TOUR: Tour = {
     { say: 'Tap ✓.', target: button('Stop and put words in the box') },
     { say: 'Tap ↑.', target: marked('box', 'main', { label: '↑' }) },
     { say: 'Tap See.', target: button('See') },
-    { say: 'Tap Items.', target: ITEMS_TAB },
+    { say: 'Tap Tasks.', target: TASKS_TAB },
     { say: 'Tap T001.', target: row(1) },
     { say: 'Tap Comments.', target: marked('tab', 'Comments', { label: 'Comments' }) },
     { say: 'Tap the mic to reply.', target: MIC },
     { say: 'Tap ↑.', target: button('Stop and send') },
     { say: 'Tap All in Shop.', target: button('All in Shop') },
-    { say: 'Tap Items.', target: ITEMS_TAB },
+    { say: 'Tap Tasks.', target: TASKS_TAB },
     { say: 'Tap D1.', target: button(/Plan: the export keeps the filter/, { label: 'D1' }) },
     { say: 'Tap a paragraph.', target: marked('key', 'p1', { label: 'The paragraph' }) },
     { say: 'Tap the mic to comment.', target: MIC },
@@ -206,16 +206,16 @@ const TOUR: Tour = {
 }
 
 function Phone({ mic }: { mic: boolean }) {
-  const [place, setPlace] = useState<Place>('items')
+  const [place, setPlace] = useState<Place>('tasks')
   const [rec, setRec] = useState(false)
   const [text, setText] = useState('')
   const [sent, setSent] = useState<string | null>(null)
   const [sel, setSel] = useState<string | null>(null)
   const [found, setFound] = useState(false)
-  // the item stays open while you look at the project's talk, Search or a document: Items brings it back
+  // the task stays open while you look at the project's talk, Search or a document: Tasks brings it back
   const [open, setOpen] = useState(false)
   // what was sent here, so it shows where it went (the prototype has no server)
-  const [mine, setMine] = useState<{ to: 'shop' | 'item'; text: string }[]>([])
+  const [mine, setMine] = useState<{ to: 'shop' | 'task'; text: string }[]>([])
   useEffect(() => {
     if (!sent) return
     const t = setTimeout(() => setSent(null), 8000)
@@ -229,16 +229,16 @@ function Phone({ mic }: { mic: boolean }) {
     setSent(null)
     if (p !== 'doc') setSel(null)
     if (p === 'detail' || p === 'comments' || p === 'doc') setOpen(true)
-    if (p === 'items' || p === 'projects') setOpen(false)
+    if (p === 'tasks' || p === 'projects') setOpen(false)
   }
-  const inItem = place === 'detail' || place === 'comments' || place === 'doc'
+  const inTask = place === 'detail' || place === 'comments' || place === 'doc'
   const tap = (t: Tab | 'Mic') => {
     if (t === 'Mic') return setRec(true)
     if (t === 'Comments') return go(open ? 'comments' : 'inputs')
-    if (t === 'Items') return go(open && place !== 'detail' ? 'detail' : 'items')
+    if (t === 'Tasks') return go(open && place !== 'detail' ? 'detail' : 'tasks')
     go(t === 'Projects' ? 'projects' : 'search')
   }
-  const thread = [...F1.thread, ...mine.filter((x) => x.to === 'item').map((x, i) => message({ id: 100 + i, by: 'you', kind: 'say', text: x.text, t: T }))]
+  const thread = [...F1.thread, ...mine.filter((x) => x.to === 'task').map((x, i) => message({ id: 100 + i, by: 'you', kind: 'say', text: x.text, t: T }))]
   const said: SaidInput[] = [
     ...mine
       .filter((x) => x.to === 'shop')
@@ -246,22 +246,22 @@ function Phone({ mic }: { mic: boolean }) {
       .map((x, i) => ({ ...SAID[0], r: input({ id: 'r' + (20 + i), text: x.text }), code: '#' + (20 + i), when: '15:02', day: 'Today', time: '15:02' })),
     ...SAID,
   ]
-  const to = place === 'doc' ? 'Comment D1' : inItem ? 'Reply T001' : 'New input'
-  // where the box writes, as the page works it out: a new input on a list, a reply in an item, a comment in its document
+  const to = place === 'doc' ? 'Comment D1' : inTask ? 'Reply T001' : 'New input'
+  // where the box writes, as the page works it out: a new input on a list, a reply in a task, a comment in its document
   const at = place === 'doc' ? '/p/shop/D1' : place === 'comments' || place === 'detail' ? '/p/shop/T001' : '/p/shop/'
   const route = parseRoute(at, '')
   const role = route.page === 'project' ? boxRole(M, route, false, 'Shop', null, { reply: null, quote: null, sel: new Set(sel ? [sel] : []) }, { mine: {}, going: {}, open: new Set() }) : null
   const shown = role ? shownBox(role, { mode: null, text, key: '', recordingFor: null }) : null
-  const where: BoxLine = shown?.line ?? (inItem ? { icon: 'reply', label: 'Reply to T001' } : { icon: 'newinput', label: 'New input to Shop' })
+  const where: BoxLine = shown?.line ?? (inTask ? { icon: 'reply', label: 'Reply to T001' } : { icon: 'newinput', label: 'New input to Shop' })
   const send = () => {
     const words = text || 'Voice note 0:05'
-    const line = place === 'doc' ? `Comment sent on D1${sel ? '' : ' · whole document'}` : inItem ? 'Reply sent to T001' : 'Sent to Shop'
-    setMine((m) => [...m, place === 'doc' ? { to: 'item', text: `On D1${sel ? ' “the export keeps the filter”' : ''}: ${words}` } : { to: inItem ? 'item' : 'shop', text: words }])
+    const line = place === 'doc' ? `Comment sent on D1${sel ? '' : ' · whole document'}` : inTask ? 'Reply sent to T001' : 'Sent to Shop'
+    setMine((m) => [...m, place === 'doc' ? { to: 'task', text: `On D1${sel ? ' “the export keeps the filter”' : ''}: ${words}` } : { to: inTask ? 'task' : 'shop', text: words }])
     setRec(false)
     setText('')
     setSent(line)
   }
-  const see = () => go(inItem ? 'comments' : 'inputs')
+  const see = () => go(inTask ? 'comments' : 'inputs')
   const box = (
     <div className="shrink-0 bg-zinc-50 px-3 pt-2 pb-6 dark:bg-zinc-950">
       <Composer
@@ -278,26 +278,26 @@ function Phone({ mic }: { mic: boolean }) {
     </div>
   )
   const env = talkEnv(M, false)
-  const facts = itemFacts(M, F1, { docs: [D1] })
-  const itemOn = { ...noItemEvents, doc: () => go('doc') }
-  const docOn: DocEvents = { copyDoc: noDoc, ref: noDoc, picture: noDoc, play: noDoc, words: noDoc, view: noDoc, edit: noDoc, move: noDoc, takeOff: noDoc, remove: noDoc, menu: noDoc, resolve: noDoc, reply: noDoc, goItem: () => go('detail'), toggle: noDoc, away: noDoc, pick: (key) => setSel((s) => (s === key ? null : key)), say: noDoc, sayCancel: noDoc, sayCheck: noDoc, saySend: noDoc, type: noDoc, moveDoc: noDoc, deleteDoc: noDoc, circle: noDoc, editDoc: noDoc, tick: noDoc, modifyTicks: noDoc, sendTicks: noDoc }
+  const facts = taskFacts(M, F1, { docs: [D1] })
+  const taskOn = { ...noTaskEvents, doc: () => go('doc') }
+  const docOn: DocEvents = { copyDoc: noDoc, ref: noDoc, picture: noDoc, play: noDoc, words: noDoc, view: noDoc, edit: noDoc, move: noDoc, takeOff: noDoc, remove: noDoc, menu: noDoc, resolve: noDoc, reply: noDoc, goTask: () => go('detail'), toggle: noDoc, away: noDoc, pick: (key) => setSel((s) => (s === key ? null : key)), say: noDoc, sayCancel: noDoc, sayCheck: noDoc, saySend: noDoc, type: noDoc, moveDoc: noDoc, deleteDoc: noDoc, circle: noDoc, editDoc: noDoc, tick: noDoc, modifyTicks: noDoc, sendTicks: noDoc }
   const docEnv = { world: { find: (c: string) => findRef(M, c), url: (f: string) => '#' + f, size: () => undefined }, now: Date.parse(T), desk: false, tidy: true, play: () => ({ playing: false, t: null }), url: (f: string) => '#' + f }
   let top: ReactNode
   let body: ReactNode
-  if (place === 'items') {
+  if (place === 'tasks') {
     top = <Top back={false} code="Shop" sub="" onBack={() => {}} />
-    body = listOf(ITEMS, 'items', { status: 'all' }, false, { on: { open: (n) => n === 1 && go('detail') } })
+    body = listOf(TASKS, 'tasks', { status: 'all' }, false, { on: { open: (n) => n === 1 && go('detail') } })
   } else if (place === 'detail') {
-    top = <Top back code="T001" sub="" onBack={() => go('items')} />
-    body = <ItemPage it={{ ...F1, thread: [] }} f={facts} env={env} facts={talkFacts(M)} on={itemOn} />
+    top = <Top back code="T001" sub="" onBack={() => go('tasks')} />
+    body = <TaskPage it={{ ...F1, thread: [] }} f={facts} env={env} facts={talkFacts(M)} on={taskOn} />
   } else if (place === 'comments') {
-    top = <Top back code="T001" sub={F1.title} onBack={() => go('items')} />
+    top = <Top back code="T001" sub={F1.title} onBack={() => go('tasks')} />
     body = (
       <div className="flex flex-col gap-6 px-4 py-4">
         <div className="-mx-4 -mt-4">
-          <Scope item onItem={() => {}} onAll={() => go('inputs')} />
+          <Scope task onTask={() => {}} onAll={() => go('inputs')} />
         </div>
-        <ItemTalk it={{ ...F1, thread }} f={facts} env={env} facts={talkFacts(M)} on={itemOn} />
+        <TaskTalk it={{ ...F1, thread }} f={facts} env={env} facts={talkFacts(M)} on={taskOn} />
       </div>
     )
   } else if (place === 'doc') {
@@ -316,7 +316,7 @@ function Phone({ mic }: { mic: boolean }) {
       <div className="px-3 py-3">
         {open ? (
           <div className="-mx-3 -mt-3 pb-3">
-            <Scope item={false} onItem={() => go('comments')} onAll={() => {}} />
+            <Scope task={false} onTask={() => go('comments')} onAll={() => {}} />
           </div>
         ) : null}
         <SaidLately more={false} outgoing={[]} rows={said} files={() => null} words={inputWords(talkEnv(M, false).world)} on={noSaid} />
@@ -324,10 +324,10 @@ function Phone({ mic }: { mic: boolean }) {
     )
   } else if (place === 'projects') {
     top = null
-    body = <Sidebar phone keys={SIDE_KEYS} projects={PROJECTS} composing={false} links={LINKS} place="h-full bg-zinc-100" on={{ newInput() {}, newVoice() {}, newProject() {}, hide() {}, settings() {}, help() {}, keys() {}, go: (_, e) => (e.preventDefault(), go('items')), undo() {}, order() {}, dragProject: () => false, dropProject() {}, projectMenu() {}, projectMenuFrom() {}, search() {} }} />
+    body = <Sidebar phone keys={SIDE_KEYS} projects={PROJECTS} composing={false} links={LINKS} place="h-full bg-zinc-100" on={{ newInput() {}, newVoice() {}, newProject() {}, hide() {}, settings() {}, help() {}, keys() {}, go: (_, e) => (e.preventDefault(), go('tasks')), undo() {}, order() {}, dragProject: () => false, dropProject() {}, projectMenu() {}, projectMenuFrom() {}, search() {} }} />
   } else {
     top = <Top back={false} code="Shop" sub={found ? 'Searched for “export filter”' : ''} onBack={() => {}} />
-    body = found ? listOf(ITEMS.filter((it) => /export|filter/i.test(it.title)), 'items', {}, false, { on: { open: (n) => n === 1 && go('detail') } }) : <Listening onDone={() => setFound(true)} onCancel={() => go('items')} />
+    body = found ? listOf(TASKS.filter((it) => /export|filter/i.test(it.title)), 'tasks', {}, false, { on: { open: (n) => n === 1 && go('detail') } }) : <Listening onDone={() => setFound(true)} onCancel={() => go('tasks')} />
   }
   // without the voice button the box is always there, as it is now
   const boxShown = mic ? rec || !!text : place !== 'projects'
@@ -343,7 +343,7 @@ function Phone({ mic }: { mic: boolean }) {
 }
 
 /** Tap your way through it, the yellow spot showing the next tap (it never plays itself): a new input by voice, an
- * item's detail and its talk, a reply, its document and a comment on a part, Search, Projects, all you said. Any
+ * task's detail and its talk, a reply, its document and a comment on a part, Search, Projects, all you said. Any
  * other tap just does what it does. Beside it, the same with three places and no voice button (the box as now). */
 export const NewMobileLayout: StoryObj = {
   render: () => (

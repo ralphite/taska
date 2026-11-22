@@ -61,7 +61,7 @@ describe('PageActions (B791: what you do on the page is logged)', () => {
 
   test("a refused request is logged with the server's reason, a slow one too; a quick one and the wait for news are not", async () => {
     let n = 0
-    const { log, sent, http } = page(async () => (n++ === 1 ? new Response('{"ok": false, "results": ["err B9: no such item"]}', { status: 400 }) : new Response('{}')))
+    const { log, sent, http } = page(async () => (n++ === 1 ? new Response('{"ok": false, "results": ["err B9: no such task"]}', { status: 400 }) : new Response('{}')))
     await http.json('/p/shop/api/view')
     await http.json('/p/shop/api/commands?cursor=1', { method: 'POST', body: {} }).catch(() => {})
     // the long wait for news is slow on purpose; another slow request is noted
@@ -70,7 +70,7 @@ describe('PageActions (B791: what you do on the page is logged)', () => {
     log.send(false)
     const net = sent[0].filter((e) => e.kind === 'net')
     expect(net).toEqual([
-      expect.objectContaining({ why: 'failed', method: 'POST', url: '/p/shop/api/commands?cursor=1', status: 400, msg: 'no such item' }),
+      expect.objectContaining({ why: 'failed', method: 'POST', url: '/p/shop/api/commands?cursor=1', status: 400, msg: 'no such task' }),
       expect.objectContaining({ why: 'slow', url: '/p/shop/api/doc?d=6', ms: 5000 }),
     ])
   })
@@ -88,11 +88,11 @@ describe('PageActions (B791: what you do on the page is logged)', () => {
 
   test('a sheet or menu that opens is logged, once, by its kind (B842: taps on Type could not be told from taps on nothing)', () => {
     const { log, sent, sheet } = page(async () => new Response('{}'))
-    sheet.getState().open({ req: { kind: 'item-menu', n: 10, arm: 't' } } as never)
+    sheet.getState().open({ req: { kind: 'task-menu', n: 10, arm: 't' } } as never)
     sheet.getState().setArm('t')
     sheet.getState().close()
     log.send(false)
-    expect(sent[0].filter((e) => e.kind === 'sheet')).toEqual([expect.objectContaining({ kind: 'sheet', what: 'item-menu', arm: 't' })])
+    expect(sent[0].filter((e) => e.kind === 'sheet')).toEqual([expect.objectContaining({ kind: 'sheet', what: 'task-menu', arm: 't' })])
   })
 
   test('a swipe on a row is logged with the way it went and what it did (F846: swipes were not in the log)', () => {

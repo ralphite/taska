@@ -27,7 +27,7 @@ class CodexNotifications:
         self.sends: Set[threading.Thread] = set()
         stored = project.store.db.get(KEY) or {}
         # Preserve existing bindings, discarding the retired delivery ledger.
-        self.data = {k: stored[k] for k in ("threadId", "projectPath", "enabled", "errorItem", "error") if k in stored}
+        self.data = {k: stored[k] for k in ("threadId", "projectPath", "enabled", "errorTask", "error") if k in stored}
         if self.data != stored:
             self._save()
 
@@ -97,7 +97,7 @@ class CodexNotifications:
         print(f"taska: Codex delivery failed: {error}", flush=True)
         body = ("Codex \u6d88\u606f\u53d1\u9001\u5931\u8d25\u3002"
                 "Taska \u66f4\u65b0\u5df2\u4fdd\u5b58\uff0c\u672a\u81ea\u52a8\u91cd\u8bd5\u3002\n" + error)
-        ref = self.data.get("errorItem")
+        ref = self.data.get("errorTask")
         if ref:
             command = {"op": "say", "ref": ref, "text": body, "kind": "progress"}
         else:
@@ -105,7 +105,7 @@ class CodexNotifications:
                        "title": "Codex \u6d88\u606f\u53d1\u9001\u5931\u8d25", "body": body}
         lines, _ = self.project.run([(0, command)], "codex-notifier")
         if not ref and lines and lines[0].startswith("ok "):
-            self.data["errorItem"] = lines[0].split()[1]
+            self.data["errorTask"] = lines[0].split()[1]
         self._save()
 
     def status(self) -> Dict[str, Any]:

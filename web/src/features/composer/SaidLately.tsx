@@ -2,7 +2,7 @@
 // its way and the draft to check, as lines of their own; then every input, the latest first (more comes as you
 // scroll), each as the row every list of inputs draws (its number and when, its words, its files, what became of it
 // on a shelf under them; its ⋯ deletes it); more being said into one of them, on its line (F657); one gone to (a
-// search found it, a source of an item) in view and lit. Search is the sidebar's (F479). Props only.
+// search found it, a source of a task) in view and lit. Search is the sidebar's (F479). Props only.
 
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { SaidInput } from '../../model/saidLately'

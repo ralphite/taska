@@ -13,8 +13,8 @@ import { blockKeys } from '../model/docs'
 import type { Outgoing } from '../model/outgoing'
 import { composing, parseRoute } from '../model/route'
 import type { Input } from '../model/types'
-import { input, item, modelOf, record, shown } from './fixtures'
-import { comment, doc } from './itemFixtures'
+import { input, task, modelOf, record, shown } from './fixtures'
+import { comment, doc } from './taskFixtures'
 import { acts } from './acts'
 import { useMedia } from './liveParts'
 import { clock } from '../model/time'
@@ -36,7 +36,7 @@ export const REC = { time: '0:04', levels: [0.2, 0.5, 0.8, 0.4, 0.6, 0.3, 0.7, 0
 
 /** Where you are and what the box holds. */
 export interface Here {
-  /** the address: '' a list (New input), 'T012' an item, 'D1' a document, 'new' the New input page */
+  /** the address: '' a list (New input), 'T012' a task, 'D1' a document, 'new' the New input page */
   at?: string
   sel?: string[]
   quote?: { key: string; text: string }
@@ -55,27 +55,27 @@ export interface Here {
   inputs?: Input[]
   /** a recording from the second mic */
   recAux?: boolean
-  /** the document's item is gone (deleted or merged away) */
-  docItemGone?: boolean
+  /** the document's task is gone (deleted or merged away) */
+  docTaskGone?: boolean
   doubts?: ReactNode
   /** its voice notes' words may be misheard (their doubts in `files`): the box draws them as the page's BoxContainer
    * does, and a version picked or used swaps the words (`showing`: the phone shows the words in the box) */
   heard?: { showing?: boolean }
 }
 
-export const boxProject = (inputs: Input[] = [VOICE_INPUT], organizer = true, docItemGone = false) =>
-  modelOf([item({ n: 12 })], inputs, { organizer: { on: organizer, model: 'gemini-flash-latest', busy: [] } }, [docItemGone ? { ...PLAN, n: 99 } : PLAN, WEB])
+export const boxProject = (inputs: Input[] = [VOICE_INPUT], organizer = true, docTaskGone = false) =>
+  modelOf([task({ n: 12 })], inputs, { organizer: { on: organizer, model: 'gemini-flash-latest', busy: [] } }, [docTaskGone ? { ...PLAN, n: 99 } : PLAN, WEB])
 
 export const boxAt = (h: Here, desk: boolean, extra: Partial<ComposerProps> = {}) => <LiveBox h={h} desk={desk} extra={extra} />
 
-const boxActs = acts('Box', ['send', 'discard', 'sendTicks', 'toItem', 'recStop', 'recSend'] as const, { toItem: 'Input box › What it writes to › A reply to an item' })
+const boxActs = acts('Box', ['send', 'discard', 'sendTicks', 'toTask', 'recStop', 'recSend'] as const, { toTask: 'Input box › What it writes to › A reply to a task' })
 
 /** The box with what the page holds for it (the draft's words and files, what the box is in, what is picked or
  * ticked in the document, a recording): you type in it, Cancel and x stop what it is in or let go of what is picked,
  * the ticks clear, + adds files (a picture opens, x takes one off), the mic records and Discard stops it (T662).
  * Sending, posting and the words of a recording need Taska: they show in the Actions panel. */
 function LiveBox({ h, desk, extra }: { h: Here; desk: boolean; extra: Partial<ComposerProps> }) {
-  const m = boxProject(h.inputs ?? [VOICE_INPUT], h.organizer, h.docItemGone)
+  const m = boxProject(h.inputs ?? [VOICE_INPUT], h.organizer, h.docTaskGone)
   const route = parseRoute(`/p/demo/${h.at ?? ''}`, '')
   if (route.page !== 'project') throw new Error('not a project')
   const [text, setText] = useState(h.text ?? '')
@@ -133,7 +133,7 @@ function LiveBox({ h, desk, extra }: { h: Here; desk: boolean; extra: Partial<Co
           discard: () => (setText(''), boxActs.discard()),
           sendTicks: () => (setTicked(null), boxActs.sendTicks()),
           clearTicks: () => setTicked(null),
-          toItem: boxActs.toItem,
+          toTask: boxActs.toTask,
         }}
         waiting={shown.waiting}
         placeholder={shown.placeholder}

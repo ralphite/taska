@@ -1,6 +1,6 @@
-// Yadong's requirements on the list (D29, "Lists and items"; T475, D45): each check is named by the codes of his
+// Yadong's requirements on the list (D29, "Lists and tasks"; T475, D45): each check is named by the codes of his
 // inputs, so a change that breaks one is stopped before it ships with his own words.
-// guards: src/features/list/ src/model/actions.ts src/model/items.ts src/app/page/navigation.ts src/app/actions.ts src/app/keys.ts
+// guards: src/features/list/ src/model/actions.ts src/model/tasks.ts src/app/page/navigation.ts src/app/actions.ts src/app/keys.ts
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
 import { row, rowActs, sheetBody, view, views } from '../ui'
@@ -42,7 +42,7 @@ test("r355 r397 r399 r663 D110: the views read Needs you, Active, All, Archive, 
   await expect(view(page, 'Active')).toHaveAttribute('aria-pressed', 'true')
 })
 
-test('r445 r451 R337: archiving an item takes its finished subitems with it; one still open stays out', async ({
+test('r445 r451 R337: archiving a task takes its finished subtasks with it; one still open stays out', async ({
   page,
   request,
 }) => {
@@ -54,9 +54,9 @@ test('r445 r451 R337: archiving an item takes its finished subitems with it; one
   await p.op({ op: 'set', ref: 'T2', f: { status: 'done' } })
   await open(page, p, 'T1')
   await page.keyboard.press('e')
-  await expect.poll(() => p.read('items?status=all&archived=1')).toContain('Plan the launch')
-  expect(await p.read('items?status=all&archived=1')).toContain('Book the venue')
-  expect(await p.read('items?status=all&archived=1')).not.toContain('Print the posters')
+  await expect.poll(() => p.read('tasks?status=all&archived=1')).toContain('Plan the launch')
+  expect(await p.read('tasks?status=all&archived=1')).toContain('Book the venue')
+  expect(await p.read('tasks?status=all&archived=1')).not.toContain('Print the posters')
 })
 
 test('D115 #21: Later offers Tomorrow, Next week, a day picked; the row then says which day', async ({ page, request }) => {
@@ -108,7 +108,7 @@ test('D115 #20: an empty project shows its first steps, each ticked by itself on
   await expect(say).toBeDisabled()
 })
 
-test('r978 (B640 #8700, B801): M on the selected item opens Put under… beside its row, as its right-click menu does, not in the window\'s corner', async ({
+test('r978 (B640 #8700, B801): M on the selected task opens Put under… beside its row, as its right-click menu does, not in the window\'s corner', async ({
   page,
   request,
 }) => {
@@ -116,7 +116,7 @@ test('r978 (B640 #8700, B801): M on the selected item opens Put under… beside 
   const p = await project(request, LOOP)
   await open(page, p, '?status=every')
   const it = row(page, 'Write the user docs').first()
-  await it.click() // picks the item: its row is the selected one
+  await it.click() // picks the task: its row is the selected one
   await expect(page).toHaveURL(/\/T0*4(\?|$)/)
   await page.keyboard.press('m')
   const menu = sheetBody(page)

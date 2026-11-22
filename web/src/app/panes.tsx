@@ -1,4 +1,4 @@
-// The panes of the page (the list, the item pane, the foot, the sidebar), each registered by its element, and the
+// The panes of the page (the list, the task pane, the foot, the sidebar), each registered by its element, and the
 // one you acted in last: what floats over the page (the toast) shows over that pane.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react'

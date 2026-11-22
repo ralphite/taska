@@ -1,10 +1,10 @@
-// Picking an item by typing part of its words: to put one under another (Put under…, No parent), or any item a
+// Picking a task by typing part of its words: to put one under another (Put under…, No parent), or any task a
 // command needs. Props only.
 
 import { useState, type ReactNode } from 'react'
-import { closed } from '../model/items'
+import { closed } from '../model/tasks'
 import { shownStatus } from '../model/needStates'
-import type { Item } from '../model/types'
+import type { Task } from '../model/types'
 import { hay } from '../model/visible'
 import { Icon, StateIcon } from './Icon'
 import { CurrentMark } from './bits'
@@ -12,12 +12,12 @@ import type { SheetParts } from './Sheet'
 import { FIELD, CODE_TEXT } from './tones'
 import { noMatches } from '../model/words'
 
-export function Picker({ items, code, placeholder, skip, sort, current, desk, extra, query = '', onPick }: {
-  items: readonly Item[]
+export function Picker({ tasks, code, placeholder, skip, sort, current, desk, extra, query = '', onPick }: {
+  tasks: readonly Task[]
   code(n: number): string
   placeholder: string
   skip: ReadonlySet<number>
-  sort(a: Item, b: Item): number
+  sort(a: Task, b: Task): number
   current?: number | null
   desk: boolean
   extra?: ReactNode
@@ -27,7 +27,7 @@ export function Picker({ items, code, placeholder, skip, sort, current, desk, ex
 }) {
   const [q, setQ] = useState(query)
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
-  const cands = items.filter((c) => !skip.has(c.n) && !c.mergedInto && !c.archived && words.every((w) => hay(c).includes(w))).sort(sort).slice(0, 40)
+  const cands = tasks.filter((c) => !skip.has(c.n) && !c.mergedInto && !c.archived && words.every((w) => hay(c).includes(w))).sort(sort).slice(0, 40)
   return (
     <div className="flex flex-col gap-2">
       <input autoFocus={desk} className={`${FIELD} lg:h-9 lg:py-0 lg:text-sm`} placeholder={placeholder} autoComplete="off" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -55,10 +55,10 @@ export function Picker({ items, code, placeholder, skip, sort, current, desk, ex
   )
 }
 
-const closedLast = (a: Item, b: Item) => Number(closed(a.status)) - Number(closed(b.status))
+const closedLast = (a: Task, b: Task) => Number(closed(a.status)) - Number(closed(b.status))
 
-/** Put an item under another (not under itself or what is under it), or on its own. */
-export function moveParentSheet({ it, items, kids, code, desk, query }: { it: Item; items: readonly Item[]; kids: ReadonlyMap<number, Item[]>; code(n: number): string; desk: boolean; query?: string }, onPick: (to: number | null) => void): SheetParts {
+/** Put a task under another (not under itself or what is under it), or on its own. */
+export function moveParentSheet({ it, tasks, kids, code, desk, query }: { it: Task; tasks: readonly Task[]; kids: ReadonlyMap<number, Task[]>; code(n: number): string; desk: boolean; query?: string }, onPick: (to: number | null) => void): SheetParts {
   const below = new Set([it.n])
   const walk = (k: number) => {
     for (const c of kids.get(k) || [])
@@ -72,9 +72,9 @@ export function moveParentSheet({ it, items, kids, code, desk, query }: { it: It
     head: <span className="text-[15px] font-semibold lg:text-sm">Move {code(it.n)} under…</span>,
     body: (
       <Picker
-        items={items}
+        tasks={tasks}
         code={code}
-        placeholder="Find an item"
+        placeholder="Find a task"
         skip={below}
         sort={(a, b) => closedLast(a, b) || a.n - b.n}
         current={it.parent}
@@ -97,10 +97,10 @@ export function moveParentSheet({ it, items, kids, code, desk, query }: { it: It
   }
 }
 
-/** Any item a command needs. */
-export function pickSheet({ head, items, skip, code, desk }: { head: string; items: readonly Item[]; skip: readonly number[]; code(n: number): string; desk: boolean }, onPick: (n: number) => void): SheetParts {
+/** Any task a command needs. */
+export function pickSheet({ head, tasks, skip, code, desk }: { head: string; tasks: readonly Task[]; skip: readonly number[]; code(n: number): string; desk: boolean }, onPick: (n: number) => void): SheetParts {
   return {
     head: <span className="text-[15px] font-semibold lg:text-sm">{head}</span>,
-    body: <Picker items={items} code={code} placeholder="Find an item" skip={new Set(skip)} sort={(a, b) => closedLast(a, b) || b.n - a.n} desk={desk} onPick={onPick} />,
+    body: <Picker tasks={tasks} code={code} placeholder="Find a task" skip={new Set(skip)} sort={(a, b) => closedLast(a, b) || b.n - a.n} desk={desk} onPick={onPick} />,
   }
 }

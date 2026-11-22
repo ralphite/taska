@@ -1,4 +1,4 @@
-// What a draft is written to: a new input, a reply on an item, a comment on a document, an edit of
+// What a draft is written to: a new input, a reply on a task, a comment on a document, an edit of
 // something you said (or details added to it), a correction in a voice note's words, an edit of one of your comments,
 // your transcription rules. The browser keeps drafts under a short key ("new", "F12", "doc 4", "edit r12", ...): that
 // key is made and read here only, so everything else works with what it means.
@@ -67,7 +67,7 @@ export const NEW_DRAFT = draftKey({ kind: 'new' })
 export const replyDraft = (code: string) => draftKey({ kind: 'reply', code })
 export const docDraft = (d: number) => draftKey({ kind: 'doc', d })
 export const PREFS_DRAFT = draftKey({ kind: 'prefs' })
-/** a reply on the item, or else a new input */
+/** a reply on the task, or else a new input */
 export const scopeDraft = (scope: string | null) => (scope ? replyDraft(scope) : NEW_DRAFT)
 
 const inputNo = (id: string) => id.replace(/^r(\d+)$/, '#$1')

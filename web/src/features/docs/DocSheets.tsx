@@ -2,7 +2,7 @@
 // or one of its paragraphs). Props only.
 
 import type { ReactNode } from 'react'
-import { oneLine } from '../../model/items'
+import { oneLine } from '../../model/tasks'
 import { plainQuote } from '../../model/markdown'
 import type { Block, Doc } from '../../model/types'
 import { Icon } from '../../ui/Icon'
@@ -93,7 +93,7 @@ export function docMenuSheet(code: string, f: { web: boolean; deleting: boolean 
   }
 }
 
-/** A part of a document as a line to pick: a heading bold, a list's items apart, a table by its columns, code as code. */
+/** A part of a document as a line to pick: a heading bold, a list's tasks apart, a table by its columns, code as code. */
 function partLabel(b: Block): ReactNode {
   const cut = (s: string) => (s.length > 120 ? s.slice(0, 120) + '…' : s)
   if (b.kind === 'heading') return <b>{cut(oneLine(plainQuote(b.text)))}</b>

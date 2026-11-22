@@ -10,7 +10,7 @@ says these states in its own words, from the same fields.
     queued --taken-----------> organizing   (organizing.busy; while its voice notes' words come it waits: held)
     organizing --busy service> queued       asked again later, longer each time (T424); nothing is written
     organizing --failed------> failed       a failure that does not go away by itself (its key refused)
-    organizing --filed-------> handled      it made or changed items, or there was nothing to do
+    organizing --filed-------> handled      it made or changed tasks, or there was nothing to do
     organizing --left--------> left         for an agent (pass, or edited after it was handled)
     failed, undone --Retry---> queued, agents
     handled, left --Undo-----> undone       only the organizer's own filing, as it left it (`filing_of`)

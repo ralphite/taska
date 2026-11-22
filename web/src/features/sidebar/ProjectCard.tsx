@@ -26,8 +26,8 @@ const AGENT: Record<AgentTone, string> = {
 /** The card itself (props only): its stories draw it alone. `href`/`onOpen`: its name opens the project. */
 export function ProjectCard({ title, tone, icon, card, href, onOpen, onMenu }: { title: string; tone: string; icon?: string; card: ProjectCardFacts; href?: string; onOpen?(e: MouseEvent<HTMLAnchorElement>): void; /** ⋯ at its top right: the project's menu (F767) */ onMenu?(from: HTMLElement): void }) {
   const open = typeof card.open === 'number' ? card.open : null
-  const items = open != null && card.closed != null ? open + card.closed : null
-  const any = items !== 0 || card.needs || card.inputs || card.docs || card.agent || card.changed
+  const tasks = open != null && card.closed != null ? open + card.closed : null
+  const any = tasks !== 0 || card.needs || card.inputs || card.docs || card.agent || card.changed
   // the agent by its app's icon where it has one, then what it does (T711)
   const drawn = hasIcon(card.agent?.who?.by) ? card.agent?.who : undefined
   return (
@@ -49,16 +49,16 @@ export function ProjectCard({ title, tone, icon, card, href, onOpen, onMenu }: {
       </div>
       {any ? (
       <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-100 bg-zinc-50 px-4 py-2 text-xs dark:border-zinc-700/60 dark:bg-zinc-900/40 ${MUTED}`}>
-        {items !== 0 ? (
+        {tasks !== 0 ? (
           <span data-card-open className="inline-flex items-center gap-1">
             <StateIcon s="open" cls="size-3.5" tone="text-current" />
             {card.open} open
           </span>
         ) : null}
-        {items ? (
+        {tasks ? (
           <span data-card-closed className="inline-flex items-center gap-1">
             <StateIcon s="done" cls="size-3.5" tone="text-current" />
-            {card.closed} closed · {plural(items, 'item')}
+            {card.closed} closed · {plural(tasks, 'task')}
           </span>
         ) : null}
         {card.needs ? (

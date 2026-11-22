@@ -1,5 +1,5 @@
-"""I810: a manager's worker that never calls Taska is found by its title (the item's code first), in a folder this
-project's own sessions work in; waiting on the user, its item needs you after a minute, and a push goes after three."""
+"""I810: a manager's worker that never calls Taska is found by its title (the task's code first), in a folder this
+project's own sessions work in; waiting on the user, its task needs you after a minute, and a push goes after three."""
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ class Workers(unittest.TestCase):
         for p in (self.a, self.b):
             p.agents.see_sessions({s.id: s for s in (ses(MANAGER, "manager"), *running) if s.id in p.agents.sids()})
 
-    def test_found_by_its_title_and_on_the_item_in_progress(self) -> None:
+    def test_found_by_its_title_and_on_the_task_in_progress(self) -> None:
         self.look(ses(WORKER, "T1：系统设计专用 tutor 技能"))
         # T1 fits both projects: it goes to the one whose T1 is in progress
         self.assertEqual(self.a.agents.workers, {WORKER: ("T1：系统设计专用 tutor 技能", 1)})
@@ -53,8 +53,8 @@ class Workers(unittest.TestCase):
         row = next(s for a in self.a.agents.presence(self.a.state) for s in a.get("sessions", []) if s.get("worker"))
         self.assertEqual((row["name"], row["on"]["n"], row["status"]), ("T1：系统设计专用 tutor 技能", 1, "busy"))
 
-    def test_its_own_session_on_no_item_is_on_the_one_its_title_names(self) -> None:
-        # the worker called Taska itself (by its id, as "t28"), but took no item: its app's title names it
+    def test_its_own_session_on_no_task_is_on_the_one_its_title_names(self) -> None:
+        # the worker called Taska itself (by its id, as "t28"), but took no task: its app's title names it
         self.a.agents.saw("claude-code", 0, "t28", WORKER)
         self.look(ses(WORKER, "T1：系统设计专用 tutor 技能"))
         self.assertEqual(self.a.agents.workers, {})
@@ -151,7 +151,7 @@ class Listening(unittest.TestCase):
         self.assertTrue(self.p.agents.listens(MANAGER, now + 30))  # its next wait comes after a short pause
         self.assertFalse(self.p.agents.listens(MANAGER, now + 120))
 
-    def test_a_session_with_an_item_in_progress_is_not_asked_to_listen(self) -> None:
+    def test_a_session_with_an_task_in_progress_is_not_asked_to_listen(self) -> None:
         self.p.agents.saw("claude-code", 0, "main", MANAGER)
         self.p.run([(0, {"op": "new", "title": "Redo the brainstorm"})], "you")
         self.p.run([(0, {"op": "set", "ref": "T1", "f": {"status": "doing"}})], "you")

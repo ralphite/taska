@@ -1,4 +1,4 @@
-// Documents, Activity and Deleted: lists in the list's column on the desktop, like the item list; the pane beside
+// Documents, Activity and Deleted: lists in the list's column on the desktop, like the task list; the pane beside
 // shows what you open from them. Actions repeated on every row show when the pointer is on the row. Props only.
 
 import type { MouseEvent, ReactNode } from 'react'
@@ -44,7 +44,7 @@ export interface DocRow {
   d: number
   title: string
   web: boolean
-  /** its item, as "F12 title" */
+  /** its task, as "F12 title" */
   on: string
   comments: number
 }
@@ -53,7 +53,7 @@ export function DocsList({ docs, open, onOpen }: { docs: DocRow[]; open: number 
   if (!docs.length)
     return (
       <Empty>
-        No documents yet · item ⋯ › New doc
+        No documents yet · task ⋯ › New doc
       </Empty>
     )
   return (
@@ -119,7 +119,7 @@ export function ActivityList({ rows, end, picked, asking, on }: { rows: Activity
   )
 }
 
-/** Something deleted: an item (with its subitems), a document, or an input (with the items only it made). */
+/** Something deleted: a task (with its subtasks), a document, or an input (with the tasks only it made). */
 
 const goneWhat = (x: GoneRow) => (x.kind === 'input' ? `Input ${x.code}` : x.what)
 

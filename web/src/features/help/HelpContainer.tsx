@@ -9,7 +9,7 @@ import type { InlineWorld } from '../../ui/markdown/inline'
 import { HelpPage } from './HelpPage'
 import { searchHelp, shownTopic } from './topics'
 
-/** Help's words name no item and hold no file. */
+/** Help's words name no task and hold no file. */
 const WORLD: InlineWorld = { find: () => null, url: () => '', size: () => undefined }
 
 export function HelpContainer({ route, place }: { route: ProjectRoute; place: string }) {

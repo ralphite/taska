@@ -1,6 +1,6 @@
 // The address as the browser gives it (the page loaded, Back or Forward): the New input page puts you in its box, as it
-// always has (opened from inside the page, what opens it does that itself); on the phone, a link to an item puts the
-// list under it once the item is there, so Back lands on the list. A project's plain address, reached again in this
+// always has (opened from inside the page, what opens it does that itself); on the phone, a link to a task puts the
+// list under it once the task is there, so Back lands on the list. A project's plain address, reached again in this
 // tab, opens the list's view you left it in (Archive or Inputs; kept as the page is left, "taska.tab.<project>").
 
 import type { ProjectModel } from '../../model/project'
@@ -37,17 +37,17 @@ export class Arrival {
     }
     arrive()
     const unroute = d.route.subscribe((s, was) => s.fromBrowser && s.url !== was.url && arrive())
-    // the phone opened at an item: the list under it, once its project is here (if you are still on it)
+    // the phone opened at a task: the list under it, once its project is here (if you are still on it)
     const at = d.route.getState().route
     let undata = () => {}
-    if (!d.desk() && at.page === 'project' && at.place.kind === 'item') {
+    if (!d.desk() && at.page === 'project' && at.place.kind === 'task') {
       const n = Number(/\d+/.exec(at.place.ref)?.[0])
       const settle = () => {
         const r = d.route.getState().route
         const m = d.model(at.slug)
         if (!m) return
         undata()
-        if (r.page === 'project' && r.slug === at.slug && r.place.kind === 'item' && m.byN.has(n)) d.route.getState().putUnder(projectPath(r.slug, 'items', { kind: 'tab' }, r.list))
+        if (r.page === 'project' && r.slug === at.slug && r.place.kind === 'task' && m.byN.has(n)) d.route.getState().putUnder(projectPath(r.slug, 'tasks', { kind: 'tab' }, r.list))
       }
       undata = d.data.subscribe(settle)
       settle()

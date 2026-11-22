@@ -2,7 +2,7 @@
 
 - `events`: the append-only change log, one row per change, in order; never removed, and changed only by a change of
   the format (`rewrite`, from a copy of the file made first), each change in its place.
-- `items`, `inputs`, `docs`: the current state, kept within a second of the log, so the project can be read
+- `tasks`, `inputs`, `docs`: the current state, kept within a second of the log, so the project can be read
   without Taska.
 - `kv`: what changes often and is not history (when each agent was last seen, what it read).
 - `meta`: the format version, and how far the state rows follow the log.
@@ -21,15 +21,16 @@ from typing import Any, Dict, Iterator, List, Optional, Set, Tuple
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS events (seq INTEGER PRIMARY KEY, k TEXT NOT NULL, t TEXT, by TEXT, data TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS items (n INTEGER PRIMARY KEY, data TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS tasks (n INTEGER PRIMARY KEY, data TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS inputs (id TEXT PRIMARY KEY, data TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS docs (d INTEGER PRIMARY KEY, data TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
 """
 # 2: every change in today's kinds; the logs of format 1 were rewritten once (Refactor 8A), nothing reads that format
-# 3: every item named T and its number in what was written (T863); a log of format 2 is rewritten once at start
-FORMAT_VERSION = "3"
+# 3: every task named T and its number in what was written (T863); a log of format 2 is rewritten once at start
+# 4: the current tasks are rows of `tasks` (T864: no "item" any more); the `items` of format 3 goes once at start
+FORMAT_VERSION = "4"
 FILE_NAME = "taska.db"
 
 
@@ -41,18 +42,18 @@ def dumps(x: Any) -> str:
 class StateRows:
     """Rows of the current state to write (key -> JSON text), and the keys that went."""
 
-    items: Dict[int, str] = field(default_factory=dict)
+    tasks: Dict[int, str] = field(default_factory=dict)
     inputs: Dict[str, str] = field(default_factory=dict)
     docs: Dict[int, str] = field(default_factory=dict)
-    items_gone: Set[int] = field(default_factory=set)
+    tasks_gone: Set[int] = field(default_factory=set)
     inputs_gone: Set[str] = field(default_factory=set)
     docs_gone: Set[int] = field(default_factory=set)
 
     def __bool__(self) -> bool:
-        return bool(self.items or self.inputs or self.docs or self.items_gone or self.inputs_gone or self.docs_gone)
+        return bool(self.tasks or self.inputs or self.docs or self.tasks_gone or self.inputs_gone or self.docs_gone)
 
     def tables(self) -> List[Tuple[str, str, Dict[Any, str], Set[Any]]]:
-        return [("items", "n", self.items, self.items_gone), ("inputs", "id", self.inputs, self.inputs_gone),
+        return [("tasks", "n", self.tasks, self.tasks_gone), ("inputs", "id", self.inputs, self.inputs_gone),
                 ("docs", "d", self.docs, self.docs_gone)]
 
 
@@ -125,6 +126,19 @@ class ProjectDb:
                                        for seq, r in changed.items()])
                 self._con.executemany("INSERT OR REPLACE INTO kv (k, v) VALUES (?, ?)",
                                       [(k, dumps(v)) for k, v in kv.items()])
+                self._set_meta("version", version)
+                self._con.execute("COMMIT")
+            except BaseException:
+                self._con.execute("ROLLBACK")
+                raise
+
+    def drop_items(self, version: str) -> None:
+        """Format 3's table of the current tasks (`items`, rows made again from the log) goes, at once with the format
+        noted (T864)."""
+        with self._lock:
+            self._con.execute("BEGIN IMMEDIATE")
+            try:
+                self._con.execute("DROP TABLE IF EXISTS items")
                 self._set_meta("version", version)
                 self._con.execute("COMMIT")
             except BaseException:

@@ -1,4 +1,4 @@
-// How wide you dragged the sidebar and the list, how tall the item over its talk, and how wide the item beside its
+// How wide you dragged the sidebar and the list, how tall the task over its talk, and how wide the task beside its
 // talk (0: as the page has them), kept in this browser ("taska.w.<side|list|top|duo>", as pages have always kept them).
 
 import { createStore, type StoreApi } from 'zustand/vanilla'

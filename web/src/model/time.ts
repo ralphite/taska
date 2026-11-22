@@ -33,7 +33,7 @@ export function dayLabel(t: string | number, now: number): string {
 
 /** How long ago, as where it shows says it:
  * - `short`, beside a name or a line (the agent pill, an agent's sessions, a row's news): now, 5m, 2h, 3d
- * - `ago`, a quiet line (an item's Updated): just now, 5m ago, 2h ago
+ * - `ago`, a quiet line (a task's Updated): just now, 5m ago, 2h ago
  * - `long`, in a sentence (the agents' tip and sheet): just now, 5 min ago, 2 h ago, 3 days ago */
 export type AgoStyle = 'short' | 'ago' | 'long'
 export function ago(t: string | number, now: number, style: AgoStyle): string {
@@ -72,7 +72,7 @@ export function laterDay(day: string, now: number): string {
   return days >= 0 && days < 7 ? d.toLocaleDateString('en-US', { weekday: 'short' }) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-/** The day an item is Later until, as its row and its page say it ("Mon"); none when it is not Later until a day. */
+/** The day a task is Later until, as its row and its page say it ("Mon"); none when it is not Later until a day. */
 export const laterOn = (it: { when: string; later_until?: string | null }, now: number): string | undefined =>
   it.when === 'later' && it.later_until ? laterDay(it.later_until, now) : undefined
 

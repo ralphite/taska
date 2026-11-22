@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Token use and time of one Claude Code session over a time window.
 
-The manager session (I447) uses it to record what each delegated item cost.
+The manager session (I447) uses it to record what each delegated task cost.
 
   python3 tools/session_usage.py <session.jsonl> [--since ISO] [--until ISO]
 

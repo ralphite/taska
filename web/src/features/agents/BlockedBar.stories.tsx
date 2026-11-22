@@ -10,7 +10,7 @@ import { Sheet, SheetLayout } from '../../ui/Sheet'
 import { Frame, Frames, PHONE, States } from '../../stories/Frames'
 import { guide } from '../../stories/guideFixture'
 import { AGENTS, headOf } from '../../stories/headFixtures'
-import { pageOf } from '../../stories/itemPage'
+import { pageOf } from '../../stories/taskPage'
 import { PROJECT, listOf } from '../../stories/listFixtures'
 import { DeskPage as NewInputDesk, PhonePage as NewInputPhone } from '../../stories/newInputPage'
 import { DeskPage, PageBox } from '../../stories/searchDeskPage'
@@ -50,14 +50,14 @@ function WithSheet({ desk, children }: { desk: boolean; children(open: () => voi
 
 const bar = (layout: Layout, onOpen: () => void, place = ABOVE_BOX[layout]) => <BlockedBar by="claude-code" place={place} onOpen={onOpen} />
 
-/** The phone's list: the head (its agent button blocked), the tabs, the items, the box at the foot, the bar above it. */
+/** The phone's list: the head (its agent button blocked), the tabs, the tasks, the box at the foot, the bar above it. */
 function PhoneList() {
   return (
     <WithSheet desk={false}>
       {(open) => (
         <div className="flex h-full flex-col">
           {headOf(false, { agents: BLOCKED, onAgents: open })}
-          {listOf(PROJECT, 'items', {}, false)}
+          {listOf(PROJECT, 'tasks', {}, false)}
           <div className="relative">
             {bar('phone', open)}
             <PageBox m={SHOP_BLOCKED} n={null} desk={false} />
@@ -68,8 +68,8 @@ function PhoneList() {
   )
 }
 
-/** The phone's item page: the item's bar, its page, the box replying to it, the bar above the box. */
-function PhoneItem() {
+/** The phone's task page: the task's bar, its page, the box replying to it, the bar above the box. */
+function PhoneTask() {
   return (
     <WithSheet desk={false}>
       {(open) => (
@@ -85,9 +85,9 @@ function PhoneItem() {
   )
 }
 
-/** The desktop with an item open: the sidebar, the bar of the project (its agent button blocked), the list, the item,
+/** The desktop with a task open: the sidebar, the bar of the project (its agent button blocked), the list, the task,
  * the box under it, the bar above the box. */
-function DeskItem() {
+function DeskTask() {
   return (
     <WithSheet desk>
       {(open) => <DeskPage slug="shop" n={1} rail={false} onSearch={act('Sidebar: search')} model={SHOP_BLOCKED} onAgents={open} float={bar('desk', open)} />}
@@ -103,10 +103,10 @@ export const OnTheList: Story = {
   render: () => pad(<Frame layout="phone" width={PHONE.width}><PhoneList /></Frame>),
 }
 
-/** An item open, its box under it: the bar just above the box, on the phone and on the desktop. */
-export const OnAnItem: Story = {
-  name: 'An item, above its box',
-  render: () => <Frames deskWidth={1280} height={760}>{(layout) => (layout === 'desk' ? <DeskItem /> : <PhoneItem />)}</Frames>,
+/** A task open, its box under it: the bar just above the box, on the phone and on the desktop. */
+export const OnAnTask: Story = {
+  name: 'A task, above its box',
+  render: () => <Frames deskWidth={1280} height={760}>{(layout) => (layout === 'desk' ? <DeskTask /> : <PhoneTask />)}</Frames>,
 }
 
 /** The phone's Inputs tab: the bar just above the box at its foot. */
@@ -130,7 +130,7 @@ export const TheBar: Story = {
     <Frames deskWidth={720} phone desk>
       {() => (
         <States
-          items={[
+          tasks={[
             ['Claude Code blocked', <BlockedBar key="cc" by="claude-code" place="p-4" onOpen={act('Open: the Agents sheet')} />],
             ['Codex blocked', <BlockedBar key="cx" by="codex" place="p-4" onOpen={act('Open: the Agents sheet')} />],
             ['an agent without an icon', <BlockedBar key="ag" by="antigravity" place="p-4" onOpen={act('Open: the Agents sheet')} />],

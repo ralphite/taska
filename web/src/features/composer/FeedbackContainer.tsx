@@ -36,7 +36,7 @@ export function FeedbackContainer({ route, scope, boxKey }: { route: ProjectRout
         cancel: (q) => app.box.cancel(q),
         retry: (q) => app.inputs.retry(q),
         edit: (q) => app.box.editOutgoing(route.slug, boxKey, q, away) && app.fields.focus('box'),
-        open: (n) => m && app.nav.openItem(codeOf(m, n)),
+        open: (n) => m && app.nav.openTask(codeOf(m, n)),
         undoFiling: () => sentRow && app.inputActions.undoFiling(route.slug, sentRow.id),
         move: () => sentRow && app.sheets.open({ kind: 'input-move', id: sentRow.id }),
         retryOrganizer: () => sentRow && app.inputActions.organizeAgain(route.slug, sentRow.id),

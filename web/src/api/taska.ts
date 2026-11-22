@@ -33,7 +33,7 @@ export interface Answers {
   commands: CommandAnswer
   upload: FileRef & { pending?: boolean }
   moveInput: Ok & { to: string; as: string }
-  moveItem: Ok & { as: string; with?: number; docs?: number }
+  moveTask: Ok & { as: string; with?: number; docs?: number }
   words: WordsAnswer
   projects: ProjectRow[]
   createProject: ProjectAnswer
@@ -41,7 +41,7 @@ export interface Answers {
   deleteProject: ProjectAnswer
   restoreProject: ProjectAnswer
   purgeProject: Ok & { name: string }
-  deletedProjects: { name: string; title: string; t: string; items: number }[]
+  deletedProjects: { name: string; title: string; t: string; tasks: number }[]
   orderProjects: Ok
   needs: Need[]
   find: FindAnswer
@@ -115,9 +115,9 @@ export class TaskaApi {
     return this.http.json(P(slug) + 'move-input', { method: 'POST', body: { id, to }, timeout: TIME_LIMIT.command })
   }
 
-  /** An item (with its subitems, words and talk) goes to another project; done once per id. */
-  moveItem(slug: string, to: string, ref: string, id: string, under?: string): Promise<Answers['moveItem']> {
-    return this.http.json(P(slug) + 'move-item?id=' + encodeURIComponent(id), { method: 'POST', body: { to, ref, ...(under ? { under } : {}) }, timeout: TIME_LIMIT.command })
+  /** A task (with its subtasks, words and talk) goes to another project; done once per id. */
+  moveTask(slug: string, to: string, ref: string, id: string, under?: string): Promise<Answers['moveTask']> {
+    return this.http.json(P(slug) + 'move-task?id=' + encodeURIComponent(id), { method: 'POST', body: { to, ref, ...(under ? { under } : {}) }, timeout: TIME_LIMIT.command })
   }
 
   /** A voice note's words: at once when they are kept (GET), or waiting for them (POST; more: the final words after
@@ -129,7 +129,7 @@ export class TaskaApi {
     return this.http.json(P(slug) + 'words?' + q.toString(), wait ? { method: 'POST', timeout: 60000 } : {})
   }
 
-  /** An item's card, word for word what an agent reading it gets (F568); read with ui=1, so it is no agent's visit. */
+  /** A task's card, word for word what an agent reading it gets (F568); read with ui=1, so it is no agent's visit. */
   card(slug: string, code: string): Promise<string> {
     return this.http.text(`/p/${encodeURIComponent(slug)}/${encodeURIComponent(code)}?ui=1`)
   }
@@ -215,7 +215,7 @@ export class TaskaApi {
     return this.http.json('/dev/api/dashboard?days=' + encodeURIComponent(days))
   }
 
-  /** Your own views of the item list, the same in every project. */
+  /** Your own views of the task list, the same in every project. */
   views(): Promise<Answers['views']> {
     return this.http.json('/api/views')
   }
@@ -229,7 +229,7 @@ export class TaskaApi {
     return this.http.json('/api/corrections')
   }
 
-  setCorrection(body: { wrong?: string; right?: string; forget?: boolean; undo?: boolean; project?: string; item?: string; file?: string }): Promise<Answers['setCorrection']> {
+  setCorrection(body: { wrong?: string; right?: string; forget?: boolean; undo?: boolean; project?: string; task?: string; file?: string }): Promise<Answers['setCorrection']> {
     return this.http.json('/api/corrections', { method: 'POST', body })
   }
 

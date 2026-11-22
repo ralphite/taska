@@ -10,7 +10,7 @@ type Story = StoryObj
 
 const parts = {
   title: 'Move to project',
-  sub: <p className="px-5 pb-2 text-sm text-zinc-500">T012 and its 2 subitems go along.</p>,
+  sub: <p className="px-5 pb-2 text-sm text-zinc-500">T012 and its 2 subtasks go along.</p>,
   body: <p className="text-[15px]">The body scrolls when it is long.</p>,
   foot: (
     <div className="flex justify-end border-t border-zinc-100 p-3 dark:border-zinc-800">

@@ -16,7 +16,7 @@ from .steps import by_id, changed_words, link, org_note, post, show_edit
 def _input(state: ProjectState, e: ev.Event) -> None:
     assert isinstance(e, ev.InputAdded)
     inp = Input(id=e.id, t=e.t, by=e.by, text=e.text, scope=e.scope, files=list(e.files), seq=e.seq, q=e.q)
-    if e.kind == "answer":  # a form you sent: in its item's talk as it is, nothing more to do
+    if e.kind == "answer":  # a form you sent: in its task's talk as it is, nothing more to do
         inp.kind, inp.acked = "answer", True
     elif e.kind == "cancelled":  # a recording you cancelled: kept to listen to and send later, not work (B627)
         inp.kind = "cancelled"
@@ -24,7 +24,7 @@ def _input(state: ProjectState, e: ev.Event) -> None:
     state.max_input = max(state.max_input, inp.number)
     if e.q:
         state.page_ids[e.q] = inp.id
-    it = state.items.get(inp.scope) if inp.scope is not None else None
+    it = state.tasks.get(inp.scope) if inp.scope is not None else None
     if it:
         post(state, it, e, "say", inp.text, inp.id)
         if e.of:
@@ -62,11 +62,11 @@ def _delete_input(state: ProjectState, e: ev.Event) -> None:
     if inp:
         inp.deleted = InputDeletion(t=e.t, seq=e.seq, ns=list(e.ns), kept=[list(k) for k in e.kept])
     for n in e.ns:
-        if n in state.items:
-            state.items[n].deleted = rid
+        if n in state.tasks:
+            state.tasks[n].deleted = rid
     took: List[Taken] = []
-    state.deletion_took[e.seq] = took  # the items that stay lose it from their sources, and its words on them
-    for it in state.items.values():
+    state.deletion_took[e.seq] = took  # the tasks that stay lose it from their sources, and its words on them
+    for it in state.tasks.values():
         if it.deleted == rid:
             continue
         if rid in it.srcs:
@@ -85,11 +85,11 @@ def _restore_input(state: ProjectState, e: ev.Event) -> None:
     gone = inp.deleted if inp else None
     if inp:
         inp.deleted = None
-    for it in state.items.values():
+    for it in state.tasks.values():
         if it.deleted == rid:
             it.deleted = None
     for taken in reversed(state.deletion_took.pop(gone.seq, []) if gone else []):
-        it = state.items.get(taken.n)
+        it = state.tasks.get(taken.n)
         if not it:
             continue
         if isinstance(taken, TakenSource):
@@ -107,8 +107,8 @@ def _move_input(state: ProjectState, e: ev.Event) -> None:
     if not inp:
         return
     inp.acked, inp.moved = True, Moved(to=e.to, as_=e.as_)
-    it = state.items.get(inp.scope) if inp.scope is not None else None
-    if it:  # its message on the item goes with it
+    it = state.tasks.get(inp.scope) if inp.scope is not None else None
+    if it:  # its message on the task goes with it
         it.thread = [x for x in it.thread if x.id != inp.seq]
         if inp.id in it.srcs and inp.id not in [x.src for x in it.thread]:
             it.srcs.remove(inp.id)
@@ -131,11 +131,11 @@ def _rescope(state: ProjectState, e: ev.Event) -> None:
     old = inp.scope
     inp.scope = e.to
     inp.touched = [n for n in inp.touched if n != old] + ([] if e.to in inp.touched else [e.to])
-    was = state.items.get(old) if old is not None else None
+    was = state.tasks.get(old) if old is not None else None
     if was:
         moved = [x for x in was.thread if x.src == e.src and x.by == "you"]
         was.thread = [x for x in was.thread if x not in moved]
-        new = state.items.get(e.to)
+        new = state.tasks.get(e.to)
         if new:
             new.thread = sorted(new.thread + moved, key=by_id)
 

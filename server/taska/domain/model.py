@@ -1,4 +1,4 @@
-"""The records of a project's current state: items, their messages, inputs, documents and their comments.
+"""The records of a project's current state: tasks, their messages, inputs, documents and their comments.
 
 They are rebuilt from the change log (domain.projector) and written as JSON rows next to it (`to_row`), in the shape
 the stored state tables have always had.
@@ -97,7 +97,7 @@ class Voice:
 
 @dataclass
 class Message:
-    """One message in an item's talk: the user's (by "you"), the organizer's ("org") or an agent's."""
+    """One message in a task's talk: the user's (by "you"), the organizer's ("org") or an agent's."""
 
     id: int  # the change number that wrote it
     by: str
@@ -133,7 +133,7 @@ class Message:
 
 @dataclass
 class AgentMark:
-    """Who works on an item and when it was last heard of there."""
+    """Who works on a task and when it was last heard of there."""
 
     by: str
     t: str
@@ -156,11 +156,11 @@ class Decision:
         return {"from": self.from_, "to": self.to, "msg": self.msg, "t": self.t}
 
 
-ITEM_FIELDS = ("title", "body", "next", "pri", "when", "status", "tags", "group", "after", "parent", "archived", "rank", "later_until")
+TASK_FIELDS = ("title", "body", "next", "pri", "when", "status", "tags", "group", "after", "parent", "archived", "rank", "later_until")
 
 
 @dataclass
-class Item:
+class Task:
     n: int
     title: str
     body: str
@@ -179,26 +179,26 @@ class Item:
     agent: Optional[AgentMark] = None
     rank: Optional[float] = None  # the user's order within a priority (smaller first); None: by priority
     decided: Optional[Decision] = None
-    deleted: Optional[str] = None  # the input it was deleted with, or "#item" when deleted by itself
+    deleted: Optional[str] = None  # the input it was deleted with, or "#task" when deleted by itself
     deleted_at: Optional[str] = None
     later_until: Optional[str] = None  # Later until this day (YYYY-MM-DD, local): then back to Now by itself (D115 #21)
     tags: List[str] = field(default_factory=list)  # #bug #手机: what it is, in place of the old types (T855)
-    # a group (T856): it holds items and gives them its words; no work of its own: /next never gives it, it is never
+    # a group (T856): it holds tasks and gives them its words; no work of its own: /next never gives it, it is never
     # done by itself (the user archives it)
     group: bool = False
-    after: List[int] = field(default_factory=list)  # the items it waits for: /next gives it once they are finished (T857)
+    after: List[int] = field(default_factory=list)  # the tasks it waits for: /next gives it once they are finished (T857)
 
     def get(self, name: str) -> Any:
-        """A field that a change can set (ITEM_FIELDS)."""
+        """A field that a change can set (TASK_FIELDS)."""
         return getattr(self, name)
 
     def put(self, name: str, value: Any) -> None:
-        if name in ITEM_FIELDS:
+        if name in TASK_FIELDS:
             setattr(self, name, value)
 
     @property
     def live(self) -> bool:
-        """Not merged into another item and not deleted."""
+        """Not merged into another task and not deleted."""
         return self.merged_into is None and not self.deleted
 
     def to_row(self) -> Row:
@@ -258,7 +258,7 @@ class InputVersion:
 
 @dataclass
 class InputDeletion:
-    """An input in Deleted: when, by which change, the items that went with it and those that stayed (and why)."""
+    """An input in Deleted: when, by which change, the tasks that went with it and those that stayed (and why)."""
 
     t: str
     seq: int
@@ -282,7 +282,7 @@ class Moved:
 
 @dataclass
 class Input:
-    """What the user said, verbatim: a new input to the project, or a reply on an item (scope)."""
+    """What the user said, verbatim: a new input to the project, or a reply on a task (scope)."""
 
     id: str  # r12
     t: str
@@ -292,9 +292,9 @@ class Input:
     files: List[FileRef]
     seq: int  # the change that made it
     acked: bool = False  # handled
-    touched: List[int] = field(default_factory=list)  # the items it made or changed
+    touched: List[int] = field(default_factory=list)  # the tasks it made or changed
     org: Optional[OrgNote] = None
-    kind: Optional[str] = None  # "answer": a form sent on its item, filed as it is; "cancelled": not sent (B627)
+    kind: Optional[str] = None  # "answer": a form sent on its task, filed as it is; "cancelled": not sent (B627)
     history: List[InputVersion] = field(default_factory=list)
     v: int = 0  # bumps on every change of its words
     edit_seq: int = 0
@@ -401,11 +401,11 @@ class Proposal:
 
 @dataclass
 class Doc:
-    """A document on an item: Markdown (the default) or a web page (fmt "html"), with its comments. The project's rules
-    are one document of the project itself (kind "rules", no item: n 0), with its proposals (I693)."""
+    """A document on a task: Markdown (the default) or a web page (fmt "html"), with its comments. The project's rules
+    are one document of the project itself (kind "rules", no task: n 0), with its proposals (I693)."""
 
     d: int
-    n: int  # the item it belongs to (0: the project's)
+    n: int  # the task it belongs to (0: the project's)
     t0: str
     title: str = ""
     md: str = ""

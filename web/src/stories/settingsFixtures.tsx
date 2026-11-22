@@ -1,6 +1,6 @@
 // Settings as the page draws it: its frame (the desktop's column of sections and the section beside it; the phone's
 // index or one section's page), the way through (DeskNav, PhoneIndex) and each section's own body, with what they
-// show worked out by the page's own settingsFacts from a demo project (Shop: the item list's) and what the page has
+// show worked out by the page's own settingsFacts from a demo project (Shop: the task list's) and what the page has
 // of the other projects. Used by Settings' stories.
 import { navWord } from '../app/project/notices'
 import { useState, type ReactNode } from 'react'
@@ -17,7 +17,7 @@ import { SharedRulesBody } from '../features/settings/SharedRulesSection'
 import { SHARED_RULES } from './sharedRulesFixtures'
 import { goneRows } from '../model/goneRows'
 import type { SectionKey } from '../features/settings/sectionList'
-import type { AgentSeen, Item, LogRow, ProjectRow, Spelling } from '../model/types'
+import type { AgentSeen, Task, LogRow, ProjectRow, Spelling } from '../model/types'
 import type { DeletedProject } from '../stores/settings'
 import { T, modelOf } from './fixtures'
 import { doc } from './docFixtures'
@@ -50,7 +50,7 @@ const ROWS: ProjectRow[] = [
   { name: 'shop', title: 'Shop', open: 0, needs: 0, pos: 1 },
   { name: 'notes', title: '\u8bfb\u4e66\u7b14\u8bb0', open: 2, needs: 1, pos: 2 },
 ]
-const GONE: DeletedProject[] = [{ name: 'old', title: 'Old notes', t: at(60 * 24 * 4), items: 4 }]
+const GONE: DeletedProject[] = [{ name: 'old', title: 'Old notes', t: at(60 * 24 * 4), tasks: 4 }]
 export const LOG: LogRow[] = [
   { seq: 41, t: at(5), who: 'claude-code', kind: 'say', n: 1, as: 'progress', text: 'Reproduced it: the export reads the list before the filter', ses: 'claude-code' },
   { seq: 40, t: at(20), who: 'you', kind: 'set', n: 4, set: [{ field: 'status', was: 'review', now: 'done' }] },
@@ -102,8 +102,8 @@ export interface SettingsHere {
 
 /** Shop with its history: agents, documents, what was deleted, what can be undone. */
 /** the demo project with its agents; `work`: something waits for an agent; `remote`: its public address ('' none) */
-export const shopWithHistory = (agents: AgentSeen[] = SEEN, o: { work?: boolean; remote?: string; items?: Item[] } = {}) =>
-  modelOf(o.items ?? PROJECT, [], {
+export const shopWithHistory = (agents: AgentSeen[] = SEEN, o: { work?: boolean; remote?: string; tasks?: Task[] } = {}) =>
+  modelOf(o.tasks ?? PROJECT, [], {
     title: 'Shop',
     agents,
     work: o.work ?? true,
@@ -112,17 +112,17 @@ export const shopWithHistory = (agents: AgentSeen[] = SEEN, o: { work?: boolean;
     key: 'a1b2-c3d4',
     organizer: { on: true, model: 'gemini-flash-latest', busy: [] },
     undo: [{ seq: 40, n: 4, f: { status: 'done' }, was: { status: 'review' }, t: at(20) }],
-    deleted: [{ kind: 'item', n: 9, code: 'T009', title: 'Export button too small on the phone', at: at(90), more: 2 }, { kind: 'doc', d: 3, title: 'Old export notes', at: at(200), on: 'T001' }],
+    deleted: [{ kind: 'task', n: 9, code: 'T009', title: 'Export button too small on the phone', at: at(90), more: 2 }, { kind: 'doc', d: 3, title: 'Old export notes', at: at(200), on: 'T001' }],
     deletedInputs: [
-      { id: 'r8', t: at(60 * 3), at: at(70), text: 'The coupons page should list the expired ones too', files: 0, scope: null, items: [{ n: 15, code: 'T015', title: 'Expired coupons on the coupons page', tags: [] }], kept: [] },
-      { id: 'r6', t: at(60 * 26), at: at(120), text: 'the drawer jumps when it opens', files: 0, scope: null, items: [], kept: [] },
-      { id: 'r5', t: at(60 * 30), at: at(150), text: '', files: 2, scope: null, items: [], kept: [] },
+      { id: 'r8', t: at(60 * 3), at: at(70), text: 'The coupons page should list the expired ones too', files: 0, scope: null, tasks: [{ n: 15, code: 'T015', title: 'Expired coupons on the coupons page', tags: [] }], kept: [] },
+      { id: 'r6', t: at(60 * 26), at: at(120), text: 'the drawer jumps when it opens', files: 0, scope: null, tasks: [], kept: [] },
+      { id: 'r5', t: at(60 * 30), at: at(150), text: '', files: 2, scope: null, tasks: [], kept: [] },
     ],
   }, [doc({ d: 1, n: 1, title: 'Plan: the export keeps the filter' }), doc({ d: 2, n: 3, fmt: 'html', title: 'Export options', blocks: [], whole: [], detached: [] })])
 
 export const settingsAt = (sec: SectionKey | null, desk: boolean, h: SettingsHere = {}) => <LiveSettings sec={sec} desk={desk} h={h} />
 
-const setActs = acts('Settings', ['saveRename', 'remove', 'restore', 'purge', 'open', 'leave', 'keys', 'copy', 'newKey', 'addWord', 'forget', 'openDoc', 'item', 'input', 'undo', 'more', 'restoreThing', 'restoreInput', 'onPhone', 'newShared', 'openShared'] as const, { keys: 'Sheets › Keyboard shortcuts', openDoc: 'Document › Reading', openShared: 'UI › Rules tab › Shared rules › A shared rule’s page' })
+const setActs = acts('Settings', ['saveRename', 'remove', 'restore', 'purge', 'open', 'leave', 'keys', 'copy', 'newKey', 'addWord', 'forget', 'openDoc', 'task', 'input', 'undo', 'more', 'restoreThing', 'restoreInput', 'onPhone', 'newShared', 'openShared'] as const, { keys: 'Sheets › Keyboard shortcuts', openDoc: 'Document › Reading', openShared: 'UI › Rules tab › Shared rules › A shared rule’s page' })
 
 /** Settings with what the page holds for it (the route's section, stores.settings: a project being named, renamed or
  * its menu open, what asks again; the notifications' and spellings' switches): a section opens (the phone's back goes
@@ -205,7 +205,7 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
     log: () => {
       const rows = h.log === 'loading' ? null : h.log === 'empty' ? [] : logRows(m, LOG)
       const asking = logAsking ?? new Set(h.log === 'asking' && rows?.length ? [rows.find((x) => x.undo != null)?.undo ?? -1] : [])
-      return <LogBody rows={rows} end={h.log !== 'more'} asking={asking} on={{ item: setActs.item, input: setActs.input, undo: (seq) => (asking.has(seq) ? setActs.undo(seq) : setLogAsking(new Set([...asking, seq]))), more: setActs.more }} />
+      return <LogBody rows={rows} end={h.log !== 'more'} asking={asking} on={{ task: setActs.task, input: setActs.input, undo: (seq) => (asking.has(seq) ? setActs.undo(seq) : setLogAsking(new Set([...asking, seq]))), more: setActs.more }} />
     },
     shared: () => <SharedRulesBody rows={sharedRows(shared, now)} desk={desk} on={{ create: setActs.newShared, open: setActs.openShared }} />,
     deleted: () => <DeletedBody rows={h.nothingDeleted ? [] : goneRows(m)} on={{ restore: (x) => (x.kind === 'input' ? setActs.restoreInput(x.id) : setActs.restoreThing(x.key)) }} />,

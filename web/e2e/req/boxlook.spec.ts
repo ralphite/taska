@@ -1,6 +1,6 @@
 // Yadong's requirements on how the input box looks (D29, "The input box", "Details"; T475, D45): each check is named by
 // the codes of his inputs, so a change that breaks one is stopped before it ships with his own words.
-// guards: src/features/composer/ src/pages/ProjectPageContainer.tsx src/features/item/ItemPage.tsx src/ui/PaneFrame.tsx src/index.css
+// guards: src/features/composer/ src/pages/ProjectPageContainer.tsx src/features/task/TaskPage.tsx src/ui/PaneFrame.tsx src/index.css
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
@@ -34,11 +34,11 @@ for (const scheme of ['light', 'dark'] as const)
     }
   })
 
-test('r469 #6715: in light the talk of an item in one column runs down to the strip under the box, no white gap above it (B536)', async ({
+test('r469 #6715: in light the talk of a task in one column runs down to the strip under the box, no white gap above it (B536)', async ({
   page,
   request,
 }) => {
-  test.skip(!isDesk(page), 'one column with its talk under the item is the desktop\u2019s')
+  test.skip(!isDesk(page), 'one column with its talk under the task is the desktop\u2019s')
   await page.emulateMedia({ colorScheme: 'light' })
   const p = await project(request, LOOP)
   for (let i = 0; i < 14; i++)
@@ -51,11 +51,11 @@ test('r469 #6715: in light the talk of an item in one column runs down to the st
   expect(t.y + t.height, 'the talk ends at the strip, not above it').toBeGreaterThanOrEqual(f.y - 1)
 })
 
-test('#6915 r711 r712: in dark the talk of an item in one column runs on under the box as in two columns: its words show above the box, and its end stays clear of it (F478)', async ({
+test('#6915 r711 r712: in dark the talk of a task in one column runs on under the box as in two columns: its words show above the box, and its end stays clear of it (F478)', async ({
   page,
   request,
 }) => {
-  test.skip(!isDesk(page), 'one column with its talk under the item is the desktop\u2019s')
+  test.skip(!isDesk(page), 'one column with its talk under the task is the desktop\u2019s')
   await page.emulateMedia({ colorScheme: 'dark' })
   const p = await project(request, LOOP)
   for (let i = 0; i < 14; i++)

@@ -30,8 +30,8 @@ class Event:
             row["ses"] = self.ses
         return row
 
-    def items_touched(self) -> List[int]:
-        """The items this change is about directly (documents are added by the rules, which know their items)."""
+    def tasks_touched(self) -> List[int]:
+        """The tasks this change is about directly (documents are added by the rules, which know their tasks)."""
         return []
 
 

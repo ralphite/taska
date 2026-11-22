@@ -7,7 +7,7 @@ import { INPUT_STATES, actsIn, becameText, showsIn, type InputAct } from './inpu
 import { allComments, docTarget, type DocTarget } from './docs'
 import { ticksNotSent, type TickState } from './docTicks'
 import { draftName, draftTarget } from './draftTarget'
-import { oneLine } from './items'
+import { oneLine } from './tasks'
 import { plainQuote } from './markdown'
 import { codeOf, liveN, type ProjectModel } from './project'
 import type { Route } from './route'
@@ -25,8 +25,8 @@ export type BoxRight =
   | { kind: 'x'; label: string; act: 'stop' | 'unpick' | 'discard' }
   /** choices ticked in the document: Send choices, and an x that clears them */
   | { kind: 'ticks' }
-  /** the phone's document: reply to its item instead */
-  | { kind: 'to-item'; code: string }
+  /** the phone's document: reply to its task instead */
+  | { kind: 'to-task'; code: string }
 
 /** The line on top of the box: what it writes to, when that needs saying. */
 export interface BoxLine {
@@ -57,7 +57,7 @@ export type BoxMode =
 
 export interface BoxRole {
   aim: DocAim
-  /** the item it replies on */
+  /** the task it replies on */
   scope: string | null
   /** the document whose box it is */
   doc: number | null
@@ -72,14 +72,14 @@ type ProjectPlace = Extract<Route, { page: 'project' }>
 
 const stop = (label: string): BoxRight => ({ kind: 'x', label, act: 'stop' })
 
-/** What the box writes to now: the open item, a document's comment or reply, what it is in (an edit, a correction,
+/** What the box writes to now: the open task, a document's comment or reply, what it is in (an edit, a correction,
  * the preferences), or a new input. */
 export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boolean, title: string, mode: BoxMode, pick: Parameters<typeof docTarget>[1], ticks: TickState): BoxRole {
-  // the item open, or the one whose document is open (nothing picked in it, the box replies on the item)
+  // the task open, or the one whose document is open (nothing picked in it, the box replies on the task)
   const place = route.place
   const dn = placeDoc(route, m)
   const docOf = dn != null ? m?.docs.find((x) => x.d === dn) : undefined
-  const open = place.kind === 'item' ? m?.byN.get(Number(/\d+/.exec(place.ref)?.[0])) : docOf && m ? m.byN.get(liveN(m, docOf.n)) : undefined
+  const open = place.kind === 'task' ? m?.byN.get(Number(/\d+/.exec(place.ref)?.[0])) : docOf && m ? m.byN.get(liveN(m, docOf.n)) : undefined
   const none = { aim: null as DocAim }
   if (mode?.kind === 'prefs') {
     const line: BoxLine = { icon: 'pencil', label: 'Edit transcription preferences', detail: '· all projects', right: stop('Stop editing') }
@@ -124,9 +124,9 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
     return { aim: { d: docOf.d, target: { key: 'doc', quote: '' } }, scope: null, doc: docOf.d, line: null, placeholder: 'Comment on the rules…', send: 'Comment' }
   }
   if (docOf && !desk && !mode) {
-    // the phone, nothing picked: a comment on the whole document (Reply to its item instead)
+    // the phone, nothing picked: a comment on the whole document (Reply to its task instead)
     const host = m ? liveN(m, docOf.n) : null
-    const line: BoxLine = { icon: 'comment', label: `Comment on D${docOf.d}`, detail: '· or tap a part', ...(host != null && m?.byN.has(host) ? { right: { kind: 'to-item', code: codeOf(m, host) } } : {}) }
+    const line: BoxLine = { icon: 'comment', label: `Comment on D${docOf.d}`, detail: '· or tap a part', ...(host != null && m?.byN.has(host) ? { right: { kind: 'to-task', code: codeOf(m, host) } } : {}) }
     return { aim: { d: docOf.d, target: { key: 'doc', quote: '' } }, scope: null, doc: docOf.d, line, placeholder: `Comment on D${docOf.d}…`, send: 'Comment' }
   }
   if (mode?.kind === 'amend' && m?.byId.has(mode.id)) {
@@ -142,7 +142,7 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
     }
     return { ...none, scope: open && m ? codeOf(m, open.n) : null, doc: null, line, placeholder: 'Write…', send: 'Save' }
   }
-  // a document open, nothing picked (the desktop): a reply to its item, written in the document's own draft
+  // a document open, nothing picked (the desktop): a reply to its task, written in the document's own draft
   if (open && m) return { ...none, scope: codeOf(m, open.n), doc: docOf ? docOf.d : null, line: null, placeholder: `Reply to ${codeOf(m, open.n)}…`, send: 'Send' }
   // a new input: no line, the New input page's head says what it is (Yadong, r583 and r1092: that line is gone)
   return { ...none, scope: null, doc: null, line: null, placeholder: m ? `Write to ${title}…` : 'Write anything…', send: 'Send' }
@@ -188,7 +188,7 @@ export type FeedbackLine =
  * `title`: a project's title by its name; `others`: there is another project to move it to. `final`: the input it
  * names, once it ended up somewhere (the line lets it go after a while). */
 export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; scope: string | null; mine: Outgoing[]; away: number; lastSent: string | null; others: boolean; title(slug: string): string }): { line: FeedbackLine; final?: string } | null {
-  // the phone's only (T689, r576): on the desktop each input is in the New input page's list; in an item, in its talk
+  // the phone's only (T689, r576): on the desktop each input is in the New input page's list; in a task, in its talk
   if (a.desk || a.scope) return null
   const going = a.mine.filter((o) => showsOnItsWay(o))
   const first = going[0]

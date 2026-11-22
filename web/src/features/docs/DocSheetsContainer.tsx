@@ -1,4 +1,4 @@
-// A document's sheets with the page's data: putting it on another item, moving one of its comments, restoring a
+// A document's sheets with the page's data: putting it on another task, moving one of its comments, restoring a
 // version of the rules, putting shared rules into them (I779).
 
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
@@ -33,7 +33,7 @@ export function DocMoveSheet({ req }: Req<'doc-move'>) {
   const code = (n: number) => codeOf(m, n)
   return (
     <SheetLayout
-      {...pickSheet({ head: `Put D${d.d} on…`, items: m.items, skip: [liveN(m, d.n)], code, desk }, (n) => {
+      {...pickSheet({ head: `Put D${d.d} on…`, tasks: m.tasks, skip: [liveN(m, d.n)], code, desk }, (n) => {
         app.sheets.close()
         app.docEditor.moveTo(d.d, code(n))
       })}

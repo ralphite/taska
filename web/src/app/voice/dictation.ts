@@ -60,7 +60,7 @@ export class Dictation {
     return r.page === 'project' ? r.slug : null
   }
 
-  /** The draft the editor writes ("D12", "new 4") and the item it is on. */
+  /** The draft the editor writes ("D12", "new 4") and the task it is on. */
   private editing(slug: string): { key: string; scope: string | null } | null {
     const v = this.d.view.getState()
     const m = this.d.model(slug)

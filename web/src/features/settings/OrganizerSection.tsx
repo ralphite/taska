@@ -22,7 +22,7 @@ export function OrganizerBody({ on, model, gemini = { from: '', tail: '' }, savi
   const save = () => key.trim() && events?.save(key.trim())
   return (
     <>
-      {on ? <Part title="On" about={`Gemini (${model}) files inputs into items in all projects; undo it on the input`} /> : <Part title="Off" about="Inputs stay as you send them and voice notes are not written out." />}
+      {on ? <Part title="On" about={`Gemini (${model}) files inputs into tasks in all projects; undo it on the input`} /> : <Part title="Off" about="Inputs stay as you send them and voice notes are not written out." />}
       <Part
         title="Gemini API key"
         about={

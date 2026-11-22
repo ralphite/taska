@@ -12,7 +12,7 @@ from .base import Event, Reader, common, files_of, need, opt
 
 @dataclass
 class InputAdded(Event):
-    """You said something: a new input, or a reply on an item (scope)."""
+    """You said something: a new input, or a reply on a task (scope)."""
 
     KIND: ClassVar[str] = "in"
     id: str = ""
@@ -20,7 +20,7 @@ class InputAdded(Event):
     scope: Optional[int] = None
     files: List[FileRef] = field(default_factory=list)
     q: str = ""  # the page's id for it, so one sent again goes in once
-    kind: Optional[str] = None  # "answer": a form you sent on its item; "cancelled": a recording you cancelled (B627)
+    kind: Optional[str] = None  # "answer": a form you sent on its task; "cancelled": a recording you cancelled (B627)
     of: List[int] = field(default_factory=list)  # an answer to some of the questions in a row: theirs (B749)
 
     def body(self) -> Row:
@@ -30,7 +30,7 @@ class InputAdded(Event):
         opt(row, "of", list(self.of), bool(self.of))
         return row
 
-    def items_touched(self) -> List[int]:
+    def tasks_touched(self) -> List[int]:
         return [self.scope] if self.scope else []
 
 
@@ -80,7 +80,7 @@ class FilingRedone(Event):
 
 @dataclass
 class InputDeleted(Event):
-    """An input to Deleted, with the items only it made (ns); `kept`: [n, why] for those that stay."""
+    """An input to Deleted, with the tasks only it made (ns); `kept`: [n, why] for those that stay."""
 
     KIND: ClassVar[str] = "del"
     ns: List[int] = field(default_factory=list)
@@ -89,7 +89,7 @@ class InputDeleted(Event):
     def body(self) -> Row:
         return {"src": self.src, "ns": list(self.ns), "kept": [list(k) for k in self.kept], "by": self.by}
 
-    def items_touched(self) -> List[int]:
+    def tasks_touched(self) -> List[int]:
         return list(self.ns)
 
 
@@ -101,7 +101,7 @@ class InputRestored(Event):
     def body(self) -> Row:
         return {"src": self.src, "ns": list(self.ns), "by": self.by}
 
-    def items_touched(self) -> List[int]:
+    def tasks_touched(self) -> List[int]:
         return list(self.ns)
 
 
@@ -154,7 +154,7 @@ class InputSent(Event):
 
 @dataclass
 class InputRescoped(Event):
-    """What you said goes with another item."""
+    """What you said goes with another task."""
 
     KIND: ClassVar[str] = "rescope"
     to: int = 0

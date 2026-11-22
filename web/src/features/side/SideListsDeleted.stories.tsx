@@ -1,16 +1,16 @@
-// Deleted beside the items on the desktop: everything deleted, and what is picked in the pane beside it.
+// Deleted beside the tasks on the desktop: everything deleted, and what is picked in the pane beside it.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { deleted, docGone, gone, inputGone } from '../../stories/sideListsFixtures'
 
 export default { title: 'UI/Left sidebar/A list open beside it/Deleted' } satisfies Meta
 type Story = StoryObj
 
-/** Everything deleted, the latest first: an item, what you said, a document. */
+/** Everything deleted, the latest first: a task, what you said, a document. */
 export const Deleted: Story = { ...deleted(null), name: 'Everything deleted' }
 /** One picked: it shows in the pane, with Restore. */
 export const DeletedPicked: Story = {
   ...deleted(gone[0].key),
-  name: 'An item picked: Restore beside it',
+  name: 'A task picked: Restore beside it',
 }
 /** The pointer on a row: its Restore shows; hidden on the desktop until then. */
 export const PointerOnARow: Story = {

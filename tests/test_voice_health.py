@@ -104,13 +104,13 @@ class Alarm(ProjectCase):
         p = self.p
         health.report(said, p)
         health.report(said, p)  # the first is still open: no second
-        bugs = [it for it in p.state.items.values() if it.title == said[0]]
+        bugs = [it for it in p.state.tasks.values() if it.title == said[0]]
         self.assertEqual(len(bugs), 1)
         self.assertIsNone(health.done(15.0))  # counting started again
         with p.lock:
             p.run([(0, {"op": "set", "ref": p.state.code(bugs[0].n), "f": {"status": "dropped"}})], "you")
         health.report(said, p)
-        self.assertEqual(len([it for it in p.state.items.values() if it.title == said[0]]), 2)
+        self.assertEqual(len([it for it in p.state.tasks.values() if it.title == said[0]]), 2)
 
     def test_counting_starts_again_after_a_bug_also_after_a_restart(self):
         # B825: a restart read the notes counted for the bug before back in, and the next note made another bug

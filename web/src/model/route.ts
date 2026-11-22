@@ -1,5 +1,5 @@
-// The page's addresses, read and written: / is every project; /p/<project>/ is its Items; /inputs /archive /rules a
-// tab (/rules is the rules document; /rules/history, /rules/v5, /rules/v5/now, /rules/p12 its versions and proposals); /B03 an item; /D4 a document; /new the New input page; /docs /log /deleted the lists beside the items (on the
+// The page's addresses, read and written: / is every project; /p/<project>/ is its Tasks; /inputs /archive /rules a
+// tab (/rules is the rules document; /rules/history, /rules/v5, /rules/v5/now, /rules/p12 its versions and proposals); /B03 a task; /D4 a document; /new the New input page; /docs /log /deleted the lists beside the tasks (on the
 // desktop); /settings and its sections (/projects /phone ...); /help and its topics (/help/connect ...); /inputs#r8 an
 // input, gone to where it is listed. The list's filters ride along as ?tag= &when= &status= &pri= &sort=. Addresses
 // are part of the product: links and bookmarks depend on them.
@@ -25,7 +25,7 @@ export const SETTINGS_PATHS: Record<string, string> = {
 export type Place =
   | { kind: 'tab' }
   | { kind: 'new' }
-  | { kind: 'item'; ref: string }
+  | { kind: 'task'; ref: string }
   | { kind: 'doc'; d: number }
   | { kind: 'side'; side: 'docs' | 'log' | 'deleted' }
   | { kind: 'settings'; section: string | null }
@@ -43,7 +43,7 @@ export type Route =
 export const routeSlug = (r: Route): string => (r.page === 'project' ? r.slug : '')
 
 /** What rows you acted on hold still for: the list (its project, tab and filters) and, on the desktop, what
- * the pane shows (going on to another item lets them go). */
+ * the pane shows (going on to another task lets them go). */
 /** The desktop's New input page: nothing open, New input itself or a tab other than Inputs (the phone has none). */
 export const composing = (r: Extract<Route, { page: 'project' }>): boolean => r.place.kind === 'new' || (r.place.kind === 'tab' && r.tab !== 'inputs' && r.tab !== 'rules')
 
@@ -51,14 +51,14 @@ export function holdKey(r: Route, desk: boolean): string {
   return r.page === 'project' ? JSON.stringify([r.slug, r.tab, r.list, desk ? r.place : null]) : ''
 }
 
-/** the number of the item an address opens (none: null) */
-export function openItemN(r: Route): number | null {
-  if (r.page !== 'project' || r.place.kind !== 'item') return null
+/** the number of the task an address opens (none: null) */
+export function openTaskN(r: Route): number | null {
+  if (r.page !== 'project' || r.place.kind !== 'task') return null
   const n = Number(/\d+/.exec(r.place.ref)?.[0])
   return Number.isFinite(n) && n ? n : null
 }
 
-const ITEM = /^[A-Za-z]?\d+$/
+const TASK = /^[A-Za-z]?\d+$/
 const DOC = /^[Dd](\d+)$/
 
 export function parseRoute(pathname: string, search: string, hash = ''): Route {
@@ -67,15 +67,15 @@ export function parseRoute(pathname: string, search: string, hash = ''): Route {
   if (!m) return { page: 'home', query: new URLSearchParams(search) }
   const slug = decodeURIComponent(m[1])
   let seg = decodeURIComponent(m[2]).replace(/\/$/, '')
-  if (!seg && ITEM.test(hash.slice(1))) seg = hash.slice(1) // links from before: #B03
+  if (!seg && TASK.test(hash.slice(1))) seg = hash.slice(1) // links from before: #B03
   const qs = new URLSearchParams(search)
   const list = { ...NO_FILTERS }
   for (const k of LIST_KEYS) list[k] = qs.get(k) || NO_FILTERS[k]
-  let tab: Tab = 'items'
+  let tab: Tab = 'tasks'
   let place: Place = { kind: 'tab' }
   const doc = DOC.exec(seg)
   if (doc) place = { kind: 'doc', d: Number(doc[1]) }
-  else if (ITEM.test(seg)) place = { kind: 'item', ref: seg }
+  else if (TASK.test(seg)) place = { kind: 'task', ref: seg }
   else if (seg === 'new') place = { kind: 'new' }
   else if (seg === 'docs' || seg === 'log' || seg === 'deleted') place = { kind: 'side', side: seg }
   else if (seg === 'settings') place = { kind: 'settings', section: null }
@@ -119,11 +119,11 @@ export function projectPath(slug: string, tab: Tab, place: Place, list: ListQuer
       return base + 'rules/' + place.at
     case 'doc':
       return base + `D${place.d}` + listSearch(list)
-    case 'item':
+    case 'task':
       return base + place.ref + listSearch(list)
     case 'new':
-      return base + (tab === 'items' ? 'new' : tab) + listSearch(list)
+      return base + (tab === 'tasks' ? 'new' : tab) + listSearch(list)
     case 'tab':
-      return base + (tab === 'items' ? '' : tab) + listSearch(list)
+      return base + (tab === 'tasks' ? '' : tab) + listSearch(list)
   }
 }

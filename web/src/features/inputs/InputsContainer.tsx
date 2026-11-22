@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useAway, useFiles, useLitFades, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { codeOf, findRef, type ProjectModel } from '../../model/project'
-import { useItemWorld } from '../../app/hooks'
+import { useTaskWorld } from '../../app/hooks'
 import { FileChips } from '../../ui/Files'
 import { useBoxHere } from '../../app/inputs/boxHere'
 import { InputsView, type InputFacts } from './InputsView'
@@ -26,7 +26,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
   const outbox = useStoreValue(stores.outbox, (s) => s.list)
   const opened = useStoreValue(stores.ui, (s) => s.openedInputs)
   const projects = useStoreValue(stores.data, (s) => s.projects)
-  const world = useItemWorld(m, route.slug)
+  const world = useTaskWorld(m, route.slug)
   const draftWords = useStoreValue(stores.drafts, (s) => s.bySlug[route.slug])
   const mode = useStoreValue(stores.box, (s) => s.mode)
   const writing = useMemo(() => (mode?.kind === 'amend' ? { id: mode.id, mode: mode.mode } : null), [mode])
@@ -58,7 +58,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
       world={world}
       files={(f) => <FileChips files={f} url={world.url} play={media.play} tidy={media.tidy} on={media.on} />}
       on={{
-        goto: (n) => m && app.nav.openItem(codeOf(m, n), 'items'),
+        goto: (n) => m && app.nav.openTask(codeOf(m, n), 'tasks'),
         more: (id) => stores.ui.getState().toggleInput(id),
         menu: (id) => app.sheets.open({ kind: 'input-menu', id }, { focus: false }),
         retry: (id) => app.inputActions.organizeAgain(route.slug, id),
@@ -67,7 +67,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
         moved: (href) => app.nav.to(href),
         ref: (c) => {
           const to = m ? findRef(m, c) : null
-          if (to?.kind === 'item') app.nav.openItem(codeOf(m as ProjectModel, to.n), 'items')
+          if (to?.kind === 'task') app.nav.openTask(codeOf(m as ProjectModel, to.n), 'tasks')
           else if (to?.kind === 'doc') app.docs.open(to.d)
           else if (to?.kind === 'input') app.nav.goInput(to.id)
         },
@@ -81,8 +81,8 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
         swipe: {
           right: (id) => {
             const x = rows.find((y) => y.r.id === id)?.became
-            const to = x?.k === 'filed' ? x.items[0]?.item : x?.k === 'answer' ? x.item : undefined
-            return to && m ? { slide: false, run: () => app.nav.openItem(codeOf(m, to.n), 'items') } : null
+            const to = x?.k === 'filed' ? x.tasks[0]?.task : x?.k === 'answer' ? x.task : undefined
+            return to && m ? { slide: false, run: () => app.nav.openTask(codeOf(m, to.n), 'tasks') } : null
           },
           hold: (id) => app.sheets.open({ kind: 'input-menu', id }, { focus: false }),
           blocked: () => stores.route.getState().layers.includes('drawer'),

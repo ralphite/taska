@@ -1,28 +1,28 @@
 // What Yadong said to remove stays removed (T689, r1092): "UI that is not in the product cannot be in a story", and
 // what he does not need is deleted, not hidden. Each entry is his decision and the words or names that would show it
 // came back; any line of the page, its stories or the server holding them fails this test (a comment that cites the
-// decision, rNNN or an item code, is fine). Add an entry with every such decision; remove one only on his explicit word.
+// decision, rNNN or a task code, is fine). Add an entry with every such decision; remove one only on his explicit word.
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test } from 'vitest'
 
 const REMOVED: { why: string; gone: RegExp }[] = [
   { why: 'r583, r1092: no "New input · organizer files it" line over the box', gone: /(organizer|agent) files it/ },
-  { why: 'T689: no "Pick an item or type below" pane; nothing open on the desktop is the New input page', gone: /Pick an item or type below/ },
+  { why: 'T689: no "Pick a task or type below" pane; nothing open on the desktop is the New input page', gone: /Pick a task or type below/ },
   { why: 'r514, r520: no new-rule input mode or draft', gone: /a new rule\b|\/new-rule/ },
-  { why: 'r655, r745: the phone list head has no search field; Search opens the search page', gone: /Search items/ },
+  { why: 'r655, r745: the phone list head has no search field; Search opens the search page', gone: /Search tasks/ },
   { why: 'r1084: an input has no Queued state', gone: /['"`]Queued['"`]|Waiting to be organized/ },
   { why: 'r1080: no "Speak or write about it" beside a place\'s two buttons', gone: /Speak or write about it/ },
   { why: 'r1092, T689 #2: no text filter in the lists; search is the search page/dialog', gone: /SearchHints|searchHints|\bsearchWords\b|\binputMatch\b|inputs\?q=|list\.q\b|Clear search and filters|Searching other projects/ },
   { why: 'r437: no "New input instead" / "Add to … instead" on the New input page', gone: /New input instead|Add to \S+ instead/ },
-  { why: 'I693, r1118: no rule items: no rule type, no R code, no rule in force read from items (the rules are one document)', gone: /type: 'rule'|type [!=]== 'rule'|rule: 'R'|"rule": "R"|RULE_STATUS_WORD|rules_in_force|is_rule_in_force|type [!=]= "rule"/ },
+  { why: 'I693, r1118: no rule tasks: no rule type, no R code, no rule in force read from tasks (the rules are one document)', gone: /type: 'rule'|type [!=]== 'rule'|rule: 'R'|"rule": "R"|RULE_STATUS_WORD|rules_in_force|is_rule_in_force|type [!=]= "rule"/ },
   { why: 'B712: one voice note chip everywhere (VoiceChip): no pill in your bubble, no line in a thread, no pill in the input lists', gone: /\bVoicePill\b|\bVoiceLine\b|Pause the voice note/ },
-  { why: 'I693, r1118: no rule list, rule rows or rule item page (Active, Retired, Retire, Reactivate)', gone: /['"]Retire['"]|['"]Reactivate['"]|No matching rules|['"]no-rules['"]|zone: 'rules'|ItemRowSwipeRules|ItemPageRules|label: 'Active'|label: 'Retired'/ },
+  { why: 'I693, r1118: no rule list, rule rows or rule task page (Active, Retired, Retire, Reactivate)', gone: /['"]Retire['"]|['"]Reactivate['"]|No matching rules|['"]no-rules['"]|zone: 'rules'|TaskRowSwipeRules|TaskPageRules|label: 'Active'|label: 'Retired'/ },
   { why: 'B715 r1169: no hint at the end of a document on the phone ("Tap, select or circle to comment", a web page\'s "Tap a part to comment")', gone: /Tap, select or circle to comment|Tap a part to comment/ },
   { why: 'B715 r1169: no "Comment on the whole document" at the end of a document on the phone, nor its spoken comment on the whole document', gone: /Comment on the whole document|wholeButton|wholeRec/ },
   { why: 'B730: no "Recording 0:12" row in the list under the box (New input, the Inputs tab) while recording: the box shows it', gone: /\bRecordingRow\b/ },
   { why: 'Refactor 1 (T728): the change log reaches the page as facts; no log words parsed back, no log_entries/_said', gone: /\blog_entries\b|\b_said\(|\bsaid\(m, (e\.)?what\b/ },
-  { why: 'Refactor 4 (T728): an item action is read by its id from one table (model/itemActs); no looks keyed by its words, no type R in a hint', gone: /\bACT_(TONE|ICON|BG|KEY)\b|\bCHOSEN_TONE\b|\bFORWARD_NEED\b|\bNEED_ACT_WORD\b|Type: F B I T R/ },
+  { why: 'Refactor 4 (T728): a task action is read by its id from one table (model/taskActs); no looks keyed by its words, no type R in a hint', gone: /\bACT_(TONE|ICON|BG|KEY)\b|\bCHOSEN_TONE\b|\bFORWARD_NEED\b|\bNEED_ACT_WORD\b|Type: F B I T R/ },
   { why: 'Refactor 6 (T728): one search across the projects, the Finder\'s (/api/find); no /api/search, CrossSearch, search store or search hits', gone: /\/api\/search\b|\bCrossSearch\b|\bcrossSearch\b|createSearchStore|\bSearchHit\b|\bSearchPhase\b|\bhitWhere\b|\bhitPath\b|def search\(self, q/ },
   { why: 'I779 r1325: no shared rule groups a project switches on (composition was not in the text; a switch is not text an agent can edit)', gone: /Shared rule groups|New group|\bwithShared\b|includes two groups/ },
   { why: 'B800 r1370 r1371: no microphone kept between recordings: kept, iPhone refused it after the background until Taska was reopened', gone: /\bfromHomeScreen\b|\bkept: MediaStream\b|\bmicRelease\b|MIC\.stream\b/ },

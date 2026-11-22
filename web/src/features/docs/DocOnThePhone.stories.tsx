@@ -21,7 +21,7 @@ const step = (label: string, h: DocHere) => (
   </Frame>
 )
 
-/** One after another: opened, a part picked, speaking about it, an item of a list picked. */
+/** One after another: opened, a part picked, speaking about it, a task of a list picked. */
 export const Behaviour: Story = {
   name: 'Opened, a part picked, speaking: the whole behaviour',
   render: () => (
@@ -29,7 +29,7 @@ export const Behaviour: Story = {
       {step('1 · opened: no box', {})}
       {step('2 · a paragraph picked: Voice and Comment float under it', { sel: ['p1'] })}
       {step('3 · speaking about it: ✕, ✓ in their place', { sel: ['p1'], speaking: { key: 'p1', bar: false } })}
-      {step('4 · an item of a list picked: under it, over the next', { quote: { key: 'l1', text: 'Build the pilot' } })}
+      {step('4 · a task of a list picked: under it, over the next', { quote: { key: 'l1', text: 'Build the pilot' } })}
     </div>
   ),
 }

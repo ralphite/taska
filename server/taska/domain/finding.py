@@ -1,4 +1,4 @@
-"""Finding things in a project by what you said or typed (F479): its items and rules, what you said (inputs) and its
+"""Finding things in a project by what you said or typed (F479): its tasks and rules, what you said (inputs) and its
 documents, closest first. Pure: a function of the state and the words.
 
 By the words: the words that carry meaning (not "the", "where", "my"; for Chinese, each two characters in a row) are
@@ -12,7 +12,7 @@ import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
-from .model import Doc, Input, Item
+from .model import Doc, Input, Task
 from .sections import sections, text_of
 from .text import page_text
 from .state import ProjectState
@@ -33,9 +33,9 @@ LONG = 300  # characters: words found in a longer text count for less
 
 @dataclass(frozen=True)
 class Found:
-    """One thing found: its kind (items, rules, inputs, docs), its key in the project ("i3", "s2" a section of the
-    rules, "r8", "d1"), the item
-    it opens (an input's: the item it became; None: none) and how close it is (higher: closer)."""
+    """One thing found: its kind (tasks, rules, inputs, docs), its key in the project ("i3", "s2" a section of the
+    rules, "r8", "d1"), the task
+    it opens (an input's: the task it became; None: none) and how close it is (higher: closer)."""
 
     kind: str
     key: str
@@ -74,18 +74,18 @@ def _score(ws: List[str], title: str, rest: str) -> float:
 
 
 def _input_n(st: ProjectState, r: Input) -> Optional[int]:
-    """The item an input opens: the first live one it made or changed, or the one it was a reply on."""
+    """The task an input opens: the first live one it made or changed, or the one it was a reply on."""
     for n in [*r.touched, *([r.scope] if r.scope else [])]:
-        it = st.items.get(n)
+        it = st.tasks.get(n)
         while it is not None and it.merged_into:
-            it = st.items.get(it.merged_into)
+            it = st.tasks.get(it.merged_into)
         if it is not None and it.live:
             return it.n
     return None
 
 
-def _items(st: ProjectState) -> List[Item]:
-    return [i for i in st.items.values() if i.live]
+def _tasks(st: ProjectState) -> List[Task]:
+    return [i for i in st.tasks.values() if i.live]
 
 
 def _inputs(st: ProjectState) -> List[Input]:
@@ -98,7 +98,7 @@ def _comments(st: ProjectState, d: Doc) -> str:
 
 
 def _docs(st: ProjectState) -> List[Doc]:
-    return [d for d in st.docs.values() if not d.deleted and d.n in st.items and st.items[d.n].live]
+    return [d for d in st.docs.values() if not d.deleted and d.n in st.tasks and st.tasks[d.n].live]
 
 
 def rule_sections(st: ProjectState) -> List[Tuple[int, str, str]]:
@@ -111,9 +111,9 @@ def rule_sections(st: ProjectState) -> List[Tuple[int, str, str]]:
     return [(k, x.title, text_of(d.md, x)) for k, x in enumerate(ss) if x.level == top]
 
 
-def item_text(st: ProjectState, i: Item) -> Tuple[str, str]:
-    """An item's words, to find it by, lower case: its title, and the rest (its code, text, next step, talk, and the
-    words of the voice notes it came from). The one place an item's words are gathered for finding it."""
+def task_text(st: ProjectState, i: Task) -> Tuple[str, str]:
+    """A task's words, to find it by, lower case: its title, and the rest (its code, text, next step, talk, and the
+    words of the voice notes it came from). The one place a task's words are gathered for finding it."""
     talk = [m.text or "" for m in i.thread] + [words_of(st, f.f) for r in i.srcs if r in st.inputs
                                                for f in voices_of(st.inputs[r].files)]
     return i.title.lower(), " ".join([st.code(i.n), i.body, i.next or "", *talk]).lower()
@@ -125,10 +125,10 @@ def by_words(st: ProjectState, q: str) -> List[Found]:
     if not ws:
         return []
     out: List[Tuple[float, str, Found]] = []
-    for i in _items(st):
-        s = _score(ws, *item_text(st, i))
+    for i in _tasks(st):
+        s = _score(ws, *task_text(st, i))
         if s:
-            out.append((s, i.t1 or i.t0 or "", Found("items", "i%d" % i.n, i.n, s)))
+            out.append((s, i.t1 or i.t0 or "", Found("tasks", "i%d" % i.n, i.n, s)))
     for r in _inputs(st):
         s = _score(ws, "", said(st, r.text, r.files).lower())
         if s:
@@ -147,12 +147,12 @@ def by_words(st: ProjectState, q: str) -> List[Found]:
 
 
 def short_list(st: ProjectState, most_inputs: int = 150) -> List[Tuple[Found, str]]:
-    """Every thing of the project as one short line, for a model to find things by meaning: items (code, title, the
-    start of the body), the rules' sections, the latest inputs, documents (their title and item)."""
+    """Every thing of the project as one short line, for a model to find things by meaning: tasks (code, title, the
+    start of the body), the rules' sections, the latest inputs, documents (their title and task)."""
     out: List[Tuple[Found, str]] = []
-    for i in sorted(_items(st), key=lambda x: x.n):
+    for i in sorted(_tasks(st), key=lambda x: x.n):
         body = " ".join(i.body.split())[:80]
-        out.append((Found("items", "i%d" % i.n, i.n), f"{st.code(i.n)} {i.title}" + (f" — {body}" if body else "")))
+        out.append((Found("tasks", "i%d" % i.n, i.n), f"{st.code(i.n)} {i.title}" + (f" — {body}" if body else "")))
     for k, title, text in rule_sections(st):
         out.append((Found("rules", "s%d" % k, None), f"Rules, section {title}: " + " ".join(text.split())[:80]))
     for r in sorted(_inputs(st), key=lambda x: x.number, reverse=True)[:most_inputs]:

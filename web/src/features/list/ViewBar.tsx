@@ -1,4 +1,4 @@
-// The row of views above the list: the preset views of Items (Needs you, Active, All, Archive, Open, Later,
+// The row of views above the list: the preset views of Tasks (Needs you, Active, All, Archive, Open, Later,
 // Done, Won't do) and your own, each with what it would show. It scrolls sideways; a fading edge says more is there
 // (the phone swipes). The desktop's list (F670): Filters at the far left, and when the views do not fit, ⌄ at the far
 // right opens the row onto as many lines as it takes to show them all; ⌃ closes it to one line again. Elsewhere on

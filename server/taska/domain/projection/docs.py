@@ -18,7 +18,7 @@ def _doc(state: ProjectState, e: ev.Event) -> None:
     if e.fmt or d.fmt:
         d.fmt = e.fmt or "md"  # each write says which; none is Markdown
     d.versions += 1
-    it = state.items.get(d.n)
+    it = state.tasks.get(d.n)
     if it:
         it.t1 = e.t
 
@@ -52,15 +52,15 @@ def _decided(state: ProjectState, e: ev.Event) -> None:
 
 @reduces(ev.RulesMoved)
 def _rules_moved(state: ProjectState, e: ev.Event) -> None:
-    """The rule items go with everything on them: their talk, their documents; what pointed at them lets go."""
+    """The rule tasks go with everything on them: their talk, their documents; what pointed at them lets go."""
     assert isinstance(e, ev.RulesMoved)
     gone = set(e.ns)
     for n in gone:
-        state.items.pop(n, None)
+        state.tasks.pop(n, None)
         state.claims.pop(n, None)
     for dn in [d.d for d in state.docs.values() if d.n in gone]:
         del state.docs[dn]
-    for it in state.items.values():
+    for it in state.tasks.values():
         if it.parent in gone:
             it.parent = None
         if it.merged_into in gone:
@@ -70,7 +70,7 @@ def _rules_moved(state: ProjectState, e: ev.Event) -> None:
         if inp.scope in gone:
             inp.scope = None
     state.deleted_groups = [g for g in state.deleted_groups if not gone & set(g.ns)]
-    state.addressed_items -= gone
+    state.addressed_tasks -= gone
     for acts in state.first_acts.values():
         for n in gone & set(acts):
             del acts[n]
@@ -88,7 +88,7 @@ def _delete_doc(state: ProjectState, e: ev.Event) -> None:
 def _move_doc(state: ProjectState, e: ev.Event) -> None:
     assert isinstance(e, ev.DocMoved)
     d = state.docs.get(e.d)
-    if d and e.to in state.items:
+    if d and e.to in state.tasks:
         d.n = e.to
 
 
@@ -177,7 +177,7 @@ def _unfile(state: ProjectState, e: ev.Event) -> None:
     if not inp:
         return
     inp.files = [f for f in inp.files if f.f != e.f]
-    for it in state.items.values():
+    for it in state.tasks.values():
         for x in it.thread:
             if x.src == e.src and x.files:
                 x.files = [f for f in x.files if f.f != e.f]

@@ -1,4 +1,4 @@
-// What an agent wrote since you last looked at an item: a blue dot on its row. Kept in this browser per project
+// What an agent wrote since you last looked at a task: a blue dot on its row. Kept in this browser per project
 // ("taska.seen.<project>": {since, <n>: the time of the agent's last message you saw}).
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
@@ -40,7 +40,7 @@ export class Seen {
     this.rev.setState((r) => r + 1)
   }
 
-  /** The item shows: what its agents wrote is seen (its dot goes). */
+  /** The task shows: what its agents wrote is seen (its dot goes). */
   see(slug: string, n: number, lastAgentT: string | undefined, archived: boolean): void {
     if (lastAgentT && unreadSince(this.of(slug), n, lastAgentT, archived)) this.mark(slug, n, lastAgentT)
   }

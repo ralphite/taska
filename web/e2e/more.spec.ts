@@ -1,11 +1,11 @@
 // More of what you do every day, on the phone and the desktop (D20 sections 4 to 6).
-// guards: src/features/ src/pages/ src/app/page/navigation.ts src/app/keys.ts src/app/actions.ts src/app/items/ src/app/inputs/ src/model/route.ts server/
+// guards: src/features/ src/pages/ src/app/page/navigation.ts src/app/keys.ts src/app/actions.ts src/app/tasks/ src/app/inputs/ src/model/route.ts server/
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
-import { box, docEdit, itemMenu, menuChoice, pane, row, sheetBody, touchRow, view } from './ui'
+import { box, docEdit, taskMenu, menuChoice, pane, row, sheetBody, touchRow, view } from './ui'
 
 
-test('the phone: an item is a page of its own, and Back returns to the list', async ({ page, request }) => {
+test('the phone: a task is a page of its own, and Back returns to the list', async ({ page, request }) => {
   test.skip(isDesk(page), 'phone only')
   const p = await project(request, LOOP)
   await open(page, p)
@@ -17,17 +17,17 @@ test('the phone: an item is a page of its own, and Back returns to the list', as
   await expect(pane(page)).toHaveCount(0)
 })
 
-test('a subitem is added under its item', async ({ page, request }) => {
+test('a subtask is added under its task', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p, 'T4')
   if (isDesk(page)) await page.keyboard.press('Shift+A')
   else {
-    await itemMenu(page).click()
-    await menuChoice(page, /^Add subitem/).click()
+    await taskMenu(page).click()
+    await menuChoice(page, /^Add subtask/).click()
   }
-  await page.getByRole('textbox', { name: 'Subitem title', exact: true }).first().fill('Install page')
+  await page.getByRole('textbox', { name: 'Subtask title', exact: true }).first().fill('Install page')
   await page.keyboard.press('Enter')
-  await expect.poll(async () => p.read('items')).toMatch(/Install page.*\^T4/)
+  await expect.poll(async () => p.read('tasks')).toMatch(/Install page.*\^T4/)
 })
 
 test('B666: an input can be deleted from its ⋯ (Delete asks again in place) and restored', async ({ page, request }) => {

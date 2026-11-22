@@ -1,4 +1,4 @@
-// What you began to write, kept by what it is written to (a new input "new", a reply on an item "B03", a comment
+// What you began to write, kept by what it is written to (a new input "new", a reply on a task "B03", a comment
 // "doc 4", an edit "edit r12" ...), per project, in this browser ("taska.drafts.<project>": {key: text}), so unsent
 // words never go elsewhere and survive a reload. Every tab of this browser shows the same drafts.
 

@@ -3,8 +3,8 @@ a version (who, when, why; the same writer's saves less than 10 minutes apart ar
 newest first), restored versions are new versions, agents only propose changes by named sections with a why and
 Yadong approves or declines, a proposal whose sections changed since it was written goes back to its agent, the
 organizer changes sections from his words at once, agents read GET /rules and are told once when the rules change;
-the rule items were moved once into version 1 and deleted (old texts that name their codes stay as they are), and
-rule is no type of item.
+the rule tasks were moved once into version 1 and deleted (old texts that name their codes stay as they are), and
+rule is no type of task.
 Change these only on Yadong's explicit word, and cite it."""
 
 from __future__ import annotations
@@ -131,7 +131,7 @@ class Commands(ProjectCase):
         self.assertIn("    + - Commit messages are in French.", news)
         self.assertEqual(self.p.agents.rule_news(self.p.state, "codex"), [])  # once
 
-    def test_a_rule_item_is_refused(self) -> None:
+    def test_a_rule_task_is_refused(self) -> None:
         self.assertIn("there are no types any more", self.page(op="new", type="rule", title="Commits"))
 
 

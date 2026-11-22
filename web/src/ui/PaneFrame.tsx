@@ -39,7 +39,7 @@ export function PaneFrame({
   onMenu?(from: Element): void
   /** the pane's element, for the layout (what floats over the page shows over the pane you acted in) */
   paneRef?: Ref<HTMLElement>
-  /** it shows an item in its two parts (they scroll, not the body) */
+  /** it shows a task in its two parts (they scroll, not the body) */
   split?: boolean
   /** false: no bar on the desktop (nothing shows to have one) */
   bar?: boolean
@@ -73,7 +73,7 @@ export function PaneFrame({
         <div className="hidden shrink-0 items-center gap-0.5 lg:flex">{desk ? acts : null}</div>
         <button
           hidden={!menu}
-          aria-label="Item actions"
+          aria-label="Task actions"
           title="All actions · ."
           {...pressedMark(pressed)}
           onClick={(e) => onMenu?.(e.currentTarget)}

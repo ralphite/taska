@@ -1,5 +1,5 @@
-"""An item merged into another can be taken back out and closed (10-30): it keeps its words and history, shows again
-as its own item, and the one it went into says it was taken out."""
+"""A task merged into another can be taken back out and closed (10-30): it keeps its words and history, shows again
+as its own task, and the one it went into says it was taken out."""
 
 from __future__ import annotations
 

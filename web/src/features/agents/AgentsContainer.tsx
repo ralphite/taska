@@ -1,4 +1,4 @@
-// The Agents sheet with the page's data: the project open, and its guide, asked for when the sheet opens; an item it
+// The Agents sheet with the page's data: the project open, and its guide, asked for when the sheet opens; a task it
 // names opens in place of the sheet.
 
 import { useEffect, useMemo } from 'react'
@@ -25,7 +25,7 @@ export function AgentsSheet(_: { req: Extract<SheetRequest, { kind: 'agents' }> 
       {...agentsSheet(f, {
         copy: (t) => app.settings.copy(t),
         help: () => app.sheets.close(() => app.nav.to(`/p/${encodeURIComponent(slug)}/help/connect`)),
-        open: (code) => app.sheets.close(() => app.nav.openItem(code)),
+        open: (code) => app.sheets.close(() => app.nav.openTask(code)),
         reconnect: (sid) => app.api.reconnect(slug, sid),
       })}
     />

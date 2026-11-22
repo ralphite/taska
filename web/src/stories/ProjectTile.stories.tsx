@@ -22,7 +22,7 @@ export const Sizes: Story = {
     <Frames phone={false} deskWidth={720}>
       {() => (
         <States
-          items={SIZES.map(([where, cls]) => [
+          tasks={SIZES.map(([where, cls]) => [
             where,
             <div className="flex flex-wrap items-center gap-2 p-3">
               {PROJECT_TONES.map((t, i) => (

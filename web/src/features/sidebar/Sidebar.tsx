@@ -20,7 +20,7 @@ export interface SideProject {
   open: number | string
   current: boolean
   href: string
-  /** an item dragged from the list would move here */
+  /** a task dragged from the list would move here */
   drop?: boolean
   /** pressed (a finger on it), being dragged to a new place, or under the pointer (its card beside it) when drawn */
   look?: 'pressed' | 'dragging' | 'pointed'
@@ -51,7 +51,7 @@ export interface SidebarEvents {
   undo(): void
   /** the projects dragged into this order (`moved`: the one you held) */
   order(names: string[], moved: string): void
-  /** an item from the list dragged over a project (null: off them); -> it can go there */
+  /** a task from the list dragged over a project (null: off them); -> it can go there */
   dragProject(slug: string | null): boolean
   dropProject(): void
   /** a project's menu, at the pointer (right-click, the desktop) */
@@ -295,7 +295,7 @@ export function Sidebar(props: SidebarProps) {
           className="flex flex-col gap-0.5"
           onDragEnter={hover.hide}
           onDragOver={(e) => {
-            // an item dragged from the list onto another project moves there
+            // a task dragged from the list onto another project moves there
             const a = (e.target as Element).closest<HTMLElement>('a[data-slug]')
             if (!on.dragProject(a?.dataset.slug ?? null)) return
             e.preventDefault()

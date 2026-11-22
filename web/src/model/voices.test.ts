@@ -4,18 +4,18 @@ import { describe, expect, test } from 'vitest'
 import { merge, project } from './project'
 import { outgoingLine } from './outgoing'
 import { saidText, splitVoices } from './voices'
-import type { Comment, Doc, Input, Item, PlacedFile, ViewAnswer, Voice } from './types'
+import type { Comment, Doc, Input, Task, PlacedFile, ViewAnswer, Voice } from './types'
 
 const F = 'f4-voice_0-12.webm'
 const WORDS = 'Keep the filter, and the sort as well.'
 const voiceFile = { f: F, name: 'voice_0-12.webm', mime: 'audio/webm' }
 const rec = (f: Partial<Voice> = {}): Voice => ({ f: F, state: 'done', said: 'Keep the filter, and, um, the sort as well.', tidied: WORDS, ...f })
 const input: Input = { id: 'r22', t: '', by: 'you', text: '', scope: 12, files: [voiceFile], acked: false, touched: [], org: null, seq: 5, v: 0 }
-const item = { n: 12, code: 'T12', tags: [], title: 'Export', body: '', pri: 'P2', when: 'now', status: 'open', parent: null, next: '', srcs: ['r22'], mergedInto: null, archived: false, t0: '', t1: '', by: 'you', wait: null, talked: true, thread: [{ id: 5, by: 'you', kind: 'say', text: '', t: '', src: 'r22', files: [] }] } as Item
+const task = { n: 12, code: 'T12', tags: [], title: 'Export', body: '', pri: 'P2', when: 'now', status: 'open', parent: null, next: '', srcs: ['r22'], mergedInto: null, archived: false, t0: '', t1: '', by: 'you', wait: null, talked: true, thread: [{ id: 5, by: 'you', kind: 'say', text: '', t: '', src: 'r22', files: [] }] } as Task
 const comment: Comment = { id: 9, key: 'doc', th: 9, quote: '', text: 'About this:', by: 'you', t: '', files: [{ ...voiceFile, f: 'f5-voice_0-03.webm' }] }
 const doc = { d: 1, n: 12, title: 'D', md: '', t0: '', t1: '', by: 'codex', versions: 1, fmt: 'md', blocks: [], detached: [], whole: [comment], unanswered: 0, resolved: {} } as Doc
 const answer = (voices: Voice[]): ViewAnswer =>
-  ({ cursor: '1', full: true, items: [item], inputs: [input], docs: [doc], voices, project: { width: 2 }, server: { page: '', update: false, dev: false } }) as unknown as ViewAnswer
+  ({ cursor: '1', full: true, tasks: [task], inputs: [input], docs: [doc], voices, project: { width: 2 }, server: { page: '', update: false, dev: false } }) as unknown as ViewAnswer
 
 describe('every place that shows a voice note shows its record’s words', () => {
   const m = project(merge(null, answer([rec(), rec({ f: 'f5-voice_0-03.webm', tidied: 'And the sort too?', said: 'And the sort too?' })]), 0))
@@ -29,7 +29,7 @@ describe('every place that shows a voice note shows its record’s words', () =>
   })
 
   test('words changed once are changed everywhere', () => {
-    const copy = merge(merge(null, answer([rec()]), 0), { cursor: '2', full: false, items: [], inputs: [], docs: [], voices: [rec({ tidied: 'Keep the filter and the sort.', fixed: 't' })] } as unknown as ViewAnswer, 1)
+    const copy = merge(merge(null, answer([rec()]), 0), { cursor: '2', full: false, tasks: [], inputs: [], docs: [], voices: [rec({ tidied: 'Keep the filter and the sort.', fixed: 't' })] } as unknown as ViewAnswer, 1)
     const now = project(copy)
     expect(now.byId.get('r22')?.text).toBe('Keep the filter and the sort.')
     expect(now.byN.get(12)?.thread[0].text).toBe('Keep the filter and the sort.')

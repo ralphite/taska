@@ -1,4 +1,4 @@
-// A segmented control (one of a few, side by side, the one on pressed) and the options it offers for an item's
+// A segmented control (one of a few, side by side, the one on pressed) and the options it offers for a task's
 // priority. Props only.
 
 import type { ReactNode } from 'react'

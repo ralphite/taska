@@ -1,5 +1,5 @@
-// The phone's swipe on a row (the item list's, the Inputs tab's: D115 #42). Right: its way forward (Done, Approve,
-// Accept, Archive; an answer opens its card; an input opens the item it became); the row slides out first. Left: the
+// The phone's swipe on a row (the task list's, the Inputs tab's: D115 #42). Right: its way forward (Done, Approve,
+// Accept, Archive; an answer opens its card; an input opens the task it became); the row slides out first. Left: the
 // ways back sit under the row until a tap anywhere else, one of them is tapped, another row is swiped or the rows are
 // drawn anew (T589 #10486: a row left open over a list that changed under it showed its layer there). Nothing new
 // shows until the finger really moves sideways (iPhone Safari takes a tap that reveals content as a hover and never

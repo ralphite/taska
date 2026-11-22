@@ -1,6 +1,6 @@
 // What became of an input (B629), worked out once from what Taska sent of it and the organizer's facts: its state of
 // model/inputStates (which says the words, the tone and what can be done in every place) with what that state names:
-// the items it made or was added to (with the organizer's note when it says more than they do), the item it answers,
+// the tasks it made or was added to (with the organizer's note when it says more than they do), the task it answers,
 // why it failed, where it went. And one input as a line of the lists draws it: its number, its day and time, what
 // became of it, a draft of yours on it, whether it is long. Pure.
 
@@ -11,7 +11,7 @@ import type { Input } from './types'
 import { sentNotes } from './voiceStates'
 import { inputCode } from './words'
 
-export interface ItemRef {
+export interface TaskRef {
   n: number
   code: string
   title: string
@@ -31,8 +31,8 @@ export type Became =
   | { k: 'cancelled' }
   /** `did`: what was done to each ("Created", "Added to"; "" when nothing says); `note`: what else the organizer said;
    * `undo`: Taska would take back what the organizer filed */
-  | { k: 'filed'; items: { did: string; item: ItemRef }[]; note: string | null; undo: boolean }
-  | { k: 'answer'; item: ItemRef; undo: boolean }
+  | { k: 'filed'; tasks: { did: string; task: TaskRef }[]; note: string | null; undo: boolean }
+  | { k: 'answer'; task: TaskRef; undo: boolean }
   /** the organizer had nothing to file, and said why */
   | { k: 'note'; text: string }
   /** left for an agent by the organizer, or no organizer: the agents read it */
@@ -40,23 +40,23 @@ export type Became =
   | { k: 'handled' }
   | { k: 'moved'; to: string; as: string; href: string }
 
-export const itemRef = (m: ProjectModel, n: number): ItemRef | null => {
+export const taskRef = (m: ProjectModel, n: number): TaskRef | null => {
   const it = m.byN.get(n)
   return it ? { n, code: codeOf(m, n), title: it.title, status: shownStatus(it) } : null
 }
 
-/** The items an input said in an item made (B714 #10594), as "→ Created B713" under your words there: those it is the
- * first source of and that were made after it was said, not the item it was said in. */
-export const madeFrom = (r: Input, m: ProjectModel): ItemRef[] =>
+/** The tasks an input said in a task made (B714 #10594), as "→ Created B713" under your words there: those it is the
+ * first source of and that were made after it was said, not the task it was said in. */
+export const madeFrom = (r: Input, m: ProjectModel): TaskRef[] =>
   r.touched
     .filter((n) => n !== r.scope)
     .flatMap((n) => {
       const it = m.byN.get(n)
-      const ref = it && it.srcs[0] === r.id && Date.parse(it.t0) >= Date.parse(r.t) ? itemRef(m, n) : null
+      const ref = it && it.srcs[0] === r.id && Date.parse(it.t0) >= Date.parse(r.t) ? taskRef(m, n) : null
       return ref ? [ref] : []
     })
 
-/** What the organizer's note says was done to each item ("Created B014 · added to F012 and T007"), and what it says
+/** What the organizer's note says was done to each task ("Created B014 · added to F012 and T007"), and what it says
  * besides. */
 function readNote(msg: string, codes: Map<string, number>): { did: Map<number, string>; rest: string[] } {
   const did = new Map<number, string>()
@@ -68,7 +68,7 @@ function readNote(msg: string, codes: Map<string, number>): { did: Map<number, s
       continue
     }
     const verb = part.replace(/\b[A-Z]\d+\b/g, '').replace(/,|\band\b/g, ' ').replace(/\s+/g, ' ').trim()
-    // the organizer's own word for words added to an item, said as the list says it (the approved B629 line)
+    // the organizer's own word for words added to a task, said as the list says it (the approved B629 line)
     const said = /^noted on$/i.test(verb) ? 'Added to' : verb
     for (const n of named) if (!did.has(n)) did.set(n, said ? said[0].toUpperCase() + said.slice(1) : '')
   }
@@ -127,22 +127,22 @@ export function becameOf(r: Input, m: ProjectModel, title: (slug: string) => str
   const retry = !r.acked && organizer.on
   if (r.org?.undone) return { k: 'undone', retry }
   if (r.kind === 'answer' && r.scope) {
-    const it = itemRef(m, r.scope)
-    if (it) return { k: 'answer', item: it, undo: canUndo(r) }
+    const it = taskRef(m, r.scope)
+    if (it) return { k: 'answer', task: it, undo: canUndo(r) }
   }
   // its key refused too: once the key is fixed, Retry is the way to have it organized (nothing asks again by itself)
   if (r.org && !r.org.ok) return { k: 'failed', why: failWhy(r.org.msg), raw: r.org.msg, retry }
-  // said on an item (its own box): added to it; then what the organizer or an agent did with it
+  // said on a task (its own box): added to it; then what the organizer or an agent did with it
   const ns = [...new Set([...(r.scope ? [r.scope] : []), ...r.touched])]
-  const items = ns.map((n) => itemRef(m, n)).filter((x): x is ItemRef => !!x)
-  const told = r.org && !r.org.keep ? readNote(r.org.msg, new Map(items.map((it) => [it.code, it.n]))) : { did: new Map<number, string>(), rest: [] }
-  // no organizer's word on an item: an agent changed it for this input
+  const tasks = ns.map((n) => taskRef(m, n)).filter((x): x is TaskRef => !!x)
+  const told = r.org && !r.org.keep ? readNote(r.org.msg, new Map(tasks.map((it) => [it.code, it.n]))) : { did: new Map<number, string>(), rest: [] }
+  // no organizer's word on a task: an agent changed it for this input
   const did = (n: number) => (n === r.scope ? 'Added to' : (told.did.get(n) ?? (r.org ? '' : 'Changed')))
-  // the items under the same word together, the words in the order the note says them (so each is said once)
+  // the tasks under the same word together, the words in the order the note says them (so each is said once)
   const msg = (r.org?.msg ?? '').toLowerCase()
   const at = (d: string) => (d && msg.includes(d.toLowerCase()) ? msg.indexOf(d.toLowerCase()) : msg.length + (d ? 0 : 1))
-  const filed = items.map((it) => ({ did: did(it.n), item: it })).sort((a, b) => at(a.did) - at(b.did))
-  if (items.length) return { k: 'filed', items: filed, note: told.rest.join(' · ') || null, undo: canUndo(r) }
+  const filed = tasks.map((it) => ({ did: did(it.n), task: it })).sort((a, b) => at(a.did) - at(b.did))
+  if (tasks.length) return { k: 'filed', tasks: filed, note: told.rest.join(' · ') || null, undo: canUndo(r) }
   if (told.rest.length) return { k: 'note', text: told.rest.join(' · ') }
   return r.acked ? { k: 'handled' } : { k: 'agent' }
 }

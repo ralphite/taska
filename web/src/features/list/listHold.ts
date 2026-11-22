@@ -1,6 +1,6 @@
 // When the rows you acted on let go: a row holds still while the pointer is over the list (or for 3 s after a key or a
 // finger's tap), so the next row never slides under a second click; then the list rearranges. On the desktop, a
-// change made in the item pane waits until you go on to another item, or the pointer has been over the list and
+// change made in the task pane waits until you go on to another task, or the pointer has been over the list and
 // leaves it.
 
 import type { UiStore } from '../../stores/ui'

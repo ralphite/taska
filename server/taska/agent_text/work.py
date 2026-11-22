@@ -1,8 +1,8 @@
-"""/next: what an agent should do now. New inputs first, then a document's unanswered comments, then the items the
+"""/next: what an agent should do now. New inputs first, then a document's unanswered comments, then the tasks the
 user replied on while an agent is working on them (in progress), then what another session wrote for it, then the
-queue (doing first, then by priority, oldest first; subitems before their parent), skipping what another session
-holds. Any other item the user replied on (open, proposed, a question answered) waits its turn by priority (B606,
-Yadong's choice): it comes before the queue's next item only when that one is not in progress and is no more
+queue (doing first, then by priority, oldest first; subtasks before their parent), skipping what another session
+holds. Any other task the user replied on (open, proposed, a question answered) waits its turn by priority (B606,
+Yadong's choice): it comes before the queue's next task only when that one is not in progress and is no more
 urgent."""
 
 from __future__ import annotations
@@ -12,13 +12,13 @@ from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Tuple
 
 from ..domain import history, rules
-from ..domain.model import Item, Message
+from ..domain.model import Task, Message
 from ..domain.state import ident
 from ..domain.vocab import CLOSED
 from .render import on_it, Reading, card, doc_text, input_card, proposal_text, proposals_for, rules_head
 
-Holder = Callable[[Item], Optional[Tuple[str, float]]]
-Calls = Callable[[], List[Tuple[Item, Message, bool]]]
+Holder = Callable[[Task], Optional[Tuple[str, float]]]
+Calls = Callable[[], List[Tuple[Task, Message, bool]]]
 
 
 # B762: the Antigravity session's waker, started (or left running) before each turn ends; it wakes the session
@@ -28,9 +28,9 @@ ANTIGRAVITY_WAKER = 'curl -s "BASE/waker" | sh -s "$ANTIGRAVITY_CONVERSATION_ID"
 class Work:
     text: str
     has_work: bool
-    given: Optional[int] = None  # the item whose card it holds
-    claim: Optional[Tuple[int, str]] = None  # (item, session): the queue item it takes
-    stop: Optional[Tuple[int, int]] = None  # (item, the change): told to stop it (B816)
+    given: Optional[int] = None  # the task whose card it holds
+    claim: Optional[Tuple[int, str]] = None  # (task, session): the queue task it takes
+    stop: Optional[Tuple[int, int]] = None  # (task, the change): told to stop it (B816)
 
 
 @dataclass
@@ -45,13 +45,13 @@ class Asker:
 
 
 def _stop(st, asker: Asker) -> Optional[Tuple[int, int]]:
-    """The first item closed under this agent session that it was not told of: the one on it, or any when no one
+    """The first task closed under this agent session that it was not told of: the one on it, or any when no one
     was heard on it."""
     if not asker.who:
         return None
     me = ident(asker.who, asker.session)
     for n, seq in history.to_stop(st, time.time()):
-        a = st.items[n].agent
+        a = st.tasks[n].agent
         if not asker.told(seq) and (not a or ident(a.by, a.ses) == me):
             return n, seq
     return None
@@ -62,10 +62,10 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
     if gone:
         return Work(f"Project {project_name} was deleted: there is no work here. The user can restore it in Taska "
                     "(Settings › Projects).\n", False)
-    out = ["Keep working without stopping. After each item, write back, then GET /next again."]
+    out = ["Keep working without stopping. After each task, write back, then GET /next again."]
     if st.rules and st.rules.md.strip():
         out.append(rules_head(st) + " and follow the parts that apply.")
-    live = rules.by_priority(i for i in st.live_items() if i.status not in CLOSED and not i.archived)
+    live = rules.by_priority(i for i in st.live_tasks() if i.status not in CLOSED and not i.archived)
     talking = {n for r in st.inputs.values() if rd.held(r) for n in [r.scope, *r.touched] if n}
     for label, rows in (
             # answered in part (B749): what was answered is the agent's to pick up, the rest still waits
@@ -82,13 +82,13 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         return Work(f"{head}\nfirst handle the inbox ({len(inbox)}):\n{cards}", True)
     stop = _stop(st, asker)
     if stop:  # you closed what it was doing: at once, before anything else (B816)
-        it = st.items[stop[0]]
+        it = st.tasks[stop[0]]
         how = "marked it won't do" if it.status == "dropped" else "closed it"
         return Work(f"{head}\nstop {st.code(it.n)}: the user {how} while you were on it. Stop working on it now (a "
                     f"worker you gave it to as well), and say on it in one line what you leave: `{st.code(it.n)} say ...`\n"
                     + card(rd, it), True, stop=stop)
     docs = [d for d in st.docs.values() if rules.doc_unanswered(d) and not d.deleted and (d.is_rules or (
-            st.items.get(d.n) and not st.items[d.n].merged_into and not st.items[d.n].deleted))]
+            st.tasks.get(d.n) and not st.tasks[d.n].merged_into and not st.tasks[d.n].deleted))]
     if docs:
         d = min(docs, key=lambda d: d.t1)
         return Work(f"{head}\nanswer the user's comments on D{d.d} (GET /D{d.d}):\n" + doc_text(rd, d), True)
@@ -103,7 +103,7 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         return Work(f"{head}\nresume {st.code(it.n)}: the user replied\n" + card(rd, it), True, given=it.n)
     fresh = min((i for i in replied if not rules.in_progress(i)), key=lambda i: (i.pri, i.t1), default=None)
     calls = asker.calls() if asker.who else []
-    if calls:  # another agent or session wrote to this one, or on the item it is on
+    if calls:  # another agent or session wrote to this one, or on the task it is on
         it, x, to_me = calls[0]
         what = "wrote to you" if to_me else "wrote on it (you are on it)"
         return Work(f"{head}\nresume {st.code(it.n)}: {ident(x.by, x.ses)} {what} (#{x.id})\n" + card(rd, it), True,
@@ -113,11 +113,11 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
             and not rules.waiting(st, i) and not rules.open_kids(st, i)]
     blocked = [(i, rules.waits_for(st, i)) for i in work]
     blocked = [(i, ws) for i, ws in blocked if ws]
-    if blocked:  # waiting for other items (T857): given once they are finished
+    if blocked:  # waiting for other tasks (T857): given once they are finished
         out.append("blocked (skip): " + ", ".join(f"{st.code(i.n)} ← {' '.join(st.code(w.n) for w in ws)}" for i, ws in blocked))
         head = "\n".join(out)
     queue = rules.queue_order([i for i in work if all(i is not b for b, _ in blocked)])
-    if me:  # what another session is on is theirs; each gets its own next item
+    if me:  # what another session is on is theirs; each gets its own next task
         theirs = [(i, c[0]) for i in queue for c in [asker.holder(i)] if c and c[0] != me]
         if theirs:
             out.append("others are on (skip): " + " ".join(f"{st.code(i.n)} ({(on_it(rd, i) or (a, a))[1]})" for i, a in theirs))

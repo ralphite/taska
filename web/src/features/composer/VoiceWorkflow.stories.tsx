@@ -1,8 +1,8 @@
 // A voice message from start to end, on one page (T722, D127): how its words are worked out (two models at once:
 // fast words first, the strong model's words replace them), then each state of model/voiceStates (T726) as a row in four places: the New input
-// and an item, each on the desktop and the phone. The normal ways first, the other outcomes and branches after. Every
+// and a task, each on the desktop and the phone. The normal ways first, the other outcomes and branches after. Every
 // cell is drawn as the state's own story draws it (the box, the New input page's list, the line over the phone's box,
-// the item's talk), with the same fixtures (stories/voiceWorkflowFixtures); where a state shows nothing, the cell says so.
+// the task's talk), with the same fixtures (stories/voiceWorkflowFixtures); where a state shows nothing, the cell says so.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
 import { COLUMNS, Place, ROWS, SECTIONS } from '../../stories/voiceWorkflowFixtures'

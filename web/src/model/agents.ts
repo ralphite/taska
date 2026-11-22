@@ -33,7 +33,7 @@ export const AROUND_MS = 10 * 60e3
 export type SessionState = 'working' | 'idle' | 'waiting' | 'gone'
 
 /** How a session is now: as its app says (Claude Code, Codex), else by when it was last heard of and whether it is on
- * an item (Antigravity: seen lately, its waker waiting, or gone). A Codex thread is idle once its turn ends, also
+ * a task (Antigravity: seen lately, its waker waiting, or gone). A Codex thread is idle once its turn ends, also
  * long after its app closed: one not heard of lately is gone. */
 export function sessionState(app: string, s: AgentSession, blocked: boolean, at: number): SessionState {
   const quiet = !s.waiting && at - s.t >= AROUND_MS
@@ -75,7 +75,7 @@ export function blockedAgent(agents: readonly AgentSeen[] | undefined, now: numb
 }
 
 /** [tone, the pill's words, a longer sentence], by presenceOf (B784: the pill never says one thing while the Agents
- * sheet says another, and a time never follows "No agent"). `queued`: items in the queue now. */
+ * sheet says another, and a time never follows "No agent"). `queued`: tasks in the queue now. */
 export function agentState(agents: readonly AgentSeen[] | undefined, work: boolean | undefined, now: number, queued = 0): ['ok' | 'bad' | 'idle' | 'blocked', string, string] {
   const p = presenceOf(agents, now)
   if (p.k === 'none') return [work ? 'bad' : 'idle', 'No agent', work ? 'Work is waiting. No agent yet.' : 'No agent yet.']
@@ -83,7 +83,7 @@ export function agentState(agents: readonly AgentSeen[] | undefined, work: boole
   if (p.k === 'blocked') return ['blocked', `${name} · blocked`, `${name} is blocked, waiting on you.`]
   if (p.k === 'working') return ['ok', `${name} · working`, `${name} is working.`]
   if (p.k === 'ready') return ['ok', `${name} ready`, `${name} is ready for work.`]
-  const waits = queued ? `${queued} ${queued === 1 ? 'item waits' : 'items wait'}.` : 'Nothing is waiting for an agent.'
+  const waits = queued ? `${queued} ${queued === 1 ? 'task waits' : 'tasks wait'}.` : 'Nothing is waiting for an agent.'
   if (p.k === 'idle')
     // B811 r1362: red is not an error: work waits and this session does not take it; it says so, not "idle"
     return work ? ['bad', `${name} · not taking work`, `${queued ? waits : 'Work is waiting.'} ${name} is not taking work.`] : ['idle', `${name} · idle`, `${waits} ${name} is idle.`]
@@ -141,8 +141,8 @@ export function lastAgent(agents: readonly AgentSeen[] | undefined, now: number)
   return p.k === 'none' || p.k === 'away' ? null : { by: p.a.name, state: p.k }
 }
 
-/** The sessions working on item `n` now (I810: a manager's worker, found by its title, among them), each with how it
- * is: what the item's page shows of who works on it. Gone ones are left out. */
+/** The sessions working on task `n` now (I810: a manager's worker, found by its title, among them), each with how it
+ * is: what the task's page shows of who works on it. Gone ones are left out. */
 export function sessionsOn(agents: readonly AgentSeen[] | undefined, n: number, at: number): { by: string; name: string; state: Exclude<SessionState, 'gone'> }[] {
   const out: { by: string; name: string; state: Exclude<SessionState, 'gone'> }[] = []
   for (const a of agents || [])

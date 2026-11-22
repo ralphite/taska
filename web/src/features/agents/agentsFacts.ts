@@ -5,12 +5,12 @@
 import { sessionState, sessionsOf, type SessionState } from '../../model/agents'
 import { ago } from '../../model/time'
 import type { ProjectModel } from '../../model/project'
-import type { AgentSession, Item } from '../../model/types'
+import type { AgentSession, Task } from '../../model/types'
 import { whoName } from '../../model/words'
 
 export { sessionState, type SessionState }
 
-export interface ItemRef {
+export interface TaskRef {
   n: number
   code: string
   title: string
@@ -32,10 +32,10 @@ export interface SessionFacts {
   folder: string
   /** what it waits for you on ('' when its app does not say) and how long */
   waits: { what: string; for: string } | null
-  on: ItemRef | null
-  workers: { key: string; name: string; state: SessionState; on: ItemRef | null }[]
+  on: TaskRef | null
+  workers: { key: string; name: string; state: SessionState; on: TaskRef | null }[]
   /** its last messages in Taska, the latest first */
-  activity: { id: number; when: string; item: ItemRef; text: string }[]
+  activity: { id: number; when: string; task: TaskRef; text: string }[]
   /** back to the session in its app: Claude Code's own link, Codex's resume command */
   link: { kind: 'open'; href: string } | { kind: 'resume'; cmd: string } | null
   /** I833: gone, and another session of its app can bring it back (Claude Code, Antigravity): the id its app knows
@@ -79,18 +79,18 @@ function linkOf(app: string, sid: string | undefined): SessionFacts['link'] {
 /** Every session of the project's agents, grouped by app, each followed by its workers; and the one to show first. */
 export function sessionGroups(m: ProjectModel): Pick<AgentsFacts, 'groups' | 'start'> {
   const at = m.at
-  const items = new Map<number, Item>(m.items.map((it) => [it.n, it]))
-  const ref = (n: number | undefined): ItemRef | null => {
-    const it = n == null ? undefined : items.get(n)
+  const tasks = new Map<number, Task>(m.tasks.map((it) => [it.n, it]))
+  const ref = (n: number | undefined): TaskRef | null => {
+    const it = n == null ? undefined : tasks.get(n)
     return it ? { n: it.n, code: it.code, title: it.title } : null
   }
-  const said = new Map<string, { id: number; t: number; item: ItemRef; text: string }[]>()
-  for (const it of m.items)
+  const said = new Map<string, { id: number; t: number; task: TaskRef; text: string }[]>()
+  for (const it of m.tasks)
     for (const x of it.thread) {
       if (x.hidden || x.by === 'you' || !x.text.trim()) continue
       const k = keyOf(x.by, sesKey(x.ses))
       const list = said.get(k) ?? []
-      list.push({ id: x.id, t: Date.parse(x.t), item: { n: it.n, code: it.code, title: it.title }, text: firstLine(x.text) })
+      list.push({ id: x.id, t: Date.parse(x.t), task: { n: it.n, code: it.code, title: it.title }, text: firstLine(x.text) })
       said.set(k, list)
     }
   type Row = { app: string; s: AgentSession; f: SessionFacts }
@@ -120,7 +120,7 @@ export function sessionGroups(m: ProjectModel): Pick<AgentsFacts, 'groups' | 'st
         activity: (said.get(keyOf(a.name, sesKey(s.name))) ?? [])
           .sort((x, y) => y.t - x.t || y.id - x.id)
           .slice(0, 5)
-          .map((x) => ({ id: x.id, when: ago(x.t, at, 'short'), item: x.item, text: x.text })),
+          .map((x) => ({ id: x.id, when: ago(x.t, at, 'short'), task: x.task, text: x.text })),
         link: linkOf(a.name, s.sid),
         reconnect: state === 'gone' && s.sid && RECONNECT.includes(a.name) ? s.sid : '',
       }
@@ -159,7 +159,7 @@ export function agentsFacts(m: ProjectModel, guide: string | null): AgentsFacts 
   // one text to paste to an agent: it connects its folder once (the project's address and Taska's skill), then works
   // (F768 r1305: the command alone was not needed beside it)
   const say = (b: string) =>
-    `This project tracks work in Taska. Once in this project's folder, run \`curl -s ${b}/connect | sh\`. Then run \`curl -s ${b}/agent\` to learn the interface, follow \`curl -s ${b}/next\` and write your progress back to the items.`
+    `This project tracks work in Taska. Once in this project's folder, run \`curl -s ${b}/connect | sh\`. Then run \`curl -s ${b}/agent\` to learn the interface, follow \`curl -s ${b}/next\` and write your progress back to the tasks.`
   const ask = say(base)
   return {
     ...sessionGroups(m),

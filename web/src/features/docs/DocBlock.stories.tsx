@@ -24,10 +24,10 @@ export const Sent: Story = { ...one(CHOICES_SENT), name: 'Sent' }
 export const SentPointedAt: Story = { ...one(CHOICES_SENT), name: 'Sent, pointed at: Modify', parameters: { pseudo: { hover: ['section[data-key="l1"] .group\\/form'] } } }
 /** Modify pressed: the choices can be ticked again. */
 export const SentChanging: Story = { ...one(CHOICES_SENT, { ticks: { open: new Set([`14 ${formats}`]) } }), name: 'Sent, being changed' }
-/** The item's question pointed here, and you replied on the item instead of ticking. */
+/** The task's question pointed here, and you replied on the task instead of ticking. */
 export const Skipped: Story = {
-  ...one(CHOICES, { item: { thread: [message({ id: 31, kind: 'ask', text: 'Pick the formats in D14.' }), message({ id: 32, by: 'you', kind: 'say', text: 'CSV is enough for now.' })] } }),
-  name: 'Skipped: replied on the item instead',
+  ...one(CHOICES, { task: { thread: [message({ id: 31, kind: 'ask', text: 'Pick the formats in D14.' }), message({ id: 32, by: 'you', kind: 'say', text: 'CSV is enough for now.' })] } }),
+  name: 'Skipped: replied on the task instead',
 }
 // ---- more states (T639)
 const MIXED = doc({ d: 14, title: 'Export formats', blocks: [{ key: 'title', kind: 'heading', text: '# Export formats', comments: [] }, { key: 'm1', kind: 'list', text: 'Which should it offer?\n- [ ] CSV\n- [ ] Excel\n\nAnd when?\n- ( ) This week\n- ( ) Next week', comments: [] }], detached: [], whole: [], resolved: {} })

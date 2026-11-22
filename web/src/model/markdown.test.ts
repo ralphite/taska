@@ -1,7 +1,7 @@
 // Taska's Markdown read into blocks, and the talk's rules that read it (what an answer picked).
 
 import { describe, expect, it as test } from 'vitest'
-import { item, message } from '../stories/fixtures'
+import { task, message } from '../stories/fixtures'
 import { blocks, choiceLabels, listOf, plainQuote, ticks } from './markdown'
 import { needOf, talkPlan } from './needStates'
 import { answerOf, versions, withdrawn } from './talk'
@@ -24,11 +24,11 @@ describe('blocks', () => {
     expect(b[3]).toEqual({ kind: 'table', head: ['A', 'B'], align: ['text-left', 'text-right'], rows: [['1', '2']] })
   })
 
-  test('a list nests by two spaces a level; a line that goes on joins its item', () => {
+  test('a list nests by two spaces a level; a line that goes on joins its task', () => {
     expect(listOf('- a\n  - b\n    more\n- c')).toEqual({
       ordered: false,
-      items: [
-        { text: 'a', subs: [{ ordered: false, items: [{ text: 'b more', subs: [] }] }] },
+      tasks: [
+        { text: 'a', subs: [{ ordered: false, tasks: [{ text: 'b more', subs: [] }] }] },
         { text: 'c', subs: [] },
       ],
     })
@@ -58,12 +58,12 @@ describe('the talk', () => {
     expect(answerOf([ask, answer, message({ id: 4, by: 'you', kind: 'say', text: '✓ CSV' })], ask)).toEqual(['CSV'])
     expect(answerOf([ask], ask, '✓ CSV')).toEqual(['CSV'])
     expect(answerOf([ask], ask)).toBeNull()
-    expect(needOf(item({ n: 1, status: 'proposed', talked: true, thread: [ask, answer] })).state).toBe('onAnswer')
+    expect(needOf(task({ n: 1, status: 'proposed', talked: true, thread: [ask, answer] })).state).toBe('onAnswer')
   })
 
   test('your decision shows while it is the latest word', () => {
     const p = message({ id: 5, kind: 'propose', text: 'Do it' })
-    const decided = item({ n: 1, status: 'open', thread: [p], decided: { from: 'proposed', to: 'open', msg: 5, t: '' } })
+    const decided = task({ n: 1, status: 'open', thread: [p], decided: { from: 'proposed', to: 'open', msg: 5, t: '' } })
     expect(needOf(decided)).toMatchObject({ state: 'decided', dec: { to: 'open' } })
     expect(needOf({ ...decided, thread: [p, message({ id: 6, text: 'Started' })] }).state).toBe('none')
   })
@@ -77,7 +77,7 @@ describe('the talk', () => {
 
   // F692 (r1113): the talk shows whole, no "Show earlier"; change only on Yadong's explicit word
   test('the whole talk shows, from its first message', () => {
-    const long = item({ n: 1, thread: Array.from({ length: 12 }, (_, i) => message({ id: i + 1 })) })
+    const long = task({ n: 1, thread: Array.from({ length: 12 }, (_, i) => message({ id: i + 1 })) })
     expect(talkPlan(long).thread.map((x) => x.id)).toEqual(Array.from({ length: 12 }, (_, i) => i + 1))
   })
 })

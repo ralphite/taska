@@ -1,5 +1,5 @@
 """T697 r(D121), Yadong's decisions on how a voice note becomes words:
-1. the organizer writes an item's body from the note's tidied words, complete; the word-for-word line is given to it
+1. the organizer writes a task's body from the note's tidied words, complete; the word-for-word line is given to it
    only to judge whether something was misheard;
 2. every step that ran is kept (its model, its words or its error, how long it took, whether its words were chosen),
    in the transcript next to the audio and in what the page gets for the note;

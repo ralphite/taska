@@ -2,7 +2,7 @@
 // around and what waits for one. On the left every agent session seen in the project, by its app, a manager's workers
 // under it, each by its state's dot, its name and when it was last heard of; under them how to connect another agent
 // and what agents read. On the right the session picked: its state and for how long, its app and folder, what it waits
-// for you on, the item it is on, its workers, its last messages, and the way back to it in its app. The phone shows the
+// for you on, the task it is on, its workers, its last messages, and the way back to it in its app. The phone shows the
 // list, then the session's page with Back. Props only.
 
 import { useState } from 'react'
@@ -11,14 +11,14 @@ import { Avatar } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import type { SheetParts } from '../../ui/Sheet'
 import { CHIP, MUTED, NEEDS_CARD, SECOND } from '../../ui/tones'
-import { OTHERS, type AgentsFacts, type ItemRef, type SessionFacts, type SessionState } from './agentsFacts'
+import { OTHERS, type AgentsFacts, type TaskRef, type SessionFacts, type SessionState } from './agentsFacts'
 import { AgentsGuide } from './AgentsGuide'
 
 export interface AgentsActs {
   copy(text: string): void
   /** How it works (Help › Connect an agent) */
   help(): void
-  /** an item, by its code */
+  /** a task, by its code */
   open(code: string): void
   /** I833: bring back a session that lost its connection (by the id its app knows it by): relay, a connected session
    * of its app is handed it; else `text` is what to give a new session */
@@ -168,11 +168,11 @@ function ListRow({ s, picked, onPick }: { s: SessionFacts; picked: boolean; onPi
 }
 
 
-function ItemButton({ item, on, cls = '' }: { item: ItemRef; on: AgentsActs; cls?: string }) {
+function TaskButton({ task, on, cls = '' }: { task: TaskRef; on: AgentsActs; cls?: string }) {
   return (
-    <button onClick={() => on.open(item.code)} className={`flex min-w-0 items-center gap-2.5 text-left ${cls}`}>
-      <span className={CODE}>{item.code}</span>
-      <span className="min-w-0 flex-1 truncate">{item.title}</span>
+    <button onClick={() => on.open(task.code)} className={`flex min-w-0 items-center gap-2.5 text-left ${cls}`}>
+      <span className={CODE}>{task.code}</span>
+      <span className="min-w-0 flex-1 truncate">{task.title}</span>
     </button>
   )
 }
@@ -275,7 +275,7 @@ function SessionPage({ s, on, onPick, resume, reconnecting }: { s: SessionFacts;
       {s.on ? (
         <section className="flex flex-col gap-2">
           <h4 className={LABEL}>On now</h4>
-          <ItemButton item={s.on} on={on} cls={`rounded-xl border border-zinc-200 px-3.5 py-3 text-sm font-medium ${ROW_HOVER} dark:border-zinc-800`} />
+          <TaskButton task={s.on} on={on} cls={`rounded-xl border border-zinc-200 px-3.5 py-3 text-sm font-medium ${ROW_HOVER} dark:border-zinc-800`} />
         </section>
       ) : null}
       {s.workers.length ? (
@@ -288,7 +288,7 @@ function SessionPage({ s, on, onPick, resume, reconnecting }: { s: SessionFacts;
                   <Dot state={w.state} />
                   {w.name}
                 </button>
-                {w.on ? <ItemButton item={w.on} on={on} cls="flex-1 text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100" /> : <span className="flex-1" />}
+                {w.on ? <TaskButton task={w.on} on={on} cls="flex-1 text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100" /> : <span className="flex-1" />}
                 <span className={`shrink-0 text-xs ${w.state === 'working' ? 'text-emerald-700 dark:text-emerald-400' : w.state === 'waiting' ? AMBER : MUTED}`}>{WORD[w.state]}</span>
               </li>
             ))}
@@ -299,9 +299,9 @@ function SessionPage({ s, on, onPick, resume, reconnecting }: { s: SessionFacts;
         <section className="flex flex-col gap-1">
           <h4 className={`pb-1 ${LABEL}`}>Recent</h4>
           {s.activity.map((a) => (
-            <button key={a.id} onClick={() => on.open(a.item.code)} className={`-mx-2 flex min-h-9 items-center gap-3 rounded-lg px-2 text-left text-[13px] ${ROW_HOVER}`}>
+            <button key={a.id} onClick={() => on.open(a.task.code)} className={`-mx-2 flex min-h-9 items-center gap-3 rounded-lg px-2 text-left text-[13px] ${ROW_HOVER}`}>
               <span className={`w-7 shrink-0 tabular-nums ${MUTED}`}>{a.when}</span>
-              <span className={CODE}>{a.item.code}</span>
+              <span className={CODE}>{a.task.code}</span>
               <span className="min-w-0 flex-1 truncate text-zinc-700 dark:text-zinc-300">{a.text}</span>
             </button>
           ))}

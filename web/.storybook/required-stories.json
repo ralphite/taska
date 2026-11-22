@@ -27,7 +27,7 @@
    "Move A Document",
    "Delete A Document"
   ],
-  "Demo/Item changes": [
+  "Demo/Task changes": [
    "Mark It Done",
    "Change Its Status",
    "Change Its Priority",
@@ -36,27 +36,27 @@
    "Put It Off Then Back To Now",
    "Archive Then Undo",
    "Do This Next",
-   "Add A Subitem",
+   "Add A Subtask",
    "Edit Its Words",
-   "Put It Under Another Item",
+   "Put It Under Another Task",
    "Move It To Another Project",
    "Delete Then Undo"
   ],
-  "Demo/Item list": [
+  "Demo/Task list": [
    "Switch Views",
    "Look In The Archive",
    "Filter By Type And Priority",
    "Sort By Newest",
    "Save Your Own View",
-   "Fold Subitems",
+   "Fold Subtasks",
    "Pick Several At Once",
    "Drag Into Your Own Order",
-   "Drag Under Another Item",
+   "Drag Under Another Task",
    "Drag To Another Project"
   ],
-  "Demo/Item page": [
-   "Open An Item",
-   "Reply To An Item",
+  "Demo/Task page": [
+   "Open A Task",
+   "Reply To A Task",
    "Reply By Voice",
    "Look At A Picture",
    "Play A Voice Note",
@@ -95,7 +95,7 @@
    "Add More To What You Said",
    "Edit What You Said",
    "Delete What You Said Then Undo",
-   "Put What You Said With An Item",
+   "Put What You Said With A Task",
    "Move What You Said To Another Project"
   ],
   "Demo/Phone gestures": [
@@ -146,7 +146,7 @@
    "New input page",
    "Inputs tab"
   ],
-  "Pages/Item list": [
+  "Pages/Task list": [
    "Active",
    "Needs you",
    "All",
@@ -164,7 +164,7 @@
    "Connection lost",
    "Switching project"
   ],
-  "Pages/Item page/By item status": [
+  "Pages/Task page/By task status": [
    "In progress, with its talk",
    "Question",
    "Checklist question",
@@ -178,14 +178,14 @@
    "Rule in force",
    "Rule proposed"
   ],
-  "Pages/Item page/By what it holds": [
-   "With subitems and a document",
-   "Subitem",
+  "Pages/Task page/By what it holds": [
+   "With subtasks and a document",
+   "Subtask",
    "With pictures",
    "Long talk",
    "Very long title and details"
   ],
-  "Pages/Item page/Loading and errors": [
+  "Pages/Task page/Loading and errors": [
    "Reload: still loading",
    "Reload: Taska refused",
    "Reload: server error",
@@ -226,9 +226,9 @@
   "Prototype/About this section": [
    "About"
   ],
-  "Prototype/T854 Linear-style items": [
+  "Prototype/T854 Linear-style tasks": [
    "List",
-   "Agent On Item",
+   "Agent On Task",
    "Agent Waiting",
    "Group Open",
    "Waits For",
@@ -317,7 +317,7 @@
    "Phone 393 · Markdown paragraph",
    "Phone 393 · web page part"
   ],
-  "UI/Left sidebar/Projects list/Project item": [
+  "UI/Left sidebar/Projects list/Project task": [
    "On a project",
    "Pointer in the card",
    "Nothing open",

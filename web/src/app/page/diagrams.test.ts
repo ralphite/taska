@@ -1,10 +1,10 @@
 // B714 r1181 (Yadong's choice): a document's diagram that does not draw is told to the server, which tells the agent
 // that wrote it; once from a page for each version, paragraph and reason, and never when the page could not load the
-// drawing code itself (that is not the diagram's fault). Taska's note on the item is no agent's word for you to read.
+// drawing code itself (that is not the diagram's fault). Taska's note on the task is no agent's word for you to read.
 
 import { describe, expect, test } from 'vitest'
-import { item, message } from '../../stories/fixtures'
-import { lastAgentMessage, workNews } from '../../model/items'
+import { task, message } from '../../stories/fixtures'
+import { lastAgentMessage, workNews } from '../../model/tasks'
 import { Diagrams, DrawerUnavailable, loadFailed, RETRY_MS, type DiagramFailure } from './diagrams'
 
 const told = () => {
@@ -58,7 +58,7 @@ describe('a diagram that does not draw goes to its writer (B714 r1181)', () => {
     const T = Date.parse('2026-11-07T12:00:00Z')
     const agent = message({ id: 1, text: 'Drew the flow.', t: new Date(T - 60e3).toISOString() })
     const note = message({ id: 2, by: 'taska', text: 'D126 ¶3: this diagram does not draw: No diagram type detected. Fix it.', t: new Date(T).toISOString(), to: ['writer-1'] })
-    const it = item({ n: 1, status: 'doing', thread: [agent, note] })
+    const it = task({ n: 1, status: 'doing', thread: [agent, note] })
     expect(lastAgentMessage(it)?.id).toBe(1)
     expect(workNews(it, T)?.text).toBe('Drew the flow.')
   })

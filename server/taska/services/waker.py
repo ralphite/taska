@@ -8,7 +8,7 @@ nothing for it), then it sends the session one message and waits again. A woken 
 within 10 minutes is woken once more; nothing is sent while it works.
 
 Nothing about it shows on the page while it works (r1286). Only when the user writes to the project and no waker has
-waited for the session for 15 minutes does Taska say so, once, as an item (proposed); when a waker waits again
+waited for the session for 15 minutes does Taska say so, once, as a task (proposed); when a waker waits again
 it is deleted, unless the user answered it. Callers hold the project lock unless a method says otherwise. Any other
 answer (the project deleted, an error) is waited 20 s after, and after 30 in a row the waker stops (B786: one asked
 a deleted project again at once, 4.5 million times in 15 hours).
@@ -96,7 +96,7 @@ class Waker:
         self.seen[sid] = self.clock()
         alarm = self.p.store.db.get(KEY)
         if n > 0 and isinstance(alarm, dict) and alarm.get("sid") == sid:
-            self.p.store.db.put(KEY, None)  # it is back: the alarm went away, so its item does, unless answered
+            self.p.store.db.put(KEY, None)  # it is back: the alarm went away, so its task does, unless answered
             ref = alarm.get("ref")
             if ref:
                 self.p.run([(0, {"op": "idel", "ref": ref})], "taska")
@@ -104,7 +104,7 @@ class Waker:
     # -- telling the user, only when it does not work ------------------------------------
 
     def on_event(self, event: ev.Event) -> None:
-        """Called after Project.emit commits an event; never on a timer. The item is made apart from that change."""
+        """Called after Project.emit commits an event; never on a timer. The task is made apart from that change."""
         if event.by == "you" and isinstance(event, (ev.InputAdded, ev.InputSent)) and self._gone() is not None:
             threading.Thread(target=self.alarm, name="waker-alarm-" + self.p.slug, daemon=True).start()
 
@@ -119,7 +119,7 @@ class Waker:
         return sid
 
     def alarm(self) -> None:
-        """Say it once, as an item (call without the lock)."""
+        """Say it once, as a task (call without the lock)."""
         with self.p.lock:
             sid = self._gone()
             if sid is None:
@@ -132,7 +132,7 @@ class Waker:
             "title": "Antigravity does not hear from Taska",
             "body": ("The Antigravity session that runs this project has not waited for Taska for over 15 minutes: "
                      "what you write does not reach it. Say a word in that session and it connects again; then this "
-                     "item goes by itself."),
+                     "task goes by itself."),
         })], "taska")
         ref: Optional[str] = lines[0].split()[1] if lines and lines[0].startswith("ok ") else None
         self.p.store.db.put(KEY, {"sid": sid, "ref": ref})

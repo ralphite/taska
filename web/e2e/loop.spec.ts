@@ -1,5 +1,5 @@
 // The loop between you and your agents, as the page shows it (D20 sections 3 and 4).
-// guards: src/features/list/ src/features/item/ src/features/composer/ src/ui/Markdown.tsx src/app/actions.ts src/app/items/ src/app/inputs/ src/model/items.ts server/
+// guards: src/features/list/ src/features/task/ src/features/composer/ src/ui/Markdown.tsx src/app/actions.ts src/app/tasks/ src/app/inputs/ src/model/tasks.ts server/
 import { expect, test } from '@playwright/test'
 import { LOOP, open, project } from './seed'
 import { box, needAct, needActs, needKind, pane, priChip, row, sheetBody, views } from './ui'
@@ -32,7 +32,7 @@ test('a question is answered by picking a choice and sending it', async ({ page,
   await expect.poll(async () => p.read('T1')).toContain('✓ JSON')
 })
 
-test('r113: a new input goes to the inbox, and a reply goes to its item', async ({ page, request }) => {
+test('r113: a new input goes to the inbox, and a reply goes to its task', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   await box(page).click()
@@ -46,7 +46,7 @@ test('r113: a new input goes to the inbox, and a reply goes to its item', async 
   await expect.poll(async () => p.read('T4')).toContain('Start with the install page')
 })
 
-test('the item page shows its state, and its priority button changes the priority', async ({ page, request }) => {
+test('the task page shows its state, and its priority button changes the priority', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   await row(page, 'Write the user docs').click()

@@ -13,8 +13,8 @@ taska/
   tools/               development, packaging, deployment and service tools
 ```
 
-What an item's status means and who moves it: [item-states.md](item-states.md).
-What happens to what the user says, from Inputs to the items it lands on: [inputs.md](inputs.md).
+What a task's status means and who moves it: [task-states.md](task-states.md).
+What happens to what the user says, from Inputs to the tasks it lands on: [inputs.md](inputs.md).
 
 ## Backend: layers and the direction of their imports
 
@@ -47,8 +47,8 @@ Rules, checked by `tests/test_architecture.py`:
 1. A module imports only from its own layer or the layers listed for it above (the composition root excepted).
    `domain`, `commands` and `agent_text` do no I/O (no `sqlite3`, `socket`, `http`, `threading`, `urllib`,
    `subprocess`, `logging`; `domain` and `agent_text` not even `os`).
-2. State is typed: `domain.model` dataclasses for items, messages, inputs, documents, comments, files, voice notes' words (one record per note, `Voice`, read by its file wherever the note is); events are
-   `domain.events` dataclasses, one per kind (a module per area: items, inputs, documents, voice notes), each kind's stored row
+2. State is typed: `domain.model` dataclasses for tasks, messages, inputs, documents, comments, files, voice notes' words (one record per note, `Voice`, read by its file wherever the note is); events are
+   `domain.events` dataclasses, one per kind (a module per area: tasks, inputs, documents, voice notes), each kind's stored row
    written by its `to_row` and read by its reader next to it. Plain dicts appear only at the edges: the stored JSON,
    the HTTP JSON bodies.
 3. Every change goes through a command handler, which returns events; only `Project.emit` commits them
@@ -64,7 +64,7 @@ Each project stores its event log, projected state and agent metadata in SQLite,
 agent or organizer sees them, and a project's rules put one in by a line `{{name}}` that readers get expanded in
 place (`domain.includes`). Changes must preserve existing user data and replay the event log consistently. Data of an earlier format is
 migrated once, then the code that read it goes: no reader of an earlier format is kept. The logs are in format 3
-(every change in today's kinds, Refactor 8A; every item named T and its number in what was written, T863): Taska
+(every change in today's kinds, Refactor 8A; every task named T and its number in what was written, T863): Taska
 rewrites a log of format 2 once when it starts (`services.migrate`, the file copied beside itself first;
 `tools/migrate_data.py` for a copy), and a log of another format is refused when its project opens.
 
@@ -77,14 +77,14 @@ web/src/
                 containers share (the route, a project's model, the projects listed, search hints), the table of
                 actions, page-wide behaviours (keys, tooltip, panes), and the services more than one feature uses,
                 by area: page/ (navigation, sheets, toasts, fields, media), project/ (the project open, its sync,
-                the projects, notices, settings), items/, inputs/ (the box, sending, drafts), docs/, voice/
+                the projects, notices, settings), tasks/, inputs/ (the box, sending, drafts), docs/, voice/
   api/          typed HTTP calls (time limits, retry, the key)                 no React
   sync/         a project's change stream (the long poll and its pauses), the IndexedDB copy   no React
   model/        pure: types, selectors (sections, needs you, counts, order), words, times              no React
   stores/       Zustand stores, one per concern: server data, pending changes (outbox), drafts, UI, toasts
   ui/           presentational parts more than one feature shows: primitives (buttons, icons, sheets, segments),
                 Markdown, files, pickers, the projects' sheets, log lines, search hints, the pane's frame
-  features/     one folder per area (sidebar, list, item, composer, inputs, docs, settings, side, find, home, ...):
+  features/     one folder per area (sidebar, list, task, composer, inputs, docs, settings, side, find, home, ...):
                 presentational components (props only), their containers (hooks into stores) and the services
                 only that feature uses (features/list/views.ts, ...); a feature is a leaf: it imports no other
                 feature and no page
@@ -148,7 +148,7 @@ servers; `tests/check_data.py` validates a copied data root without a second imp
   returned, the window shows again); only a refusal, or what it was for being gone, ends it.
 - Whether the server is out of reach is one rule, `model/reach.ts` (T728 #8): every place counts its tries without an
   answer the same way (one that timed out counts twice), says so from the same threshold and in the same words.
-- Derived things (sections of the list, counts, needs you, the agents' next item) are selectors over that overlay,
+- Derived things (sections of the list, counts, needs you, the agents' next task) are selectors over that overlay,
   computed with the same rules as the server's: the page's copies are held to cases the server's own code ran
   (`model/ruleCases.gen.ts`), and its words (types, statuses, priorities, kinds) are the server's
   (`model/vocab.gen.ts`), both written by `tools/rule_cases.py`.

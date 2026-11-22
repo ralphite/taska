@@ -1,8 +1,8 @@
-"""B703 (r1141, r1144, #10330): an input said in an item is already in that item's talk, as the user's own words; the
+"""B703 (r1141, r1144, #10330): an input said in a task is already in that task's talk, as the user's own words; the
 organizer never writes a message there (no repeat, no rewrite): it only does what needs doing. Change only on
 Yadong's explicit word.
 
-B714 (#10594, 11-07): the one message the organizer may write there, or on an item it just made, is a question to the
+B714 (#10594, 11-07): the one message the organizer may write there, or on a task it just made, is a question to the
 user (ask, with its choices), so that when it is unsure the user sees the question instead of nothing."""
 
 import os
@@ -27,22 +27,22 @@ class Echo(ProjectCase):
     def say(self, ref, text, kind="say"):
         return {"op": "say", "ref": ref, "kind": kind, "text": text, "src": None, "files": []}
 
-    def test_repeating_the_input_on_its_own_item_is_dropped(self):
+    def test_repeating_the_input_on_its_own_task_is_dropped(self):
         self.assertTrue(echo(self.p, self.inp, self.say("T001", "Update this task from the latest code.")))
 
-    def test_a_message_on_the_item_the_plan_just_made_is_dropped(self):
+    def test_a_message_on_the_task_the_plan_just_made_is_dropped(self):
         # B714 (r1167): the organizer made B713 and added "截图" with the input's picture as a message on it
         self.p.run([(0, {"op": "input", "text": "Swipe down does nothing", "q": "q2"})], "you")
         inp = self.p.state.inputs["r2"]
         self.assertTrue(echo(self.p, inp, self.say("$", "截图")))
         self.assertTrue(echo(self.p, inp, self.say("B099", "截图")))  # by its code, made by the same plan
 
-    def test_any_message_on_that_item_is_dropped_one_elsewhere_stays(self):
+    def test_any_message_on_that_task_is_dropped_one_elsewhere_stays(self):
         self.assertTrue(echo(self.p, self.inp, self.say("T001", "Noted: the plan follows the code.")))
         self.p.run([(0, {"op": "new", "pri": "P1", "when": "now", "title": "Other"})], "you")
         self.assertFalse(echo(self.p, self.inp, self.say("T002", "The part about the other task.")))
 
-    def test_a_question_to_the_user_stays_on_those_items(self):
+    def test_a_question_to_the_user_stays_on_those_tasks(self):
         # B714 #10594: unsure, the organizer asks with a question card; its notes and proposals there are still dropped
         ask = parse("T001 ask Which export should change?\n  - ( ) CSV\n  - ( ) PDF")[0][1]
         self.assertFalse(echo(self.p, self.inp, ask))

@@ -1,4 +1,4 @@
-"""Voice notes into words: a project's notes are heard with its own context (the item spoken to, its open items and
+"""Voice notes into words: a project's notes are heard with its own context (the task spoken to, its open tasks and
 their words), the spellings fixed before and the user's preferences, all from the workspace."""
 
 from __future__ import annotations

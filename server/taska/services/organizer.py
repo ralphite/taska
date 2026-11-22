@@ -1,4 +1,4 @@
-"""The organizer (optional, Gemini): turns what you said into item changes, one input at a time, oldest first.
+"""The organizer (optional, Gemini): turns what you said into task changes, one input at a time, oldest first.
 
 The model decides what to change and writes it in the agents' command language; the commands check and apply it,
 so every change traces back to the input. With no key, inputs wait for the coding agent instead.
@@ -30,22 +30,22 @@ from .project import Project
 
 
 def context(p: Project, inp: Input) -> str:
-    """What the organizer reads with an input: the open items, the rules, the item it is about, and the input."""
+    """What the organizer reads with an input: the open tasks, the rules, the task it is about, and the input."""
     st = p.state
-    rows = [render.line(st, i) for i in rules.by_priority(st.live_items()) if i.status not in CLOSED][:600]
+    rows = [render.line(st, i) for i in rules.by_priority(st.live_tasks()) if i.status not in CLOSED][:600]
     listed = skills.listing(p.skills(), "")
-    out = ["Open items:\n" + ("\n".join(rows) if rows else "(none yet)"), "Project rules:\n" + render.rules_text(st, p.shared_texts())
+    out = ["Open tasks:\n" + ("\n".join(rows) if rows else "(none yet)"), "Project rules:\n" + render.rules_text(st, p.shared_texts())
            + ("\n\n" + listed if listed else "")]
     rd = p.reading()
-    if inp.scope in st.items:
-        out.append("Scope item (the input is about this one):\n" + render.card(rd, st.items[inp.scope]))  # type: ignore[index]
+    if inp.scope in st.tasks:
+        out.append("Scope task (the input is about this one):\n" + render.card(rd, st.tasks[inp.scope]))  # type: ignore[index]
     scope = f" [scope: {st.code(inp.scope)}]" if inp.scope else " [no scope: whole project]"
     if inp.history:
         out.append("This is an update to an existing input, not a new submission. The latest text is authoritative. "
-                   "Update its linked items where relevant instead of duplicating them. Preserve unrelated work. "
+                   "Update its linked tasks where relevant instead of duplicating them. Preserve unrelated work. "
                    "Do not repeat completed external actions. The coding agent must see the update: include pass.")
         out.append("Previous input text:\n" + inp.history[-1].text)
-        out.append("Linked items:\n" + "\n".join(render.card(rd, st.items[n]) for n in inp.touched if n in st.items))
+        out.append("Linked tasks:\n" + "\n".join(render.card(rd, st.tasks[n]) for n in inp.touched if n in st.tasks))
     # T697 r(D121): a voice note's tidied words are what the body is written from; its words word for word come only
     # to judge whether something was misheard
     said = for_agents(st, inp.text, inp.files, as_said=True, said_as=AS_SAID_LABEL)
@@ -62,33 +62,33 @@ MODELS = [m.strip() for m in os.environ.get("TASKA_ORGANIZER_MODELS", "gemini-4-
 
 
 def echo(p: Project, inp: Input, c: Any) -> bool:
-    """A message from the organizer on the item the input was said in (B703, r1144, #10330), or on the item its plan
+    """A message from the organizer on the task the input was said in (B703, r1144, #10330), or on the task its plan
     just made from it (B714, r1167): the user's own words and files are already there (tidied); with nothing to do
     they stay as said, and anything to do is done by changing things, never by writing them again in a message. So
-    no organizer message goes on that item; it is dropped here. The one exception is a question to the user (ask, with
+    no organizer message goes on that task; it is dropped here. The one exception is a question to the user (ask, with
     its choices): when the organizer is unsure, it asks there, so its doubt is seen, not dropped (B714 #10594)."""
     if not isinstance(c, dict) or c.get("op") != "say" or c.get("kind") == "ask":
         return False
     ref = str(c.get("ref") or "").strip()
     num = re.fullmatch(r"[A-Za-z]?(\d+)", ref)
     if ref == "$" or (num and int(num.group(1)) > p.state.max_n):
-        return True  # on an item this plan makes from the input: it already shows the input's words and files (B714)
+        return True  # on a task this plan makes from the input: it already shows the input's words and files (B714)
     if inp.scope is None:
         return False
     try:
-        return rules.item_at(p.state, c.get("ref") or "").n == inp.scope
+        return rules.task_at(p.state, c.get("ref") or "").n == inp.scope
     except Refused:
         return False
 
 
 def unclosed(p: Project, scope: Optional[int], cmd: Tuple[int, Any]) -> Tuple[int, Any]:
-    """A reply on an item is for the agent on it, who reads it and decides (B760, Yadong r1278 r1281): the organizer
-    never changes that item's status (done, drop, open ...) from it; its other changes (priority, Now/Later) stay."""
+    """A reply on a task is for the agent on it, who reads it and decides (B760, Yadong r1278 r1281): the organizer
+    never changes that task's status (done, drop, open ...) from it; its other changes (priority, Now/Later) stay."""
     no, c = cmd
     if not isinstance(c, dict) or c.get("op") != "set" or "status" not in (c.get("f") or {}):
         return cmd
     try:
-        if rules.item_at(p.state, c.get("ref") or "").n != scope:
+        if rules.task_at(p.state, c.get("ref") or "").n != scope:
             return cmd
     except Refused:
         return cmd
@@ -169,7 +169,7 @@ class Organizer(threading.Thread):
             files = list(inp.files)
             heard = {f.f: words_of(p.state, f.f) for f in files}  # a voice note without words goes as its audio
             scope, had_history = inp.scope, bool(inp.history)
-            reply = scope in p.state.items  # a reply on an item: for the agent on it (B760)
+            reply = scope in p.state.tasks  # a reply on a task: for the agent on it (B760)
         err: Optional[str] = None
         try:
             for f in files:
@@ -212,7 +212,7 @@ class Organizer(threading.Thread):
             bad = [x for x in lines if x.startswith("err")]
             if not p.state.inputs[rid].acked and not bad and not keep:
                 p.emit(ev.InputsAcked(ids=[rid], by="org"))
-            noted = f"Added to {p.state.code(scope)}" if scope in p.state.items else "No changes needed"
+            noted = f"Added to {p.state.code(scope)}" if scope in p.state.tasks else "No changes needed"
             msg = " · ".join(labels) if labels else ("" if keep else noted)
             if keep:
                 msg = (msg + " · " if msg else "") + "Left for agent"
@@ -225,7 +225,7 @@ class Organizer(threading.Thread):
                 "ms": int((time.time() - t0) * 1000)}})
 
 
-# a line that starts a command: new, ack, pass, or an item or document code ($ is the item made just before)
+# a line that starts a command: new, ack, pass, or a task or document code ($ is the task made just before)
 _HEAD = re.compile(r"(?i)(new|ack|pass)\b|\$|[A-Za-z]?\d+\b")
 
 

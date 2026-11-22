@@ -8,7 +8,7 @@ import { Who } from './bits'
 import { MUTED } from './tones'
 
 export interface LogEvents {
-  item(n: number): void
+  task(n: number): void
   input(id: string): void
 }
 
@@ -39,7 +39,7 @@ export function LogLine({ s, withTime = false, on }: { s: LogSentence; withTime?
             {p.faint}
           </span>
         ) : 'n' in p ? (
-          <button key={i} onClick={() => on.item(p.n)} className="font-semibold text-blue-600 hover:underline dark:text-blue-400">
+          <button key={i} onClick={() => on.task(p.n)} className="font-semibold text-blue-600 hover:underline dark:text-blue-400">
             {p.code}
           </button>
         ) : (

@@ -1,5 +1,5 @@
 // The desktop's bar over the panes (T591: Top bar and list head > Project bar): the project's name, its tabs with
-// their counts, whether an agent is around, from the page's own headFacts with the item list's demo project.
+// their counts, whether an agent is around, from the page's own headFacts with the task list's demo project.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames, States } from '../stories/Frames'
 import { headOf } from '../stories/headFixtures'
@@ -16,7 +16,7 @@ export const ProjectBarLooks: Story = {
     <Frames phone={false} deskWidth={1100}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['pointer on Rules and on the agent', <div data-look="pointer">{headOf(true)}</div>],
             ['keys: Tab on Rules (the browser draws the ring itself)', <div data-look="keys">{headOf(true)}</div>],
           ]}

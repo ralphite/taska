@@ -1,13 +1,13 @@
-// An item's talk, read for the page: its latest message, what you answered a question with, the versions of something
+// A task's talk, read for the page: its latest message, what you answered a question with, the versions of something
 // you edited, the questions taken back, who read your words, its documents' comments in time (what its card holds
-// and where: model/needStates). Pure: from the item (and an answer still on its way, when there is one).
+// and where: model/needStates). Pure: from the task (and an answer still on its way, when there is one).
 
-import { taskaNote, userWord } from './items'
+import { taskaNote, userWord } from './tasks'
 import { plainQuote, ticks } from './markdown'
-import type { Comment, Doc, Item, Message } from './types'
+import type { Comment, Doc, Task, Message } from './types'
 
-/** The item's latest message from anyone but the organizer: what you came to read, shown whole. */
-export const latestMessage = (it: Item): number | null => it.thread.filter((x) => x.by !== 'org').at(-1)?.id ?? null
+/** The task's latest message from anyone but the organizer: what you came to read, shown whole. */
+export const latestMessage = (it: Task): number | null => it.thread.filter((x) => x.by !== 'org').at(-1)?.id ?? null
 
 /** B749 (D132): an agent's questions in a row: two or more asks one after another, with only your answers to some of
  * them (`of`) between. They are answered in one card, a question a page. Each row, in the talk's order. */
@@ -113,7 +113,7 @@ export function withdrawn(thread: readonly Message[]): Set<number> {
 }
 
 /** Your latest words, read by agents since and not answered yet: who, and the latest read (ms). */
-export function readMark(it: Item): { id: number; names: string[]; t: number } | null {
+export function readMark(it: Task): { id: number; names: string[]; t: number } | null {
   const th = it.thread
   const mine = th.findLastIndex((x) => x.by === 'you')
   const theirs = th.findLastIndex((x) => x.by !== 'you' && x.by !== 'org' && !taskaNote(x))
@@ -125,7 +125,7 @@ export function readMark(it: Item): { id: number; names: string[]; t: number } |
   return readers.length ? { id: th[mine].id, names: readers.map(([n]) => n), t: readers[0][1] } : null
 }
 
-/** A comment on one of the item's documents, as the talk shows it among its messages. */
+/** A comment on one of the task's documents, as the talk shows it among its messages. */
 export interface DocNote {
   c: Comment
   /** the document's number */
@@ -147,7 +147,7 @@ function partStart(d: Doc, key: string): string {
   return `“${words.length > 120 ? words.slice(0, 120) + '…' : words}”`
 }
 
-/** The comments on the item's documents, in time (one with no time yet is not shown). */
+/** The comments on the task's documents, in time (one with no time yet is not shown). */
 export function docNotes(docs: readonly Doc[]): DocNote[] {
   return docs
     .flatMap((d) => [

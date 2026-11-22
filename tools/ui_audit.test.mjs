@@ -82,7 +82,7 @@ test('wrap: a long label (a row drawn as a button) may wrap', async () => {
 })
 
 test('midword: a word broken in a box narrower than it', async () => {
-  assert.deepEqual(await kinds(`<p style="width:40px;overflow-wrap:break-word">dropped items</p>`), ['midword'])
+  assert.deepEqual(await kinds(`<p style="width:40px;overflow-wrap:break-word">dropped tasks</p>`), ['midword'])
 })
 
 test('midword: codes, paths and Chinese may break anywhere', async () => {

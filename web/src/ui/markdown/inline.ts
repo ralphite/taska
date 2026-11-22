@@ -6,7 +6,7 @@
 import DOMPurify from 'dompurify'
 import { STATE_ICON } from '../icon-paths'
 
-export type RefTarget = { kind: 'item'; n: number } | { kind: 'doc'; d: number } | { kind: 'input'; id: string }
+export type RefTarget = { kind: 'task'; n: number } | { kind: 'doc'; d: number } | { kind: 'input'; id: string }
 
 export interface InlineWorld {
   /** what a code names in this project (a code naming nothing stays words) */

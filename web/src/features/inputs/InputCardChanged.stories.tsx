@@ -6,7 +6,7 @@ import { one } from '../../stories/inputCardFixtures'
 export default { title: 'UI/Inputs page/Input row/Failed, undone, edited' } satisfies Meta
 type Story = StoryObj
 
-/** The organizer's commands failed (it named an item the project does not have): why, and Try again. */
+/** The organizer's commands failed (it named a task the project does not have): why, and Try again. */
 export const OrganizerFailed: Story = { ...one(ONE.failed), name: "Couldn't organize: Try again" }
 /** The organizer's key refused: where to fix it, no Try again (it would fail the same way). */
 export const OrganizerKeyRefused: Story = { ...one(ONE.keyRefused), name: "Couldn't organize: its key not accepted" }

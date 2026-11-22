@@ -1,7 +1,7 @@
 """B762 (Yadong r1280, r1283, r1286, 11-13): Taska cannot wake an Antigravity session from outside, so the session
 keeps Taska's waker running in its own terminal. The waker is woken by Taska only when there is work and the session
 is idle (once, not again while it works); nothing shows on the page while it works; only when the user writes and no
-waker has waited for 15 minutes is it said, once, as an item, closed again when a waker comes back. Change only on
+waker has waited for 15 minutes is it said, once, as a task, closed again when a waker comes back. Change only on
 Yadong's explicit word."""
 
 from __future__ import annotations
@@ -94,16 +94,16 @@ class Waker(ProjectCase):
         self.clock.now += 600
         say("one")
         time.sleep(0.2)
-        self.assertEqual([i.title for i in self.p.state.items.values()], [])  # gone a short while: nothing said
+        self.assertEqual([i.title for i in self.p.state.tasks.values()], [])  # gone a short while: nothing said
         self.clock.now += 400
         say("two")
         say("three")
         time.sleep(0.3)
-        alarms = [i for i in self.p.state.items.values() if "Antigravity" in i.title]
+        alarms = [i for i in self.p.state.tasks.values() if "Antigravity" in i.title]
         self.assertEqual(len(alarms), 1)
         self.assertEqual(alarms[0].status, "proposed")  # in front of the user, in Needs you
-        self.call(f"/wake?wait=0&sid={A}")  # a waker waits again: the alarm went away, and so does its item
-        self.assertTrue(self.p.state.items[alarms[0].n].deleted)
+        self.call(f"/wake?wait=0&sid={A}")  # a waker waits again: the alarm went away, and so does its task
+        self.assertTrue(self.p.state.tasks[alarms[0].n].deleted)
 
     def test_the_script_starts_one_waker_and_wakes_by_a_message(self) -> None:
         script = self.call("/waker")

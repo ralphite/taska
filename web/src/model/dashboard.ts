@@ -13,7 +13,7 @@ export interface Dash {
   hourly: boolean
   via: Pair[]
   projects: Pair[]
-  items: { project: string; code: string; title: string; n: number }[]
+  tasks: { project: string; code: string; title: string; n: number }[]
   opens: number
   opened: number
   voice: { n: number; ends: Pair[]; median: number; minutes: number }
@@ -22,14 +22,14 @@ export interface Dash {
   reloads: number
   updates: number
   costs: {
-    items: { project: string; code: string; title: string; rounds: number; minutes: number; tokens: number; cache: number; steps: number; t: string }[]
+    tasks: { project: string; code: string; title: string; rounds: number; minutes: number; tokens: number; cache: number; steps: number; t: string }[]
     minutes: number
     tokens: number
     cache: number
     median_minutes: number
     median_tokens: number
   }
-  /** each round of work on an item, the latest first (F576) */
+  /** each round of work on a task, the latest first (F576) */
   rounds: Round[]
   panels: { name: string; updated: string; title: string; md: string }[]
   analyses: { name: string; date: string; title: string; md: string }[]
@@ -38,7 +38,7 @@ export interface Dash {
 /** 3,620,181 -> 3.6M, 65,467 -> 65k */
 export const short = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : String(n))
 
-/** A round of work on an item: from started to handed over (review) or done. `tokens`: what its agent's cost line
+/** A round of work on a task: from started to handed over (review) or done. `tokens`: what its agent's cost line
  * says (null: it says nothing). */
 export interface Round {
   project: string

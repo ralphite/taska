@@ -28,15 +28,15 @@ export const HELP_GROUPS: HelpGroup[] = [
 ## How it works
 
 1. **You say what you want**, typed or as a voice note, in any language.
-2. **It becomes items.** The organizer turns what you said into items, or adds it to the item it is about.
-3. **Agents work through the items** by priority and write back on each one: progress, questions, proposals.
+2. **It becomes tasks.** The organizer turns what you said into tasks, or adds it to the task it is about.
+3. **Agents work through the tasks** by priority and write back on each one: progress, questions, proposals.
 4. **You decide.** Answer their questions, approve what they propose and accept what they finish.
 
 ## What a project holds
 
 | Place | What it holds |
 | --- | --- |
-| Items | The work, with what needs you at the top; its views include **Archive**, the finished items you put away |
+| Tasks | The work, with what needs you at the top; its views include **Archive**, the finished tasks you put away |
 | Inputs | Everything you said, as you said it, and what each became: on the desktop under **New input**, on the phone its own tab |
 | Rules | One document: how agents work in this project |
 
@@ -47,7 +47,7 @@ The sidebar lists your projects, each with how many things need you. **Documents
       {
         key: 'inputs',
         title: 'Writing and speaking',
-        about: 'New inputs, voice notes, files, and replies on an item.',
+        about: 'New inputs, voice notes, files, and replies on a task.',
         text: `Everything you tell Taska starts as an input: a few words, a voice note, a picture, or all of them together.
 
 ## Write a new input
@@ -63,11 +63,11 @@ The microphone records a voice note. Taska writes out what you said and keeps th
 
 ## What happens next
 
-The organizer reads each input and turns it into items: new ones, or words added to the item it is about. Every input keeps a link to what it became, with your inputs. **What happens to what you say** has the whole way.
+The organizer reads each input and turns it into tasks: new ones, or words added to the task it is about. Every input keeps a link to what it became, with your inputs. **What happens to what you say** has the whole way.
 
-## Reply on an item
+## Reply on a task
 
-On an item, the box under it replies there: an answer to a question, more detail, or a change of mind. The connected agent sees it at once.`,
+On a task, the box under it replies there: an answer to a question, more detail, or a change of mind. The connected agent sees it at once.`,
       },
       {
         key: 'after-you-say',
@@ -77,22 +77,22 @@ On an item, the box under it replies there: an answer to a question, more detail
 
 ## Step by step
 
-1. **You say it**, under **New input** or in an item's box.
-2. **It shows at once** as a new line in your inputs. Said in an item, it is also your message there.
+1. **You say it**, under **New input** or in a task's box.
+2. **It shows at once** as a new line in your inputs. Said in a task, it is also your message there.
 3. **A voice note writes itself out**: its first words in about two seconds, then tidied words, used everywhere.
 4. **The organizer reads it** and does what it asks: one input can do several things.
-5. **Not sure what you meant?** The organizer asks you on the item, with choices, as an agent does.
+5. **Not sure what you meant?** The organizer asks you on the task, with choices, as an agent does.
 
 ## What the organizer does
 
-- Something new becomes a **new item**: a short title, and all your words as its body.
-- Words about an item go into **that item's talk**: only the part about it.
-- "Make it P0", "later", "done" or "won't do" **change the item**.
+- Something new becomes a **new task**: a short title, and all your words as its body.
+- Words about a task go into **that task's talk**: only the part about it.
+- "Make it P0", "later", "done" or "won't do" **change the task**.
 - "From now on, always…" **changes the Rules**.
 - A question or request for an agent is **left for an agent**.
 - Hello and thanks need nothing.
 
-New items are P1 and Now, unless you say urgent or later.
+New tasks are P1 and Now, unless you say urgent or later.
 
 ## Where you see what
 
@@ -106,12 +106,12 @@ New items are P1 and Now, unless you say urgent or later.
 | A rule | Changed the rules | A new version of the Rules |
 | A question for an agent | For an agent | The agent picks it up |
 
-Change an input you sent and it is read again: its items follow the new words.
+Change an input you sent and it is read again: its tasks follow the new words.
 
 ## What never happens
 
-- No notes from the organizer on an item it just made, or on the item you spoke in. A question for you is the only exception.
-- Your whole input is never pasted into another item.
+- No notes from the organizer on a task it just made, or on the task you spoke in. A question for you is the only exception.
+- Your whole input is never pasted into another task.
 - Your words are never shortened, reordered or rewritten. Only "um"s and words said twice go.
 - You never press Retry: when the organizer can't be reached, Taska keeps trying.`,
       },
@@ -142,17 +142,17 @@ When you write, Taska tells the connected agent at once. An agent waiting for wo
     ],
   },
   {
-    name: 'Working with items',
+    name: 'Working with tasks',
     topics: [
       {
-        key: 'items',
-        title: 'Items',
-        about: 'Codes, types, statuses, priority, Now and Later, and subitems.',
-        text: `An item is one piece of work: a feature, a bug, an idea or a task.
+        key: 'tasks',
+        title: 'Tasks',
+        about: 'Codes, types, statuses, priority, Now and Later, and subtasks.',
+        text: `A task is one piece of work: a feature, a bug, an idea or a task.
 
 ## Codes
 
-Each item has a code: its type's letter and a number, such as **F12** or **B3**. Agents and you use codes to point at items.
+Each task has a code: its type's letter and a number, such as **F12** or **B3**. Agents and you use codes to point at tasks.
 
 | Letter | Type |
 | --- | --- |
@@ -175,17 +175,17 @@ Each item has a code: its type's letter and a number, such as **F12** or **B3**.
 
 ## Priority, Now and Later
 
-P0 is the most urgent and P3 the least. **Now** items are the queue agents take work from; **Later** items wait until you move them back.
+P0 is the most urgent and P3 the least. **Now** tasks are the queue agents take work from; **Later** tasks wait until you move them back.
 
-## Subitems
+## Subtasks
 
-An item can sit under another one. Drag a row onto the middle of another row, or choose **Put under…** in its menu.`,
+A task can sit under another one. Drag a row onto the middle of another row, or choose **Put under…** in its menu.`,
       },
       {
         key: 'needs-you',
         title: 'What needs you',
         about: 'Questions, proposals and finished work waiting for your answer.',
-        text: `An item needs you when an agent asked a question, proposed something, or finished work for you to check. These come first in **Items**, in the **Needs you** view, and in each project's count in the sidebar.
+        text: `A task needs you when an agent asked a question, proposed something, or finished work for you to check. These come first in **Tasks**, in the **Needs you** view, and in each project's count in the sidebar.
 
 ## Answer, approve, accept
 
@@ -195,7 +195,7 @@ An item can sit under another one. Drag a row onto the middle of another row, or
 | proposed something | **Approve**, or say **Won't do** |
 | finished work | **Accept**, or say **Not yet** and what is still wrong |
 
-**Not yet** sends the item back to the agent.
+**Not yet** sends the task back to the agent.
 
 ## On the phone
 
@@ -204,18 +204,18 @@ Swipe a row right for its next step, or left for the other actions.`,
       {
         key: 'lists',
         title: 'Lists, views and search',
-        about: 'Find items, order the queue, and act on many at once.',
+        about: 'Find tasks, order the queue, and act on many at once.',
         text: `## Views and filters
 
 The views over the list are **Needs you**, **Active**, **All**, **Archive**, **Open**, **Later**, **Done** and **Won't do**. **Filters** narrow the list by type, priority and more; save a set of filters as your own view.
 
 ## Search
 
-Search (**⌘K** or **/**, or the magnifier beside Taska in the sidebar) finds items, inputs, the rules and documents in every project, by what the words mean. Type, or click the mic and say it. Words that name something you can do, like **Done** or **Settings**, show it under Actions.
+Search (**⌘K** or **/**, or the magnifier beside Taska in the sidebar) finds tasks, inputs, the rules and documents in every project, by what the words mean. Type, or click the mic and say it. Words that name something you can do, like **Done** or **Settings**, show it under Actions.
 
 ## Order the queue
 
-On the desktop, drag a row over the top or bottom edge of another row to put it before or after. Drag a subitem off every row to take it out from under its parent. Drag a row onto a project in the sidebar to move it there.
+On the desktop, drag a row over the top or bottom edge of another row to put it before or after. Drag a subtask off every row to take it out from under its parent. Drag a row onto a project in the sidebar to move it there.
 
 ## Act on many at once
 
@@ -228,8 +228,8 @@ Drag projects in the sidebar into your own order. On the phone, hold one still f
       {
         key: 'documents',
         title: 'Documents',
-        about: 'Longer plans and write-ups that belong to an item.',
-        text: `A document (code **D** and a number) holds a longer plan or write-up for an item: an agent's proposal, a design, or notes. It opens beside its item.
+        about: 'Longer plans and write-ups that belong to a task.',
+        text: `A document (code **D** and a number) holds a longer plan or write-up for a task: an agent's proposal, a design, or notes. It opens beside its task.
 
 ## Comment on a document
 
@@ -273,7 +273,7 @@ An agent proposes a change; it waits in **Needs you**. **View changes** shows it
 
 ## Deleted
 
-**Deleted** keeps the inputs, items and documents you deleted. Restore them from there.`,
+**Deleted** keeps the inputs, tasks and documents you deleted. Restore them from there.`,
       },
     ],
   },
@@ -302,7 +302,7 @@ An agent proposes a change; it waits in **Needs you**. **View changes** shows it
         about: 'Alerts when something starts to need you.',
         text: `## Turn them on
 
-**Settings › Notifications** turns on alerts when an item starts to need you. **Quiet hours** hold them back while you do not want to be disturbed.
+**Settings › Notifications** turns on alerts when a task starts to need you. **Quiet hours** hold them back while you do not want to be disturbed.
 
 ## On the phone
 

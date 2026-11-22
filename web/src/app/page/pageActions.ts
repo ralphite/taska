@@ -20,7 +20,7 @@ const FIELD = 'input, textarea, select, [contenteditable="true"]'
 
 export type Entry = Record<string, unknown> & { kind: string }
 
-/** an item's row in a list: tapping it opens the item (no control of its own) */
+/** a task's row in a list: tapping it opens the task (no control of its own) */
 const ROW = 'article[data-n]'
 
 /** A control's name as you see it: its label, else its words without its key hints, at most 80 characters. */

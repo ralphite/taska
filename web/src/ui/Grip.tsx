@@ -1,6 +1,6 @@
-// A line you can drag (a pane's edge, the line between an item and its talk): pointed at or dragged, the line itself
+// A line you can drag (a pane's edge, the line between a task and its talk): pointed at or dragged, the line itself
 // turns blue. Dragging gives the size from where its pane starts to the pointer; a double-click puts it back (not the
-// line under an item, which stays where you put it). A button on the line is a button. Props only.
+// line under a task, which stays where you put it). A button on the line is a button. Props only.
 
 import { useRef, useState } from 'react'
 

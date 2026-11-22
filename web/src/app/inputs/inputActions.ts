@@ -1,5 +1,5 @@
 // What you do to something you said: organize it again (after the organizer failed, or after you undid what it
-// filed), take back what it filed (and put it back), put it with another item, take a file off it, delete it (and
+// filed), take back what it filed (and put it back), put it with another task, take a file off it, delete it (and
 // restore it), move it to another project, send a recording kept as cancelled. Each shows at once and goes out as a change, sent again until Taska has
 // it; a toast says what happened, with Undo where there is one.
 
@@ -33,13 +33,13 @@ export class InputActions {
       const ok = await this.send(slug, { op: 'restore', id }, `restoring ${inputCode(id)}`)
       if (!ok) return false
       const x = this.d.model(slug)?.facts.deletedInputs.find((y) => y.id === id)
-      this.d.toasts.show(`${inputCode(id)} is back${x?.items.length ? ` with ${x.items.map((i) => i.code).join(', ')}` : ''}`)
+      this.d.toasts.show(`${inputCode(id)} is back${x?.tasks.length ? ` with ${x.tasks.map((i) => i.code).join(', ')}` : ''}`)
       return true
     })
     this.d.toasts.show(`Deleted ${inputCode(id)}`, undo)
   }
 
-  /** Back from Deleted, with the items only it made; Undo deletes it again. */
+  /** Back from Deleted, with the tasks only it made; Undo deletes it again. */
   async restore(slug: string, id: string): Promise<void> {
     const x = this.d.model(slug)?.facts.deletedInputs.find((y) => y.id === id)
     if (!(await this.send(slug, { op: 'restore', id }, `restoring ${inputCode(id)}`))) return
@@ -48,7 +48,7 @@ export class InputActions {
       if (ok) this.d.toasts.show(deletedSaid(this.d.model(slug)?.facts.deletedInputs.find((y) => y.id === id), id))
       return ok
     })
-    this.d.toasts.show(`${inputCode(id)} is back${x?.items.length ? ` with ${x.items.map((i) => i.code).join(', ')}` : ''}`, undo)
+    this.d.toasts.show(`${inputCode(id)} is back${x?.tasks.length ? ` with ${x.tasks.map((i) => i.code).join(', ')}` : ''}`, undo)
   }
 
   undoFiling(slug: string, id: string): void {
@@ -112,5 +112,5 @@ export class InputActions {
 export function deletedSaid(x: DeletedInput | undefined, id: string): string {
   if (!x) return `Deleted ${inputCode(id)}`
   const k = x.kept
-  return `Deleted ${inputCode(id)}${x.items.length ? ` and ${x.items.map((i) => i.code).join(', ')}` : ''}${k.length ? ` · ${k[0].code} kept: ${k[0].why}${k.length > 1 ? ` · ${k.length - 1} more kept` : ''}` : ''}`
+  return `Deleted ${inputCode(id)}${x.tasks.length ? ` and ${x.tasks.map((i) => i.code).join(', ')}` : ''}${k.length ? ` · ${k[0].code} kept: ${k[0].why}${k.length > 1 ? ` · ${k.length - 1} more kept` : ''}` : ''}`
 }

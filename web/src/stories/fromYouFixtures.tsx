@@ -1,10 +1,10 @@
-// A message of yours in an item's talk, as the page draws it: the page's own talk (ItemTalk) with that item's data and
+// A message of yours in a task's talk, as the page draws it: the page's own talk (TaskTalk) with that task's data and
 // the input your words came from. Used by the stories of your messages, one file for each kind of state.
 import type { StoryObj } from '@storybook/react-vite'
-import type { Input, Item, Message } from '../model/types'
+import type { Input, Task, Message } from '../model/types'
 import { Frames } from './Frames'
-import { T, input, item, message } from './fixtures'
-import { talkOf, type PageOpts } from './itemPage'
+import { T, input, task, message } from './fixtures'
+import { talkOf, type PageOpts } from './taskPage'
 import { phaseIn, type OutPhase } from '../model/outgoingStates'
 
 type Story = StoryObj
@@ -22,8 +22,8 @@ export const shot = { f: 'f3-shot.png', name: 'shot.png', mime: 'image/png' }
 export const pdf = { f: 'f5-export.pdf', name: 'export.pdf', mime: 'application/pdf' }
 export const r4 = (f: Partial<Input> = {}) => input({ id: 'r4', text: 'The export should keep the filter I set.', ...f })
 export const mine = (f: Partial<Message> = {}) => message({ id: 1, by: 'you', kind: 'say', text: 'The export should keep the filter I set.', src: 'r4', ...f })
-export const at = (thread: Message[], o: PageOpts = {}, f: Partial<Item> = {}): Story => ({
-  render: () => <Frames phoneWidth={393} deskWidth={720}>{(layout) => talkOf(item({ n: 12, thread, ...f }), layout === 'desk', { inputs: [r4()], ...o })}</Frames>,
+export const at = (thread: Message[], o: PageOpts = {}, f: Partial<Task> = {}): Story => ({
+  render: () => <Frames phoneWidth={393} deskWidth={720}>{(layout) => talkOf(task({ n: 12, thread, ...f }), layout === 'desk', { inputs: [r4()], ...o })}</Frames>,
 })
 export const LONG = [
   'The export is still wrong on the orders page.',

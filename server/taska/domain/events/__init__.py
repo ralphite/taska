@@ -2,7 +2,7 @@
 
 The rows are the durable storage format. `decode` reads a row and `Event.to_row` writes one; nothing else touches
 the JSON. Stored history remains intact when it is read.
-One module per area (items, inputs, documents, voice notes' words), each with the readers of its kinds.
+One module per area (tasks, inputs, documents, voice notes' words), each with the readers of its kinds.
 """
 
 from __future__ import annotations
@@ -10,17 +10,17 @@ from __future__ import annotations
 from typing import Dict
 
 from ..model import Row
-from . import docs, inputs, items, voices
+from . import docs, inputs, tasks, voices
 from .base import Event, Folded, Reader, Unknown, Unreadable, common
 from .docs import DOC_EVENTS, CommentAdded, CommentDeleted, CommentEdited, CommentMoved, CommentRestored, DocDecided, \
     DocDeleted, DocMoved, DocProposed, DocWritten, RulesMoved, ThreadResolved
 from .inputs import FilingRedone, FilingUndone, InputAdded, InputAmended, InputDeleted, InputMoved, InputRescoped, \
     InputRestored, InputSent, InputsAcked, Organized
-from .items import FieldsSet, FileTakenOff, ItemAdded, ItemMerged, ItemUnmerged, ItemsArchived, ItemsDeleted, ItemsRestored, LaterEnded, \
+from .tasks import FieldsSet, FileTakenOff, TaskAdded, TaskMerged, TaskUnmerged, TasksArchived, TasksDeleted, TasksRestored, LaterEnded, \
     MessageHidden, MessagePosted, ProjectIconSet, ProjectRenamed
 from .voices import VoiceFixed, VoiceHeard, VoicesSplit
 
-READERS: Dict[str, Reader] = {**inputs.READERS, **items.READERS, **docs.READERS, **voices.READERS,
+READERS: Dict[str, Reader] = {**inputs.READERS, **tasks.READERS, **docs.READERS, **voices.READERS,
                               "folded": lambda r: Folded(was=str(r.get("was") or ""), **common(r))}
 
 
@@ -37,7 +37,7 @@ def decode(row: Row) -> Event:
 
 __all__ = [
     "Event", "Folded", "Unknown", "Unreadable", "Row", "READERS", "DOC_EVENTS", "decode",
-    "ItemAdded", "FieldsSet", "MessagePosted", "ItemMerged", "ItemUnmerged", "ItemsArchived", "ItemsDeleted", "ItemsRestored", "LaterEnded",
+    "TaskAdded", "FieldsSet", "MessagePosted", "TaskMerged", "TaskUnmerged", "TasksArchived", "TasksDeleted", "TasksRestored", "LaterEnded",
     "MessageHidden", "FileTakenOff", "ProjectRenamed", "ProjectIconSet",
     "InputAdded", "InputsAcked", "InputAmended", "FilingUndone", "FilingRedone", "InputDeleted",
     "InputRestored", "InputMoved", "Organized", "InputRescoped", "InputSent",

@@ -1,4 +1,4 @@
-// A document under the pointer on the desktop (a paragraph, an item of a list: its speak and comment buttons beside
+// A document under the pointer on the desktop (a paragraph, a task of a list: its speak and comment buttons beside
 // it), and its Delete asking again; the pane's bar is in DocPane.stories.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Doc } from '../../model/types'
@@ -25,10 +25,10 @@ export const PointingAtParagraph: Story = {
   name: 'Pointing at a paragraph',
   parameters: { pseudo: { hover: ['section[data-key="p1"]'] } },
 }
-/** The desktop: in a list each item is its own place to comment on; the pointer on one puts the buttons beside it. */
-export const PointingAtListItem: Story = {
+/** The desktop: in a list each task is its own place to comment on; the pointer on one puts the buttons beside it. */
+export const PointingAtListTask: Story = {
   ...desk(PLAN, { pointing: { key: 'l1', li: 1 } }),
-  name: 'Pointing at an item of a list',
+  name: 'Pointing at a task of a list',
   parameters: { pseudo: { hover: ['section[data-key="l1"]'] } },
 }
 export const DeleteAsksAgain: Story = { ...both(PLAN, { asked: { 'doc-delete 12': 1 } }), name: 'Delete asks again' }

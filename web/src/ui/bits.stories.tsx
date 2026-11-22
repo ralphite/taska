@@ -14,7 +14,7 @@ export const Bits: Story = {
     <Frames phoneWidth={393} deskWidth={560}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['quiet words, counts, a draft', <div className="flex items-center gap-3 p-3 text-xs"><Soft>Later</Soft><Count icon="comment" n={4} label="4 messages" /><DraftMark /></div>],
             ['a section head', <SectionHead text="Needs you" right={<span className="text-xs text-zinc-400">3</span>} />],
             ['an empty list', <Empty>Nothing needs you.</Empty>],

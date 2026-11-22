@@ -1,9 +1,9 @@
-// The page's pure rules: the copy of the server's data, the address, what needs you, the queue's order, which items a
+// The page's pure rules: the copy of the server's data, the address, what needs you, the queue's order, which tasks a
 // list shows.
 
 import { describe, expect, it as test } from 'vitest'
-import { input, item, message, modelOf, projectFacts } from '../stories/fixtures'
-import { queueHead, queueOrder } from './items'
+import { input, task, message, modelOf, projectFacts } from '../stories/fixtures'
+import { queueHead, queueOrder } from './tasks'
 import { needsYou } from './needStates'
 import { merge, patched, project } from './project'
 import { inputOf, inputPath, NO_FILTERS, parseRoute, projectPath } from './route'
@@ -12,28 +12,28 @@ import { visible } from './visible'
 import { becameOf, madeFrom } from './became'
 import { actsIn } from './inputStates'
 
-const answer = (a: Partial<ViewAnswer>): ViewAnswer => ({ cursor: 'c1', full: false, items: [], inputs: [], docs: [], project: projectFacts(), server: { page: '', update: false, dev: false }, ...a })
+const answer = (a: Partial<ViewAnswer>): ViewAnswer => ({ cursor: 'c1', full: false, tasks: [], inputs: [], docs: [], project: projectFacts(), server: { page: '', update: false, dev: false }, ...a })
 
 describe("the copy of the server's data", () => {
   test('a full answer replaces it, a delta changes and removes, a same answer keeps it', () => {
-    const full = merge(null, answer({ full: true, items: [item({ n: 1 }), item({ n: 2 })] }), 1)
-    expect([...full.items.keys()]).toEqual([1, 2])
-    const delta = merge(full, answer({ cursor: 'c2', items: [item({ n: 2, title: 'New title' })], removed: { items: [1], inputs: [], docs: [] } }), 2)
-    expect([...delta.items.keys()]).toEqual([2])
-    expect(delta.items.get(2)?.title).toBe('New title')
+    const full = merge(null, answer({ full: true, tasks: [task({ n: 1 }), task({ n: 2 })] }), 1)
+    expect([...full.tasks.keys()]).toEqual([1, 2])
+    const delta = merge(full, answer({ cursor: 'c2', tasks: [task({ n: 2, title: 'New title' })], removed: { tasks: [1], inputs: [], docs: [] } }), 2)
+    expect([...delta.tasks.keys()]).toEqual([2])
+    expect(delta.tasks.get(2)?.title).toBe('New title')
     const same = merge(delta, { cursor: 'c3', same: true, server: { page: '', update: false, dev: false } }, 3)
-    expect(same.items).toBe(delta.items)
+    expect(same.tasks).toBe(delta.tasks)
     expect([same.cursor, same.at]).toEqual(['c3', 3])
   })
 
-  test('a question on a closed item is history', () => {
-    const c = merge(null, answer({ full: true, items: [item({ n: 1, status: 'done', wait: { id: 1, kind: 'ask', text: '?', by: 'codex', files: [] } })] }), 1)
-    expect(c.items.get(1)?.wait).toBeNull()
+  test('a question on a closed task is history', () => {
+    const c = merge(null, answer({ full: true, tasks: [task({ n: 1, status: 'done', wait: { id: 1, kind: 'ask', text: '?', by: 'codex', files: [] } })] }), 1)
+    expect(c.tasks.get(1)?.wait).toBeNull()
   })
 
-  test('a closed item asks nothing; your pending change shows over the copy', () => {
-    expect(patched(item({ n: 1, status: 'open', wait: { id: 1, kind: 'ask', text: '?', by: 'codex', files: [] } }), { status: 'done' }).wait).toBe(null)
-    const c = merge(null, answer({ full: true, items: [item({ n: 1 })] }), 1)
+  test('a closed task asks nothing; your pending change shows over the copy', () => {
+    expect(patched(task({ n: 1, status: 'open', wait: { id: 1, kind: 'ask', text: '?', by: 'codex', files: [] } }), { status: 'done' }).wait).toBe(null)
+    const c = merge(null, answer({ full: true, tasks: [task({ n: 1 })] }), 1)
     expect(project(c, [{ n: 1, f: { status: 'done' } }]).byN.get(1)?.status).toBe('done')
   })
 })
@@ -41,8 +41,8 @@ describe("the copy of the server's data", () => {
 describe('the address', () => {
   test("places and the list's settings read back the way they were written", () => {
     const list = { ...NO_FILTERS, tag: 'bug', status: 'wait' }
-    for (const place of [{ kind: 'tab' }, { kind: 'item', ref: 'F12' }, { kind: 'doc', d: 3 }, { kind: 'new' }] as const) {
-      const path = projectPath('taska', 'items', place, list)
+    for (const place of [{ kind: 'tab' }, { kind: 'task', ref: 'F12' }, { kind: 'doc', d: 3 }, { kind: 'new' }] as const) {
+      const path = projectPath('taska', 'tasks', place, list)
       const [p, s] = path.split('?')
       const r = parseRoute(p, s ? '?' + s : '')
       expect(r).toMatchObject({ page: 'project', slug: 'taska', place, list })
@@ -57,47 +57,47 @@ describe('the address', () => {
     expect(parseRoute('/p/shop/inputs', '?q=export')).toMatchObject({ list: NO_FILTERS })
   })
 
-  test('an old link with the item after # opens it', () => {
-    expect(parseRoute('/p/taska/', '', '#B03')).toMatchObject({ place: { kind: 'item', ref: 'B03' } })
+  test('an old link with the task after # opens it', () => {
+    expect(parseRoute('/p/taska/', '', '#B03')).toMatchObject({ place: { kind: 'task', ref: 'B03' } })
   })
 })
 
 describe('what needs you and the queue', () => {
   test('a question, or a proposal you have not answered, needs you; finished and archived work does not', () => {
-    expect(needsYou(item({ n: 1, wait: { id: 1, kind: 'ask', text: '?', by: 'codex', files: [] } }))).toBe(true)
-    expect(needsYou(item({ n: 1, status: 'proposed' }))).toBe(true)
-    expect(needsYou(item({ n: 1, status: 'proposed', talked: true }))).toBe(false)
-    expect(needsYou(item({ n: 1, status: 'proposed', archived: true }))).toBe(false)
-    expect(needsYou(item({ n: 1, status: 'done' }))).toBe(false)
+    expect(needsYou(task({ n: 1, wait: { id: 1, kind: 'ask', text: '?', by: 'codex', files: [] } }))).toBe(true)
+    expect(needsYou(task({ n: 1, status: 'proposed' }))).toBe(true)
+    expect(needsYou(task({ n: 1, status: 'proposed', talked: true }))).toBe(false)
+    expect(needsYou(task({ n: 1, status: 'proposed', archived: true }))).toBe(false)
+    expect(needsYou(task({ n: 1, status: 'done' }))).toBe(false)
   })
 
   test('in progress first, then the order you set, then priority; Later last', () => {
-    const items = [
-      item({ n: 1, pri: 'P2' }),
-      item({ n: 2, pri: 'P1' }),
-      item({ n: 3, pri: 'P2', status: 'doing' }),
-      item({ n: 4, pri: 'P0', when: 'later' }),
-      item({ n: 5, pri: 'P3', rank: 1 }),
+    const tasks = [
+      task({ n: 1, pri: 'P2' }),
+      task({ n: 2, pri: 'P1' }),
+      task({ n: 3, pri: 'P2', status: 'doing' }),
+      task({ n: 4, pri: 'P0', when: 'later' }),
+      task({ n: 5, pri: 'P3', rank: 1 }),
     ]
-    expect(queueOrder(items).map((x) => x.n)).toEqual([3, 2, 1, 5, 4])
-    expect(queueHead(items)).toBe(2)
+    expect(queueOrder(tasks).map((x) => x.n)).toEqual([3, 2, 1, 5, 4])
+    expect(queueHead(tasks)).toBe(2)
   })
 })
 
-describe('which items a list shows', () => {
-  const items = [
-    item({ n: 1, title: 'Export ignores the filter' }),
-    item({ n: 2, status: 'done', title: 'Sort by priority' }),
-    item({ n: 3, when: 'later', title: 'Commit in English' }),
-    item({ n: 4, archived: true, title: 'Old export' }),
-    item({ n: 5, title: 'Talk', thread: [message({ id: 1, text: 'the CSV export keeps every row' })] }),
+describe('which tasks a list shows', () => {
+  const tasks = [
+    task({ n: 1, title: 'Export ignores the filter' }),
+    task({ n: 2, status: 'done', title: 'Sort by priority' }),
+    task({ n: 3, when: 'later', title: 'Commit in English' }),
+    task({ n: 4, archived: true, title: 'Old export' }),
+    task({ n: 5, title: 'Talk', thread: [message({ id: 1, text: 'the CSV export keeps every row' })] }),
   ]
-  const ns = (tab: Parameters<typeof visible>[1], list: Partial<typeof NO_FILTERS>) => visible(items, tab, { ...NO_FILTERS, ...list }).map((x) => x.n)
+  const ns = (tab: Parameters<typeof visible>[1], list: Partial<typeof NO_FILTERS>) => visible(tasks, tab, { ...NO_FILTERS, ...list }).map((x) => x.n)
 
-  test('Items shows open work now; the archive has its own tab; the rules are a document, no items (T693, r1118)', () => {
-    expect(ns('items', {})).toEqual([1, 5])
-    expect(ns('items', { status: 'done' })).toEqual([2])
-    expect(ns('items', { status: 'open' })).toEqual([1, 5])
+  test('Tasks shows open work now; the archive has its own tab; the rules are a document, no tasks (T693, r1118)', () => {
+    expect(ns('tasks', {})).toEqual([1, 5])
+    expect(ns('tasks', { status: 'done' })).toEqual([2])
+    expect(ns('tasks', { status: 'open' })).toEqual([1, 5])
     expect(ns('archive', {})).toEqual([4])
     expect(ns('rules', {})).toEqual([])
   })
@@ -108,14 +108,14 @@ describe('a recording cancelled with Esc, kept in the inputs (T627)', () => {
   const kept = { t: '', by: 'you', text: 'Keep the columns too', scope: null, files: [], acked: false, touched: [], org: null, seq: 1, v: 0, id: 'r4', kind: 'cancelled' as const }
 
   test("it stands as cancelled, is no one's work, and can be sent", () => {
-    const m = project({ cursor: '', items: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), voices: new Map(), facts: projectFacts({ organizer: { ...organizer, model: '' } }), server: { page: '', update: false, dev: false }, at: 0 })
+    const m = project({ cursor: '', tasks: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), voices: new Map(), facts: projectFacts({ organizer: { ...organizer, model: '' } }), server: { page: '', update: false, dev: false }, at: 0 })
     expect(becameOf(kept, m, (s) => s)).toEqual({ k: 'cancelled' })
     expect(actsIn(becameOf(kept, m, (s) => s), 'sheet', { others: false })).toEqual(['send'])
     expect(becameOf({ ...kept, moved: { to: 'other', as: 'r1' } }, m, (s) => s).k).toBe('moved')
   })
 
   test('Send shows it sent at once: an ordinary new input, waiting for the organizer', () => {
-    const copy = { cursor: '', items: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), voices: new Map(), facts: projectFacts(), server: { page: '', update: false, dev: false }, at: 0 }
+    const copy = { cursor: '', tasks: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), voices: new Map(), facts: projectFacts(), server: { page: '', update: false, dev: false }, at: 0 }
     const sent = project(copy, [], 0, [{ id: kept.id, f: { kind: undefined } }]).byId.get(kept.id)!
     const b = becameOf(sent, project({ ...copy, facts: projectFacts({ organizer: { ...organizer, model: '' } }) }), (s) => s)
     expect(b).toEqual({ k: 'organizing' })
@@ -123,7 +123,7 @@ describe('a recording cancelled with Esc, kept in the inputs (T627)', () => {
   })
 
   test('T684: an input the organizer has not finished reads Organizing whether it is on it, next or trying again', () => {
-    const copy = { cursor: '', items: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), voices: new Map(), facts: projectFacts(), server: { page: '', update: false, dev: false }, at: 0 }
+    const copy = { cursor: '', tasks: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), voices: new Map(), facts: projectFacts(), server: { page: '', update: false, dev: false }, at: 0 }
     const sent = project(copy, [], 0, [{ id: kept.id, f: { kind: undefined } }]).byId.get(kept.id)!
     for (const busy of [[sent.id], ['r999'], []])
       expect(becameOf(sent, project({ ...copy, facts: projectFacts({ organizer: { model: '', ...organizer, busy } }) }), (s) => s)).toEqual({ k: 'organizing' })
@@ -131,17 +131,17 @@ describe('a recording cancelled with Esc, kept in the inputs (T627)', () => {
 })
 
 describe('what became of an input, in one set of words (T629)', () => {
-  const m = modelOf([item({ n: 14, tags: ['bug'] }), item({ n: 12 }), item({ n: 7 })], [], { organizer: { on: true, model: '', busy: [] } })
+  const m = modelOf([task({ n: 14, tags: ['bug'] }), task({ n: 12 }), task({ n: 7 })], [], { organizer: { on: true, model: '', busy: [] } })
   const org = (msg: string, f = {}) => ({ ok: true, msg, t: '', keep: false, changed: true, undone: false, ...f })
   const of = (f: Parameters<typeof input>[0]) => becameOf(input(f), m, (s) => (s === 'mobile-app' ? 'Mobile app' : s))
 
-  test("the organizer's note says what was done to each item, and what else it says stays as a note", () => {
+  test("the organizer's note says what was done to each task, and what else it says stays as a note", () => {
     const b = of({ id: 'r1', acked: true, touched: [14, 12, 7], org: org('Created T014; added to T012 and T007 · asked about the sort') })
     expect(b).toMatchObject({ k: 'filed', note: 'asked about the sort' })
-    expect(b.k === 'filed' && b.items.map((x) => [x.item.code, x.did])).toEqual([['T014', 'Created'], ['T012', 'Added to'], ['T007', 'Added to']])
+    expect(b.k === 'filed' && b.tasks.map((x) => [x.task.code, x.did])).toEqual([['T014', 'Created'], ['T012', 'Added to'], ['T007', 'Added to']])
   })
 
-  test('where one stands when no item came of it', () => {
+  test('where one stands when no task came of it', () => {
     expect(of({ id: 'r2', org: org('B99 is not in this project', { ok: false }) })).toEqual({ k: 'failed', why: 'B99 is not in this project', raw: 'B99 is not in this project', retry: true })
     // the service's own words in plain ones; Taska's own reason as it is
     expect(of({ id: 'r2', org: org('Gemini HTTP 503: overloaded', { ok: false }) })).toMatchObject({ k: 'failed', why: 'busy' })
@@ -151,18 +151,18 @@ describe('what became of an input, in one set of words (T629)', () => {
     expect(of({ id: 'r3', org: org('Left for your agent', { keep: true }) })).toEqual({ k: 'agent' })
     expect(of({ id: 'r4', acked: true, org: org('Left for your agent', { keep: true }) })).toEqual({ k: 'handled' })
     expect(of({ id: 'r5', acked: true, org: org('Nothing to file: a thank-you') })).toEqual({ k: 'note', text: 'Nothing to file: a thank-you' })
-    expect(of({ id: 'r6', acked: true, kind: 'answer', scope: 7 })).toMatchObject({ k: 'answer', item: { code: 'T007' } })
+    expect(of({ id: 'r6', acked: true, kind: 'answer', scope: 7 })).toMatchObject({ k: 'answer', task: { code: 'T007' } })
     expect(of({ id: 'r7', acked: true, moved: { to: 'mobile-app', as: 'r4' } })).toEqual({ k: 'moved', to: 'Mobile app', as: '#4', href: '/p/mobile-app/' })
   })
-  test('T714 #10594: an input said in T012 that made T014 and T007 shows "Created" for those two, not for T012 or an older item', () => {
+  test('T714 #10594: an input said in T012 that made T014 and T007 shows "Created" for those two, not for T012 or an older task', () => {
     const said = '2026-10-23T14:30:00-07:00'
     const later = '2026-10-23T14:31:00-07:00'
     const made = modelOf([
-      item({ n: 12, srcs: ['r1'], t0: '2026-10-22T09:00:00-07:00' }),
-      item({ n: 14, tags: ['bug'], srcs: ['r1'], t0: later }),
-      item({ n: 7, srcs: ['r1'], t0: later }),
-      item({ n: 9, srcs: ['r1'], t0: '2026-10-22T09:00:00-07:00' }), // made before, by an agent: only added to
-      item({ n: 3, srcs: ['r0', 'r1'], t0: later }), // made from another input
+      task({ n: 12, srcs: ['r1'], t0: '2026-10-22T09:00:00-07:00' }),
+      task({ n: 14, tags: ['bug'], srcs: ['r1'], t0: later }),
+      task({ n: 7, srcs: ['r1'], t0: later }),
+      task({ n: 9, srcs: ['r1'], t0: '2026-10-22T09:00:00-07:00' }), // made before, by an agent: only added to
+      task({ n: 3, srcs: ['r0', 'r1'], t0: later }), // made from another input
     ])
     const r = input({ id: 'r1', t: said, scope: 12, touched: [12, 14, 9, 3, 7] })
     expect(madeFrom(r, made).map((x) => x.code)).toEqual(['T014', 'T007'])
@@ -171,13 +171,13 @@ describe('what became of an input, in one set of words (T629)', () => {
 })
 
 describe('the agents\' queue, as /next hands out work (T728 #4)', () => {
-  test('a proposal you replied on, or work in review, is not queued; an item with an open subitem waits for it', () => {
-    const items = [
-      item({ n: 1, status: 'proposed', pri: 'P0' }),
-      item({ n: 2, status: 'review', pri: 'P0' }),
-      item({ n: 3, pri: 'P1' }),
-      item({ n: 4, pri: 'P2', parent: 3 }),
+  test('a proposal you replied on, or work in review, is not queued; a task with an open subtask waits for it', () => {
+    const tasks = [
+      task({ n: 1, status: 'proposed', pri: 'P0' }),
+      task({ n: 2, status: 'review', pri: 'P0' }),
+      task({ n: 3, pri: 'P1' }),
+      task({ n: 4, pri: 'P2', parent: 3 }),
     ]
-    expect(queueHead(items)).toBe(4)
+    expect(queueHead(tasks)).toBe(4)
   })
 })

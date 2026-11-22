@@ -9,14 +9,14 @@ type Story = StoryObj
 
 /** The list's lines between its rows. */
 export const Lines: Story = {
-  name: 'Group heads, hidden subitems, show more, archive them',
+  name: 'Group heads, hidden subtasks, show more, archive them',
   render: () => (
     <Frames phoneWidth={393} deskWidth={460}>
       {() => (
         <States
-          items={[
-            ['hidden subitems: in Later', <Hold start={false}>{(open, set) => <HiddenKidsLine parent={1} depth={1} open={open} later={2} onToggle={() => set(!open)} />}</Hold>],
-            ['hidden subitems: shown', <Hold<boolean> start>{(open, set) => <HiddenKidsLine parent={1} depth={1} open={open} later={2} onToggle={() => set(!open)} />}</Hold>],
+          tasks={[
+            ['hidden subtasks: in Later', <Hold start={false}>{(open, set) => <HiddenKidsLine parent={1} depth={1} open={open} later={2} onToggle={() => set(!open)} />}</Hold>],
+            ['hidden subtasks: shown', <Hold<boolean> start>{(open, set) => <HiddenKidsLine parent={1} depth={1} open={open} later={2} onToggle={() => set(!open)} />}</Hold>],
             ['finished: archive them', <ArchiveAllLine n={7} onArchive={act('List: archive all')} />],
           ]}
         />

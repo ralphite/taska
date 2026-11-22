@@ -1,6 +1,6 @@
 // Yadong's requirements on pictures in a text (D29, "Details"; T475, D45): each check is named by the codes of his
 // inputs, so a change that breaks one is stopped before it ships with his own words.
-// guards: src/ui/markdown/ src/ui/Markdown.tsx src/ui/bits.tsx src/ui/Files.tsx src/features/item/ src/app/page/media.ts src/stores/media.ts server/taska/http/agent_routes.py
+// guards: src/ui/markdown/ src/ui/Markdown.tsx src/ui/bits.tsx src/ui/Files.tsx src/features/task/ src/app/page/media.ts src/stores/media.ts server/taska/http/agent_routes.py
 import { expect, test } from '@playwright/test'
 import { LOOP, open, project } from '../seed'
 import { talk } from '../ui'

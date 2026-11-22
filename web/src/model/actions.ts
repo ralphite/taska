@@ -1,16 +1,16 @@
-// What can be done to an item, and why not: its next step for you, what Done, Won't do and Later do and why they
+// What can be done to a task, and why not: its next step for you, what Done, Won't do and Later do and why they
 // cannot (in a few words, said instead); and what a row offers: the desktop's quick actions (shown on hover) and the
-// phone's swipes, as (field, value, action: model/itemActs); and what S or P then a key sets, and says.
+// phone's swipes, as (field, value, action: model/taskActs); and what S or P then a key sets, and says.
 
-import type { ItemActId } from './itemActs'
-import { canDone, closed, statusChoices } from './items'
+import type { TaskActId } from './taskActs'
+import { canDone, closed, statusChoices } from './tasks'
 import { yourStep } from './needStates'
-import type { Item } from './types'
+import type { Task } from './types'
 
-export type Slot = readonly [field: string, value: string, act: ItemActId]
+export type Slot = readonly [field: string, value: string, act: TaskActId]
 
 /** S or P was pressed, then `key`: the field it sets and the value (a status by its number in `statuses`, a
- * priority by its digit); null: the key sets nothing. (T opens the item's tags, a list to pick from.) */
+ * priority by its digit); null: the key sets nothing. (T opens the task's tags, a list to pick from.) */
 export function armedSet(arm: 's' | 'p', key: string, statuses: readonly string[]): readonly [field: string, value: string] | null {
   if (arm === 'p') return /^[0-3]$/.test(key) ? ['pri', 'P' + key] : null
   const v = /^[1-9]$/.test(key) ? statuses[Number(key) - 1] : undefined
@@ -18,24 +18,24 @@ export function armedSet(arm: 's' | 'p', key: string, statuses: readonly string[
 }
 
 /** What S then a digit counts on the page. */
-export const pageStatuses = (it: Item): readonly string[] => statusChoices(it).map(([v]) => v)
+export const pageStatuses = (it: Task): readonly string[] => statusChoices(it).map(([v]) => v)
 
 /** What S or P says it waits for (and a digit pressed alone): the keys that follow, from what they set. */
-export function armHint(arm: 's' | 'p' | null, it: Item): string {
+export function armHint(arm: 's' | 'p' | null, it: Task): string {
   if (arm === 's') return `Status: 1–${pageStatuses(it).length}`
   if (arm === 'p') return 'Priority: 0–3'
   return 'First S or P: then a digit'
 }
 
 /** What Done and Won't do set. */
-export const doneTo = (_it: Item) => 'done'
+export const doneTo = (_it: Task) => 'done'
 export const dropTo = () => 'dropped'
 
-/** Why a step cannot be taken on this item, in a few words; null: it can. */
+/** Why a step cannot be taken on this task, in a few words; null: it can. */
 export const whyNot = {
-  next: (it: Item, code: string) => (yourStep(it) ? null : `Nothing waits on you in ${code}`),
-  notYet: (it: Item) => (it.status === 'review' ? null : 'Not yet works on items in review'),
-  done: (it: Item, code: string) =>
+  next: (it: Task, code: string) => (yourStep(it) ? null : `Nothing waits on you in ${code}`),
+  notYet: (it: Task) => (it.status === 'review' ? null : 'Not yet works on tasks in review'),
+  done: (it: Task, code: string) =>
     closed(it.status)
       ? `${code} is ${it.status === 'done' ? 'done' : "marked won't do"} already`
       : !canDone(it)
@@ -43,13 +43,13 @@ export const whyNot = {
           ? `Approve ${code} first (A)`
           : `Accept ${code} first (A)`
         : null,
-  drop: (it: Item, code: string) => (it.status === 'dropped' ? `${code} is marked won't do already` : null),
-  later: (it: Item) => (!closed(it.status) ? null : 'Later works on open items'),
+  drop: (it: Task, code: string) => (it.status === 'dropped' ? `${code} is marked won't do already` : null),
+  later: (it: Task) => (!closed(it.status) ? null : 'Later works on open tasks'),
 }
 
 /** Swipe right all the way, or the desktop's first action: the step forward you take most, A's (model/needStates). On
- * an item that waits on your answer the step forward is that answer (its pill), never Done. */
-export function forward(it: Item | undefined): readonly [field: string, value: string, act: ItemActId, said?: string] | null {
+ * a task that waits on your answer the step forward is that answer (its pill), never Done. */
+export function forward(it: Task | undefined): readonly [field: string, value: string, act: TaskActId, said?: string] | null {
   if (!it || it.archived) return null
   if (it.group) return ['archived', 'true', 'archive', 'archived'] // a group is never done: you archive it (T856)
   const step = yourStep(it)
@@ -61,7 +61,7 @@ export function forward(it: Item | undefined): readonly [field: string, value: s
 
 /** The desktop's quick actions, in one order on every row (forward, progress, Won't do, Later), those that do not apply
  * left out. A row waiting on your answer offers only these beside its pill. */
-export function deskSlots(it: Item, needs: boolean): (Slot | null)[] {
+export function deskSlots(it: Task, needs: boolean): (Slot | null)[] {
   const later: Slot = it.when === 'now' ? ['when', 'later', 'later'] : ['when', 'now', 'now']
   const drop: Slot = ['status', 'dropped', 'drop']
   if (it.archived) return [['archived', 'false', 'unarchive'], null, null, null]
@@ -80,7 +80,7 @@ export function deskSlots(it: Item, needs: boolean): (Slot | null)[] {
 }
 
 /** Swipe left: the way back. The one you want most sits at the edge, under your finger. */
-export function backward(it: Item): Slot[] {
+export function backward(it: Task): Slot[] {
   const later: Slot = it.when === 'now' ? ['when', 'later', 'later'] : ['when', 'now', 'now']
   const drop: Slot = ['status', 'dropped', 'drop']
   const done: Slot[] = it.wait ? [['status', 'done', 'done']] : []

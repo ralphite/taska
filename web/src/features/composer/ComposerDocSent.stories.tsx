@@ -1,4 +1,4 @@
-// After sending: sent, not sent, voice comments not sent, and a document whose item is gone.
+// After sending: sent, not sent, voice comments not sent, and a document whose task is gone.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { at, one } from '../../stories/composerDocFixtures'
 

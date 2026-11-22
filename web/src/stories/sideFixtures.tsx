@@ -1,5 +1,5 @@
 // The sidebar as the page draws it: the projects as Taska last listed them, in your order, through the page's own
-// sideProjects (this one, Shop, with this page's counts from the item list's demo project) and sideLinks, drawn by the
+// sideProjects (this one, Shop, with this page's counts from the task list's demo project) and sideLinks, drawn by the
 // page's Sidebar and Rail. On the desktop it folds to the rail and back, its edge drags it wider or narrower (a
 // double-click puts it back), and New project names one, as the page's SidebarContainer does with the page's own
 // state (T662); what needs the rest of the page (a project, Settings, Search...) shows in the Actions panel. Used by

@@ -1,5 +1,5 @@
 """Taska's judgements about a project, as pure functions of its state: what waits on the user, who spoke last, what
-an agent should handle, how items are ordered, how references are read.
+an agent should handle, how tasks are ordered, how references are read.
 
 The page, the agent answers and the projects' counts all read these, so they agree.
 """
@@ -12,7 +12,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 from . import events as ev, input_states
 from .markdown import blocks as md_blocks, block_key
-from .model import Comment, Doc, Input, Item, Message
+from .model import Comment, Doc, Input, Task, Message
 from .state import ProjectState
 from .vocab import CLOSED, DOC_KEY, NOTES, OLD_LETTERS, PEOPLE, USER_KINDS, Refused
 
@@ -25,10 +25,10 @@ def user_word(x: Message) -> bool:
     return x.by == "you" or (x.by == "org" and x.kind in USER_KINDS and bool(x.src))
 
 
-def open_asks(state: ProjectState, it: Item) -> List[Message]:
+def open_asks(state: ProjectState, it: Task) -> List[Message]:
     """The questions (asks) an agent posted that the user has not answered yet, in order: the latest, and the ones
     asked in a row with it (B749). Whatever the user says after a question answers it, and so does a comment of theirs
-    on one of the item's documents; an answer that names its questions (`of`) answers those, the others still wait."""
+    on one of the task's documents; an answer that names its questions (`of`) answers those, the others still wait."""
     said = [c.t for d in state.docs.values() if d.n == it.n and not d.deleted for c in d.comments if c.by == "you"]
     answered: Set[int] = set()
     out: List[Message] = []
@@ -47,19 +47,19 @@ def open_asks(state: ProjectState, it: Item) -> List[Message]:
     return out[::-1]
 
 
-def waiting(state: ProjectState, it: Item) -> Optional[Message]:
+def waiting(state: ProjectState, it: Task) -> Optional[Message]:
     """The latest open question an agent posted that the user has not answered yet (see open_asks)."""
     asks = open_asks(state, it)
     return asks[-1] if asks else None
 
 
-def in_progress(it: Item) -> bool:
+def in_progress(it: Task) -> bool:
     """An agent is working on it now (B606, r942): in progress. One that asked the user is not."""
     return it.status == "doing"
 
 
-def replied(it: Item) -> bool:
-    """The user wrote after an agent's last word on this item: an agent should pick it up."""
+def replied(it: Task) -> bool:
+    """The user wrote after an agent's last word on this task: an agent should pick it up."""
     user = False
     for x in reversed(it.thread):
         if user_word(x):
@@ -69,9 +69,9 @@ def replied(it: Item) -> bool:
     return False
 
 
-def talked(state: ProjectState, it: Item) -> bool:
-    """For the page: replied, counting comments on the item's documents as words on the item, the user's or an
-    agent's, in time with its messages. An agent making the item is its first word."""
+def talked(state: ProjectState, it: Task) -> bool:
+    """For the page: replied, counting comments on the task's documents as words on the task, the user's or an
+    agent's, in time with its messages. An agent making the task is its first word."""
     said: List[Tuple[str, int, bool]] = []  # (when, order, the user's)
     if it.by not in (None, "you") and it.t0:
         said.append((it.t0, -1, False))
@@ -92,11 +92,11 @@ def talked(state: ProjectState, it: Item) -> bool:
     return False
 
 
-def needs_you(state: ProjectState, it: Item) -> bool:
+def needs_you(state: ProjectState, it: Task) -> bool:
     """On the user's list of what needs them, exactly while a form waits on them (T646): an agent's question to
     answer, a proposal to approve or decline, finished work to accept or send back, the last two until the user
-    replies there; on an item not finished, archived, merged or deleted. The page's same rule, with the states of
-    what an item needs from you and what each place shows of them, is web/src/model/needStates.ts (T728 #3)."""
+    replies there; on a task not finished, archived, merged or deleted. The page's same rule, with the states of
+    what a task needs from you and what each place shows of them, is web/src/model/needStates.ts (T728 #3)."""
     if not it.live or it.archived or it.status in CLOSED:
         return False
     return bool(waiting(state, it)) or (it.status in ("proposed", "review") and not talked(state, it))
@@ -118,18 +118,18 @@ def by_number(inputs: Iterable[Input]) -> List[Input]:
     return sorted(inputs, key=lambda i: i.number)
 
 
-def by_priority(items: Iterable[Item]) -> List[Item]:
+def by_priority(tasks: Iterable[Task]) -> List[Task]:
     """Now before later, then P0 to P3, then oldest first."""
-    return sorted(items, key=lambda i: (i.when != "now", i.pri, i.n))
+    return sorted(tasks, key=lambda i: (i.when != "now", i.pri, i.n))
 
 
-def open_kids(state: ProjectState, it: Item) -> List[Item]:
-    """Subitems not finished yet, at any depth: a parent is done when they are."""
-    out: List[Item] = []
+def open_kids(state: ProjectState, it: Task) -> List[Task]:
+    """Subtasks not finished yet, at any depth: a parent is done when they are."""
+    out: List[Task] = []
     todo = [it.n]
     while todo:
         n = todo.pop()
-        for k in state.items.values():
+        for k in state.tasks.values():
             if k.parent == n and k.live:
                 todo.append(k.n)
                 if k.status not in CLOSED:
@@ -137,31 +137,31 @@ def open_kids(state: ProjectState, it: Item) -> List[Item]:
     return out
 
 
-def waits_for(state: ProjectState, it: Item) -> List[Item]:
-    """The items it waits for that are not finished yet (T857), a merged one followed to what it went into: while there
+def waits_for(state: ProjectState, it: Task) -> List[Task]:
+    """The tasks it waits for that are not finished yet (T857), a merged one followed to what it went into: while there
     are any, /next does not give it."""
-    out: List[Item] = []
+    out: List[Task] = []
     for n in it.after:
-        w = state.items.get(n)
+        w = state.tasks.get(n)
         while w and w.merged_into:
-            w = state.items.get(w.merged_into)
+            w = state.tasks.get(w.merged_into)
         if w and not w.deleted and w.status not in CLOSED and w not in out:
             out.append(w)
     return out
 
 
-def holds_up(state: ProjectState, it: Item) -> List[Item]:
-    """The unfinished items that wait for it (T857)."""
-    return [k for k in state.live_items() if it.n in k.after and k.status not in CLOSED]
+def holds_up(state: ProjectState, it: Task) -> List[Task]:
+    """The unfinished tasks that wait for it (T857)."""
+    return [k for k in state.live_tasks() if it.n in k.after and k.status not in CLOSED]
 
 
-def descendants(state: ProjectState, n: int) -> List[Item]:
-    """Every subitem under an item, at any depth."""
-    out: List[Item] = []
+def descendants(state: ProjectState, n: int) -> List[Task]:
+    """Every subtask under a task, at any depth."""
+    out: List[Task] = []
     todo = [n]
     while todo:
         m = todo.pop()
-        for k in state.items.values():
+        for k in state.tasks.values():
             if k.parent == m and k.live:
                 out.append(k)
                 todo.append(k.n)
@@ -173,31 +173,31 @@ def descendants(state: ProjectState, n: int) -> List[Item]:
 
 @dataclass
 class RefContext:
-    """What a run of commands shares: `$` is the item the last `new` made."""
+    """What a run of commands shares: `$` is the task the last `new` made."""
 
     src: Optional[str] = None
     keep: bool = False
     last: Optional[int] = None
 
 
-_ITEM_REF = re.compile(r"([A-Za-z]?)0*(\d+)")
+_TASK_REF = re.compile(r"([A-Za-z]?)0*(\d+)")
 
 
-def item_at(state: ProjectState, ref: object, ctx: Optional[RefContext] = None, follow: bool = True) -> Item:
-    """The item a reference names (B03, b3, 3, $); a merged item leads to the one it went into."""
+def task_at(state: ProjectState, ref: object, ctx: Optional[RefContext] = None, follow: bool = True) -> Task:
+    """The task a reference names (B03, b3, 3, $); a merged task leads to the one it went into."""
     s = str(ref).strip()
     if s == "$":
         if not ctx or not ctx.last:
-            raise Refused("$ is empty: no item created earlier in this request")
+            raise Refused("$ is empty: no task created earlier in this request")
         s = str(ctx.last)
-    m = _ITEM_REF.fullmatch(s)
+    m = _TASK_REF.fullmatch(s)
     if not m or (m.group(1) and m.group(1).upper() not in OLD_LETTERS):
-        raise Refused(f"bad item ref '{s}'")
-    it = state.items.get(int(m.group(2)))
+        raise Refused(f"bad task ref '{s}'")
+    it = state.tasks.get(int(m.group(2)))
     if not it:
         raise Refused(f"{s} not found")
     while follow and it.merged_into:
-        it = state.items[it.merged_into]
+        it = state.tasks[it.merged_into]
     return it
 
 
@@ -290,8 +290,8 @@ def doc_unanswered(d: Doc) -> int:
 
 
 def touches(state: ProjectState, e: ev.Event) -> List[int]:
-    """The items an event changes or adds to: a change, a message, a reply, a subitem, a document, a comment."""
-    out = list(e.items_touched())
+    """The tasks an event changes or adds to: a change, a message, a reply, a subtask, a document, a comment."""
+    out = list(e.tasks_touched())
     if isinstance(e, (ev.CommentAdded, ev.CommentEdited, ev.CommentDeleted, ev.CommentRestored, ev.ThreadResolved,
                       ev.DocDeleted, ev.DocMoved, ev.CommentMoved)) and e.d in state.docs and state.docs[e.d].n:
         out.append(state.docs[e.d].n)
@@ -303,23 +303,23 @@ def touched_since(state: ProjectState, n: int, seq: int) -> bool:
 
 
 def agent_hands(state: ProjectState) -> Set[int]:
-    """Items an agent changed, wrote on, or added a subitem, document or comment to (making an item is not working
+    """Tasks an agent changed, wrote on, or added a subtask, document or comment to (making a task is not working
     on it)."""
     hands: Set[int] = set()
     for e in state.events:
         if e.by and e.by not in PEOPLE:
-            made = e.n if isinstance(e, ev.ItemAdded) else None
+            made = e.n if isinstance(e, ev.TaskAdded) else None
             hands.update(m for m in touches(state, e) if m != made)
     return hands
 
 
-def queue_order(items: List[Item]) -> List[Item]:
+def queue_order(tasks: List[Task]) -> List[Task]:
     """The order agents take the work: in progress first; then the user's own order comes before priority: what
     they dragged or put next keeps its place (rank), and what they never placed goes in by priority, each just before
-    the first item of their order that has a lower priority."""
-    out: List[Item] = []
+    the first task of their order that has a lower priority."""
+    out: List[Task] = []
     for doing in (True, False):
-        mine = [i for i in items if (i.status == "doing") == doing]
+        mine = [i for i in tasks if (i.status == "doing") == doing]
         ranked = sorted((i for i in mine if i.rank is not None), key=lambda i: (i.rank, i.n))
         rest = sorted((i for i in mine if i.rank is None), key=lambda i: (i.pri, i.n))
         k = 0

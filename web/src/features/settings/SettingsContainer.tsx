@@ -148,7 +148,7 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
             end={!!activity?.end}
             asking={new Set(Object.keys(asked).filter((x) => x.startsWith('revert ')).map((x) => Number(x.slice(7))))}
             on={{
-              item: (n) => app.nav.openItem(codeOf(m, n)),
+              task: (n) => app.nav.openTask(codeOf(m, n)),
               input: () => app.nav.newInput(),
               undo: (seq) => app.sheets.confirm('revert ' + seq) && void app.restores.revert(route.slug, seq),
               more: () => void app.activity.more(route.slug),
@@ -160,7 +160,7 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
           <DeletedBody
             rows={goneRows(m)}
             on={{
-              restore: (x) => (x.kind === 'input' ? void app.restores.input(route.slug, x.id) : x.kind === 'doc' ? void app.restores.doc(route.slug, Number(x.key.slice(1))) : void app.restores.item(route.slug, x.key)),
+              restore: (x) => (x.kind === 'input' ? void app.restores.input(route.slug, x.id) : x.kind === 'doc' ? void app.restores.doc(route.slug, Number(x.key.slice(1))) : void app.restores.task(route.slug, x.key)),
             }}
           />
         )

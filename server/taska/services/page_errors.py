@@ -82,5 +82,5 @@ class PageErrorBugs:
 
     @staticmethod
     def _open(taska: Any, ref: str) -> bool:
-        it = next((x for x in taska.state.items.values() if taska.state.code(x.n) == ref), None)
+        it = next((x for x in taska.state.tasks.values() if taska.state.code(x.n) == ref), None)
         return it is not None and it.status not in CLOSED and not it.archived

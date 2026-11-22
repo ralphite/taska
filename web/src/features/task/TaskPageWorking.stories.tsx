@@ -1,0 +1,21 @@
+// A task's page while it is worked on: open, in progress with its talk, the agent's turn, P0, for later, made from two inputs.
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { T, message } from '../../stories/fixtures'
+import { at, said } from '../../stories/taskPageFixtures'
+
+export default { title: 'UI/Task pane/Whole/By task status/Being worked on' } satisfies Meta
+type Story = StoryObj
+
+export const Open = at({ thread: [said] })
+export const InProgressWithItsTalk: Story = {
+  ...at({ status: 'doing', agent: { by: 'claude-code', t: T }, thread: [said, message({ id: 2, text: 'Reproduced it: the export reads the list before the filter.' }), message({ id: 3, text: 'Fixed the order; testing with three filters now.' })] }),
+  name: 'In progress, with its talk',
+}
+/** the agent asked in words, you replied: its turn */
+export const AgentsTurnYouReplied: Story = { ...at({ talked: true, thread: [said, message({ id: 2, text: 'Should the export keep the sort too?' }), { ...said, id: 3, text: 'Yes, the sort too.' }] }), name: 'Open, you replied' }
+// ---- more states (T636)
+export const P0: Story = { ...at({ pri: 'P0', thread: [said] }), name: 'P0' }
+export const Later = at({ when: 'later', thread: [said] })
+/** Later until a day: its chip says the day; then it is back to Now by itself (D115 #21) */
+export const LaterUntilADay: Story = { ...at({ when: 'later', later_until: '2026-10-26', thread: [said] }), name: 'Later until a day' }
+export const MadeFromTwoInputs: Story = { ...at({ thread: [said, { ...said, id: 2, text: 'And keep the sort too.', src: 'r5' }], srcs: ['r4', 'r5'] }), name: 'Made from two inputs' }

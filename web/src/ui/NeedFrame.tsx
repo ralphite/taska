@@ -1,6 +1,6 @@
-// The card for what an item or a proposal needs from you (T642): its icon and title (who, what), the time or where
-// an answer on its way is, its body, and its buttons on a row of their own (on the desktop at the right). An item's
-// needs (features/item/NeedsCard) and a rules proposal (features/docs/Rules) are drawn in it alike (B763). Props only.
+// The card for what a task or a proposal needs from you (T642): its icon and title (who, what), the time or where
+// an answer on its way is, its body, and its buttons on a row of their own (on the desktop at the right). A task's
+// needs (features/task/NeedsCard) and a rules proposal (features/docs/Rules) are drawn in it alike (B763). Props only.
 
 import type { ReactNode } from 'react'
 import type { OutShow, OutTone } from '../model/outgoingStates'

@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test'
 import { isDesk, open, project } from './seed'
 import { needAct } from './ui'
 
-/** The clickable content of an item row. */
+/** The clickable content of a task row. */
 const HIT = (n: number | string) => `#list article[data-n="${n}"] .group.cursor-pointer`
 /** the buttons a row shows under the pointer */
 const ACTS = '[data-row-acts] button'

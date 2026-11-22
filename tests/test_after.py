@@ -1,6 +1,6 @@
-"""T857 (D152 part 3, Yadong r1455): "do T13 after T12". An item that waits for others is not given by /next while any
+"""T857 (D152 part 3, Yadong r1455): "do T13 after T12". A task that waits for others is not given by /next while any
 of them is unfinished, and /next says so; once they are done it comes back, saying what it waited for. Never itself,
-never a group, never two items waiting for each other."""
+never a group, never two tasks waiting for each other."""
 
 import os
 import sys
@@ -31,8 +31,8 @@ class After(ProjectCase):
         self.assertIn("blocked (skip): T2 ← T1", got)
         self.assertIn("next T1 ", got)  # the P0 waits, the P2 goes first
         self.assertIn("T2 P0 now open Show the order number after T1", listing(self.p.state, {}))
-        self.assertIn("waits for T1 (open): /next gives T2 once it is done", card(self.p.reading(), self.p.state.items[2]))
-        self.assertIn("blocks T2", card(self.p.reading(), self.p.state.items[1]))
+        self.assertIn("waits for T1 (open): /next gives T2 once it is done", card(self.p.reading(), self.p.state.tasks[2]))
+        self.assertIn("blocks T2", card(self.p.reading(), self.p.state.tasks[1]))
         self.do("T1 done\n", "you")
         got = self.next_text()
         self.assertNotIn("blocked", got)
@@ -43,7 +43,7 @@ class After(ProjectCase):
         self.do("T2 after T1\n")
         self.assertEqual(self.do("T2 after -T1\n"), ["ok T2 after -T1 (not blocked any more)"])
         self.do("new parent=T1 First the data\nnew parent=T1 after=$ Then the page\n", "you")
-        self.assertEqual(self.p.state.items[4].after, [3])
+        self.assertEqual(self.p.state.tasks[4].after, [3])
 
     def test_never_itself_a_group_or_each_other(self) -> None:
         self.do("new group Checkout\nT2 after T1\n", "you")

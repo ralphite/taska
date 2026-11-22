@@ -1,17 +1,17 @@
-// The list's rows as they are drawn: each row of the list's settings with what it shows (its code, picture, subitems,
+// The list's rows as they are drawn: each row of the list's settings with what it shows (its code, picture, subtasks,
 // talk, draft, whether it is next, new from an agent, who works on it, where a searched word was found) and how it
 // looks (open in the pane, picked, dragged). Pure: the container and the stories draw the same rows from the same data.
 
-import { closed, lastAgentMessage, waitsFor, workNews, type DropHow } from '../../model/items'
+import { closed, lastAgentMessage, waitsFor, workNews, type DropHow } from '../../model/tasks'
 import { needRow } from '../../model/needStates'
 import { codeOf, filesOf, type ProjectModel } from '../../model/project'
 import { laterOn } from '../../model/time'
-import type { Item, SavedView } from '../../model/types'
+import type { Task, SavedView } from '../../model/types'
 import { showsView, visible } from '../../model/visible'
 import type { ListQuery } from '../../model/route'
 import type { Tab } from '../../model/words'
 import { unreadSince, type SeenMap } from '../../stores/seen'
-import type { DrawnRow } from './ItemList'
+import type { DrawnRow } from './TaskList'
 import { workerTip, type RowFacts, type RowLook } from './ListRows'
 import { viewChips, type ListBody, type Row, type ViewChip } from './rows'
 import type { OwnViewChip } from './ViewBar'
@@ -19,22 +19,22 @@ import type { OwnViewChip } from './ViewBar'
 /** What the rows are drawn with besides the project: where you are and what you did on the page. */
 export interface DrawWith {
   slug: string
-  /** the item open in the pane (or the one whose document is open) */
+  /** the task open in the pane (or the one whose document is open) */
   openN: number | null
   selected: ReadonlySet<number>
   /** the searched words (the search page's results; the list has none) */
   words: string[]
   desk: boolean
-  /** the codes of the items that have a draft */
+  /** the codes of the tasks that have a draft */
   drafts: ReadonlySet<string>
-  /** the first item of the queue */
+  /** the first task of the queue */
   head: number | undefined
   seen: SeenMap
   drag: { n: number | null; at: { n?: number; how: DropHow } | null }
 }
 
 /** The line a search word was found in, when it is not in the code or title. */
-export function hitLine(it: Item, code: string, words: string[]): string | null {
+export function hitLine(it: Task, code: string, words: string[]): string | null {
   const title = (code + ' ' + it.title).toLowerCase()
   const w = words.find((x) => !title.includes(x))
   if (!w) return null
@@ -45,7 +45,7 @@ export function hitLine(it: Item, code: string, words: string[]): string | null 
   return line || null
 }
 
-export function rowFacts(m: ProjectModel, it: Item, w: DrawWith): RowFacts {
+export function rowFacts(m: ProjectModel, it: Task, w: DrawWith): RowFacts {
   const code = codeOf(m, it.n)
   const kids = m.kids.get(it.n) || []
   const img = filesOf(m, it).find((f) => (f.mime || '').startsWith('image/'))
@@ -69,7 +69,7 @@ export function rowFacts(m: ProjectModel, it: Item, w: DrawWith): RowFacts {
   }
 }
 
-export function rowLook(it: Item, w: DrawWith): RowLook {
+export function rowLook(it: Task, w: DrawWith): RowLook {
   const { drag } = w
   return {
     current: it.n === w.openN,
@@ -83,8 +83,8 @@ export function rowLook(it: Item, w: DrawWith): RowLook {
 export function drawRows(m: ProjectModel, rows: Row[], w: DrawWith): DrawnRow[] {
   return rows.map((r): DrawnRow => {
     switch (r.kind) {
-      case 'item':
-        return { kind: 'item', key: 'i' + r.it.n, it: r.it, depth: r.depth, band: r.band, foldable: r.foldable, folded: r.folded, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), said: r.said, struck: r.struck }
+      case 'task':
+        return { kind: 'task', key: 'i' + r.it.n, it: r.it, depth: r.depth, band: r.band, foldable: r.foldable, folded: r.folded, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), said: r.said, struck: r.struck }
       case 'needs': {
         return { kind: 'needs', key: 'i' + r.it.n, it: r.it, depth: r.depth, facts: rowFacts(m, r.it, w), look: rowLook(r.it, w), excerpt: needRow(r.it)?.line ?? '', said: r.said, struck: r.struck, act: r.act }
       }
@@ -102,8 +102,8 @@ export function drawRows(m: ProjectModel, rows: Row[], w: DrawWith): DrawnRow[] 
  * it would show; none while the list has no views' row. */
 export function listViews(m: ProjectModel, tab: Tab, list: ListQuery, body: ListBody, saved: { list: readonly SavedView[]; edit: number }): { views: ViewChip[] | null; ownViews: OwnViewChip[] | undefined } {
   const presets = body.kind === 'rows' && body.views ? viewChips(m, tab, list) : null
-  const lit = tab === 'items' ? saved.list.findIndex((v) => showsView(list, v)) : -1
+  const lit = tab === 'tasks' ? saved.list.findIndex((v) => showsView(list, v)) : -1
   const views = presets && lit >= 0 ? presets.map((v) => ({ ...v, on: false })) : presets
-  const ownViews = views ? saved.list.map((v, i) => ({ name: v.name, count: visible(m.items, 'items', { ...list, ...v }).length, on: i === lit, editing: saved.edit === i })) : undefined
+  const ownViews = views ? saved.list.map((v, i) => ({ name: v.name, count: visible(m.tasks, 'tasks', { ...list, ...v }).length, on: i === lit, editing: saved.edit === i })) : undefined
   return { views, ownViews }
 }

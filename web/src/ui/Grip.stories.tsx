@@ -1,15 +1,15 @@
-// The line between panes, as the page draws it: the desktop's two columns of an item, the line between them as it is,
+// The line between panes, as the page draws it: the desktop's two columns of a task, the line between them as it is,
 // under the pointer, and being dragged (blue). Drag it to resize; a double-click puts it back.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frame, States } from '../stories/Frames'
-import { it } from '../stories/itemPageLayoutFixtures'
-import { pageOf } from '../stories/itemPage'
+import { it } from '../stories/taskPageLayoutFixtures'
+import { pageOf } from '../stories/taskPage'
 
-const meta: Meta = { title: 'UI/Item pane/Layout' }
+const meta: Meta = { title: 'UI/Task pane/Layout' }
 export default meta
 type Story = StoryObj
 
-// an item with its talk, so the column beside it is the talk
+// a task with its talk, so the column beside it is the talk
 const page = (duoDragged?: string) => pageOf(it(), true, { duo: true, duoDragged })
 
 /** A pane's edge: as it is, pointed at, dragged. */
@@ -18,7 +18,7 @@ export const Edge: Story = {
   parameters: { pseudo: { hover: ['[data-look="pointer"] [data-grip="duo"]'] } },
   render: () => (
     <States
-      items={[
+      tasks={[
         ['as it is', <Frame layout="desk" width={1100} height={320}>{page()}</Frame>],
         ['pointer on it', <div data-look="pointer"><Frame layout="desk" width={1100} height={320}>{page()}</Frame></div>],
         // dragged to the left: the line where the pointer has it, the columns as wide as it says

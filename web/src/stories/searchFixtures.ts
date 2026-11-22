@@ -2,12 +2,12 @@
 // the server sends (/api/find): the words heard first (one word misheard), set right, then with more said.
 import type { HeardFile } from '../model/doubts'
 import type { FindAnswer, Found } from '../model/find'
-import type { Item } from '../model/types'
+import type { Task } from '../model/types'
 import { doc } from './docFixtures'
-import { T, input, item, message, modelOf } from './fixtures'
+import { T, input, task, message, modelOf } from './fixtures'
 import { PROJECT } from './listFixtures'
 
-const F1: Item = {
+const F1: Task = {
   ...PROJECT[0],
   body: 'The export writes **every** row; it should write the rows the list shows, with the filter and the sort.',
   thread: [
@@ -15,7 +15,7 @@ const F1: Item = {
     message({ id: 3, text: 'Reproduced it: the export reads the list before the filter.', t: '2026-10-23T14:20:00-07:00' }),
   ],
 }
-const B18 = item({
+const B18 = task({
   n: 18,
   tags: ['bug'],
   pri: 'P1',
@@ -23,26 +23,26 @@ const B18 = item({
   body: 'On the phone the export writes every row again, whatever the filter.',
   thread: [message({ id: 5, by: 'you', kind: 'say', text: 'On my phone the export gives me every row again.', t: '2026-11-02T09:12:00-08:00' })],
 })
-export const ITEMS: Item[] = [F1, ...PROJECT.slice(1), B18]
+export const TASKS: Task[] = [F1, ...PROJECT.slice(1), B18]
 export const D1 = doc({ d: 1, n: 1, title: 'Plan: the export keeps the filter' })
 const INPUTS = [
   input({ id: 'r12', text: 'On my phone the export gives me every row again.', acked: true, touched: [18] }),
   input({ id: 'r8', text: 'The export should keep the filter I set.', acked: true, touched: [1] }),
 ]
-export const SHOP = modelOf(ITEMS, INPUTS, { title: 'Shop', agents: [{ name: 'claude-code', t: Date.parse(T), waiting: true }], work: true }, [D1])
-const H21 = item({ n: 21, title: 'Export contacts with the sort kept' })
+export const SHOP = modelOf(TASKS, INPUTS, { title: 'Shop', agents: [{ name: 'claude-code', t: Date.parse(T), waiting: true }], work: true }, [D1])
+const H21 = task({ n: 21, title: 'Export contacts with the sort kept' })
 export const HOME = modelOf([H21], [], { title: 'Home' })
 /** The projects in the sidebar's order. */
 export const ORDER = ['shop', 'home']
 
-const it = (n: number): Found => ({ project: 'shop', kind: 'items', key: 'i' + n, n })
+const it = (n: number): Found => ({ project: 'shop', kind: 'tasks', key: 'i' + n, n })
 /** a section of the rules (T693) */
 const RULES0: Found = { project: 'shop', kind: 'rules', key: 's0', n: null, code: 'Rules', title: 'Exports write what the list shows' }
 const SAID8: Found = { project: 'shop', kind: 'inputs', key: 'r8', n: 1, code: '#8', title: 'The export should keep the filter I set.', t: '2026-10-23T14:10:00-07:00', became: 'T001' }
 const SAID12: Found = { project: 'shop', kind: 'inputs', key: 'r12', n: 18, code: '#12', title: 'On my phone the export gives me every row again.', t: '2026-11-02T09:12:00-08:00', became: 'T018' }
 const DOC1: Found = { project: 'shop', kind: 'docs', key: 'd1', n: 1, code: 'D1', d: 1, title: D1.title, on: 'T001' }
-// another project's item comes with what the list shows of it
-const HOME21: Found = { project: 'home', kind: 'items', key: 'i21', n: 21, item: { ...H21, code: 'T021' }, parentCode: null, kids: null }
+// another project's task comes with what the list shows of it
+const HOME21: Found = { project: 'home', kind: 'tasks', key: 'i21', n: 21, task: { ...H21, code: 'T021' }, parentCode: null, kids: null }
 const HOME4: Found = { project: 'home', kind: 'inputs', key: 'r4', n: 21, code: '#4', title: 'When I export contacts the order is gone', t: '2026-10-20T19:02:00-07:00', became: 'T021' }
 
 const answer = (q: string, marks: string[], found: Found[]): FindAnswer => ({ q, by: 'meaning', marks, found, titles: { shop: 'Shop', home: 'Home' } })

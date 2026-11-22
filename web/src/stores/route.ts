@@ -30,22 +30,22 @@ export interface RouteState {
   url: string
   /** what is open over the page that Back closes (the phone's search, its drawer), the latest last */
   layers: readonly string[]
-  /** the desktop's item full width (O): a step Back undoes; `link`: reached by a link while full width */
+  /** the desktop's task full width (O): a step Back undoes; `link`: reached by a link while full width */
   full: boolean
   /** the list beside the pane on the desktop when it is Documents, Activity or Deleted: it stays while what you open
    * from it shows beside it */
   side: Side | null
-  /** the desktop's New input page opened from an item or a document: its name, for the way back ("B333", "D89") */
+  /** the desktop's New input page opened from a task or a document: its name, for the way back ("B333", "D89") */
   from: string | null
   /** this address came from the browser (the page loaded, Back or Forward), not from a step the page took */
   fromBrowser: boolean
-  /** the list's tab came with the step (an item or a document opened in the page); without, the address was opened
-   * as it is and the item's own tab is the list's */
+  /** the list's tab came with the step (a task or a document opened in the page); without, the address was opened
+   * as it is and the task's own tab is the list's */
   tabKept: boolean
   /** go full width, or back to the list (`here`: by rewriting this step, not going back) */
   setFull(on: boolean, here?: boolean): void
   /** go to an address: a step in the history (push) or the address rewritten; `layers`: what the new step has open
-   * (a step from the drawer leaves it closed: its step becomes the new one); `tab`: the list's tab beside an item or a
+   * (a step from the drawer leaves it closed: its step becomes the new one); `tab`: the list's tab beside a task or a
    * document (their address does not say it) */
   go(url: string, push?: boolean, layers?: readonly string[], from?: string | null, tab?: Tab): void
   /** something opens over the page: a step Back undoes */
@@ -54,7 +54,7 @@ export interface RouteState {
   shutLayer(kind: string, then?: () => void): void
   /** n steps back in the history */
   backBy(n: number): void
-  /** the page opened at this address (an item, on the phone): `under` goes under it in the history, so Back lands
+  /** the page opened at this address (a task, on the phone): `under` goes under it in the history, so Back lands
    * there (once: a reload finds it there) */
   putUnder(under: string): void
   /** the history moved (Back, Forward): read it again */
@@ -68,10 +68,10 @@ const placeOf = (url: string): [string, string, string] => {
   const u = new URL(url, 'http://taska.local')
   return [u.pathname, u.search, u.hash]
 }
-/** an item's or a document's address */
-const itemOrDoc = (url: string) => {
+/** a task's or a document's address */
+const taskOrDoc = (url: string) => {
   const r = parseRoute(...placeOf(url))
-  return r.page === 'project' && (r.place.kind === 'item' || r.place.kind === 'doc')
+  return r.page === 'project' && (r.place.kind === 'task' || r.place.kind === 'doc')
 }
 const fullOf = (state: unknown) => !!(state as { full?: unknown } | null)?.full
 const SIDES: readonly string[] = ['docs', 'log', 'deleted']
@@ -79,20 +79,20 @@ const sideOf = (route: Route, state: unknown): Side | null => {
   if (route.page !== 'project') return null
   if (route.place.kind === 'side') return route.place.side
   const s = (state as { side?: unknown } | null)?.side
-  return (route.place.kind === 'item' || route.place.kind === 'doc') && typeof s === 'string' && SIDES.includes(s) ? (s as Side) : null
+  return (route.place.kind === 'task' || route.place.kind === 'doc') && typeof s === 'string' && SIDES.includes(s) ? (s as Side) : null
 }
 const fromOf = (route: Route, state: unknown): string | null => {
   const f = (state as { from?: unknown } | null)?.from
   return route.page === 'project' && route.place.kind === 'new' && typeof f === 'string' ? f : null
 }
-/** The list's tab beside an item or a document, kept in its step (none: the address was opened as it is) */
+/** The list's tab beside a task or a document, kept in its step (none: the address was opened as it is) */
 export const keptTab = (state: unknown): Tab | null => {
   const t = (state as { tab?: unknown } | null)?.tab
   return typeof t === 'string' && (TABS as readonly string[]).includes(t) ? (t as Tab) : null
 }
 const withTab = (route: Route, state: unknown): Route => {
   const t = keptTab(state)
-  return t && route.page === 'project' && (route.place.kind === 'item' || route.place.kind === 'doc') ? { ...route, tab: t } : route
+  return t && route.page === 'project' && (route.place.kind === 'task' || route.place.kind === 'doc') ? { ...route, tab: t } : route
 }
 const layersOf = (state: unknown): string[] => {
   const l = (state as { layers?: unknown } | null)?.layers
@@ -131,9 +131,9 @@ export function createRouteStore(history: History): RouteStore {
       const full = get().full ? { full: true, link: true } : {}
       const side = get().side
       const to = side ? parseRoute(...placeOf(url)) : null
-      const keep = side && to?.page === 'project' && (to.place.kind === 'item' || to.place.kind === 'doc') ? { side } : {}
+      const keep = side && to?.page === 'project' && (to.place.kind === 'task' || to.place.kind === 'doc') ? { side } : {}
       const back = from ? { from } : {}
-      const lists = tab && itemOrDoc(url) ? { tab } : {}
+      const lists = tab && taskOrDoc(url) ? { tab } : {}
       const state = (l: readonly string[]) => (l.length || get().full || 'side' in keep || from || 'tab' in lists ? { ...full, ...keep, ...back, ...lists, ...(l.length ? { layers: [...l] } : {}) } : null)
       if (push && url !== get().url) {
         // from the drawer: its step becomes the new one (as closing it, then going on, would leave the history)
@@ -187,7 +187,7 @@ export function createRouteStore(history: History): RouteStore {
       const was = get()
       set({ ...now(), fromBrowser: !mine })
       // a sheet closed (its button, or Back) after its filters changed the list: the list stays as set, not as it was
-      // under the sheet (the phone's Filters, "Show N items")
+      // under the sheet (the phone's Filters, "Show N tasks")
       const here = get()
       const wasAt = placeOf(was.url)
       const hereAt = placeOf(here.url)

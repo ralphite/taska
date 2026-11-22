@@ -117,25 +117,25 @@ export function PlaceVoiceRow({ rec, meter, say, comment, on }: { rec: boolean; 
 /** How far the phone's row floats from its place. */
 const FLOAT_GAP = 6
 
-/** How many of a list item's words name it (what a tap on it quotes). */
-const ITEM_WORDS = 500
+/** How many of a list task's words name it (what a tap on it quotes). */
+const TASK_WORDS = 500
 
-/** A list item's words as a tap on it quotes them. */
-export const itemWords = (li: HTMLElement) => li.innerText.trim().slice(0, ITEM_WORDS)
+/** A list task's words as a tap on it quotes them. */
+export const taskWords = (li: HTMLElement) => li.innerText.trim().slice(0, TASK_WORDS)
 
-/** The item of a list in `within` that these words name (the one picked and lit amber; B715 r1176). */
-export function listItemOf(within: Element, words: string): HTMLElement | null {
-  return [...within.querySelectorAll<HTMLElement>('li')].find((l) => itemWords(l) === words) ?? null
+/** The task of a list in `within` that these words name (the one picked and lit amber; B715 r1176). */
+export function listTaskOf(within: Element, words: string): HTMLElement | null {
+  return [...within.querySelectorAll<HTMLElement>('li')].find((l) => taskWords(l) === words) ?? null
 }
 
 /** The phone's row on a place picked, floating over the page under it (over it when the screen shows no room under
  * it), never in the page's flow: opening and closing it move no words (B715 r1169). Its two buttons at the place's
- * right; speaking, the strip across it. In its positioned parent: `place` is where the place is in it; `item`: the
- * words of the list's item picked in it (B715 r1175); neither: the parent is the place. It goes by that place
+ * right; speaking, the strip across it. In its positioned parent: `place` is where the place is in it; `task`: the
+ * words of the list's task picked in it (B715 r1175); neither: the parent is the place. It goes by that place
  * itself, found by itself (not by a mark another part sets after it is drawn), and moves only with it: when it or
  * its parent changes size (pictures, fonts, an update of the words), never to somewhere else; which side of the place
  * it takes is chosen once, when the place is picked, so it never flips (B715 r1176). */
-export function PlaceVoiceFloat({ place, item, x, ...row }: Parameters<typeof PlaceVoiceRow>[0] & { place?: { y: number; h: number }; item?: string | null; x?: string }) {
+export function PlaceVoiceFloat({ place, task, x, ...row }: Parameters<typeof PlaceVoiceRow>[0] & { place?: { y: number; h: number }; task?: string | null; x?: string }) {
   const el = useRef<HTMLDivElement>(null)
   const py = place?.y
   const ph = place?.h
@@ -147,7 +147,7 @@ export function PlaceVoiceFloat({ place, item, x, ...row }: Parameters<typeof Pl
     const put = () => {
       const p = parent.getBoundingClientRect()
       // found again each time: an update of the words draws the list anew
-      const at = (item ? listItemOf(parent, item) : null)?.getBoundingClientRect()
+      const at = (task ? listTaskOf(parent, task) : null)?.getBoundingClientRect()
       const y = py ?? (at ? at.top - p.top : 0)
       const h = ph ?? (at ? at.height : p.height)
       over ??= floatOver({ top: p.top + y, bottom: p.top + y + h }, me.offsetHeight, FLOAT_GAP, shownArea(me))
@@ -158,10 +158,10 @@ export function PlaceVoiceFloat({ place, item, x, ...row }: Parameters<typeof Pl
     const seen = new ResizeObserver(put)
     seen.observe(parent)
     seen.observe(me)
-    const li = item ? listItemOf(parent, item) : null
+    const li = task ? listTaskOf(parent, task) : null
     if (li) seen.observe(li)
     return () => seen.disconnect()
-  }, [item, py, ph])
+  }, [task, py, ph])
   return (
     // a tap on it is not a tap on what is under it
     <div ref={el} data-place-row onClick={(e) => e.stopPropagation()} className={`absolute z-20 ${row.rec ? 'rounded-full bg-white px-1 shadow-lg ring-1 ring-zinc-900/10 dark:bg-zinc-900 dark:ring-white/10' : ''} ${x ?? (row.rec ? 'inset-x-0' : 'right-0')}`}>

@@ -1,11 +1,11 @@
 // The desktop's search (T479) in its stories: the page around it (stories/searchDesk.tsx), each part the page's own
 // component with the demo projects Shop and Home (searchFixtures.ts): the sidebar with its Search button (or the rail
-// with its magnifier), the project's bar, the list (its filter at the end of the views' row), the item open in its
-// pane, the box under it; and an item's preview, drawn as its page draws it.
+// with its magnifier), the project's bar, the list (its filter at the end of the views' row), the task open in its
+// pane, the box under it; and a task's preview, drawn as its page draws it.
 import type { ReactNode } from 'react'
 import { sideProjects } from '../app/sideProjects'
 import { Composer } from '../features/composer/Composer'
-import { ItemPage } from '../features/item/ItemPage'
+import { TaskPage } from '../features/task/TaskPage'
 import { Rail, Sidebar, type SidebarEvents } from '../features/sidebar/Sidebar'
 import { SIDE_KEYS, sideLinks } from '../features/sidebar/sideLinks'
 import { boxRole, shownBox } from '../model/boxFoot'
@@ -13,12 +13,12 @@ import type { Found } from '../model/find'
 import { codeOf, type ProjectModel } from '../model/project'
 import { NO_FILTERS, parseRoute } from '../model/route'
 import { latestMessage } from '../model/talk'
-import type { Item, ProjectRow } from '../model/types'
+import type { Task, ProjectRow } from '../model/types'
 import { ProjectBar } from '../pages/Header'
 import { agentInfo, deskTabs, tabCounts } from '../pages/headFacts'
 import { toneOf } from '../ui/tones'
-import { pageOf, type PageOpts } from './itemPage'
-import { itemFacts, noItemEvents, talkEnv, talkFacts } from './itemFixtures'
+import { pageOf, type PageOpts } from './taskPage'
+import { taskFacts, noTaskEvents, talkEnv, talkFacts } from './taskFixtures'
 import { listOf, type Holding } from './listFixtures'
 import { D1, HOME, SHOP } from './searchFixtures'
 import { sideOn } from './sideFixtures'
@@ -33,22 +33,22 @@ export const TONES = sideProjects(ROWS, SHOP, 'shop').tones
 export const modelFor = (slug: string): ProjectModel => (slug === 'home' ? HOME : SHOP)
 export const titleOf = (slug: string) => modelFor(slug).facts.title
 
-/** The item a row found is or opens. */
-export const itemOf = (x: Found): Item | undefined => (x.n == null ? undefined : (modelFor(x.project).byN.get(x.n) ?? (x.item as Item | undefined)))
+/** The task a row found is or opens. */
+export const taskOf = (x: Found): Task | undefined => (x.n == null ? undefined : (modelFor(x.project).byN.get(x.n) ?? (x.task as Task | undefined)))
 
 // ---------------------------------------------------------------- the preview
 
-/** An item's preview beside the search's list, as its page draws it (read only). */
+/** A task's preview beside the search's list, as its page draws it (read only). */
 export function previewOf(x: Found): ReactNode {
   const m = modelFor(x.project)
-  const it = itemOf(x)
+  const it = taskOf(x)
   if (!it) return null
-  return <ItemPage it={it} f={itemFacts(m, it)} env={talkEnv(m, true, { latest: latestMessage(it) })} facts={talkFacts(m)} on={noItemEvents} readOnly />
+  return <TaskPage it={it} f={taskFacts(m, it)} env={talkEnv(m, true, { latest: latestMessage(it) })} facts={talkFacts(m)} on={noTaskEvents} readOnly />
 }
 
 // ---------------------------------------------------------------- the page
 
-/** The box at the foot, as the page draws it: a reply to the item open (`n`), else a new input; the desktop's under
+/** The box at the foot, as the page draws it: a reply to the task open (`n`), else a new input; the desktop's under
  * the pane, the phone's at the screen's foot. */
 export function PageBox({ m, n, desk = true }: { m: ProjectModel; n: number | null; desk?: boolean }) {
   const route = parseRoute(`/p/shop/${n == null ? '' : codeOf(m, n)}`, '')
@@ -62,14 +62,14 @@ export function PageBox({ m, n, desk = true }: { m: ProjectModel; n: number | nu
   )
 }
 
-/** The desktop's project page: the sidebar (or its rail), the project's bar, the list, the item open in its pane.
+/** The desktop's project page: the sidebar (or its rail), the project's bar, the list, the task open in its pane.
  * `model`: the project's data in place of the demo's; `onAgents`: what the agent pill opens; `float`: what floats
- * just above the box (the blocked bar, T711); `list`, `page`: what a prototype holds for the list and the item open. */
+ * just above the box (the blocked bar, T711); `list`, `page`: what a prototype holds for the list and the task open. */
 export function DeskPage({ slug, n, rail, onSearch, model, onAgents, float, list, page }: { slug: string; n: number; rail: boolean; onSearch(): void; model?: ProjectModel; onAgents?(): void; float?: ReactNode; list?: Holding; page?: PageOpts }) {
   const m = model ?? modelFor(slug)
   const projects = sideProjects(ROWS, m, slug).list
   const sOn: SidebarEvents = { ...sideOn, search: onSearch }
-  const it = m.byN.get(n) as Item
+  const it = m.byN.get(n) as Task
   return (
     <div className="flex h-full">
       {rail ? (
@@ -81,13 +81,13 @@ export function DeskPage({ slug, n, rail, onSearch, model, onAgents, float, list
         <ProjectBar
           title={m.facts.title}
           tone={toneOf(TONES, slug)}
-          tabs={deskTabs(tabCounts(m, 'items', NO_FILTERS, true), 'items', false)}
+          tabs={deskTabs(tabCounts(m, 'tasks', NO_FILTERS, true), 'tasks', false)}
           agent={agentInfo(m, 0)}
           notSaved={0}
           place="col-span-2"
           on={{ tab() {}, agents: onAgents ?? (() => {}), notSaved() {} }}
         />
-        <section className="flex min-h-0 flex-col border-r border-zinc-200 dark:border-zinc-800">{listOf(m.items, 'items', {}, true, { open: n, ...list })}</section>
+        <section className="flex min-h-0 flex-col border-r border-zinc-200 dark:border-zinc-800">{listOf(m.tasks, 'tasks', {}, true, { open: n, ...list })}</section>
         <div className="flex min-h-0 min-w-0 flex-col">
           <div className="min-h-0 flex-1">{pageOf(it, true, { docs: n === 1 && slug === 'shop' && !model ? [D1] : [], ...page })}</div>
           <div className="relative">

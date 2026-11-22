@@ -33,7 +33,7 @@ class DocWritten(Event):
             opt(row, k, getattr(self, k), bool(getattr(self, k)))
         return row
 
-    def items_touched(self) -> List[int]:
+    def tasks_touched(self) -> List[int]:
         return [self.n] if self.n else []
 
 
@@ -172,7 +172,7 @@ class DocDecided(Event):
 
 @dataclass
 class RulesMoved(Event):
-    """Once per project (I693): the rule items are gone, with their talk and documents; the rules in force are the
+    """Once per project (I693): the rule tasks are gone, with their talk and documents; the rules in force are the
     rules document's first version (written just before)."""
 
     KIND: ClassVar[str] = "rulesmoved"

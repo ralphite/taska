@@ -1,4 +1,4 @@
-// Your own views of the item list (kept with Taska, the same in every project), and the one being renamed.
+// Your own views of the task list (kept with Taska, the same in every project), and the one being renamed.
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { SavedView } from '../model/types'

@@ -3,10 +3,10 @@
 // domain/vocab.py (model/vocab.gen.ts).
 
 import { describe, expect, it as test } from 'vitest'
-import { closed, heldItems, queueHead, queueOrder, userWord } from './items'
+import { closed, heldTasks, queueHead, queueOrder, userWord } from './tasks'
 import { needsYou } from './needStates'
 import { NEEDS, NEXT, QUEUE, USER_WORDS } from './ruleCases.gen'
-import type { Input, Item } from './types'
+import type { Input, Task } from './types'
 import { CLOSED, STATUSES } from './vocab.gen'
 
 describe("the server's rules, on the server's cases", () => {
@@ -15,7 +15,7 @@ describe("the server's rules, on the server's cases", () => {
   })
 
   test('what needs you (needs_you): every status, asked or not, answered or not, archived or not, merged', () => {
-    for (const it of NEEDS.items) expect(needsYou(it), `${it.n} ${it.title}`).toBe(NEEDS.needs[String(it.n)])
+    for (const it of NEEDS.tasks) expect(needsYou(it), `${it.n} ${it.title}`).toBe(NEEDS.needs[String(it.n)])
   })
 
   test("the user's own words (user_word): everyone's messages of every kind", () => {
@@ -24,16 +24,16 @@ describe("the server's rules, on the server's cases", () => {
 
   test('the order agents take the work (queue_order)', () => {
     for (const c of QUEUE) {
-      const now = c.items.filter((it: Item) => it.when === 'now')
+      const now = c.tasks.filter((it: Task) => it.when === 'now')
       expect(queueOrder(now).map((it) => it.n)).toEqual(c.order)
     }
   })
 
-  test('the item /next hands out next (next_work): replied on, held for a voice note, the queue', () => {
+  test('the task /next hands out next (next_work): replied on, held for a voice note, the queue', () => {
     for (const c of NEXT) {
       // the server's held inputs, as the page sees them: a voice note whose words are being worked out
       const inputs = c.inputs.map((r: Input) => (c.held.includes(r.id) ? { ...r, files: r.files.map((f) => ({ ...f, voice: { f: f.f, state: 'wait' as const, said: '', tidied: '' } })) } : r))
-      expect(queueHead(c.items, heldItems(inputs)) ?? null, c.items.map((it) => `${it.n} ${it.pri} ${it.when} ${it.status}`).join(', ')).toBe(c.next)
+      expect(queueHead(c.tasks, heldTasks(inputs)) ?? null, c.tasks.map((it) => `${it.n} ${it.pri} ${it.when} ${it.status}`).join(', ')).toBe(c.next)
     }
   })
 })

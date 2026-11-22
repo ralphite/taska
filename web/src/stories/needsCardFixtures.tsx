@@ -1,11 +1,11 @@
 // The helpers NeedsCard's stories share: how each draws its part.
 import type { StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import type { Item } from '../model/types'
+import type { Task } from '../model/types'
 import { Frames } from './Frames'
-import { T, item, message, modelOf } from './fixtures'
-import { noItemEvents, talkEnv } from './itemFixtures'
-import { NeedsCard } from '../features/item/NeedsCard'
+import { T, task, message, modelOf } from './fixtures'
+import { noTaskEvents, talkEnv } from './taskFixtures'
+import { NeedsCard } from '../features/task/NeedsCard'
 
 type Story = StoryObj
 
@@ -15,10 +15,10 @@ export const report = message({ id: 6, text: 'Done: the export writes the rows t
 export const askOf = (text: string, by = 'claude-code') => ({ id: 7, kind: 'ask' as const, text, by, ses: 'Shop project work', files: [] })
 export const you = message({ id: 9, by: 'you', kind: 'say', text: 'Only the filter, not the sort.' })
 
-/** The card with what the page holds for it (stores.itemView): its question's choices picked, Change your decision and
+/** The card with what the page holds for it (stores.taskView): its question's choices picked, Change your decision and
  * its Cancel; deciding and sending show in the Actions panel. */
-function LiveCard({ f, o, desk }: { f: Partial<Item>; o: { remodify?: boolean; picked?: number[] }; desk: boolean }) {
-  const it = item({ n: 12, ...f })
+function LiveCard({ f, o, desk }: { f: Partial<Task>; o: { remodify?: boolean; picked?: number[] }; desk: boolean }) {
+  const it = task({ n: 12, ...f })
   const [remodify, setRemodify] = useState(!!o.remodify)
   const [picked, setPicked] = useState<ReadonlySet<number>>(new Set(o.picked))
   const pick = (i: number, multi: boolean) => {
@@ -27,10 +27,10 @@ function LiveCard({ f, o, desk }: { f: Partial<Item>; o: { remodify?: boolean; p
     else next.add(i)
     setPicked(next)
   }
-  const on = { ...noItemEvents, modify: () => setRemodify(true), cancelModify: () => setRemodify(false) }
+  const on = { ...noTaskEvents, modify: () => setRemodify(true), cancelModify: () => setRemodify(false) }
   return <NeedsCard it={it} env={{ ...talkEnv(modelOf([it]), desk), choosing: { picked, pick } }} on={on} remodify={remodify} />
 }
-export const at = (f: Partial<Item>, o: { remodify?: boolean; picked?: number[] } = {}): Story => ({
+export const at = (f: Partial<Task>, o: { remodify?: boolean; picked?: number[] } = {}): Story => ({
   render: () => (
     <Frames phoneWidth={393} deskWidth={720}>
       {(layout) => (

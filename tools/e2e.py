@@ -2,7 +2,7 @@
 
 Every spec file says what it guards on a line of its own:
 
-    // guards: src/features/list/ src/model/items.ts server/
+    // guards: src/features/list/ src/model/tasks.ts server/
 
 (paths under web; a path ending in / guards a whole folder; "server/..." is under server). A check that guards
 one of Yadong's requirements starts its title with the requirement's input codes ("r494 r308: ..."); when it fails,

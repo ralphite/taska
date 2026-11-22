@@ -7,7 +7,7 @@ import { PROJECT_TONES } from '../ui/tones'
 import { Frames } from './Frames'
 import { AT_POINTER, acts, opened } from './menuFixtures'
 
-export default { title: 'UI/Left sidebar/Projects list/Project item/Its menu' } satisfies Meta
+export default { title: 'UI/Left sidebar/Projects list/Project task/Its menu' } satisfies Meta
 type Story = StoryObj
 
 const home = { slug: 'home', title: 'Home', tone: PROJECT_TONES[1], open: 13 }

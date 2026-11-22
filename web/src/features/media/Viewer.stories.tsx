@@ -17,7 +17,7 @@ const one = (fit: boolean, idx: number, count: number): Story => ({
     <Frames phoneWidth={393} deskWidth={900} height={600}>
       {(layout) => (
         <div className="relative h-full">
-          {listOf(PROJECT, 'items', {}, layout === 'desk')}
+          {listOf(PROJECT, 'tasks', {}, layout === 'desk')}
           {/* the page's media.close, step and zoom: × closes it, ‹ › step through the pictures, the picture zooms */}
           <Hold start={{ open: true, idx, fit }}>
             {(v, set) =>

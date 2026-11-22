@@ -7,7 +7,7 @@ const A: FindAnswer = {
   by: 'meaning',
   marks: ['export'],
   titles: { shop: 'Shop', home: 'Home', work: 'Work' },
-  found: [f('home', 'items', 'i21'), f('shop', 'items', 'i1'), f('work', 'docs', 'd2'), f('shop', 'inputs', 'r8'), f('shop', 'rules', 'i17')],
+  found: [f('home', 'tasks', 'i21'), f('shop', 'tasks', 'i1'), f('work', 'docs', 'd2'), f('shop', 'inputs', 'r8'), f('shop', 'rules', 'i17')],
 }
 
 describe('the phone search', () => {
@@ -17,9 +17,9 @@ describe('the phone search', () => {
       ['work', ['d2']],
       ['home', ['i21']],
     ])
-    expect(foundGroups(A, 'shop', ['work', 'home'], 'items').map((g) => g.project)).toEqual(['shop', 'home'])
+    expect(foundGroups(A, 'shop', ['work', 'home'], 'tasks').map((g) => g.project)).toEqual(['shop', 'home'])
     expect(foundKinds(A)).toEqual([
-      ['items', 'Items', 2],
+      ['tasks', 'Tasks', 2],
       ['inputs', 'Inputs', 1],
       ['rules', 'Rules', 1],
       ['docs', 'Documents', 1],
@@ -58,7 +58,7 @@ describe('All, by kind (T642 R9 (D115, 11-06))', () => {
   const rows = A.found.map((found) => ({ found }))
   it("puts the rows together by kind in the chips' order, each closest first, its name over the first", () => {
     expect(byKind(rows).map((r) => [r.found.key, r.head ?? ''])).toEqual([
-      ['i21', 'Items'],
+      ['i21', 'Tasks'],
       ['i1', ''],
       ['r8', 'Inputs'],
       ['i17', 'Rules'],
@@ -66,8 +66,8 @@ describe('All, by kind (T642 R9 (D115, 11-06))', () => {
     ])
   })
   it('names no kind when only one is there, or when told not to', () => {
-    expect(byKind(rows.filter((r) => r.found.kind === 'items')).some((r) => r.head)).toBe(false)
+    expect(byKind(rows.filter((r) => r.found.kind === 'tasks')).some((r) => r.head)).toBe(false)
     expect(byKind(rows, false).some((r) => r.head)).toBe(false)
-    expect(byKind(rows.slice(0, 1), true)[0].head).toBe('Items')
+    expect(byKind(rows.slice(0, 1), true)[0].head).toBe('Tasks')
   })
 })

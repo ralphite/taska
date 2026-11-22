@@ -63,7 +63,7 @@ describe('going to an input (r1092, T689 #2)', () => {
 })
 
 describe("the phone's Filters sheet", () => {
-  // QA of T689 #2 found it: "Show 2 items" closed the sheet and the list went back to all 19
+  // QA of T689 #2 found it: "Show 2 tasks" closed the sheet and the list went back to all 19
   test('a filter set while the sheet is open stays once it closes, by its button or by Back', () => {
     for (const close of ['button', 'back'] as const) {
       const { route, nav } = page('/p/shop/', false)

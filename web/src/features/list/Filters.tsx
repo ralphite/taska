@@ -1,5 +1,5 @@
-// The list's filters: tags, when (Archive), status (not on Items, whose views are its status), priority and sort,
-// and saving them as a view of your own (Items). On the phone a sheet with Show N items; on the desktop the Filters
+// The list's filters: tags, when (Archive), status (not on Tasks, whose views are its status), priority and sort,
+// and saving them as a view of your own (Tasks). On the phone a sheet with Show N tasks; on the desktop the Filters
 // button at the end of the views' row, and a row over the list with what is set, opening to the controls. Props only.
 
 import { useState, type ReactNode } from 'react'
@@ -20,7 +20,7 @@ export interface FilterEvents {
 const PILL = (small: boolean) =>
   `relative ${small ? 'h-7 px-2.5' : 'h-9 px-3.5'} rounded-full bg-zinc-100 text-[13px] font-medium text-zinc-700 after:absolute after:inset-x-0 after:-inset-y-1 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900`
 
-/** `tags`: the project's, the most used first (T855); the one picked shows its items. */
+/** `tags`: the project's, the most used first (T855); the one picked shows its tasks. */
 export function FilterControls({ tab, list, small = false, tags, on }: { tab: Tab; list: ListQuery; small?: boolean; tags: readonly string[]; on: FilterEvents }) {
   const [name, setName] = useState('')
   const lab = (t: string) => <div className={`px-1 ${small ? 'pb-1 text-[11px]' : 'pb-2 text-xs'} font-semibold text-zinc-500 dark:text-zinc-400`}>{t}</div>
@@ -54,7 +54,7 @@ export function FilterControls({ tab, list, small = false, tags, on }: { tab: Ta
           />
         </div>
       ) : null}
-      {tab === 'items' ? null : (
+      {tab === 'tasks' ? null : (
         <div>
           {lab('Status')}
           <div className="flex flex-wrap gap-1.5">
@@ -79,7 +79,7 @@ export function FilterControls({ tab, list, small = false, tags, on }: { tab: Ta
         {lab('Sort')}
         <SegCtl opts={SORT_WORDS} on={list.sort} small={small} pick={(v) => on.set('sort', v)} />
       </div>
-      {tab === 'items' ? (
+      {tab === 'tasks' ? (
         <div>
           {lab('Save as view')}
           <div className="flex items-center gap-1.5">
@@ -123,7 +123,7 @@ export function filtersSheet({ tab, list, filtered, shown, open, tags }: { tab: 
       <div className="flex flex-col gap-5">
         <FilterControls tab={tab} list={list} tags={tags} on={on} />
         <button onClick={on.close} className={`${PRIMARY} w-full`}>
-          Show {tab === 'items' && open !== shown ? `${open} open, ${shown - open} finished` : `${shown} item${shown === 1 ? '' : 's'}`}
+          Show {tab === 'tasks' && open !== shown ? `${open} open, ${shown - open} finished` : `${shown} task${shown === 1 ? '' : 's'}`}
         </button>
       </div>
     ),

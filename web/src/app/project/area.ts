@@ -46,7 +46,7 @@ export function makeProject(c: Core, i: Pick<InputsArea, 'box' | 'inputActions' 
     cache: l.cache ?? noCache,
     presence: l.presence,
     model: c.model,
-    fresh: { ui: s.ui, itemView: s.itemView, keptEdits: s.keptEdits, docTicks: s.docTicks, box: s.box, drafts: s.drafts, pictureSizes, keptNotes: i.keptNotes, notices },
+    fresh: { ui: s.ui, taskView: s.taskView, keptEdits: s.keptEdits, docTicks: s.docTicks, box: s.box, drafts: s.drafts, pictureSizes, keptNotes: i.keptNotes, notices },
     server: (v) => {
       updates.seen(v)
       s.data.getState().setDev(v.dev)

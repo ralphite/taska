@@ -1,4 +1,4 @@
-"""r1069: an agent deletes an item it proposed that the user has not answered (a monitor's alarm that went away);
+"""r1069: an agent deletes a task it proposed that the user has not answered (a monitor's alarm that went away);
 anything else stays the user's to delete."""
 
 import os
@@ -19,13 +19,13 @@ class AgentDelete(ProjectCase):
     def test_the_agent_deletes_its_own_untouched_proposal(self):
         lines, _ = self.p.run(parse("B1 delete\n"), "claude-code")
         self.assertEqual(lines, ["ok T1 deleted"])
-        self.assertTrue(self.p.state.items[1].deleted)
+        self.assertTrue(self.p.state.tasks[1].deleted)
 
     def test_not_once_the_user_answered(self):
         self.p.run(parse("B1 say keep it\n"), "you")
         lines, _ = self.p.run(parse("B1 delete\n"), "claude-code")
         self.assertTrue(lines[0].startswith("err"), lines)
-        self.assertFalse(self.p.state.items[1].deleted)
+        self.assertFalse(self.p.state.tasks[1].deleted)
 
     def test_not_another_agents_and_not_an_approved_one(self):
         lines, _ = self.p.run(parse("B1 delete\n"), "codex")

@@ -1,4 +1,4 @@
-"""The plain-text answers agents read: an item's card, the item list, the inbox, the rules, a document.
+"""The plain-text answers agents read: a task's card, the task list, the inbox, the rules, a document.
 The change log is in `log`.
 
 The words here are the agent interface: agents parse them, so they stay exactly as they are.
@@ -14,7 +14,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from ..domain import includes, rules, sections, skills, versions
 from . import guide_text
-from ..domain.model import Comment, Doc, FileRef, Input, Item, Message, Proposal
+from ..domain.model import Comment, Doc, FileRef, Input, Task, Message, Proposal
 from ..domain.rules import Held
 from ..domain.state import ProjectState
 from ..domain.text import clean_title, first_line, hm
@@ -35,8 +35,8 @@ class Reading:
     file_ref: FileRefText  # for this caller
     file_path: FileRefText  # always the path on this machine
     skills: Mapping[str, str] = field(default_factory=dict)  # I821: the skills, by name, whose text comes with words that apply one
-    # the agent session on an item, and since when (T858): ("claude-code · worker", unix time), or None
-    holder: Callable[[Item], Optional[Tuple[str, float]]] = field(default=lambda it: None)
+    # the agent session on a task, and since when (T858): ("claude-code · worker", unix time), or None
+    holder: Callable[[Task], Optional[Tuple[str, float]]] = field(default=lambda it: None)
 
 
 def _others(rd: Reading, files: Sequence[FileRef], path: bool = False) -> List[str]:
@@ -59,13 +59,13 @@ def _comment(rd: Reading, c: Comment) -> str:
     return words + "".join(f" [{p}]" for p in _others(rd, c.files, path=True))
 
 
-def when(it: Item) -> str:
+def when(it: Task) -> str:
     """Now or later, and the day a Later ends (D115 #21): "later until 2026-11-10"."""
     return f"later until {it.later_until}" if it.when == "later" and it.later_until else it.when
 
 
-def on_it(rd: Reading, it: Item) -> Optional[Tuple[str, str]]:
-    """The session on an item and how it is, as an agent reads it (T858): ("claude-code · worker", "claude-code · worker
+def on_it(rd: Reading, it: Task) -> Optional[Tuple[str, str]]:
+    """The session on a task and how it is, as an agent reads it (T858): ("claude-code · worker", "claude-code · worker
     (working, heard 3 min ago)"), or None."""
     h = rd.holder(it)
     if not h:
@@ -75,13 +75,13 @@ def on_it(rd: Reading, it: Item) -> Optional[Tuple[str, str]]:
     return h[0], f"{h[0]} ({state}, heard {'just now' if mins < 1 else f'{mins} min ago'})"
 
 
-def finished(st: ProjectState, it: Item) -> str:
-    """A group's progress: its items finished, of all (3/5)."""
-    kids = [k for k in st.live_items() if k.parent == it.n]
+def finished(st: ProjectState, it: Task) -> str:
+    """A group's progress: its tasks finished, of all (3/5)."""
+    kids = [k for k in st.live_tasks() if k.parent == it.n]
     return f"{sum(1 for k in kids if k.status in CLOSED)}/{len(kids)}"
 
 
-def line(st: ProjectState, it: Item) -> str:
+def line(st: ProjectState, it: Task) -> str:
     tags = "".join(f"#{t} " for t in it.tags)
     status = f"group {finished(st, it)}" if it.group else it.status
     out = f"{st.code(it.n)} {it.pri} {when(it)} {status} {tags}{it.title}"
@@ -107,8 +107,8 @@ def listing(st: ProjectState, q: Mapping[str, Sequence[str]]) -> str:
     status, limit = one("status", "active"), int(one("limit", "60") or 60)
     words = one("q").lower().split()
     archived = one("archived")  # "" hide, "1" only archived, "all" both
-    rows: List[Item] = []
-    for it in rules.by_priority(st.live_items()):
+    rows: List[Task] = []
+    for it in rules.by_priority(st.live_tasks()):
         if (archived == "1" and not it.archived) or (not archived and it.archived):
             continue
         if status == "active" and it.status in CLOSED:
@@ -131,10 +131,10 @@ def listing(st: ProjectState, q: Mapping[str, Sequence[str]]) -> str:
     out = [line(st, i) for i in rows[:limit]]
     if len(rows) > limit:
         out.append(f"… {len(rows) - limit} more (add &limit=)")
-    return f"{len(rows)} items" + ("\n" + "\n".join(out) if out else "") + "\n"
+    return f"{len(rows)} tasks" + ("\n" + "\n".join(out) if out else "") + "\n"
 
 
-def _files_of(rd: Reading, it: Item) -> List[str]:
+def _files_of(rd: Reading, it: Task) -> List[str]:
     seen: set = set()
     out: List[str] = []
     for rid in it.srcs:
@@ -146,23 +146,23 @@ def _files_of(rd: Reading, it: Item) -> List[str]:
     return out
 
 
-def card(rd: Reading, it: Item) -> str:
+def card(rd: Reading, it: Task) -> str:
     st = rd.state
     c = st.code(it.n)
     tags = "".join(f" #{t}" for t in it.tags)
-    if it.group:  # T856: what a group is, and its items one by one
+    if it.group:  # T856: what a group is, and its tasks one by one
         out = [f"{c} group {it.pri} {when(it)}{' archived' if it.archived else ''}{tags}  {it.title}  ({finished(st, it)} "
                "finished; a group is never given by /next and never done by itself)"]
-        kids = [k for k in st.live_items() if k.parent == it.n]
+        kids = [k for k in st.live_tasks() if k.parent == it.n]
         if kids:
-            out.append("items: " + " · ".join(f"{st.code(k.n)} {k.status}" for k in kids))
+            out.append("tasks: " + " · ".join(f"{st.code(k.n)} {k.status}" for k in kids))
     else:
         out = [f"{c} {it.pri} {when(it)} {it.status}{' archived' if it.archived else ''}{tags}  {it.title}"]
     if it.deleted:
         out.append(f"deleted by the user together with input {it.deleted}: stop working on it")
     if it.merged_into:
         out.append(f"merged into {st.code(it.merged_into)}")
-    kids = [st.code(i.n) for i in st.live_items() if i.parent == it.n]
+    kids = [st.code(i.n) for i in st.live_tasks() if i.parent == it.n]
     meta = [x for x in (f"parent {st.code(it.parent)}" if it.parent else "",
                         "kids " + " ".join(kids) if kids and not it.group else "",
                         "src " + " ".join(it.srcs) if it.srcs else "",
@@ -178,7 +178,7 @@ def card(rd: Reading, it: Item) -> str:
         out.append("waits for " + ", ".join(f"{st.code(w.n)} ({w.status})" for w in ws)
                    + f": /next gives {c} once {'it is' if len(ws) == 1 else 'they are'} done")
     elif it.after:
-        out.append("waited for " + ", ".join(f"{st.code(n)} ({st.items[n].status if n in st.items else 'gone'})" for n in it.after))
+        out.append("waited for " + ", ".join(f"{st.code(n)} ({st.tasks[n].status if n in st.tasks else 'gone'})" for n in it.after))
     if it.next:
         out.append("next: " + it.next)
     out.extend(_above(st, it))
@@ -211,8 +211,8 @@ def card(rd: Reading, it: Item) -> str:
     return "\n".join(out) + "\n"
 
 
-def _reference(rd: Reading, it: Item) -> List[str]:
-    """F568: last, every input the item came from, in time order, so an agent has the user's words in one read: the
+def _reference(rd: Reading, it: Task) -> List[str]:
+    """F568: last, every input the task came from, in time order, so an agent has the user's words in one read: the
     words as everyone reads them (a voice note's tidied words); one line for those already in the body or the thread
     above."""
     st = rd.state
@@ -240,17 +240,17 @@ def _reference(rd: Reading, it: Item) -> List[str]:
     return out
 
 
-ABOVE_BODY = 2000  # characters of each level's body; past it the agent is told to read that item for the rest
+ABOVE_BODY = 2000  # characters of each level's body; past it the agent is told to read that task for the rest
 SIBLINGS = 20
 
 
-def _above(st: ProjectState, it: Item) -> List[str]:
-    """T853 (r1458): everything the item is part of, from its parent up to the top, so instructions written for
-    everything under a level reach every item below it: each level's whole body (cut long ones and say so), every
-    decision there, its documents; then the items beside it, one line each, so the agent knows what is next to it."""
+def _above(st: ProjectState, it: Task) -> List[str]:
+    """T853 (r1458): everything the task is part of, from its parent up to the top, so instructions written for
+    everything under a level reach every task below it: each level's whole body (cut long ones and say so), every
+    decision there, its documents; then the tasks beside it, one line each, so the agent knows what is next to it."""
     out: List[str] = []
     seen = {it.n}
-    par = st.items.get(it.parent) if it.parent else None
+    par = st.tasks.get(it.parent) if it.parent else None
     while par and par.n not in seen:
         seen.add(par.n)
         c = st.code(par.n)
@@ -264,11 +264,11 @@ def _above(st: ProjectState, it: Item) -> List[str]:
         out.extend(f"  decided: {first_line(x.text, 300)}" for x in par.thread if x.kind == "decide")
         pdocs = st.docs_of(par.n)
         if pdocs:
-            out.append("  docs (read the ones that bear on this item first): "
+            out.append("  docs (read the ones that bear on this task first): "
                        + "; ".join(f"D{d.d} {d.title}" for d in pdocs))
-        par = st.items.get(par.parent) if par.parent else None
+        par = st.tasks.get(par.parent) if par.parent else None
     if it.parent:
-        sibs = [k for k in st.live_items() if k.parent == it.parent and k.n != it.n]
+        sibs = [k for k in st.live_tasks() if k.parent == it.parent and k.n != it.n]
         if sibs:
             out.append(f"beside it under {st.code(it.parent)}:")
             out.extend(f"  {st.code(k.n)} {k.status} {first_line(k.title, 80)}" for k in sibs[:SIBLINGS])
@@ -284,7 +284,7 @@ def _doc_summary(d: Doc) -> str:
 
 def input_card(rd: Reading, inp: Input) -> str:
     st = rd.state
-    scope = f" →{st.code(inp.scope)} {st.items[inp.scope].title}" if inp.scope else ""
+    scope = f" →{st.code(inp.scope)} {st.tasks[inp.scope].title}" if inp.scope else ""
     head = f"{inp.id} {hm(inp.t)} {inp.by}{scope}" + ("" if not inp.acked else " [handled]") \
         + (" [deleted by the user]" if inp.deleted else "") \
         + (" [cancelled: not sent, not to handle]" if inp.kind == "cancelled" else "")
@@ -300,7 +300,7 @@ def input_card(rd: Reading, inp: Input) -> str:
         out.append(f"  organizer: {inp.org.msg}")
     if inp.history:
         out.append(f"  updated: {hm(inp.updated or '')}; latest text above replaces earlier versions")
-        out.append("  linked items: " + " ".join(st.code(n) for n in inp.touched))
+        out.append("  linked tasks: " + " ".join(st.code(n) for n in inp.touched))
     return "\n".join(out)
 
 

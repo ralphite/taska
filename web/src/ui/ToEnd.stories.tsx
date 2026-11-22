@@ -1,19 +1,19 @@
 // The button to the talk's end (T716, Yadong r1171): a round button with a down arrow just above the box, over the
 // middle of the talk. Scrolled up it points down; a tap scrolls to the end. At the end it points up, Back to top, and a
 // tap goes to the top (T752 r1250).
-// The page's own item pane (PaneFrame, ItemPage) and box, with an item's real talk.
+// The page's own task pane (PaneFrame, TaskPage) and box, with a task's real talk.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { boxAt } from '../stories/boxFixtures'
 import { Frames } from '../stories/Frames'
 import { message } from '../stories/fixtures'
-import { pageOf, you } from '../stories/itemPage'
-import { it } from '../stories/itemPageLayoutFixtures'
+import { pageOf, you } from '../stories/taskPage'
+import { it } from '../stories/taskPageLayoutFixtures'
 import { LONG, later } from '../stories/talkFromAgentFixtures'
 
-export default { title: 'UI/Item pane/Button to the end' } satisfies Meta
+export default { title: 'UI/Task pane/Button to the end' } satisfies Meta
 type Story = StoryObj
 
-// an item whose talk is longer than the screen: the report, your questions and the agent's answers
+// a task whose talk is longer than the screen: the report, your questions and the agent's answers
 const talk = [
   you(1, 'The export should keep the filter I set.'),
   { ...message({ id: 2, text: 'Reproduced it: the export reads the list before the filter.' }), t: later(4) },
@@ -24,7 +24,7 @@ const talk = [
   { ...you(7, 'Good, do that.'), t: later(64) },
 ]
 
-/** The item's pane over its box, as the page lays them out; `up`: you have scrolled the talk up from its end. */
+/** The task's pane over its box, as the page lays them out; `up`: you have scrolled the talk up from its end. */
 const page = (up: boolean): Story => ({
   render: () => (
     <Frames phoneWidth={393} deskWidth={900} height={760}>

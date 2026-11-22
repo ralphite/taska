@@ -53,11 +53,11 @@ export const SORT_WORDS: [string, string][] = [
   ['upd', 'Last updated'],
 ]
 
-export const TABS = ['items', 'inputs', 'archive', 'rules'] as const
+export const TABS = ['tasks', 'inputs', 'archive', 'rules'] as const
 export type Tab = (typeof TABS)[number]
-export const TAB_WORD: Record<Tab, string> = { items: 'Items', inputs: 'Inputs', archive: 'Archive', rules: 'Rules' }
+export const TAB_WORD: Record<Tab, string> = { tasks: 'Tasks', inputs: 'Inputs', archive: 'Archive', rules: 'Rules' }
 
-/** What a change did, after the item's code: "F12 is done". */
+/** What a change did, after the task's code: "F12 is done". */
 export const DID: Record<string, string> = {
   open: 'is open',
   doing: 'is in progress',

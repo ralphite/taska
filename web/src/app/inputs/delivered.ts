@@ -1,4 +1,4 @@
-// What you sent shows where you are: a reply to the item open takes its talk to its end at once (the phone as the
+// What you sent shows where you are: a reply to the task open takes its talk to its end at once (the phone as the
 // desktop, T589 #10486), where your words and then the reply show. Once
 // Taska has it: what you took back meanwhile is deleted there behind you (unless the organizer or your agent has it
 // already: then it says to delete it from Inputs); the box's line says what became of it; it shows up where you are,
@@ -6,7 +6,7 @@
 
 import { inputCode } from '../../model/words'
 import { reached } from '../../model/inputStates'
-import { openItemN } from '../../model/route'
+import { openTaskN } from '../../model/route'
 import { codeOf, liveN, type ProjectModel } from '../../model/project'
 import type { BoxStore } from '../../stores/box'
 import type { Outgoing } from '../../model/outgoing'
@@ -33,10 +33,10 @@ export class Delivered {
     this.d = d
   }
 
-  /** Sent to `scope`: the item open shows the end of its talk, where the reply is. */
+  /** Sent to `scope`: the task open shows the end of its talk, where the reply is. */
   replied(slug: string, scope: string): void {
     const m = this.d.model(slug)
-    const n = openItemN(this.d.route.getState().route)
+    const n = openTaskN(this.d.route.getState().route)
     if (m && n != null && codeOf(m, liveN(m, n)) === scope) requestAnimationFrame(() => this.d.fields.toEnd('talk'))
   }
 

@@ -7,7 +7,7 @@ export type Align = 'text-left' | 'text-center' | 'text-right'
 
 export interface ListNode {
   ordered: boolean
-  items: { text: string; subs: ListNode[] }[]
+  tasks: { text: string; subs: ListNode[] }[]
 }
 
 export type MdBlock =
@@ -55,7 +55,7 @@ function runs(text: string): { kind: string; lines: string[] }[] {
       cur = null
     } else if (/^\s*>/.test(l)) add('quote', l)
     else if (LIST_LINE.test(l)) add(/^\s*\d/.test(l) ? 'ol' : 'ul', l)
-    else if ((open()?.kind === 'ol' || open()?.kind === 'ul') && /^\s{2,}\S/.test(l)) open()?.lines.push(l) // a list item goes on
+    else if ((open()?.kind === 'ol' || open()?.kind === 'ul') && /^\s{2,}\S/.test(l)) open()?.lines.push(l) // a list task goes on
     else if (/^\s*\|/.test(l) && TABLE_SEP.test(lines[i + 1] || '')) {
       const from = i
       i += 2
@@ -67,30 +67,30 @@ function runs(text: string): { kind: string; lines: string[] }[] {
   return out
 }
 
-/** A list's lines as a tree: an item indented two spaces more is a level deeper, under the item before it. */
+/** A list's lines as a tree: a task indented two spaces more is a level deeper, under the task before it. */
 export function listOf(text: string): ListNode | null {
-  const items: { lv: number; ol: boolean; t: string }[] = []
+  const tasks: { lv: number; ol: boolean; t: string }[] = []
   for (const l of text.split('\n')) {
     const m = /^(\s*)([-*+]|\d+[.)])\s+/.exec(l)
-    if (m) items.push({ lv: Math.floor(m[1].replace(/\t/g, '  ').length / 2), ol: /\d/.test(m[2]), t: l.slice(m[0].length) })
-    else if (items.length) items[items.length - 1].t += ' ' + l.trim()
+    if (m) tasks.push({ lv: Math.floor(m[1].replace(/\t/g, '  ').length / 2), ol: /\d/.test(m[2]), t: l.slice(m[0].length) })
+    else if (tasks.length) tasks[tasks.length - 1].t += ' ' + l.trim()
   }
   const nest = (from: number, lv: number): [ListNode, number] => {
-    const node: ListNode = { ordered: items[from].ol, items: [] }
+    const node: ListNode = { ordered: tasks[from].ol, tasks: [] }
     let i = from
-    while (i < items.length && items[i].lv >= lv) {
-      if (items[i].lv > lv) {
-        const [sub, next] = nest(i, items[i].lv)
-        node.items[node.items.length - 1]?.subs.push(sub)
+    while (i < tasks.length && tasks[i].lv >= lv) {
+      if (tasks[i].lv > lv) {
+        const [sub, next] = nest(i, tasks[i].lv)
+        node.tasks[node.tasks.length - 1]?.subs.push(sub)
         i = next
         continue
       }
-      node.items.push({ text: items[i].t, subs: [] })
+      node.tasks.push({ text: tasks[i].t, subs: [] })
       i++
     }
     return [node, i]
   }
-  return items.length ? nest(0, items[0].lv)[0] : null
+  return tasks.length ? nest(0, tasks[0].lv)[0] : null
 }
 
 function tableOf(lines: string[]): MdBlock {
@@ -107,8 +107,8 @@ function tableOf(lines: string[]): MdBlock {
   return { kind: 'table', head, align, rows }
 }
 
-/** A list run's items, each with the lines that go on it, as one line. */
-const itemsOf = (lines: string[]) =>
+/** A list run's tasks, each with the lines that go on it, as one line. */
+const tasksOf = (lines: string[]) =>
   lines.reduce<string[]>((acc, l) => {
     if (/^\s*[-*+]\s/.test(l)) acc.push(l)
     else acc[acc.length - 1] += ' ' + l.trim()
@@ -150,11 +150,11 @@ export function blocks(text: string, asking = false): MdBlock[] {
       out.push({ kind: 'para', text: r.lines.join('\n') })
       continue
     }
-    const items = r.kind === 'ul' ? itemsOf(r.lines) : []
-    if (items.length && (items.every((l) => CHOICE.test(l)) || (asking && items.some((l) => CHOICE.test(l))))) {
+    const tasks = r.kind === 'ul' ? tasksOf(r.lines) : []
+    if (tasks.length && (tasks.every((l) => CHOICE.test(l)) || (asking && tasks.some((l) => CHOICE.test(l))))) {
       // the list in runs: its plain points as a list, its choices as choices
       const parts: { c: boolean; ls: string[] }[] = []
-      for (const l of items) {
+      for (const l of tasks) {
         const c = CHOICE.test(l)
         if (parts.at(-1)?.c !== c) parts.push({ c, ls: [] })
         parts.at(-1)?.ls.push(l)

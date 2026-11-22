@@ -27,7 +27,7 @@ export const VOICE_PLACES = {
   card: "the Draft card (the desktop's New input page)",
   row: "its row in the desktop's New input list",
   line: "the line over the phone's box (New input)",
-  talk: "your bubble in the item's talk",
+  talk: "your bubble in the task's talk",
 } as const
 export type VoicePlace = keyof typeof VOICE_PLACES
 
@@ -65,7 +65,7 @@ const SENT_HEARING = { chip: null, card: null, row: TRANSCRIBING, line: { say: '
 /** the first words are in, the strong model is still confirming them: no longer "transcribing" (r1217) */
 const CONFIRMING: Show = { say: 'Confirming…', tone: 'busy' }
 const SENT_CONFIRMING = { ...SENT_HEARING, row: CONFIRMING, line: { say: 'Sent · confirming…', tone: 'busy' }, talk: { say: 'confirming', tone: 'busy' } } as const
-/** what became of it: the input's line says it; the item's talk stays as sent */
+/** what became of it: the input's line says it; the task's talk stays as sent */
 const BECAME = { chip: null, card: null, row: 'became', line: 'became', talk: null } as const
 
 /** Every state, the normal way first. */
@@ -87,8 +87,8 @@ export const VOICE_STATES = {
   sentTranscribing: { phase: 'sent', label: 'Sent, words to come', show: SENT_HEARING },
   sentFastWords: { phase: 'sent', label: 'Sent with the fast words, confirming', show: SENT_CONFIRMING },
   organizing: { phase: 'sent', label: 'Organizing', show: BECAME },
-  created: { phase: 'sent', label: 'Created an item', show: { ...BECAME, talk: 'became' } },
-  added: { phase: 'sent', label: 'Added to an item', show: BECAME },
+  created: { phase: 'sent', label: 'Created a task', show: { ...BECAME, talk: 'became' } },
+  added: { phase: 'sent', label: 'Added to a task', show: BECAME },
   forAgent: { phase: 'sent', label: 'For an agent', show: BECAME },
   handled: { phase: 'sent', label: 'Handled by an agent', show: BECAME },
   organizeFailed: { phase: 'sent', label: "Couldn't organize", show: BECAME },
@@ -118,8 +118,8 @@ export const VOICE_EVENTS = {
   back: 'Taska back',
   retry: 'Retry',
   taken: 'Taska has it',
-  created: 'Made an item',
-  added: 'Added to an item',
+  created: 'Made a task',
+  added: 'Added to a task',
   agent: 'Left for an agent',
   handled: 'Handled',
   organizeFailed: 'Organizer failed',

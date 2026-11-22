@@ -7,7 +7,7 @@ import { useBackSwipe, useDrawerPull } from './phoneGestures'
 import { gripVars } from '../stores/grips'
 import { useLayout, useServices, useStores, useStoreValue } from '../app/context'
 import { useAway, useProjectModel, type ProjectRoute } from '../app/hooks'
-import { projectTags } from '../model/items'
+import { projectTags } from '../model/tasks'
 import { usePaneRef } from '../app/panes'
 import { blockedAgent } from '../model/agents'
 import { needsYou } from '../model/needStates'
@@ -19,7 +19,7 @@ import { FootContainer } from '../features/composer/FootContainer'
 import { BoxContainer } from '../features/composer/BoxContainer'
 import { ToastContainer } from '../features/feedback/ToastContainer'
 import { BlockedBar } from '../features/agents/BlockedBar'
-import { ItemListContainer } from '../features/list/ItemListContainer'
+import { TaskListContainer } from '../features/list/TaskListContainer'
 import { SidebarContainer } from '../features/sidebar/SidebarContainer'
 import { useSideProjects } from '../app/projectLists'
 import { SideListContainer } from '../features/side/SideListContainer'
@@ -86,7 +86,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const sideHidden = useStoreValue(stores.ui, (s) => s.sideHidden)
   const help = route.place.kind === 'help'
   const settings = route.place.kind === 'settings' || help
-  const full = useStoreValue(stores.route, (s) => s.full) && route.place.kind === 'item' && !settings
+  const full = useStoreValue(stores.route, (s) => s.full) && route.place.kind === 'task' && !settings
   const shownSide = useStoreValue(stores.route, (s) => s.side)
   // the Rules tab is the rules document over both columns (I693)
   const rulesTab = route.tab === 'rules' && (route.place.kind === 'tab' || route.place.kind === 'rules')
@@ -98,7 +98,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const compose = composing(route)
   const filtersOpen = useStoreValue(stores.ui, (s) => s.deskFilters)
   const model = useProjectModel(route.slug)
-  const tags = useMemo(() => (model ? projectTags(model.items) : []), [model])
+  const tags = useMemo(() => (model ? projectTags(model.tasks) : []), [model])
   const set = filtersSet(route.tab, route.list)
   // the foot's height and its box's middle (from the foot's top): what scrolls runs on under the box to its middle in
   // dark, where the box floats over the talk, and stops at the foot's top in light, so a scrollbar is never under it (B739)
@@ -140,12 +140,12 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
             tags={tags}
             on={{ ...filterEvents(app), toggle: () => stores.ui.getState().setDeskFilters(!filtersOpen) }}
           />
-          <section data-part="items" className="@container/list flex min-h-0 flex-1 flex-col">
-            {shownSide ? <SideListContainer slug={route.slug} side={shownSide} /> : <ItemListContainer route={route} />}
+          <section data-part="tasks" className="@container/list flex min-h-0 flex-1 flex-col">
+            {shownSide ? <SideListContainer slug={route.slug} side={shownSide} /> : <TaskListContainer route={route} />}
           </section>
         </div>
         {/* the pane over the box; on the New input page the pane is only its bar and the box's page fills the rest. An
-            item full width (O) takes the list's column too */}
+            task full width (O) takes the list's column too */}
         <div data-part="pane-column" hidden={settings} className={`row-start-2 flex min-h-0 min-w-0 flex-col ${full || rulesTab ? 'col-span-2 col-start-1' : 'col-start-2'}`}>
           <DetailContainer route={route} place="group-data-[compose]/app:flex-none" hidden={settings} full={full} />
           <FootContainer
@@ -222,10 +222,10 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
     const t = window.setTimeout(() => setClosing(false), 240)
     return () => clearTimeout(t)
   }, [closing])
-  const open = route.place.kind === 'item' || route.place.kind === 'doc'
+  const open = route.place.kind === 'task' || route.place.kind === 'doc'
   const sheet = useStoreValue(stores.sheet, (s) => !!s.spec)
   const drawerPull = useDrawerPull(drawer && !sheet, () => app.nav.drawer(false))
-  const backSwipe = useBackSwipe(route.place.kind === 'item' && !sheet && !drawer, () => app.actions.run('back'))
+  const backSwipe = useBackSwipe(route.place.kind === 'task' && !sheet && !drawer, () => app.actions.run('back'))
   const floating = backSwipe.pull
   // Settings' pages (Documents, Activity and Deleted are pages of it on the phone)
   const help = route.place.kind === 'help'
@@ -239,7 +239,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
   // the Rules tab reads the rules document in place of the list (I693); its editor has no box under it
   const rulesTab = route.tab === 'rules' && (route.place.kind === 'tab' || route.place.kind === 'rules')
   const rulesEditing = useStoreValue(stores.docView, (s) => s.editing && s.newFor == null) && rulesTab
-  // while the item's page is swiped back, what it was opened from shows underneath it: the list, or the search page
+  // while the task's page is swiped back, what it was opened from shows underneath it: the list, or the search page
   // (F479), which stays while a result is open, as you left it
   const beneath = (!open && !settings) || !!floating
   const under = beneath && !searching
@@ -281,8 +281,8 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
         />
         <PhoneTabs tabs={tabs} filtersSet={phoneSet.length > 0} showFilter={route.tab !== 'inputs' && route.tab !== 'rules'} hidden={!under} on={{ tab: (t) => app.nav.tab(t), filters: () => app.sheets.open({ kind: 'filters' }, { focus: false }) }} />
         <FilterStrip set={phoneSet} hidden={!under || route.tab === 'inputs' || rulesTab || !phoneSet.length} onUnset={(k) => app.nav.setList({ [k]: 'all' })} onReset={() => filterEvents(app).reset()} />
-        <section data-part="items" className="flex min-h-0 flex-1 flex-col" hidden={!under || route.tab === 'inputs' || rulesTab}>
-          <ItemListContainer route={route} />
+        <section data-part="tasks" className="flex min-h-0 flex-1 flex-col" hidden={!under || route.tab === 'inputs' || rulesTab}>
+          <TaskListContainer route={route} />
         </section>
         {rulesTab ? <RulesContainer route={route} place="" hidden={!under} footRoom={footH} /> : null}
         <InputsContainer route={route} hidden={!under || route.tab !== 'inputs'} />

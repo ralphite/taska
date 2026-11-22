@@ -137,7 +137,7 @@ class VoiceHealth:
             made = project.store.db.get(KEY)
             ref = made.get("ref") if isinstance(made, dict) else None
             if ref:
-                it = next((x for x in project.state.items.values() if project.state.code(x.n) == ref), None)
+                it = next((x for x in project.state.tasks.values() if project.state.code(x.n) == ref), None)
                 if it is not None and it.status not in CLOSED and not it.archived:
                     return
             title, body = said

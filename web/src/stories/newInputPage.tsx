@@ -19,9 +19,9 @@ import type { FileRef, Input, OrgNote, ProjectRow } from '../model/types'
 import { RecBar } from '../ui/PlaceVoice'
 import { toneOf } from '../ui/tones'
 import { boxAt, out } from './boxFixtures'
-import { T, input, item, modelOf } from './fixtures'
+import { T, input, task, modelOf } from './fixtures'
 import { Frame, PHONE } from './Frames'
-import { talkEnv } from './itemFixtures'
+import { talkEnv } from './taskFixtures'
 import { sideOn } from './sideFixtures'
 import { LiveWords } from './doubtsFixtures'
 import { useInputs } from './inputFixtures'
@@ -37,15 +37,15 @@ const voice = (n: number, len: string, tr?: string): FileRef => {
   return { f, name: `voice_${len}.webm`, mime: 'audio/webm', voice: tr === undefined ? waiting(f) : record(f, tr) }
 }
 
-const ITEMS = [
-  item({ n: 479, status: 'doing', title: '搜索默认语音输入进行语义匹配' }),
-  item({ n: 659, status: 'done', title: 'Input item 布局从左右两栏改为上下结构' }),
-  item({ n: 642, status: 'doing', wait: { id: 1, kind: 'ask', text: 'Which first?', by: 'claude-code', files: [] }, title: 'Gemini 并行审查所有 Storybook 故事，按优先级列出设计缺陷' }),
-  item({ n: 656, tags: ['bug'], status: 'done', title: '关联的 session 不去做任务分析' }),
-  item({ n: 657, status: 'done', title: '悬浮菜单拆分为 comment 与原地录音 voice 两个按钮' }),
-  item({ n: 447, status: 'open', title: '创建 manager session 监听 Taska 任务并做 task delegation，防止卡住并统计 token/耗时' }),
-  item({ n: 588, status: 'review', title: 'The export keeps the filter and the sort you set' }),
-  item({ n: 651, tags: ['bug'], status: 'proposed', title: 'CSV 导出的列顺序和页面不一致' }),
+const TASKS = [
+  task({ n: 479, status: 'doing', title: '搜索默认语音输入进行语义匹配' }),
+  task({ n: 659, status: 'done', title: 'Input task 布局从左右两栏改为上下结构' }),
+  task({ n: 642, status: 'doing', wait: { id: 1, kind: 'ask', text: 'Which first?', by: 'claude-code', files: [] }, title: 'Gemini 并行审查所有 Storybook 故事，按优先级列出设计缺陷' }),
+  task({ n: 656, tags: ['bug'], status: 'done', title: '关联的 session 不去做任务分析' }),
+  task({ n: 657, status: 'done', title: '悬浮菜单拆分为 comment 与原地录音 voice 两个按钮' }),
+  task({ n: 447, status: 'open', title: '创建 manager session 监听 Taska 任务并做 task delegation，防止卡住并统计 token/耗时' }),
+  task({ n: 588, status: 'review', title: 'The export keeps the filter and the sort you set' }),
+  task({ n: 651, tags: ['bug'], status: 'proposed', title: 'CSV 导出的列顺序和页面不一致' }),
 ]
 
 const LONG =
@@ -59,7 +59,7 @@ const INPUTS: Input[] = [
   input({ id: 'r1030', t: at(2), text: 'The export button does nothing on the orders page, see the screenshot.', files: [{ f: 'f90-orders-error.png', name: 'orders-error.png', mime: 'image/png', size: 145_408 }] }),
   input({ id: 'r1029', t: at(4), acked: true, touched: [479], text: '', files: [voice(29, '0-05', '加上，我现在做桌面版本的设计。')], org: org('Noted on T479') }),
   input({ id: 'r1028', t: at(12), text: '', files: [voice(28, '0-09', '把 T642 的结果按优先级排好，先给我看 P0 的。')], org: org('Some commands failed: err: 503 Service Unavailable', { ok: false, changed: false }) }),
-  input({ id: 'r1027', t: at(40), acked: true, touched: [659], text: '', files: [voice(27, '0-28', 'Input item 现在的设计还是很有问题。我们现在分成两栏，像右边的这个状态，放在右边我觉得不合适，应该放在下面。不是左右，而是上下。')], org: org('Created T659') }),
+  input({ id: 'r1027', t: at(40), acked: true, touched: [659], text: '', files: [voice(27, '0-28', 'Input task 现在的设计还是很有问题。我们现在分成两栏，像右边的这个状态，放在右边我觉得不合适，应该放在下面。不是左右，而是上下。')], org: org('Created T659') }),
   input({ id: 'r1026', t: at(55), acked: true, touched: [657], text: '', files: [voice(26, '1-00', LONG)], org: org('Created T657') }),
   input({ id: 'r1025', t: at(70), kind: 'cancelled', text: '', files: [voice(25, '0-04', 'Maybe the inputs list should say each day once.')] }),
   input({
@@ -103,7 +103,7 @@ const OUTBOX = [
   out({ q: 'q8', slug: 'taska', text: 'Also check the phone layout after that.', state: 'failed', net: true }),
   out({ q: 'q9', slug: 'taska', text: '把输入列表上面的搜索框去掉，用侧栏里的搜索。', state: 'sending' }),
 ]
-const M = modelOf(ITEMS, INPUTS, { slug: 'taska', title: 'taska', organizer: { on: true, model: 'gemini-flash-latest', busy: ['r1030'] } })
+const M = modelOf(TASKS, INPUTS, { slug: 'taska', title: 'taska', organizer: { on: true, model: 'gemini-flash-latest', busy: ['r1030'] } })
 const title = (slug: string) => ({ home: 'Home' })[slug] ?? slug
 const DRAFTS = { [draftKey({ kind: 'amend', mode: 'edit', id: 'r1023' })]: 'my edit' }
 

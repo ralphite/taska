@@ -1,4 +1,4 @@
-"""Keeping a page's copy of a project up to date with as little as possible: each item, input and document carries
+"""Keeping a page's copy of a project up to date with as little as possible: each task, input and document carries
 the change number at which its view last changed; a page names the number its copy is at (its cursor) and gets only
 what changed after it, and the keys of what went. Changes are found by comparing what would be sent with what was,
 so none is missed. A cursor from before a restart gets everything."""
@@ -11,7 +11,7 @@ import threading
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-KINDS = (("items", "n"), ("inputs", "id"), ("docs", "d"), ("voices", "f"))
+KINDS = (("tasks", "n"), ("inputs", "id"), ("docs", "d"), ("voices", "f"))
 Entities = Dict[str, List[Dict[str, Any]]]
 
 

@@ -1,6 +1,6 @@
 // Yadong's requirements on documents (D29, "Documents"; T475, D45): each check is named by the codes of his inputs, so
 // a change that breaks one is stopped before it ships with his own words.
-// guards: src/features/docs/ src/features/composer/ src/features/item/ src/app/docs/ src/model/docs.ts src/model/boxFoot.ts src/pages/DetailContainer.tsx src/pages/ProjectPageContainer.tsx src/ui/PaneFrame.tsx src/ui/PlaceVoice.tsx src/app/voice/docVoice.ts src/app/RecMeter.tsx
+// guards: src/features/docs/ src/features/composer/ src/features/task/ src/app/docs/ src/model/docs.ts src/model/boxFoot.ts src/pages/DetailContainer.tsx src/pages/ProjectPageContainer.tsx src/ui/PaneFrame.tsx src/ui/PlaceVoice.tsx src/app/voice/docVoice.ts src/app/RecMeter.tsx
 import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
 import { blockPick, blockSay, box, boxAux, boxLine, boxMain, choice, commentRail, docBlock, docBlocks, docCard, draftFiles, duo, form, partSay, placeRec, sayCancel, sayCheck, saySend, sendChoices, talk, threadCounts } from '../ui'
@@ -43,11 +43,11 @@ test('r447 r467: the text of a document stays where it is when a comment comes, 
   expect(side.x).toBeGreaterThanOrEqual(text.x + text.width - 1)
 })
 
-test('r473 r500: each item of a list has its own two buttons, the voice one first, reached by moving the pointer across', async ({
+test('r473 r500: each task of a list has its own two buttons, the voice one first, reached by moving the pointer across', async ({
   page,
   request,
 }) => {
-  test.skip(!isDesk(page), 'the phone picks a list item with a tap')
+  test.skip(!isDesk(page), 'the phone picks a list task with a tap')
   const p = await project(request, {
     ...LOOP,
     then: `${LOOP.then}T4 doc Bakes
@@ -61,7 +61,7 @@ test('r473 r500: each item of a list has its own two buttons, the voice one firs
   await li.hover()
   const say = blockSay(page),
     pick = blockPick(page)
-  await expect(say).toHaveCount(1) // only the item under the pointer
+  await expect(say).toHaveCount(1) // only the task under the pointer
   await expect(pick).toHaveCount(1)
   const s = await say.boundingBox(),
     c = await pick.boundingBox(),
@@ -69,7 +69,7 @@ test('r473 r500: each item of a list has its own two buttons, the voice one firs
   if (!s || !c || !t) throw new Error('not drawn')
   expect(s.x).toBeLessThan(c.x) // the voice one first
   expect(Math.abs(s.y - c.y)).toBeLessThan(2) // side by side
-  // across from the item to the comment button: they stay, and it is this item that is picked
+  // across from the task to the comment button: they stay, and it is this task that is picked
   await page.mouse.move(t.x + t.width - 4, s.y + s.height / 2)
   await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2, { steps: 12 })
   await pick.click()
@@ -131,7 +131,7 @@ test('r420: a sent form is greyed and says Sent (R3-1 #3: one word for an answer
   await expect.poll(() => p.read('D1')).toMatch(/\(x\) Pears/i)
 })
 
-test("r736 r722: ticks wait, the box's mic stays the mic; Send choices is in the line above the box, and the document's top and its card on the item say what is not sent", async ({
+test("r736 r722: ticks wait, the box's mic stays the mic; Send choices is in the line above the box, and the document's top and its card on the task say what is not sent", async ({
   page,
   request,
 }) => {
@@ -172,7 +172,7 @@ test("r736 r722: ticks wait, the box's mic stays the mic; Send choices is in the
     first = await docBlocks(page).locator('section[data-key]').first().boundingBox()
   expect(t && first && t.y < first.y).toBe(true)
   expect(await p.read('D1')).not.toMatch(/\[x\] Apples/i) // nothing sent yet
-  // on the item, the document's card says it too, after a reload
+  // on the task, the document's card says it too, after a reload
   await open(page, p, 'T4')
   const card = docCard(page, 'Pick the fruit')
   await expect(card).toContainText('1 choice not sent')
@@ -207,7 +207,7 @@ test('r736 #6754: what is written in the box goes with Send choices as their not
   await expect(boxLine(page)).toContainText('1 choice not sent')
   await box(page).fill('Ripe ones only, please')
   await sendChoices(page).click()
-  // one reply on the item: the choices, then the note
+  // one reply on the task: the choices, then the note
   await expect.poll(() => p.read('T4')).toMatch(/Answered in D1:[\s\S]*Pears[\s\S]*Ripe ones only, please/)
   await expect(box(page)).toHaveValue('')
   await expect.poll(() => p.read('D1')).toMatch(/\[x\] Pears/i)
@@ -274,12 +274,12 @@ test('B715 r1169: a block picked, its comment buttons float over the page: no wo
   expect(await below()).toEqual(before)
 })
 
-test('B715 r1175 r1176: on the phone an item of a list picked, its buttons sit right at its edge and stay there: over time, after an update, while speaking', async ({
+test('B715 r1175 r1176: on the phone a task of a list picked, its buttons sit right at its edge and stay there: over time, after an update, while speaking', async ({
   page,
   request,
 }) => {
-  test.skip(isDesk(page), "the desktop's buttons go beside the item pointed at (BlockActs)")
-  const long = 'A long item whose words wrap onto more lines of the phone, so its edge is not one line below its top. '.repeat(7).trim()
+  test.skip(isDesk(page), "the desktop's buttons go beside the task pointed at (BlockActs)")
+  const long = 'A long task whose words wrap onto more lines of the phone, so its edge is not one line below its top. '.repeat(7).trim()
   const p = await project(request, {
     ...LOOP,
     then: `${LOOP.then}T4 doc The plan
@@ -300,7 +300,7 @@ test('B715 r1175 r1176: on the phone an item of a list picked, its buttons sit r
   const list = docBlock(page, 'Apples')
   await expect(list).toBeVisible()
   const words = async () => Promise.all(['First part', 'Apples', 'Last part'].map(async (w) => (await docBlock(page, w).boundingBox())?.y))
-  // the buttons' edge against the edge of the item lit amber (under it, or over it when the screen has no room)
+  // the buttons' edge against the edge of the task lit amber (under it, or over it when the screen has no room)
   const gap = () =>
     page.evaluate(() => {
       const row = document.querySelector('[data-place-row]')?.getBoundingClientRect()
@@ -309,15 +309,15 @@ test('B715 r1175 r1176: on the phone an item of a list picked, its buttons sit r
       return Math.round(document.querySelector('[data-place-row]')?.hasAttribute('data-over') ? lit.top - row.bottom : row.top - lit.bottom)
     })
   const from = async () => page.evaluate(() => Math.round((document.querySelector('[data-place-row]')?.getBoundingClientRect().top ?? 0) - (document.querySelector('[data-doc-blocks] li[data-q]')?.getBoundingClientRect().top ?? 0)))
-  for (const item of ['Pears', 'Red pears', 'A long item', 'Cherries']) {
-    const li = list.locator('li').filter({ hasText: item }).last()
+  for (const task of ['Pears', 'Red pears', 'A long task', 'Cherries']) {
+    const li = list.locator('li').filter({ hasText: task }).last()
     const before = await words()
-    // at the right end of its first line: its own words, not a nested item's
+    // at the right end of its first line: its own words, not a nested task's
     const b = await li.boundingBox()
     await page.touchscreen.tap(b!.x + b!.width - 8, b!.y + 8)
-    // the item tapped is the one lit, its buttons at its edge at once, and the words did not move
+    // the task tapped is the one lit, its buttons at its edge at once, and the words did not move
     await expect(li).toHaveAttribute('data-q', '')
-    expect(await gap(), item).toBe(6)
+    expect(await gap(), task).toBe(6)
     const at = await from()
     expect(await words()).toEqual(before)
     // a while later and after an update arrives, still there (B715 r1176: "after a while they jump")
@@ -325,12 +325,12 @@ test('B715 r1175 r1176: on the phone an item of a list picked, its buttons sit r
     await p.doAs('D1 reply ¶1 An agent note')
     await expect(threadCounts(page).first()).toBeVisible()
     await page.waitForTimeout(1500)
-    expect(await gap(), item).toBe(6)
-    expect(await from(), item).toBe(at)
+    expect(await gap(), task).toBe(6)
+    expect(await from(), task).toBe(at)
     await page.touchscreen.tap(b!.x + b!.width - 8, b!.y + 8)
     await expect(page.locator('[data-place-row]')).toHaveCount(0)
   }
-  // speaking: the strip where the buttons were, by the same item
+  // speaking: the strip where the buttons were, by the same task
   const plums = list.locator('li').filter({ hasText: 'Plums' })
   const b = await plums.boundingBox()
   await page.touchscreen.tap(b!.x + b!.width - 8, b!.y + 8)
@@ -382,12 +382,12 @@ D1 reply ¶3 An agent note to delete
   }
 })
 
-test("r691 #6505: a document open on the desktop is a column of its own beside its item's conversation, which holds its comments, once the pane is wide enough for two columns (B505, B557)", async ({
+test("r691 #6505: a document open on the desktop is a column of its own beside its task's conversation, which holds its comments, once the pane is wide enough for two columns (B505, B557)", async ({
   page,
   request,
 }) => {
   test.skip(!isDesk(page), 'the phone shows a document in a sheet')
-  await page.setViewportSize({ width: 1920, height: 900 }) // r783: four columns only where an item would have them too
+  await page.setViewportSize({ width: 1920, height: 900 }) // r783: four columns only where a task would have them too
   const p = await project(request, {
     ...LOOP,
     then: `${LOOP.then}T4 doc The plan
@@ -412,7 +412,7 @@ test("r691 #6505: a document open on the desktop is a column of its own beside i
   await expect(commentRail(page)).toHaveCount(0) // no fifth column of comments
 })
 
-test('r783: at 1440 wide a document on the desktop is one column, the document alone: the four columns come only where an item would have two in its pane too (B557)', async ({
+test('r783: at 1440 wide a document on the desktop is one column, the document alone: the four columns come only where a task would have two in its pane too (B557)', async ({
   page,
   request,
 }) => {

@@ -124,9 +124,9 @@ class ApiContractTest(unittest.TestCase):
                   {"op": "archive", "refs": ["B1"], "on": True})
         view = self.get(self.project + "/api/view")
         self.assertTrue(view["full"])
-        self.assertEqual([(it["n"], it["archived"]) for it in view["items"] if it["n"] in (1, 2)], [(1, True), (2, True)])
-        before = {kind: view[kind] for kind in ("items", "inputs", "docs")}
-        paths = ["/B1", "/T2", "/D1", "/r1", "/rules", "/inbox", "/items?status=all&archived=all", "/log?n=100"]
+        self.assertEqual([(it["n"], it["archived"]) for it in view["tasks"] if it["n"] in (1, 2)], [(1, True), (2, True)])
+        before = {kind: view[kind] for kind in ("tasks", "inputs", "docs")}
+        paths = ["/B1", "/T2", "/D1", "/r1", "/rules", "/inbox", "/tasks?status=all&archived=all", "/log?n=100"]
         answers = {p: self.call(self.project + p + ("&" if "?" in p else "?") + "ui=1") for p in paths}
         for status, body in answers.values():
             self.assertEqual(status, 200, body)
@@ -138,7 +138,7 @@ class ApiContractTest(unittest.TestCase):
         self.stop()
         counts, warnings = inspect(self.data / "contract-check/taska.db")
         self.assertEqual(warnings, [])
-        self.assertEqual((counts["items"], counts["docs"], counts["inputs"]), (2, 2, 1))
+        self.assertEqual((counts["tasks"], counts["docs"], counts["inputs"]), (2, 2, 1))
         self.start()
         after = self.get(self.project + "/api/view?cursor=" + view["cursor"])
         self.assertTrue(after["full"], "a cursor from before a restart must get the full state")
@@ -148,19 +148,19 @@ class ApiContractTest(unittest.TestCase):
         self.assertEqual(self.call(self.project + "/f/" + fid), (200, b"kept attachment"))
 
     def test_command_retries_and_errors_do_not_duplicate_changes(self) -> None:
-        command = {"op": "new", "title": "One item"}
+        command = {"op": "new", "title": "One task"}
         first = self.page(command, request_id="same-request")
         self.assertEqual(self.page(command, request_id="same-request"), first)
-        self.assertEqual(len(self.get(self.project + "/api/view")["items"]), 1)
+        self.assertEqual(len(self.get(self.project + "/api/view")["tasks"]), 1)
         failed = self.do("nonsense here\n99 say missing\nT1 P7\nT1 merge T1\n")
         self.assertEqual(sum(line.startswith("err ") for line in failed.splitlines()), 4)
-        self.assertEqual(len(self.get(self.project + "/api/view")["items"]), 1)
+        self.assertEqual(len(self.get(self.project + "/api/view")["tasks"]), 1)
         self.stop()
         db_path = self.data / "contract-check/taska.db"
         with closing(sqlite3.connect(db_path)) as db:
             stored = db.execute("SELECT seq,data FROM events ORDER BY seq").fetchall()
         self.start()
-        self.assertEqual(len(self.get(self.project + "/api/view")["items"]), 1)
+        self.assertEqual(len(self.get(self.project + "/api/view")["tasks"]), 1)
         self.stop()
         with closing(sqlite3.connect(db_path)) as db:
             self.assertEqual(db.execute("SELECT seq,data FROM events ORDER BY seq").fetchall(), stored)

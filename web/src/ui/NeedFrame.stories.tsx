@@ -16,14 +16,14 @@ const foot = (
   </>
 )
 
-/** The card an item's need and a rules proposal are drawn in (T763): to decide, decided, and with no buttons. */
+/** The card a task's need and a rules proposal are drawn in (T763): to decide, decided, and with no buttons. */
 export const Card: Story = {
   name: 'The card: to decide, decided, no buttons',
   render: () => (
     <Frames phoneWidth={393} deskWidth={760}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['to decide', <div className="p-3"><NeedFrame icon="propose" title="Claude proposes a change" t={t} now={now} body="Ask before pushing to main." foot={foot} /></div>],
             ['decided', <div className="p-3"><NeedFrame icon="propose" title="Claude proposes a change" t={t} now={now} done body="Ask before pushing to main." foot={foot} /></div>],
             ['no buttons', <div className="p-3"><NeedFrame icon="ask" title="Claude asks you" t={t} now={now} quiet body="Which export should change?" foot={null} hint="↓ Answer below" /></div>],

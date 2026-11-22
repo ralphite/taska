@@ -1,11 +1,11 @@
-// What you typed in an item's editor and in its subitem title and did not save, kept in this browser per project
+// What you typed in a task's editor and in its subtask title and did not save, kept in this browser per project
 // ("taska.edits.<project>": {n: {title, body, next}}, "taska.subs.<project>": {n: title}): leaving them any way but
 // Cancel keeps it, and they bring it back.
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { KeyValueStore } from './storage'
 
-export interface ItemEditDraft {
+export interface TaskEditDraft {
   title: string
   body: string
   next: string
@@ -13,12 +13,12 @@ export interface ItemEditDraft {
 
 export interface KeptEditsState {
   slug: string
-  edits: Readonly<Record<number, ItemEditDraft>>
+  edits: Readonly<Record<number, TaskEditDraft>>
   subs: Readonly<Record<number, string>>
   /** a project shown: what was kept for it */
   show(slug: string): void
   /** null: nothing kept */
-  setEdit(n: number, d: ItemEditDraft | null): void
+  setEdit(n: number, d: TaskEditDraft | null): void
   setSub(n: number, title: string | null): void
 }
 
@@ -40,7 +40,7 @@ export function createKeptEditsStore(kv: KeyValueStore): KeptEditsStore {
       slug: '',
       edits: {},
       subs: {},
-      show: (slug) => set({ slug, edits: read<ItemEditDraft>('edits', slug), subs: read<string>('subs', slug) }),
+      show: (slug) => set({ slug, edits: read<TaskEditDraft>('edits', slug), subs: read<string>('subs', slug) }),
       setEdit: (n, d) => put('edits', n, d),
       setSub: (n, title) => put('subs', n, title),
     }

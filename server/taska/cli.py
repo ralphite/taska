@@ -5,7 +5,7 @@
     python3 -m taska install-skill           teach Claude Code, Codex and Antigravity how to use Taska
     curl -s localhost:7340/p/<project>/agent     what a coding agent reads first
 
-Standard library only. With GEMINI_API_KEY set, the organizer turns what you say into item changes and voice notes
+Standard library only. With GEMINI_API_KEY set, the organizer turns what you say into task changes and voice notes
 are transcribed; without it, the inbox waits for a coding agent.
 """
 
@@ -154,7 +154,7 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
 
     threading.Thread(target=sessions, daemon=True).start()
 
-    def laters() -> None:  # once a minute (and at the start): an item Later until today is back to Now (D115 #21)
+    def laters() -> None:  # once a minute (and at the start): a task Later until today is back to Now (D115 #21)
         while True:
             try:
                 back = ws.bring_back_laters(time.strftime("%Y-%m-%d"))

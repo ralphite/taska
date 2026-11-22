@@ -1,4 +1,4 @@
-// A voice note being recorded: where it goes (the project, the draft it was started in, the item it replies on),
+// A voice note being recorded: where it goes (the project, the draft it was started in, the task it replies on),
 // which mic started it, how long it has run and how loud it was lately (for the box's bar).
 
 import { createStore, type StoreApi } from 'zustand/vanilla'

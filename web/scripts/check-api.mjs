@@ -25,11 +25,11 @@ const UNSEEN = {
   'activity[].count': "only voice notes' records set at once (B682); the sample makes none",
   'activity[].was': 'only a change of an earlier format folded into others (Refactor 8A); the sample makes none',
   'activity[].retry': 'only an input sent again; the sample makes none',
-  'view.items[].thread[].files[].voice': VOICE,
-  'view.items[].thread[].files[].size': "an agent's file is kept without its size (commands/items.py _message_files)",
-  'view.items[].thread[].typed': TYPED,
-  'view.items[].wait.files[].voice': VOICE,
-  'view.items[].wait.files[].size': "an agent's file is kept without its size",
+  'view.tasks[].thread[].files[].voice': VOICE,
+  'view.tasks[].thread[].files[].size': "an agent's file is kept without its size (commands/tasks.py _message_files)",
+  'view.tasks[].thread[].typed': TYPED,
+  'view.tasks[].wait.files[].voice': VOICE,
+  'view.tasks[].wait.files[].size': "an agent's file is kept without its size",
   'view.inputs[].files[].voice': VOICE,
   'view.inputs[].typed': TYPED,
   'view.inputs[].moved': 'a moved input shows in the project it went to, not here',
@@ -54,7 +54,7 @@ const UNSEEN = {
   'view.project.agents[].sessions[].cwd': "only a session its app tells of (Claude Code's or Codex's own files)",
   'view.project.agents[].sessions[].waitingFor': 'only a session that waits on you (T711)',
   'view.project.agents[].sessions[].waiting': 'only an Antigravity session whose waker waits for work (B762)',
-  'view.project.deletedInputs[].kept*': 'only an input whose items were made from others too',
+  'view.project.deletedInputs[].kept*': 'only an input whose tasks were made from others too',
   'view.project.deleted[].d': 'only a deleted document',
   'view.project.deleted[].on': 'only a deleted document',
   'changes*': "the sample is the answer of a wait that saw nothing; the rest is view's",
@@ -63,7 +63,7 @@ const UNSEEN = {
   'words.more': 'only while a note is worked out',
   'words.doubts[]*': 'what may be misheard says only what it has',
   'words.steps[].error': 'only a step that failed',
-  'moveItem.with': 'only an item with subitems',
+  'moveTask.with': 'only a task with subtasks',
   'projects[].agents[]*': 'only a project an agent called',
   'projects[].pos': 'only a project you put in order',
   'find*': 'what is found depends on the words (model/find.test.ts)',
@@ -104,8 +104,8 @@ function walk(type, values, p, depth = 0) {
   if (!members.length || members.every((t) => t.flags & LEAF)) return
   const arrays = members.filter((t) => checker.isArrayType(t))
   if (arrays.length) {
-    const items = values.filter(Array.isArray).flat()
-    for (const t of arrays) walk(checker.getTypeArguments(t)[0], items, p + '[]', depth + 1)
+    const tasks = values.filter(Array.isArray).flat()
+    for (const t of arrays) walk(checker.getTypeArguments(t)[0], tasks, p + '[]', depth + 1)
     return
   }
   const objects = members.filter((t) => !(t.flags & LEAF) && !checker.isTupleType(t))

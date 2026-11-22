@@ -1,6 +1,6 @@
 // A draft sent from wherever you are (a voice note stopped with Send): to what it is written to. A document's box:
-// its voice comments, or a comment; the box shown now: sent as the box sends; another item's or the new input's: a
-// reply to that item, or a new input; more to add to an input (said on its own line), added to it as Add more adds.
+// its voice comments, or a comment; the box shown now: sent as the box sends; another task's or the new input's: a
+// reply to that task, or a new input; more to add to an input (said on its own line), added to it as Add more adds.
 
 import { draftTarget, type DraftKey } from '../../model/draftTarget'
 import type { ProjectModel } from '../../model/project'

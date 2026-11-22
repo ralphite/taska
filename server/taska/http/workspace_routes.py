@@ -102,7 +102,7 @@ def post(ctx: "AppContext", req: Request, path: str) -> Optional[Response]:
             ws.spellings.correct(d.get("wrong"), d.get("right") if "right" in d else None)
             if d.get("right") and not d.get("undo"):  # a word fixed in the box before sending
                 voice_fix(" ".join(str(d["wrong"]).split()), " ".join(str(d["right"]).split()), via="draft", who="you",
-                          **{k: str(d[k])[:200] for k in ("project", "item", "file") if d.get(k)})
+                          **{k: str(d[k])[:200] for k in ("project", "task", "file") if d.get(k)})
         return as_json({"ok": True, "corrections": ws.spellings.all()})
     if path == "/api/push":  # {sub, quiet, from, to} turns pushes on for a phone; {endpoint, off: true} turns them off
         d = req.json_body(10_000)

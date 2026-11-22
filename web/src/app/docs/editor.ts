@@ -1,6 +1,6 @@
 // The document itself: edited (in the pane on the desktop, in a sheet on the phone; the first line is the title) and
 // saved, or left without saving, which keeps the text as a draft that Edit (or New doc) brings back; a new one made
-// on an item; deleted and moved to another item, with Undo.
+// on a task; deleted and moved to another task, with Undo.
 
 import type { CommandOf } from '../../model/commands'
 import type { Doc } from '../../model/types'
@@ -66,7 +66,7 @@ export class DocEditor {
     if (was) this.d.toasts.show('Draft restored')
   }
 
-  /** A new document on item `n`, in a sheet. */
+  /** A new document on task `n`, in a sheet. */
   create(n: number): void {
     const h = docHere(this.d)
     if (!h) return
@@ -151,13 +151,13 @@ export class DocEditor {
     )
   }
 
-  /** On another item. */
+  /** On another task. */
   moveTo(dn: number, to: string): void {
     const h = docHere(this.d)
     const doc = h?.m.docs.find((x) => x.d === dn)
     if (!h || !doc) return
     const was = { code: codeOf(h.m, doc.n), n: doc.n }
-    // on its new item at once
+    // on its new task at once
     const put = (ref: string) => docSend(this.d, h.slug, { op: 'dmove', d: dn, to: ref }, `moving D${dn} to ${ref}`)
     void put(to)
     this.d.toasts.show(

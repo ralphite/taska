@@ -41,7 +41,7 @@ export interface BoxState {
   slug: string
   mode: BoxMode
   files: Readonly<Record<string, readonly DraftFile[]>>
-  /** the draft the box shows now, and the item it writes to (a voice note stopped elsewhere knows where it goes) */
+  /** the draft the box shows now, and the task it writes to (a voice note stopped elsewhere knows where it goes) */
   shown: { key: DraftKey; scope: string | null }
   setShown(key: DraftKey, scope: string | null): void
   /** the phone: the words show in the box with the versions of misheard words to pick from */

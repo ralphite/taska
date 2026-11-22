@@ -1,8 +1,8 @@
 // The Agents sheet's demo sessions (T768): the demo project Shop with the sessions an agent app would report, as the
-// server sends them (each session's app id, what its app says of it, the item it is on, who started it), and what
-// each session wrote on the items. Used by the Agents sheet's stories.
+// server sends them (each session's app id, what its app says of it, the task it is on, who started it), and what
+// each session wrote on the tasks. Used by the Agents sheet's stories.
 
-import type { AgentSeen, Item, Message } from '../model/types'
+import type { AgentSeen, Task, Message } from '../model/types'
 import type { AgentsActs } from '../features/agents/Agents'
 import { acts } from './sheetFixtures'
 import { T, message } from './fixtures'
@@ -23,7 +23,7 @@ export const SID = {
 
 const said = (id: number, m: number, ses: string, text: string, by = 'claude-code', kind: Message['kind'] = 'progress'): Message => message({ id, by, ses, kind, text, t: iso(m) })
 
-/** What the sessions wrote on Shop's items, beside what the items already have. */
+/** What the sessions wrote on Shop's tasks, beside what the tasks already have. */
 const THREADS: Record<number, Message[]> = {
   1: [
     said(901, 34, 'Export keeps the filter', 'Reproduced it: the export reads the list before the filter.'),
@@ -33,7 +33,7 @@ const THREADS: Record<number, Message[]> = {
   5: [
     said(911, 25, 'Manager', '@worker-1 Search finds words in the talk: yours, in its own working copy.'),
     said(912, 20, 'worker-1', 'Started: the search reads the talk as well as the titles.'),
-    said(913, 6, 'worker-1', 'Found words in the talk now show under the item, marked.'),
+    said(913, 6, 'worker-1', 'Found words in the talk now show under the task, marked.'),
   ],
   6: [
     said(921, 40, 'Manager', '@worker-2 Excel export as well: wait until the filter fix is in.'),
@@ -42,8 +42,8 @@ const THREADS: Record<number, Message[]> = {
   4: [said(931, 70, 'Manager', 'Merged and shipped: the list sorts by priority, then by number.', 'claude-code', 'say')],
 }
 
-/** Shop, with what its sessions wrote on its items. */
-export const ITEMS: Item[] = PROJECT.map((it) => (THREADS[it.n] ? { ...it, thread: [...it.thread, ...THREADS[it.n]] } : it))
+/** Shop, with what its sessions wrote on its tasks. */
+export const TASKS: Task[] = PROJECT.map((it) => (THREADS[it.n] ? { ...it, thread: [...it.thread, ...THREADS[it.n]] } : it))
 
 /** One session works now (on T001) and a Codex session was here hours ago. */
 export const WORKING: AgentSeen[] = [
@@ -103,7 +103,7 @@ export const sessionKey = (app: string, name: string) => `${app}\u0000${name}`
 /** What the Agents sheet does, for its stories: each in the Actions panel; Reconnect is handed to a connected
  * session of its app (T833). */
 export const AGENTS_ON: AgentsActs = {
-  ...acts('Agents', ['copy', 'help', 'open'], { help: 'Help › Topics › Connect an agent', open: 'the item' }),
+  ...acts('Agents', ['copy', 'help', 'open'], { help: 'Help › Topics › Connect an agent', open: 'the task' }),
   reconnect: () => new Promise((done) => setTimeout(() => done({ relay: true }), 300)),
 }
 

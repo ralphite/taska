@@ -242,7 +242,7 @@ def record(base: str) -> Dict[str, Any]:
     c.raw(f"/p/{slug}/do?by=claude-code&session=helper&parent=sample&sid=aaaaaaaa-1111-2222-3333-444444444444",
           b"T2 progress Looking at the address.\n", "text/plain")
     agent(SEED)
-    # the worker on an item you approved (it holds it: Agents says what each session is on, F768)
+    # the worker on a task you approved (it holds it: Agents says what each session is on, F768)
     c.raw(f"/p/{slug}/do?by=you", b"F3 open\n", "text/plain")
     c.raw(f"/p/{slug}/do?by=claude-code&session=helper&parent=sample&sid=aaaaaaaa-1111-2222-3333-444444444444",
           b"F3 doing\n", "text/plain")
@@ -272,10 +272,10 @@ def record(base: str) -> Dict[str, Any]:
          {"op": "input", "text": "One more thing", "q": "page-5"})
     view = _settle(c, p)
     r = {i["q"]: i["id"] for i in view["inputs"] if i.get("q")}
-    told = next(x["id"] for it in view["items"] if it["code"] == "T1" for x in it["thread"] if x["kind"] == "progress")
+    told = next(x["id"] for it in view["tasks"] if it["code"] == "T1" for x in it["thread"] if x["kind"] == "progress")
     # questions in a row, one of them answered (B749): the answer names it (`of`), the other still waits
     agent(f"T4 ask files={shot['f']} Anything else?\n")
-    first = next(x for it in _settle(c, p)["items"] if it["code"] == "T4" for x in it["thread"] if x["kind"] == "ask")
+    first = next(x for it in _settle(c, p)["tasks"] if it["code"] == "T4" for x in it["thread"] if x["kind"] == "ask")
     page("s2b", {"op": "input", "text": "- Which columns? → ✓ Date", "scope": "T4", "kind": "answer", "of": [first["id"]], "q": "page-6"})
     made = page("s3", {"op": "amend", "id": r["page-1"], "mode": "append", "text": "By date."},
                 {"op": "delete", "id": r["page-5"]},
@@ -293,7 +293,7 @@ def record(base: str) -> Dict[str, Any]:
     out["changes"] = c.json(p + f"changes?cursor={cursor}&wait=0")
     out["commands"] = c.json(p + f"commands?cursor={cursor}", {"id": "s5", "commands": [{"op": "set", "ref": "B1", "f": {"pri": "P0"}}]})
     out["moveInput"] = c.json(p + "move-input", {"id": r["page-2"], "to": other})
-    out["moveItem"] = c.json(p + "move-item?id=s6", {"to": other, "ref": "F3"})
+    out["moveTask"] = c.json(p + "move-task?id=s6", {"to": other, "ref": "F3"})
     out["activity"] = c.json(p + "activity?n=100")
     out["pictureSizes"] = c.json(p + "picture-sizes")
     out["diagramFailed"] = c.json(p + "diagram-failed", {"d": 1, "v": 1, "key": "x", "error": "Parse error"})
@@ -339,7 +339,7 @@ def record(base: str) -> Dict[str, Any]:
 # -- shapes: what the staleness check compares ---------------------------------------------------------------------
 
 def shape(value: Any, path: str = "", out: Optional[Set[str]] = None) -> Set[str]:
-    """Every path in the value with its JSON type ("view.items[].n number"): what stays the same from one recording to
+    """Every path in the value with its JSON type ("view.tasks[].n number"): what stays the same from one recording to
     the next, whatever the times, ids and keys."""
     out = set() if out is None else out
     if isinstance(value, dict):

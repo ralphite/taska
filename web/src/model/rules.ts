@@ -160,8 +160,8 @@ export function placeDoc(r: { tab: string; place: { kind: string; d?: number } }
 /** How the box names the document a comment goes to: D4, or the rules (whose number is nobody's business). */
 export const docName = (d: Doc) => (d.kind === 'rules' ? 'the rules' : `D${d.d}`)
 
-/** What needs you in a project: the items waiting on you and the proposed changes to the rules (I693). */
-export const needsCount = (m: ProjectModel, needsYou: (it: ProjectModel['items'][number]) => boolean) => m.items.filter(needsYou).length + waitingProposals(rulesDoc(m)).length
+/** What needs you in a project: the tasks waiting on you and the proposed changes to the rules (I693). */
+export const needsCount = (m: ProjectModel, needsYou: (it: ProjectModel['tasks'][number]) => boolean) => m.tasks.filter(needsYou).length + waitingProposals(rulesDoc(m)).length
 
 /** The text a version changed from: the one before it ('' for the first). */
 export function beforeOf(d: Doc | undefined, v: number): string {

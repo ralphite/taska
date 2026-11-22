@@ -1,5 +1,5 @@
 // Sheets about what you said: an input's menu (Send, for a recording kept as cancelled; Edit, Add more, its original words, Undo organizing, Move to…,
-// History, Put with an item…, Take off a file, Delete: red and last, it asks again in place, B666), its versions, a voice
+// History, Put with a task…, Take off a file, Delete: red and last, it asks again in place, B666), its versions, a voice
 // note's original words. Props only.
 
 import type { ReactNode } from 'react'
@@ -30,14 +30,14 @@ export interface InputMenuEvents {
 
 export interface InputMenuFacts {
   r: Input
-  /** a recording kept as cancelled: Send sends it after all, and it is put with no item until then (B627) */
+  /** a recording kept as cancelled: Send sends it after all, and it is put with no task until then (B627) */
   send: boolean
   /** Original words for each voice note (the phone: the desktop shows them under the pointer) */
   tidy: boolean
   undo: { tip: string } | null
   move: boolean
   history: boolean
-  /** "Put with an item… · now F12" */
+  /** "Put with a task… · now F12" */
   scope: string | null
   /** the file whose Take off waits for its second click */
   asking: string | null
@@ -65,7 +65,7 @@ export function inputMenuSheet({ r, send, tidy, undo, move, history, scope, aski
         {undo ? row('undo', 'undo', 'Undo organizing', on.undo, undo.tip) : null}
         {move ? row('move', 'arrow', 'Move to…', on.move) : null}
         {history ? row('history', 'history', 'History', on.history) : null}
-        {send ? null : row('rescope', 'scope', scope ? `Put with an item… · now ${scope}` : 'Put with an item…', on.rescope)}
+        {send ? null : row('rescope', 'scope', scope ? `Put with a task… · now ${scope}` : 'Put with a task…', on.rescope)}
         {r.files.map((f: FileRef) => (
           <button key={f.f} onClick={() => on.takeOff(f.f)} className={`${MENU_ROW} ${asking === f.f ? DANGER : ''}`}>
             <Icon n="x" c={`size-4 ${asking === f.f ? '' : 'text-zinc-500 dark:text-zinc-400'}`} />

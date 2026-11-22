@@ -16,7 +16,7 @@ export const Segments: Story = {
     <Frames phoneWidth={393} deskWidth={480} height={400}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['priority', <div className="p-3">{seg(priOpts(false), 'P0')}</div>],
             ['priority, a small filter', <div className="p-3">{seg(priOpts(true), 'all', true)}</div>],
           ]}

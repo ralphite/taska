@@ -1,6 +1,6 @@
 // The phone's search page as it is drawn, from where the search is (stores/find) and the page's data: the box's
 // words and what may be misheard in them, the kinds found, the rows by project (All: by kind in each, each kind
-// named; an item of the project you are in
+// named; a task of the project you are in
 // drawn from its model, as the list draws it; another project's from what the search sent). Pure: the container and
 // the stories draw the same page from the same data.
 
@@ -28,7 +28,7 @@ export interface SearchPlace {
   /** a project's picture's address (F743) */
   icon?(slug: string): string | undefined
   seen: SeenMap
-  /** the codes of the items with a draft, in the project you are in */
+  /** the codes of the tasks with a draft, in the project you are in */
   drafts: ReadonlySet<string>
   /** a row's events: opening it opens what it found */
   on(x: Found): RowEvents
@@ -39,9 +39,9 @@ export interface SearchPlace {
   model(slug: string): ProjectModel | null
 }
 
-/** A row of another project's item: what the list would show, from what the search sent. */
+/** A row of another project's task: what the list would show, from what the search sent. */
 function otherFacts(x: Found, words: string[]): RowFacts {
-  const it = x.item as NonNullable<Found['item']>
+  const it = x.task as NonNullable<Found['task']>
   return {
     code: it.code,
     parentCode: x.parentCode ?? null,
@@ -63,14 +63,14 @@ export function searchView(s: SearchNow, p: SearchPlace): SearchView {
   const marks = a?.marks ?? []
   const w: DrawWith = { slug: p.here, openN: null, selected: new Set(), words: marks, desk: false, drafts: p.drafts, head: undefined, seen: p.seen, drag: { n: null, at: null } }
   const row = (x: Found): FoundRowView[] => {
-    if (x.kind === 'items') {
+    if (x.kind === 'tasks') {
       const mine = x.project === p.here && p.m && x.n != null ? p.m.byN.get(x.n) : undefined
       // another project's: what the search sent, or (a page visited there) its model's
       const there = !mine && x.n != null ? p.model(x.project)?.byN.get(x.n) : undefined
-      const it = mine ?? x.item ?? there
+      const it = mine ?? x.task ?? there
       if (!it) return []
-      const facts = mine && p.m ? rowFacts(p.m, mine, w) : otherFacts({ ...x, item: x.item ?? (there && p.model(x.project) ? { ...there, code: codeOf(p.model(x.project) as ProjectModel, there.n) } : undefined) }, marks)
-      return [{ kind: 'item', key: x.project + '/' + x.key, found: x, it, facts, look: rowLook(it, w), on: p.on(x) }]
+      const facts = mine && p.m ? rowFacts(p.m, mine, w) : otherFacts({ ...x, task: x.task ?? (there && p.model(x.project) ? { ...there, code: codeOf(p.model(x.project) as ProjectModel, there.n) } : undefined) }, marks)
+      return [{ kind: 'task', key: x.project + '/' + x.key, found: x, it, facts, look: rowLook(it, w), on: p.on(x) }]
     }
     return [{ kind: 'other', key: x.project + '/' + x.key, found: x, icon: x.kind === 'rules' ? 'book' : x.kind === 'docs' ? (p.model(x.project)?.docs.find((d) => d.d === x.d)?.fmt === 'html' ? 'web' : 'doc') : 'newinput', code: x.code ?? '', title: x.title ?? '', meta: foundMeta(x, p.now) }]
   }

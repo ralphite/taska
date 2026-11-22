@@ -18,9 +18,9 @@ type Story = StoryObj
 const on = acts('Rules', ['view', 'comment', 'decline', 'approve', 'pick', 'marks', 'now', 'restore', 'cancel', 'why', 'write', 'history'] as const)
 const env = envOf(modelOf([]), true)
 const f = (p: RuleProposal) => ({ p, who: ruleWho(p.by), now: env.now, talk: p.comments.length })
-const rows = (items: [string, React.ReactNode][]) => (
+const rows = (tasks: [string, React.ReactNode][]) => (
   <div className="flex flex-col gap-4 p-4">
-    {items.map(([label, node]) => (
+    {tasks.map(([label, node]) => (
       <div key={label}>
         <div className="pb-1 text-xs text-zinc-500">{label}</div>
         {node}

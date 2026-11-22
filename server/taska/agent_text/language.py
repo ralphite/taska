@@ -26,7 +26,7 @@ _OPTION = re.compile(
     r"|(?P<tag>-?#[\w-]{1,30}))"
     r"(?(open)\])(?=\s|$)")  # [P1] reads as P1
 _END_OPTION = re.compile(r"(?i)\s+\[?(src|parent)=([^\s\]]+)\]?\s*$")  # an option at the end of a title
-_ITEM_WORD = re.compile(r"\$|[A-Za-z]?\d+")
+_TASK_WORD = re.compile(r"\$|[A-Za-z]?\d+")
 _DOC_WORD = re.compile(r"[Dd]\d+")
 
 
@@ -71,7 +71,7 @@ def options(s: str, before_title: bool = False) -> Tuple[Dict[str, Any], str]:
 
 
 def _no_type(head: str, words: str, opts: Dict[str, Any]) -> None:
-    """Items have no types (T855): a type word is refused with the same command written with a tag instead."""
+    """Tasks have no types (T855): a type word is refused with the same command written with a tag instead."""
     start, end, kind = opts["_type"]
     tag = "#bug " if kind == "bug" else ""
     rewritten = " ".join((head + " " + words[:start] + tag + words[end:].lstrip()).split())
@@ -126,8 +126,8 @@ def command(head: str, cont: str) -> Union[Command, List[Command]]:
         return _project(rest)
     if _DOC_WORD.fullmatch(word):
         return _doc_command(word, rest, cont)
-    if not _ITEM_WORD.fullmatch(word):
-        raise Refused(f"unknown command '{word}' (start with new, ack, rules, project or an item code like T03)")
+    if not _TASK_WORD.fullmatch(word):
+        raise Refused(f"unknown command '{word}' (start with new, ack, rules, project or a task code like T03)")
     verb, _, rest2 = rest.partition(" ")
     verb_l = verb.lower()
     if verb_l == "doc":
@@ -149,10 +149,10 @@ def command(head: str, cont: str) -> Union[Command, List[Command]]:
     if verb_l == "after":  # T13 after T12: waits for it (T857); after -T12: no longer
         words = rest2.replace(",", " ").split()
         if not words:
-            raise Refused(f"after needs an item: {word} after T12")
+            raise Refused(f"after needs a task: {word} after T12")
         return {"op": "after", "ref": word, "add": [w for w in words if not w.startswith("-")],
                 "del": [w[1:] for w in words if w.startswith("-")]}
-    if verb_l in ("group", "task") and not rest2.strip():  # T797 group: holds items, no work of its own (T856)
+    if verb_l in ("group", "task") and not rest2.strip():  # T797 group: holds tasks, no work of its own (T856)
         return {"op": "set", "ref": word, "f": {"group": verb_l == "group"}, "src": None}
     if verb_l == "take" and not rest2.strip():  # doing, taken from the session that holds it, as the user asked (T772)
         return {"op": "set", "ref": word, "f": {"status": "doing"}, "src": None, "take": True}

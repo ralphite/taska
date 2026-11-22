@@ -5,9 +5,9 @@ web/src/model/vocab.gen.ts, which the page imports instead of lists of its own.
 
 - EFFECTS: what a change does (refactor 7): a project as the page sees it (page_api/views.py), the commands you send
   (model/commands.ts), and the project after the server ran them. model/optimistic.test.ts holds each preview to it.
-- NEEDS: items in every status, asked or not, answered or not, archived or not, and whether they need you
+- NEEDS: tasks in every status, asked or not, answered or not, archived or not, and whether they need you
   (domain/rules.py needs_you). USER_WORDS: messages by everyone, of every kind, and whether they are the user's
-  words (user_word). QUEUE: items and the order agents take them (queue_order). NEXT: projects and the item /next
+  words (user_word). QUEUE: tasks and the order agents take them (queue_order). NEXT: projects and the task /next
   hands out next (agent_text/work.py next_work), with the inputs whose voice notes are still being worked out.
   model/rules.test.ts holds the page's rules to them.
 
@@ -68,7 +68,7 @@ class Place:
         return {"f": f.f, "name": f.name, "mime": f.mime, "size": f.size}
 
     def seen(self) -> Dict[str, Any]:
-        """The project as the page gets it: its items, inputs, documents, voice notes and what can be undone."""
+        """The project as the page gets it: its tasks, inputs, documents, voice notes and what can be undone."""
         with self.p.lock:
             out = views.entities(self.p.state, self.p.agents)
             out["undo"] = views.project_view(self.p.state, self.p.agents, slug="", title="", organizer_on=False,
@@ -95,7 +95,7 @@ def _effects() -> List[Tuple[str, Seed, Callable[[Place, Any], List[Dict[str, An
         x.agent({"op": "set", "ref": "T1", "f": {"status": "doing"}}, {"op": "set", "ref": "T1", "f": {"status": "done"}},
                 {"op": "say", "ref": "T1", "kind": "progress", "text": "Done: it keeps the filter."})
 
-    def family(x: Place) -> None:  # T1 with an open subitem T2 and a finished one T3
+    def family(x: Place) -> None:  # T1 with an open subtask T2 and a finished one T3
         x.you(task("Paint the fence"), task("Buy the paint", parent="T1"), task("Pick a colour", parent="T1"))
         x.you({"op": "set", "ref": "T3", "f": {"status": "done"}})
 
@@ -106,7 +106,7 @@ def _effects() -> List[Tuple[str, Seed, Callable[[Place, Any], List[Dict[str, An
     def three(x: Place) -> None:
         x.you(task("One"), task("Two"), task("Three"))
 
-    def input_with_item(x: Place) -> None:
+    def input_with_task(x: Place) -> None:
         x.you({"op": "input", "text": "Export to Excel"})
         x.run("org", {"op": "new", "title": "Export to Excel"}, src="r1")
         x.you({"op": "input", "text": "And keep the sort"})
@@ -125,7 +125,7 @@ def _effects() -> List[Tuple[str, Seed, Callable[[Place, Any], List[Dict[str, An
         return next(c.id for c in x.p.state.docs[1].comments if c.by == "you")
 
     def agent_message(x: Place) -> int:
-        return next(m.id for m in x.p.state.items[1].thread if m.by == AGENT)
+        return next(m.id for m in x.p.state.tasks[1].thread if m.by == AGENT)
 
     return [
         ("approving a proposal keeps the decision", proposed, lambda x, _: [{"op": "set", "ref": "B1", "f": {"status": "open"}}]),
@@ -134,11 +134,11 @@ def _effects() -> List[Tuple[str, Seed, Callable[[Place, Any], List[Dict[str, An
          lambda x, _: [{"op": "set", "ref": "B1", "f": {"status": "proposed"}}]),
         ("accepting finished work", review, lambda x, _: [{"op": "set", "ref": "T1", "f": {"status": "done"}}]),
         ("sending finished work back", review, lambda x, _: [{"op": "set", "ref": "T1", "f": {"status": "open"}}]),
-        ("reopening an archived item brings it back",
+        ("reopening an archived task brings it back",
          lambda x: (x.you(task("Old")), x.you({"op": "set", "ref": "T1", "f": {"status": "done"}}),
                     x.you({"op": "archive", "refs": ["T1"], "on": True})),
          lambda x, _: [{"op": "set", "ref": "T1", "f": {"status": "open"}}]),
-        ("later until a day: later, with the unfinished subitems", family,
+        ("later until a day: later, with the unfinished subtasks", family,
          lambda x, _: [{"op": "set", "ref": "T1", "f": {"later_until": "2026-12-01"}}]),
         ("back to now: the day goes",
          lambda x: (x.you(task("Wait")), x.you({"op": "set", "ref": "T1", "f": {"later_until": "2026-12-01"}})),
@@ -146,48 +146,48 @@ def _effects() -> List[Tuple[str, Seed, Callable[[Place, Any], List[Dict[str, An
         ("later with no day: the day goes",
          lambda x: (x.you(task("Wait")), x.you({"op": "set", "ref": "T1", "f": {"later_until": "2026-12-01"}})),
          lambda x, _: [{"op": "set", "ref": "T1", "f": {"when": "later", "later_until": None}}]),
-        ("won't do: the unfinished subitems too", family, lambda x, _: [{"op": "set", "ref": "T1", "f": {"status": "dropped"}}]),
-        ("archived: the finished subitems too", done_family, lambda x, _: [{"op": "set", "ref": "T1", "f": {"archived": True}}]),
+        ("won't do: the unfinished subtasks too", family, lambda x, _: [{"op": "set", "ref": "T1", "f": {"status": "dropped"}}]),
+        ("archived: the finished subtasks too", done_family, lambda x, _: [{"op": "set", "ref": "T1", "f": {"archived": True}}]),
         ("fields as the server keeps them", three,
          lambda x, _: [{"op": "set", "ref": "T1", "f": {"pri": "P0", "tags": ["bug"], "title": "  Many   spaces  ", "body": "  Trimmed.  "}}]),
-        ("under another item, and on its own", three,
+        ("under another task, and on its own", three,
          lambda x, _: [{"op": "set", "ref": "T2", "f": {"parent": "1"}}, {"op": "set", "ref": "T3", "f": {"parent": "T2"}},
                        {"op": "set", "ref": "T2", "f": {"parent": "none"}}]),
         ("next in its priority, and back in order", three,
          lambda x, _: [{"op": "set", "ref": "T1", "f": {"rank": -100}}, {"op": "set", "ref": "T2", "f": {"rank": -50}},
                        {"op": "set", "ref": "T2", "f": {"rank": None}}]),
-        ("archiving many: the finished ones, with their finished subitems",
+        ("archiving many: the finished ones, with their finished subtasks",
          lambda x: (done_family(x), x.you(task("Open one"), task("Done one")), x.you({"op": "set", "ref": "T5", "f": {"status": "done"}})),
          lambda x, _: [{"op": "archive", "refs": ["T1", "T4", "T5"], "on": True}]),
         ("unarchiving", lambda x: (three(x), x.you({"op": "set", "ref": "T1", "f": {"status": "done"}}), x.you({"op": "archive", "refs": ["T1"]})),
          lambda x, _: [{"op": "archive", "refs": ["T1"], "on": False}]),
-        ("deleting an item with its subitems", family, lambda x, _: [{"op": "idel", "ref": "T1"}]),
+        ("deleting a task with its subtasks", family, lambda x, _: [{"op": "idel", "ref": "T1"}]),
         ("hiding an agent's message", lambda x: (proposed(x), agent_message(x))[1],
          lambda x, mid: [{"op": "hide", "ref": "B1", "id": mid, "on": True}]),
-        ("a new subitem", family, lambda x, _: [{"op": "new", "title": "Sand it first", "parent": "T1", "pri": "P2", "when": "now"}]),
-        ("merging into another item takes its subitems along", lambda x: (family(x), x.you(task("Fence and gate"))),
+        ("a new subtask", family, lambda x, _: [{"op": "new", "title": "Sand it first", "parent": "T1", "pri": "P2", "when": "now"}]),
+        ("merging into another task takes its subtasks along", lambda x: (family(x), x.you(task("Fence and gate"))),
          lambda x, _: [{"op": "merge", "ref": "T1", "into": "T4"}]),
-        ("taking a merged item out", lambda x: (three(x), x.you({"op": "merge", "ref": "T1", "into": "T2"})),
+        ("taking a merged task out", lambda x: (three(x), x.you({"op": "merge", "ref": "T1", "into": "T2"})),
          lambda x, _: [{"op": "unmerge", "ref": "T1"}]),
         ("putting back one of your changes", lambda x: (three(x), x.you({"op": "set", "ref": "T1", "f": {"pri": "P3"}}),
                                                          x.p.state.events[-1].seq)[2],
          lambda x, seq: [{"op": "revert", "seq": seq}]),
         ("words on finished work take it back to open", review,
          lambda x, _: [{"op": "input", "text": "Keep the sort too", "scope": "T1"}]),
-        ("deleting an input takes the item only it made", input_with_item, lambda x, _: [{"op": "delete", "id": "r1"}]),
-        ("editing an input", input_with_item, lambda x, _: [{"op": "amend", "id": "r2", "mode": "edit", "v": x.p.state.inputs["r2"].v, "text": "And keep the order"}]),
-        ("adding to an input", input_with_item, lambda x, _: [{"op": "amend", "id": "r2", "mode": "append", "text": "By date."}]),
-        ("correcting an input's words", input_with_item, lambda x, _: [{"op": "correct", "id": "r2", "wrong": "sort", "right": "order", "v": x.p.state.inputs["r2"].v}]),
-        ("an input with another item", lambda x: (input_with_item(x), x.you(task("Sorting"))),
+        ("deleting an input takes the task only it made", input_with_task, lambda x, _: [{"op": "delete", "id": "r1"}]),
+        ("editing an input", input_with_task, lambda x, _: [{"op": "amend", "id": "r2", "mode": "edit", "v": x.p.state.inputs["r2"].v, "text": "And keep the order"}]),
+        ("adding to an input", input_with_task, lambda x, _: [{"op": "amend", "id": "r2", "mode": "append", "text": "By date."}]),
+        ("correcting an input's words", input_with_task, lambda x, _: [{"op": "correct", "id": "r2", "wrong": "sort", "right": "order", "v": x.p.state.inputs["r2"].v}]),
+        ("an input with another task", lambda x: (input_with_task(x), x.you(task("Sorting"))),
          lambda x, _: [{"op": "rescope", "id": "r2", "to": "T2"}]),
         ("sending a recording kept as cancelled", lambda x: x.you({"op": "input", "text": "Never mind", "kind": "cancelled"}),
          lambda x, _: [{"op": "send", "id": "r1"}]),
         ("taking a file off an input", lambda x: x.you({"op": "input", "text": "Two shots", "files": [x.file("a.png", "image/png"), x.file("b.png", "image/png")]}),
          lambda x, _: [{"op": "unfile", "id": "r1", "f": "f1-a.png"}]),
-        ("inputs handled", input_with_item, lambda x, _: [{"op": "ack", "ids": ["r1", "r2"]}]),
+        ("inputs handled", input_with_task, lambda x, _: [{"op": "ack", "ids": ["r1", "r2"]}]),
         ("writing a document", doc, lambda x, _: [{"op": "doc", "d": 1, "md": "# Plan\n\nRead the filter, then the sort."}]),
         ("deleting a document", doc, lambda x, _: [{"op": "ddel", "d": 1}]),
-        ("a document to another item", doc, lambda x, _: [{"op": "dmove", "d": 1, "to": "T2"}]),
+        ("a document to another task", doc, lambda x, _: [{"op": "dmove", "d": 1, "to": "T2"}]),
         ("resolving a thread", doc, lambda x, _: [{"op": "dcres", "d": 1, "key": next(c.key for c in x.p.state.docs[1].comments), "on": True}]),
         ("a comment, in the thread of the same words", doc,
          lambda x, _: [{"op": "dc", "d": 1, "key": "doc", "text": "Looks right."},
@@ -215,7 +215,7 @@ def effects(ws: Workspace) -> List[Dict[str, Any]]:
 
 def _views(x: Place) -> List[Dict[str, Any]]:
     with x.p.lock:
-        return [views.item_view(x.p.state, x.p.agents, it) for it in x.p.state.items.values() if not it.deleted]
+        return [views.task_view(x.p.state, x.p.agents, it) for it in x.p.state.tasks.values() if not it.deleted]
 
 
 def needs(ws: Workspace) -> Dict[str, Any]:
@@ -245,8 +245,8 @@ def needs(ws: Workspace) -> Dict[str, Any]:
                         x.you({"op": "set", "ref": ref, "f": {"archived": True}})
     x.agent({"op": "new", "title": "merged"}, {"op": "merge", "ref": str(n + 1), "into": "1"})
     with x.p.lock:
-        want = {str(it.n): rules.needs_you(x.p.state, it) for it in x.p.state.items.values()}
-    return {"items": _views(x), "needs": want}
+        want = {str(it.n): rules.needs_you(x.p.state, it) for it in x.p.state.tasks.values()}
+    return {"tasks": _views(x), "needs": want}
 
 
 def user_words() -> List[Dict[str, Any]]:
@@ -255,7 +255,7 @@ def user_words() -> List[Dict[str, Any]]:
 
 
 def queue(ws: Workspace) -> List[Dict[str, Any]]:
-    """Items in progress or not, placed by you (rank) or not, by priority: the order agents take them."""
+    """Tasks in progress or not, placed by you (rank) or not, by priority: the order agents take them."""
     out: List[Dict[str, Any]] = []
     for i, rows in enumerate([
         [("P2", None, False), ("P1", None, False), ("P2", None, True), ("P3", 1, False), ("P0", None, False)],
@@ -264,35 +264,35 @@ def queue(ws: Workspace) -> List[Dict[str, Any]]:
     ]):
         x = Place(ws, f"queue-{i}")
         for k, (pri, rank, doing) in enumerate(rows, 1):
-            x.you(task(f"Item {k}", pri=pri))
+            x.you(task(f"Task {k}", pri=pri))
             if rank is not None:
                 x.you({"op": "set", "ref": str(k), "f": {"rank": rank}})
             if doing:
                 x.agent({"op": "set", "ref": str(k), "f": {"status": "doing"}})
         with x.p.lock:
-            order = [it.n for it in rules.queue_order(list(x.p.state.items.values()))]
-        out.append({"items": _views(x), "order": order})
+            order = [it.n for it in rules.queue_order(list(x.p.state.tasks.values()))]
+        out.append({"tasks": _views(x), "order": order})
     return out
 
 
 def _next(x: Place, held: List[str]) -> Dict[str, Any]:
-    """What /next hands an agent on nothing yet, every item in progress another session's (it skips those)."""
+    """What /next hands an agent on nothing yet, every task in progress another session's (it skips those)."""
     with x.p.lock:
         st = x.p.state
         rd = Reading(state=st, held=lambda inp: inp.id in held, organizer_on=False, file_ref=lambda f: f, file_path=lambda f: f)
         asker = Asker(who=AGENT, session="case", holder=lambda it: ("other", 0.0) if it.status == "doing" else None)
         given = next_work(rd, x.p.slug, False, asker).given
-    return {"items": _views(x), "inputs": [views.input_view(i, None, None) for i in st.inputs.values()], "held": held, "next": given}
+    return {"tasks": _views(x), "inputs": [views.input_view(i, None, None) for i in st.inputs.values()], "held": held, "next": given}
 
 
 def next_up(ws: Workspace) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
 
     def place(name: str, rows: List[Tuple[str, str, str]]) -> Place:
-        """(pri, when, tag) per item, open."""
+        """(pri, when, tag) per task, open."""
         x = Place(ws, name)
         for k, (pri, when, tag) in enumerate(rows, 1):
-            x.you({"op": "new", "tags": [tag] if tag else [], "title": f"Item {k}", "pri": pri, "when": when})
+            x.you({"op": "new", "tags": [tag] if tag else [], "title": f"Task {k}", "pri": pri, "when": when})
         return x
 
     x = place("next-0", [("P2", "now", ""), ("P1", "now", "bug"), ("P0", "later", ""), ("P1", "now", "")])
@@ -313,18 +313,18 @@ def next_up(ws: Workspace) -> List[Dict[str, Any]]:
     x = place("next-4", [("P1", "now", ""), ("P2", "now", ""), ("P0", "now", "")])
     x.you(task("Sub", parent="1", pri="P3"))
     x.agent({"op": "say", "ref": "3", "kind": "ask", "text": "Which one?"})
-    out.append(_next(x, []))  # asked: it waits on you; a parent waits for its subitem
+    out.append(_next(x, []))  # asked: it waits on you; a parent waits for its subtask
     x = place("next-5", [("P1", "later", "")])
     x.agent({"op": "say", "ref": "1", "text": "Done?"})
     x.you({"op": "say", "ref": "1", "text": "Not yet: one more thing."})
-    out.append(_next(x, []))  # the queue is empty: an item you replied on, even Later
+    out.append(_next(x, []))  # the queue is empty: a task you replied on, even Later
     x = place("next-6", [("P0", "now", ""), ("P1", "now", "")])
     x.agent({"op": "set", "ref": "1", "f": {"status": "doing"}})
     out.append(_next(x, []))  # in progress is another session's: the next one
     x = place("next-7", [("P0", "now", "")])
     x.you(task("Middle", parent="1", pri="P1"), task("Deep", parent="2", pri="P3"))
     x.you({"op": "set", "ref": "2", "f": {"status": "done"}})
-    out.append(_next(x, []))  # an open subitem at any depth, under a finished one, comes before its parent
+    out.append(_next(x, []))  # an open subtask at any depth, under a finished one, comes before its parent
     return out
 
 
@@ -336,19 +336,19 @@ def vocab_text() -> str:
     """domain/vocab.py's words, for the page (model/vocab.gen.ts)."""
     v = vocab
     rows = [
-        ("CODE_LETTER", "The letter of every item's code (T855: items have no types).", v.CODE_LETTER),
-        ("OLD_LETTERS", "Letters an older code may have: B838 names the same item as T838.", v.OLD_LETTERS),
+        ("CODE_LETTER", "The letter of every task's code (T855: tasks have no types).", v.CODE_LETTER),
+        ("OLD_LETTERS", "Letters an older code may have: B838 names the same task as T838.", v.OLD_LETTERS),
         ("PRIORITIES", "Priorities, the most urgent first.", list(v.PRIORITIES)),
-        ("DEFAULT_PRI", "A new item's priority when nobody says one (r10, r1072).", v.DEFAULT_PRI),
+        ("DEFAULT_PRI", "A new task's priority when nobody says one (r10, r1072).", v.DEFAULT_PRI),
         ("WHENS", "Now or later.", list(v.WHENS)),
-        ("STATUSES", "An item's statuses, in their order.", list(v.STATUSES)),
+        ("STATUSES", "A task's statuses, in their order.", list(v.STATUSES)),
         ("CLOSED", "The finished statuses.", list(v.CLOSED)),
         ("DECISIONS", "The two choices of a proposal (approve, won't do) and of finished work (accept, not yet).",
          {k: list(x) for k, x in v.DECISIONS.items()}),
         ("PEOPLE", "The user, and the organizer, who writes down what the user said.", list(v.PEOPLE)),
         ("TASKA", "Taska's own notes to an agent.", v.TASKA),
         ("NOTES", "Neither side's word: the organizer's own notes, and Taska's.", list(v.NOTES)),
-        ("MESSAGE_KINDS", "The kinds of a message on an item.", list(v.MESSAGE_KINDS)),
+        ("MESSAGE_KINDS", "The kinds of a message on a task.", list(v.MESSAGE_KINDS)),
         ("USER_KINDS", "What the organizer files from an input as the user's own: their words, decision, idea.", list(v.USER_KINDS)),
         ("DOC_KEY", "The comment thread on a document as a whole.", v.DOC_KEY),
     ]
@@ -382,20 +382,20 @@ def render() -> Tuple[str, str]:
     return (
         "// Generated by tools/rule_cases.py from the server's own rules: do not edit (regenerate: python3 tools/rule_cases.py).\n\n"
         "import type { Command } from './commands'\n"
-        "import type { Doc, Input, Item, Kind, UndoEntry, Voice } from './types'\n\n"
+        "import type { Doc, Input, Task, Kind, UndoEntry, Voice } from './types'\n\n"
         "/** A project as the page gets it (page_api/views.py entities, and what can be undone). */\n"
-        "export interface Seen {\n  items: Item[]\n  inputs: Input[]\n  docs: Doc[]\n  voices: Voice[]\n  undo: UndoEntry[]\n}\n\n"
+        "export interface Seen {\n  tasks: Task[]\n  inputs: Input[]\n  docs: Doc[]\n  voices: Voice[]\n  undo: UndoEntry[]\n}\n\n"
         "/** What a change did on the server: the project before, the commands you sent, the project after. */\n"
         "export interface EffectCase {\n  name: string\n  before: Seen\n  commands: Command[]\n  after: Seen\n}\n\n"
         f"export const EFFECTS: EffectCase[] = {text}\n\n"
-        "/** Items, and whether each needs you (domain/rules.py needs_you), by its number. */\n"
-        "export interface NeedsCase {\n  items: Item[]\n  needs: Record<string, boolean>\n}\n\n"
+        "/** Tasks, and whether each needs you (domain/rules.py needs_you), by its number. */\n"
+        "export interface NeedsCase {\n  tasks: Task[]\n  needs: Record<string, boolean>\n}\n\n"
         "/** A message, and whether it is the user's own words (user_word). */\n"
         "export interface UserWordCase {\n  by: string\n  kind: Kind\n  src: string | null\n  user: boolean\n}\n\n"
-        "/** Items, and the order agents take them (queue_order). */\n"
-        "export interface QueueCase {\n  items: Item[]\n  order: number[]\n}\n\n"
-        "/** A project, the inputs whose voice notes are still being worked out, and the item /next hands out next. */\n"
-        "export interface NextCase {\n  items: Item[]\n  inputs: Input[]\n  held: string[]\n  next: number | null\n}\n\n"
+        "/** Tasks, and the order agents take them (queue_order). */\n"
+        "export interface QueueCase {\n  tasks: Task[]\n  order: number[]\n}\n\n"
+        "/** A project, the inputs whose voice notes are still being worked out, and the task /next hands out next. */\n"
+        "export interface NextCase {\n  tasks: Task[]\n  inputs: Input[]\n  held: string[]\n  next: number | null\n}\n\n"
         + rest.rstrip("\n") + "\n"
     ), vocab_text()
 

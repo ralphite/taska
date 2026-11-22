@@ -1,6 +1,6 @@
-// An item's conversation, where the Storybook review found it wrong (T529): message headers, a kept decision, agents'
+// A task's conversation, where the Storybook review found it wrong (T529): message headers, a kept decision, agents'
 // marks and names, the line under a comment on a document, and the original words of a moved input's voice note.
-// guards: src/features/item/ src/ui/bits.tsx src/ui/Files.tsx src/model/agents.ts src/model/talk.ts
+// guards: src/features/task/ src/ui/bits.tsx src/ui/Files.tsx src/model/agents.ts src/model/talk.ts
 import { expect, test } from '@playwright/test'
 import type { APIRequestContext, Locator } from '@playwright/test'
 import { LOOP, isDesk, open, project, type Project } from './seed'
@@ -21,7 +21,7 @@ const op = async (_request: APIRequestContext, p: Project, data: Record<string, 
   if (!r.ok) throw new Error(r.res.join('\n'))
   return r.res[0]
 }
-/** A message of the open item's conversation, by words in it. */
+/** A message of the open task's conversation, by words in it. */
 const message = (page: Parameters<typeof open>[0], words: string) =>
   pane(page).locator('.group\\/msg').filter({ hasText: words }).filter({ visible: true }).first()
 /** How many lines each part's words take (its words only, not the buttons in it). */

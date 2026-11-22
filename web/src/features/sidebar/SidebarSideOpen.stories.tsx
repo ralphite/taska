@@ -1,4 +1,4 @@
-// Documents, Activity or Deleted open beside the items.
+// Documents, Activity or Deleted open beside the tasks.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { side } from '../../stories/sideFixtures'

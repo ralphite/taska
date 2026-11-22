@@ -1,5 +1,5 @@
 // A document's choices: a tap ticks one on the page; they wait until Send choices, which puts them in the document
-// and tells its item which you ticked (with what the box holds).
+// and tells its task which you ticked (with what the box holds).
 
 import { blockKeys } from '../../model/docs'
 import { tickedBlock, tickText, tickWords, ticksOf } from '../../model/docTicks'
@@ -50,7 +50,7 @@ export class DocChoices {
     this.d.ticks.getState().clear(dn)
   }
 
-  /** Only the choices go into the document (as it is when they get there); the item hears which you ticked, with
+  /** Only the choices go into the document (as it is when they get there); the task hears which you ticked, with
    * what the box holds (`key`: the draft the box writes now) as their note. */
   async sendTicks(slug: string, dn: number, key: DraftKey): Promise<void> {
     const m = this.d.model(slug)

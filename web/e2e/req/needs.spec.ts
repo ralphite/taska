@@ -1,6 +1,6 @@
 // Yadong's requirements on what waits for him (D29, "Agents and talk"; R055; T475, D45): each check is named by the codes
 // of his inputs, so a change that breaks one is stopped before it ships with his own words.
-// guards: src/features/list/ src/features/item/ src/app/page/sheets.ts src/ui/ src/model/items.ts src/model/words.ts src/model/project.ts src/pages/DetailContainer.tsx server/taska/domain/ server/taska/page_api/
+// guards: src/features/list/ src/features/task/ src/app/page/sheets.ts src/ui/ src/model/tasks.ts src/model/words.ts src/model/project.ts src/pages/DetailContainer.tsx server/taska/domain/ server/taska/page_api/
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { isDesk, open, project } from '../seed'
 import { box, pane, paneHead, row, rowActs, sheetBody, statusChip, talk, tip, view } from '../ui'
@@ -32,14 +32,14 @@ test('r68 r326 T646: work an agent is stuck on asks you for what it needs: in Ne
   await expect(body.getByText('I need the export key').filter({ visible: true }).first()).toBeVisible()
 })
 
-// B535: the item's status as a row and the item page show it: each status icon's label and its tooltip, and the chip
+// B535: the task's status as a row and the task page show it: each status icon's label and its tooltip, and the chip
 const said = (l: Locator) =>
   l.evaluateAll((els) => els.map((e) => `${e.getAttribute('aria-label')} | ${e.querySelector('title')?.textContent}`))
 const rowIcons = (page: Page) => row(page, 'Ship the export').locator('svg[role="img"]')
 const chip = statusChip
 
 for (const [kind, words] of [['ask', 'Which export key should I use?']] as const)
-  test(`r326 R055: an item in progress whose agent asks reads Needs you, not In progress, on its row and its page; its status stays In progress, and it reads that again once you answer (B535)`, async ({
+  test(`r326 R055: a task in progress whose agent asks reads Needs you, not In progress, on its row and its page; its status stays In progress, and it reads that again once you answer (B535)`, async ({
     page,
     request,
   }) => {
@@ -60,7 +60,7 @@ for (const [kind, words] of [['ask', 'Which export key should I use?']] as const
       expect(await said(paneHead(page).locator('svg[role="img"]').filter({ visible: true }))).toEqual([
         'Needs you | Needs you',
       ])
-    // display only: the item is still in progress, and the chip's menu ticks that
+    // display only: the task is still in progress, and the chip's menu ticks that
     expect((await p.read('T1')).split('\n')[0]).toMatch(/ doing /)
     await chip(page).click()
     const doing = sheetBody(page).getByRole('button', { name: /In progress/ })
@@ -79,7 +79,7 @@ for (const [kind, words] of [['ask', 'Which export key should I use?']] as const
   })
 
 for (const [kind, words] of [['ask', 'Which export key should I use?']] as const)
-  test(`r781: an item whose agent asks says so once: its status reads Needs you, and the line above it has only its code, no Asks you (B555)`, async ({
+  test(`r781: a task whose agent asks says so once: its status reads Needs you, and the line above it has only its code, no Asks you (B555)`, async ({
     page,
     request,
   }) => {
@@ -112,7 +112,7 @@ test('r802: in a list sorted another way (Filters › Sort) what waits on you is
   }
 })
 
-test("r802: the card an item's code shows under the pointer says its status in one word, as its row and its page do: Needs you for an item whose agent asks, not In progress and Needs you (B555)", async ({
+test("r802: the card a task's code shows under the pointer says its status in one word, as its row and its page do: Needs you for a task whose agent asks, not In progress and Needs you (B555)", async ({
   page,
   request,
 }) => {

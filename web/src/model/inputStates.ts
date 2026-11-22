@@ -5,7 +5,7 @@
 // diagram and the table in docs/inputs.md are made from this table (`inputDiagram`, `inputPlacesTable`, checked by a
 // test).
 //
-// The state, with what it names (the items, why it failed, where it went), is worked out from the input Taska sent
+// The state, with what it names (the tasks, why it failed, where it went), is worked out from the input Taska sent
 // and the organizer's facts by model/became `becameOf`, the one place it is; Taska's side of the same way is
 // server/taska/domain/input_states.py (a failure its `transient` rule says goes away is never written). Before Taska
 // has it, it is on its
@@ -20,15 +20,15 @@ export const INPUT_PLACES = {
   row: "its row in the desktop's New input list",
   inputs: 'its row on the Inputs page',
   line: "the line over the phone's box (New input)",
-  talk: "under your message in the item's talk",
+  talk: "under your message in the task's talk",
   sheet: 'its menu (⋯, a long press) and Move',
 } as const
 export type InputPlace = keyof typeof INPUT_PLACES
 
-/** busy: blue, moving; failed: red; done: green; quiet: grey; plain: the items it went to, as links */
+/** busy: blue, moving; failed: red; done: green; quiet: grey; plain: the tasks it went to, as links */
 export type InputTone = 'busy' | 'failed' | 'done' | 'quiet' | 'plain'
 
-/** Under your words in an item, what they made there (B714 #10594): → Created B713. */
+/** Under your words in a task, what they made there (B714 #10594): → Created B713. */
 export const MADE_WORD = 'Created'
 
 /** What can be done about it: ask the organizer again after it failed (Retry) or after its filing was undone
@@ -39,7 +39,7 @@ export const INPUT_ACT_WORD: Record<InputAct, string> = { retry: 'Retry', organi
 
 interface StateDef {
   label: string
-  /** its words, the same in every place ('' : they are what it names: its items, the organizer's note) */
+  /** its words, the same in every place ('' : they are what it names: its tasks, the organizer's note) */
   say: string
   tone: InputTone
   /** a voice message in this state is in this one of model/voiceStates (null: none of its own) */
@@ -58,8 +58,8 @@ export const INPUT_STATES = {
   transcribing: { label: 'Its words to come', say: 'Transcribing…', tone: 'busy', voice: 'sentTranscribing', settled: false, show: { ...LISTS([]), line: [], talk: [], sheet: [] } },
   // the organizer on it now, next in line or asking its service again after a busy answer: one word (B684)
   organizing: { label: 'Organizing', say: 'Organizing…', tone: 'busy', voice: 'organizing', settled: false, show: { ...LISTS([]), line: [], talk: null, sheet: [] } },
-  filed: { label: 'Made or changed items', say: '', tone: 'plain', voice: 'added', settled: true, show: { ...LISTS([]), line: ['open', 'undo', 'move'], talk: [], sheet: ['undo', 'move'] } },
-  answer: { label: 'An answer on its item', say: 'Answer to', tone: 'plain', voice: 'added', settled: true, show: { ...LISTS([]), line: ['open', 'undo', 'move'], talk: null, sheet: ['undo', 'move'] } },
+  filed: { label: 'Made or changed tasks', say: '', tone: 'plain', voice: 'added', settled: true, show: { ...LISTS([]), line: ['open', 'undo', 'move'], talk: [], sheet: ['undo', 'move'] } },
+  answer: { label: 'An answer on its task', say: 'Answer to', tone: 'plain', voice: 'added', settled: true, show: { ...LISTS([]), line: ['open', 'undo', 'move'], talk: null, sheet: ['undo', 'move'] } },
   agent: { label: 'For an agent', say: 'For an agent', tone: 'quiet', voice: 'forAgent', settled: true, show: { ...LISTS([]), line: ['move'], talk: null, sheet: ['move'] } },
   note: { label: 'Nothing filed, the organizer said why', say: '', tone: 'quiet', voice: 'handled', settled: true, show: { ...LISTS([]), line: ['move'], talk: null, sheet: ['move'] } },
   handled: { label: 'Handled', say: 'Handled', tone: 'done', voice: 'handled', settled: true, show: { ...LISTS([]), line: ['move'], talk: null, sheet: ['move'] } },
@@ -81,7 +81,7 @@ export const INPUT_EVENTS = {
   kept: 'Esc (New input: kept)',
   send: 'Send',
   words: 'Its words in',
-  filed: 'Made or changed items',
+  filed: 'Made or changed tasks',
   answered: 'Filed as an answer',
   note: 'Nothing to file, said why',
   nothing: 'Nothing to do',
@@ -153,7 +153,7 @@ export function actsIn(b: Became, place: InputPlace, w: InputWith): InputAct[] {
     if (a === 'retry' || a === 'organize') return b.k === 'failed' || b.k === 'undone' ? b.retry : false
     if (a === 'undo') return b.k === 'filed' || b.k === 'answer' ? b.undo : false
     if (a === 'move') return w.others
-    if (a === 'open') return b.k === 'moved' || (b.k === 'filed' && b.items.length > 0) || b.k === 'answer'
+    if (a === 'open') return b.k === 'moved' || (b.k === 'filed' && b.tasks.length > 0) || b.k === 'answer'
     return true
   })
 }
@@ -164,8 +164,8 @@ export const showsIn = (b: Became, place: InputPlace) => INPUT_STATES[b.k].show[
 const VOICE_PLACE: Record<InputPlace, VoicePlace> = { row: 'row', inputs: 'row', line: 'line', talk: 'talk', sheet: 'row' }
 const say = (s: string) => s[0].toUpperCase() + s.slice(1)
 
-/** What became of it, in words, as `place` says it: its state's words, with what it names (the items and what was done
- * to each, said once over the items it was done to; why it failed; where it went). */
+/** What became of it, in words, as `place` says it: its state's words, with what it names (the tasks and what was done
+ * to each, said once over the tasks it was done to; why it failed; where it went). */
 export function becameText(b: Became, place: InputPlace): string {
   const W = INPUT_STATES[b.k].say
   switch (b.k) {
@@ -174,9 +174,9 @@ export function becameText(b: Became, place: InputPlace): string {
     case 'failed':
       return `${W} · ${b.why}`
     case 'answer':
-      return `${W} ${b.item.code}`
+      return `${W} ${b.task.code}`
     case 'filed':
-      return [...b.items.map((x, i) => [x.did && !(i && b.items[i - 1].did === x.did) ? x.did : '', x.item.code].filter(Boolean).join(' ')), ...(b.note ? [say(b.note)] : [])].join(' · ')
+      return [...b.tasks.map((x, i) => [x.did && !(i && b.tasks[i - 1].did === x.did) ? x.did : '', x.task.code].filter(Boolean).join(' ')), ...(b.note ? [say(b.note)] : [])].join(' · ')
     case 'note':
       return say(b.text)
     case 'moved':
@@ -186,11 +186,11 @@ export function becameText(b: Became, place: InputPlace): string {
   }
 }
 
-/** The state of model/voiceStates a voice message is in, from what became of its input: one that made an item is
+/** The state of model/voiceStates a voice message is in, from what became of its input: one that made a task is
  * Created, its words still to come are as Taska's records have them (or more said into it: adding). */
 export function voiceStateOf(b: Became): VoiceState | null {
   if (b.k === 'transcribing') return b.state
-  if (b.k === 'filed' && b.items.some((x) => x.did === 'Created')) return 'created'
+  if (b.k === 'filed' && b.tasks.some((x) => x.did === 'Created')) return 'created'
   return INPUT_STATES[b.k].voice
 }
 
@@ -220,9 +220,9 @@ export function inputDiagram(): string {
   return lines.join('\n')
 }
 
-/** what the table says for the states whose words are what they name; the talk shows only the items it made there */
-const WORDS: Partial<Record<InputState, string>> = { filed: 'its items: Created B014 · Added to F012', answer: 'Answer to T007', note: "the organizer's words", failed: "Couldn't organize · why", transcribing: 'as model/voiceStates says it', moved: 'Moved to Shop' }
-const TALK_WORDS: Partial<Record<InputState, string>> = { filed: `→ ${MADE_WORD} B713 (the items it made there)` }
+/** what the table says for the states whose words are what they name; the talk shows only the tasks it made there */
+const WORDS: Partial<Record<InputState, string>> = { filed: 'its tasks: Created B014 · Added to F012', answer: 'Answer to T007', note: "the organizer's words", failed: "Couldn't organize · why", transcribing: 'as model/voiceStates says it', moved: 'Moved to Shop' }
+const TALK_WORDS: Partial<Record<InputState, string>> = { filed: `→ ${MADE_WORD} B713 (the tasks it made there)` }
 
 /** What each place shows in each state, as a Markdown table; —: nothing. */
 export function inputPlacesTable(): string {

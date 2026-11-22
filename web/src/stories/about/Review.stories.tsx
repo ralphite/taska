@@ -13,7 +13,7 @@ export const About: StoryObj = {
         on the phone and the desktop. Interactive cases keep their state in the story and need no Taska server.
       </p>
       <p>
-        Yadong opens the link from the item, compares the states or tries the available controls, and confirms there. Once settled and built,
+        Yadong opens the link from the task, compares the states or tries the available controls, and confirms there. Once settled and built,
         keep the case in the component&apos;s stories or a demo so it can be checked when the page changes.
       </p>
     </SectionAbout>

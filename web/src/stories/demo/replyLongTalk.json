@@ -1,5 +1,5 @@
 {
- "note": "What lies outside Taska in the Demo \"Reply by voice on a long talk\" (B786 r1337, as system-design T27 was on Yadong's iPhone): the words the microphone's recording (replyLongTalk.webm, a synthetic voice) says, as transcription gives them; the organizer's answer for what is said on an item an agent works on (it is left for the agent); and the tutor's reply with its next question, as it would write them. web/scripts/record-demo.mjs hands them to the real server it records against.",
+ "note": "What lies outside Taska in the Demo \"Reply by voice on a long talk\" (B786 r1337, as system-design T27 was on Yadong's iPhone): the words the microphone's recording (replyLongTalk.webm, a synthetic voice) says, as transcription gives them; the organizer's answer for what is said on a task an agent works on (it is left for the agent); and the tutor's reply with its next question, as it would write them. web/scripts/record-demo.mjs hands them to the real server it records against.",
  "story": "demo-reply-by-voice-on-a-long-talk--phone-and-desktop",
  "words": "按默认来。细节也要懂，但时间优先给能迁移的判断和模式；重点你从我的回答里找，边练边定。",
  "plan": "pass\n",

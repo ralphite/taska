@@ -1,4 +1,4 @@
-// What just happened (T591: Floating > Toast): the page's own Toast over the item list, as the page places it: above
+// What just happened (T591: Floating > Toast): the page's own Toast over the task list, as the page places it: above
 // the box over the pane you acted in on the desktop, above the box on the phone.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames, Hold } from '../../stories/Frames'
@@ -18,7 +18,7 @@ const one = (t: ToastView | ((desk: boolean) => ToastView)): Story => ({
     <Frames phoneWidth={393} deskWidth={900} height={420}>
       {(layout) => (
         <div className="relative h-full">
-          {listOf(PROJECT, 'items', {}, layout === 'desk')}
+          {listOf(PROJECT, 'tasks', {}, layout === 'desk')}
           {/* × closes it; its button (Undo, Open, Reload, Retry) needs Taska or the page: the Actions panel, and it goes */}
           <Hold<boolean> start>
             {(shown, set) =>
@@ -40,7 +40,7 @@ export const Moved: Story = { ...one({ text: 'Moved T012 to Home', error: false,
 /** It stays until closed. */
 export const Sticky: Story = { ...one({ text: 'Taska has an update', error: false, sticky: true, action: { label: 'Reload' } }), name: 'Stays until closed' }
 /** Long words: two lines at most. */
-export const Long: Story = { ...one({ text: 'T012 is done, with your note · 3 subitems still open. Their talk stays with them.', error: false, sticky: false, action: { label: 'Undo' } }), name: 'Long words' }
+export const Long: Story = { ...one({ text: 'T012 is done, with your note · 3 subtasks still open. Their talk stays with them.', error: false, sticky: false, action: { label: 'Undo' } }), name: 'Long words' }
 // ---- more states (T639)
 export const ErrorStays: Story = { ...one({ text: '#12: your change did not go through. Your words are back in the box; send again', error: true, sticky: true, action: null }), name: 'Error that stays until closed' }
 export const ErrorWithRetry: Story = { ...one({ text: 'Order not saved', error: true, sticky: false, action: { label: 'Retry' } }), name: 'Error with Retry' }

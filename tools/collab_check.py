@@ -3,15 +3,15 @@
 
     python3 tools/collab_check.py [--base http://127.0.0.1:7340] [--keep]
 
-Makes a throwaway project on that Taska with a few items you approved, then runs real agent sessions on it, each a
+Makes a throwaway project on that Taska with a few tasks you approved, then runs real agent sessions on it, each a
 fresh headless session of its app (Claude Code: `claude -p`, Codex: `codex exec`) told only what a user would tell
 it; after each step it reads Taska itself and checks what came of it:
 
-  1. alpha takes the next item: it holds it.
-  2. beta, told to work on alpha's item, is refused by Taska and leaves it; its /next named alpha as here.
-  3. beta, told the user wants it to take over, takes it with `take`; the item says so to alpha.
+  1. alpha takes the next task: it holds it.
+  2. beta, told to work on alpha's task, is refused by Taska and leaves it; its /next named alpha as here.
+  3. beta, told the user wants it to take over, takes it with `take`; the task says so to alpha.
   4. alpha, writing on it again, is told to stop, and says it will.
-  5. a manager hands an item to its worker (parent=manager): the worker is not refused; Agents shows it under its
+  5. a manager hands a task to its worker (parent=manager): the worker is not refused; Agents shows it under its
      manager.
   6. Codex, connecting, is told who else is here.
 
@@ -66,10 +66,10 @@ def main() -> int:
     print(f"project {slug}: {base}", flush=True)
     http("POST", f"{base}/do?by=you", "new P1 now Pick the export format\nnew task P1 now Sort the list by date\n"
                                        "new P2 now Write the changelog\n")
-    item = lambda code: http("GET", f"{base}/{code}?ui=1")  # noqa: E731
+    task = lambda code: http("GET", f"{base}/{code}?ui=1")  # noqa: E731
 
     def sessions() -> dict:
-        """Each agent session as the page's Agents shows it: its parent and the item it holds (n)."""
+        """Each agent session as the page's Agents shows it: its parent and the task it holds (n)."""
         view = json.loads(http("GET", f"{base}/api/view?ui=1"))["project"]["agents"]
         return {s["name"]: s for ag in view for s in ag.get("sessions", [])}
 
@@ -98,23 +98,23 @@ def main() -> int:
             f"`T1 doing`, `T1 progress <text>`). Always keep `by=claude-code&session={ses}{extra}` in the URLs. Do only "
             f"this, then stop and say in one or two sentences what Taska told you and what you did: {task}"), work)
 
-    step("1 alpha takes the next item and holds it",
-         lambda: claude("alpha", "get your next item from /next and mark that item doing."),
-         lambda out: on("alpha") == 1 and " doing " in item("T1").split("\n")[0])
-    step("2 beta is refused alpha's item, leaves it, and was told alpha is here",
+    step("1 alpha takes the next task and holds it",
+         lambda: claude("alpha", "get your next task from /next and mark that task doing."),
+         lambda out: on("alpha") == 1 and " doing " in task("T1").split("\n")[0])
+    step("2 beta is refused alpha's task, leaves it, and was told alpha is here",
          lambda: claude("beta", "call /next once, then work on T1: send `T1 doing`. Follow what Taska answers."),
          lambda out: on("alpha") == 1 and on("beta") != 1 and "alpha" in out.lower())
     step("3 beta takes T1 over because the user asked; T1 says so to alpha",
          lambda: claude("beta", "the user asks you to take over T1 from the session that holds it. Do it the way "
                                 "Taska's guide says (GET .../agent tells; the command is `T1 take`)."),
-         lambda out: on("beta") == 1 and "@alpha T1 is taken over from you" in item("T1"))
+         lambda out: on("beta") == 1 and "@alpha T1 is taken over from you" in task("T1"))
     step("4 alpha, writing on T1 again, is told to stop and says it stops",
          lambda: claude("alpha", "write `T1 progress still on the export format` and do what Taska's answer says."),
-         lambda out: any(w in out.lower() for w in STOP) and "@alpha T1 is taken over" in item("T1"))
-    step("5 a manager's worker takes the item its manager got, unrefused, shown under its manager",
-         lambda: claude("manager", "call /next and mark the item it gives you doing; then hand it to your worker: "
-                                   "`<that item> say @worker-1 please do this one`.") + "\n----\n" +
-         claude("worker-1", "call /next; your manager wrote to you on an item: mark that item doing and write a "
+         lambda out: any(w in out.lower() for w in STOP) and "@alpha T1 is taken over" in task("T1"))
+    step("5 a manager's worker takes the task its manager got, unrefused, shown under its manager",
+         lambda: claude("manager", "call /next and mark the task it gives you doing; then hand it to your worker: "
+                                   "`<that task> say @worker-1 please do this one`.") + "\n----\n" +
+         claude("worker-1", "call /next; your manager wrote to you on a task: mark that task doing and write a "
                             "progress line on it.", "&parent=manager"),
          lambda out: sessions().get("worker-1", {}).get("parent") == "manager" and on("worker-1") is not None
          and on("worker-1") == (sessions().get("manager", {}).get("on") or {}).get("n", on("worker-1")))

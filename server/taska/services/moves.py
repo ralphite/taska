@@ -1,4 +1,4 @@
-"""Moving work between projects: an input sent to the wrong project, and an item (with its subitems, the words it
+"""Moving work between projects: an input sent to the wrong project, and a task (with its subtasks, the words it
 came from, its talk and its documents) that belongs in another one."""
 
 from __future__ import annotations
@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 from ..domain import events as ev
 from ..domain.history import made_by_organizer
-from ..domain.model import FileRef, Item, Voice
-from ..domain.rules import item_at
+from ..domain.model import FileRef, Task, Voice
+from ..domain.rules import task_at
 from ..domain.vocab import MAX_TEXT, Refused
 from ..domain.voices import is_voice, said as said_text
 from .project import Project
@@ -51,11 +51,11 @@ def _save(there: Project, got: List[Carried]) -> List[str]:
 
 
 class Moves:
-    """Moves between the projects of a workspace: one move of an item at a time; an input on its way out takes no
+    """Moves between the projects of a workspace: one move of a task at a time; an input on its way out takes no
     other change until it is gone."""
 
     def __init__(self) -> None:
-        self.one_at_a_time = threading.Lock()  # an item move, and the page's answer for it, whole
+        self.one_at_a_time = threading.Lock()  # a task move, and the page's answer for it, whole
         self._out: Set[Tuple[str, str]] = set()  # (project, input) on their way to another project
         self._out_lock = threading.Lock()
 
@@ -122,19 +122,19 @@ class Moves:
             self._leaving(here.slug, rid, False)
         return {"ok": True, "to": there.slug, "as": new}
 
-    def item(self, here: Project, there: Optional[Project], ref: Any, under: Any = None) -> Dict[str, Any]:
-        """The item is made there with its words and talk (and its subitems, the inputs it came from, its documents);
+    def task(self, here: Project, there: Optional[Project], ref: Any, under: Any = None) -> Dict[str, Any]:
+        """The task is made there with its words and talk (and its subtasks, the inputs it came from, its documents);
         here it says where it went and is closed."""
         if not there or there is here:
             raise Refused("choose another project")
         named = here.state.title or here.slug
         with here.lock:
             st = here.state
-            root = item_at(st, ref, follow=False)
+            root = task_at(st, ref, follow=False)
             if root.deleted or root.merged_into:
                 raise Refused(f"{st.code(root.n)} cannot be moved")
             plan = []
-            docs: List[Tuple[int, str, str, bool, str]] = []  # (item, title, text, a web page, its comments)
+            docs: List[Tuple[int, str, str, bool, str]] = []  # (task, title, text, a web page, its comments)
             said: List[Tuple[int, str, str, List[Carried]]] = []
             kept: Dict[int, List[Carried]] = {}  # the files of its talk and of its documents' comments
             for it, par in _tree(here, root):
@@ -156,14 +156,14 @@ class Moves:
                 for d in sorted((d for d in st.docs.values() if d.n == it.n and not d.deleted), key=lambda d: d.d):
                     notes = "\n\n".join(f"- {c.by} ({_stamp(c.t)})" + (f" on “{c.quote[:200]}”" if c.quote else "")
                                         + f": {words}" for c in d.comments for words in [said_text(st, c.text, c.files)] if words)
-                    page = d.is_page  # a web page goes as it is; its comments go on the item (T753)
+                    page = d.is_page  # a web page goes as it is; its comments go on the task (T753)
                     md = d.md if page else d.md + (f"\n\n---\nComments in {named} D{d.d}:\n\n{notes}" if notes else "")
                     docs.append((it.n, d.title or "", md, page, f"Comments in {named} D{d.d}:\n\n{notes}" if page and notes else ""))
                     kept[it.n] += _read(here, [f for c in d.comments for f in c.files])
         parent_there = None
-        if under:  # put it under an item there
+        if under:  # put it under a task there
             with there.lock:
-                parent_there = there.state.code(item_at(there.state, under, follow=False).n)
+                parent_there = there.state.code(task_at(there.state, under, follow=False).n)
         new_as: Dict[int, str] = {}
         for n, par, code, status, archived, fields in plan:
             command: Dict[str, Any] = {"op": "new", **fields, "status": status}
@@ -197,14 +197,14 @@ class Moves:
 
 
 
-def _tree(here: Project, root: Item) -> List[Tuple[Item, Optional[int]]]:
-    """The item and its subitems, parents before their children: (item, its parent's number)."""
-    out: List[Tuple[Item, Optional[int]]] = []
-    todo: List[Tuple[Item, Optional[int]]] = [(root, None)]
+def _tree(here: Project, root: Task) -> List[Tuple[Task, Optional[int]]]:
+    """The task and its subtasks, parents before their children: (task, its parent's number)."""
+    out: List[Tuple[Task, Optional[int]]] = []
+    todo: List[Tuple[Task, Optional[int]]] = [(root, None)]
     while todo:
         it, par = todo.pop(0)
         out.append((it, par))
-        todo += [(k, it.n) for k in sorted(here.state.items.values(), key=lambda k: k.n) if k.parent == it.n and k.live]
+        todo += [(k, it.n) for k in sorted(here.state.tasks.values(), key=lambda k: k.n) if k.parent == it.n and k.live]
     return out
 
 

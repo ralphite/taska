@@ -14,18 +14,18 @@ import { SkillMenu, type AddRow } from './SkillMenu'
 import { HIT, MUTED } from '../../ui/tones'
 
 /** What the line's buttons do: stop what the box is in, let go of what is picked in the document, send or clear the
- * choices ticked, reply to the document's item instead. */
+ * choices ticked, reply to the document's task instead. */
 export interface LineEvents {
   stop(): void
   unpick(): void
   sendTicks(): void
   clearTicks(): void
-  toItem(): void
+  toTask(): void
   /** let go of the comments written in the box */
   discard(): void
 }
 
-const NO_LINE_EVENTS: LineEvents = { stop() {}, unpick() {}, sendTicks() {}, clearTicks() {}, toItem() {}, discard() {} }
+const NO_LINE_EVENTS: LineEvents = { stop() {}, unpick() {}, sendTicks() {}, clearTicks() {}, toTask() {}, discard() {} }
 
 const xButton = (label: string, run: () => void, esc = true) => (
   <button
@@ -54,7 +54,7 @@ function LineRight({ right, on }: { right: BoxRight; on: LineEvents }) {
     )
   return (
     <button
-      onClick={on.toItem}
+      onClick={on.toTask}
       className={`${HIT} -my-1 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200`}
     >
       Reply to {right.code}
@@ -507,7 +507,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
       case 'became': {
         const { b } = line
         const tone = INPUT_STATES[b.k].tone
-        const first = b.k === 'filed' ? b.items[0]?.item : b.k === 'answer' ? b.item : undefined
+        const first = b.k === 'filed' ? b.tasks[0]?.task : b.k === 'answer' ? b.task : undefined
         const act = (a: InputAct) =>
           a === 'open' && b.k === 'moved' ? (
             <a key={a} href={b.href} className="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">

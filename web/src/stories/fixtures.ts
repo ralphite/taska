@@ -1,18 +1,18 @@
-// Made-up data for stories: items, inputs and the facts a row or a list shows, each built from a few fields.
+// Made-up data for stories: tasks, inputs and the facts a row or a list shows, each built from a few fields.
 
 import { fn } from 'storybook/test'
 import SHOT_SMALL from './assets/screenshot-search-small.jpg'
 import { Diagrams } from '../app/page/diagrams'
 import type { RowEvents, RowFacts, RowLook } from '../features/list/ListRows'
-import { commentWithVoices, inputWithVoices, itemWithVoices, project, type ProjectModel } from '../model/project'
-import type { Comment, Doc, Input, Item, Message, ProjectFacts, Voice, VoiceStep } from '../model/types'
+import { commentWithVoices, inputWithVoices, taskWithVoices, project, type ProjectModel } from '../model/project'
+import type { Comment, Doc, Input, Task, Message, ProjectFacts, Voice, VoiceStep } from '../model/types'
 
 export const T = '2026-10-23T14:30:00-07:00'
 
 /** Mermaid diagrams drawn as the page draws them (the page's own drawing, one for every story) */
 export const DIAGRAMS = new Diagrams()
 
-export function item(f: Partial<Item> & { n: number }): Item {
+export function task(f: Partial<Task> & { n: number }): Task {
   return {
     code: 'T' + String(f.n).padStart(3, '0'),
     tags: [],
@@ -65,9 +65,9 @@ export const shown = (r: Input, ...voices: Voice[]): Input => inputWithVoices(r,
 /** A comment as the page's model shows it, its voice notes' words from their records. */
 export const shownComment = (c: Comment, ...voices: Voice[]): Comment => commentWithVoices(c, new Map(voices.map((v) => [v.f, v])))
 
-/** An item as the page's model shows it: your messages with the words of their inputs' voice notes. */
-export const shownItem = (it: Item, inputs: readonly Input[], ...voices: Voice[]): Item =>
-  itemWithVoices(it, new Map(inputs.map((r) => [r.id, r])), new Map(voices.map((v) => [v.f, v])))
+/** A task as the page's model shows it: your messages with the words of their inputs' voice notes. */
+export const shownTask = (it: Task, inputs: readonly Input[], ...voices: Voice[]): Task =>
+  taskWithVoices(it, new Map(inputs.map((r) => [r.id, r])), new Map(voices.map((v) => [v.f, v])))
 
 export function input(f: Partial<Input> & { id: string }): Input {
   return { t: T, by: 'you', text: 'The export should keep the filter I set.', scope: null, files: [], acked: false, touched: [], org: null, seq: 1, v: 0, ...f }
@@ -79,7 +79,7 @@ export function facts(f: Partial<RowFacts> = {}): RowFacts {
 
 export const look = (desk: boolean, f: Partial<RowLook> = {}): RowLook => ({ current: false, selected: false, words: [], desk, ...f })
 
-/** A row's handlers: each shows in Storybook's Actions panel (opening an item, changing one needs the rest of the
+/** A row's handlers: each shows in Storybook's Actions panel (opening a task, changing one needs the rest of the
  * page). */
 export const noRowEvents: RowEvents = {
   open: fn().mockName('Row: open'),
@@ -122,12 +122,12 @@ export function projectFacts(f: Partial<ProjectFacts> = {}): ProjectFacts {
   }
 }
 
-/** A project's model made of these items and inputs, as the page would have it; a voice note's words come only from
+/** A project's model made of these tasks and inputs, as the page would have it; a voice note's words come only from
  * its record (`voices`), as on the page (T682). */
-export function modelOf(items: Item[], inputs: Input[] = [], f: Partial<ProjectFacts> = {}, docs: Doc[] = [], voices: Voice[] = []): ProjectModel {
+export function modelOf(tasks: Task[], inputs: Input[] = [], f: Partial<ProjectFacts> = {}, docs: Doc[] = [], voices: Voice[] = []): ProjectModel {
   return project({
     cursor: '',
-    items: new Map(items.map((it) => [it.n, it])),
+    tasks: new Map(tasks.map((it) => [it.n, it])),
     inputs: new Map(inputs.map((r) => [r.id, r])),
     docs: new Map(docs.map((d) => [d.d, d])),
     voices: new Map(voices.map((v) => [v.f, v])),

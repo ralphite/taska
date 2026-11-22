@@ -71,7 +71,7 @@ function foundRanges(root: HTMLElement, words: readonly string[]): Range[] {
 }
 
 function Mark({ l }: { l: FoundLine }) {
-  if (l.mark.kind === 'item') return <StateIcon s={l.mark.s} label={l.mark.label} cls="size-4 shrink-0" />
+  if (l.mark.kind === 'task') return <StateIcon s={l.mark.s} label={l.mark.label} cls="size-4 shrink-0" />
   // a web page as Documents marks it
   return <Icon n={l.mark.kind === 'rules' ? 'book' : l.mark.kind === 'doc' ? (l.mark.web ? 'web' : 'doc') : 'newinput'} c="size-4 shrink-0 text-zinc-400 dark:text-zinc-500" />
 }
@@ -410,7 +410,7 @@ export function SearchDialog({ v, preview, menuOpen = null, on }: { v: SearchDia
 const NO_WORLD: InlineWorld = { find: () => null, url: () => '', size: () => undefined }
 
 /** A row's preview when its page is not here (another project's, a document, an input): what the search knows of it. */
-export function FoundPreview({ l, text, meta }: { l: FoundLine; /** its words (Markdown): an item's body, a document's text */ text: string; meta: string }) {
+export function FoundPreview({ l, text, meta }: { l: FoundLine; /** its words (Markdown): a task's body, a document's text */ text: string; meta: string }) {
   return (
     <article className="px-8 pt-7 pb-10">
       <p className="mb-2 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">

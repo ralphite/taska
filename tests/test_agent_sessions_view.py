@@ -1,5 +1,5 @@
 """F768 (Yadong r1290, r1296): the Agents dialog lists every agent session seen in a project, each with what its app
-says of it now (working, idle, waiting on the user, gone), the item it is on, and the session that started it (a
+says of it now (working, idle, waiting on the user, gone), the task it is on, and the session that started it (a
 manager's worker says &parent=<the manager's session name>). What the page gets for each session."""
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ class SessionsInPresence(ProjectCase):
         rows = {r["name"]: r for r in agent_routes.presence(self.p)["agents"]}
         return {s["name"]: s for s in rows[agent].get("sessions", [])}
 
-    def test_worker_names_its_parent_and_holds_its_item(self) -> None:
+    def test_worker_names_its_parent_and_holds_its_task(self) -> None:
         self.p.run([(0, {"op": "new", "pri": "P1", "when": "now", "title": "Export loses the filter"})], "you")
         self.call(f"/next?by=claude-code&session=Manager&sid={CC}")
         self.call(f"/do?by=claude-code&session=worker-1&parent=Manager&sid={W1}", b"T1 doing\n")

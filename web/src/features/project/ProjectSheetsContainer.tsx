@@ -64,7 +64,7 @@ function LiveProjectMenu({ req }: { req: Extract<SheetRequest, { kind: 'project-
   const rows = useStoreValue(stores.data, (s) => s.projects)
   const row = rows?.find((p) => p.name === req.slug)
   const title = (here && m?.facts.title) || row?.title || req.slug
-  const open = here && m ? openCount(m.items) : (row?.open ?? '')
+  const open = here && m ? openCount(m.tasks) : (row?.open ?? '')
   const done = (run: () => void) => () => {
     app.sheets.close()
     run()

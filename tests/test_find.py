@@ -53,8 +53,8 @@ class ByTheWords(unittest.TestCase):
     def test_closest_first_every_kind(self) -> None:
         st = replay(LOG, lambda seq, why: None)
         found = finding.by_words(st, "where the export loses my filter")
-        self.assertEqual([(f.kind, f.key) for f in found][:2], [("items", "i1"), ("docs", "d1")])
-        self.assertEqual({f.kind for f in found}, {"items", "rules", "inputs", "docs"})
+        self.assertEqual([(f.kind, f.key) for f in found][:2], [("tasks", "i1"), ("docs", "d1")])
+        self.assertEqual({f.kind for f in found}, {"tasks", "rules", "inputs", "docs"})
         self.assertIn(("rules", "s0"), [(f.kind, f.key) for f in found])  # a section of the rules (I693)
         self.assertNotIn("i2", [f.key for f in found])
         self.assertEqual(finding.by_words(st, "the where my"), [])
@@ -113,7 +113,7 @@ class InEveryProject(unittest.TestCase):
         view = find_view(self.ws, "export", "home")
         self.assertEqual(view["by"], "words")
         self.assertEqual([x["project"] for x in view["found"]], ["home", "shop"])
-        self.assertEqual(view["found"][0]["item"]["title"], "Export contacts with the sort kept")
+        self.assertEqual(view["found"][0]["task"]["title"], "Export contacts with the sort kept")
         self.ws.meaning.warm()
         self.assertEqual(embed.calls, [])
 
@@ -135,7 +135,7 @@ class InEveryProject(unittest.TestCase):
         self.meaning(embed)
         view = find_view(self.ws, "the thing that drops words", "shop")
         self.assertEqual(view["by"], "meaning")
-        self.assertEqual([(x["project"], x["item"]["title"]) for x in view["found"][:2]],
+        self.assertEqual([(x["project"], x["task"]["title"]) for x in view["found"][:2]],
                          [("shop", "Saving drops the last word"), ("home", "Saving drops the last word")])
         self.assertEqual(embed.texts("RETRIEVAL_QUERY"), ["the thing that drops words"])
         self.assertIn(self.line("shop", "T2 "), embed.texts("RETRIEVAL_DOCUMENT"))
@@ -153,7 +153,7 @@ class InEveryProject(unittest.TestCase):
         again = FakeEmbed()
         self.meaning(again)
         view = find_view(self.ws, "the filter on export", "shop")
-        self.assertEqual(view["found"][0]["item"]["title"], "Export keeps the filter")
+        self.assertEqual(view["found"][0]["task"]["title"], "Export keeps the filter")
         self.assertEqual(again.calls, [("RETRIEVAL_QUERY", ["the filter on export"])])
 
     def test_new_and_changed_lines_are_found_at_once(self) -> None:
@@ -164,13 +164,13 @@ class InEveryProject(unittest.TestCase):
         shop = self.ws.projects["shop"]
         shop.run(parse("new #bug P1 Words go missing after a pause\n"), "claude-code")
         view = find_view(self.ws, "missing words after a pause", "shop")
-        self.assertEqual(view["found"][0]["item"]["title"], "Words go missing after a pause")
+        self.assertEqual(view["found"][0]["task"]["title"], "Words go missing after a pause")
         self.assertEqual(embed.texts("RETRIEVAL_DOCUMENT"), [self.line("shop", "T3 ")])
         embed.calls.clear()
         shop.run(parse("F1 title Export keeps the sort you set\n"), "claude-code")
         view = find_view(self.ws, "export with the sort", "shop")
         self.assertEqual(embed.texts("RETRIEVAL_DOCUMENT"), [self.line("shop", "T1 ")])
-        self.assertEqual(view["found"][0]["item"]["title"], "Export keeps the sort you set")
+        self.assertEqual(view["found"][0]["task"]["title"], "Export keeps the sort you set")
 
     def test_warm_up_embeds_and_lets_go_of_old_lines(self) -> None:
         embed = FakeEmbed()

@@ -1,5 +1,5 @@
 """F667: each project's counts in the projects' list (the sidebar's card), as its page counts them: open and finished
-on Items, what needs you, its inputs and documents; archived and deleted left out; the rules document is not one of
+on Tasks, what needs you, its inputs and documents; archived and deleted left out; the rules document is not one of
 the documents, and a proposed change to it waits on you (I693)."""
 
 from __future__ import annotations
@@ -60,7 +60,7 @@ class Tally(unittest.TestCase):
         self.assertEqual(got["closed"], 2)
         self.assertEqual(got["needs"], 1)  # the proposed change to the rules waits on you
         self.assertEqual(got["inputs"], 1)  # r2 was deleted
-        self.assertEqual(got["docs"], 1)  # doc 2 went with its deleted item
+        self.assertEqual(got["docs"], 1)  # doc 2 went with its deleted task
 
 
 if __name__ == "__main__":

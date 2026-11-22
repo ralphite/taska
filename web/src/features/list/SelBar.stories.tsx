@@ -7,7 +7,7 @@ const meta: Meta = { title: 'UI/List pane/Selection bar' }
 export default meta
 type Story = StoryObj
 
-// what it does to the picked items needs the list and Taska: it shows in the Actions panel
+// what it does to the picked tasks needs the list and Taska: it shows in the Actions panel
 const on = { set: act('Picked: set'), clear: act('Picked: clear') }
 
 /** Three rows picked (Cmd-click, Shift-click): what can be done to them all. */

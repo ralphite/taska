@@ -13,7 +13,7 @@
 //
 // Rules that keep false positives out (from the manual review of the first audit, 11-06):
 //   - story scaffolding is skipped: rows around the phone and desktop frames ([data-layout]) and their captions
-//   - rows that align their items to the end or the baseline mean it (attachments of different sizes)
+//   - rows that align their tasks to the end or the baseline mean it (attachments of different sizes)
 //   - a row with text on more than one line is a multi-line row: its controls sit at the top or the middle by design
 //   - an icon over its label (a column) is not an icon beside its label
 //   - text that ends in an ellipsis, fades out (mask) or scrolls is not cut off
@@ -154,7 +154,7 @@ export function probe() {
         continue
       }
     }
-    // align: rows that align their items to the end or the baseline mean it
+    // align: rows that align their tasks to the end or the baseline mean it
     if (/end|baseline/.test(cs.alignItems)) continue
     const kids = []
     for (const ch of shown) {

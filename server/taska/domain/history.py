@@ -7,8 +7,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from . import events as ev, item_states
-from .model import Item
+from . import events as ev, task_states
+from .model import Task
 from .rules import agent_hands, touched_since, touches
 from .state import ProjectState
 from .text import seconds
@@ -31,7 +31,7 @@ def filings(state: ProjectState) -> Dict[str, Filing]:
     for e in state.events:
         for m in touches(state, e):
             last[m] = e.seq
-        if e.by == "org" and e.src and isinstance(e, (ev.ItemAdded, ev.FieldsSet, ev.MessagePosted, ev.ItemMerged)) \
+        if e.by == "org" and e.src and isinstance(e, (ev.TaskAdded, ev.FieldsSet, ev.MessagePosted, ev.TaskMerged)) \
                 and e.seq not in state.filing_off:
             by_src.setdefault(e.src, []).append(e)
     out: Dict[str, Filing] = {}
@@ -49,14 +49,14 @@ def filings(state: ProjectState) -> Dict[str, Filing]:
         words: List[str] = []
         for x in xs:
             c = state.code(getattr(x, "n"))
-            if isinstance(x, ev.ItemAdded):
+            if isinstance(x, ev.TaskAdded):
                 words.append(f"removes {c}")
             elif isinstance(x, ev.FieldsSet):
                 words += [f"{c} back to {STATUS_WORDS.get(str(x.was.get(f)), x.was.get(f))}"
                           if f in ("pri", "status", "when") else f"{c}'s old {f}" for f in x.f]
             elif isinstance(x, ev.MessagePosted):
                 words.append(f"takes back the note on {c}")
-            elif isinstance(x, ev.ItemMerged):
+            elif isinstance(x, ev.TaskMerged):
                 words.append(f"{c} no longer merged into {state.code(x.into)}")
         words = list(dict.fromkeys(words))
         if words:
@@ -96,11 +96,11 @@ def undoable(state: ProjectState, limit: int = 5, scan: int = 600) -> List[Undoa
     out: List[Undoable] = []
     seen: Set[Tuple[int, str]] = set()
     for e in reversed(state.events[-scan:]):
-        if isinstance(e, ev.ItemsArchived):  # archived in a batch since: an older archive is not the latest any more
+        if isinstance(e, ev.TasksArchived):  # archived in a batch since: an older archive is not the latest any more
             seen.update((n, "archived") for n in e.ns)
         if not isinstance(e, ev.FieldsSet) or e.undo_of or e.seq in state.undone_changes:
             continue
-        it = state.items.get(e.n)
+        it = state.tasks.get(e.n)
         fields = e.fields
         if e.by == "you" and it and it.live:
             f = {k: v for k, v in fields.items() if (e.n, k) not in seen and _has(it, k) and it.get(k) == v}
@@ -112,24 +112,24 @@ def undoable(state: ProjectState, limit: int = 5, scan: int = 600) -> List[Undoa
     return out
 
 
-def _has(it: Item, name: str) -> bool:
+def _has(it: Task, name: str) -> bool:
     return hasattr(it, name)
 
 
 @dataclass
 class DeletionPlan:
-    """What deleting an input does: the items that go with it, and those that stay with why."""
+    """What deleting an input does: the tasks that go with it, and those that stay with why."""
 
     go: List[int]
     keep: List[List[Any]]  # [n, why]
 
 
 def deletions(state: ProjectState, only: Optional[List[str]] = None) -> Dict[str, DeletionPlan]:
-    """Delete moves an input to Deleted, with the items only it made, as long as no agent worked on them. An item
+    """Delete moves an input to Deleted, with the tasks only it made, as long as no agent worked on them. A task
     with other inputs, or that an agent changed or wrote on, stays and only loses this input."""
     made: Dict[str, List[int]] = {}
     for e in state.events:
-        if isinstance(e, ev.ItemAdded) and e.src:
+        if isinstance(e, ev.TaskAdded) and e.src:
             made.setdefault(e.src, []).append(e.n)
     hands = agent_hands(state)
     out: Dict[str, DeletionPlan] = {}
@@ -137,7 +137,7 @@ def deletions(state: ProjectState, only: Optional[List[str]] = None) -> Dict[str
         go: List[int] = []
         keep: Dict[int, str] = {}
         for n in made.get(rid, []):
-            it = state.items.get(n)
+            it = state.tasks.get(n)
             if not it or it.merged_into or it.deleted:
                 continue
             if any(r != rid and r in state.inputs and not state.inputs[r].deleted for r in it.srcs):
@@ -147,31 +147,31 @@ def deletions(state: ProjectState, only: Optional[List[str]] = None) -> Dict[str
             else:
                 go.append(n)
         stays = True
-        while stays:  # a subitem that stays keeps its parent
+        while stays:  # a subtask that stays keeps its parent
             stays = False
             for n in list(go):
-                if any(k.parent == n and k.live and k.n not in go for k in state.items.values()):
+                if any(k.parent == n and k.live and k.n not in go for k in state.tasks.values()):
                     go.remove(n)
-                    keep[n], stays = "a subitem of it stays", True
+                    keep[n], stays = "a subtask of it stays", True
         if go or keep:
             out[rid] = DeletionPlan(go=sorted(go), keep=[[n, keep[n]] for n in sorted(keep)])
     return out
 
 
-def followed(state: ProjectState, k: Item, name: str) -> Tuple[Optional[int], Any]:
-    """The item k's last change of field `name` followed (or None), and what the field was before it."""
+def followed(state: ProjectState, k: Task, name: str) -> Tuple[Optional[int], Any]:
+    """The task k's last change of field `name` followed (or None), and what the field was before it."""
     for e in reversed(state.events):
         if isinstance(e, ev.FieldsSet) and e.n == k.n and name in e.f:
             return e.cascade, e.was.get(name)
     return None, None
 
 
-def status_set_by(state: ProjectState, it: Item) -> Optional[str]:
-    """Who last set an item's status (an agent may not reopen what the user dropped)."""
+def status_set_by(state: ProjectState, it: Task) -> Optional[str]:
+    """Who last set a task's status (an agent may not reopen what the user dropped)."""
     for e in reversed(state.events):
         if isinstance(e, ev.FieldsSet) and e.n == it.n and "status" in e.f:
             return e.by
-        if isinstance(e, ev.ItemAdded) and e.n == it.n:
+        if isinstance(e, ev.TaskAdded) and e.n == it.n:
             return e.by
     return None
 
@@ -181,9 +181,9 @@ STOP_FRESH = 12 * 3600  # an older one: that agent has long stopped (and the fir
 
 
 def to_stop(state: ProjectState, now: float) -> List[Tuple[int, int]]:
-    """The items you (or the organizer, from your words) closed or dropped while an agent was doing them, in the last
-    STOP_FRESH seconds, with no agent's word on them since: (item, the change's place in the log). That agent stops
-    (B816, item_states.STOP)."""
+    """The tasks you (or the organizer, from your words) closed or dropped while an agent was doing them, in the last
+    STOP_FRESH seconds, with no agent's word on them since: (task, the change's place in the log). That agent stops
+    (B816, task_states.STOP)."""
     seen: Set[int] = set()
     out: List[Tuple[int, int]] = []
     for e in reversed(state.events[-STOP_LOOK:]):
@@ -194,19 +194,19 @@ def to_stop(state: ProjectState, now: float) -> List[Tuple[int, int]]:
             seen.add(n)
         elif isinstance(e, ev.FieldsSet) and "status" in e.f:
             seen.add(n)
-            it = state.items.get(n)
-            if item_states.told(str(e.was.get("status")), e.f["status"], e.by) == item_states.STOP and it \
+            it = state.tasks.get(n)
+            if task_states.told(str(e.was.get("status")), e.f["status"], e.by) == task_states.STOP and it \
                     and it.live and it.status in CLOSED and bool(e.t) and seconds(e.t) > now - STOP_FRESH:
                 out.append((n, e.seq))
     return out[::-1]
 
 
-def last_archive(state: ProjectState, n: int) -> Optional[ev.ItemsArchived]:
-    return next((e for e in reversed(state.events) if isinstance(e, ev.ItemsArchived) and e.on and n in e.ns), None)
+def last_archive(state: ProjectState, n: int) -> Optional[ev.TasksArchived]:
+    return next((e for e in reversed(state.events) if isinstance(e, ev.TasksArchived) and e.on and n in e.ns), None)
 
 
 def made_by_organizer(state: ProjectState, rid: str) -> bool:
-    return any(x.src == rid and x.by == "org" and isinstance(x, (ev.ItemAdded, ev.FieldsSet, ev.MessagePosted, ev.ItemMerged))
+    return any(x.src == rid and x.by == "org" and isinstance(x, (ev.TaskAdded, ev.FieldsSet, ev.MessagePosted, ev.TaskMerged))
                for x in state.events)
 
 

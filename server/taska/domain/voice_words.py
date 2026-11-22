@@ -1,5 +1,5 @@
 """How a voice note is heard: what the models are told (the rules, the user's preferences, the spellings they fixed,
-the project's own words as hints, its open items), and how their words are judged: where two models heard
+the project's own words as hints, its open tasks), and how their words are judged: where two models heard
 differently in a way that changes the meaning (what may be misheard), whether one stopped early, whether words were
 only copied from the prompt, whether tidied words kept everything. Pure: no I/O, no models."""
 
@@ -22,10 +22,10 @@ VOICE_HINT = "\u9010\u5b57\u8f6c\u5199\uff0c\u4e2d\u6587\u7528\u7b80\u4f53\u5b57
 VOICE_RULES = """\
 Transcribe this voice note verbatim. The speaker mixes Mandarin Chinese and English while talking about software work.
 Rules:
-- Write only words that are actually spoken. If nobody speaks (silence, noise, a beep, music), return an empty transcript. Never output the hint words or item titles below unless the speaker says them.
+- Write only words that are actually spoken. If nobody speaks (silence, noise, a beep, music), return an empty transcript. Never output the hint words or task titles below unless the speaker says them.
 - Write Chinese in Simplified characters (\u7b80\u4f53\u5b57) only, never Traditional (\u7e41\u9ad4\u5b57).
 - Keep English words in Latin letters as spoken; never translate them. Write code identifiers, file paths, commands and product names the normal way (Codex, pytest, tests/test_export.py).
-- Priorities are spoken as "P\u96f6", "P0", "P\u4e00", "P\u4e8c": write P0, P1, P2, P3. Item codes are a letter and a number, like B73, F12, R66, T101; the letter is often said in English and the number in Chinese ("B\u4e03\u5341\u4e09" is B73).
+- Priorities are spoken as "P\u96f6", "P0", "P\u4e00", "P\u4e8c": write P0, P1, P2, P3. Task codes are a letter and a number, like B73, F12, R66, T101; the letter is often said in English and the number in Chinese ("B\u4e03\u5341\u4e09" is B73).
 - Do not summarize, translate or tidy the wording. Keep self-corrections and repetitions. Use normal Chinese punctuation.
 - If a word is unclear, give your best guess followed by (?).
 - Put only the spoken words in transcript: no preface, notes or timestamps."""
@@ -34,7 +34,7 @@ Rules:
 VOICE_PREFS = """\
 Chinese in Simplified characters, never Traditional.
 Technical terms stay in English, as spoken: code names, commands, file names, product names.
-Numbers, priorities and item codes the short way: 3, P1, B73.
+Numbers, priorities and task codes the short way: 3, P1, B73.
 My own words, as I said them: no summary, no translation."""
 # Everyday English words: no help as spelling hints, and they push the project's own names down the list.
 VOICE_COMMON = frozenset("""a about above after again all also always an and another any are as ask at away back be
@@ -73,26 +73,26 @@ def voice_terms(words: "Counter[str]", fixes: List[Dict[str, Any]], limit: int =
 
 def doc_words(d: Any) -> str:
     """A document's words as it reads: a web page's without its markup, styles and scripts (B809: "font-size" and
-    "border-radius" were the spelling hints for a note on an item with a web page)."""
+    "border-radius" were the spelling hints for a note on a task with a web page)."""
     return page_text(d.md or "") if d.fmt == "html" else (d.md or "")
 
 
 def voice_context(st: ProjectState, scope: Optional[int]) -> Tuple["Counter[str]", List[str], List[str]]:
-    """(the project's words, its open items as "B73 title", their titles): what the transcription is told. Everything
-    about the item spoken to is context: its text, its thread, its subitems and its documents; their words are hints
+    """(the project's words, its open tasks as "B73 title", their titles): what the transcription is told. Everything
+    about the task spoken to is context: its text, its thread, its subtasks and its documents; their words are hints
     first (Chinese names from headings and bold text too), and the text itself goes to the main model to recognize
     words, never to copy (about 6000 characters)."""
-    live = [i for i in st.items.values() if not i.merged_into and not i.deleted]
-    it0 = st.items.get(scope) if scope is not None else None
+    live = [i for i in st.tasks.values() if not i.merged_into and not i.deleted]
+    it0 = st.tasks.get(scope) if scope is not None else None
     pool = [it0] if it0 is not None else []
     pool += [i for i in by_priority(live) if i.status in ("open", "doing") and i.n != scope][:80]
     words: "Counter[str]" = Counter()
     for it in pool:
         words.update(re.findall(r"[A-Za-z_][A-Za-z0-9_./\-]{2,}", it.title + " " + it.body))
     # B73, not B073: the way people say it; no "src=r119" left over in a title
-    items = [f"{CODE_LETTER}{it.n} " + " ".join(re.sub(r"\bsrc=r\d+", " ", it.title).split())[:100] for it in pool[:30]]
+    tasks = [f"{CODE_LETTER}{it.n} " + " ".join(re.sub(r"\bsrc=r\d+", " ", it.title).split())[:100] for it in pool[:30]]
     if it0 is not None:
-        kids = [k for k in st.items.values() if k.parent == scope]
+        kids = [k for k in st.tasks.values() if k.parent == scope]
         docs = [d for d in st.docs.values() if d.n == scope][-3:]
         parts = [it0.title, it0.body or "", it0.next or ""] + [m.text or "" for m in it0.thread][-40:] \
             + [k.title for k in kids] + [doc_words(d) for d in docs]
@@ -103,17 +103,17 @@ def voice_context(st: ProjectState, scope: Optional[int]) -> Tuple["Counter[str]
             for part in re.split(r"[\s\uff0c\u3002\u3001\uff1a:\uff1b;\uff08\uff09()\uff0f/\u00b7|+\uff0b-]+", w):
                 if re.search(r"[\u4e00-\u9fff]", part) and 2 <= len(part) <= 12:
                     words[part] += 3
-        items.insert(0, f"{CODE_LETTER}{it0.n} (the item being discussed: its text, thread, subitems and documents) "
+        tasks.insert(0, f"{CODE_LETTER}{it0.n} (the task being discussed: its text, thread, subtasks and documents) "
                      + " ".join(re.sub(r"[#*`>|_-]+", " ", text).split())[-6000:])
-    return words, items, [it.title for it in pool[:40]]
+    return words, tasks, [it.title for it in pool[:40]]
 
 
 # B724: the product's own words, which the models heard as everyday ones (story as storage, Taska as "task 啊"): told
 # to both models, and to the reviewers that settle where they disagree.
-PRODUCT_WORDS = ("Taska", "Storybook", "story", "stories", "Inputs", "input", "item", "subitem", "organizer", "agent",
+PRODUCT_WORDS = ("Taska", "Storybook", "story", "stories", "Inputs", "input", "task", "subtask", "organizer", "agent",
                  "Codex", "Claude", "Gemini", "Nota", "voice note", "tidy", "Later", "won't do", "prototype", "Demo",
                  "worktree", "ship")
-ITEM_CODE = re.compile(r"[A-Z]\d+")
+TASK_CODE = re.compile(r"[A-Z]\d+")
 
 
 def corrected(fixes: List[Dict[str, Any]]) -> str:
@@ -121,10 +121,10 @@ def corrected(fixes: List[Dict[str, Any]]) -> str:
     return "; ".join(f"{c['right']} (not {c['wrong']})" for c in [c for c in fixes if c.get("wrong")][-40:])
 
 
-def voice_vocab(terms: List[str], items: List[str], fixes: List[Dict[str, Any]], limit: int = 100) -> List[str]:
+def voice_vocab(terms: List[str], tasks: List[str], fixes: List[Dict[str, Any]], limit: int = 100) -> List[str]:
     """The speech model's custom vocabulary (B724), each once: priorities, the words the user corrected or added,
-    the open items' codes, the product's words, then the project's own words (terms)."""
-    codes = [m.group() for m in (ITEM_CODE.match(i) for i in items) if m]
+    the open tasks' codes, the product's words, then the project's own words (terms)."""
+    codes = [m.group() for m in (TASK_CODE.match(i) for i in tasks) if m]
     out: List[str] = []
     seen = set()
     for t in ["Taska", "P0", "P1", "P2", "P3"] + [c["right"] for c in reversed(fixes)] + codes + list(PRODUCT_WORDS) + terms:
@@ -134,10 +134,10 @@ def voice_vocab(terms: List[str], items: List[str], fixes: List[Dict[str, Any]],
     return out[:limit]
 
 
-def voice_glossary(items: List[str], fixes: List[Dict[str, Any]], terms: List[str], limit: int = 4000) -> str:
+def voice_glossary(tasks: List[str], fixes: List[Dict[str, Any]], terms: List[str], limit: int = 4000) -> str:
     """What the reviewers of a disagreement are told about the project (B724), at most `limit` characters: the
     spellings the user corrected, the product's words and the words the user added, the project's own words, and its
-    open items (codes and titles; the item spoken to with the start of its text)."""
+    open tasks (codes and titles; the task spoken to with the start of its text)."""
     lines = []
     if corrected(fixes):
         lines.append("Spellings the user corrected before: " + corrected(fixes))
@@ -145,13 +145,13 @@ def voice_glossary(items: List[str], fixes: List[Dict[str, Any]], terms: List[st
     lines.append("The product's words: " + ", ".join(dict.fromkeys(list(PRODUCT_WORDS) + added)))
     if terms:
         lines.append("The project's own words: " + ", ".join(terms[:60]))
-    if items:
-        lines.append("Open items (code and title): " + "; ".join(
-            i[:600] if "(the item being discussed" in i else i[:100] for i in items[:30]))
+    if tasks:
+        lines.append("Open tasks (code and title): " + "; ".join(
+            i[:600] if "(the task being discussed" in i else i[:100] for i in tasks[:30]))
     return "\n".join(lines)[:limit]
 
 
-def voice_prompt(terms: List[str], items: List[str], fixes: List[Dict[str, Any]], prefs: str = VOICE_PREFS) -> str:
+def voice_prompt(terms: List[str], tasks: List[str], fixes: List[Dict[str, Any]], prefs: str = VOICE_PREFS) -> str:
     lines = [VOICE_RULES]
     if prefs.strip():  # F183
         lines.append("The user's own preferences for the transcript (follow them, but never add words nobody said):\n" + prefs.strip())
@@ -159,8 +159,8 @@ def voice_prompt(terms: List[str], items: List[str], fixes: List[Dict[str, Any]]
         lines.append("Spellings the user corrected before (write the right form when you hear it): " + corrected(fixes))
     lines.append("This product's own words, written this way when you hear them: " + ", ".join(PRODUCT_WORDS))
     lines.append("Spelling hints, only for words you actually hear: " + ", ".join(terms))
-    if items:
-        lines.append("Open items, only to recognize names and codes (do not copy them): " + "; ".join(items))
+    if tasks:
+        lines.append("Open tasks, only to recognize names and codes (do not copy them): " + "; ".join(tasks))
     return "\n".join(lines)
 
 
@@ -290,7 +290,7 @@ TIDY_SYSTEM = ("Below is a voice note as transcribed (Mandarin Chinese mixed wit
                "written text: drop filler words (\u55ef, \u554a, \u5443, \u5c31\u662f, \u8fd9\u4e2a used as fillers), stutters, "
                "repetitions and false starts (keep only what the speaker settled on), join broken sentences, fix word order "
                "and punctuation. Keep every meaning and detail; add nothing; do not summarize or translate; keep the speaker's "
-               "own words where you can; keep English words, names, links, numbers and item codes exactly as they are. "
+               "own words where you can; keep English words, names, links, numbers and task codes exactly as they are. "
                "Write Chinese in Simplified characters (\u7b80\u4f53\u5b57) only, never Traditional (\u7e41\u9ad4\u5b57).")
 def tidy_ok(heard: str, out: str) -> bool:
     """Tidied words count only when they keep the words: about as long as what was heard, and every link still in."""
@@ -299,7 +299,7 @@ def tidy_ok(heard: str, out: str) -> bool:
 
 
 def echoed(tr: str, titles: List[str]) -> bool:
-    """A transcript made only of item titles was copied from the prompt: nobody spoke (B092)."""
+    """A transcript made only of task titles was copied from the prompt: nobody spoke (B092)."""
     norm = lambda t: " ".join(re.sub(r"[\W_]+", " ", t.lower()).split())
     rest = norm(tr)
     if not rest:

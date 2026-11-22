@@ -1,6 +1,6 @@
 // Replies leave questions skipped; a reply on a proposal approves it (B818); replying to finished work sends it back to
 // the agent (B607).
-// guards: src/features/item/ src/features/docs/ src/ui/Markdown.tsx src/app/actions.ts src/app/docs/ src/model/docTicks.ts server/
+// guards: src/features/task/ src/features/docs/ src/ui/Markdown.tsx src/app/actions.ts src/app/docs/ src/model/docTicks.ts server/
 import { expect, test } from '@playwright/test'
 import { open, project } from './seed'
 import { box } from './ui'
@@ -29,7 +29,7 @@ new P2 now A proposal
   await expect(page.getByText('Skipped · you replied').filter({ visible: true })).toHaveCount(0)
 })
 
-test('choices in a document you were sent to, answered by a reply on the item, show Skipped (T472)', async ({
+test('choices in a document you were sent to, answered by a reply on the task, show Skipped (T472)', async ({
   page,
   request,
 }) => {

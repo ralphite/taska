@@ -66,7 +66,7 @@ def inspect(path: Path) -> Tuple[Dict[str, int], List[str]]:
     if unknown:
         warnings.append(f"changes of kinds this version does not know: {' '.join(unknown)}")
     voices(state, warnings)
-    return {"events": len(stored), "items": len(state.items), "inputs": len(state.inputs), "docs": len(state.docs),
+    return {"events": len(stored), "tasks": len(state.tasks), "inputs": len(state.inputs), "docs": len(state.docs),
             "voices": len(state.voices)}, warnings
 
 

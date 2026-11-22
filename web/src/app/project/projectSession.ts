@@ -10,7 +10,7 @@ import type { BoxStore } from '../../stores/box'
 import type { DataStore } from '../../stores/data'
 import type { DocTicksStore } from '../../stores/docTicks'
 import type { DraftsStore } from '../../stores/drafts'
-import type { ItemViewStore } from '../../stores/itemView'
+import type { TaskViewStore } from '../../stores/taskView'
 import type { KeptEditsStore } from '../../stores/keptEdits'
 import type { RouteStore } from '../../stores/route'
 import type { UiStore } from '../../stores/ui'
@@ -28,7 +28,7 @@ export interface ProjectSessionDeps {
   presence: Presence
   model(slug: string): ProjectModel | null
   /** what starts afresh with each project */
-  fresh: { ui: UiStore; itemView: ItemViewStore; keptEdits: KeptEditsStore; docTicks: DocTicksStore; box: BoxStore; drafts: DraftsStore; pictureSizes: PictureSizes; keptNotes: KeptNotes; notices: Notices }
+  fresh: { ui: UiStore; taskView: TaskViewStore; keptEdits: KeptEditsStore; docTicks: DocTicksStore; box: BoxStore; drafts: DraftsStore; pictureSizes: PictureSizes; keptNotes: KeptNotes; notices: Notices }
   /** Taska's code is newer than this page's */
   server(s: ServerCopy['server']): void
   /** what waits for Taska goes now: when the window is back, when Taska answers again, when the network is back */
@@ -99,7 +99,7 @@ export class ProjectSession {
     this.sync?.close()
     const f = this.d.fresh
     f.ui.getState().reset()
-    f.itemView.getState().show(slug)
+    f.taskView.getState().show(slug)
     f.keptEdits.getState().show(slug)
     f.docTicks.getState().show(slug)
     void f.pictureSizes.load(slug)
@@ -120,7 +120,7 @@ export class ProjectSession {
           const m = fresh ? this.d.model(s) : null
           if (m) void f.keptNotes.restore(s, m) // what this browser kept that did not go out comes back
           if (fresh) this.d.server(copy.server) // new code for Taska, or for this page
-          if (m) f.notices.items(s, m) // what newly needs you here
+          if (m) f.notices.tasks(s, m) // what newly needs you here
         },
         reach: (s, away) => {
           const was = this.d.data.getState().away[s] || 0

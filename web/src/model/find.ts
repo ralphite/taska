@@ -4,7 +4,7 @@
 
 import { inputPath } from './route'
 import { when } from './time'
-import type { Item } from './types'
+import type { Task } from './types'
 import { STATUS_WORD } from './words'
 
 export type FindPhase =
@@ -25,32 +25,32 @@ export type FindPhase =
   /** Taska out of reach: it keeps trying */
   | 'offline'
 
-export type FindKind = 'items' | 'inputs' | 'rules' | 'docs'
+export type FindKind = 'tasks' | 'inputs' | 'rules' | 'docs'
 export const FIND_KINDS: readonly (readonly [FindKind, string])[] = [
-  ['items', 'Items'],
+  ['tasks', 'Tasks'],
   ['inputs', 'Inputs'],
   ['rules', 'Rules'],
   ['docs', 'Documents'],
 ]
 
-/** One thing found, in its project: an item (as the list has it), an input, a document, a section of the rules. */
+/** One thing found, in its project: a task (as the list has it), an input, a document, a section of the rules. */
 export interface Found {
   project: string
   kind: FindKind
   /** its key in the project: i3, r8, d1, s2 (a section of the rules) */
   key: string
-  /** the item it is or opens (a document's, what an input became); null: none */
+  /** the task it is or opens (a document's, what an input became); null: none */
   n: number | null
-  item?: Item
+  task?: Task
   parentCode?: string | null
   kids?: { done: number; all: number } | null
   /** an input or a document: its code (#8, D1) and words */
   code?: string
   title?: string
-  /** an input: when it was said, and the item it became */
+  /** an input: when it was said, and the task it became */
   t?: string
   became?: string | null
-  /** a document: its number and its item's code */
+  /** a document: its number and its task's code */
   d?: number
   on?: string
 }
@@ -83,7 +83,7 @@ export function foundGroups(a: FindAnswer, here: string, order: readonly string[
   })
 }
 
-/** All the kinds shown at once: the rows put together by kind (Items, Inputs, Rules, Documents, as the chips), each
+/** All the kinds shown at once: the rows put together by kind (Tasks, Inputs, Rules, Documents, as the chips), each
  * kind's closest first, its name over the first of it; `heads`: whether to name them (one kind only: nothing to tell
  * apart). T642 R9 (D115, 11-06). */
 export function byKind<T extends { found: Pick<Found, 'kind'> }>(rows: readonly T[], heads = new Set(rows.map((r) => r.found.kind)).size > 1): (T & { head?: string })[] {
@@ -101,22 +101,22 @@ export function foundMeta(x: Found, now: number): string {
   return [when(x.t, now), x.became ? `became ${x.became}` : ''].filter(Boolean).join(' · ')
 }
 
-/** The address a result opens: an item its page, a document its own, an input the item it became (none: the input
+/** The address a result opens: a task its page, a document its own, an input the task it became (none: the input
  * itself, where it is listed). */
 export function foundPath(x: Found): string {
   const base = `/p/${encodeURIComponent(x.project)}/`
   if (x.kind === 'docs' && x.d != null) return base + `D${x.d}`
   if (x.kind === 'rules') return base + 'rules'
   if (x.kind === 'inputs') return x.became ? base + encodeURIComponent(x.became) : inputPath(x.project, x.key)
-  return base + encodeURIComponent(x.item?.code || String(x.n))
+  return base + encodeURIComponent(x.task?.code || String(x.n))
 }
 
 /** A result as one line (the home page's): its code, its words, and what it is, said after its project's name (what
- * you said, a document, the rules; an item archived, done or won't do; an open one: nothing). Lowercase, as the rest
+ * you said, a document, the rules; a task archived, done or won't do; an open one: nothing). Lowercase, as the rest
  * of that line. */
 export function foundLine(x: Found): { code: string; title: string; where: string } {
-  if (x.kind === 'items') {
-    const it = x.item
+  if (x.kind === 'tasks') {
+    const it = x.task
     const s = it?.status
     return { code: it?.code ?? '', title: it?.title ?? '', where: it?.archived ? ' · archived' : s === 'done' || s === 'dropped' ? ` · ${STATUS_WORD[s].toLowerCase()}` : '' }
   }

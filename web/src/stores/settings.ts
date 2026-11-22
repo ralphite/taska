@@ -8,7 +8,7 @@ export interface DeletedProject {
   name: string
   title: string
   t: string
-  items: number
+  tasks: number
 }
 
 export interface SettingsState {

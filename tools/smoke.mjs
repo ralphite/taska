@@ -1,5 +1,5 @@
 // A quick look at a running Taska in a real (headless) browser: the desktop (1440x900) and the phone (393x852), one
-// page at a time. Read-only unless --open: then it also opens the first item of the list (which marks it seen).
+// page at a time. Read-only unless --open: then it also opens the first task of the list (which marks it seen).
 //   node tools/smoke.mjs <base url> <project> [--open] [--shots <dir>]
 import { createRequire } from 'node:module';
 const require = createRequire(new URL('../web/package.json', import.meta.url));
@@ -18,9 +18,9 @@ for (const [name, viewport, mobile] of [['desktop', { width: 1440, height: 900 }
   const t0 = Date.now();
   const res = await page.goto(`${base}/p/${project}/`, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.locator('#list article[data-n], #list [data-zone], #list [data-views]')
-    .or(page.locator('#list').getByText(/^No items(?: yet\.)?/)).filter({ visible: true }).first().waitFor();
+    .or(page.locator('#list').getByText(/^No tasks(?: yet\.)?/)).filter({ visible: true }).first().waitFor();
   const text = await page.locator('body').innerText();
-  const ok = res.status() === 200 && text.includes('Items') && await page.locator('#list').isVisible();
+  const ok = res.status() === 200 && text.includes('Tasks') && await page.locator('#list').isVisible();
   let opened = '';
   if (open && ok) {
     const row = page.locator('#list article[data-n]').filter({ visible: true }).first();

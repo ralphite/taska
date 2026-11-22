@@ -16,9 +16,9 @@ import rulesPhone from './recordings/rulesChange.phone.json'
 import rulesDesk from './recordings/rulesChange.desk.json'
 import rowsPhone from './recordings/handleRows.phone.json'
 import rowsDesk from './recordings/handleRows.desk.json'
-import replyClip from './replyOnItem.webm?inline'
-import replyPhone from './recordings/replyOnItem.phone.json'
-import replyDesk from './recordings/replyOnItem.desk.json'
+import replyClip from './replyOnTask.webm?inline'
+import replyPhone from './recordings/replyOnTask.phone.json'
+import replyDesk from './recordings/replyOnTask.desk.json'
 import longTalkClip from './replyLongTalk.webm?inline'
 import longTalkPhone from './recordings/replyLongTalk.phone.json'
 import longTalkDesk from './recordings/replyLongTalk.desk.json'
@@ -35,7 +35,7 @@ export interface Demo {
   recordings: Record<Layout, Recording>
 }
 
-/** A row's title in the list, by its number: a tap there opens the item. */
+/** A row's title in the list, by its number: a tap there opens the task. */
 const title = (n: number, code: string): Target => ({ css: `[data-n="${n}"] p`, label: `Row ${code}` })
 
 // what the organizer makes of the words (sayIt.json)
@@ -55,15 +55,15 @@ export const sayIt: Demo = {
         { say: 'Tap the mic to say what you want done.', target: button('Record a voice note'), wait: 15000, pace: 1500 },
         { say: 'Say it (here a recording plays), then tap ↑ to send it.', target: button('Stop and send'), pace: 6000 },
         { say: 'Taska writes out your words; the organizer files them.', until: shows(filed) },
-        { say: 'Tap Open to see the new item.', target: button('Open', { within: filed }), pace: 2000 },
+        { say: 'Tap Open to see the new task.', target: button('Open', { within: filed }), pace: 2000 },
       ],
     },
     desk: {
       steps: [
         { say: 'Click the mic to say what you want done.', target: button('Record a voice note'), wait: 15000, pace: 1500 },
         { say: 'Say it (here a recording plays), then click ↑ to send it.', target: button('Stop and send'), pace: 6000 },
-        { say: 'Taska writes out your words; the organizer files them.', until: shows(button(TITLE, { label: 'The new item' })) },
-        { say: 'Click the new item to open it.', target: button(TITLE, { label: 'The new item' }), pace: 2000 },
+        { say: 'Taska writes out your words; the organizer files them.', until: shows(button(TITLE, { label: 'The new task' })) },
+        { say: 'Click the new task to open it.', target: button(TITLE, { label: 'The new task' }), pace: 2000 },
       ],
     },
   },
@@ -142,9 +142,9 @@ export const rulesChange: Demo = {
 }
 
 // Rows of the list: Later (F37), Won't do (T38) and Undo, Done (T40). The phone swipes them; the desktop opens each and
-// uses the buttons over the item (the row's own buttons show only under the pointer).
+// uses the buttons over the task (the row's own buttons show only under the pointer).
 const swipeRow = (n: number, code: string) => marked('swipe', n, { label: `Row ${code}` })
-const pane = marked('part', 'pane', { label: 'The item' })
+const pane = marked('part', 'pane', { label: 'The task' })
 const nextWeek = button(/^Next week/, { label: 'Next week' })
 
 /** Handle rows of the list: Later, Won't do, Undo, Done (D124: the fourth Demo). */
@@ -180,24 +180,24 @@ export const handleRows: Demo = {
   recordings: { phone: rowsPhone, desk: rowsDesk },
 }
 
-// Reply to Claude Code on F01: typed, then said; its replies come (replyOnItem.json).
-/** A paragraph on the page with these words (a message in an item's talk). */
+// Reply to Claude Code on F01: typed, then said; its replies come (replyOnTask.json).
+/** A paragraph on the page with these words (a message in a task's talk). */
 const words = (name: RegExp, label: string): Target => ({ css: 'p', name, label })
 const typed = 'iOS 先在新标签页打开，让用户自己点分享存到“文件”。'
 const reply1 = words(/新标签页打开 CSV/, 'Claude Code’s reply')
 const said = words(/安卓上也看一下/, 'Your words')
 const reply2 = words(/安卓 Chrome 也测一遍/, 'Claude Code’s reply')
 
-/** Reply to an agent on an item, typed and said; the agent's reply comes (D124: the fifth Demo). */
-export const replyOnItem: Demo = {
-  id: 'replyOnItem',
+/** Reply to an agent on a task, typed and said; the agent's reply comes (D124: the fifth Demo). */
+export const replyOnTask: Demo = {
+  id: 'replyOnTask',
   start: '/p/shop/',
   now: story.now,
   clip: replyClip,
   tours: {
     phone: {
       steps: [
-        { say: 'Open an item Claude Code is working on.', target: title(1, 'F01'), wait: 15000 },
+        { say: 'Open a task Claude Code is working on.', target: title(1, 'F01'), wait: 15000 },
         { say: 'Tap the box and type a reply.', target: role('textbox', 'Input', { label: 'The box' }), type: typed, until: shows(button('Send')) },
         { say: 'Tap ↑ to send it.', target: button('Send') },
         { say: 'Claude Code’s reply comes here.', until: shows(reply1) },
@@ -209,7 +209,7 @@ export const replyOnItem: Demo = {
     },
     desk: {
       steps: [
-        { say: 'Open an item Claude Code is working on.', target: title(1, 'F01'), wait: 15000 },
+        { say: 'Open a task Claude Code is working on.', target: title(1, 'F01'), wait: 15000 },
         { say: 'Click the box and type a reply.', target: role('textbox', 'Input', { label: 'The box' }), type: typed, until: shows(button('Send')) },
         { say: 'Click ↑ to send it.', target: button('Send') },
         { say: 'Claude Code’s reply comes here.', until: shows(reply1) },
@@ -239,7 +239,7 @@ export const replyLongTalk: Demo = {
   tours: {
     phone: {
       steps: [
-        { say: 'Open the item the tutor is teaching on: a long talk, its last message a question for you.', target: teaching, wait: 15000 },
+        { say: 'Open the task the tutor is teaching on: a long talk, its last message a question for you.', target: teaching, wait: 15000 },
         { say: 'Tap the mic to answer by voice.', target: button('Record a voice note'), pace: 2500 },
         { say: 'Say it (here a recording plays), then tap ↑.', target: button('Stop and send'), pace: 7000 },
         { say: 'Taska writes out your words. The talk stays at its end.', until: shows(yourWords), wait: 300 },
@@ -248,7 +248,7 @@ export const replyLongTalk: Demo = {
     },
     desk: {
       steps: [
-        { say: 'Open the item the tutor is teaching on: a long talk, its last message a question for you.', target: teaching, wait: 15000 },
+        { say: 'Open the task the tutor is teaching on: a long talk, its last message a question for you.', target: teaching, wait: 15000 },
         { say: 'Click the mic to answer by voice.', target: button('Record a voice note'), pace: 2500 },
         { say: 'Say it (here a recording plays), then click ↑.', target: button('Stop and send'), pace: 7000 },
         { say: 'Taska writes out your words. The talk stays at its end.', until: shows(yourWords), wait: 300 },
@@ -259,4 +259,4 @@ export const replyLongTalk: Demo = {
   recordings: { phone: longTalkPhone, desk: longTalkDesk },
 }
 
-export const DEMOS: Record<string, Demo> = { sayIt, answerAndAccept, rulesChange, handleRows, replyOnItem, replyLongTalk }
+export const DEMOS: Record<string, Demo> = { sayIt, answerAndAccept, rulesChange, handleRows, replyOnTask, replyLongTalk }

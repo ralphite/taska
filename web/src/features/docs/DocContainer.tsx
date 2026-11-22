@@ -1,5 +1,5 @@
 // A document with the page's data: on the desktop in the pane beside the list (its bar: what it is, Edit, Move,
-// Delete, the way back), on the phone in a sheet over its item. What it shows comes from the model and the document's
+// Delete, the way back), on the phone in a sheet over its task. What it shows comes from the model and the document's
 // view; what you do goes to app.docs.
 
 import { useEffect, useMemo, useState, type ReactNode, useCallback } from 'react'
@@ -69,7 +69,7 @@ export function useDoc(slug: string, dn: number) {
     ref: (c) => {
       const to = m ? world.find(c) : null
       if (!to || !m) return
-      if (to.kind === 'item') app.nav.openItem(codeOf(m, to.n))
+      if (to.kind === 'task') app.nav.openTask(codeOf(m, to.n))
       else if (to.kind === 'doc') docs.open(to.d)
       else app.nav.goInput(to.id)
     },
@@ -82,7 +82,7 @@ export function useDoc(slug: string, dn: number) {
     menu: (id) => app.sheets.open({ kind: 'comment-menu', d: dn, id }, { focus: false }),
     resolve: (tk, on2) => app.docComments.resolve(dn, tk, on2),
     reply: (tk) => docs.reply(tk),
-    goItem: () => m && d && app.nav.openItem(codeOf(m, liveN(m, d.n))),
+    goTask: () => m && d && app.nav.openTask(codeOf(m, liveN(m, d.n))),
     toggle: (tk) => docs.toggle(tk),
     away: (tk) => docs.away(tk),
     pick: (key, quote, by) => docs.pick(key, quote, by),
@@ -187,7 +187,7 @@ function WebPageContainer({ slug, cap, d, v, seen, env, on, waiting }: { slug: s
 }
 
 /** The desktop's pane with a document. */
-export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside, talk = null }: { route: ProjectRoute; dn: number; place: string; hidden?: boolean; bodyRef?: (el: HTMLElement | null) => void; /** wide: the document on the left, its item's talk on the right */ beside?: (view: ReactNode, web: boolean) => ReactNode; /** that talk: the button to its end over it (F716) */ talk?: HTMLElement | null }) {
+export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside, talk = null }: { route: ProjectRoute; dn: number; place: string; hidden?: boolean; bodyRef?: (el: HTMLElement | null) => void; /** wide: the document on the left, its task's talk on the right */ beside?: (view: ReactNode, web: boolean) => ReactNode; /** that talk: the button to its end over it (F716) */ talk?: HTMLElement | null }) {
   const app = useServices('docEditor', 'docs')
   const stores = useStores('docView', 'route', 'sheet')
   const pane = usePaneRef('detail')
@@ -232,7 +232,7 @@ export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside, ta
   )
 }
 
-/** The phone's sheet with a document, over its item. */
+/** The phone's sheet with a document, over its task. */
 export function DocSheetContainer({ slug, dn, footRoom }: { slug: string; dn: number; footRoom: number }) {
   const app = useServices('docs', 'sheets')
   const stores = useStores('docView')

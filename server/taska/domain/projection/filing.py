@@ -22,23 +22,23 @@ def _undo_filing(state: ProjectState, e: ev.Event) -> None:
     for x in [x for x in state.events if x.src == rid and x.by == "org" and x.seq > since]:
         if x.seq in state.filing_off:  # taken back already
             continue
-        if isinstance(x, (ev.ItemAdded, ev.FieldsSet, ev.MessagePosted, ev.ItemMerged)):
+        if isinstance(x, (ev.TaskAdded, ev.FieldsSet, ev.MessagePosted, ev.TaskMerged)):
             state.filing_off.add(x.seq)
             took.append(x.seq)
-        if isinstance(x, ev.ItemAdded) and x.n in state.items:
-            it = state.items[x.n]
+        if isinstance(x, ev.TaskAdded) and x.n in state.tasks:
+            it = state.tasks[x.n]
             it.status, it.archived, it.t1 = "dropped", True, e.t
-        elif isinstance(x, ev.FieldsSet) and x.n in state.items:
-            it = state.items[x.n]
+        elif isinstance(x, ev.FieldsSet) and x.n in state.tasks:
+            it = state.tasks[x.n]
             for name, value in x.fields.items():
                 if it.get(name) == value:
                     it.put(name, x.was.get(name))
             it.t1 = e.t
-        elif isinstance(x, ev.MessagePosted) and x.n in state.items:
-            it = state.items[x.n]
+        elif isinstance(x, ev.MessagePosted) and x.n in state.tasks:
+            it = state.tasks[x.n]
             it.thread = [m for m in it.thread if m.id != x.seq]
-        elif isinstance(x, ev.ItemMerged) and x.n in state.items:
-            a, b = state.items[x.n], state.items.get(x.into)
+        elif isinstance(x, ev.TaskMerged) and x.n in state.tasks:
+            a, b = state.tasks[x.n], state.tasks.get(x.into)
             if a.merged_into == x.into:
                 a.merged_into = None
             if b:
@@ -58,11 +58,11 @@ def _redo_filing(state: ProjectState, e: ev.Event) -> None:
     for seq in state.undo_took.get(undo.seq, []):
         x = state.event(seq)
         state.filing_off.discard(seq)
-        it = state.items.get(getattr(x, "n", None))  # type: ignore[arg-type]
+        it = state.tasks.get(getattr(x, "n", None))  # type: ignore[arg-type]
         if not it:
             continue
         it.t1 = e.t
-        if isinstance(x, ev.ItemAdded):
+        if isinstance(x, ev.TaskAdded):
             it.status, it.archived = x.status, False
         elif isinstance(x, ev.FieldsSet):
             for name, value in x.fields.items():
@@ -73,9 +73,9 @@ def _redo_filing(state: ProjectState, e: ev.Event) -> None:
                 it.thread.append(Message(id=seq, by=x.by, kind=x.kind, text=x.text, t=x.t, src=x.src,
                                          files=list(x.files), ses=x.ses))
                 it.thread.sort(key=by_id)
-        elif isinstance(x, ev.ItemMerged):
+        elif isinstance(x, ev.TaskMerged):
             it.merged_into = x.into
-            b = state.items.get(x.into)
+            b = state.tasks.get(x.into)
             if b and all(m.id != seq for m in b.thread):
                 b.thread.append(Message(id=seq, by=x.by, kind="progress", text=f"Merged in {state.code(it.n)}: {it.title}",
                                         t=x.t, src=x.src, files=[]))

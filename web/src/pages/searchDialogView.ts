@@ -8,11 +8,11 @@ import type { FindStatus } from '../stores/find'
 import type { Visit } from '../stores/recent'
 import { openDoubts, spotsIn, type Spot } from '../model/doubts'
 import { byKind, FIND_KINDS, type FindPhase, type Found } from '../model/find'
-import { closed } from '../model/items'
+import { closed } from '../model/tasks'
 import { shownStatus } from '../model/needStates'
 import { codeOf, type ProjectModel } from '../model/project'
 import { clock } from '../model/time'
-import type { Item } from '../model/types'
+import type { Task } from '../model/types'
 import type { ViewChip } from '../features/list/rows'
 import type { SearchNow } from './searchView'
 
@@ -22,11 +22,11 @@ export type DialogNow = SearchNow & { project: string | null; status: FindStatus
 export interface FoundLine {
   key: string
   found: Found
-  /** what its mark is: an item's state, a document, an input */
-  mark: { kind: 'item'; s: string; label: string } | { kind: 'doc'; web: boolean } | { kind: 'input' } | { kind: 'rules' }
+  /** what its mark is: a task's state, a document, an input */
+  mark: { kind: 'task'; s: string; label: string } | { kind: 'doc'; web: boolean } | { kind: 'input' } | { kind: 'rules' }
   code: string
   title: string
-  /** where it is: its project, and the item it is under or on */
+  /** where it is: its project, and the task it is under or on */
   path: string
   project: string
   projectTitle: string
@@ -40,7 +40,7 @@ export interface FoundLine {
 export interface ActionLine {
   id: ActionId
   label: string
-  /** the open item's code, for what acts on it */
+  /** the open task's code, for what acts on it */
   sub: string
   keys: string
 }
@@ -90,26 +90,26 @@ export interface DialogPlace {
   projects: readonly string[]
   recent: readonly Visit[]
   /** the actions the words may name (none on the home page) */
-  actions: readonly { id: ActionId; label: string; keys: string; item: boolean }[]
-  /** the item open in the pane, for the actions on it */
+  actions: readonly { id: ActionId; label: string; keys: string; task: boolean }[]
+  /** the task open in the pane, for the actions on it */
   openCode: string | null
 }
 
-/** The item a row found is or opens, as the page has it (another project's: as the search sent it). */
-export function itemOf(x: Found, p: Pick<DialogPlace, 'model'>): Item | undefined {
+/** The task a row found is or opens, as the page has it (another project's: as the search sent it). */
+export function taskOf(x: Found, p: Pick<DialogPlace, 'model'>): Task | undefined {
   if (x.n == null) return undefined
-  return p.model(x.project)?.byN.get(x.n) ?? x.item
+  return p.model(x.project)?.byN.get(x.n) ?? x.task
 }
 
 export function lineOf(x: Found, p: DialogPlace): FoundLine {
   const m = p.model(x.project)
   const base = { key: x.project + '/' + x.key, found: x, project: x.project, projectTitle: p.title(x.project), tone: p.tone(x.project), icon: p.icon?.(x.project) }
-  const it = itemOf(x, p)
+  const it = taskOf(x, p)
   if (x.kind === 'rules') return { ...base, mark: { kind: 'rules' }, code: 'Rules', title: x.title ?? '', path: base.projectTitle }
-  if (x.kind === 'items' && it) {
-    const code = x.item?.code ?? (m ? codeOf(m, it.n) : String(it.n))
+  if (x.kind === 'tasks' && it) {
+    const code = x.task?.code ?? (m ? codeOf(m, it.n) : String(it.n))
     const under = it.parent && m ? codeOf(m, it.parent) : (x.parentCode ?? '')
-    return { ...base, mark: { kind: 'item', ...shownStatus(it) }, code, title: it.title, path: [base.projectTitle, under].filter(Boolean).join(' / ') }
+    return { ...base, mark: { kind: 'task', ...shownStatus(it) }, code, title: it.title, path: [base.projectTitle, under].filter(Boolean).join(' / ') }
   }
   const on = x.kind === 'docs' ? x.on : x.became
   const web = x.kind === 'docs' && m?.docs.find((d) => d.d === x.d)?.fmt === 'html'
@@ -125,10 +125,10 @@ export function visitFound(v: Visit, model: (slug: string) => ProjectModel | nul
     return { project: v.project, kind: 'docs', key: 'd' + v.d, n: v.n, d: v.d, code: 'D' + v.d, title: d?.title ?? v.title, on: v.on }
   }
   const it = m?.byN.get(v.n)
-  // a project whose model is not here: the row drawn from what was kept of the visit, a whole item (B710: a partial
+  // a project whose model is not here: the row drawn from what was kept of the visit, a whole task (B710: a partial
   // one, cast, had no thread, and the phone's search went white opening on its Recent)
-  const item: Item = it ?? { n: v.n, code: v.code, tags: [], title: v.title, body: '', pri: v.pri ?? 'P2', when: 'now', status: v.status ?? 'open', parent: null, next: '', srcs: [], mergedInto: null, archived: false, t0: '', t1: '', by: null, thread: [], wait: null, talked: false }
-  return { project: v.project, kind: 'items', key: 'i' + v.n, n: v.n, item: it ? undefined : { ...item, code: v.code } }
+  const task: Task = it ?? { n: v.n, code: v.code, tags: [], title: v.title, body: '', pri: v.pri ?? 'P2', when: 'now', status: v.status ?? 'open', parent: null, next: '', srcs: [], mergedInto: null, archived: false, t0: '', t1: '', by: null, thread: [], wait: null, talked: false }
+  return { project: v.project, kind: 'tasks', key: 'i' + v.n, n: v.n, task: it ? undefined : { ...task, code: v.code } }
 }
 
 /** The actions whose words start as the words do (three at most). */
@@ -136,9 +136,9 @@ function actionsFor(words: string, p: DialogPlace): ActionLine[] {
   const q = words.trim().toLowerCase()
   if (q.length < 3) return []
   return p.actions
-    .filter((a) => (!a.item || p.openCode) && (a.label.toLowerCase().startsWith(q) || a.label.toLowerCase().split(/[^a-z']+/).some((w) => w.startsWith(q))))
+    .filter((a) => (!a.task || p.openCode) && (a.label.toLowerCase().startsWith(q) || a.label.toLowerCase().split(/[^a-z']+/).some((w) => w.startsWith(q))))
     .slice(0, 3)
-    .map((a) => ({ id: a.id, label: a.label.replace(/…$/, ''), sub: a.item ? (p.openCode ?? '') : '', keys: a.keys }))
+    .map((a) => ({ id: a.id, label: a.label.replace(/…$/, ''), sub: a.task ? (p.openCode ?? '') : '', keys: a.keys }))
 }
 
 export function searchDialogView(s: DialogNow, p: DialogPlace): SearchDialogView {
@@ -146,8 +146,8 @@ export function searchDialogView(s: DialogNow, p: DialogPlace): SearchDialogView
   const busy = s.phase === 'listening' || s.phase === 'writing'
   const typed = !!s.words.trim()
   const status = (x: Found) => {
-    const it = itemOf(x, p)
-    return x.kind === 'items' && !!it && closed(it.status) === (s.status === 'finished')
+    const it = taskOf(x, p)
+    return x.kind === 'tasks' && !!it && closed(it.status) === (s.status === 'finished')
   }
   const narrowed = a ? a.found.filter((x) => (s.project === null || x.project === s.project) && (s.status === null || status(x))) : []
   // All: by kind, each named over its first row (T642 R9); one kind: best first

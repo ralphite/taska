@@ -1,4 +1,4 @@
-// Documents beside the items on the desktop: every document with its item and its comments.
+// Documents beside the tasks on the desktop: every document with its task and its comments.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { listedDocs } from '../../model/docs'
 import { DocsList } from './SideLists'
@@ -12,6 +12,6 @@ const openDoc = act('Documents: open → Document › Reading')
 export default { title: 'UI/Left sidebar/A list open beside it/Documents' } satisfies Meta
 type Story = StoryObj
 
-/** Every document, the newest first, each with its item and its comments; the one open beside the list lit. */
+/** Every document, the newest first, each with its task and its comments; the one open beside the list lit. */
 export const Documents: Story = { ...page('docs', m.docs.length, <Hold<number | null> start={1}>{(open, set) => <DocsList docs={listedDocs(m)} open={open} onOpen={(d) => (set(d), openDoc(d))} />}</Hold>), name: 'Every document' }
 export const DocumentsNoneYet: Story = { ...page('docs', 0, <DocsList docs={[]} open={null} onOpen={openDoc} />), name: 'None yet' }

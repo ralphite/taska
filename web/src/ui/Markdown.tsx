@@ -31,8 +31,8 @@ export interface RichProps {
 const html = (s: string, world: InlineWorld, refs = true) => ({ __html: clean(inlineHtml(s, world, refs)) })
 
 function listHtml(list: ListNode, world: InlineWorld): string {
-  const items = list.items.map((it) => `<li>${inlineHtml(it.text, world)}${it.subs.map((s) => listTag(s, world)).join('')}</li>`).join('')
-  return items
+  const tasks = list.tasks.map((it) => `<li>${inlineHtml(it.text, world)}${it.subs.map((s) => listTag(s, world)).join('')}</li>`).join('')
+  return tasks
 }
 const LIST_CLS = (ordered: boolean) => `${ordered ? 'list-decimal' : 'list-disc'} space-y-1.5 pl-5 marker:text-zinc-400 [&_ol]:mt-1.5 [&_ul]:mt-1.5`
 const listTag = (list: ListNode, world: InlineWorld) => {

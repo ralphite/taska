@@ -123,7 +123,7 @@ if __name__ == "__main__":
             changed = (add if options.action == "add" else remove)(options.home, session, options.harness)
     except (FileNotFoundError, ValueError) as error:
         parser.error(str(error))
-    for item in changed:
-        print(item)
+    for task in changed:
+        print(task)
     if options.action != "install" and session:
         print(f"{options.action}: {session}")

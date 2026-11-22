@@ -23,7 +23,7 @@ test('the phone: say or type what to find, open a result, come back to the same 
   const heads = searchPage(page).locator('h2')
   await expect(heads.first()).toContainText(p.title)
   await expect(searchPage(page).locator('h2', { hasText: other.title })).toBeVisible()
-  await expect(searchPage(page).getByRole('button', { name: /^Items/ }).first()).toBeVisible()
+  await expect(searchPage(page).getByRole('button', { name: /^Tasks/ }).first()).toBeVisible()
   await expect(searchPage(page)).toContainText('Export ignores the filter')
   // a result opens its page; its Back comes back to the same search
   await searchPage(page).getByText('Export ignores the filter').first().click()

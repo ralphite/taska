@@ -64,7 +64,7 @@ export interface ProposalEvents {
   approve(): void
 }
 
-/** An agent's proposed change, in the card an item's proposal is drawn in (ui/NeedFrame), with its buttons (B763: the
+/** An agent's proposed change, in the card a task's proposal is drawn in (ui/NeedFrame), with its buttons (B763: the
  * same component and buttons, r1282): who, why, when; waiting (View changes), opened (Comment, Not now, Approve), or
  * decided (in place, faded, its buttons disabled, the one chosen in the past tense; r1003). Sent back: what changed
  * since. */
@@ -73,7 +73,7 @@ export function ProposalCard({ f, open = false, on }: { f: ProposalFacts; open?:
   const decided = p.state === 'approved' ? 'Approve' : p.state === 'declined' ? 'Not now' : null
   const off = !!decided || p.state === 'stale'
   const past: Record<string, string> = { Approve: 'Approved', 'Not now': 'Not now' }
-  // no, a quieter one; yes, in Approve's blue (as an item's DecideBtns)
+  // no, a quieter one; yes, in Approve's blue (as a task's DecideBtns)
   const btn = (label: 'Approve' | 'Not now', icon: IconName, run: () => void, yes: boolean) => {
     const size = `${yes ? 'flex-[1.4]' : 'flex-1'} lg:flex-none`
     const mark = <Icon n={icon} c={yes ? 'size-4.5' : 'size-4'} sw="2.25" />

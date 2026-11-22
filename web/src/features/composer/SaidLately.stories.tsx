@@ -19,7 +19,7 @@ export const SaidLatelyList: Story = {
   ),
 }
 
-/** An input gone to (a search found it, an item's source): brought into view and lit, as the phone's Inputs tab does. */
+/** An input gone to (a search found it, a task's source): brought into view and lit, as the phone's Inputs tab does. */
 export const SaidGoneTo: Story = {
   name: 'One gone to: in view and lit',
   render: () => <Frames phone={false} deskWidth={1024}>{() => <div className="p-6">{saidOf({ inputs: DAY, lit: ONE.made.id })}</div>}</Frames>,
@@ -36,10 +36,10 @@ export const SaidLooks: Story = {
     <Frames phone={false} deskWidth={760}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['as it is', line()],
             ['pointer on a line: Voice, Comment and ⋯ show', <div data-pointer>{line()}</div>],
-            ['keys: Tab on its item (Voice, Comment and ⋯ show; the browser draws the ring itself)', <div data-keys>{line()}</div>],
+            ['keys: Tab on its task (Voice, Comment and ⋯ show; the browser draws the ring itself)', <div data-keys>{line()}</div>],
           ]}
         />
       )}
@@ -55,7 +55,7 @@ export const SaidVoice: Story = {
     <Frames phone={false} deskWidth={760}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['recording (the pointer elsewhere): ✕, the time and level, ✓', saidOf({ inputs: [ONE.made], adding: { id: ONE.made.id, clock: '0:07' } })],
             ['stopped: transcribing', saidOf({ inputs: [ONE.made], addingUp: [ONE.made.id] })],
             ['its words added at the end, with the voice note', saidOf({ inputs: [shown({ ...ONE.made, files: [said('And on the tablet too.', 'And, uh, on the tablet too.')] })] })],

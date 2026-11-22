@@ -68,7 +68,7 @@ def decide(request: dict, home: Path, harness: str = "claude",
     args = request.get("tool_input") if isinstance(request.get("tool_input"), dict) else {}
     if tool in BLOCKING_TOOLS or tool.startswith(BLOCKING_PREFIXES):
         return (f"A manager never blocks: {tool} can show a prompt or wait on the user. Hand this to the task "
-                "session that owns the item (a question for the user goes on the item with `ask`), then continue.")
+                "session that owns the task (a question for the user goes on the task with `ask`), then continue.")
     if tool in EDIT_TOOLS:
         cwd = Path(str(request.get("cwd") or home))
         writable = _writable(request, home, harness, temp_dirs)
@@ -77,7 +77,7 @@ def decide(request: dict, home: Path, harness: str = "claude",
         if outside or not paths:
             target = str(outside[0]) if outside else "these files"
             return (f"A manager does no project work: hand the edit of {target} to the task session that owns "
-                    "the item, then continue. Only the manager's memory and temp folders are writable here.")
+                    "the task, then continue. Only the manager's memory and temp folders are writable here.")
     return None
 
 

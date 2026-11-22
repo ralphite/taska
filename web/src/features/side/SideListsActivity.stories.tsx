@@ -1,4 +1,4 @@
-// Activity beside the items on the desktop: what happened, newest first, in words.
+// Activity beside the tasks on the desktop: what happened, newest first, in words.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { activity, rows } from '../../stories/sideListsFixtures'
 

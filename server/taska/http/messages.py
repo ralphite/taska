@@ -104,7 +104,7 @@ class Request:
 
     def wants_page(self) -> bool:
         """A person's browser opening an address, as opposed to an agent's curl: the same /p/x/B03 shows the page
-        to one and the item's text to the other."""
+        to one and the task's text to the other."""
         accept, ua = self.header("Accept"), self.header("User-Agent")
         return self.header("Sec-Fetch-Mode") == "navigate" or ("text/html" in accept and "Mozilla" in ua)
 

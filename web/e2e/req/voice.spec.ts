@@ -1,6 +1,6 @@
 // Yadong's requirements on voice notes (D29, "The input box", "Details"; T475, D45): each check is named by the codes of
 // his inputs, so a change that breaks one is stopped before it ships with his own words.
-// guards: src/features/composer/ src/features/item/Talk.tsx src/features/inputs/ src/ui/Files.tsx src/app/voice/ src/app/inputs/ src/stores/box.ts src/stores/outbox.ts src/stores/noteVault.ts src/app/actions.ts src/app/search/finder.ts
+// guards: src/features/composer/ src/features/task/Talk.tsx src/features/inputs/ src/ui/Files.tsx src/app/voice/ src/app/inputs/ src/stores/box.ts src/stores/outbox.ts src/stores/noteVault.ts src/app/actions.ts src/app/search/finder.ts
 // layouts: phone desktop phone-webkit
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'

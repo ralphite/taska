@@ -7,21 +7,21 @@ import { Fragment, useRef, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import { RecBar } from '../ui/PlaceVoice'
 import { BOX_WORDS_LOOK, Doubts, DraftWords } from '../features/composer/Doubts'
-import { ItemRow, type RowEvents, type RowFacts, type RowLook } from '../features/list/ListRows'
+import { TaskRow, type RowEvents, type RowFacts, type RowLook } from '../features/list/ListRows'
 import { ViewBar } from '../features/list/ViewBar'
 import type { ViewChip } from '../features/list/rows'
 import type { Spot } from '../model/doubts'
 import { micAllow } from '../model/micWords'
 import type { FindPhase, Found } from '../model/find'
-import type { Item } from '../model/types'
+import type { Task } from '../model/types'
 import { Hit, ProjTile } from '../ui/bits'
 import { Icon } from '../ui/Icon'
 import { noMatches } from '../model/words'
 import { REACH_WORDS } from '../model/reach'
 
-/** A row of what it found: an item or a rule is the list's own row; an input or a document, a row like it. */
+/** A row of what it found: a task or a rule is the list's own row; an input or a document, a row like it. */
 export type FoundRowView = (
-  | { kind: 'item'; key: string; found: Found; it: Item; facts: RowFacts; look: RowLook; on: RowEvents }
+  | { kind: 'task'; key: string; found: Found; it: Task; facts: RowFacts; look: RowLook; on: RowEvents }
   | { kind: 'other'; key: string; found: Found; icon: 'doc' | 'web' | 'newinput' | 'book'; code: string; title: string; meta: string }
 ) & {
   /** All: its kind's name, over the first row of that kind in its project */
@@ -214,7 +214,7 @@ function Results({ groups, marks, faded, onOpen }: { groups: FoundGroupView[]; m
             <Fragment key={r.key}>
               {/* All: each kind named over its first row (T642 R9) */}
               {r.head ? <h3 className={LABEL}>{r.head}</h3> : null}
-              {r.kind === 'item' ? <ItemRow it={r.it} depth={0} band="" foldable={false} folded={false} facts={r.facts} look={r.look} on={r.on} /> : <OtherRow r={r} marks={marks} onOpen={onOpen} />}
+              {r.kind === 'task' ? <TaskRow it={r.it} depth={0} band="" foldable={false} folded={false} facts={r.facts} look={r.look} on={r.on} /> : <OtherRow r={r} marks={marks} onOpen={onOpen} />}
             </Fragment>
           ))}
         </section>

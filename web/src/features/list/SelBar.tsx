@@ -1,11 +1,11 @@
 // Over the list while rows are picked: how many, what can be done to them all, and Clear. Props only.
 
-import { ITEM_ACTS, type ItemActId } from '../../model/itemActs'
+import { TASK_ACTS, type TaskActId } from '../../model/taskActs'
 import { DID } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 
-/** What can be done to them all (model/itemActs), and what each sets. */
-export const SEL_ACTS: readonly [act: ItemActId, field: string, value: unknown][] = [
+/** What can be done to them all (model/taskActs), and what each sets. */
+export const SEL_ACTS: readonly [act: TaskActId, field: string, value: unknown][] = [
   ['done', 'status', 'done'],
   ['later', 'when', 'later'],
   ['now', 'when', 'now'],
@@ -21,7 +21,7 @@ export function SelBar({ n, on }: { n: number; on: { set(f: string, v: unknown, 
       <span className="mr-auto text-sm font-semibold whitespace-nowrap text-blue-950 dark:text-blue-100">{n} selected</span>
       {SEL_ACTS.map(([act, f, v]) => (
         <button key={act} onClick={() => on.set(f, v, saidOfThem(f, v))} className="flex h-8 items-center rounded-lg px-2 text-[13px] font-medium whitespace-nowrap text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-800">
-          {ITEM_ACTS[act].label}
+          {TASK_ACTS[act].label}
         </button>
       ))}
       <button onClick={on.clear} title="Clear · Esc" aria-label="Clear the selection" className="grid size-8 place-items-center rounded-lg text-zinc-500 hover:bg-white dark:hover:bg-zinc-800">

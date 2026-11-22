@@ -115,7 +115,7 @@ class UndoOfAFiling(ProjectCase):
         self.assertTrue(self.p.state.inputs["r1"].org.undone)  # type: ignore[union-attr]
 
     def test_refused_when_the_organizer_failed(self) -> None:
-        """T728: it made an item, then a command failed (its note not ok): the undo was let through before."""
+        """T728: it made a task, then a command failed (its note not ok): the undo was let through before."""
         self.file(False, "Created B1 · Some commands failed: err: B99 not found")
         self.assertIn("err", self.undo())
         self.assertFalse(any(isinstance(e, ev.FilingUndone) for e in self.p.state.events))

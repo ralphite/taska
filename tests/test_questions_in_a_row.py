@@ -31,23 +31,23 @@ class QuestionsInARow(unittest.TestCase):
 
     def ask(self, text):
         self.run_one({"op": "say", "ref": "F1", "kind": "ask", "text": text}, "claude")
-        return self.p.state.items[1].thread[-1].id
+        return self.p.state.tasks[1].thread[-1].id
 
     def open_ids(self):
-        return [x.id for x in rules.open_asks(self.p.state, self.p.state.items[1])]
+        return [x.id for x in rules.open_asks(self.p.state, self.p.state.tasks[1])]
 
     def answer(self, text, of=None):
         self.run_one({"op": "input", "text": text, "scope": "F1", "kind": "answer", **({"of": of} if of else {})})
 
     def test_all_the_questions_in_a_row_wait(self):
         self.assertEqual(self.open_ids(), self.asks)
-        self.assertEqual(rules.waiting(self.p.state, self.p.state.items[1]).id, self.asks[-1])
+        self.assertEqual(rules.waiting(self.p.state, self.p.state.tasks[1]).id, self.asks[-1])
 
     def test_an_answer_to_some_leaves_the_others_waiting_and_the_agent_picks_it_up(self):
         a, b, c = self.asks
         self.answer("- Turn the page by itself? → ✓ Yes\n- Send a part? → ✓ Yes", [a, b])
         self.assertEqual(self.open_ids(), [c])
-        it = self.p.state.items[1]
+        it = self.p.state.tasks[1]
         self.assertEqual(it.thread[-1].of, [a, b])
         card = render.card(self.p.reading(), it)
         self.assertIn("still waiting on: What else?", card)

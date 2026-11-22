@@ -1,5 +1,5 @@
-"""The agent interface: plain text in, plain text out. /agent, /next, /do, /items, /rules, /inbox, /log, /connect,
-an item's card (/T03), an input (/r12), a document (/D1); and a file sent (POST /api/file, its answer in JSON, which
+"""The agent interface: plain text in, plain text out. /agent, /next, /do, /tasks, /rules, /inbox, /log, /connect,
+a task's card (/T03), an input (/r12), a document (/D1); and a file sent (POST /api/file, its answer in JSON, which
 the page uses too). Every word of these answers is part of the interface."""
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ import os
 import re
 import time
 from typing import Callable, List, Optional, Tuple
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 from ..agent_text import log as change_log
 from ..agent_text import render
@@ -17,7 +17,7 @@ from ..agent_text.language import Parsed, parse
 from ..agent_text.work import Asker, Work, next_work
 from ..domain import events as ev, includes, rules, skills
 from ..domain.offers import TIMES
-from ..domain.rules import item_at
+from ..domain.rules import task_at
 from ..domain.state import ident
 from ..domain.vocab import MAX_FILE, PEOPLE, Refused
 from ..infra.agent_sessions import SID, lookup
@@ -27,9 +27,9 @@ from ..services.project import Project
 from ..services.waker import SCRIPT
 from .messages import NOT_FOUND, Request, Response, as_json, text
 
-ITEM_PATH = re.compile(r"/([A-Za-z]?\d+)")
+TASK_PATH = re.compile(r"/([A-Za-z]?\d+)")
 BYTE_RANGE = re.compile(r"bytes=(\d*)-(\d*)$")
-AGENT_READS = ("/agent", "/next", "/rules", "/inbox", "/items", "/log")
+AGENT_READS = ("/agent", "/next", "/rules", "/inbox", "/tasks", "/log")
 
 
 def file_ref(req: Request, p: Project) -> Callable[[str], str]:
@@ -63,7 +63,7 @@ def asker(p: Project, who: Optional[str], session: str) -> Asker:
 
 
 def work_for(p: Project, req: Request, who: Optional[str], session: str) -> Work:
-    """What to do now for this agent session (under the lock); the queue item it takes is held for it."""
+    """What to do now for this agent session (under the lock); the queue task it takes is held for it."""
     w = next_work(p.reading(file_ref(req, p)), p.slug, p.gone, asker(p, who, session))
     if w.claim:
         p.state.claim(w.claim[0], w.claim[1], time.time())
@@ -83,7 +83,7 @@ def see_sessions(p: Project) -> None:
 
 
 def presence(p: Project) -> dict:
-    """What the page shows about agents: who came when, each session as its app says it is and the item it is on, who
+    """What the page shows about agents: who came when, each session as its app says it is and the task it is on, who
     waits now (for work, or on the user), and whether work waits for them."""
     see_sessions(p)
     with p.lock:
@@ -117,7 +117,7 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
     """An agent's read, or None when the path is not one."""
     q = req.query
     by = req.arg("by", "agent")
-    agent_call = (sub in AGENT_READS or ITEM_PATH.fullmatch(sub)) and "ui" not in q
+    agent_call = (sub in AGENT_READS or TASK_PATH.fullmatch(sub)) and "ui" not in q
     if agent_call:
         with p.lock:
             p.agents.saw(by, 1 if sub == "/next" and q.get("wait") else 0, req.session(), req.arg("sid"), req.arg("parent"))
@@ -153,19 +153,22 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
     if sub == "/archive":
         with p.lock:
             return text(200, render.listing(p.state, {"archived": ["1"], **q}))
-    if sub == "/items":
+    if sub == "/tasks":
         with p.lock:
             return text(200, render.listing(p.state, q))
+    if sub == "/items":  # T864: there are no items, only tasks: told where the list is now
+        query = urlsplit(req.target).query
+        raise Refused(f"there are no items any more, only tasks: GET {base}/tasks" + (f"?{query}" if query else ""))
     if sub == "/log":
         with p.lock:
             return text(200, change_log.text(p.state, int(req.arg("n", "30"))))
-    if ITEM_PATH.fullmatch(sub):
+    if TASK_PATH.fullmatch(sub):
         return _card(req, p, sub[1:], by)
     return None
 
 
 def let_go(p: Project, w: Work) -> None:
-    """The item handed to a session that does not take it is no longer held for it (B832)."""
+    """The task handed to a session that does not take it is no longer held for it (B832)."""
     if w.claim:
         c = p.state.claims.get(w.claim[0])
         if c and c.who == w.claim[1]:
@@ -196,14 +199,14 @@ def _next(req: Request, p: Project, by: str) -> Response:
     try:
         with p.lock:  # ?wait=N: while there is nothing to do, hold until work arrives
             who = req.arg("by") or None if "ui" not in q else None
-            # what each session held before this ask: a wait is not woken by the item it already holds and works on
-            # (B741: a manager whose own doing item came back at once re-asked every 20 s); a plain /next still gets it
+            # what each session held before this ask: a wait is not woken by the task it already holds and works on
+            # (B741: a manager whose own doing task came back at once re-asked every 20 s); a plain /next still gets it
             held = {n: c.who for n, c in p.state.claims.items()}
 
             key = req.arg("sid") or session or (who or "")
 
             def mark(n: int) -> object:
-                it = p.state.items.get(n)
+                it = p.state.tasks.get(n)
                 return (it.status, it.when, it.t1, len(it.thread)) if it else None
 
             def nothing_new(w: Work) -> bool:
@@ -215,7 +218,7 @@ def _next(req: Request, p: Project, by: str) -> Response:
                 if not wait or not w.claim:
                     return False
                 n, me = w.claim
-                it = p.state.items.get(n)
+                it = p.state.tasks.get(n)
                 return bool(it and it.status == "doing" and held.get(n) == me)
 
             job = relay_job(p, req, by)  # I833: bringing back a lost session comes before any other work
@@ -239,7 +242,7 @@ def _next(req: Request, p: Project, by: str) -> Response:
             if sid:  # the waker wakes it only when it is idle (B762)
                 p.waker.next_read(sid, w.has_work)
             if given is not None and who:  # the card it was given holds what other sessions wrote there
-                p.agents.heard_item(p.state, given, who, session)
+                p.agents.heard_task(p.state, given, who, session)
     finally:
         if q.get("wait"):
             with p.lock:
@@ -251,7 +254,7 @@ def _next(req: Request, p: Project, by: str) -> Response:
         with p.lock:
             p.agents.read_next(by)
             if given is not None:
-                p.agents.read_item(given, by, p.state)
+                p.agents.read_task(given, by, p.state)
             news = p.agents.rule_news(p.state, by, session)  # the rules changed since it last heard: said first
             news += p.agents.shared_news(p.state, by, session, shared)  # and the shared rules they put in (I779)
             news += p.agents.guide_news(by, session, render.guide_version())  # and so did the guide (F743)
@@ -266,7 +269,7 @@ def _next(req: Request, p: Project, by: str) -> Response:
 def _wake(req: Request, p: Project) -> Response:
     """GET /wake?sid=&wait=: the waker's wait (B762). "wake" when the session has work and may be woken (idle, or
     silent since it was woken), "stop" when the project is gone, "replaced" when another session runs it, else
-    "nothing to do now" when the time is up. It takes no item and marks nothing read: the session does, on /next."""
+    "nothing to do now" when the time is up. It takes no task and marks nothing read: the session does, on /next."""
     sid = req.arg("sid")
     if not SID.fullmatch(sid):
         raise Refused("sid: the Antigravity session id")
@@ -301,7 +304,7 @@ def _wake(req: Request, p: Project) -> Response:
 
 def _card(req: Request, p: Project, ref: str, by: str) -> Response:
     q = req.query
-    item_n: Optional[int] = None
+    task_n: Optional[int] = None
     with p.lock:
         st = p.state
         if ref[0] in "dD":
@@ -311,14 +314,14 @@ def _card(req: Request, p: Project, ref: str, by: str) -> Response:
             if not inp:
                 raise Refused(f"{ref} not found")
             return text(200, render.input_card(p.reading(file_ref(req, p)), inp) + "\n")
-        it = rules.item_at(st, ref, follow=False)
+        it = rules.task_at(st, ref, follow=False)
         answer = text(200, render.card(p.reading(file_ref(req, p)), it))
         if "ui" not in q:
-            p.agents.heard_item(st, it.n, by, session_of(p, req, by))
-            item_n = it.n
-    if item_n is not None:  # an agent read the item, and so your words on it
+            p.agents.heard_task(st, it.n, by, session_of(p, req, by))
+            task_n = it.n
+    if task_n is not None:  # an agent read the task, and so your words on it
         with p.lock:
-            p.agents.read_item(item_n, by, p.state)
+            p.agents.read_task(task_n, by, p.state)
     return answer
 
 
@@ -342,15 +345,15 @@ def do(req: Request, p: Project) -> Response:
         with p.lock:
             commands, taken, moves = held_by_others(p, commands, by, session)
     lines, _ = p.run(commands, by, session=session)
-    if moves:  # doing on an item already doing, taken or handed on: the change is recorded, so the hold moves (I769)
+    if moves:  # doing on a task already doing, taken or handed on: the change is recorded, so the hold moves (I769)
         with p.lock:
             for n in moves:
                 code = p.state.code(n)
-                h = p.agents.holder(p.state, p.state.items[n])
+                h = p.agents.holder(p.state, p.state.tasks[n])
                 if h and h[0] != ident(by, session):
                     p.emit(ev.FieldsSet(n=n, by=by, f={"status": "doing"}, was={"status": "doing"}, ses=session or None))
                 lines = [f"ok {code} status=doing (yours now)" if x.startswith(f"ok {code} no change") else x for x in lines]
-    if taken:  # said on the item, so the session that had it hears it there (it is told what is written on its items)
+    if taken:  # said on the task, so the session that had it hears it there (it is told what is written on its tasks)
         p.run([(0, {"op": "say", "ref": ref, "kind": "progress", "text": f"@{who.split(' · ')[-1]} {ref} is taken over from you, as the user asked: stop working on it.",
                     "src": None, "files": []}) for ref, who in taken], by, session=session)
     with p.lock:
@@ -371,7 +374,7 @@ def do(req: Request, p: Project) -> Response:
 def held_by_others(p: Project, commands: Parsed, by: str, session: str) -> Tuple[Parsed, List[Tuple[str, str]], List[int]]:
     """T772: `T03 doing` from a session while another one holds T03 is not done: it is told who holds it and since
     when, and how to go on (leave it, write to the holder, or take it when the user asked: `T03 take`). -> the
-    commands to run, the items taken over with who had them, and the items already doing whose hold moves to it."""
+    commands to run, the tasks taken over with who had them, and the tasks already doing whose hold moves to it."""
     me = ident(by, session)
     rec = p.agents.agents.get(agent_name(by))
     parent = rec.parents.get(session_name(session), "") if rec and session else ""
@@ -383,7 +386,7 @@ def held_by_others(p: Project, commands: Parsed, by: str, session: str) -> Tuple
         if isinstance(c, dict) and c.get("op") == "set" and (c.get("f") or {}).get("status") == "doing":
             take = bool(c.pop("take", False))
             try:
-                it = item_at(p.state, str(c.get("ref") or ""))
+                it = task_at(p.state, str(c.get("ref") or ""))
             except Refused:
                 out.append((no, c))
                 continue
@@ -435,9 +438,9 @@ def serve_file(p: Project, name: str, byte_range: str = "") -> Response:
 
 
 def scope_of(p: Project, req: Request) -> Optional[int]:
-    """The item a voice note is about (?scope=): its words are spelled like that item's."""
+    """The task a voice note is about (?scope=): its words are spelled like that task's."""
     try:
-        return item_at(p.state, req.arg("scope"), follow=False).n if req.query.get("scope") else None
+        return task_at(p.state, req.arg("scope"), follow=False).n if req.query.get("scope") else None
     except Refused:
         return None
 

@@ -7,11 +7,11 @@ import { inputRows, outgoingRows } from '../features/inputs/inputRows'
 import { SaidLately, SaidRow, type SaidEvents } from '../features/composer/SaidLately'
 import type { Outgoing } from '../model/outgoing'
 import { saidOutgoing, saidRows } from '../model/saidLately'
-import type { FileRef, Input, Item, OrgNote } from '../model/types'
+import type { FileRef, Input, Task, OrgNote } from '../model/types'
 import { FileChips } from '../ui/Files'
 import { RecBar } from '../ui/PlaceVoice'
-import { PICTURE, T, input, item, modelOf, record, shown, waiting } from './fixtures'
-import { talkEnv } from './itemFixtures'
+import { PICTURE, T, input, task, modelOf, record, shown, waiting } from './fixtures'
+import { talkEnv } from './taskFixtures'
 import { inputWords } from '../ui/Markdown'
 import type { ProjectModel } from '../model/project'
 import { acts } from './acts'
@@ -28,11 +28,11 @@ export const VOICE: FileRef = { f: 'f4-voice_0-12.webm', name: 'voice_0-12.webm'
 /** a voice note with its words: its record (T682), as the page's model puts it with the note */
 export const said = (tr: string, heard?: string): FileRef => ({ ...VOICE, voice: record(VOICE.f, tr, heard ?? tr) })
 
-/** The items what you said made or changed. */
-export const ITEMS: Item[] = [
-  item({ n: 12, title: 'Export keeps the filter you set' }),
-  item({ n: 14, tags: ['bug'], pri: 'P1', title: 'Coupon box hidden behind the keyboard' }),
-  item({ n: 7, title: 'Which formats should the export offer?' }),
+/** The tasks what you said made or changed. */
+export const TASKS: Task[] = [
+  task({ n: 12, title: 'Export keeps the filter you set' }),
+  task({ n: 14, tags: ['bug'], pri: 'P1', title: 'Coupon box hidden behind the keyboard' }),
+  task({ n: 7, title: 'Which formats should the export offer?' }),
 ]
 
 /** One input in each state it can be in. */
@@ -80,7 +80,7 @@ export const DAY: Input[] = [ONE.waiting, ONE.voice, ONE.made, ONE.added, ONE.fa
 
 export interface Said {
   inputs?: Input[]
-  /** the phone's swipe, drawn: right this far on the first row that opens an item; left, the first row's Move and Delete left open */
+  /** the phone's swipe, drawn: right this far on the first row that opens a task; left, the first row's Move and Delete left open */
   swiped?: number
   /** the organizer is on (the default, as Taska is normally used; false: the story is the organizer off) and which
    * input it is on now */
@@ -104,7 +104,7 @@ export interface Said {
 }
 
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
-const project = (s: Said, items = ITEMS) => modelOf(items, s.inputs ?? DAY, { organizer: { on: s.organizer ?? true, model: 'gemini-flash-latest', busy: s.busy ? [s.busy] : [] } })
+const project = (s: Said, tasks = TASKS) => modelOf(tasks, s.inputs ?? DAY, { organizer: { on: s.organizer ?? true, model: 'gemini-flash-latest', busy: s.busy ? [s.busy] : [] } })
 const fileUrl = (x: string) => (x.endsWith('.png') ? PICTURE : '#' + x)
 const swipeActs = acts('Input swipe', ['open'] as const)
 const inputActs = acts('Input', ['goto', 'retry', 'send', 'draft', 'moved', 'ref', 'outboxRetry', 'outboxEdit', 'end', 'append', 'loadMore'] as const, { append: 'Input box › What it writes to › Changing what you said', draft: 'Input box › What it writes to › Changing what you said' })
@@ -116,7 +116,7 @@ const menuActs = acts('Input menu', ['send', 'edit', 'append', 'asSaid', 'undo',
 })
 
 /** An input's menu from its ⋯, as the page's InputMenuSheet runs it (Take off and Delete ask again); also the menu of
- * your message in an item's talk. */
+ * your message in a task's talk. */
 export type InputMenuAt = { id: string; asked: Record<string, number> }
 export function inputMenuParts(m: ProjectModel, desk: boolean, { id, asked }: InputMenuAt, menu: { close(): void; change(w: InputMenuAt): void }) {
   const r = m.byId.get(id)!
@@ -193,7 +193,7 @@ export const inputsOf = (s: Said = {}) => <LiveInputs s={s} />
 function LiveInputs({ s }: { s: Said }) {
   const live = useInputs(project(s), false, s)
   const { m, rows: all, total } = rowsOf(s, live.opened)
-  // the row drawn swiped: right, the first that became an item (it opens it); left, the first
+  // the row drawn swiped: right, the first that became a task (it opens it); left, the first
   const pick = s.swiped == null ? -1 : all.findIndex((x) => (s.swiped! >= 0 ? x.became.k === 'filed' || x.became.k === 'answer' : x.became.k !== 'moved'))
   const rows = all.map((x, i) => (i === pick ? { ...x, swiped: s.swiped } : x))
   return (

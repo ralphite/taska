@@ -15,7 +15,7 @@ const TOUR: Tour = {
     { say: 'Click Search (or press ⌘K).', target: button('Search'), until: shows(DIALOG) },
     { say: 'Type “export filter”.', target: role('textbox', 'What to find'), until: shows(marked('found', undefined, { label: 'Results' })), wait: 20000 },
     { say: 'Point at #8 under Inputs (or press ↓ to it): the preview follows.', target: marked('found', 'shop/r8', { label: '#8' }), until: shows(marked('preview', 'inputs', { label: 'The preview' })), wait: 300 },
-    { say: 'Click Items.', target: button(/^Items/, { within: CHIPS, label: 'Items' }) },
+    { say: 'Click Tasks.', target: button(/^Tasks/, { within: CHIPS, label: 'Tasks' }) },
     { say: 'Press ↓ then ↵ to open T003 (or click it).', target: marked('found', 'shop/i3', { label: 'T003' }), until: gone(DIALOG), wait: 300 },
     { say: 'Search again: the same words, selected.', target: button('Search'), until: shows(DIALOG) },
     { say: 'Click the mic (or ⌥V) to say it instead.', target: button('Speak'), until: shows(STOP) },

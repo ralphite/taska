@@ -6,7 +6,7 @@ import { answer, shown } from '../../stories/homeFixtures'
 export default { title: 'UI/Home page/Searching' } satisfies Meta
 type Story = StoryObj
 
-/** Words typed in the search: what was found in every project (an item, a done one, an input). */
+/** Words typed in the search: what was found in every project (a task, a done one, an input). */
 export const Searching: Story = { render: () => shown({ q: 'rewrite', search: { phase: 'found', answer } }) }
 
 /** The search found nothing. */

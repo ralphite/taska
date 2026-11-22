@@ -21,7 +21,7 @@ class SessionsByTheirIds(ServerCase):
         req = urllib.request.Request(f"{self.p}{path}{'&' if '?' in path else '?'}{q}", data=body.encode() if body else None)
         return urllib.request.urlopen(req, timeout=10).read().decode()
 
-    def test_words_on_an_item_wake_the_session_on_it_not_another_with_no_name(self) -> None:
+    def test_words_on_an_task_wake_the_session_on_it_not_another_with_no_name(self) -> None:
         self.do("new P1 Export loses the filter\n", "you")
         self.assertIn("next T1", self.call("/next", sid=A))  # A takes T1
         self.assertIn("ok T1 say", self.call("/do", sid=A, body="T1 say looking at it\n"))

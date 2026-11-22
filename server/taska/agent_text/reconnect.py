@@ -38,7 +38,7 @@ def relay(root: str, app: str, slug: str, sid: str, name: str, desktop: Optional
     who = f"the {'Antigravity conversation' if app == 'antigravity' else 'Claude session'} \"{name or sid[:8]}\" (project {slug})"
     return (f"reconnect first: the user asked you to bring back {who}, which lost its connection to Taska. Do only "
             f"this, then go back to what you were doing.\nSend it this message {_send(app, sid, desktop, message(root, app, slug, sid))}\n"
-            f"Write about it nowhere (no item, no message). Then GET /next again, or start your wait again, as before.\n")
+            f"Write about it nowhere (no task, no message). Then GET /next again, or start your wait again, as before.\n")
 
 
 def all_lost(root: str, app: str, rows: List[Dict[str, object]]) -> str:

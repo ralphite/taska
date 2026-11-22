@@ -15,7 +15,7 @@ describe('the voice states tree (T731)', () => {
     expect(new Set(all.map((n) => n.id))).toEqual(steps)
   })
 
-  it('walks the normal path on Next, from Recording to Created an item', () => {
+  it('walks the normal path on Next, from Recording to Created a task', () => {
     const path = [t.root.state]
     for (let n = nextOf(t, t.root, new Set(path)); n && path.length < 8; n = nextOf(t, n, new Set(path))) path.push(n.state)
     expect(path).toEqual(['recording', 'uploading', 'transcribing', 'fastWords', 'words', 'sending', 'organizing', 'created'])

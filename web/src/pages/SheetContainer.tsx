@@ -9,7 +9,7 @@ import { usePaneRef } from '../app/panes'
 import { KeysSheet, SwitchProjectSheet } from '../features/find/FindersContainer'
 import { SearchSheet } from './SearchDialogContainer'
 import { AsSaidSheet, InputHistorySheet, InputMenuSheet, InputMoveSheet, InputRescopeSheet } from '../features/inputs/InputSheetsContainer'
-import { AgentCardSheet, ItemMenuSheet, LaterSheet, MessageMenuSheet, MoveItemProjectSheet, MoveParentSheet, SourcesSheet, TimesSheet, WaitForSheet } from '../features/item/ItemSheetsContainer'
+import { AgentCardSheet, TaskMenuSheet, LaterSheet, MessageMenuSheet, MoveTaskProjectSheet, MoveParentSheet, SourcesSheet, TimesSheet, WaitForSheet } from '../features/task/TaskSheetsContainer'
 import { AgentsSheet } from '../features/agents/AgentsContainer'
 import { FiltersSheet } from '../features/list/FiltersContainer'
 import { ViewMenuSheet } from '../features/list/ViewMenuContainer'
@@ -19,14 +19,14 @@ import { CommentMenuSheet, CommentMoveSheet, DocEditSheet, DocMenuSheet, DocMove
 import { NewSharedSheet } from '../features/settings/SharedRulesContainer'
 
 const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { kind: K }> }> } = {
-  'item-menu': ItemMenuSheet,
+  'task-menu': TaskMenuSheet,
   'agent-card': AgentCardSheet,
   later: LaterSheet,
-  'item-move-parent': MoveParentSheet,
-  'item-wait-for': WaitForSheet,
-  'item-move-project': MoveItemProjectSheet,
-  'item-sources': SourcesSheet,
-  'item-times': TimesSheet,
+  'task-move-parent': MoveParentSheet,
+  'task-wait-for': WaitForSheet,
+  'task-move-project': MoveTaskProjectSheet,
+  'task-sources': SourcesSheet,
+  'task-times': TimesSheet,
   'message-menu': MessageMenuSheet,
   'input-menu': InputMenuSheet,
   'input-history': InputHistorySheet,

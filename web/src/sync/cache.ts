@@ -1,6 +1,6 @@
 // The copy of each project kept in this browser (IndexedDB), so opening a project again draws at once from it while
 // the server's newest view comes. A slow or missing store never holds the page up. A copy is used only by the page
-// build that kept it (T859): what the server sends changes with the page's code (T855's items had tags where they had a
+// build that kept it (T859): what the server sends changes with the page's code (T855's tasks had tags where they had a
 // type), and a page drawing a copy an older build kept broke on what was not there, the whole page blank until a
 // reload.
 
@@ -17,7 +17,7 @@ export interface Stored {
   /** the page build that kept it (its script's name) */
   build?: string
   cursor: string
-  items: ServerCopy['items'] extends ReadonlyMap<number, infer I> ? I[] : never
+  tasks: ServerCopy['tasks'] extends ReadonlyMap<number, infer I> ? I[] : never
   inputs: ServerCopy['inputs'] extends ReadonlyMap<string, infer I> ? I[] : never
   docs: ServerCopy['docs'] extends ReadonlyMap<number, infer D> ? D[] : never
   voices: ServerCopy['voices'] extends ReadonlyMap<string, infer V> ? V[] : never
@@ -90,7 +90,7 @@ export class BrowserCopyCache implements CopyCache {
         const stored: Stored = {
           build: this.build,
           cursor: copy.cursor,
-          items: [...copy.items.values()],
+          tasks: [...copy.tasks.values()],
           inputs: [...copy.inputs.values()],
           docs: [...copy.docs.values()],
           voices: [...copy.voices.values()],
@@ -112,7 +112,7 @@ export function keptCopy(s: Stored | null, build: string, at: number): ServerCop
   if (!s || s.build !== build) return null
   return {
     cursor: s.cursor,
-    items: new Map(s.items.map((x) => [x.n, x])),
+    tasks: new Map(s.tasks.map((x) => [x.n, x])),
     inputs: new Map(s.inputs.map((x) => [x.id, x])),
     docs: new Map(s.docs.map((x) => [x.d, x])),
     voices: new Map(s.voices.map((x) => [x.f, x])),

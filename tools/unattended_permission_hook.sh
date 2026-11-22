@@ -18,5 +18,5 @@ print(json.dumps({"hookSpecificOutput": {"hookEventName": "PermissionRequest", "
     "behavior": "deny",
     "message": "Denied automatically: this session runs unattended (T465) and must never wait on a permission prompt. "
                "Do not retry the same command; take another route (a narrower command, files you created yourself, "
-               "a fresh folder), or post a block on the Taska item saying what you need, and move on."}}}))
+               "a fresh folder), or post a block on the Taska task saying what you need, and move on."}}}))
 ' ~/.claude/unattended-denials.log

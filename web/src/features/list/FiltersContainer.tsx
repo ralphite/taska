@@ -1,4 +1,4 @@
-// The phone's filters sheet with the page's data: the list's filters, and how many items they leave.
+// The phone's filters sheet with the page's data: the list's filters, and how many tasks they leave.
 
 import { useServices } from '../../app/context'
 import { useProjectModel, useProjectRoute } from '../../app/hooks'

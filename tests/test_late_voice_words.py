@@ -31,7 +31,7 @@ def rows(late: bool, amend: bool = False):
 
 
 def message(state):
-    return next(x for x in state.items[1].thread if x.src == "r1")
+    return next(x for x in state.tasks[1].thread if x.src == "r1")
 
 
 class LateVoiceWords(unittest.TestCase):

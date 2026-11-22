@@ -1,4 +1,4 @@
-// A document as it is read: who wrote it on which item, its title, its contents when it is long, its paragraphs with
+// A document as it is read: who wrote it on which task, its title, its contents when it is long, its paragraphs with
 // their comment threads (beside the text on the desktop, under the paragraph on the phone), the comments on the whole
 // document, and those whose words changed since. On the phone a paragraph is tapped to comment on it. Props only.
 
@@ -14,7 +14,7 @@ import type { SheetLook } from '../../ui/Sheet'
 import { MUTED, NEEDS_PILL, PRIMARY } from '../../ui/tones'
 import { BlockActs, type CountInfo } from './BlockActs'
 import { DocBlock } from './DocBlock'
-import { PlaceVoiceFloat, itemWords, listItemOf } from '../../ui/PlaceVoice'
+import { PlaceVoiceFloat, taskWords, listTaskOf } from '../../ui/PlaceVoice'
 import { DraftCard, NewDot, Thread, type DocEnv, type ThreadEvents } from './Thread'
 import type { NotSent } from '../../model/voiceComments'
 
@@ -45,7 +45,7 @@ export interface DocRow {
   threads: ShownThread[]
   isNew: boolean
   picked: boolean
-  /** words picked in it (the phone marks the item of a list) */
+  /** words picked in it (the phone marks the task of a list) */
   quote: string | null
   skipped: boolean
   /** the phone's row to speak or write a comment, floating by the paragraph picked (B715 r1169) */
@@ -60,7 +60,7 @@ export interface DocRow {
 
 export interface DocFacts {
   d: Doc
-  itemCode: string
+  taskCode: string
   /** who wrote it, by its key (drawn by its app's icon where it has one, T711) */
   by: string
   when: string
@@ -80,10 +80,10 @@ export interface DocFacts {
 }
 
 export interface DocEvents extends ThreadEvents {
-  goItem(): void
+  goTask(): void
   toggle(tk: string): void
   away(tk: string): void
-  /** a paragraph tapped, or its Comment pressed (`quote`: one item of its list) */
+  /** a paragraph tapped, or its Comment pressed (`quote`: one task of its list) */
   pick(key: string, quote: string | null, by: 'button' | 'tap'): void
   /** a place's Voice; its recording strip's ✕, ✓ and ↑ (B498) */
   say(key: string, quote: string | null): void
@@ -172,7 +172,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
   meter?: ReactNode
   /** its contents opened when it opens */
   contentsOpen?: boolean
-  /** the pointer on an item of a list when it opens: the list's key and the item's place in it (the desktop) */
+  /** the pointer on a task of a list when it opens: the list's key and the task's place in it (the desktop) */
   pointing?: { key: string; li: number } | null
   /** a paragraph drawn otherwise (the rules' lines that put shared rules in, I779); null: as the document draws it */
   lines?: (text: string) => ReactNode | null
@@ -182,7 +182,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
   const root = useRef<HTMLDivElement>(null)
   useMarkQuotes(root, rows, (tk) => !!d.resolved?.[tk])
   useLayoutEffect(() => {
-    // come from the item's talk to a comment: its passage in view
+    // come from the task's talk to a comment: its passage in view
     if (!aim) return
     const el = root.current
     const at = aim === 'doc' ? [...(el?.querySelectorAll('section') || [])].at(-1) : el?.querySelector(`[data-doc-blocks] [data-key="${CSS.escape(aim)}"]`)
@@ -190,15 +190,15 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
     onAimed?.()
   }, [aim, onAimed])
   useLayoutEffect(() => {
-    // the one item of a list you picked is marked, not the whole list
+    // the one task of a list you picked is marked, not the whole list
     const el = root.current
     if (!el) return
     for (const li of el.querySelectorAll('li[data-q]')) li.removeAttribute('data-q')
     const r = rows.find((x) => x.quote)
     if (!r) return
-    // found as its buttons find it, so they sit by the item lit (B715 r1176)
+    // found as its buttons find it, so they sit by the task lit (B715 r1176)
     const sec = el.querySelector(`section[data-key="${CSS.escape(r.b.key)}"]`)
-    if (sec && r.quote) listItemOf(sec, r.quote)?.setAttribute('data-q', '')
+    if (sec && r.quote) listTaskOf(sec, r.quote)?.setAttribute('data-q', '')
   })
   const thread = (s: ShownThread, blockText?: string, rail = false) => (
     <Thread key={s.t.tk} t={s.t} blockText={blockText} rail={rail} isNew={s.isNew} done={s.done} doneAt={s.doneAt} replying={facts.replying === s.t.tk} asking={facts.asking} env={env} on={on} />
@@ -230,8 +230,8 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
           ) : null}
           <span hidden={web || d.kind === 'rules'} className="min-w-0 flex-1 basis-full truncate lg:basis-auto">
             on{' '}
-            <button onClick={on.goItem} className="text-blue-600 hover:underline dark:text-blue-400">
-              {facts.itemCode}
+            <button onClick={on.goTask} className="text-blue-600 hover:underline dark:text-blue-400">
+              {facts.taskCode}
             </button>{' '}
             · <Who by={facts.by} /> · {facts.when}
           </span>
@@ -266,9 +266,9 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
                 onClick={(e) => {
                   const t = e.target as Element
                   if (t.closest('button, a, video, [data-ref], [data-include]')) return
-                  // on the phone a tap on one item of a list picks that item, as pointing at it does on the desktop
+                  // on the phone a tap on one task of a list picks that task, as pointing at it does on the desktop
                   const li = desk ? null : t.closest<HTMLElement>('li')
-                  on.pick(r.b.key, li ? itemWords(li) : null, 'tap')
+                  on.pick(r.b.key, li ? taskWords(li) : null, 'tap')
                 }}
                 {...(r.picked || r.speaking ? { 'data-picked': '' } : {})}
                 // the pointing area beside it reaches to where its acts end, no further: wider, it made a narrow column
@@ -298,7 +298,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
                   // has no room under it): it never moves the words (B715 r1169); speaking, its recording strip (B498)
                   <PlaceVoiceFloat
                     rec={r.speaking}
-                    item={r.quote}
+                    task={r.quote}
                     meter={meter}
                     say={{ 'data-part-say': '', 'data-key': r.b.key, 'data-quote': r.quote ?? '' }}
                     on={{ say: () => on.say(r.b.key, r.quote), comment: on.type, cancel: on.sayCancel, check: on.sayCheck }}
@@ -307,7 +307,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
                 {r.skipped && CHOICE_LINE.test(r.b.text) && !TICKED_LINE.test(r.b.text) ? (
                   <div className="mt-1.5 flex items-center gap-1 text-[13px] font-medium text-zinc-500 dark:text-zinc-400">
                     <Icon n="reply" c="size-3.5" />
-                    Skipped · you replied on {facts.itemCode}
+                    Skipped · you replied on {facts.taskCode}
                   </div>
                 ) : null}
                 {desk ? null : r.threads.map((s) => thread(s, r.b.text))}

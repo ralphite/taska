@@ -1,5 +1,5 @@
 // The composition root: the page's services, made once and handed to the components through React context. It only
-// assembles: each area of the page (app/<area>/area.ts: inputs, docs, voice, items, the page, the project) is made by
+// assembles: each area of the page (app/<area>/area.ts: inputs, docs, voice, tasks, the page, the project) is made by
 // its own factory from the core (app/core.ts: the API, the delivery, the stores, the page's own parts); what an area
 // reaches in one made after it, it reaches by a function. The services a feature keeps for itself are made here.
 // Stories and tests make their own with fakes.
@@ -32,14 +32,14 @@ import { makeInputs } from './inputs/area'
 import type { Box } from './inputs/box'
 import type { InputActions } from './inputs/inputActions'
 import type { InputSender } from './inputs/inputSender'
-import { makeItems } from './items/area'
-import type { Answers } from './items/answers'
-import type { ItemActions } from './items/itemActions'
-import type { ItemDrag } from './items/itemDrag'
-import type { ItemEdits } from './items/itemEdits'
-import type { ListOrder } from './items/listOrder'
-import type { Moves } from './items/moves'
-import type { Selection } from './items/selection'
+import { makeTasks } from './tasks/area'
+import type { Answers } from './tasks/answers'
+import type { TaskActions } from './tasks/taskActions'
+import type { TaskDrag } from './tasks/taskDrag'
+import type { TaskEdits } from './tasks/taskEdits'
+import type { ListOrder } from './tasks/listOrder'
+import type { Moves } from './tasks/moves'
+import type { Selection } from './tasks/selection'
 import { makePage } from './page/area'
 import type { Diagrams } from './page/diagrams'
 import type { Fields } from './page/fields'
@@ -81,19 +81,19 @@ export interface App {
   api: TaskaApi
   stores: Stores
   toasts: Toasts
-  items: ItemActions
+  tasks: TaskActions
   inputs: InputSender
   nav: Navigation
   listHold: ListHold
   seen: Seen
-  /** the list's items in the order it shows them, for Previous and Next */
+  /** the list's tasks in the order it shows them, for Previous and Next */
   listOrder: ListOrder
   /** the search: listening, writing out, searching every project (F479; Home's field, ⌘K, the phone's page) */
   finder: Finder
   /** answering an agent's question by its choices */
   answers: Answers
-  /** an item's editor and its subitem title: what you typed is kept */
-  itemEdits: ItemEdits
+  /** a task's editor and its subtask title: what you typed is kept */
+  taskEdits: TaskEdits
   /** the table of actions, done here */
   actions: Actions
   /** the places the keys reach (the search, the box, the talk), given by ref */
@@ -104,7 +104,7 @@ export interface App {
   box: Box
   /** what floats over the page: sheets and menus */
   sheets: Sheets
-  /** an item going to another project */
+  /** a task going to another project */
   moves: Moves
   desk(): boolean
   runner: ChangeRunner
@@ -140,7 +140,7 @@ export interface App {
   /** Mermaid diagrams in Markdown, drawn once per words and theme; a document's that does not draw goes to its writer */
   diagrams: Diagrams
   views: SavedViews
-  itemDrag: ItemDrag
+  taskDrag: TaskDrag
   selection: Selection
   access: Access
   refreshProjects(): Promise<boolean>
@@ -157,7 +157,7 @@ export function createApp(env: AppEnv): App {
   const inputs = makeInputs(c, { voice: () => voice.voice, docVoice: () => voice.docVoice, docs: () => docs.docs, docComments: () => docs.docComments, vault: env.vault })
   const docs = makeDocs(c, inputs, () => voice.dictation)
   const voice = makeVoice(c, inputs, docs)
-  const items = makeItems(c, inputs, () => listHold.started())
+  const tasks = makeTasks(c, inputs, () => listHold.started())
   const page = makePage(c, env.vault)
   const access = new Access({ api, sheets, toasts, refresh: () => void c.project().refresh() })
   const project = makeProject(c, inputs, { presence: env.presence, cache: env.cache, pageScript: env.pageScript, keyNeeded: () => access.ask(), busy: page.busy })
@@ -187,8 +187,8 @@ export function createApp(env: AppEnv): App {
   })
   const { box } = inputs
   const { docs: docsOpen, docEditor, rules, sharedRules } = docs
-  const { items: itemActions, itemEdits, answers, selection, listOrder } = items
-  const actions = new Actions({ finder, items: itemActions, itemEdits, keyArm: page.keyArm, answers, toasts, nav, fields, sheets, docs: docsOpen, docEditor, rules, sharedRules, box, voice: voice.voice, media: page.media, selection, listOrder, route: s.route, ui: s.ui, feedback: s.feedback, sheet: s.sheet, itemView: s.itemView, docView: s.docView, boxStore: s.box, desk: env.desk, model })
+  const { tasks: taskActions, taskEdits, answers, selection, listOrder } = tasks
+  const actions = new Actions({ finder, tasks: taskActions, taskEdits, keyArm: page.keyArm, answers, toasts, nav, fields, sheets, docs: docsOpen, docEditor, rules, sharedRules, box, voice: voice.voice, media: page.media, selection, listOrder, route: s.route, ui: s.ui, feedback: s.feedback, sheet: s.sheet, taskView: s.taskView, docView: s.docView, boxStore: s.box, desk: env.desk, model })
 
   // what did not go out before a reload goes now, in the order it was made
   for (const k of keptChanges(env.kv)) void runner.send(k)
@@ -199,7 +199,7 @@ export function createApp(env: AppEnv): App {
     api,
     stores: s,
     toasts,
-    items: itemActions,
+    tasks: taskActions,
     inputs: inputs.inputs,
     nav,
     listHold,
@@ -207,12 +207,12 @@ export function createApp(env: AppEnv): App {
     listOrder,
     finder,
     answers,
-    itemEdits,
+    taskEdits,
     fields,
     inputActions: inputs.inputActions,
     box,
     sheets,
-    moves: items.moves,
+    moves: tasks.moves,
     desk: env.desk,
     runner,
     model,
@@ -237,12 +237,12 @@ export function createApp(env: AppEnv): App {
     media: page.media,
     diagrams: page.diagrams,
     views,
-    itemDrag: items.itemDrag,
+    taskDrag: tasks.taskDrag,
     selection,
     access,
     refreshProjects: project.refreshProjects,
     stop: () => {
-      for (const x of [project.projects, project.projectSession, project.damaged, project.pictureSizes, sheets, docsOpen, docEditor, items.merges, page.arrival, project.notices, page.pageErrors, page.pageActions, page.leaveGuard]) x.stop()
+      for (const x of [project.projects, project.projectSession, project.damaged, project.pictureSizes, sheets, docsOpen, docEditor, tasks.merges, page.arrival, project.notices, page.pageErrors, page.pageActions, page.leaveGuard]) x.stop()
       unlisten()
     },
     actions,

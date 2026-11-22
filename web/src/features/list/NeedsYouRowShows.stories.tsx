@@ -1,7 +1,7 @@
-// What such a row can carry: later and part of another item, a draft.
+// What such a row can carry: later and part of another task, a draft.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
-import { item } from '../../stories/fixtures'
+import { task } from '../../stories/fixtures'
 import { listOf } from '../../stories/listFixtures'
 import { one, question, row } from '../../stories/needsYouRowFixtures'
 import { one as tipOne } from '../../stories/tipFixtures'
@@ -9,14 +9,14 @@ import { one as tipOne } from '../../stories/tipFixtures'
 export default { title: 'UI/List pane/Needs-you row/What it shows' } satisfies Meta
 type Story = StoryObj
 
-export const LaterPartOfAnother: Story = { ...one({ it: { n: 14, status: 'proposed', when: 'later', parent: 3 }, excerpt: 'Split from T003', f: { code: 'T014', parentCode: 'T003' } }), name: 'Later, part of another item' }
+export const LaterPartOfAnother: Story = { ...one({ it: { n: 14, status: 'proposed', when: 'later', parent: 3 }, excerpt: 'Split from T003', f: { code: 'T014', parentCode: 'T003' } }), name: 'Later, part of another task' }
 // ---- more states (T636)
 export const WithADraft: Story = { ...one({ ...question, f: { draft: true } }), name: 'With a draft' }
 // ---- more states (T639)
-/** in Active, a subitem that needs you stays under its parent, indented */
-export const AsASubitem: Story = {
-  name: 'As a subitem, under its parent',
-  render: () => <Frames phoneWidth={393} deskWidth={460} height={420}>{(layout) => listOf([item({ n: 1, status: 'doing', title: 'Export keeps the filter you set' }), item({ n: 14, parent: 1, title: 'Which file name?', wait: { id: 4, kind: 'ask', text: 'Put the date in the file name?', by: 'claude-code', files: [] } })], 'items', { status: 'all' }, layout === 'desk')}</Frames>,
+/** in Active, a subtask that needs you stays under its parent, indented */
+export const AsASubtask: Story = {
+  name: 'As a subtask, under its parent',
+  render: () => <Frames phoneWidth={393} deskWidth={460} height={420}>{(layout) => listOf([task({ n: 1, status: 'doing', title: 'Export keeps the filter you set' }), task({ n: 14, parent: 1, title: 'Which file name?', wait: { id: 4, kind: 'ask', text: 'Put the date in the file name?', by: 'claude-code', files: [] } })], 'tasks', { status: 'all' }, layout === 'desk')}</Frames>,
 }
 // ---- a narrow list (T678, T764): under about 90% of its width by default, the action is its icon, its name in the tip
 const narrow = (desk: boolean) => (

@@ -1,5 +1,5 @@
-"""B832 (r1423): a waiting session handed the same item, unchanged, three times in a row and not taking it (it waited
-for its own item only: a P0 item went to nobody for nine hours) is told about once to the user on that item; the item
+"""B832 (r1423): a waiting session handed the same task, unchanged, three times in a row and not taking it (it waited
+for its own task only: a P0 task went to nobody for nine hours) is told about once to the user on that task; the task
 is no longer held for it, so other sessions get it, and its own wait holds instead of answering at once again."""
 
 import time
@@ -19,9 +19,9 @@ class OffersAlone(unittest.TestCase):
         self.assertTrue(o.handed("s", 5, "a"))
         self.assertTrue(o.passed("s", 5, "a"))
         self.assertFalse(o.handed("s", 5, "a"))  # told once
-        self.assertFalse(o.passed("s", 5, "b"))  # the item changed: handed to it again
+        self.assertFalse(o.passed("s", 5, "b"))  # the task changed: handed to it again
 
-    def test_anything_done_on_it_or_another_item_starts_the_count_again(self) -> None:
+    def test_anything_done_on_it_or_another_task_starts_the_count_again(self) -> None:
         o = Offers()
         o.handed("s", 5, "a")
         o.handed("s", 5, "b")
@@ -45,7 +45,7 @@ class OffersServed(ServerCase):
         card = urllib.request.urlopen(self.p + "/T1?by=claude-code").read().decode()
         self.assertIn("taska", card)
         self.assertIn("连着 3 次拿到这件都没接", card)
-        # its wait now holds; another session is handed the item
+        # its wait now holds; another session is handed the task
         _, took = self.wait("t31")
         self.assertGreaterEqual(took, 0.9)
         self.assertIn("next T1", self.wait("fresh")[0])

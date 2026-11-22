@@ -3,7 +3,7 @@
 // Input card, Inputs tab, New input page.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
-import { failWhy, type Became, type ItemRef } from '../model/became'
+import { failWhy, type Became, type TaskRef } from '../model/became'
 import type { Status } from '../model/types'
 import { STATUS_WORD } from '../model/words'
 import { Frames, States } from '../stories/Frames'
@@ -14,20 +14,20 @@ import { act, acts } from '../stories/acts'
 export default { title: 'UI/Inputs page/Input row/Every state of a line' } satisfies Meta
 type Story = StoryObj
 
-const it = (n: number, code: string, title: string, s: Status = 'open'): ItemRef => ({ n, code, title, status: { s, label: STATUS_WORD[s] } })
+const it = (n: number, code: string, title: string, s: Status = 'open'): TaskRef => ({ n, code, title, status: { s, label: STATUS_WORD[s] } })
 const T014 = it(14, 'T014', 'Coupon box hidden behind the keyboard')
 const T012 = it(12, 'T012', 'Export keeps the filter you set', 'doing')
 const T007 = it(7, 'T007', 'Which formats should the export offer?', 'open')
 /** what the organizer said when it failed, as Taska keeps it (the line says it as failWhy does) */
 const FAILED = 'No changes needed · Some commands failed: err: B99 not found'
 const BECAME: [string, Became][] = [
-  ['made an item', { k: 'filed', items: [{ did: 'Created', item: T014 }], note: null, undo: true }],
-  ['made two, added to one', { k: 'filed', items: [{ did: 'Created', item: T014 }, { did: 'Created', item: it(43, 'T043', 'Close the keyboard by tapping outside it', 'open') }, { did: 'Added to', item: T012 }], note: null, undo: true }],
-  ["an item, and the organizer's note", { k: 'filed', items: [{ did: 'Created', item: T014 }], note: 'Commented on D1', undo: true }],
-  ['an agent changed an item for it (no organizer)', { k: 'filed', items: [{ did: 'Changed', item: T012 }], note: null, undo: false }],
-  ['left for an agent, which changed an item', { k: 'filed', items: [{ did: '', item: T012 }], note: null, undo: false }],
-  ['an answer', { k: 'answer', item: T007, undo: false }],
-  ["the organizer's note, no item", { k: 'note', text: 'No changes needed' }],
+  ['made a task', { k: 'filed', tasks: [{ did: 'Created', task: T014 }], note: null, undo: true }],
+  ['made two, added to one', { k: 'filed', tasks: [{ did: 'Created', task: T014 }, { did: 'Created', task: it(43, 'T043', 'Close the keyboard by tapping outside it', 'open') }, { did: 'Added to', task: T012 }], note: null, undo: true }],
+  ["a task, and the organizer's note", { k: 'filed', tasks: [{ did: 'Created', task: T014 }], note: 'Commented on D1', undo: true }],
+  ['an agent changed a task for it (no organizer)', { k: 'filed', tasks: [{ did: 'Changed', task: T012 }], note: null, undo: false }],
+  ['left for an agent, which changed a task', { k: 'filed', tasks: [{ did: '', task: T012 }], note: null, undo: false }],
+  ['an answer', { k: 'answer', task: T007, undo: false }],
+  ["the organizer's note, no task", { k: 'note', text: 'No changes needed' }],
   ['transcribing', { k: 'transcribing', state: 'sentTranscribing' }],
   ['organizing', { k: 'organizing' }],
   ["couldn't organize: Try again", { k: 'failed', why: failWhy(FAILED), raw: FAILED, retry: true }],
@@ -51,7 +51,7 @@ export const WhatItBecame: Story = {
     <Frames desk={false}>
       {() => (
         <States
-          items={BECAME.map(([name, b]): [string, ReactNode] => [
+          tasks={BECAME.map(([name, b]): [string, ReactNode] => [
             name,
             <div key={name} className="px-4 py-2 text-[13px] leading-5">
               <BecameLine b={b} id="r1" place="row" on={on} />

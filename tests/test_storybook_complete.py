@@ -11,10 +11,10 @@ from typing import Dict, List
 WEB = os.path.join(os.path.dirname(__file__), "..", "web")
 # still being made (10-24): each goes from this list once its stories are there
 NOT_YET = {
-    "Demo/Agents", "Demo/Document", "Demo/Item changes", "Demo/Item list", "Demo/Item page", "Demo/Keyboard",
+    "Demo/Agents", "Demo/Document", "Demo/Task changes", "Demo/Task list", "Demo/Task page", "Demo/Keyboard",
     "Demo/Needs you", "Demo/New input", "Demo/Phone gestures", "Demo/Projects", "Demo/Settings", "Demo/Side lists",
-    "Demo/Sync and errors", "Demo/Voice", "Pages/Dev", "Pages/Document", "Pages/Inputs", "Pages/Item list",
-    "Pages/Item page/By item status", "Pages/Item page/By what it holds", "Pages/Item page/Loading and errors",
+    "Demo/Sync and errors", "Demo/Voice", "Pages/Dev", "Pages/Document", "Pages/Inputs", "Pages/Task list",
+    "Pages/Task page/By task status", "Pages/Task page/By what it holds", "Pages/Task page/Loading and errors",
     "Pages/Projects", "Pages/Settings", "Pages/Side lists",
 }
 

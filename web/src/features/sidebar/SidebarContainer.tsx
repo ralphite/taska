@@ -18,12 +18,12 @@ const DEV_LINKS = [
 const NEW_PROJECT = { kind: 'new-project' } as const
 
 export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; place: string; hidden?: boolean; rail?: boolean }) {
-  const app = useServices('actions', 'finder', 'itemDrag', 'nav', 'projects', 'sheets', 'voice')
+  const app = useServices('actions', 'finder', 'taskDrag', 'nav', 'projects', 'sheets', 'voice')
   const stores = useStores('data', 'drag', 'feedback', 'grips', 'route', 'sheet', 'ui')
   const layout = useLayout()
   const drawerFoot = usePaneRef('drawerFoot')
   const { list: listed } = useSideProjects(slug)
-  // an item dragged from the list over a project lights it
+  // a task dragged from the list over a project lights it
   const dropOn = useStoreValue(stores.drag, (s) => s.project)
   const list = dropOn && listed ? listed.map((p) => (p.slug === dropOn ? { ...p, drop: true } : p)) : listed
   const route = useStoreValue(stores.route, (s) => s.route)
@@ -52,11 +52,11 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
     keys: () => app.sheets.open({ kind: 'keys' }),
     undo: () => void undo?.run(),
     order: (names, moved) => void app.projects.order(names, `${list?.find((p) => p.slug === moved)?.title || moved} moved`),
-    dragProject: (to) => app.itemDrag.overProject(to),
+    dragProject: (to) => app.taskDrag.overProject(to),
     // the desktop's menu where it was asked for (a right click, ⋯); the phone's (a long press) as its sheets are (F767)
     projectMenuFrom: (to, from) => (layout === 'desk' ? app.sheets.openFrom(from, { kind: 'project-menu', slug: to }, { focus: false }) : app.sheets.open({ kind: 'project-menu', slug: to }, { focus: false })),
     projectMenu: (to, x, y) => (layout === 'desk' ? app.sheets.open({ kind: 'project-menu', slug: to }, { pop: true, focus: false, at: { x, y } }) : app.sheets.open({ kind: 'project-menu', slug: to }, { focus: false })),
-    dropProject: () => app.itemDrag.drop(),
+    dropProject: () => app.taskDrag.drop(),
     go: (href, e) => {
       if (e.metaKey || e.ctrlKey) return
       e.preventDefault()

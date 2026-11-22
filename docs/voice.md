@@ -44,8 +44,8 @@ flowchart TD
     sentTranscribing["Sent, words to come"]
     sentFastWords["Sent with the fast words, confirming"]
     organizing["Organizing"]
-    created["Created an item"]
-    added["Added to an item"]
+    created["Created a task"]
+    added["Added to a task"]
     forAgent["For an agent"]
     handled["Handled by an agent"]
     organizeFailed["Couldn't organize"]
@@ -84,13 +84,13 @@ flowchart TD
     sentTranscribing -->|"Strong words in · Nothing heard · Transcription failed"| forAgent
     sentFastWords -->|"Strong words in · Strong model failed or said the same"| organizing
     sentFastWords -->|"Strong words in · Strong model failed or said the same"| forAgent
-    organizing -->|"Made an item"| created
-    organizing -->|"Added to an item"| added
+    organizing -->|"Made a task"| created
+    organizing -->|"Added to a task"| added
     organizing -->|"Left for an agent"| forAgent
     organizing -->|"Handled"| handled
     organizing -->|"Organizer failed"| organizeFailed
     organizeFailed -->|"Retry"| organizing
-    forAgent -->|"Added to an item"| added
+    forAgent -->|"Added to a task"| added
     forAgent -->|"Handled"| handled
     created -->|"Edited after sending"| organizing
     created -->|"Edited after sending"| forAgent
@@ -115,7 +115,7 @@ sent); "what became of it" is the input's line (Organizing…, Created B014, For
 is the colour: busy blue and pulsing, partial amber, done green, quiet grey, failed red.
 
 <!-- made from voiceStates.ts: voicePlacesTable() -->
-| State | the note's chip in the box | the Draft card (the desktop's New input page) | its row in the desktop's New input list | the line over the phone's box (New input) | your bubble in the item's talk |
+| State | the note's chip in the box | the Draft card (the desktop's New input page) | its row in the desktop's New input list | the line over the phone's box (New input) | your bubble in the task's talk |
 |---|---|---|---|---|---|
 | Recording (`recording`) | — | — | — | — | — |
 | Uploading (`uploading`) | Transcribing… (busy) | Transcribing… (busy) | — | — | — |
@@ -131,8 +131,8 @@ is the colour: busy blue and pulsing, partial amber, done green, quiet grey, fai
 | Sent, words to come (`sentTranscribing`) | — | — | Transcribing… (busy) | Sent · transcribing… (busy) | transcribing (busy) |
 | Sent with the fast words, confirming (`sentFastWords`) | — | — | Confirming… (busy) | Sent · confirming… (busy) | confirming (busy) |
 | Organizing (`organizing`) | — | — | what became of it | what became of it | — |
-| Created an item (`created`) | — | — | what became of it | what became of it | what became of it |
-| Added to an item (`added`) | — | — | what became of it | what became of it | — |
+| Created a task (`created`) | — | — | what became of it | what became of it | what became of it |
+| Added to a task (`added`) | — | — | what became of it | what became of it | — |
 | For an agent (`forAgent`) | — | — | what became of it | what became of it | — |
 | Handled by an agent (`handled`) | — | — | what became of it | what became of it | — |
 | Couldn't organize (`organizeFailed`) | — | — | what became of it | what became of it | — |

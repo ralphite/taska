@@ -1,5 +1,5 @@
-// Deleted's rows: everything deleted, one list, the latest first, whatever it was (an item with its subitems, a
-// document with its item, what you said with the items it had made). Pure: the container and the stories both use it.
+// Deleted's rows: everything deleted, one list, the latest first, whatever it was (a task with its subtasks, a
+// document with its task, what you said with the tasks it had made). Pure: the container and the stories both use it.
 
 import type { ProjectModel } from './project'
 import { when } from './time'
@@ -7,17 +7,17 @@ import { inputCode, plural } from './words'
 
 /** One deleted thing as Deleted lists it, on the desktop and the phone. */
 export type GoneRow =
-  | { key: string; kind: 'item' | 'doc'; title: string; what: string; at: string }
+  | { key: string; kind: 'task' | 'doc'; title: string; what: string; at: string }
   | { key: string; kind: 'input'; id: string; text: string; code: string; with: string; at: string }
 
 export function goneRows(m: ProjectModel): GoneRow[] {
   const at = (t: string) => when(t, m.at)
   return [
     ...m.facts.deleted.map((x): GoneRow & { t: string } => ({
-      key: x.kind === 'item' ? x.code || '' : `D${x.d}`,
+      key: x.kind === 'task' ? x.code || '' : `D${x.d}`,
       kind: x.kind,
       title: x.title,
-      what: x.kind === 'item' ? `Item${x.more ? `, with ${plural(x.more, 'subitem')}` : ''}` : `Document${x.on ? ` on ${x.on}` : ''}`,
+      what: x.kind === 'task' ? `Task${x.more ? `, with ${plural(x.more, 'subtask')}` : ''}` : `Document${x.on ? ` on ${x.on}` : ''}`,
       at: at(x.at),
       t: x.at,
     })),
@@ -27,7 +27,7 @@ export function goneRows(m: ProjectModel): GoneRow[] {
       id: x.id,
       text: x.text || (x.files ? plural(x.files, 'file') : ''),
       code: inputCode(x.id),
-      with: x.items.map((i) => i.code).join(', '),
+      with: x.tasks.map((i) => i.code).join(', '),
       at: at(x.at),
       t: x.at,
     })),

@@ -2,7 +2,7 @@
 
 import { describe, expect, it as test } from 'vitest'
 import { doc } from '../stories/docFixtures'
-import { input, item, modelOf } from '../stories/fixtures'
+import { input, task, modelOf } from '../stories/fixtures'
 import { boxRole, boxShowsRecording, feedbackLine, shownBox } from './boxFoot'
 import type { TickState } from './docTicks'
 import type { Outgoing } from './outgoing'
@@ -11,8 +11,8 @@ import { codeOf } from './project'
 import { NO_FILTERS, type Route } from './route'
 
 type Place = Extract<Route, { page: 'project' }>
-const at = (place: Place['place']): Place => ({ page: 'project', slug: 'taska', tab: 'items', place, list: NO_FILTERS })
-const m = modelOf([item({ n: 12 })], [input({ id: 'r7', text: 'Keep the filter' })], {}, [doc()])
+const at = (place: Place['place']): Place => ({ page: 'project', slug: 'taska', tab: 'tasks', place, list: NO_FILTERS })
+const m = modelOf([task({ n: 12 })], [input({ id: 'r7', text: 'Keep the filter' })], {}, [doc()])
 const nothing = { sel: new Set<string>(), quote: null, reply: null }
 const noTicks: TickState = { mine: {}, going: {}, open: new Set() }
 const code = codeOf(m, 12)
@@ -28,7 +28,7 @@ describe('what the box writes to', () => {
   // Yadong (F706, r1146): on the rules, the box comments on them; change only on his explicit word
   test('the rules open, nothing picked: a comment on the rules, desktop and phone', () => {
     const rules = { ...doc(), d: 9, n: 0, kind: 'rules' as const }
-    const rm = modelOf([item({ n: 12 })], [], {}, [rules])
+    const rm = modelOf([task({ n: 12 })], [], {}, [rules])
     const rulesAt: Place = { page: 'project', slug: 'taska', tab: 'rules', place: { kind: 'tab' }, list: NO_FILTERS }
     for (const desk of [true, false]) {
       const r = boxRole(rm, rulesAt, desk, 'taska', null, nothing, noTicks)
@@ -36,8 +36,8 @@ describe('what the box writes to', () => {
     }
   })
 
-  test('an item open: a reply on it', () => {
-    const r = boxRole(m, at({ kind: 'item', ref: code }), true, 'taska', null, nothing, noTicks)
+  test('a task open: a reply on it', () => {
+    const r = boxRole(m, at({ kind: 'task', ref: code }), true, 'taska', null, nothing, noTicks)
     expect([r.scope, r.line, r.placeholder]).toEqual([code, null, `Reply to ${code}…`])
   })
 
@@ -47,9 +47,9 @@ describe('what the box writes to', () => {
     expect([r.doc, r.line?.label, r.line?.right, r.send]).toEqual([12, 'Comment on D12', { kind: 'x', label: 'Cancel · Esc', act: 'unpick' }, 'Comment'])
   })
 
-  test("the phone's document, nothing picked: the whole document, or a reply to its item instead", () => {
+  test("the phone's document, nothing picked: the whole document, or a reply to its task instead", () => {
     const r = boxRole(m, at({ kind: 'doc', d: 12 }), false, 'taska', null, nothing, noTicks)
-    expect([r.aim?.target.key, r.line?.detail, r.line?.right]).toEqual(['doc', '· or tap a part', { kind: 'to-item', code }])
+    expect([r.aim?.target.key, r.line?.detail, r.line?.right]).toEqual(['doc', '· or tap a part', { kind: 'to-task', code }])
   })
 
   // r1095: the desktop's document bar has Comment, for a comment on the whole document
@@ -116,7 +116,7 @@ describe('the line over the box', () => {
     expect(said({ mine: [out({ unsent: true }), out({ q: 'q2' })] })).toBe('Sending… cancel')
   })
 
-  test('none on the New input page, nor in an item', () => {
+  test('none on the New input page, nor in a task', () => {
     // the phone's only (T689)
     expect(feedbackLine({ ...base, desk: true, mine: [out({})] })).toBeNull()
     expect(feedbackLine({ ...base, scope: code, mine: [out({})] })).toBeNull()

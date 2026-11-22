@@ -1,21 +1,21 @@
 // Each state of a voice message (model/voiceStates, T726) drawn in the four places it shows: the New input and an
-// item, each on the desktop and the phone. Shared by the overview (UI/Input box/Voice/Whole workflow, T722) and the
+// task, each on the desktop and the phone. Shared by the overview (UI/Input box/Voice/Whole workflow, T722) and the
 // Demo that steps through the states (Demo/Voice message, T731). Every cell is drawn as the state's own story draws it
-// (the box, the New input page's list, the line over the phone's box, the item's talk), with the same fixtures; where
+// (the box, the New input page's list, the line over the phone's box, the task's talk), with the same fixtures; where
 // a state shows nothing, the cell says so.
 import type { ReactNode } from 'react'
 import { spotsIn, type HeardFile } from '../model/doubts'
-import type { FileRef, Input, Item, Message } from '../model/types'
+import type { FileRef, Input, Task, Message } from '../model/types'
 import type { Outgoing } from '../model/outgoing'
 import { Frame } from './Frames'
 import { VOICE, boxAt, out as outgoing, sentLine, toastOver, type Here } from './boxFixtures'
 import { org } from './composerSentFixtures'
 import { HEARD, HEARD_TEXT } from './doubtFixtures'
 import { AGAIN, AGAIN_HEARD, LiveWords } from './doubtsFixtures'
-import { T, input, item, message, record, shown, waiting } from './fixtures'
+import { T, input, task, message, record, shown, waiting } from './fixtures'
 import { later, mine, out, r4, voice } from './fromYouFixtures'
 import { ONE, cardOf, saidOf, type Said } from './inputFixtures'
-import { talkOf } from './itemPage'
+import { talkOf } from './taskPage'
 import { VOICE_STEPS, notesState, type VoiceEvent, type VoiceState } from '../model/voiceStates'
 import { DraftCard, DRAFT_WORDS, type DraftHint } from '../features/composer/DraftCard'
 import type { DraftFile } from '../features/composer/DraftFiles'
@@ -63,11 +63,11 @@ const HANDLED = voiced({ ...ONE.handled, t: T }, NOTE2, ONE.handled.text, 'Look 
 const NOT_ORGANIZED = voiced({ id: 'r25', org: org(false, 'Gemini HTTP 503: overloaded') }, NOTE, N1, N1_HEARD)
 const EDITED = voiced({ id: 'r25', acked: true, touched: [14], org: org(true, 'Created T014'), history: [{ text: N1, t: T, mode: 'edit' }], updated: later(3) }, NOTE, N1_EDITED, N1_HEARD)
 
-// the item's talk: an agent asked, you answered by voice
+// the task's talk: an agent asked, you answered by voice
 const ASKED = message({ id: 1, by: 'claude-code', kind: 'say', text: 'Which filter should the export keep?' })
 const you = (text: string, f: Partial<Message> = {}) => mine({ id: 2, text, ...f })
 const r4Said = (words: string, heard: string, f: Partial<Input> = {}) => r4({ text: '', files: [{ ...NOTE_R4, voice: record(NOTE_R4.f, words, heard) }], ...f })
-const PHONE_BUG = item({ n: 16, tags: ['bug'], pri: 'P1', title: 'Export does nothing on the phone', srcs: ['r4'], t0: later(1), body: I1 })
+const PHONE_BUG = task({ n: 16, tags: ['bug'], pri: 'P1', title: 'Export does nothing on the phone', srcs: ['r4'], t0: later(1), body: I1 })
 const MADE_HERE = r4Said(I1, I1_HEARD, { scope: 12, touched: [16], acked: true, org: { ...org(true, 'Created T016'), t: later(1) } })
 
 // ---------------------------------------------------------------- the cells
@@ -79,9 +79,9 @@ type Two = [Cell, Cell]
  * New input page its Draft card over the list, as the page passes it. */
 function inBox(at: '' | 'T012', note: Partial<DraftFile>, text = '', heard?: HeardFile[], said?: string): Two {
   const draw = (desk: boolean) => {
-    // the item's note is the one its talk plays (0:12)
+    // the task's note is the one its talk plays (0:12)
     const files = [{ ...VOICE, ...(at ? { ms: 12_000 } : {}), ...note, ...(heard ? heard[0] : {}) }]
-    // the phone shows the words to pick from in the box by itself; the desktop's item box needs Show the words
+    // the phone shows the words to pick from in the box by itself; the desktop's task box needs Show the words
     const box = boxAt({ at, text, files, ...(heard ? { heard: { showing: !desk } } : {}) }, desk)
     const top = said ? toastOver(said) : null
     if (at || !desk) return <>{top}{box}</>
@@ -119,15 +119,15 @@ const newBoxAnd = (h: Here, s: Said, said?: string): Two => [
   { where: 'the box', node: <>{said ? toastOver(said) : null}{boxAt(h, false)}</> },
 ]
 
-/** The item's box (T012), as `h` has it. */
-const itemBox = (h: Here, said?: { text: string; action?: string }): Two =>
+/** The task's box (T012), as `h` has it. */
+const taskBox = (h: Here, said?: { text: string; action?: string }): Two =>
   [true, false].map((desk) => ({ where: 'the box', node: <>{said ? toastOver(said.text, said.action) : null}{boxAt({ at: 'T012', ...h }, desk)}</> })) as Two
 
-/** The item's talk (T012), its messages and the inputs they came from. */
-const inTalk = (thread: Message[], o: Parameters<typeof talkOf>[2] = {}, f: Partial<Item> = {}): Two =>
-  [true, false].map((desk) => ({ where: 'its talk', node: talkOf(item({ n: 12, thread, ...f }), desk, { inputs: [r4()], ...o }) })) as Two
+/** The task's talk (T012), its messages and the inputs they came from. */
+const inTalk = (thread: Message[], o: Parameters<typeof talkOf>[2] = {}, f: Partial<Task> = {}): Two =>
+  [true, false].map((desk) => ({ where: 'its talk', node: talkOf(task({ n: 12, thread, ...f }), desk, { inputs: [r4()], ...o }) })) as Two
 
-/** What you sent from the item, on its way: the faded bubble under the message before it. */
+/** What you sent from the task, on its way: the faded bubble under the message before it. */
 const replyGoing = (state: 'Sending…' | 'Waiting for Taska…' | 'Not sent', words: string) =>
   inTalk([ASKED], { t: { outgoing: [{ ...out(state).t.outgoing[0], text: words, voices: [voice] }] } })
 
@@ -137,12 +137,12 @@ const none = (why: string): Two => [{ none: why }, { none: why }]
 
 /** The sections, the normal ways first (T722). */
 export const SECTIONS = {
-  normal: { title: 'Normal: the words are final before you send', where: 'In the box first; once sent, the New input list (desktop), the line over the box (phone), the talk (item).' },
-  early: { title: 'Normal: sent before the words were final', where: 'Sent with the fast words: the New input list (desktop), the line over the box (phone), the talk (item).' },
-  outcomes: { title: 'Other outcomes', where: 'The New input list (desktop), the line over the box (phone), the talk (item).' },
+  normal: { title: 'Normal: the words are final before you send', where: 'In the box first; once sent, the New input list (desktop), the line over the box (phone), the talk (task).' },
+  early: { title: 'Normal: sent before the words were final', where: 'Sent with the fast words: the New input list (desktop), the line over the box (phone), the talk (task).' },
+  outcomes: { title: 'Other outcomes', where: 'The New input list (desktop), the line over the box (phone), the talk (task).' },
   words: { title: 'Word branches', where: 'In the box, before sending.' },
-  sending: { title: 'Sending and organizing branches', where: 'The New input list (desktop), the line over the box (phone), the talk (item).' },
-  later: { title: 'Later changes', where: 'The New input list (desktop), the box and the Inputs tab (phone), the box and the talk (item).' },
+  sending: { title: 'Sending and organizing branches', where: 'The New input list (desktop), the line over the box (phone), the talk (task).' },
+  later: { title: 'Later changes', where: 'The New input list (desktop), the box and the Inputs tab (phone), the box and the talk (task).' },
 } as const
 
 export interface Row {
@@ -153,7 +153,7 @@ export interface Row {
   label?: string
   /** how long, or what else to know, in a few words */
   note?: string
-  /** New input · desktop, New input · phone, In an item · desktop, In an item · phone */
+  /** New input · desktop, New input · phone, In a task · desktop, In a task · phone */
   cells: [...Two, ...Two]
 }
 
@@ -169,7 +169,7 @@ export const ROWS: Record<VoiceState, Row[]> = {
       cells: [
         { where: 'the box', node: boxAt({ rec: true }, true) },
         { where: 'the box', node: boxAt({ rec: true }, false) },
-        ...itemBox({ rec: true }),
+        ...taskBox({ rec: true }),
       ],
     },
   ],
@@ -239,7 +239,7 @@ export const ROWS: Record<VoiceState, Row[]> = {
       ] as [...Two, ...Two],
     },
   ],
-  added: [{ section: 'early', cells: [...sentNew({ sent: ADDED }), ...none('Nothing more: said here, it is in this item')] }],
+  added: [{ section: 'early', cells: [...sentNew({ sent: ADDED }), ...none('Nothing more: said here, it is in this task')] }],
   forAgent: [{ section: 'outcomes', cells: [...sentNew({ sent: LEFT }), ...none('Not shown here: the talk stays as sent')] }],
   handled: [
     {
@@ -254,7 +254,7 @@ export const ROWS: Record<VoiceState, Row[]> = {
       note: 'Esc',
       cells: [
         ...newBoxAnd({ at: '' }, { inputs: [{ ...ONE.cancelled, t: T }] }, 'Recording cancelled · kept in New input').map((c, i) => (i ? { where: 'the box', node: <>{toastOver('Recording cancelled · kept in Inputs')}{boxAt({ at: '' }, false)}</> } : c)),
-        ...itemBox({}, { text: 'Recording discarded', action: 'Undo' }),
+        ...taskBox({}, { text: 'Recording discarded', action: 'Undo' }),
       ] as [...Two, ...Two],
     },
   ],
@@ -264,7 +264,7 @@ export const ROWS: Record<VoiceState, Row[]> = {
       cells: [
         { where: 'its row in the list', node: <>{boxAt({ at: '' }, true)}<div className="px-3 pb-6">{saidOf({ inputs: [MADE], adding: { id: MADE.id, clock: '0:04' } })}</div></> },
         { where: 'the box', node: boxAt({ at: '', mode: { kind: 'amend', id: MADE.id, mode: 'append', v: 0 }, inputs: [MADE], rec: true }, false) },
-        ...itemBox({ mode: { kind: 'amend', id: 'r4', mode: 'append', v: 0 }, inputs: [r4Said(I2, voice.heard, { scope: 12 })], rec: true }),
+        ...taskBox({ mode: { kind: 'amend', id: 'r4', mode: 'append', v: 0 }, inputs: [r4Said(I2, voice.heard, { scope: 12 })], rec: true }),
       ],
     },
   ],
@@ -275,8 +275,8 @@ export const ROWS: Record<VoiceState, Row[]> = {
 export const COLUMNS = [
   { title: 'New input · desktop', w: DESK, layout: 'desk' as const },
   { title: 'New input · phone', w: PHONE, layout: 'phone' as const },
-  { title: 'In an item · desktop', w: DESK, layout: 'desk' as const },
-  { title: 'In an item · phone', w: PHONE, layout: 'phone' as const },
+  { title: 'In a task · desktop', w: DESK, layout: 'desk' as const },
+  { title: 'In a task · phone', w: PHONE, layout: 'phone' as const },
 ]
 
 export function Place({ cell, col }: { cell: Cell; col: (typeof COLUMNS)[number] }) {

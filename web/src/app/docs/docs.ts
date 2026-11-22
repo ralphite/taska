@@ -1,5 +1,5 @@
 // A document as you read it: opened and closed (on the desktop in the pane, beside the list; on the phone over its
-// item), the one shown following the address; what a comment goes to picked (a paragraph, words in one, a thread to
+// task), the one shown following the address; what a comment goes to picked (a paragraph, words in one, a thread to
 // reply in, the whole document); its threads opened and closed.
 
 import { docTarget, splitThread } from '../../model/docs'
@@ -47,14 +47,14 @@ export class Docs {
     v.show(d)
   }
 
-  /** A document: in the tab its item is in (from the Documents list the list stays); Back comes back. */
+  /** A document: in the tab its task is in (from the Documents list the list stays); Back comes back. */
   open(dn: number): void {
     const h = docHere(this.d)
     if (!h) return
     const doc = h.m.docs.find((x) => x.d === dn)
     if (doc?.kind === 'rules') return this.d.nav.rules('', true) // the rules are the Rules tab (I693)
     const it = doc ? h.m.byN.get(liveN(h.m, doc.n)) : undefined
-    const tab: Tab = it?.archived ? 'archive' : 'items'
+    const tab: Tab = it?.archived ? 'archive' : 'tasks'
     this.d.nav.openDoc(dn, this.d.route.getState().side ? undefined : tab)
   }
 
@@ -88,7 +88,7 @@ export class Docs {
     return p
   }
 
-  /** From an item's talk to a comment in its document: the document, the comment's thread open, its passage in view. */
+  /** From a task's talk to a comment in its document: the document, the comment's thread open, its passage in view. */
   openAt(dn: number, key: string): void {
     this.open(dn)
     const v = this.d.view.getState()
@@ -96,7 +96,7 @@ export class Docs {
     v.setAim(key)
   }
 
-  /** Back from a document: to the list it was opened from (Documents, Activity, Deleted), else its item. */
+  /** Back from a document: to the list it was opened from (Documents, Activity, Deleted), else its task. */
   close(): void {
     const h = docHere(this.d)
     if (!h || h.r.place.kind !== 'doc') return
@@ -105,12 +105,12 @@ export class Docs {
     if (this.d.route.getState().full) this.d.route.getState().setFull(false, true)
     this.d.view.getState().show(null)
     if (this.d.nav.backToSearch()) return
-    if (this.d.desk() && this.d.route.getState().side) return this.d.nav.closeItem()
-    if (doc && h.m.byN.has(liveN(h.m, doc.n))) return this.d.nav.openItemHere(codeOf(h.m, liveN(h.m, doc.n)))
-    this.d.nav.closeItem()
+    if (this.d.desk() && this.d.route.getState().side) return this.d.nav.closeTask()
+    if (doc && h.m.byN.has(liveN(h.m, doc.n))) return this.d.nav.openTaskHere(codeOf(h.m, liveN(h.m, doc.n)))
+    this.d.nav.closeTask()
   }
 
-  /** A paragraph tapped or its Comment pressed (`quote`: one item of a list); the desktop picks only by its button. */
+  /** A paragraph tapped or its Comment pressed (`quote`: one task of a list); the desktop picks only by its button. */
   pick(key: string, quote: string | null, by: 'button' | 'tap'): void {
     const v = this.d.view.getState()
     const desk = this.d.desk()
@@ -132,8 +132,8 @@ export class Docs {
     if (desk && sel.size) this.d.fields.get('box')?.focus({ preventScroll: true })
   }
 
-  /** From a document to its item: the box replies there. */
-  toItem(): void {
+  /** From a document to its task: the box replies there. */
+  toTask(): void {
     this.close()
     requestAnimationFrame(() => this.d.fields.get('box')?.focus({ preventScroll: true }))
   }
@@ -161,7 +161,7 @@ export class Docs {
   }
 
   /** A comment on the whole document (its bar's Comment, r1095; its comments' chip): the box writes to it, as the
-   * phone's does with nothing picked (with nothing picked the desktop's box replies on the item). */
+   * phone's does with nothing picked (with nothing picked the desktop's box replies on the task). */
   whole(): void {
     const v = this.d.view.getState()
     v.pick({ sel: new Set(), quote: { key: 'doc', text: '' }, reply: null })

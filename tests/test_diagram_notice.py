@@ -1,8 +1,8 @@
 """B714 r1181 (Yadong's choice): a diagram in a document that does not draw goes back to the agent that wrote it, so
 errors fix themselves without Yadong noticing. The page reports what Mermaid said; Taska writes "D<n> ¶<k>: this
-diagram does not draw: <why>. Fix it." on the document's item, addressed to the writer's session (it reads it in
+diagram does not draw: <why>. Fix it." on the document's task, addressed to the writer's session (it reads it in
 /next), once per version of the document and paragraph; nothing when the user wrote the diagram. Taska's note is
-neither side's word: the user's reply before it still waits for an agent, and it does not make Taska the item's
+neither side's word: the user's reply before it still waits for an agent, and it does not make Taska the task's
 agent."""
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ class DiagramNotice(ServerCase):
         return self.post("/api/diagram-failed", {"d": d, "v": doc["versions"], "key": key, "error": error})["result"]
 
     def notes(self, code: str) -> list:
-        it = next(i for i in self.view("items") if i["code"] == code)
+        it = next(i for i in self.view("tasks") if i["code"] == code)
         return [x for x in it["thread"] if x["by"] == "taska"]
 
     def test_the_writer_hears_once_per_version(self) -> None:
@@ -101,7 +101,7 @@ class TaskaNoteIsNoAgentsWord(ProjectCase):
         key = rules.doc_view(d)[0][1].key
         lines, _ = self.p.run([(0, {"op": "diagram-failed", "d": d.d, "v": d.versions, "key": key, "error": WHY})], "taska")
         self.assertIn("told w", lines[0])
-        it = self.p.state.items[1]
+        it = self.p.state.tasks[1]
         self.assertEqual(it.thread[-1].by, "taska")
         self.assertTrue(rules.replied(it))
         self.assertNotEqual(it.agent.by if it.agent else None, "taska")

@@ -40,18 +40,18 @@ def short_slug() -> str:
 
 def tally(st: ProjectState) -> Dict[str, int]:
     """A project's counts, as its page counts them: what needs you (archived is not on the page's list, so not here;
-    a proposed change to the rules waiting counts, I693); what Items holds, open and finished (done or dropped); its
+    a proposed change to the rules waiting counts, I693); what Tasks holds, open and finished (done or dropped); its
     inputs and documents (the rules are not one of them; F667: the sidebar's card)."""
-    needs = {i.n for i in st.live_items() if rules.needs_you(st, i)}
-    listed = [i for i in st.live_items() if not i.archived]
+    needs = {i.n for i in st.live_tasks() if rules.needs_you(st, i)}
+    listed = [i for i in st.live_tasks() if not i.archived]
     closed = sum(1 for i in listed if i.status in CLOSED)
     docs = sum(1 for d in st.docs.values() if not d.deleted and not d.is_rules
-               and not (d.n in st.items and st.items[d.n].deleted))
+               and not (d.n in st.tasks and st.tasks[d.n].deleted))
     return {"open": len(listed) - closed, "needs": len(needs) + len(versions.waiting(st.rules)), "closed": closed,
             "inputs": sum(1 for r in st.inputs.values() if not r.deleted), "docs": docs}
 
 
-# I810: a worker's title starting with the code of the item it works on ("T28: the tutor skill", "T28 · …")
+# I810: a worker's title starting with the code of the task it works on ("T28: the tutor skill", "T28 · …")
 WORKER_TITLE = re.compile(r"\s*([A-Z])0*(\d+)(?=$|[\s:\uff1a\u00b7,\uff0c.\-\u2014])")
 
 
@@ -168,7 +168,7 @@ class Workspace:
             p = self.live(slug)
             with p.lock:
                 p.gone = True
-                info = {"t": now_iso(), "title": p.title, "items": len(p.state.live_items())}
+                info = {"t": now_iso(), "title": p.title, "tasks": len(p.state.live_tasks())}
                 p.news.bump()  # pages and agents waiting on it hear at once
                 p.close()
             del self.projects[p.slug]
@@ -213,7 +213,7 @@ class Workspace:
                     info = json.load(f)
             except (OSError, ValueError):
                 info = {}
-            out.append({"name": slug, "title": info.get("title") or slug, "t": info.get("t") or "", "items": info.get("items", 0)})
+            out.append({"name": slug, "title": info.get("title") or slug, "t": info.get("t") or "", "tasks": info.get("tasks", 0)})
         return sorted(out, key=lambda d: d["t"], reverse=True)
 
     def set_order(self, names: Any) -> None:
@@ -255,9 +255,9 @@ class Workspace:
         return sum(p.bring_back_laters(today) for p in list(self.projects.values()))
 
     def find_workers(self, running: List[Session]) -> None:
-        """I810: which running sessions are a manager's workers on which items, by their titles: a title starting with
-        an item's code ("T28: the tutor skill"), in a folder this project's own sessions work in. A code that fits
-        items in several projects goes to the one whose item is in progress, and to none when that does not settle it."""
+        """I810: which running sessions are a manager's workers on which tasks, by their titles: a title starting with
+        a task's code ("T28: the tutor skill"), in a folder this project's own sessions work in. A code that fits
+        tasks in several projects goes to the one whose task is in progress, and to none when that does not settle it."""
         found: Dict[str, Dict[str, Tuple[str, int]]] = {name: {} for name in self.projects}
         titled: Dict[str, Dict[str, int]] = {name: {} for name in self.projects}
         for s in running:
@@ -268,14 +268,14 @@ class Workspace:
             for name, p in self.projects.items():
                 with p.lock:
                     own = s.id in p.agents.sids(own=True)
-                    if own:  # one of its own sessions: its app's title says the item it is on (when nothing else does)
-                        it = p.state.items.get(int(m.group(2)))
+                    if own:  # one of its own sessions: its app's title says the task it is on (when nothing else does)
+                        it = p.state.tasks.get(int(m.group(2)))
                         if it and it.status not in CLOSED:
                             titled[name][s.id] = it.n
                         continue
                     if s.cwd not in p.agents.folders():
                         continue
-                    it = p.state.items.get(int(m.group(2)))
+                    it = p.state.tasks.get(int(m.group(2)))
                     if it and not it.deleted and not it.merged_into and it.status not in CLOSED:
                         fits.append((name, it.n, it.status == "doing"))
             doing = [f for f in fits if f[2]]
@@ -295,8 +295,8 @@ class Workspace:
             with p.lock:
                 if sid in p.agents.sids(own=True):
                     known = True
-                    # an item in progress there: it is at work (waiting on what it started), not to listen now
-                    busy = any(i.status == "doing" and not i.deleted and not i.merged_into for i in p.state.items.values())
+                    # a task in progress there: it is at work (waiting on what it started), not to listen now
+                    busy = any(i.status == "doing" and not i.deleted and not i.merged_into for i in p.state.tasks.values())
                     listens = listens or busy or p.agents.listens(sid, now)
         return {"known": known, "listening": listens}
 
@@ -362,7 +362,7 @@ class Workspace:
         return reconnect_text.all_lost(root, app, rows)
 
     def needs(self, push: bool = False) -> List[Dict[str, Any]]:
-        """What needs you in every project, newest first. A session working on an item and waiting on you counts
+        """What needs you in every project, newest first. A session working on a task and waiting on you counts
         once it has waited a minute (I810), and for a push once it has waited three."""
         out: List[Dict[str, Any]] = []
         now_ms = time.time() * 1000
@@ -372,7 +372,7 @@ class Workspace:
                 for k, rows in p.agents.blocked.items():
                     for b in rows:
                         n, since = b.get("on"), b.get("since") or 0
-                        if not isinstance(n, int) or n not in st.items or not isinstance(since, (int, float)):
+                        if not isinstance(n, int) or n not in st.tasks or not isinstance(since, (int, float)):
                             continue
                         if since and now_ms - since < (180_000 if push else 60_000):
                             continue
@@ -380,7 +380,7 @@ class Workspace:
                         out.append({"project": name, "ptitle": p.title, "n": n, "code": st.code(n),
                                     "title": f"{b.get('session')} waits on you{why}", "kind": "blocked", "pri": "P1",
                                     "t": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime((since or now_ms) / 1000))})
-                for i in st.live_items():
+                for i in st.live_tasks():
                     if i.status in CLOSED or i.merged_into or i.archived:
                         continue
                     w = rules.waiting(st, i)

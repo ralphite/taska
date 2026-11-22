@@ -3,7 +3,7 @@ import { ACTIONS, actionOfKeys, helpedActions, keyHelp, keysShown, listedActions
 
 // the actions whose keys the keys sheet tells in words of its own ("G then I N A R", "O or ↵", "Space", "Esc", "1–9, ⌘↵",
 // "E / ⇧E")
-const TOLD_IN_WORDS: ActionId[] = ['archive', 'full', 'scroll', 'send-answer', 'items', 'inputs', 'archive-tab', 'rules', 'switch-project', 'settings', 'documents', 'activity', 'deleted', 'back']
+const TOLD_IN_WORDS: ActionId[] = ['archive', 'full', 'scroll', 'send-answer', 'tasks', 'inputs', 'archive-tab', 'rules', 'switch-project', 'settings', 'documents', 'activity', 'deleted', 'back']
 
 describe('the table of actions', () => {
   const ids = Object.keys(ACTIONS) as ActionId[]
@@ -21,11 +21,11 @@ describe('the table of actions', () => {
 
   it('writes the keys as the sheet always has', () => {
     const keys = Object.fromEntries(keyHelp().flatMap(([, r]) => r.map(([k, t]) => [t, k])))
-    expect(keys["The item's next step: Accept, Approve, Answer or Reply"]).toBe('A')
-    expect(keys['Archive or unarchive / archive every finished item']).toBe('E / ⇧E')
+    expect(keys["The task's next step: Accept, Approve, Answer or Reply"]).toBe('A')
+    expect(keys['Archive or unarchive / archive every finished task']).toBe('E / ⇧E')
     expect(keys["Done · Won't do · Later / Now"]).toBe('D · W · L')
-    expect(keys['Edit · New doc · Add subitem']).toBe('I · ⇧D · ⇧A')
-    expect(keys['Next or previous item']).toBe('J / K')
+    expect(keys['Edit · New doc · Add subtask']).toBe('I · ⇧D · ⇧A')
+    expect(keys['Next or previous task']).toBe('J / K')
     expect(keys['Search every project (or /); the words of an action do it']).toBe('⌘K')
     expect(keysShown('search')).toBe('⌘K')
     expect(keysShown('copy')).toBe('⇧C')
@@ -33,6 +33,6 @@ describe('the table of actions', () => {
 
   it("lists the search's Actions in its order (not the search itself)", () => {
     expect(listedActions(true).map((r) => r.keys)).toEqual(['A', 'R', 'N', 'D', 'L', 'E', 'W', 'I', 'S', 'P', 'T', 'M', '⇧A', '⇧D', '⇧C', 'O'])
-    expect(listedActions(false).map((r) => r.keys)).toEqual(['C', 'F', '⇧V', 'G I', 'G N', 'G A', 'G R', 'G P', 'G S', 'G D', 'G H', 'G X', '[', 'Z', '?'])
+    expect(listedActions(false).map((r) => r.keys)).toEqual(['C', 'F', '⇧V', 'G T', 'G N', 'G A', 'G R', 'G P', 'G S', 'G D', 'G H', 'G X', '[', 'Z', '?'])
   })
 })

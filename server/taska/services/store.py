@@ -22,11 +22,11 @@ class WrittenRows:
     """The JSON of every state row as last written, so a write takes only what changed since."""
 
     def __init__(self) -> None:
-        self._was: Dict[str, Dict[Any, str]] = {"items": {}, "inputs": {}, "docs": {}}
+        self._was: Dict[str, Dict[Any, str]] = {"tasks": {}, "inputs": {}, "docs": {}}
 
     def since(self, state: ProjectState, full: bool) -> StateRows:
         rows = StateRows()
-        self._table("items", state.items, rows.items, rows.items_gone, full)
+        self._table("tasks", state.tasks, rows.tasks, rows.tasks_gone, full)
         self._table("inputs", state.inputs, rows.inputs, rows.inputs_gone, full)
         self._table("docs", state.docs, rows.docs, rows.docs_gone, full)
         return rows

@@ -19,8 +19,8 @@ export const OUT_PLACES = {
   row: "its row in the desktop's New input list",
   line: "the line over the phone's box (New input)",
   inputs: 'its row on the Inputs page',
-  talk: "your bubble in the item's talk",
-  card: "an answer, on its question's card in the item's talk",
+  talk: "your bubble in the task's talk",
+  card: "an answer, on its question's card in the task's talk",
 } as const
 export type OutPlace = keyof typeof OUT_PLACES
 

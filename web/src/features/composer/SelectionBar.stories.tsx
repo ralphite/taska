@@ -67,7 +67,7 @@ export const Recording: Story = {
     </Frames>
   ),
 }
-/** Words selected outside a document (an item's talk, what you said): speak about them, nothing else. */
+/** Words selected outside a document (a task's talk, what you said): speak about them, nothing else. */
 export const SpeakOnly: Story = {
   name: 'Speak only (words outside a document)',
   render: () => (

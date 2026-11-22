@@ -16,7 +16,7 @@ export const Together: Story = {
         const desk = layout === 'desk'
         return (
           <States
-            items={[
+            tasks={[
               ['under the pointer', <div data-pointer>{row(question, desk)}</div>],
               ['open in the pane (where the keys are)', row({ ...question, l: { current: true } }, desk)],
               ['picked', row({ ...question, l: { selected: true } }, desk)],

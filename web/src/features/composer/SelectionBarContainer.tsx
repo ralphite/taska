@@ -1,4 +1,4 @@
-// The bar on selected words, with the page: what is selected (a document's passage, an item's words and its talk,
+// The bar on selected words, with the page: what is selected (a document's passage, a task's words and its talk,
 // what you said), where it is (selectedWords: it follows the selection, the scrolling and the window; while it records
 // it is the recording strip, where the words were), and what the bar does with it.
 

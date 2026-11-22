@@ -3,8 +3,8 @@
 Only counts and times: never the words of a draft, a message or an input. Shown at /dev/dashboard, on this computer
 only. Below the numbers, the analyses agents wrote: Markdown files in <data folder>/dev/analyses, newest first (a file
 is named by its date, 2026-10-22-what-it-is-about.md, and its first line is its title). Above them, the panels agents
-and scripts keep up to date (Markdown files in <data folder>/dev/panels, each rewritten in place), and what each item
-cost to make: the cost line agents end a done message with, and how long each round of work on an item took (F576).
+and scripts keep up to date (Markdown files in <data folder>/dev/panels, each rewritten in place), and what each task
+cost to make: the cost line agents end a done message with, and how long each round of work on a task took (F576).
 """
 
 from __future__ import annotations
@@ -19,22 +19,22 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from ..domain import events as ev
-from ..domain.model import Item as ItemRow
+from ..domain.model import Task as TaskRow
 from ..domain.state import ProjectState
 from .project import Project
 
 # what the page's actions are, in plain words
 NAME = {
-    "open": "Open an item", "send": "Send", "voice start": "Start a voice note", "new-input": "New input",
+    "open": "Open a task", "send": "Send", "voice start": "Start a voice note", "new-input": "New input",
     "voice stop and send": "Send a voice note", "view": "Look at an image", "key Escape": "Esc",
     "doc-open": "Open a document", "v-close": "Close an image", "status": "Change a status",
     "doc-tick": "Tick a choice in a document", "docs-go": "Go to another document", "back": "Back",
     "psec": "Open a Settings section", "doc-pick": "Pick a paragraph to comment on",
     "set-filter": "Change a view or filter", "vc": "Voice comment on a document", "voice stop": "Voice note into the box",
     "choice": "Pick an answer", "more-msg": "Show a whole message", "projects": "Projects", "choice-send": "Send an answer",
-    "row-act": "A button on a row", "tab": "Items, Inputs or Rules", "key ⌘r": "Reload the page",
-    "log-open": "Open the activity log", "close": "Close", "doc-thread": "Open comments", "item-menu": "Item menu",
-    "swipe": "Swipe (phone)", "goto": "Go to a linked item", "input-append": "Add to an input", "archive": "Archive",
+    "row-act": "A button on a row", "tab": "Tasks, Inputs or Rules", "key ⌘r": "Reload the page",
+    "log-open": "Open the activity log", "close": "Close", "doc-thread": "Open comments", "task-menu": "Task menu",
+    "swipe": "Swipe (phone)", "goto": "Go to a linked task", "input-append": "Add to an input", "archive": "Archive",
     "rec-cancel": "Discard a recording", "doc-close": "Close a document", "input-more": "An input's menu",
 }
 NOISE = {"net", "error", "draft", "draft-cleared"}  # what the page says about itself, not what you did
@@ -42,7 +42,7 @@ SAME = {"mic", "rec-send", "rec-stop"}  # the microphone's buttons: the voice no
 VOICE_END = {"voice stop and send": "sent as it was", "voice stop": "words into the box", "rec-cancel": "discarded",
              "voice cancel": "discarded"}
 
-Item = Callable[[str, int], Optional[Tuple[str, str]]]
+Task = Callable[[str, int], Optional[Tuple[str, str]]]
 
 
 def _when(t: str) -> datetime:
@@ -75,9 +75,9 @@ def _page_rows(db_path: Optional[str], since: str) -> List[Dict[str, Any]]:
     return page
 
 
-def summary(db_path: Optional[str], days: Optional[int], item: Item) -> Dict[str, Any]:
+def summary(db_path: Optional[str], days: Optional[int], task: Task) -> Dict[str, Any]:
     """What you did since the start of the day `days` days ago (0: today; None: all the log has), as the dashboard
-    shows it. `item(project, n)` -> (code, title) for an item opened, if it still exists."""
+    shows it. `task(project, n)` -> (code, title) for a task opened, if it still exists."""
     now = datetime.now().astimezone()
     start = _start(days)
     page = _page_rows(db_path, start.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") if start else "")
@@ -95,15 +95,15 @@ def summary(db_path: Optional[str], days: Optional[int], item: Item) -> Dict[str
         while k <= now:
             span.append([k.strftime(fmt), counts.get(k.strftime(fmt), 0)])
             k += step
-    # the items opened most
+    # the tasks opened most
     opened = Counter((r["project"], r["d"].get("n")) for r in acts if r["kind"] == "open" and r["d"].get("n"))
-    items = []
+    tasks = []
     for (p, n), k in opened.most_common(10):
         try:
-            got = item(p, int(n))
+            got = task(p, int(n))
         except (TypeError, ValueError):
             got = None
-        items.append({"project": p, "code": got[0] if got else f"#{n}", "title": got[1] if got else "", "n": k})
+        tasks.append({"project": p, "code": got[0] if got else f"#{n}", "title": got[1] if got else "", "n": k})
     # voice notes: from start to how each ended, in each tab
     ends: "Counter[str]" = Counter()
     lens: List[float] = []
@@ -137,7 +137,7 @@ def summary(db_path: Optional[str], days: Optional[int], item: Item) -> Dict[str
         "via": [["phone" if k == "tunnel" else "this computer", n]
                 for k, n in Counter(r["via"] for r in acts if r["via"]).most_common()],
         "projects": Counter(r["project"] for r in acts if r["project"]).most_common(8),
-        "items": items,
+        "tasks": tasks,
         "opens": sum(opened.values()),
         "opened": len(opened),
         "voice": {"n": sum(1 for r in page if r["kind"] == "voice start"), "ends": ends.most_common(),
@@ -195,14 +195,14 @@ def _num(m: Optional["re.Match[str]"]) -> int:
 
 
 def costs(projects: Dict[str, Project], days: Optional[int]) -> Dict[str, Any]:
-    """What each item cost to make, from the cost lines in the agents' messages since the start of the day `days` days
-    ago (None: all): per item its rounds, minutes, fresh and cache-read tokens and steps, the latest first."""
+    """What each task cost to make, from the cost lines in the agents' messages since the start of the day `days` days
+    ago (None: all): per task its rounds, minutes, fresh and cache-read tokens and steps, the latest first."""
     start = _start(days)
     per: Dict[Tuple[str, int], Dict[str, Any]] = {}
     for slug, p in list(projects.items()):
         with p.lock:
             st = p.state
-            for n, it in list(st.items.items()):
+            for n, it in list(st.tasks.items()):
                 for x in it.thread:
                     if x.by in ("you", "org") or "\u6210\u672c\uff1a" not in (x.text or ""):
                         continue
@@ -226,13 +226,13 @@ def costs(projects: Dict[str, Project], days: Optional[int]) -> Dict[str, Any]:
     toks = [r["tokens"] for r in rows]
     for r in rows:
         r["t"] = r["t"].strftime("%m-%d %H:%M")
-    return {"items": rows, "minutes": sum(mins), "tokens": sum(toks), "cache": sum(r["cache"] for r in rows),
+    return {"tasks": rows, "minutes": sum(mins), "tokens": sum(toks), "cache": sum(r["cache"] for r in rows),
             "median_minutes": round(statistics.median(mins)) if mins else 0,
             "median_tokens": round(statistics.median(toks)) if toks else 0}
 
 
-def _round_tokens(it: ItemRow, a: datetime, b: datetime) -> Optional[int]:
-    """The tokens the cost lines of a round say: an agent's messages on the item from its start until a little after it
+def _round_tokens(it: TaskRow, a: datetime, b: datetime) -> Optional[int]:
+    """The tokens the cost lines of a round say: an agent's messages on the task from its start until a little after it
     was handed over (the done message with the cost line comes with it or just after). None: no cost line."""
     got: Optional[int] = None
     for x in it.thread:
@@ -248,13 +248,13 @@ def _round_tokens(it: ItemRow, a: datetime, b: datetime) -> Optional[int]:
 
 
 def rounds(slug: str, st: ProjectState) -> List[Dict[str, Any]]:
-    """Each round of work on an item (F576): from when it was started (doing) until it was handed to you (review) or
+    """Each round of work on a task (F576): from when it was started (doing) until it was handed to you (review) or
     done, its minutes, and the tokens its agent's cost line gives for it (None: no cost line). A round put back (open)
-    before it was handed over does not count; a deleted or merged item's rounds neither."""
+    before it was handed over does not count; a deleted or merged task's rounds neither."""
     out: List[Dict[str, Any]] = []
     began: Dict[int, str] = {}
     for e in st.events:
-        if isinstance(e, ev.ItemAdded):
+        if isinstance(e, ev.TaskAdded):
             if e.status == "doing":
                 began[e.n] = e.t
             continue
@@ -265,7 +265,7 @@ def rounds(slug: str, st: ProjectState) -> List[Dict[str, Any]]:
             began.setdefault(e.n, e.t)
             continue
         t0 = began.pop(e.n, None)
-        it = st.items.get(e.n)
+        it = st.tasks.get(e.n)
         if t0 is None or now not in ("review", "done") or it is None or not it.live:
             continue
         a, b = _when(t0), _when(e.t)
@@ -284,17 +284,17 @@ def all_rounds(projects: Dict[str, Project]) -> List[Dict[str, Any]]:
     return sorted(out, key=lambda r: r["end"], reverse=True)
 
 
-def item_of(projects: Dict[str, Project]) -> Item:
-    """(code, title) of item n in a project, from the projects Taska has open."""
+def task_of(projects: Dict[str, Project]) -> Task:
+    """(code, title) of task n in a project, from the projects Taska has open."""
     def get(slug: str, n: int) -> Optional[Tuple[str, str]]:
         p = projects.get(slug)
         if p is None:
             return None
         with p.lock:
-            it = p.state.items.get(n)
+            it = p.state.tasks.get(n)
             return (p.state.code(n), it.title[:80]) if it else None
     return get
 
 
 def dashboard(root: str, projects: Dict[str, Project], db_path: Optional[str], days: Optional[int]) -> Dict[str, Any]:
-    return dict(summary(db_path, days, item_of(projects)), costs=costs(projects, days), rounds=all_rounds(projects), panels=panels(root), analyses=analyses(root))
+    return dict(summary(db_path, days, task_of(projects)), costs=costs(projects, days), rounds=all_rounds(projects), panels=panels(root), analyses=analyses(root))

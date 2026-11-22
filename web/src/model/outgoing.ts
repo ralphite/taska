@@ -27,7 +27,7 @@ export interface Outgoing {
   q: string
   slug: string
   text: string
-  /** the item it replies on (its code), or null for a new input */
+  /** the task it replies on (its code), or null for a new input */
   scope: string | null
   /** cancelled: a recording cancelled with Esc, kept in the inputs without being sent (B627) */
   kind?: 'answer' | 'cancelled'
@@ -83,7 +83,7 @@ export const outgoingLine = (o: Pick<Outgoing, 'text' | 'files'> & Pick<Partial<
 }
 
 /** Something on its way as a list draws it: its words on one line, where it is and what can be done
- * (model/outgoingStates), the item it goes to, its pictures as they were picked. */
+ * (model/outgoingStates), the task it goes to, its pictures as they were picked. */
 export interface OutgoingFacts {
   q: string
   text: string

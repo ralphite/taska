@@ -91,7 +91,7 @@ test('the blocked bar: only while presence says blocked, gone as soon as it does
   expect(blockedAgent(undefined, now)).toBeNull()
 })
 
-describe('who works on an item (I810)', () => {
+describe('who works on a task (I810)', () => {
   it("lists the sessions on it, a manager's worker among them, each as it is; gone ones not", () => {
     const now = Date.now()
     const agents = [

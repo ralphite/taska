@@ -17,9 +17,9 @@ export interface Project {
   op: (command: Record<string, unknown>) => Promise<{ ok: boolean; res: string[] }>
 }
 export interface Seed {
-  /** What the agent writes first (new items start as proposals). */
+  /** What the agent writes first (new tasks start as proposals). */
   agent?: string
-  /** The items the user approves, by code. */
+  /** The tasks the user approves, by code. */
   approve?: string[]
   /** What the agent writes after that. */
   then?: string
@@ -55,7 +55,7 @@ export async function project(request: APIRequestContext, seed: Seed = {}): Prom
   await agent(seed.then)
   return p
 }
-// A project with one item in each place: a question, work to accept, a proposal, the queue, later.
+// A project with one task in each place: a question, work to accept, a proposal, the queue, later.
 export const LOOP: Seed = {
   agent: `new P1 now Pick the export format
 new #bug P0 now Export ignores the filter
@@ -78,7 +78,7 @@ export async function open(page: Page, p: Project, path = '') {
 }
 export async function drawn(page: Page) {
   // a document on the phone has no box over it (B643): its words say it is drawn, a web page's frame (F432) its own
-  await page.locator('#list article[data-n], #list [data-zone], #composer textarea, [data-part="settings"], [data-part="help"], [data-part="items"] h2, [data-doc-blocks] section, iframe[srcdoc]').filter({ visible: true }).first().waitFor()
+  await page.locator('#list article[data-n], #list [data-zone], #composer textarea, [data-part="settings"], [data-part="help"], [data-part="tasks"] h2, [data-doc-blocks] section, iframe[srcdoc]').filter({ visible: true }).first().waitFor()
 }
 /** The page done moving: no transition or animation running (but those that never end, a pulse), and two frames drawn
  * since (what a fixed pause after a resize or a click waited for). */

@@ -34,7 +34,7 @@ export interface DocVoiceDeps {
   toasts: Toasts
   model(slug: string): ProjectModel | null
   desk(): boolean
-  /** what the document's box holds goes as a reply to its item */
+  /** what the document's box holds goes as a reply to its task */
   reply(slug: string, key: DraftKey, scope: string | null): void
 }
 
@@ -46,7 +46,7 @@ export class DocVoice {
     this.d = d
   }
 
-  /** The item the document is on, for what its voice notes are heard with. */
+  /** The task the document is on, for what its voice notes are heard with. */
   private host(slug: string, dn: number): string | null {
     const m = this.d.model(slug)
     const doc = m?.docs.find((x) => x.d === dn)
@@ -97,7 +97,7 @@ export class DocVoice {
   /** Send in a document's box: its voice comments if it has quote lines, else a comment on what is picked. */
   send(slug: string, dn: number, key: DraftKey): Promise<boolean> {
     if (vcCount(this.d.box.text(slug, key))) return this.post(slug, dn, key)
-    // what is picked; on the phone nothing picked is the whole document; on the desktop, a reply to its item
+    // what is picked; on the phone nothing picked is the whole document; on the desktop, a reply to its task
     const t = this.d.docs.target(dn) ?? (this.d.desk() ? null : { key: 'doc', quote: '' })
     if (t) return this.d.comments.comment(slug, dn, t, key)
     this.d.reply(slug, key, this.host(slug, dn))

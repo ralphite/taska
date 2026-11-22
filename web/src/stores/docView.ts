@@ -10,7 +10,7 @@ export interface DocViewState {
   threads: ReadonlySet<string>
   /** paragraphs picked (by circling, or a tap on the phone) */
   sel: ReadonlySet<string>
-  /** words picked inside one paragraph (a list's item, a selection) */
+  /** words picked inside one paragraph (a list's task, a selection) */
   quote: { key: string; text: string } | null
   /** the passage to bring into view once the document shows it ("doc": its end, the whole document's comments) */
   aim: string | null
@@ -27,7 +27,7 @@ export interface DocViewState {
   /** the editor is open, with this text (null: the document's own) */
   editing: boolean
   text: string | null
-  /** a new document's item, while its editor is open */
+  /** a new document's task, while its editor is open */
   newFor: number | null
   scroll: Readonly<Record<number, number>>
   show(d: number | null): void

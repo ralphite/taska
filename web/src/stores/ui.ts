@@ -1,4 +1,4 @@
-// What you are doing on the page that the address does not say: which parents are folded, which hidden subitems are
+// What you are doing on the page that the address does not say: which parents are folded, which hidden subtasks are
 // shown, whether all of what needs you shows, the rows that hold still after you acted on them, the rows you picked,
 // whether the sidebar is folded.
 
@@ -7,7 +7,7 @@ import type { KeyValueStore } from './storage'
 
 export interface Held {
   said: string
-  /** the field and value it was changed to: once the item moves on (an agent took it further) the row shows it as it is */
+  /** the field and value it was changed to: once the task moves on (an agent took it further) the row shows it as it is */
   f?: string
   v?: unknown
 }
@@ -16,13 +16,13 @@ export interface UiState {
   folded: ReadonlySet<number>
   subMore: ReadonlySet<number>
   held: ReadonlyMap<number, Held>
-  /** the list's settings and open item when the rows began holding: anything else lets them go */
+  /** the list's settings and open task when the rows began holding: anything else lets them go */
   heldFor: string
   selected: ReadonlySet<number>
   sideHidden: boolean
-  /** the desktop's item pane in two columns: the item (or its document) on the left, its talk on the right */
+  /** the desktop's task pane in two columns: the task (or its document) on the left, its talk on the right */
   duo: boolean
-  /** an input gone to (a search found it, an item's source, the activity log): lit where it is listed until it is
+  /** an input gone to (a search found it, a task's source, the activity log): lit where it is listed until it is
    * shown, then for a moment */
   lit: string | null
   /** lit where it is, the list not moved to it (the phone's way from the Sources sheet, as it always has been) */

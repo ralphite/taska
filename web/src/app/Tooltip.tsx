@@ -141,7 +141,7 @@ export function Tooltip({ card, steps, at = null }: { card(ref: string): RefCard
     }
     // keys close it, but not while its words are selected (to copy them), only Escape then
     const key = (e: KeyboardEvent) => {
-      // Escape closes the tip alone, not what is under it (the item pane)
+      // Escape closes the tip alone, not what is under it (the task pane)
       if (e.key === 'Escape' && current) e.stopPropagation()
       if (e.key === 'Escape' || !inTip(getSelection()?.anchorNode ?? null)) hide()
     }

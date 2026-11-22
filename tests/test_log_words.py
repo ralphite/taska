@@ -43,7 +43,7 @@ class LogWords(unittest.TestCase):
         """B842: a request the page found slow says which (108 slow ones read "page net "); a sheet, which one."""
         self.assertEqual(page_line("net", {"why": "slow", "method": "GET", "url": "/api/needs", "ms": 4539}), "page net slow GET /api/needs")
         self.assertEqual(page_line("net", {"why": "failed", "msg": "Taska is unreachable"}), "page net Taska is unreachable")
-        self.assertEqual(page_line("sheet", {"what": "item-menu", "arm": "t", "where": "/p/sd/T10"}), "page sheet item-menu")
+        self.assertEqual(page_line("sheet", {"what": "task-menu", "arm": "t", "where": "/p/sd/T10"}), "page sheet task-menu")
         self.assertEqual(page_line("view", {"where": "/p/sd/T10"}), "page view /p/sd/T10")
         self.assertEqual(page_line("swipe", {"dir": "right", "what": "Done", "n": "12"}), "page swipe right Done")  # F846
         self.assertEqual(page_line("tap", {"what": "Accept", "role": "button", "where": "/p/sd/"}), "page tap Accept")

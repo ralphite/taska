@@ -6,7 +6,7 @@
 // 1. Find something by saying it. Tap the magnifier: the search page opens and the box records at once. Say what to
 //    find; tap the up arrow. Taska writes your words out after you stop, puts them in the box and searches every
 //    project: "Searching…", then the results by project (the one you are in first), closest first in each; a row of
-//    kinds (All, Items, Inputs, Rules, Documents) filters them all.
+//    kinds (All, Tasks, Inputs, Rules, Documents) filters them all.
 // 2. Say more. With the results showing, tap the mic in the box: what you added is put at the end of your words, lit,
 //    and it searches all of them again; the results change in place (faded while it searches, never blank).
 // 3. Fix what it heard. A word two models heard differently shows its two versions in the box; tap the right one and
@@ -25,15 +25,15 @@ import { pickSide } from '../model/doubts'
 import { saidMore, type Found } from '../model/find'
 import { codeOf, type ProjectModel } from '../model/project'
 import { NO_FILTERS, parseRoute } from '../model/route'
-import type { Item } from '../model/types'
+import type { Task } from '../model/types'
 import type { Visit } from '../stores/recent'
 import { PROJECT_TONES } from '../ui/tones'
 import { Frame } from './Frames'
 import { noRowEvents, T } from './fixtures'
-import { pageOf } from './itemPage'
+import { pageOf } from './taskPage'
 import { listOf } from './listFixtures'
 import { PROJECT_ICONS } from './projectIcons'
-import { ADDED, D1, HEARD, HOME, ITEMS, MISHEARD, MORE, ORDER, RIGHT, SHOP, searchOf } from './searchFixtures'
+import { ADDED, D1, HEARD, HOME, TASKS, MISHEARD, MORE, ORDER, RIGHT, SHOP, searchOf } from './searchFixtures'
 
 /** Where the phone is: the list, the search page, or a result open over it. */
 export interface Flow extends SearchNow {
@@ -49,7 +49,7 @@ export const AT: Record<string, Partial<Flow>> = {
   writing: { at: 'search', phase: 'writing' },
   searching: { at: 'search', phase: 'searching', words: RIGHT.q },
   found: { at: 'search', phase: 'found', words: RIGHT.q, answer: RIGHT },
-  oneKind: { at: 'search', phase: 'found', words: RIGHT.q, answer: RIGHT, kind: 'items' },
+  oneKind: { at: 'search', phase: 'found', words: RIGHT.q, answer: RIGHT, kind: 'tasks' },
   open: { at: 'open', phase: 'found', words: MORE.q, answer: MORE, open: MORE.found[0] },
   misheard: { at: 'search', phase: 'found', words: MISHEARD.q, answer: MISHEARD, heard: HEARD },
   sayingMore: { at: 'search', phase: 'listening', words: RIGHT.q, answer: RIGHT, ms: 2000 },
@@ -66,7 +66,7 @@ export const AT: Record<string, Partial<Flow>> = {
 
 const visit = (m: ProjectModel, slug: string, n: number): Visit | null => {
   const it = m.byN.get(n)
-  return it ? { project: slug, kind: 'items', n, code: codeOf(m, n), title: it.title, status: it.status } : null
+  return it ? { project: slug, kind: 'tasks', n, code: codeOf(m, n), title: it.title, status: it.status } : null
 }
 /** The page's data around the search: the project you are in is Shop. */
 const PLACE: SearchPlace = {
@@ -138,7 +138,7 @@ const Foot = ({ children }: { children: ReactNode }) => (
   <footer className="relative z-20 shrink-0 border-t border-zinc-200 bg-zinc-50 px-3 pt-3 pb-5 dark:border-transparent dark:bg-zinc-950 dark:pt-1">{children}</footer>
 )
 
-/** The page's own box where you are (the list: a new input; an item: a reply to it). */
+/** The page's own box where you are (the list: a new input; a task: a reply to it). */
 function PageBox({ m = SHOP, at }: { m?: ProjectModel; at: string }) {
   const route = parseRoute(`/p/shop/${at}`, '')
   if (route.page !== 'project') throw new Error('not a project')
@@ -162,17 +162,17 @@ function ListPage({ onSearch }: { onSearch(): void }) {
         notSaved={0}
         on={{ menu() {}, agents() {}, notSaved() {}, search: onSearch }}
       />
-      <PhoneTabs tabs={phoneTabs(tabCounts(SHOP, 'items', NO_FILTERS, false), 'items')} filtersSet={false} showFilter on={{ tab() {}, filters() {} }} />
-      <div className="flex min-h-0 flex-1 flex-col">{listOf(ITEMS, 'items', {}, false)}</div>
+      <PhoneTabs tabs={phoneTabs(tabCounts(SHOP, 'tasks', NO_FILTERS, false), 'tasks')} filtersSet={false} showFilter on={{ tab() {}, filters() {} }} />
+      <div className="flex min-h-0 flex-1 flex-col">{listOf(TASKS, 'tasks', {}, false)}</div>
       <PageBox at="" />
     </div>
   )
 }
 
-/** A result open: the item's own page (its back: the search as you left it), and the box under it writes to it. */
+/** A result open: the task's own page (its back: the search as you left it), and the box under it writes to it. */
 function OpenPage({ x, onBack }: { x: Found; onBack(): void }) {
   const m = x.project === 'home' ? HOME : SHOP
-  const one = m.byN.get(x.n ?? 0) as Item
+  const one = m.byN.get(x.n ?? 0) as Task
   return (
     <div className="flex h-full flex-col">
       <div className="min-h-0 flex-1">{pageOf(one, false, { onBack, docs: x.n === 1 ? [D1] : [] })}</div>

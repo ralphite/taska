@@ -1,4 +1,4 @@
-// Where a draft belongs, to go to it ("Go there", "Open"): the New input page, an item's box, a document, the box on
+// Where a draft belongs, to go to it ("Go there", "Open"): the New input page, a task's box, a document, the box on
 // one of your inputs (an edit, details added, a correction), one of your comments being edited. What it was for is
 // gone: it says which, never a Go there that does nothing.
 
@@ -52,7 +52,7 @@ export class DraftPlaces {
         const it = m?.byN.get(n)
         if (!m || !it) break
         const r = this.d.route.getState().route
-        this.d.nav.openItem(codeOf(m, n), inTab(it, r.page === 'project' ? r.tab : 'items') ? undefined : tabOf(it))
+        this.d.nav.openTask(codeOf(m, n), inTab(it, r.page === 'project' ? r.tab : 'tasks') ? undefined : tabOf(it))
         return this.d.fields.focus('box')
       }
       case 'correct': {

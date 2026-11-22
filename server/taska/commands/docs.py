@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from ..domain import events as ev
 from ..domain.markdown import block_key, blocks as md_blocks
-from ..domain.rules import detached_threads, doc_at, doc_view, is_proposal_key, item_at
+from ..domain.rules import detached_threads, doc_at, doc_view, is_proposal_key, task_at
 from ..domain.vocab import DOC_KEY, MAX_TEXT, PEOPLE, TASKA, Refused
 from .base import Args, Outcome, Run, handles
 from .inputs import sent_files, voice_words
@@ -20,7 +20,7 @@ _MERMAID = re.compile(r"\s*```[ \t]*mermaid\b", re.I)
 
 @handles("doc")
 def write_doc(r: Run, a: Args) -> Outcome:
-    """A new document on an item, or new text for an existing one."""
+    """A new document on a task, or new text for an existing one."""
     s = r.state
     html = a.get("fmt") == "html"  # a web page, shown as it is
     md = a.text("md").strip()  # a document is kept whole, however long
@@ -39,8 +39,8 @@ def write_doc(r: Run, a: Args) -> Outcome:
         if d.is_rules:
             raise Refused(RULES_HOW)
         r.emit(ev.DocWritten(d=d.d, n=d.n, title=title, md=md, by=r.by, fmt=fmt))
-        return Outcome(f"ok D{d.d} updated{r.gone_note(s.items.get(d.n))}", f"Updated D{d.d}")
-    it = item_at(s, a.get("ref", ""), r.ctx)
+        return Outcome(f"ok D{d.d} updated{r.gone_note(s.tasks.get(d.n))}", f"Updated D{d.d}")
+    it = task_at(s, a.get("ref", ""), r.ctx)
     dn = s.max_doc + 1
     r.emit(ev.DocWritten(d=dn, n=it.n, title=title, md=md, by=r.by, fmt=fmt))
     return Outcome(f"ok D{dn} new on {s.code(it.n)}{r.gone_note(it)}", f"Wrote D{dn}")
@@ -143,7 +143,7 @@ def comment(r: Run, a: Args) -> Outcome:
     r.emit(ev.CommentAdded(d=d.d, key=key, quote=quote[:500], text=body, by=r.by, files=files, th=th))
     for fix in fixes:
         r.emit(fix)
-    return Outcome(f"ok D{d.d} comment{r.gone_note(s.items.get(d.n))}", f"Commented on D{d.d}")
+    return Outcome(f"ok D{d.d} comment{r.gone_note(s.tasks.get(d.n))}", f"Commented on D{d.d}")
 
 
 @handles("ddel")
@@ -159,9 +159,9 @@ def delete_doc(r: Run, a: Args) -> Outcome:
 @handles("dmove")
 def move_doc(r: Run, a: Args) -> Outcome:
     s = r.state
-    d, it = doc_at(s, a.get("d")), item_at(s, a.get("to"), r.ctx)
+    d, it = doc_at(s, a.get("d")), task_at(s, a.get("to"), r.ctx)
     if d.is_rules:
-        raise Refused("the rules belong to the project, not to an item")
+        raise Refused("the rules belong to the project, not to a task")
     r.emit(ev.DocMoved(d=d.d, to=it.n, by=r.by))
     return Outcome(f"ok D{d.d} now on {s.code(it.n)}", f"Moved D{d.d} to {s.code(it.n)}")
 
@@ -258,7 +258,7 @@ def _writer(writes: List[ev.DocWritten], key: str) -> Optional[ev.DocWritten]:
 @handles("diagram-failed")
 def diagram_failed(r: Run, a: Args) -> Outcome:
     """Taska's own (B714 r1181): a diagram the page could not draw goes to the agent that wrote it, so it fixes it,
-    as a message on the document's item addressed to that agent's session; once per version of the document and
+    as a message on the document's task addressed to that agent's session; once per version of the document and
     paragraph. Nothing goes when the user wrote it, or the document changed since the page drew it."""
     if r.by != TASKA:
         raise Refused("only Taska reports a diagram that does not draw")
@@ -275,11 +275,11 @@ def diagram_failed(r: Run, a: Args) -> Outcome:
     w = _writer(writes, key)
     if not w or w.by in PEOPLE or w.by == TASKA:
         return Outcome(f"ok D{d.d} ¶{k} is the user's: no notice", "")
-    it = s.items.get(d.n)
+    it = s.tasks.get(d.n)
     while it and it.merged_into:
-        it = s.items.get(it.merged_into)
+        it = s.tasks.get(it.merged_into)
     if not it or it.deleted:
-        return Outcome(f"ok D{d.d} no item to tell on", "")
+        return Outcome(f"ok D{d.d} no task to tell on", "")
     head = f"D{d.d} ¶{k}: this diagram does not draw:"
     if any(x.by == TASKA and x.id > writes[-1].seq and x.text.startswith(head) for x in it.thread):
         return Outcome(f"ok D{d.d} ¶{k} told already", "")

@@ -1,5 +1,5 @@
 // Choices in a document are a form you fill in place: a tap ticks one on the page, and the ticks wait until you send
-// them (they go into the document, and the item hears which ones you ticked). A sent form shows as sent until you
+// them (they go into the document, and the task hears which ones you ticked). A sent form shows as sent until you
 // choose to change it. Each paragraph is told apart by which one it is ("key~0"), as paragraphs can share words.
 
 import { blockKeys } from './docs'

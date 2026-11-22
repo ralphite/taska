@@ -6,11 +6,11 @@ import { holdHeight, keepsEnd, scrollerOf, toEnd, YOUR_SCROLL, yourScroll } from
 const page = (talkScrolls: boolean) => {
   const body = document.createElement('div')
   body.style.overflowY = 'auto'
-  const item = document.createElement('div')
+  const task = document.createElement('div')
   const talk = document.createElement('div')
   if (talkScrolls) talk.style.overflowY = 'auto'
-  item.append(talk)
-  body.append(item)
+  task.append(talk)
+  body.append(task)
   document.body.append(body)
   for (const el of [body, talk]) Object.defineProperty(el, 'scrollHeight', { value: 2000 })
   return { body, talk }

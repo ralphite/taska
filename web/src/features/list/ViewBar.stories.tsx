@@ -48,7 +48,7 @@ export const Views: Story = {
     <Frames phoneWidth={393} deskWidth={460}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['Active', bar('all')],
             ['Needs you, nothing waiting', bar('wait', { needs: 0 })],
             ["Won't do (scrolled to it)", bar('dropped')],
@@ -67,7 +67,7 @@ export const DesktopList: Story = {
     <Frames phone={false} deskWidth={420}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['one line: ⌄ (the views do not fit)', bar('all', { list: { open: false }, own: [{ name: 'Bugs now', count: 6, on: false }, { name: 'P0', count: 1, on: false }] })],
             ['opened onto all its lines: ⌃', bar('all', { list: { open: true }, own: [{ name: 'Bugs now', count: 6, on: false }, { name: 'P0', count: 1, on: false }] })],
           ]}
@@ -88,7 +88,7 @@ export const YourOwnViewShownBeingRenamed: Story = {
     <Frames phoneWidth={393} deskWidth={460}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['Your own view shown', bar('', { own: [{ name: 'Bugs first', count: 6, on: true }] })],
             ['Being renamed', bar('', { own: [{ name: 'Bugs first', count: 6, on: true, editing: true }] })],
           ]}
@@ -107,7 +107,7 @@ export const PointerAndKeys: Story = {
     <Frames phone={false} deskWidth={460}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['a chip under the pointer', <div data-look="pointer">{bar('all')}</div>],
             ['a chip from the keys', <div data-look="keys">{bar('all')}</div>],
             ['the edge arrow under the pointer', <div data-look="arrow">{bar('all')}</div>],

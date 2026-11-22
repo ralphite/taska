@@ -1,6 +1,6 @@
-// Yadong's requirements on an item's talk (D29, "Lists and items"; T475, D45): each check is named by the codes of his
+// Yadong's requirements on a task's talk (D29, "Lists and tasks"; T475, D45): each check is named by the codes of his
 // inputs, so a change that breaks one is stopped before it ships with his own words.
-// guards: src/features/item/ src/features/composer/ src/app/voice/ src/ui/scroller.ts src/model/outgoing.ts src/app/inputs/delivered.ts src/ui/Markdown.tsx src/app/Tooltip.tsx src/app/actions.ts src/ui/ToEnd.tsx
+// guards: src/features/task/ src/features/composer/ src/app/voice/ src/ui/scroller.ts src/model/outgoing.ts src/app/inputs/delivered.ts src/ui/Markdown.tsx src/app/Tooltip.tsx src/app/actions.ts src/ui/ToEnd.tsx
 // layouts: phone desktop phone-webkit
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project, type Project } from '../seed'
@@ -34,7 +34,7 @@ test('r479: the latest message is open in full up to 50 lines; longer, it is cut
   )
 })
 
-test('r368: a code in a message is a link to its item, and pointing at it shows the item', async ({
+test('r368: a code in a message is a link to its task, and pointing at it shows the task', async ({
   page,
   request,
 }) => {
@@ -91,7 +91,7 @@ new P2 now Still waits
     await above(card(shown), words('Let us talk first'), `${code}: the card above your reply`)
     await above(words(said), words('Let us talk first'), `${code}: what the agent said above your reply`)
   }
-  // an agent's item with no words of its own: its card heads the talk, before your reply, approved by it (B818)
+  // an agent's task with no words of its own: its card heads the talk, before your reply, approved by it (B818)
   await open(page, p, 'T1')
   await expect.poll(async () => p.read('T1')).toMatch(/^T0*1 P\d \w+ open/)
   await expect(card('proposed this').getByRole('button', { name: 'Approved', exact: true })).toBeVisible()
@@ -103,7 +103,7 @@ new P2 now Still waits
   for (const before of ['Started.', 'Go ahead']) await above(words(before), waits, `T4: ${before} above the card`)
 })
 
-test('T589 #10486: an item opens at its latest message, and what you send and the reply to it show; the phone as the desktop', async ({
+test('T589 #10486: a task opens at its latest message, and what you send and the reply to it show; the phone as the desktop', async ({
   page,
   request,
 }) => {
@@ -117,7 +117,7 @@ test('T589 #10486: an item opens at its latest message, and what you send and th
   const seen = (text: string) => expect(page.getByText(text, { exact: true }).filter({ visible: true }).last()).toBeInViewport()
   await seen('The last word so far')
   // opened at its end, not its top: in one column the title is scrolled out of sight
-  if (!isDesk(page)) await expect(page.locator('[data-part=item-title]')).not.toBeInViewport()
+  if (!isDesk(page)) await expect(page.locator('[data-part=task-title]')).not.toBeInViewport()
   await box(page).fill('Friday then')
   await boxMain(page).click()
   await seen('Friday then')
@@ -158,7 +158,7 @@ type Frames = { eachFrame: (look: () => boolean) => void }
 async function watchEnd(page: Page, words: string) {
   await frames(page)
   await page.evaluate((words) => {
-    const talk = [...document.querySelectorAll<HTMLElement>('[data-item-talk]')].find((e) => e.getClientRects().length)
+    const talk = [...document.querySelectorAll<HTMLElement>('[data-task-talk]')].find((e) => e.getClientRects().length)
     let sc: HTMLElement | null = talk ?? null
     while (sc && !/auto|scroll/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement
     if (!talk || !sc) throw new Error('no talk')
@@ -267,7 +267,7 @@ async function hearing(page: Page) {
   }
 }
 
-/** B770: a voice reply recorded and sent from the item's box, its words told by `h` as they come: the first words, then the final
+/** B770: a voice reply recorded and sent from the task's box, its words told by `h` as they come: the first words, then the final
  * ones in their place. */
 async function voiceReply(page: Page, p: Project, h: Awaited<ReturnType<typeof hearing>>, first: string, final: string) {
   const mic = page.locator('#composer').getByRole('button', { name: 'Record a voice note', exact: true }).filter({ visible: true }).last()
@@ -328,7 +328,7 @@ test('B770 r1292: scrolled up to read, replying by voice moves the talk once, do
   await expect(page.getByText('The last word so far', { exact: true }).filter({ visible: true }).last()).toBeInViewport()
   await page.waitForTimeout(1500)
   if (isDesk(page)) {
-    const at = await page.locator('[data-item-talk]').filter({ visible: true }).first().boundingBox()
+    const at = await page.locator('[data-task-talk]').filter({ visible: true }).first().boundingBox()
     await page.mouse.move(at!.x + at!.width / 2, at!.y + at!.height / 2)
     await page.mouse.wheel(0, -400)
   } else await fingerScroll(page, -400)
@@ -336,7 +336,7 @@ test('B770 r1292: scrolled up to read, replying by voice moves the talk once, do
   // what scrolls the talk, as each frame is drawn: the most it went up, and the frames off its end once it got there
   await frames(page)
   await page.evaluate(() => {
-    const talk = [...document.querySelectorAll<HTMLElement>('[data-item-talk]')].find((e) => e.getClientRects().length)!
+    const talk = [...document.querySelectorAll<HTMLElement>('[data-task-talk]')].find((e) => e.getClientRects().length)!
     let sc: HTMLElement | null = talk
     while (sc && !/auto|scroll/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement
     if (!sc || sc.scrollHeight - sc.clientHeight - sc.scrollTop < 200) throw new Error('not scrolled up')
@@ -408,7 +408,7 @@ test('B786 r1337: scrolled up to read after replying by voice at the end of a lo
   await page.waitForTimeout(1500)
   await voiceReply(page, p, h, FIRST, FINAL)
   if (isDesk(page)) {
-    const at = await page.locator('[data-item-talk]').filter({ visible: true }).first().boundingBox()
+    const at = await page.locator('[data-task-talk]').filter({ visible: true }).first().boundingBox()
     await page.mouse.move(at!.x + at!.width / 2, at!.y + at!.height / 2)
     await page.mouse.wheel(0, -400)
   } else await fingerScroll(page, -400)
@@ -416,7 +416,7 @@ test('B786 r1337: scrolled up to read after replying by voice at the end of a lo
   // what scrolls the talk, as each frame is drawn from here on: the most it moved either way
   await frames(page)
   await page.evaluate(() => {
-    const talk = [...document.querySelectorAll<HTMLElement>('[data-item-talk]')].find((e) => e.getClientRects().length)!
+    const talk = [...document.querySelectorAll<HTMLElement>('[data-task-talk]')].find((e) => e.getClientRects().length)!
     let sc: HTMLElement | null = talk
     while (sc && !/auto|scroll/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement
     if (!sc || sc.scrollHeight - sc.clientHeight - sc.scrollTop < 200) throw new Error('not scrolled up')
@@ -440,7 +440,7 @@ test('B786 r1337: scrolled up to read after replying by voice at the end of a lo
   expect(got, 'where you scrolled it all along').toEqual({ moved: 0 })
 })
 
-test('B721 r1183: scrolled up right after an item opens, the talk stays where you scrolled it, never pulled back to its end; the phone (a finger) as the desktop (the wheel)', async ({
+test('B721 r1183: scrolled up right after a task opens, the talk stays where you scrolled it, never pulled back to its end; the phone (a finger) as the desktop (the wheel)', async ({
   page,
   request,
 }) => {
@@ -453,7 +453,7 @@ test('B721 r1183: scrolled up right after an item opens, the talk stays where yo
   // how far what scrolls the talk is from its end
   const away = () =>
     page.evaluate(() => {
-      const talk = [...document.querySelectorAll<HTMLElement>('[data-item-talk]')].find((e) => e.getClientRects().length)
+      const talk = [...document.querySelectorAll<HTMLElement>('[data-task-talk]')].find((e) => e.getClientRects().length)
       let sc: HTMLElement | null = talk ?? null
       while (sc && !/auto|scroll/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement
       return sc ? Math.round(sc.scrollHeight - sc.clientHeight - sc.scrollTop) : -1
@@ -463,7 +463,7 @@ test('B721 r1183: scrolled up right after an item opens, the talk stays where yo
     await expect(page.getByText('The last word so far', { exact: true }).filter({ visible: true }).last()).toBeInViewport()
     await page.waitForTimeout(wait) // still settling: its own scrolls to the end on opening not all done
     if (isDesk(page)) {
-      const at = await page.locator('[data-item-talk]').filter({ visible: true }).first().boundingBox()
+      const at = await page.locator('[data-task-talk]').filter({ visible: true }).first().boundingBox()
       await page.mouse.move(at!.x + at!.width / 2, at!.y + at!.height / 2)
       await page.mouse.wheel(0, -300)
     } else await fingerScroll(page, -300)

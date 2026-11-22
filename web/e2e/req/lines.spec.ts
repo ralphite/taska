@@ -1,6 +1,6 @@
 // Yadong's requirements on the lines you drag (D29, "Details"; R267; T475, D45): each check is named by the codes of his
 // inputs, so a change that breaks one is stopped before it ships with his own words.
-// guards: src/ui/Grip.tsx src/features/item/ItemPage.tsx src/features/item/ItemPageContainer.tsx src/features/sidebar/SidebarContainer.tsx src/pages/ProjectPageContainer.tsx src/pages/Header.tsx src/features/list/Filters.tsx src/features/composer/FootContainer.tsx src/stores/grips.ts src/app/keys.ts
+// guards: src/ui/Grip.tsx src/features/task/TaskPage.tsx src/features/task/TaskPageContainer.tsx src/features/sidebar/SidebarContainer.tsx src/pages/ProjectPageContainer.tsx src/pages/Header.tsx src/features/list/Filters.tsx src/features/composer/FootContainer.tsx src/stores/grips.ts src/app/keys.ts
 import { expect, test } from '@playwright/test'
 import type { Locator, Page } from '@playwright/test'
 import { LOOP, isDesk, open, project, settled as pageSettled } from '../seed'
@@ -85,7 +85,7 @@ test('r491: dragging one line lights only that one', async ({ page, request }) =
   await page.mouse.up()
 })
 
-test('r448 r458 r464 r470: a line goes wherever it is dragged, and stays there from item to item', async ({
+test('r448 r458 r464 r470: a line goes wherever it is dragged, and stays there from task to task', async ({
   page,
   request,
 }) => {
@@ -104,7 +104,7 @@ test('r448 r458 r464 r470: a line goes wherever it is dragged, and stays there f
   const got = await settled(top)
   if (across) expect(Math.abs(got.y - to.y)).toBeLessThan(12)
   else expect(Math.abs(got.x - to.x)).toBeLessThan(12)
-  // another item: the line has not moved
+  // another task: the line has not moved
   await page.keyboard.press('j')
   await expect(page).not.toHaveURL(/\/T0*1(\?|$)/)
   const next = page.locator('[data-grip="top"], [data-grip="duo"]').filter({ visible: true }).first()
@@ -118,7 +118,7 @@ test('r448 r458 r464 r470: a line goes wherever it is dragged, and stays there f
  * as the screen shows them. */
 async function downTheLine(page: Page): Promise<string[]> {
   await page.mouse.move(2, 2)
-  const list = await page.locator('[data-part="items"]').filter({ visible: true }).first().boundingBox()
+  const list = await page.locator('[data-part="tasks"]').filter({ visible: true }).first().boundingBox()
   const bar = await page.locator('nav[aria-label="This project"]').filter({ visible: true }).first().boundingBox()
   if (!list || !bar) throw new Error('not drawn')
   const shot = (await page.screenshot({ scale: 'css' })).toString('base64')
@@ -142,7 +142,7 @@ async function downTheLine(page: Page): Promise<string[]> {
 }
 
 for (const scheme of ['light', 'dark'] as const)
-  test(`r558 r682 r813: the line between the list and the pane is one line from under the project's bar to the bottom, in an item, a document and the new input (B573, ${scheme})`, async ({
+  test(`r558 r682 r813: the line between the list and the pane is one line from under the project's bar to the bottom, in a task, a document and the new input (B573, ${scheme})`, async ({
     page,
     request,
   }) => {

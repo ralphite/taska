@@ -1,6 +1,6 @@
 // Guards for the B802 changes (requirements lost in the 10-24 rewrite, found by T795): a picked choice and the box's words go as one answer
 // (B145), the phone keeps the answered card in view, a web page's comment leaves its part when the words change (F432).
-// guards: src/features/item/ src/features/composer/ src/app/inputs/ src/app/items/ src/features/docs/
+// guards: src/features/task/ src/features/composer/ src/app/inputs/ src/app/tasks/ src/features/docs/
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
 import { box, boxMain, pane, pageCount } from '../ui'

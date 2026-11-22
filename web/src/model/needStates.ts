@@ -1,45 +1,45 @@
-// What an item needs from you, in one place (T728 #3): every state an item is in towards you (nothing, a question to
+// What a task needs from you, in one place (T728 #3): every state a task is in towards you (nothing, a question to
 // answer, a proposal to approve, finished work to accept, the same once you replied instead, and what you decided),
 // in one priority order, and what each place shows in each state: Needs you and its counts, the row's pill and the
-// line under its title, the item's status mark, A (and the row's way forward), the card in the item's talk and where
-// it goes there. Every place that asks what an item needs from you reads it here; nothing else decides it. The table
-// in docs/item-states.md is made from this table (`needPlacesTable`, checked by a test).
+// line under its title, the task's status mark, A (and the row's way forward), the card in the task's talk and where
+// it goes there. Every place that asks what a task needs from you reads it here; nothing else decides it. The table
+// in docs/task-states.md is made from this table (`needPlacesTable`, checked by a test).
 //
-// The state is worked out from the item (its question waiting, its status, whether you spoke last, what you decided
+// The state is worked out from the task (its question waiting, its status, whether you spoke last, what you decided
 // and whether the agent has spoken since) by `needOf`, the one place it is. Whether it is on your list is the server's
 // rule (domain/rules.py needs_you, the projects' counts): a question to answer, or a proposal or finished work you
-// have not replied on, on an item that is not finished, archived or merged. Pure.
+// have not replied on, on a task that is not finished, archived or merged. Pure.
 
-import { closed, lastAgentMessage, oneLine } from './items'
+import { closed, lastAgentMessage, oneLine } from './tasks'
 import { hasChoices } from './markdown'
 import { answerOf, askRowOf, rowAnswer } from './talk'
-import { ITEM_ACTS, pastOf, type ItemActId } from './itemActs'
-import type { Item, Message } from './types'
+import { TASK_ACTS, pastOf, type TaskActId } from './taskActs'
+import type { Task, Message } from './types'
 import { PLACE_WORD, STATUS_WORD } from './words'
 
-/** Where what an item needs from you shows. */
+/** Where what a task needs from you shows. */
 export const NEED_PLACES = {
   list: "Needs you: the list, its counts and the projects' (the server's needs_you)",
   row: "its row in Needs you: the pill, and the line under its title",
-  mark: "the item's status mark: Needs you while a question waits",
+  mark: "the task's status mark: Needs you while a question waits",
   key: "A, and the row's way forward (the desktop's first action, the phone's swipe right)",
-  card: "the card in the item's talk",
+  card: "the card in the task's talk",
 } as const
 export type NeedPlace = keyof typeof NEED_PLACES
 
 /** What a decision is on: a proposal (Approve or Won't do) or finished work (Accept or Not yet). */
 export type NeedOf = 'proposal' | 'work'
 
-/** A decision's two choices (actions, model/itemActs) and how they are said, on a proposal and on finished work. */
+/** A decision's two choices (actions, model/taskActs) and how they are said, on a proposal and on finished work. */
 export const DECISION = {
   proposal: { status: 'proposed', yes: { to: 'open', act: 'approve', said: 'approved' }, no: { to: 'dropped', act: 'drop' }, did: 'proposed this' },
   work: { status: 'review', yes: { to: 'done', act: 'accept', said: 'accepted' }, no: { to: 'open', act: 'not-yet' }, did: 'finished this' },
-} as const satisfies Record<NeedOf, { status: string; yes: { to: string; act: ItemActId; said: string }; no: { to: string; act: ItemActId }; did: string }>
+} as const satisfies Record<NeedOf, { status: string; yes: { to: string; act: TaskActId; said: string }; no: { to: string; act: TaskActId }; did: string }>
 
-/** The row's pill in Needs you: what it does (an action, model/itemActs). */
+/** The row's pill in Needs you: what it does (an action, model/taskActs). */
 export type NeedAct = 'answer' | 'approve' | 'accept'
 
-/** The card in the item's talk: the question (its choices, or ↓ Answer below; Approve or Accept beside it on a
+/** The card in the task's talk: the question (its choices, or ↓ Answer below; Approve or Accept beside it on a
  * proposal or finished work); a decision's two buttons; Skipped · you replied with Approve or Accept still to press;
  * the decision made, faded in place (r1003); or none of its own (`onQuestion`: Approve or Accept, or what you chose,
  * stays on the card of the question you answered). */
@@ -47,20 +47,20 @@ export type NeedCard = 'question' | 'decide' | 'replied' | 'decided' | 'onQuesti
 
 interface StateDef {
   label: string
-  /** on your list (on an item still open, not archived, not merged) */
+  /** on your list (on a task still open, not archived, not merged) */
   listed: boolean
   /** the row's pill */
   row: NeedAct | null
-  /** the item's status mark says Needs you */
+  /** the task's status mark says Needs you */
   mark: boolean
   /** A: answer the question, or take the decision's yes (Approve, Accept) */
   key: 'answer' | 'decide' | null
   card: NeedCard | null
 }
 
-/** Every state, in the order they are worked out: the first that holds is the item's. */
+/** Every state, in the order they are worked out: the first that holds is the task's. */
 export const NEED_STATES = {
-  // an agent's question you have not answered (your words on the item or a comment on its documents answer it)
+  // an agent's question you have not answered (your words on the task or a comment on its documents answer it)
   answer: { label: 'A question to answer', listed: true, row: 'answer', mark: true, key: 'answer', card: 'question' },
   // proposed or in review, and you have not spoken since the agent did
   approve: { label: 'A proposal to approve', listed: true, row: 'approve', mark: false, key: 'decide', card: 'decide' },
@@ -79,9 +79,9 @@ export const NEED_STATES = {
 export type NeedState = keyof typeof NEED_STATES
 export const NEED_STATE_LIST = Object.keys(NEED_STATES) as NeedState[]
 
-export type Decided = NonNullable<Item['decided']>
+export type Decided = NonNullable<Task['decided']>
 
-/** What an item needs from you, worked out once. */
+/** What a task needs from you, worked out once. */
 export interface Need {
   state: NeedState
   /** what the decision is (or was) on; null: none */
@@ -97,24 +97,24 @@ export interface Need {
 const ofStatus = (s: string): NeedOf | null => (s === 'proposed' ? 'proposal' : s === 'review' ? 'work' : null)
 
 /** Not finished, not archived, not merged: what it needs from you can be on your list. */
-const live = (it: Item) => !it.mergedInto && !it.archived && !closed(it.status)
+const live = (it: Task) => !it.mergedInto && !it.archived && !closed(it.status)
 
 /** Your decision still shows (the agent has not spoken since). */
-function stillDecided(it: Item): Decided | null {
+function stillDecided(it: Task): Decided | null {
   const dec = it.decided
   if (!dec || it.status === dec.from || !ofStatus(dec.from)) return null
   return (lastAgentMessage(it)?.id ?? null) === dec.msg ? dec : null
 }
 
 /** Questions in a row, every one answered (B749). */
-const rowAnswered = (it: Item, x: Message | undefined) => {
+const rowAnswered = (it: Task, x: Message | undefined) => {
   const row = x ? askRowOf(it.thread, x.id) : null
   return !!row && row.every((q) => rowAnswer(it.thread, row, q))
 }
 
 /** The agent's latest word is a question with choices you answered, or the last of questions in a row all answered
  * (`going`: an answer to it on its way). */
-function answeredLast(it: Item, going?: string | null) {
+function answeredLast(it: Task, going?: string | null) {
   const x = lastAgentMessage(it)
   if (rowAnswered(it, x)) return true
   return !!x && x.kind === 'ask' && hasChoices(x.text) && !!answerOf(it.thread, x, going)?.length
@@ -123,7 +123,7 @@ function answeredLast(it: Item, going?: string | null) {
 const choicesAsk = (x: Message | undefined) => !!x && x.kind === 'ask' && hasChoices(x.text)
 
 /** What `it` needs from you (`going`: an answer to its latest question on its way): the one place it is worked out. */
-export function needOf(it: Item, going?: string | null): Need {
+export function needOf(it: Task, going?: string | null): Need {
   const of = ofStatus(it.status)
   const dec = stillDecided(it)
   const need = (state: NeedState, msg: Message | null, o: NeedOf | null = of, keep: Need['keep'] = null): Need => ({ state, of: o, msg, keep, dec })
@@ -146,27 +146,27 @@ export function needOf(it: Item, going?: string | null): Need {
 }
 
 /** On your list of what needs you (and in its counts): the server's needs_you. */
-export const needsYou = (it: Item) => live(it) && NEED_STATES[needOf(it).state].listed
+export const needsYou = (it: Task) => live(it) && NEED_STATES[needOf(it).state].listed
 
-/** An item's status as the page shows it: "Needs you" while an agent's question waits on you, else its status. */
-export const shownStatus = (it: Item): { s: string; label: string } =>
+/** A task's status as the page shows it: "Needs you" while an agent's question waits on you, else its status. */
+export const shownStatus = (it: Task): { s: string; label: string } =>
   live(it) && NEED_STATES[needOf(it).state].mark ? { s: 'wait', label: PLACE_WORD.wait } : { s: it.status, label: STATUS_WORD[it.status] }
 
 /** Its row in Needs you: the pill (what it does, its word) and the line under the title (the question, or what the
  * agent said last); null: it has no row there. */
-export function needRow(it: Item): { act: NeedAct; word: string; line: string } | null {
+export function needRow(it: Task): { act: NeedAct; word: string; line: string } | null {
   const n = needOf(it)
   const act = NEED_STATES[n.state].row
   if (!act) return null
   const line = n.state === 'answer' ? it.wait?.text : n.state === 'approve' ? n.msg?.text || it.body : n.msg?.text
-  return { act, word: ITEM_ACTS[act].label, line: oneLine(line) }
+  return { act, word: TASK_ACTS[act].label, line: oneLine(line) }
 }
 
-/** A: the item's next step for you: answer what waits (on its first choice, or in the box), or take the decision's
+/** A: the task's next step for you: answer what waits (on its first choice, or in the box), or take the decision's
  * yes (the status it sets, the button's word, how it is said done). */
-export type YourStep = { set: readonly [field: 'status', value: string, act: ItemActId, said: string] } | { answer: 'choices' | 'words' } | null
+export type YourStep = { set: readonly [field: 'status', value: string, act: TaskActId, said: string] } | { answer: 'choices' | 'words' } | null
 
-export function yourStep(it: Item): YourStep {
+export function yourStep(it: Task): YourStep {
   const n = needOf(it)
   const key = NEED_STATES[n.state].key
   if (key === 'answer') return { answer: it.wait && it.wait.kind === 'ask' && hasChoices(it.wait.text) ? 'choices' : 'words' }
@@ -177,8 +177,8 @@ export function yourStep(it: Item): YourStep {
   return null
 }
 
-/** Where the card goes in the item's talk, and which messages show (`going`: an answer on its way). */
-export function talkPlan(it: Item, opts: { going?: string | null } = {}) {
+/** Where the card goes in the task's talk, and which messages show (`going`: an answer on its way). */
+export function talkPlan(it: Task, opts: { going?: string | null } = {}) {
   const n = needOf(it, opts.going)
   const card = NEED_STATES[n.state].card
   // questions in a row are one card, where the last of them is (B749)
@@ -192,7 +192,7 @@ export function talkPlan(it: Item, opts: { going?: string | null } = {}) {
 }
 
 /** What you chose: its button's action. */
-export function chosenAct(d: Decided): ItemActId {
+export function chosenAct(d: Decided): TaskActId {
   const x = DECISION[d.from === 'proposed' ? 'proposal' : 'work']
   return d.to === x.yes.to ? x.yes.act : x.no.act
 }
@@ -200,7 +200,7 @@ export function chosenAct(d: Decided): ItemActId {
 /** What you chose, said as done: Approved, Accepted, Declined, Sent back. */
 export const decidedWord = (d: Decided) => pastOf(chosenAct(d))
 
-// ---------------------------------------------------------------- the table (docs/item-states.md)
+// ---------------------------------------------------------------- the table (docs/task-states.md)
 
 const CARD_CELL: Record<NeedCard, string> = {
   question: 'the question (Approve or Accept beside it)',
@@ -215,12 +215,12 @@ export function needPlacesTable(): string {
   const cell = (s: NeedState, place: NeedPlace) => {
     const d: StateDef = NEED_STATES[s]
     if (place === 'list') return d.listed ? 'yes' : '—'
-    if (place === 'row') return d.row ? ITEM_ACTS[d.row].label : '—'
+    if (place === 'row') return d.row ? TASK_ACTS[d.row].label : '—'
     if (place === 'mark') return d.mark ? 'Needs you' : '—'
-    if (place === 'key') return d.key === 'answer' ? ITEM_ACTS.answer.label : d.key === 'decide' ? (d.row ? ITEM_ACTS[d.row].label : 'Approve / Accept') : '—'
+    if (place === 'key') return d.key === 'answer' ? TASK_ACTS.answer.label : d.key === 'decide' ? (d.row ? TASK_ACTS[d.row].label : 'Approve / Accept') : '—'
     if (d.card === 'decide') {
       const x = DECISION[s === 'approve' ? 'proposal' : 'work']
-      return `${ITEM_ACTS[x.no.act].label} · ${ITEM_ACTS[x.yes.act].label}`
+      return `${TASK_ACTS[x.no.act].label} · ${TASK_ACTS[x.yes.act].label}`
     }
     return d.card ? CARD_CELL[d.card] : '—'
   }

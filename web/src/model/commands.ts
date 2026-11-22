@@ -19,7 +19,7 @@ export interface SentFile {
 /** A voice note's words as you left them, by its file: they become the note's words (B682). */
 export type SentWords = Record<string, string>
 
-/** The fields `set` changes, as the server takes them (commands/items.py field_value): a parent by its code, or
+/** The fields `set` changes, as the server takes them (commands/tasks.py field_value): a parent by its code, or
  * 'none'; a day as YYYY-MM-DD, or null for none; a rank, or null for the usual order. */
 export interface SetFields {
   /** every tag it has, without the # (T855) */
@@ -60,7 +60,7 @@ interface From {
 
 export type Command = From &
   (
-    // items (commands/items.py)
+    // tasks (commands/tasks.py)
     | { op: 'new'; title: string; tags?: string[]; group?: boolean; after?: string[]; pri?: Pri; when?: When; status?: Status; body?: string; next?: string; parent?: string }
     | { op: 'set'; ref: string; f: SetFields; undo_of?: number }
     | { op: 'tag'; ref: string; add?: string[]; del?: string[] }
@@ -161,7 +161,7 @@ export const OPS = {
 /** One command of the union, by its op (a member for several ops, as this one). */
 export type CommandOf<K extends Op> = Command extends infer C ? (C extends { op: infer O } ? (K extends O ? C & { op: K } : never) : never) : never
 
-/** One field of an item as the page holds it -> as `set` sends it: a parent goes as its number's text, or 'none'. */
+/** One field of a task as the page holds it -> as `set` sends it: a parent goes as its number's text, or 'none'. */
 export function field(f: string, v: unknown): SetFields {
   return { [f]: f === 'parent' ? (v ? String(v) : 'none') : v } as SetFields
 }

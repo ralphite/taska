@@ -39,7 +39,7 @@ class Bugs(unittest.TestCase):
 
     def test_a_code_error_makes_one_p1_bug_with_where_it_happened(self) -> None:
         code = self.seen(err())
-        it = next(iter(self.taska.state.items.values()))
+        it = next(iter(self.taska.state.tasks.values()))
         self.assertEqual(code, self.taska.state.code(it.n))
         self.assertEqual((it.tags, it.pri, it.status), (["bug"], "P1", "proposed"))  # Yadong approves it, as every bug Taska makes
         self.assertEqual(it.title, "页面报错：TypeError: n.tags is not iterable")
@@ -51,14 +51,14 @@ class Bugs(unittest.TestCase):
         self.assertIsNone(self.seen(err("TypeError: n.tags is not iterable")))  # Safari words it without 'Uncaught'
         self.taska.run([(0, {"op": "set", "ref": first, "f": {"status": "done"}})], "you")
         self.assertNotEqual(self.seen(err()), first)
-        self.assertEqual(len(self.taska.state.items), 2)
+        self.assertEqual(len(self.taska.state.tasks), 2)
 
     def test_not_the_pages_own_messages_the_browsers_noise_or_a_page_from_before_an_update(self) -> None:
         for e in (err("Taska has an update"), err("ResizeObserver loop completed with undelivered notifications."),
                   err("iPhone blocked the microphone."), err(build="index-OLD0.js"), {"msg": "TypeError: x"}):
             self.assertIsNone(self.seen(e))
         self.assertIsNone(self.bugs.seen(err(), "todos", BUILD, None))  # no taska project here
-        self.assertEqual(len(self.taska.state.items), 0)
+        self.assertEqual(len(self.taska.state.tasks), 0)
 
     def test_at_most_a_few_a_day(self) -> None:
         made = [self.seen(err(f"TypeError: error {i}")) for i in range(PER_DAY + 2)]
@@ -77,9 +77,9 @@ class FromThePage(ServerCase):
         build = json.loads(urllib.request.urlopen(self.p + "/api/view", timeout=10).read())["server"]["page"]
         e = dict(err(build=build), kind="error", level="error")
         post(self.p + "/api/page-log", {"list": [e, dict(e, msg="Taska has an update")]})
-        items = urllib.request.urlopen(self.base + "/p/taska/items?by=claude-code", timeout=10).read().decode()
-        self.assertIn("页面报错：TypeError: n.tags is not iterable", items)
-        self.assertEqual(items.count("页面报错"), 1)
+        tasks = urllib.request.urlopen(self.base + "/p/taska/tasks?by=claude-code", timeout=10).read().decode()
+        self.assertIn("页面报错：TypeError: n.tags is not iterable", tasks)
+        self.assertEqual(tasks.count("页面报错"), 1)
 
 
 if __name__ == "__main__":

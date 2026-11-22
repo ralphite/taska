@@ -1,5 +1,5 @@
 // A change that did not go in, in words for the list of what was not saved: what it was ("T501 to Later"), where it
-// belongs (its item, its document, the inputs), and the words it carried.
+// belongs (its task, its document, the inputs), and the words it carried.
 
 type Cmd = Record<string, unknown>
 
@@ -38,7 +38,7 @@ export function changeWords(cmds: readonly unknown[]): string {
   return `${String(x.op)}${x.ref ? ' ' + String(x.ref) : ''}`
 }
 
-/** Where it belongs, to go and see it: its item, its document, or the project's inputs. */
+/** Where it belongs, to go and see it: its task, its document, or the project's inputs. */
 export function changePlace(cmds: readonly unknown[], slug: string): string {
   const p = `/p/${encodeURIComponent(slug)}/`
   const x = first(cmds)

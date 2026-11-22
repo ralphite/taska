@@ -7,7 +7,7 @@ import { AgentPill } from './Header'
 
 // T711 (Yadong): an agent with an app icon is shown by its icon, never by the words "Claude Code" (its name stays in
 // the icon's tip and for a screen reader); an agent without one keeps its name. The session's name shows in the head's
-// agent button and on messages, never in a list (an item row's agent mark, the sidebar's card).
+// agent button and on messages, never in a list (a task row's agent mark, the sidebar's card).
 describe('agents by their icon, sessions where they belong (T711)', () => {
   test('an agent with an icon: the icon, named for the tip and a screen reader; without one: its name', () => {
     const { container } = render(

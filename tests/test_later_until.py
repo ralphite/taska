@@ -1,5 +1,5 @@
-"""D115 #21: Later with a day. An item put Later until a day (Tomorrow, Next week, a day picked; an agent writes
-`B03 later until 2026-11-10`) is back to Now by itself on that day, with the subitems that went Later with it; back to
+"""D115 #21: Later with a day. A task put Later until a day (Tomorrow, Next week, a day picked; an agent writes
+`B03 later until 2026-11-10`) is back to Now by itself on that day, with the subtasks that went Later with it; back to
 Now or Later with no day, the day goes. The log keeps it (a `due` event), replaying gives the same state, the agent
 text and the page say it."""
 
@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 from taska.agent_text import language  # noqa: E402
 from taska.agent_text.render import line  # noqa: E402
 from taska.domain.projection import replay  # noqa: E402
-from taska.page_api.views import item_view  # noqa: E402
+from taska.page_api.views import task_view  # noqa: E402
 from taska.services.workspace import Workspace  # noqa: E402
 
 
@@ -35,12 +35,12 @@ class LaterUntil(unittest.TestCase):
         return self.p.run([(0, c) for c in commands], by)[0]
 
     def it(self, n: int):
-        return self.p.state.items[n]
+        return self.p.state.tasks[n]
 
     def test_later_until_a_day_comes_back_on_that_day(self) -> None:
         self.run_as("you", {"op": "set", "ref": "T1", "f": {"when": "later", "later_until": "2026-11-10"}})
         self.assertEqual((self.it(1).when, self.it(1).later_until), ("later", "2026-11-10"))
-        self.assertEqual(self.it(2).when, "later")  # its subitem went Later with it
+        self.assertEqual(self.it(2).when, "later")  # its subtask went Later with it
         self.assertEqual(self.p.bring_back_laters("2026-11-09"), 0)
         self.assertEqual(self.it(1).when, "later")
         self.assertEqual(self.p.bring_back_laters("2026-11-10"), 1)
@@ -50,7 +50,7 @@ class LaterUntil(unittest.TestCase):
         rows = [row for _, row, _ in self.p.store.db.rows() if row]
         self.assertEqual([r["k"] for r in rows].count("due"), 1)  # the log keeps it
         again = replay(rows, lambda *_: None)  # and the log replayed gives the same
-        self.assertEqual((again.items[1].when, again.items[1].later_until, again.items[2].when), ("now", None, "now"))
+        self.assertEqual((again.tasks[1].when, again.tasks[1].later_until, again.tasks[2].when), ("now", None, "now"))
 
     def test_a_day_alone_puts_it_later_and_now_takes_the_day_away(self) -> None:
         self.run_as("you", {"op": "set", "ref": "T1", "f": {"later_until": "2026-11-10"}})
@@ -74,7 +74,7 @@ class LaterUntil(unittest.TestCase):
         self.assertEqual(cmds, [(1, {"op": "set", "ref": "T1", "f": {"when": "later", "later_until": "2026-11-10"}})])
         self.run_as("claude-code", cmds[0][1])
         self.assertIn("later until 2026-11-10", line(self.p.state, self.it(1)))
-        self.assertEqual(item_view(self.p.state, self.p.agents, self.it(1)).get("later_until"), "2026-11-10")
+        self.assertEqual(task_view(self.p.state, self.p.agents, self.it(1)).get("later_until"), "2026-11-10")
 
 
 if __name__ == "__main__":

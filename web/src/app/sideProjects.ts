@@ -2,7 +2,7 @@
 // (its model), the others as last listed, each with its colour and its card (F667). Pure: the page and the stories
 // both use it.
 
-import { closed } from '../model/items'
+import { closed } from '../model/tasks'
 import { needsYou } from '../model/needStates'
 import { needsCount } from '../model/rules'
 import type { ProjectModel } from '../model/project'
@@ -55,9 +55,9 @@ export function sideProjects(rows: readonly ProjectRow[] | null | undefined, m: 
           ...seen,
           name: slug,
           title: m.facts.title,
-          open: openCount(m.items),
+          open: openCount(m.tasks),
           needs: needsCount(m, needsYou),
-          closed: m.items.filter((it) => !it.mergedInto && inTab(it, 'items') && closed(it.status)).length,
+          closed: m.tasks.filter((it) => !it.mergedInto && inTab(it, 'tasks') && closed(it.status)).length,
           inputs: m.inputs.length,
           docs: m.docs.filter((d) => d.kind !== 'rules').length,
           agents: m.facts.agents,

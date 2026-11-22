@@ -1,5 +1,5 @@
 // The page's few places the keys reach, given by ref where they are drawn: the list's search, the box, the talk that
-// Space scrolls, the home page's search, the item list, the open sheet's body. Nothing looks the page up.
+// Space scrolls, the home page's search, the task list, the open sheet's body. Nothing looks the page up.
 
 import { toEnd } from '../../ui/scroller'
 

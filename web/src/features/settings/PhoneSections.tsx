@@ -1,4 +1,4 @@
-// The phone's pages of Settings that the desktop shows beside the items: Documents, Activity and Deleted. (Projects,
+// The phone's pages of Settings that the desktop shows beside the tasks: Documents, Activity and Deleted. (Projects,
 // in the phone's grouped rows, is Sections' ProjectsBody, the same body as the desktop's.) Props only.
 
 import type { LogSentence } from '../../model/activity'
@@ -26,7 +26,7 @@ export function DocsBody({ docs, onOpen }: { docs: PhoneDocRow[]; onOpen(d: numb
     return (
       <Ruled>
         <Empty>
-          No documents yet · item ⋯ › New doc
+          No documents yet · task ⋯ › New doc
         </Empty>
       </Ruled>
     )

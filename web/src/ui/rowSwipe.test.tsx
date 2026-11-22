@@ -61,7 +61,7 @@ afterEach(() => {
 })
 
 describe('a row swiped open (T589 #10486)', () => {
-  test('closes when the rows are drawn anew (Done, Later, Won’t do, a subitem done)', () => {
+  test('closes when the rows are drawn anew (Done, Later, Won’t do, a subtask done)', () => {
     const { container, rerender } = render(<List drawing="a" />)
     const row = swipeLeft(container, '1')
     expect(isOpen(row)).toBe(true)

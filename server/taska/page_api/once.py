@@ -1,6 +1,6 @@
 """The page's changes come with an id: one sent again after a lost answer is done once and gets the first answer.
 
-The newest answers are kept, per project: those of changes (taken under the project's lock) apart from those of item
+The newest answers are kept, per project: those of changes (taken under the project's lock) apart from those of task
 moves (taken under the moves' own lock), so a long move does not hold up the project's changes.
 """
 

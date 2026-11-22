@@ -35,7 +35,7 @@ test('r696 r727 D71: the dashboard opens on this computer and is never given thr
   expect(through.status()).not.toBe(200)
 })
 
-test("r595 r696: what each item cost, from the line ending an agent's done message, is on the dashboard", async ({
+test("r595 r696: what each task cost, from the line ending an agent's done message, is on the dashboard", async ({
   page,
   request,
 }) => {

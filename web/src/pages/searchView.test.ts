@@ -21,24 +21,24 @@ const shown = (kind: SearchNow['kind']) => searchView(now({ kind }), place).grou
 describe("the phone search's page", () => {
   it('in All, puts each project\'s rows by kind, each kind named over its first row (T642 R9 (D115, 11-06))', () => {
     expect(shown('all')).toEqual([
-      ['shop', ['Items: shop/i1', 'shop/i3', 'shop/i14', 'shop/i6', 'Inputs: shop/r8', 'Rules: shop/s0', 'Documents: shop/d1']],
-      ['home', ['Items: home/i21', 'Inputs: home/r4']],
+      ['shop', ['Tasks: shop/i1', 'shop/i3', 'shop/i14', 'shop/i6', 'Inputs: shop/r8', 'Rules: shop/s0', 'Documents: shop/d1']],
+      ['home', ['Tasks: home/i21', 'Inputs: home/r4']],
     ])
   })
   it('names no kind when one kind is shown', () => {
-    expect(shown('items')).toEqual([
+    expect(shown('tasks')).toEqual([
       ['shop', ['shop/i1', 'shop/i3', 'shop/i14', 'shop/i6']],
       ['home', ['home/i21']],
     ])
   })
 })
 
-// B710 (r1160): the phone's search opened white when Recent held an item of a project whose model was not here
+// B710 (r1160): the phone's search opened white when Recent held a task of a project whose model was not here
 describe('Recent, a project not loaded', () => {
-  it('draws the visit as a whole item row', async () => {
+  it('draws the visit as a whole task row', async () => {
     const { visitFound } = await import('./searchDialogView')
-    const f = visitFound({ project: 'home', kind: 'items', n: 21, code: 'F021', title: 'Export contacts', status: 'open', pri: 'P1' }, () => null)
-    expect(f.item?.thread).toEqual([])
-    expect([f.item?.code, f.item?.pri]).toEqual(['F021', 'P1'])
+    const f = visitFound({ project: 'home', kind: 'tasks', n: 21, code: 'F021', title: 'Export contacts', status: 'open', pri: 'P1' }, () => null)
+    expect(f.task?.thread).toEqual([])
+    expect([f.task?.code, f.task?.pri]).toEqual(['F021', 'P1'])
   })
 })

@@ -6,7 +6,7 @@
 #
 # A busybox web server on a private Docker network serves dist/ and install.sh; each Linux container (as an
 # ordinary user, no root) runs `curl .../install.sh | TASKA_BASE_URL=... sh` and checks the page, /api/projects and
-# an item made through the agent API on 127.0.0.1:7340 inside the container. Nothing is mapped to a host port.
+# a task made through the agent API on 127.0.0.1:7340 inside the container. Nothing is mapped to a host port.
 # Cases: Ubuntu 24.04 (install, then update), Debian 12 (TASKA_NO_START, then a start), Alpine 3.20 (wget and
 # busybox sh), no Python (the clear message), a wrong checksum (nothing changed), and a systemd user service.
 unset GEMINI_API_KEY GOOGLE_API_KEY GOOGLE_GENERATIVE_AI_API_KEY  # no key goes near a container
@@ -46,7 +46,7 @@ as_tester() {  # name command...: run in the container as tester, in its home
 }
 
 # Inside the container, with its Python: the server answers, the page is the built page, /api/projects lists the
-# default project, and an item made through the agent API is listed. Prints the item lines.
+# default project, and a task made through the agent API is listed. Prints the task lines.
 CHECK='
 import json, sys, urllib.request
 base = "http://127.0.0.1:7340"
@@ -60,8 +60,8 @@ projects = json.loads(get("/api/projects"))
 assert "default" in json.dumps(projects), projects
 title = sys.argv[1]
 print(get("/p/default/do?by=linux-test", ("new P2 " + title + "\n").encode()).strip())
-items = get("/p/default/items")
-assert title in items, items
+tasks = get("/p/default/tasks")
+assert title in tasks, tasks
 print("ok:", sys.version.split()[0], "| page", len(html), "bytes | projects", json.dumps(projects)[:80])
 '
 INSTALL="curl -fsSL $URL/install.sh | TASKA_BASE_URL=$URL sh"
@@ -69,7 +69,7 @@ WGET_INSTALL="wget -qO- $URL/install.sh | TASKA_BASE_URL=$URL sh"
 CMD=(sleep infinity)
 ENVS=()
 
-# -- Ubuntu 24.04: install, check, update (a second run), the item kept --------------------------------------
+# -- Ubuntu 24.04: install, check, update (a second run), the task kept --------------------------------------
 {
     start ubu ubuntu:24.04
     docker exec ubu sh -c 'apt-get update -qq && apt-get install -y -qq python3 curl ca-certificates >/dev/null && useradd -m tester' \
@@ -78,7 +78,7 @@ $CHECK
 EOF" && first=$(as_tester ubu 'cat ~/.local/share/taska/taska.pid') \
         && as_tester ubu "$INSTALL" && second=$(as_tester ubu 'cat ~/.local/share/taska/taska.pid') \
         && [ "$first" != "$second" ] && echo "update: pid $first -> $second" \
-        && as_tester ubu "python3 -c 'import urllib.request as u; t=u.urlopen(\"http://127.0.0.1:7340/p/default/items\").read().decode(); assert \"Hello from Ubuntu\" in t; print(t)'" \
+        && as_tester ubu "python3 -c 'import urllib.request as u; t=u.urlopen(\"http://127.0.0.1:7340/p/default/tasks\").read().decode(); assert \"Hello from Ubuntu\" in t; print(t)'" \
         && as_tester ubu 'test -x ~/.local/bin/taska && ~/.local/bin/taska --help | head -3'
 } > "$LOGS/ubuntu-24.04.log" 2>&1
 result ubuntu-24.04 $?

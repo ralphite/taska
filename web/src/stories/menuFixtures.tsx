@@ -1,6 +1,6 @@
 // A sheet or menu open as the page opens it: on the phone a sheet from the bottom over the page under it, on the
 // desktop a menu at the button or the pointer it came from (or a sheet in the middle). What it holds is the page's own
-// parts (itemMenuSheet, moveParentSheet, inputMenuSheet, ...) from the page's own facts, with the item list's demo
+// parts (taskMenuSheet, moveParentSheet, inputMenuSheet, ...) from the page's own facts, with the task list's demo
 // project. Used by the stories of menus and sheets.
 import type { ReactNode } from 'react'
 import { Sheet, SheetLayout, type SheetLook, type SheetParts } from '../ui/Sheet'
@@ -9,7 +9,7 @@ import { modelOf } from './fixtures'
 
 import { act } from './acts'
 export { act, acts } from './acts'
-/** The model of the item list's project used by menus. */
+/** The model of the task list's project used by menus. */
 export const menuModel = () => modelOf(PROJECT)
 
 /** Where the desktop's menu opens: under a button at the right of the pane's bar (its right edge at the button's, as
@@ -18,8 +18,8 @@ export const AT_BUTTON = { x: 880 - 384, y: 56 }
 export const AT_BUTTON_NARROW = { x: 880 - 224, y: 56 }
 export const AT_POINTER = (x: number, y: number) => ({ x, y })
 
-/** The page under the sheet: the item list. */
-export const underList = (desk: boolean) => listOf(PROJECT, 'items', {}, desk)
+/** The page under the sheet: the task list. */
+export const underList = (desk: boolean) => listOf(PROJECT, 'tasks', {}, desk)
 
 export function opened(parts: SheetParts, desk: boolean, o: { under?: ReactNode; look?: SheetLook } = {}) {
   return (

@@ -150,7 +150,7 @@ class Notifications(ProjectCase):
         self.assertEqual(self.transport.attempts, 1)
         self.assertEqual(self.transport.wakes, [])
         self.assertEqual(self.n.status()["error"], "CLI unavailable")
-        self.assertEqual(len(self.p.state.items), 1)
+        self.assertEqual(len(self.p.state.tasks), 1)
         self.assertEqual(self.p.state.inputs["r1"].text, "new work")
         self.assertEqual(self.n.sends, set())
 

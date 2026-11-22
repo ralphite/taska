@@ -6,7 +6,7 @@
 import { actionOfKeys, type ActionId } from './actions'
 import { armHint, armedSet, pageStatuses } from '../model/actions'
 import type { App } from './createApp'
-import type { Item } from '../model/types'
+import type { Task } from '../model/types'
 
 const typingIn = (el: Element | null) => /INPUT|TEXTAREA|SELECT/.test(el?.tagName || '') || !!(el as HTMLElement | null)?.isContentEditable
 
@@ -45,9 +45,9 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
       if (open && open.req.kind !== 'search') app.sheets.close()
       return act('search')
     }
-    // the desktop's item menu: arrows walk it, S P T and then a digit or letter set a field, and the keys it shows
+    // the desktop's task menu: arrows walk it, S P T and then a digit or letter set a field, and the keys it shows
     // work from it (it closes, the key acts)
-    const menu = app.desk() ? app.sheets.shown('item-menu') : null
+    const menu = app.desk() ? app.sheets.shown('task-menu') : null
     if (menu && menuKey(app, e, h.m?.byN.get(menu.n), menu.arm)) return
     if (menu && /^[a-zA-Z]$/.test(e.key)) app.sheets.close()
     else if (app.stores.sheet.getState().spec) return // a sheet or menu is open: it has its own keys
@@ -93,9 +93,9 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
   }
 }
 
-/** A key in the desktop's item menu: the arrows walk it; with S or P shown, the key sets that field (as the menu
+/** A key in the desktop's task menu: the arrows walk it; with S or P shown, the key sets that field (as the menu
  * numbers it); S, P or T show that field (T: its tags, whose field takes the keys typed in it). -> whether it was the menu's */
-function menuKey(app: App, e: KeyboardEvent, it: Item | undefined, arm: 's' | 'p' | 't' | null): boolean {
+function menuKey(app: App, e: KeyboardEvent, it: Task | undefined, arm: 's' | 'p' | 't' | null): boolean {
   const box = app.fields.get('sheet')
   if (!box || !it || e.target instanceof HTMLInputElement) return false
   const k = e.key
@@ -113,14 +113,14 @@ function menuKey(app: App, e: KeyboardEvent, it: Item | undefined, arm: 's' | 'p
   if (to) {
     e.preventDefault()
     app.sheets.close()
-    void app.items.change(it.n, to[0], to[1])
+    void app.tasks.change(it.n, to[0], to[1])
     return true
   }
   const low = k.toLowerCase()
   if (low === 's' || low === 'p' || low === 't') {
     e.preventDefault()
     const at = app.stores.sheet.getState().spec?.at
-    app.sheets.open({ kind: 'item-menu', n: it.n, arm: low }, { pop: true, focus: false, narrow: true, at })
+    app.sheets.open({ kind: 'task-menu', n: it.n, arm: low }, { pop: true, focus: false, narrow: true, at })
     return true
   }
   if (/^[0-9]$/.test(k)) {

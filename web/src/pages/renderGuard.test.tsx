@@ -7,7 +7,7 @@ import { RenderGuard } from './RenderGuard'
 
 function Page({ ok }: { ok: boolean }) {
   if (!ok) throw new TypeError('n.tags is not iterable')
-  return <p>Items</p>
+  return <p>Tasks</p>
 }
 
 afterEach(() => {
@@ -36,12 +36,12 @@ describe('RenderGuard', () => {
         <Page ok />
       </RenderGuard>,
     )
-    expect(screen.queryByText('Items')).toBeNull() // the same copy: not drawn again
+    expect(screen.queryByText('Tasks')).toBeNull() // the same copy: not drawn again
     rerender(
       <RenderGuard again={2} reload={reload}>
         <Page ok />
       </RenderGuard>,
     )
-    expect(screen.getByText('Items')).toBeTruthy()
+    expect(screen.getByText('Tasks')).toBeTruthy()
   })
 })

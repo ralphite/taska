@@ -1,6 +1,6 @@
 // The box keeps its height while you record, whatever else the page draws meanwhile (B481); the line on top names what
 // it writes to as the page does everywhere (T529).
-// guards: src/features/composer/ src/pages/ProjectPageContainer.tsx src/ui/PaneFrame.tsx src/features/item/ src/app/voice/ src/app/inputs/ src/stores/box.ts src/stores/outbox.ts
+// guards: src/features/composer/ src/pages/ProjectPageContainer.tsx src/ui/PaneFrame.tsx src/features/task/ src/app/voice/ src/app/inputs/ src/stores/box.ts src/stores/outbox.ts
 import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
 import { FOOT, TALK, box as field, boxLine, duo, pane, recording, talk } from './ui'
@@ -35,7 +35,7 @@ test('what scrolls shows only around the top of the box: from its middle down th
 }) => {
   const many = Array.from(
     { length: 30 },
-    (_, i) => `new P2 now Item number ${i + 1} with a title long enough`,
+    (_, i) => `new P2 now Task number ${i + 1} with a title long enough`,
   ).join('\n')
   const p = await project(request, {
     agent: `${many}\nnew P1 now A long one\n${Array.from({ length: 60 }, (_, i) => `  Line ${i + 1} of the body.`).join('\n')}\n`,
@@ -75,7 +75,7 @@ test('what scrolls shows only around the top of the box: from its middle down th
   expect(gapPx).toBeGreaterThanOrEqual(20)
 })
 
-test('in two columns the line between them is one line to the bottom of the screen, and the item beside the box can be pointed at (B495)', async ({
+test('in two columns the line between them is one line to the bottom of the screen, and the task beside the box can be pointed at (B495)', async ({
   page,
   request,
 }) => {
@@ -105,7 +105,7 @@ test('in two columns the line between them is one line to the bottom of the scre
   expect(at.lineEnd).toBeGreaterThanOrEqual(at.height - 1) // one line, top to bottom: no second piece under the box
   expect(at.footLeft).toBeGreaterThanOrEqual(at.lineRight - 1) // the box's row is the talk's column only
   expect(at.lineShows).toBe(true)
-  expect(at.inFoot).toBe(false) // the item's column runs down beside the box, free to point at and scroll
+  expect(at.inFoot).toBe(false) // the task's column runs down beside the box, free to point at and scroll
   // the talk, scrolled to its end, still ends clear above the box
   const gap = await talk(page).evaluate((e, foot) => {
     e.scrollTop = e.scrollHeight
@@ -132,7 +132,7 @@ test('correcting a word of a voice note names the input as the page does everywh
     files: [{ f: f.f, name: 'voice 0-07.webm', mime: 'audio/webm' }],
   })
   const id = said.res[0].split(' ')[1]
-  await open(page, p, 'T4') // in the item's thread
+  await open(page, p, 'T4') // in the task's thread
   const note = page.locator(`[data-voice="${id}"]`).filter({ visible: true }).first()
   await expect(note).toBeVisible()
   // select "export" in what it said, as with the mouse or a finger

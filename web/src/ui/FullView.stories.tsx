@@ -3,8 +3,8 @@
 // scrolling either way; × or Esc closes it. On the whole window a table reads as a table on the phone too.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../stories/Frames'
-import { item, modelOf } from '../stories/fixtures'
-import { talkEnv } from '../stories/itemFixtures'
+import { task, modelOf } from '../stories/fixtures'
+import { talkEnv } from '../stories/taskFixtures'
 import { blocks, type MdBlock } from '../model/markdown'
 import { FullView } from './FullView'
 import { Diagram, Rich, Table } from './Markdown'
@@ -12,9 +12,9 @@ import { Diagram, Rich, Table } from './Markdown'
 export default { title: 'Base components/Markdown/Full screen' } satisfies Meta
 type Story = StoryObj
 
-const world = talkEnv(modelOf([item({ n: 12 })]), true).world
+const world = talkEnv(modelOf([task({ n: 12 })]), true).world
 const DIAGRAM = 'graph TD\n  A[You say it] --> B[Organizer files it]\n  B --> C{Agent picks it up}\n  C -->|done| D[Review]\n  C -->|question| E[Needs you]'
-const TABLE = '| Step | Who | Where | When |\n|---|---|---|---|\n| Say it | You | Input box | Any time |\n| File it | Organizer | Items | In seconds |\n| Do it | Agent | Its session | When it is free |'
+const TABLE = '| Step | Who | Where | When |\n|---|---|---|---|\n| Say it | You | Input box | Any time |\n| File it | Organizer | Tasks | In seconds |\n| Do it | Agent | Its session | When it is free |'
 const table = blocks(TABLE).find((b): b is Extract<MdBlock, { kind: 'table' }> => b.kind === 'table')!
 
 /** In the document: the button at the top right, always on the phone, when pointed at on the desktop. */

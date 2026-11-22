@@ -56,7 +56,7 @@ export const Voice: Story = {
     <Frames phoneWidth={393} deskWidth={480}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['not played', chip(voice, { playing: false, t: null })],
             ['playing', chip(voice, { playing: true, t: 23000 })],
             ['paused partway', chip(voice, { playing: false, t: 41000 })],
@@ -78,7 +78,7 @@ export const Together: Story = {
     <Frames phoneWidth={393} deskWidth={480}>
       {() => (
         <States
-          items={[
+          tasks={[
             ['all three', <div className="flex flex-wrap items-end gap-2 p-3"><LiveFiles url={(f) => (f === picture.f ? PICTURE : '#')}>{(media) => <Thumbs files={[voice, picture, pdf]} url={(f) => (f === picture.f ? PICTURE : '#')} play={media.play} tidy on={media.on} />}</LiveFiles></div>],
             ['small pictures', <div className="flex flex-wrap items-end gap-2 p-3"><LiveFiles url={() => PICTURE}>{(media) => <Thumbs files={[picture, { ...picture, f: 'f7-shot.png' }]} url={() => PICTURE} size="size-12" play={media.play} tidy on={media.on} />}</LiveFiles></div>],
           ]}

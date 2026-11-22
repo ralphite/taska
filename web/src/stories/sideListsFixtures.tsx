@@ -8,7 +8,7 @@ import { LOG, shopWithHistory } from './settingsFixtures'
 import { goneRows } from '../model/goneRows'
 import { ActivityList, DeletedList, DeletedView, SideFrame, type ActivityRow, type Side } from '../features/side/SideLists'
 import type { GoneRow } from '../model/goneRows'
-import { talkEnv } from './itemFixtures'
+import { talkEnv } from './taskFixtures'
 import { acts } from './acts'
 
 type Story = StoryObj
@@ -32,7 +32,7 @@ export const page = (side: Side, count: number, list: ReactNode, pane: ReactNode
   render: () => <Frames phone={false} deskWidth={1100} height={560}>{() => <Columns side={side} count={count} list={list} pane={pane} />}</Frames>,
 })
 
-const sideActs = acts('Side list', ['open', 'item', 'input', 'undo', 'more', 'restore'] as const, { open: 'Item page' })
+const sideActs = acts('Side list', ['open', 'task', 'input', 'undo', 'more', 'restore'] as const, { open: 'Task page' })
 
 /** Activity as the page keeps it: a line picked (what it changed opens in the pane: the Actions panel), your change's
  * Undo asking again and then putting it back (Taska). */

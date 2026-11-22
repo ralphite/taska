@@ -1,7 +1,7 @@
 // One input as every list of inputs draws it (T661, the approved "Anchored Stream"): a line with its number and its
 // day and time (edited, a draft of yours on it), its buttons at the end; its words (a long one: four lines, More); its
 // voice notes, pictures and files as chips; and what became of it on a shelf of its own under them. A hairline
-// between rows; under the pointer a row is a shade darker, as the item list's are. Its buttons: the phone's ⋯ (where it does not swipe, D115 #42; Add
+// between rows; under the pointer a row is a shade darker, as the task list's are. Its buttons: the phone's ⋯ (where it does not swipe, D115 #42; Add
 // more, Edit and the rest are in it); the desktop's Voice, Comment and ⋯ as the page's other places have them
 // (PlaceVoice, B498), under the pointer only (or the keys); Voice turns them into the recording strip right there, its
 // ✓ where Voice was, which stops and adds the note to this input. Its ⋯ has Delete, last (B666: no Undo for a while
@@ -10,7 +10,7 @@
 
 import { Fragment, useRef, type ReactNode, type Ref } from 'react'
 import { useSwiped } from './rowSwipe'
-import type { Became, InputLine, ItemRef } from '../model/became'
+import type { Became, InputLine, TaskRef } from '../model/became'
 import { INPUT_ACT_WORD, INPUT_STATES, actsIn, becameText, type InputAct, type InputTone } from '../model/inputStates'
 import { voiceMark } from '../model/inputs'
 import { OUT_ACT_WORD, type OutAct, type OutShow, type OutTone } from '../model/outgoingStates'
@@ -41,7 +41,7 @@ export interface InputRowEvents {
 /** The rows of a list: a hairline between them, across the whole row. */
 export const INPUT_LIST = 'divide-y divide-zinc-200/80 dark:divide-zinc-800/80'
 /** A row: more room under it than over it, so what it became stays with it and apart from the next one's line. Under
- * the pointer (or the keys) a shade darker than the page, as the item list's rows (dark: the same tone as theirs). */
+ * the pointer (or the keys) a shade darker than the page, as the task list's rows (dark: the same tone as theirs). */
 const ROW =
   'group/row px-4 pt-4 pb-5 transition-colors lg:-mx-3 lg:px-3 lg:hover:bg-zinc-100 lg:focus-within:bg-zinc-100 dark:lg:hover:bg-[color-mix(in_oklab,var(--color-zinc-900)_70%,var(--color-zinc-950))] dark:lg:focus-within:bg-[color-mix(in_oklab,var(--color-zinc-900)_70%,var(--color-zinc-950))]'
 /** gone to: lit up for a moment */
@@ -60,8 +60,8 @@ const FAILED = 'border-red-200/80 bg-red-50/70 font-medium text-red-700 dark:bor
 const DONE = 'gap-1.5 border-emerald-200/80 bg-emerald-50/80 font-medium text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300'
 const DID = 'shrink-0 whitespace-nowrap font-medium text-zinc-500 dark:text-zinc-400'
 
-/** An item: its status mark, code and title (cut to fit). */
-function ItemLink({ it, narrow, on }: { it: ItemRef; narrow: boolean; on: Pick<InputRowEvents, 'goto'> }) {
+/** A task: its status mark, code and title (cut to fit). */
+function TaskLink({ it, narrow, on }: { it: TaskRef; narrow: boolean; on: Pick<InputRowEvents, 'goto'> }) {
   return (
     <button onClick={() => on.goto(it.n)} title={it.title} className="inline-flex min-w-0 items-center gap-1.5 text-left text-zinc-800 hover:underline dark:text-zinc-200">
       <StateIcon {...it.status} cls="size-4 shrink-0" />
@@ -79,29 +79,29 @@ const Dot = () => <span>·</span>
 const TINT: Record<InputTone, string> = { busy: BUSY, failed: `${FAILED} flex-wrap`, done: DONE, quiet: `${QUIET} gap-1.5`, plain: `${GREY} text-zinc-500 dark:text-zinc-400` }
 const ACT: Partial<Record<InputTone, string>> = { failed: 'font-semibold underline hover:text-red-900 dark:hover:text-red-200' }
 
-/** What became of it, the same words in every list (model/inputStates): the items with what was done to each (said
- * once over the items it was done to) and the organizer's note; or where it stands, in its tint, with what can be done
+/** What became of it, the same words in every list (model/inputStates): the tasks with what was done to each (said
+ * once over the tasks it was done to) and the organizer's note; or where it stands, in its tint, with what can be done
  * there now. */
 export function BecameLine({ b, id, place, on }: { b: Became; id: string; place: 'row' | 'inputs'; on: Pick<InputRowEvents, 'goto' | 'retry' | 'send' | 'moved'> }) {
   if (b.k === 'filed' || b.k === 'answer') {
-    const rows = b.k === 'filed' ? b.items : [{ did: INPUT_STATES.answer.say, item: b.item }]
+    const rows = b.k === 'filed' ? b.tasks : [{ did: INPUT_STATES.answer.say, task: b.task }]
     const note = b.k === 'filed' ? b.note : null
     if (rows.length === 1 && !note)
       return (
         <div className={`${SHELF} ${GREY}`}>
           {rows[0].did ? <span className={DID}>{rows[0].did}</span> : null}
-          <ItemLink it={rows[0].item} narrow={false} on={on} />
+          <TaskLink it={rows[0].task} narrow={false} on={on} />
         </div>
       )
     const sep = <span className="hidden text-zinc-300 sm:inline dark:text-zinc-700">·</span>
     return (
       <div className={`${SHELF} ${GREY} flex-wrap gap-x-3 gap-y-1.5`}>
-        {rows.map(({ did, item }, i) => (
-          <span key={item.n} className="contents">
+        {rows.map(({ did, task }, i) => (
+          <span key={task.n} className="contents">
             {i ? sep : null}
             <span className="flex min-w-0 items-center gap-1.5">
               {did && !(i && rows[i - 1].did === did) ? <span className={DID}>{did}</span> : null}
-              <ItemLink it={item} narrow={rows.length > 1} on={on} />
+              <TaskLink it={task} narrow={rows.length > 1} on={on} />
             </span>
           </span>
         ))}
@@ -203,7 +203,7 @@ export function InputRow({ x, text, files, place = 'row', lit = false, rec = nul
   rowRef?: Ref<HTMLElement>
   /** the phone swipes it (its ⋯ goes: a long press opens its menu) */
   swipe?: InputSwipe | null
-  /** drawn swiped this far (right: opening its item; left: Move and Delete left open) */
+  /** drawn swiped this far (right: opening its task; left: Move and Delete left open) */
   swiped?: number
   on: InputRowEvents
 }) {
@@ -248,7 +248,7 @@ export function InputRow({ x, text, files, place = 'row', lit = false, rec = nul
     </article>
   )
   if (!swipe) return row
-  // the phone's swipe (D115 #42): right opens the item it became, left shows Move and Delete; a long press, its menu
+  // the phone's swipe (D115 #42): right opens the task it became, left shows Move and Delete; a long press, its menu
   return (
     <div className="relative overflow-hidden">
       <div data-swipe-left hidden className="absolute inset-0 flex items-center gap-2 bg-blue-600 pl-6 text-sm font-semibold text-white dark:bg-blue-500">
@@ -280,7 +280,7 @@ export function InputRow({ x, text, files, place = 'row', lit = false, rec = nul
 
 const SWIPE_BTN = 'flex w-19 flex-col items-center justify-center gap-1 text-xs font-semibold text-white'
 
-/** What a row swiped shows (the phone's Inputs tab): the item it opens (its code; none: no swipe right), Move (when it
+/** What a row swiped shows (the phone's Inputs tab): the task it opens (its code; none: no swipe right), Move (when it
  * can go to another project), Delete. */
 export interface InputSwipe {
   open: string | null

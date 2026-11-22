@@ -2,9 +2,9 @@
 // "key#12"), which are resolved, which hold an agent's word you have not seen, the contents of a long one, whether its
 // first paragraph is its title, and what a comment written now goes to.
 
-import { userWord } from './items'
+import { userWord } from './tasks'
 import { codeOf, liveN, type ProjectModel } from './project'
-import type { Block, Comment, Doc, Item } from './types'
+import type { Block, Comment, Doc, Task } from './types'
 
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' }
 
@@ -87,8 +87,8 @@ export function blockKeys(d: Doc): string[] {
   return d.blocks.map((b) => `${b.key}~${(seen[b.key] = (seen[b.key] ?? -1) + 1)}`)
 }
 
-/** The item's latest question points at this document, and you replied on the item instead of picking in it. */
-export function skipped(d: Doc, it: Item | undefined): boolean {
+/** The task's latest question points at this document, and you replied on the task instead of picking in it. */
+export function skipped(d: Doc, it: Task | undefined): boolean {
   const asks = (it?.thread || []).filter((x) => x.kind === 'ask' && new RegExp(`\\bD${d.d}\\b`).test(x.text))
   const x = asks.at(-1)
   return !!(it && x && it.thread.slice(it.thread.indexOf(x) + 1).some(userWord))
@@ -127,7 +127,7 @@ export const commentCount = (d: Doc) =>
  * changed since). */
 export const listedCommentCount = (d: Doc) => d.blocks.reduce((k, b) => k + b.comments.length, 0) + (d.whole?.length || 0)
 
-/** The documents as Documents lists them, the newest first: each with its item (its code and title) and how many
+/** The documents as Documents lists them, the newest first: each with its task (its code and title) and how many
  * comments it has. */
 export function listedDocs(m: ProjectModel): { d: number; title: string; web: boolean; on: string; comments: number }[] {
   return m.docs

@@ -1,5 +1,5 @@
 // The box: what it writes to, its draft there (words and files), and sending. A draft belongs to what it is written
-// to: an item (a reply, "F12"), a new input ("new"), an edit of something you said ("edit r12", "append r12"), so
+// to: a task (a reply, "F12"), a new input ("new"), an edit of something you said ("edit r12", "append r12"), so
 // unsent words never go elsewhere. A file is sent to Taska as soon as you add it; what you send waits for its files.
 // What is still on its way can be cancelled (its ×); once Taska has it, its ⋯ deletes it (B666: no Undo for a while
 // after sending). An edit or details added show at once and are saved behind you.
@@ -45,7 +45,7 @@ export interface BoxDeps {
   refresh?(slug: string): Promise<void>
   /** the other tabs: this draft went out from here */
   sent?(slug: string, key: DraftKey): void
-  /** a reply to the item open: its talk goes to its end, where the reply shows */
+  /** a reply to the task open: its talk goes to its end, where the reply shows */
   replied?(slug: string, scope: string): void
   /** what has to reach Taska is asked until it answers (its pauses end at once when Taska may be back) */
   delivery?: Delivery
@@ -174,7 +174,7 @@ export class Box {
     this.d.sent?.(slug, key)
   }
 
-  /** Send what the box has, to what it writes to. `answer`: the choices picked on the item's question, which go with
+  /** Send what the box has, to what it writes to. `answer`: the choices picked on the task's question, which go with
    * it as one answer (B145: the choices and what you wrote go together, whichever you send with). -> whether anything
    * went */
   send(slug: string, m: ProjectModel | null, scope: string | null, draft?: DraftKey, answer?: { text: string; done(): void } | null): boolean {
@@ -183,7 +183,7 @@ export class Box {
     const key = draft ?? this.key(scope, mode)
     const text = this.text(slug, key).trim()
     const files = st.files[key] || []
-    // the item's own reply, with the choices picked on its question (not an edit or a correction the box writes)
+    // the task's own reply, with the choices picked on its question (not an edit or a correction the box writes)
     if (answer && scope && key === replyDraft(scope)) {
       this.write(slug, key, '')
       st.takeFiles(key)

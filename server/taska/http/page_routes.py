@@ -10,7 +10,7 @@
     GET  picture-sizes          each picture's width and height
     POST page-log               the page's own records, into the log
     POST diagram-failed         {d, v, key, error}: a document's diagram the page could not draw, to its writer
-    POST move-input, move-item  work that belongs in another project
+    POST move-input, move-task  work that belongs in another project
 """
 
 from __future__ import annotations
@@ -152,14 +152,14 @@ def post(ctx: "AppContext", req: Request, p: Project, sub: str) -> Response:
     if sub == "/api/move-input":
         d = req.json_body(10_000)
         return as_json(ctx.workspace.moves.input(p, ctx.workspace.projects.get(str(d.get("to") or "")), d.get("id")))
-    if sub == "/api/move-item":
+    if sub == "/api/move-task":
         cid = req.arg("id")[:64]
         ws, kept = ctx.workspace, ctx.pages(p).once.moves
         with ws.moves.one_at_a_time:  # a move sent again after a lost answer is done once
             done = kept.get(cid)
             if done is None:
                 d = req.json_body(10_000)
-                done = (ws.moves.item(p, ws.projects.get(str(d.get("to") or "")), d.get("ref"), d.get("under")), 200)
+                done = (ws.moves.task(p, ws.projects.get(str(d.get("to") or "")), d.get("ref"), d.get("under")), 200)
                 kept.put(cid, done)
         return as_json(done[0], done[1])
     return text(404, NOT_FOUND)
@@ -248,6 +248,6 @@ def _page_log(ctx: "AppContext", req: Request, p: Project) -> None:
         where = re.search(r"/([A-Z]\d+)\b", str(e.get("where", "")))
         ctx.log.log(level, page_line(kind, e), extra={"f": {
             **e, "source": "page", "kind": kind, "project": p.slug, "tab": req.header("X-Taska-Tab") or None, "who": "you",
-            "item": where.group(1) if where else None, "via": req.via()}})
+            "task": where.group(1) if where else None, "via": req.via()}})
         if kind == "error" and level == logging.ERROR:
             ctx.page_bugs.seen(e, p.slug, ctx.page.version(), ctx.workspace.projects.get("taska"))

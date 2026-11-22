@@ -70,7 +70,7 @@ export function DocPaneActs({ web, inspect, whole, deleting, on }: { web: boolea
   )
 }
 
-/** Back to where it was opened from: Documents, Activity or Deleted, else its item. */
+/** Back to where it was opened from: Documents, Activity or Deleted, else its task. */
 export function DocPaneNav({ to, onBack }: { to: string; onBack(): void }) {
   return (
     <button onClick={onBack} aria-label={`Back to ${to}`} title={`Back to ${to} · Esc`} className="flex h-9 items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700">

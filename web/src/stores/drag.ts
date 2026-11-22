@@ -1,8 +1,8 @@
-// An item being dragged (the desktop, with a mouse): which, and where it would go: before, after or under a row of
+// A task being dragged (the desktop, with a mouse): which, and where it would go: before, after or under a row of
 // the list, out from under its parent, or into another project in the sidebar.
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
-import type { DropHow } from '../model/items'
+import type { DropHow } from '../model/tasks'
 
 export interface DragState {
   n: number | null

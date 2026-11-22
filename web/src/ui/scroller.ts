@@ -1,5 +1,5 @@
-// The part that scrolls something: the thing itself when it scrolls (the desktop's talk, beside the item), else the
-// nearest part round it that does (the phone's page, the item and its talk on it). So the talk opens at its latest
+// The part that scrolls something: the thing itself when it scrolls (the desktop's talk, beside the task), else the
+// nearest part round it that does (the phone's page, the task and its talk on it). So the talk opens at its latest
 // message and goes to its end after you send in one way on both (T589 #10486: the phone's stayed at its top).
 
 /** `el` itself when it scrolls, else the nearest part round it that does. */

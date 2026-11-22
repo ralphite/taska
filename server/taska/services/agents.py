@@ -1,5 +1,5 @@
 """The agents of one project as Taska sees them: who called when (and from which session), who waits for work,
-what each read, which items each session holds, and what other sessions wrote for it.
+what each read, which tasks each session holds, and what other sessions wrote for it.
 
 Kept in the project's `kv` (agents, reads, heard, guide). Callers hold the project lock.
 """
@@ -13,7 +13,7 @@ from typing import Callable, Dict, List, Optional, Set, Tuple
 
 from ..agent_text import render
 from ..domain import events as ev, includes, rules, sections, versions
-from ..domain.model import Input, Item, Message
+from ..domain.model import Input, Task, Message
 from ..domain.offers import Offers
 from ..domain.state import ProjectState, ident
 from ..domain.text import first_line, seconds
@@ -65,7 +65,7 @@ class AgentActivity:
         self._db = db
         self._changed = changed  # wakes those waiting for news
         self._gone = gone
-        self.version = 0  # bumps when an agent turns up, starts or stops waiting, or reads an item
+        self.version = 0  # bumps when an agent turns up, starts or stops waiting, or reads a task
         self.offers = Offers()  # work handed to a waiting session that does not take it (B832)
         self._saved_at = 0.0
         saved = db.get("agents")
@@ -97,9 +97,9 @@ class AgentActivity:
         self.guide_marks: Dict[str, str] = {str(k): str(v) for k, v in (guide.get("marks") or {}).items()}
         self.blocked: Dict[str, List[Dict[str, object]]] = {}  # per agent: its sessions waiting on the user (T711)
         self.found: Dict[str, Session] = {}  # per session id: what its app says of it now (F768)
-        # I810: a manager's workers that never call Taska, found by their titles: per session id, its title and item
+        # I810: a manager's workers that never call Taska, found by their titles: per session id, its title and task
         self.workers: Dict[str, Tuple[str, int]] = {}
-        self.titled: Dict[str, int] = {}  # I810: its own sessions whose app's title starts with an item's code
+        self.titled: Dict[str, int] = {}  # I810: its own sessions whose app's title starts with a task's code
         # B811: per session id, its long waits for work open now, and when its last one started or ended
         self.listening: Dict[str, int] = {}
         self.listened: Dict[str, float] = {}
@@ -182,10 +182,10 @@ class AgentActivity:
         self._db.put("agents", {k: {"t": v.t, "session": v.session, "sessions": v.sessions, "sids": v.sids,
                                     "parents": v.parents} for k, v in self.agents.items()})
 
-    def read_item(self, n: int, name: object, state: ProjectState) -> None:
-        """An agent read an item (its card, or /next gave it): the page says "Read by" under your last words."""
+    def read_task(self, n: int, name: object, state: ProjectState) -> None:
+        """An agent read a task (its card, or /next gave it): the page says "Read by" under your last words."""
         name = agent_name(name)
-        if name in PEOPLE or n not in state.items:
+        if name in PEOPLE or n not in state.tasks:
             return
         self.reads.setdefault(n, {})[name] = time.time()
         self.version += 1
@@ -296,8 +296,8 @@ class AgentActivity:
 
     # -- holds ------------------------------------------------------------------
 
-    def holder(self, state: ProjectState, it: Item, now: Optional[float] = None) -> Optional[Tuple[str, float]]:
-        """The agent session working on an item: the last one /next gave it to or that wrote to it, while fresh."""
+    def holder(self, state: ProjectState, it: Task, now: Optional[float] = None) -> Optional[Tuple[str, float]]:
+        """The agent session working on a task: the last one /next gave it to or that wrote to it, while fresh."""
         t_now = now or time.time()
         c = state.claims.get(it.n)
         best = (c.who, c.since) if c and t_now - c.since < CLAIM_TTL else None
@@ -350,24 +350,24 @@ class AgentActivity:
         to = {name_key(t) for t in x.to or []}
         return bool(to) and ((bool(ses) and name_key(ses) in to) or name_key(by) in to)
 
-    def calls_for(self, state: ProjectState, by: object, ses: str = "") -> List[Tuple[Item, Message, bool]]:
-        """What other agents or sessions wrote for this session that it has not read yet, oldest first, as (item,
-        message, named it): words addressed to it on any item, and any of theirs on the items it is on."""
+    def calls_for(self, state: ProjectState, by: object, ses: str = "") -> List[Tuple[Task, Message, bool]]:
+        """What other agents or sessions wrote for this session that it has not read yet, oldest first, as (task,
+        message, named it): words addressed to it on any task, and any of theirs on the tasks it is on."""
         if not by or by in PEOPLE:
             return []
         me = ident(by, ses)
         heard, acted = self.heard.get(me, {}), state.first_act(me)
         t_now = time.time()
-        maybe = state.addressed_items | set(state.claims) | {
-            n for n, i in state.items.items() if i.agent and i.status == "doing"}
-        out: List[Tuple[Item, Message, bool]] = []
+        maybe = state.addressed_tasks | set(state.claims) | {
+            n for n, i in state.tasks.items() if i.agent and i.status == "doing"}
+        out: List[Tuple[Task, Message, bool]] = []
         for n in maybe:
-            it = state.items.get(n)
+            it = state.tasks.get(n)
             if not it or it.deleted or it.merged_into:
                 continue
             c = self.holder(state, it, t_now)
             mine = bool(c and c[0] == me)
-            if not mine and n not in state.addressed_items:
+            if not mine and n not in state.addressed_tasks:
                 continue
             mark, took = heard.get(n, 0), acted.get(n, 0)
             for x in reversed(it.thread):
@@ -393,9 +393,9 @@ class AgentActivity:
             if not self._gone():
                 self._db.put("stops", self.stops)
 
-    def heard_item(self, state: ProjectState, n: int, by: object, ses: str = "") -> None:
-        """A session read item n: the messages on it so far have reached it."""
-        it = state.items.get(n)
+    def heard_task(self, state: ProjectState, n: int, by: object, ses: str = "") -> None:
+        """A session read task n: the messages on it so far have reached it."""
+        it = state.tasks.get(n)
         if not by or by in PEOPLE or not it:
             return
         last = int(it.thread[-1].id) if it.thread else 0
@@ -442,8 +442,8 @@ class AgentActivity:
         return {s.cwd for sid, s in self.found.items() if s.cwd and sid not in self.workers}
 
     def adopt(self, workers: Dict[str, Tuple[str, int]], titled: Optional[Dict[str, int]] = None) -> None:
-        """The workers found now (I810): session id -> (its title, the item it works on); and its own sessions whose
-        app's title names an item (session id -> the item), for those on no item otherwise. A change wakes the pages."""
+        """The workers found now (I810): session id -> (its title, the task it works on); and its own sessions whose
+        app's title names a task (session id -> the task), for those on no task otherwise. A change wakes the pages."""
         titled = titled or {}
         if workers != self.workers or titled != self.titled:
             self.workers, self.titled = dict(workers), dict(titled)
@@ -461,7 +461,7 @@ class AgentActivity:
                 if s and s.status == "waiting":
                     mine.setdefault(k, []).append({"session": ses or s.name or sid[:8], "waitingFor": s.waiting_for,
                                                    "since": s.since, **({"on": self.titled[sid]} if sid in self.titled else {})})
-        for sid, (title, n) in self.workers.items():  # I810: a worker waiting on the user, with the item it is on
+        for sid, (title, n) in self.workers.items():  # I810: a worker waiting on the user, with the task it is on
             s = found.get(sid)
             if s and s.status == "waiting":
                 mine.setdefault(s.agent, []).append({"session": title, "waitingFor": s.waiting_for, "since": s.since,
@@ -475,7 +475,7 @@ class AgentActivity:
 
     def roster_news(self, state: ProjectState, by: object, ses: str = "") -> List[str]:
         """T774: who else works on this project, for a session's /next: the other agent sessions heard of in the last
-        day, each with the item it is on and when it was last heard of; told on its first /next, then only when who is
+        day, each with the task it is on and when it was last heard of; told on its first /next, then only when who is
         here or what they are on changed (not as time passes)."""
         me = ident(agent_name(by), session_name(ses))
         holds = self._holds(state)
@@ -490,7 +490,7 @@ class AgentActivity:
                 if who == me:
                     continue
                 on = holds.get(who)
-                rows.append((t, who, state.code(on[0]) if on and on[0] in state.items else ""))
+                rows.append((t, who, state.code(on[0]) if on and on[0] in state.tasks else ""))
         key = f"{agent_name(by)}\x00{session_name(ses)}"
         seen = "|".join(sorted(f"{w}>{c}" for _, w, c in rows))
         if self.roster_told.get(key) == seen:
@@ -505,15 +505,15 @@ class AgentActivity:
             return "just now" if m < 1 else f"{m}m ago" if m < 60 else f"{m // 60}h ago"
 
         said = "; ".join(f"{w} ({'on ' + c + ', ' if c else ''}heard {ago(t)})" for t, w, c in sorted(rows, reverse=True))
-        return [f"other agent sessions here: {said}. An item one of them is on is theirs: leave it, or write to them "
+        return [f"other agent sessions here: {said}. A task one of them is on is theirs: leave it, or write to them "
                 "with `B03 say @<session> ...`."]
 
     def _holds(self, state: ProjectState) -> Dict[str, Tuple[int, float]]:
-        """Per agent session ("claude-code · worker"): the item it is on now and since when (the latest it took)."""
+        """Per agent session ("claude-code · worker"): the task it is on now and since when (the latest it took)."""
         out: Dict[str, Tuple[int, float]] = {}
         t_now = time.time()
-        for n in set(state.claims) | {n for n, i in state.items.items() if i.agent and i.status == "doing"}:
-            it = state.items.get(n)
+        for n in set(state.claims) | {n for n, i in state.tasks.items() if i.agent and i.status == "doing"}:
+            it = state.tasks.get(n)
             if not it or it.deleted or it.merged_into:
                 continue
             h = self.holder(state, it, t_now)
@@ -524,7 +524,7 @@ class AgentActivity:
     def _session(self, k: str, name: str, t: float, sid: str, holds: Dict[str, Tuple[int, float]],
                  waking: Set[str]) -> Dict[str, object]:
         """One session as the page shows it (F768): its name and last call; the id its app knows it by, and what the
-        app says of it (status, since when, what it waits on, its folder); the item it is on; who started it."""
+        app says of it (status, since when, what it waits on, its folder); the task it is on; who started it."""
         row: Dict[str, object] = {"name": name, "t": int(t * 1000)}
         s = self.found.get(sid) if sid else None
         if sid:
@@ -542,7 +542,7 @@ class AgentActivity:
         h = holds.get(ident(k, name))
         if h:
             row["on"] = {"n": h[0], "since": int(h[1] * 1000)}
-        elif sid in self.titled:  # I810: on no item here, but its app's title names one
+        elif sid in self.titled:  # I810: on no task here, but its app's title names one
             row["on"] = {"n": self.titled[sid], "since": s.since if s else 0}
         parent = self.agents[k].parents.get(name)
         if parent:
@@ -572,7 +572,7 @@ class AgentActivity:
             if self.blocked.get(k):
                 row["blocked"] = self.blocked[k]
             out.append(row)
-        # I810: the workers found by their titles, under their app, each with the item it works on
+        # I810: the workers found by their titles, under their app, each with the task it works on
         for sid, (title, n) in self.workers.items():
             s = self.found.get(sid)
             if not s:

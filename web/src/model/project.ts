@@ -2,15 +2,15 @@
 // changes you made that the server does not have yet laid over it. Both are plain values; nothing here changes in
 // place.
 
-import { closed } from './items'
-import type { Comment, Doc, FileRef, Input, Item, Message, NoNews, ProjectFacts, ServerFacts, ViewAnswer, Voice } from './types'
+import { closed } from './tasks'
+import type { Comment, Doc, FileRef, Input, Task, Message, NoNews, ProjectFacts, ServerFacts, ViewAnswer, Voice } from './types'
 import { CODE_LETTER, OLD_LETTERS } from './vocab.gen'
 import { draftKey, draftTarget } from './draftTarget'
 import { isVoice, saidText, withVoice } from './voices'
 
 export interface ServerCopy {
   cursor: string
-  items: ReadonlyMap<number, Item>
+  tasks: ReadonlyMap<number, Task>
   inputs: ReadonlyMap<string, Input>
   docs: ReadonlyMap<number, Doc>
   /** every voice note's words, by its file (B682) */
@@ -21,8 +21,8 @@ export interface ServerCopy {
   at: number
 }
 
-/** A question on a closed item is history, not a pending one. */
-const settled = (it: Item): Item => (closed(it.status) && it.wait ? { ...it, wait: null } : it)
+/** A question on a closed task is history, not a pending one. */
+const settled = (it: Task): Task => (closed(it.status) && it.wait ? { ...it, wait: null } : it)
 
 /** The server's answer, come at `at`, folded into the copy the page has (all of it, or what changed; nothing changed
  * comes only for a copy there is). */
@@ -31,20 +31,20 @@ export function merge(prev: ServerCopy | null, a: ViewAnswer, at: number): Serve
 export function merge(prev: ServerCopy | null, a: ViewAnswer | NoNews, at: number): ServerCopy {
   if (a.same) return { ...(prev as ServerCopy), cursor: a.cursor, server: a.server, at }
   const full = a.full || !prev
-  const items = new Map(full ? [] : prev.items)
+  const tasks = new Map(full ? [] : prev.tasks)
   const inputs = new Map(full ? [] : prev.inputs)
   const docs = new Map(full ? [] : prev.docs)
   const changed = full || !!a.voices?.length || !!a.removed?.voices?.length
   const voices = changed ? new Map(full ? [] : prev.voices) : prev.voices
-  for (const n of a.removed?.items || []) items.delete(n)
+  for (const n of a.removed?.tasks || []) tasks.delete(n)
   for (const id of a.removed?.inputs || []) inputs.delete(id)
   for (const d of a.removed?.docs || []) docs.delete(d)
   for (const f of a.removed?.voices || []) (voices as Map<string, Voice>).delete(f)
-  for (const it of a.items || []) items.set(it.n, settled(it))
+  for (const it of a.tasks || []) tasks.set(it.n, settled(it))
   for (const r of a.inputs || []) inputs.set(r.id, r)
   for (const d of a.docs || []) docs.set(d.d, d)
   for (const v of a.voices || []) (voices as Map<string, Voice>).set(v.f, v)
-  return { cursor: a.cursor, items, inputs, docs, voices, facts: a.project ?? prev?.facts, server: a.server ?? prev?.server, at }
+  return { cursor: a.cursor, tasks, inputs, docs, voices, facts: a.project ?? prev?.facts, server: a.server ?? prev?.server, at }
 }
 
 // -- what was said, with each voice note's words (B682) ---------------------------------------------------------
@@ -97,16 +97,16 @@ const messageWithVoices = (x: Message, inputs: ReadonlyMap<string, Input>, voice
   return { ...x, files, typed, text: own ? saidText(typed, filesWith(r.files, voices)) : typed }
 }
 
-export const itemWithVoices = (it: Item, inputs: ReadonlyMap<string, Input>, voices: Voices): Item =>
+export const taskWithVoices = (it: Task, inputs: ReadonlyMap<string, Input>, voices: Voices): Task =>
   once(it, voices, () => ({ ...it, thread: it.thread.map((x) => messageWithVoices(x, inputs, voices)) }))
 
 
-/** A change to an item shown before the server has it; `add`: an item shown before the server makes it (its number
+/** A change to a task shown before the server has it; `add`: a task shown before the server makes it (its number
  * a stand-in's, from STAND up: its code reads "…" until Taska gives it one). */
-export interface ItemPatch {
+export interface TaskPatch {
   n: number
-  f: Partial<Item>
-  add?: Item
+  f: Partial<Task>
+  add?: Task
   /** gone at once (deleted, moved to another project) */
   gone?: boolean
 }
@@ -114,19 +114,19 @@ export interface ItemPatch {
 /** Stand-in numbers start here, above any real one, growing with time: a stand-in sorts after its older siblings. */
 export const STAND = 1e12
 
-/** The fields of a patch over an item (model/optimistic makes them as the server will); a closed item asks nothing. */
-export function patched(it: Item, f: Partial<Item>): Item {
-  const out: Item = { ...it, ...f }
+/** The fields of a patch over a task (model/optimistic makes them as the server will); a closed task asks nothing. */
+export function patched(it: Task, f: Partial<Task>): Task {
+  const out: Task = { ...it, ...f }
   if (closed(out.status)) out.wait = null
   return out
 }
 
 export interface ProjectModel {
-  /** live items in the server's order */
-  items: Item[]
-  byN: ReadonlyMap<number, Item>
-  /** each item's subitems (not merged) */
-  kids: ReadonlyMap<number, Item[]>
+  /** live tasks in the server's order */
+  tasks: Task[]
+  byN: ReadonlyMap<number, Task>
+  /** each task's subtasks (not merged) */
+  kids: ReadonlyMap<number, Task[]>
   inputs: Input[]
   byId: ReadonlyMap<string, Input>
   docs: Doc[]
@@ -178,21 +178,21 @@ function patchedDoc(doc: Doc, p: DocPatch): Doc {
   return 'f' in p ? { ...doc, ...p.f } : doc
 }
 
-export function project(copy: ServerCopy, patches: readonly ItemPatch[] = [], at = copy.at, inputPatches: readonly InputPatch[] = [], docPatches: readonly DocPatch[] = []): ProjectModel {
+export function project(copy: ServerCopy, patches: readonly TaskPatch[] = [], at = copy.at, inputPatches: readonly InputPatch[] = [], docPatches: readonly DocPatch[] = []): ProjectModel {
   const voices = copy.voices ?? new Map<string, Voice>()
   const joinedInputs = new Map<string, Input>()
   for (const [id, r] of copy.inputs) joinedInputs.set(id, inputWithVoices(r, voices))
-  const byN = new Map<number, Item>()
-  for (const [n, it] of copy.items) byN.set(n, itemWithVoices(it, copy.inputs, voices))
+  const byN = new Map<number, Task>()
+  for (const [n, it] of copy.tasks) byN.set(n, taskWithVoices(it, copy.inputs, voices))
   for (const p of patches) {
     const it = byN.get(p.n)
     if (p.gone) byN.delete(p.n)
     else if (it) byN.set(p.n, patched(it, p.f))
     else if (p.add) byN.set(p.n, p.add)
   }
-  const items = [...byN.values()]
-  const kids = new Map<number, Item[]>()
-  for (const it of items)
+  const tasks = [...byN.values()]
+  const kids = new Map<number, Task[]>()
+  for (const it of tasks)
     if (it.parent && !it.mergedInto) {
       const list = kids.get(it.parent)
       if (list) list.push(it)
@@ -210,7 +210,7 @@ export function project(copy: ServerCopy, patches: readonly ItemPatch[] = [], at
   }
   const inputs = [...byId.values()]
   return {
-    items,
+    tasks,
     byN,
     kids,
     inputs,
@@ -240,7 +240,7 @@ function docsPatched(docs: ReadonlyMap<number, Doc>, patches: readonly DocPatch[
   return [...m.values()]
 }
 
-/** An item's code as the page shows it, padded to the project's width. */
+/** A task's code as the page shows it, padded to the project's width. */
 export function codeOf(m: Pick<ProjectModel, 'byN' | 'width'>, n: number | null | undefined): string {
   if (n == null) return ''
   if (n >= STAND) return '\u2026'
@@ -248,15 +248,15 @@ export function codeOf(m: Pick<ProjectModel, 'byN' | 'width'>, n: number | null 
   return (it ? CODE_LETTER : '?') + String(n).padStart(m.width, '0')
 }
 
-/** The item a merged one went into, and on. */
+/** The task a merged one went into, and on. */
 export function liveN(m: Pick<ProjectModel, 'byN'>, n: number): number {
   let it = m.byN.get(n)
   for (let i = 0; it?.mergedInto && m.byN.has(it.mergedInto) && i < 50; i++) it = m.byN.get(it.mergedInto)
   return it ? it.n : n
 }
 
-/** An item's own files: those of the inputs it was made from (a reply keeps its files to itself). */
-export function filesOf(m: Pick<ProjectModel, 'byId'>, it: Item): FileRef[] {
+/** A task's own files: those of the inputs it was made from (a reply keeps its files to itself). */
+export function filesOf(m: Pick<ProjectModel, 'byId'>, it: Task): FileRef[] {
   const replies = new Set(it.thread.filter((x) => x.by === 'you' && x.src).map((x) => x.src))
   const seen = new Set<string>()
   const out: FileRef[] = []
@@ -270,14 +270,14 @@ export function filesOf(m: Pick<ProjectModel, 'byId'>, it: Item): FileRef[] {
   return out
 }
 
-/** How many inputs an item was made from (an answer to its question is not one): its head's "From N inputs". */
-export const sourceCount = (m: Pick<ProjectModel, 'byId'>, it: Item) => it.srcs.filter((id) => m.byId.get(id)?.kind !== 'answer').length
+/** How many inputs a task was made from (an answer to its question is not one): its head's "From N inputs". */
+export const sourceCount = (m: Pick<ProjectModel, 'byId'>, it: Task) => it.srcs.filter((id) => m.byId.get(id)?.kind !== 'answer').length
 
-/** An item's documents (not deleted). */
+/** A task's documents (not deleted). */
 export const docsOf = (m: Pick<ProjectModel, 'docs'>, n: number) => m.docs.filter((d) => d.n === n)
 
-/** What a code in some words names in this project: an item (T12, or an older code: B12), a document, an input. */
-export function findRef(m: Pick<ProjectModel, 'byN' | 'byId' | 'docs'>, c: string): { kind: 'item'; n: number } | { kind: 'doc'; d: number } | { kind: 'input'; id: string } | null {
+/** What a code in some words names in this project: a task (T12, or an older code: B12), a document, an input. */
+export function findRef(m: Pick<ProjectModel, 'byN' | 'byId' | 'docs'>, c: string): { kind: 'task'; n: number } | { kind: 'doc'; d: number } | { kind: 'input'; id: string } | null {
   if (/^[r#]\d+$/.test(c)) {
     const r = 'r' + c.slice(1)
     return m.byId.has(r) ? { kind: 'input', id: r } : null
@@ -285,11 +285,11 @@ export function findRef(m: Pick<ProjectModel, 'byN' | 'byId' | 'docs'>, c: strin
   const n = Number(c.slice(1))
   if (c[0] === 'D') return m.docs.some((d) => d.d === n) ? { kind: 'doc', d: n } : null
   const it = m.byN.get(n)
-  return it && OLD_LETTERS.includes(c[0]) ? { kind: 'item', n } : null
+  return it && OLD_LETTERS.includes(c[0]) ? { kind: 'task', n } : null
 }
 
-/** The items with a draft not sent: words in any tab of this browser, or files waiting (a draft of a comment on a
- * document counts for the item it belongs to). */
+/** The tasks with a draft not sent: words in any tab of this browser, or files waiting (a draft of a comment on a
+ * document counts for the task it belongs to). */
 export function draftCodes(m: ProjectModel, words: Readonly<Record<string, string>>, files: Readonly<Record<string, readonly unknown[]>>): Set<string> {
   const out = new Set<string>()
   for (const k of new Set([...Object.keys(words), ...Object.keys(files)])) {

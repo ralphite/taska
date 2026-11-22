@@ -9,7 +9,7 @@ import { button, one } from './tipFixtures'
 export default { title: 'Base components/Tips/On buttons' } satisfies Meta
 type Story = StoryObj
 
-export const OnApprove: Story = { ...one(() => listOf(PROJECT, 'items', {}, true), button('[data-n="3"]', 'Approve'), { height: 520 }), name: 'On Approve, in a row that waits on you' }
+export const OnApprove: Story = { ...one(() => listOf(PROJECT, 'tasks', {}, true), button('[data-n="3"]', 'Approve'), { height: 520 }), name: 'On Approve, in a row that waits on you' }
 export const OnHideSidebar: Story = { ...one(() => <div className="h-full w-60">{side(false)}</div>, 'button[aria-label="Hide sidebar"]', { height: 520 }), name: 'On Hide sidebar' }
 export const OnRailProject: Story = { ...one(() => <div className="h-full w-14">{rail({ look: { slug: 'home', as: 'pointed' } })}</div>, '#rail a[aria-label="Home"]', { height: 520 }), name: 'On a project in the rail' }
 export const OnRailSettings: Story = { ...one(() => <div className="h-full w-14">{rail()}</div>, '#rail button[aria-label="Settings"]', { height: 520 }), name: 'On Settings in the rail' }

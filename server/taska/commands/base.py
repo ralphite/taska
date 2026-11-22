@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Protocol, Tuple
 
 from ..domain.events import Event
-from ..domain.model import Input, Item
+from ..domain.model import Input, Task
 from ..domain.rules import RefContext
 from ..domain.state import ProjectState
 from ..domain.vocab import PEOPLE
@@ -115,8 +115,8 @@ class Run:
             event.ses = self.session
         self.project.emit(event)
 
-    def gone_note(self, it: Optional[Item]) -> str:
-        """What an agent hears when it writes to an item the user deleted."""
+    def gone_note(self, it: Optional[Task]) -> str:
+        """What an agent hears when it writes to a task the user deleted."""
         if not it or not it.deleted or self.person:
             return ""
         return f" (note: the user deleted {self.state.code(it.n)} together with input {it.deleted}: stop working on it)"

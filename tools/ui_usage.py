@@ -29,10 +29,10 @@ def when(t: str) -> datetime:
 
 
 def name(e: Dict[str, Any]) -> str:
-    """A control's name with its numbers left out, so every row or item code is one control."""
+    """A control's name with its numbers left out, so every row or task code is one control."""
     what = str(e.get("what") or "")
     if e.get("role") == "row":
-        return "row (opens the item)"
+        return "row (opens the task)"
     return re.sub(r"\d+", "#", what)[:50] or "(no name)"
 
 

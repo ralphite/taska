@@ -35,8 +35,8 @@ export function inputMenuFacts(m: ProjectModel, r: Input, otherProjects: number,
   }
 }
 
-/** What Move says about it: its code and words, the items it made (they move too), whether the organizer made them,
- * and the item it was said on. */
+/** What Move says about it: its code and words, the tasks it made (they move too), whether the organizer made them,
+ * and the task it was said on. */
 export function inputMoveFacts(m: ProjectModel, r: Input) {
   const made = r.touched.filter((n) => n !== r.scope && m.byN.has(n) && !m.byN.get(n)?.archived)
   return {

@@ -25,4 +25,4 @@ export const ResolvedThread: Story = { ...one({}, { ...PLAN, resolved: { 'p1#1':
 export const ResolvedThreadOpened: Story = { ...one({ threads: ['p1#1'] }, { ...PLAN, resolved: { 'p1#1': '2026-10-23T14:25:00-07:00' } }), name: 'Thread resolved, opened again' }
 // ---- more states (T636)
 export const SpeakingAboutAParagraph: Story = { ...one({ speaking: { key: 'p1', bar: false } }), name: 'Speaking about a paragraph' }
-export const AnItemOfAListPicked: Story = { ...one({ quote: { key: 'l1', text: 'Write the goals' } }), name: 'An item of a list picked' }
+export const AnTaskOfAListPicked: Story = { ...one({ quote: { key: 'l1', text: 'Write the goals' } }), name: 'A task of a list picked' }

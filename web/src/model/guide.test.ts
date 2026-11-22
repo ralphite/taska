@@ -24,8 +24,8 @@ describe('guideParts', () => {
 
   test('a command and what it does; a further line continues what it does, a line under the command adds to it', () => {
     const rows = parts.flatMap((p) => (p.kind === 'rows' ? p.rows : []))
-    expect(rows[0]).toEqual({ cmd: 'curl -s BASE/next', say: 'what to do now: the inbox first, items the user replied on, then the next item  <- start here' })
-    expect(rows.find((r) => r.cmd === 'curl -s BASE/items')?.say).toMatch(/\[\^parent\] flag: \? you asked .* filters: \?q=word/)
+    expect(rows[0]).toEqual({ cmd: 'curl -s BASE/next', say: 'what to do now: the inbox first, tasks the user replied on, then the next task  <- start here' })
+    expect(rows.find((r) => r.cmd === 'curl -s BASE/tasks')?.say).toMatch(/\[\^parent\] flag: \? you asked .* filters: \?q=word/)
     expect(rows.find((r) => r.cmd.startsWith('new bug'))?.cmd).toBe('new bug P1 now parent=B03 src=r12 Export ignores the active filter\n  <optional body, indented>')
   })
 

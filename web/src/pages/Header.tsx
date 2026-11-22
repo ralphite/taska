@@ -24,7 +24,7 @@ const PILL: Record<AgentTone, [string, string]> = {
   blocked: ['bg-amber-50 text-amber-800 ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/25', 'bg-amber-500 dark:bg-amber-400'],
 }
 
-/** "Out of reach, retrying…" while the server is away: in the agent pill's place, and on the phone over an item's page. */
+/** "Out of reach, retrying…" while the server is away: in the agent pill's place, and on the phone over a task's page. */
 export function OfflinePill() {
   return (
     <span

@@ -1,5 +1,5 @@
 // Settings' sections: each with its address, icon, name and what it is for, all for every project. Documents,
-// Activity and Deleted are lists beside the items on the desktop, and pages here on the phone. (Agents are the agent
+// Activity and Deleted are lists beside the tasks on the desktop, and pages here on the phone. (Agents are the agent
 // pill's sheet.)
 
 import type { Place } from '../../model/route'
@@ -8,14 +8,14 @@ import type { IconName } from '../../ui/icon-paths'
 export type SectionKey = 'projects' | 'phone' | 'notifications' | 'spellings' | 'organizer' | 'shared' | 'docs' | 'log' | 'deleted'
 
 export const SECTIONS: Record<SectionKey, { path: string; icon: IconName; name: string; about: () => string }> = {
-  docs: { path: 'docs', icon: 'doc', name: 'Documents', about: () => 'Each opens with its item' },
+  docs: { path: 'docs', icon: 'doc', name: 'Documents', about: () => 'Each opens with its task' },
   log: { path: 'log', icon: 'history', name: 'Activity', about: () => 'Undo puts back your changes' },
-  deleted: { path: 'deleted', icon: 'trash', name: 'Deleted', about: () => 'Inputs, items and documents' },
+  deleted: { path: 'deleted', icon: 'trash', name: 'Deleted', about: () => 'Inputs, tasks and documents' },
   projects: { path: 'projects', icon: 'folder', name: 'Projects', about: () => 'Renaming keeps links working' },
   phone: { path: 'phone', icon: 'phone', name: 'Use on your phone', about: () => 'Open Taska on your phone.' },
   notifications: { path: 'notifications', icon: 'bell', name: 'Notifications', about: () => 'Alerts when something needs you' },
   spellings: { path: 'spellings', icon: 'pencil', name: 'Voice spellings', about: () => 'Add one by selecting wrong words in a voice note.' },
-  organizer: { path: 'organizer', icon: 'sparkle', name: 'Organizer', about: () => 'Turns what you say into items across all projects.' },
+  organizer: { path: 'organizer', icon: 'sparkle', name: 'Organizer', about: () => 'Turns what you say into tasks across all projects.' },
   shared: { path: 'shared', icon: 'book', name: 'Shared rules', about: () => 'Kept once for every project. A line {{name}} in a project’s rules puts one there.' },
 }
 

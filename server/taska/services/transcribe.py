@@ -363,12 +363,12 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
     are the note's)}, biased toward the project's own vocabulary. path: the note on disk. Raises Err when no model
     answered. first(words): the speech model's words, as soon as they are in while the main model still works (T687:
     about 2 s instead of up to a minute); the answer's words then take their place."""
-    words, items, titles = h.context(scope)
+    words, tasks, titles = h.context(scope)
     fixes = h.fixes()
     terms = voice_terms(words, fixes)
     audio = {"inline_data": {"mime_type": mime.split(";")[0], "data": base64.b64encode(data).decode()}}
-    vocab = voice_vocab(terms, items, fixes)  # B724: the open items' codes and the product's words too
-    prompt = voice_prompt(terms, items, fixes, h.prefs())
+    vocab = voice_vocab(terms, tasks, fixes)  # B724: the open tasks' codes and the product's words too
+    prompt = voice_prompt(terms, tasks, fixes, h.prefs())
     t0, times = time.time(), {}
     steps: List[Step] = []
     hedge = h.hedge()
@@ -411,9 +411,9 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
         tr = ""
     if err is None and tr and not echoed(tr, titles):
         out["tr_by"] = "pro"
-    elif alt_err is None:  # the main one refused, failed, stopped early, heard nothing or wrote only item titles: the speech model's words
+    elif alt_err is None:  # the main one refused, failed, stopped early, heard nothing or wrote only task titles: the speech model's words
         tr, alt = alt, ""
-    elif err is None:  # nothing heard but item titles, and no second opinion
+    elif err is None:  # nothing heard but task titles, and no second opinion
         out["tr_by"], tr = "main", ""
     else:
         tr = None
@@ -443,7 +443,7 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
             tr, alt = tr.replace(c["wrong"], c["right"]), alt.replace(c["wrong"], c["right"])
     if out["tr_by"] == "pro" and alt:  # B724: where the two heard differently, reviewers settle it
         t1 = time.time()
-        tr, doubts = voice_vote.settle(steps, audio, tr, alt, voice_glossary(items, fixes, terms), VOTE_MODELS)
+        tr, doubts = voice_vote.settle(steps, audio, tr, alt, voice_glossary(tasks, fixes, terms), VOTE_MODELS)
         if steps[-1]["step"] == "vote":
             times["vote"] = round(time.time() - t1, 1)
         times["total"] = round(time.time() - t0, 1)

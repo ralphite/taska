@@ -1,7 +1,7 @@
 """The HTTP application: from a request to an answer. It puts the routes in front of the workspace: who may come
 in, which project an address names, and the routes for agents, the page and the workspace.
 
-The same address answers a person and an agent differently: /p/x/B03 opens the page in a browser and gives the item's
+The same address answers a person and an agent differently: /p/x/B03 opens the page in a browser and gives the task's
 card to curl.
 """
 

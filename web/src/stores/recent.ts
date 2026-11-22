@@ -1,4 +1,4 @@
-// The items and documents you opened lately, for the desktop search's Recent (F479): newest first, at most 12, each
+// The tasks and documents you opened lately, for the desktop search's Recent (F479): newest first, at most 12, each
 // as it was when you opened it (its words show while its project's data is not here). Kept in this browser
 // ("taska.recent").
 
@@ -8,14 +8,14 @@ import type { KeyValueStore } from './storage'
 
 export interface Visit {
   project: string
-  kind: 'items' | 'docs'
-  /** the item, or the document's item */
+  kind: 'tasks' | 'docs'
+  /** the task, or the document's task */
   n: number
   /** the document */
   d?: number
   code: string
   title: string
-  /** an item's status; a document's item's code */
+  /** a task's status; a document's task's code */
   status?: Status
   pri?: Pri
   on?: string

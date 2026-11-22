@@ -4,20 +4,20 @@
 // shows its preview and sends it. tools/rule_cases.py runs the same commands on the server (model/ruleCases.gen.ts);
 // optimistic.test.ts holds the previews to what it did.
 //
-// What the page cannot know it leaves to the server's answer: which subitems followed an item to Later, to Won't do
-// or to Archive (the log knows; the view does not), so putting the item back shows only the item back at once.
+// What the page cannot know it leaves to the server's answer: which subtasks followed a task to Later, to Won't do
+// or to Archive (the log knows; the view does not), so putting the task back shows only the task back at once.
 
 import type { Command, CommandOf, Op } from './commands'
 import { allComments, sameText } from './docs'
-import { closed } from './items'
-import { STAND, type DocPatch, type InputPatch, type ItemPatch, type ProjectModel } from './project'
-import type { Comment, Doc, FileRef, Input, Item, Status } from './types'
+import { closed } from './tasks'
+import { STAND, type DocPatch, type InputPatch, type TaskPatch, type ProjectModel } from './project'
+import type { Comment, Doc, FileRef, Input, Task, Status } from './types'
 import { DECISIONS as DECIDE, DEFAULT_PRI, PEOPLE as WHO, PRIORITIES, STATUSES as ALL, TASKA, WHENS } from './vocab.gen'
 import { saidText } from './voices'
 
-/** What a change shows: its items', inputs' and documents' changes over the server's data. */
+/** What a change shows: its tasks', inputs' and documents' changes over the server's data. */
 export interface Shown {
-  patches: ItemPatch[]
+  patches: TaskPatch[]
   inputPatches: InputPatch[]
   docPatches: DocPatch[]
 }
@@ -30,7 +30,7 @@ const NONE = ['', '-', 'none', 'null']
 /** The project as the change goes on: the model with what the change did so far (a change may hold several
  * commands, each sees the ones before). */
 class Work {
-  readonly byN: Map<number, Item>
+  readonly byN: Map<number, Task>
   readonly inputs: Map<string, Input>
   readonly docs: Map<number, Doc>
   readonly out: Shown = { patches: [], inputPatches: [], docPatches: [] }
@@ -44,17 +44,17 @@ class Work {
     this.docs = new Map(m.docs.map((d) => [d.d, d]))
   }
 
-  /** The item a reference names (B03, b3, 3); a merged one leads to where it went, unless `follow` is false. */
-  item(ref: unknown, follow = true): Item | undefined {
+  /** The task a reference names (B03, b3, 3); a merged one leads to where it went, unless `follow` is false. */
+  task(ref: unknown, follow = true): Task | undefined {
     const m = /^([A-Za-z])?0*(\d+)$/.exec(String(ref ?? '').trim())
     let it = m ? this.byN.get(Number(m[2])) : undefined
     for (let i = 0; follow && it?.mergedInto && i < 50; i++) it = this.byN.get(it.mergedInto)
     return it
   }
 
-  /** Every subitem under an item, at any depth (not merged). */
-  under(n: number): Item[] {
-    const out: Item[] = []
+  /** Every subtask under a task, at any depth (not merged). */
+  under(n: number): Task[] {
+    const out: Task[] = []
     for (let todo = [n]; todo.length; ) {
       const p = todo.pop()
       for (const k of this.byN.values())
@@ -66,7 +66,7 @@ class Work {
     return out
   }
 
-  put(n: number, f: Partial<Item>): void {
+  put(n: number, f: Partial<Task>): void {
     const it = this.byN.get(n)
     if (!it) return
     this.byN.set(n, { ...it, ...f })
@@ -90,9 +90,9 @@ class Work {
   }
 }
 
-// -- items (commands/items.py) ---------------------------------------------------------------------------------
+// -- tasks (commands/tasks.py) ---------------------------------------------------------------------------------
 
-/** Tags as sent (a list, or words with or without #) -> as the server keeps them (commands/items.py tags_value): lower
+/** Tags as sent (a list, or words with or without #) -> as the server keeps them (commands/tasks.py tags_value): lower
  * case, without the #, each once, at most 10; null: refused. */
 export function tagsValue(v: unknown): string[] | null {
   const words = Array.isArray(v) ? v.map(String) : String(v ?? '').replace(/,/g, ' ').split(/\s+/)
@@ -106,13 +106,13 @@ export function tagsValue(v: unknown): string[] | null {
   return out.length > 10 ? null : out
 }
 
-/** A field's value as sent -> as the server keeps it (commands/items.py field_value); undefined: refused. */
-function value(w: Work, name: string, v: unknown, me: Item): { ok: boolean; v?: unknown } {
+/** A field's value as sent -> as the server keeps it (commands/tasks.py field_value); undefined: refused. */
+function value(w: Work, name: string, v: unknown, me: Task): { ok: boolean; v?: unknown } {
   const s = String(v ?? '')
   switch (name) {
     case 'after': {
       const refs = Array.isArray(v) ? v.map(String) : s.split(/[\s,]+/).filter(Boolean)
-      const ns = refs.map((r) => w.item(r)?.n)
+      const ns = refs.map((r) => w.task(r)?.n)
       return ns.every((n) => n != null && n !== me.n) ? { ok: true, v: [...new Set(ns as number[])] } : { ok: false }
     }
     case 'tags': {
@@ -145,7 +145,7 @@ function value(w: Work, name: string, v: unknown, me: Item): { ok: boolean; v?: 
       return Number.isFinite(Number(v)) ? { ok: true, v: Number(v) } : { ok: false }
     case 'parent': {
       if (NONE.includes(s.trim().toLowerCase())) return { ok: true, v: null }
-      const p = w.item(v)
+      const p = w.task(v)
       for (let up = p, i = 0; up && i < 100; up = up.parent != null ? w.byN.get(up.parent) : undefined, i++) if (up.n === me.n) return { ok: false }
       return p ? { ok: true, v: p.n } : { ok: false }
     }
@@ -153,8 +153,8 @@ function value(w: Work, name: string, v: unknown, me: Item): { ok: boolean; v?: 
   return { ok: false }
 }
 
-/** What you decided on a proposal or on finished work, kept on the item (domain/projection/items.py _set). */
-export function decision(it: Item, to: string): Pick<Item, 'decided'> | null {
+/** What you decided on a proposal or on finished work, kept on the task (domain/projection/tasks.py _set). */
+export function decision(it: Task, to: string): Pick<Task, 'decided'> | null {
   const was = it.status
   const dec = it.decided
   if (to === was) return null
@@ -169,18 +169,18 @@ export function decision(it: Item, to: string): Pick<Item, 'decided'> | null {
 
 const same = (a: unknown, b: unknown) => (a ?? null) === (b ?? null)
 
-/** Fields put on an item by you: kept as they are, what you decided with them. */
-function setOn(w: Work, it: Item, f: Partial<Item>): void {
+/** Fields put on a task by you: kept as they are, what you decided with them. */
+function setOn(w: Work, it: Task, f: Partial<Task>): void {
   const dec = 'status' in f ? decision(it, String(f.status)) : null
   w.put(it.n, { ...f, ...(dec ?? {}), ...(f.status && closed(f.status) ? { wait: null } : {}) })
 }
 
-/** What you do to an item is done to the items under it (commands/items.py cascade): put Later, they go Later;
+/** What you do to a task is done to the tasks under it (commands/tasks.py cascade): put Later, they go Later;
  * marked won't do, the unfinished ones too; archived, the finished ones too. (Back again: only the ones that
  * followed it, which the page does not know.) */
-function cascade(w: Work, it: Item, f: Partial<Item>): void {
+function cascade(w: Work, it: Task, f: Partial<Task>): void {
   for (const k of w.under(it.n)) {
-    const g: Partial<Item> = {}
+    const g: Partial<Task> = {}
     if (f.when === 'later' && !closed(k.status) && k.when !== 'later') g.when = 'later'
     if (f.status === 'dropped' && !closed(k.status)) g.status = 'dropped'
     if (f.archived === true && closed(k.status) && !k.archived) g.archived = true
@@ -188,21 +188,21 @@ function cascade(w: Work, it: Item, f: Partial<Item>): void {
   }
 }
 
-/** What an item waits for, put on and taken off (commands/items.py after); what the server would refuse (itself, a
+/** What a task waits for, put on and taken off (commands/tasks.py after); what the server would refuse (itself, a
  * group, waiting for each other) it leaves to the server's answer. */
 function after(w: Work, c: CommandOf<'after'>): void {
-  const it = w.item(c.ref)
+  const it = w.task(c.ref)
   if (!it) return
-  const add = (c.add ?? []).map((r) => w.item(r)?.n)
-  const off = (c.del ?? []).map((r) => w.item(r)?.n)
+  const add = (c.add ?? []).map((r) => w.task(r)?.n)
+  const off = (c.del ?? []).map((r) => w.task(r)?.n)
   if (add.some((n) => n == null || n === it.n) || off.some((n) => n == null)) return
   const now = [...(it.after ?? []).filter((n) => !off.includes(n)), ...(add as number[]).filter((n) => !(it.after ?? []).includes(n))]
   if (!same(now, it.after ?? [])) setOn(w, it, { after: now })
 }
 
-/** Tags put on and taken off (commands/items.py tag). */
+/** Tags put on and taken off (commands/tasks.py tag). */
 function tag(w: Work, c: CommandOf<'tag'>): void {
-  const it = w.item(c.ref)
+  const it = w.task(c.ref)
   const add = tagsValue(c.add ?? [])
   const off = tagsValue(c.del ?? [])
   if (!it || !add || !off) return
@@ -211,9 +211,9 @@ function tag(w: Work, c: CommandOf<'tag'>): void {
 }
 
 function set(w: Work, c: CommandOf<'set'>): void {
-  const it = w.item(c.ref)
+  const it = w.task(c.ref)
   if (!it) return
-  const f: Partial<Item> & Record<string, unknown> = {}
+  const f: Partial<Task> & Record<string, unknown> = {}
   for (const [k, v] of Object.entries(c.f || {})) {
     const x = value(w, k, v, it)
     if (!x.ok) return // refused: nothing changes
@@ -223,7 +223,7 @@ function set(w: Work, c: CommandOf<'set'>): void {
   if (f.later_until && it.when !== 'later') f.when = 'later'
   if (it.later_until && !('later_until' in f) && 'when' in f) f.later_until = null
   if (f.when === 'now' && f.later_until) return
-  // any item can be archived; only setting it open again brings it back
+  // any task can be archived; only setting it open again brings it back
   if ('status' in f && (f.group ?? it.group)) return // a group has no status (T856)
   if (f.group && it.status !== 'open') f.status = 'open'
   if (it.archived && 'status' in f && !closed(String(f.status)) && !('archived' in f)) f.archived = false
@@ -236,7 +236,7 @@ function archive(w: Work, c: CommandOf<'archive'>): void {
   const on = c.on ?? true
   const ns: number[] = []
   for (const ref of c.refs || []) {
-    const it = w.item(ref, false)
+    const it = w.task(ref, false)
     if (!it || it.archived === on || ns.includes(it.n) || (on && !closed(it.status))) continue
     ns.push(it.n)
   }
@@ -244,15 +244,15 @@ function archive(w: Work, c: CommandOf<'archive'>): void {
   for (const n of ns) w.put(n, { archived: on })
 }
 
-function newItem(w: Work, c: CommandOf<'new'>): void {
-  const parent = c.parent ? w.item(c.parent) : undefined
+function newTask(w: Work, c: CommandOf<'new'>): void {
+  const parent = c.parent ? w.task(c.parent) : undefined
   if (c.parent && !parent) return
   const title = c.title.split(/\s+/).filter(Boolean).join(' ').slice(0, 300)
   if (!title) return
   // a stand-in, its number from STAND up (its code reads "…" until Taska gives it one)
   const n = STAND + (w.at % 1e11) + w.out.patches.length
   const t = new Date(w.at).toISOString()
-  const add: Item = {
+  const add: Task = {
     n, code: '…', tags: tagsValue(c.tags ?? []) ?? [], group: !!c.group, title, body: (c.body || '').trim(), pri: c.pri || DEFAULT_PRI, when: c.when || 'now',
     status: (c.status || 'open') as Status, parent: parent?.n ?? null, next: (c.next || '').trim(), srcs: [], mergedInto: null, archived: false,
     t0: t, t1: t, by: 'you', thread: [], wait: null, talked: false, rank: null, decided: null,
@@ -262,28 +262,28 @@ function newItem(w: Work, c: CommandOf<'new'>): void {
 }
 
 function remove(w: Work, c: CommandOf<'idel'>): void {
-  const it = w.item(c.ref, false)
+  const it = w.task(c.ref, false)
   if (!it) return
   for (const k of [it, ...w.under(it.n)]) w.gone(k.n)
 }
 
 function hide(w: Work, c: CommandOf<'hide'>): void {
-  const it = w.item(c.ref)
+  const it = w.task(c.ref)
   if (!it?.thread.some((x) => x.id === c.id && !PEOPLE.includes(x.by))) return
   const on = c.on ?? true
   w.put(it.n, { thread: it.thread.map((x) => (x.id === c.id ? { ...x, hidden: on } : x)) })
 }
 
 function merge(w: Work, c: CommandOf<'merge'>): void {
-  const it = w.item(c.ref)
-  const into = w.item(c.into)
+  const it = w.task(c.ref)
+  const into = w.task(c.into)
   if (!it || !into || it.n === into.n) return
   for (const k of w.byN.values()) if (k.parent === it.n && !k.mergedInto && k.n !== into.n) w.put(k.n, { parent: into.n })
   w.put(it.n, { mergedInto: into.n })
 }
 
 function unmerge(w: Work, c: CommandOf<'unmerge'>): void {
-  const it = w.item(c.ref, false)
+  const it = w.task(c.ref, false)
   if (it?.mergedInto != null) w.put(it.n, { mergedInto: null })
 }
 
@@ -296,13 +296,13 @@ function revert(w: Work, c: CommandOf<'revert'>): void {
 
 // -- what you said (commands/inputs.py) --------------------------------------------------------------------------
 
-/** Words on an item waiting for review, or done, take it back to open (r961, r1082). */
+/** Words on a task waiting for review, or done, take it back to open (r961, r1082). */
 function input(w: Work, c: CommandOf<'input'>): void {
-  const it = c.scope && c.kind !== 'cancelled' ? w.item(c.scope) : undefined
+  const it = c.scope && c.kind !== 'cancelled' ? w.task(c.scope) : undefined
   if (it && (it.status === 'review' || it.status === 'done')) setOn(w, it, { status: 'open' })
 }
 
-/** An input to Deleted, with the items only it made. */
+/** An input to Deleted, with the tasks only it made. */
 function deleteInput(w: Work, c: CommandOf<'delete'>): void {
   const r = w.inputs.get(c.id)
   if (!r || r.moved) return
@@ -340,7 +340,7 @@ function correct(w: Work, c: CommandOf<'correct'>): void {
 }
 
 function rescope(w: Work, c: CommandOf<'rescope'>): void {
-  const it = w.item(c.to)
+  const it = w.task(c.to)
   if (it && w.inputs.get(c.id)?.kind !== 'cancelled') w.input(c.id, { scope: it.n })
 }
 
@@ -399,7 +399,7 @@ function resolve(w: Work, c: CommandOf<'dcres'>): void {
 
 function moveDoc(w: Work, c: CommandOf<'dmove'>): void {
   const doc = w.docs.get(c.d)
-  const it = w.item(c.to)
+  const it = w.task(c.to)
   if (doc && it && doc.kind !== 'rules') w.doc({ d: c.d, f: { n: it.n } })
 }
 
@@ -418,7 +418,7 @@ function writeRules(w: Work, md: string): void {
 const later = () => {}
 
 const PREVIEW: { [K in Op]: (w: Work, c: CommandOf<K>) => void } = {
-  new: newItem,
+  new: newTask,
   set,
   tag,
   after,
@@ -475,8 +475,8 @@ export function preview(m: ProjectModel, commands: readonly Command[], at: numbe
   return w.out
 }
 
-/** An item moved to another project (POST move-item): here it and its subitems end won't do and archived. */
-export function movedItem(m: ProjectModel, n: number): Shown {
+/** A task moved to another project (POST move-task): here it and its subtasks end won't do and archived. */
+export function movedTask(m: ProjectModel, n: number): Shown {
   const w = new Work(m, 0)
   const it = w.byN.get(n)
   if (it) for (const k of [it, ...w.under(n)]) w.put(k.n, { status: 'dropped', archived: true })

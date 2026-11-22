@@ -24,7 +24,7 @@ function LiveHelp({ desk, start, q: q0, menu: menu0 }: { desk: boolean; start: s
     back: act('Help: back'),
     menu: setMenu,
   }
-  return <HelpPage desk={desk} topic={topic} q={q} found={searchHelp(q)} back="Items" menu={menu} render={(text) => <Rich text={text} world={WORLD} />} place="" on={on} />
+  return <HelpPage desk={desk} topic={topic} q={q} found={searchHelp(q)} back="Tasks" menu={menu} render={(text) => <Rich text={text} world={WORLD} />} place="" on={on} />
 }
 export const help = (key: string | null, q = '', f: { menu?: boolean; deskWidth?: number } = {}): Story => ({
   render: () => (

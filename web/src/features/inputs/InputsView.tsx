@@ -1,6 +1,6 @@
 // The phone's Inputs tab: everything you said, newest first, each as the row every list of inputs draws (its number
 // and when, its words, its files, what became of it on a shelf under them); a voice note being recorded and what is
-// still on its way as lines of their own on top. A row swipes as the item list's do (D115 #42): right opens the item
+// still on its way as lines of their own on top. A row swipes as the task list's do (D115 #42): right opens the task
 // it became, left shows Move and Delete; held, its menu opens. Props only.
 
 import { useEffect, useRef, type ReactNode } from 'react'
@@ -20,7 +20,7 @@ export interface InputFacts extends InputLine {
   lit?: 'shown' | 'still'
   /** it can go to another project (Move, a swipe left) */
   movable?: boolean
-  /** drawn swiped this far (the phone; right: opening its item, left: Move and Delete left open) */
+  /** drawn swiped this far (the phone; right: opening its task, left: Move and Delete left open) */
   swiped?: number
 }
 
@@ -46,7 +46,7 @@ export interface InputEvents {
   /** swiped left: Move (its sheet) and Delete (Undo puts it back) (D115 #42) */
   moveInput(id: string): void
   remove(id: string): void
-  /** swiped right: the item it became; held: its menu */
+  /** swiped right: the task it became; held: its menu */
   swipe: RowSwipe
 }
 
@@ -55,7 +55,7 @@ export interface InputEvents {
 export function InputCard({ x, world, files, on }: { x: InputFacts; world: InlineWorld; files(f: FileRef[]): ReactNode; on: InputEvents }) {
   const litRef = useLitRow<HTMLElement>(x.lit === 'shown')
   const r = x.r
-  const to = x.became.k === 'filed' ? (x.became.items[0]?.item ?? null) : x.became.k === 'answer' ? x.became.item : null
+  const to = x.became.k === 'filed' ? (x.became.tasks[0]?.task ?? null) : x.became.k === 'answer' ? x.became.task : null
   return (
     <InputRow
       place="inputs"

@@ -1,12 +1,12 @@
 // The looks every part shares, as Tailwind classes: colours carry one meaning each (amber = needs you, blue = in
 // progress, red = P0 and errors, green = done, faded = closed), and the buttons and fields come in a few kinds.
 
-import { ITEM_ACTS, type ActTone, type ItemActId } from '../model/itemActs'
+import { TASK_ACTS, type ActTone, type TaskActId } from '../model/taskActs'
 import { newSlug } from '../model/projects'
 import type { IconName } from './icon-paths'
 import type { Pri, Status } from '../model/types'
 
-/** An item's code, before its title (one colour for all: items have no types, T855). */
+/** A task's code, before its title (one colour for all: tasks have no types, T855). */
 export const CODE_TEXT = 'text-zinc-500 dark:text-zinc-400'
 
 export const PRI_TEXT: Record<Pri, string> = {
@@ -48,7 +48,7 @@ export const BUSY = 'animate-pulse text-blue-600 dark:text-blue-400'
 /** Words that matter less (times, counts, hints): readable on white and on dark (WCAG AA, 4.5:1). Pale grey
  * (zinc-400) is for marks only, and for what is disabled. */
 export const MUTED = 'text-zinc-500 dark:text-zinc-400'
-/** your words in an item's talk: a blue bubble on the right */
+/** your words in a task's talk: a blue bubble on the right */
 export const YOU_BUBBLE =
   'max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_[data-ref]]:text-white [&_[data-ref]]:underline [&_[data-ref]]:decoration-white/60 [&_[data-ref]]:underline-offset-2 [&_a]:text-white [&_a]:decoration-white/60 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_button[data-more]]:text-white [&_code]:bg-white/15 [&_code]:text-white [&_mark]:text-zinc-900 [&_pre]:bg-white/15 [&_pre]:text-white'
 /** A main button; a button's label never wraps (B785). */
@@ -66,8 +66,8 @@ export const NEEDS_PILL =
 const DECIDED_BASE = 'inline-flex h-11 cursor-not-allowed items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-4 text-[15px]'
 export const DECIDED_ON = (tone: string) => `${DECIDED_BASE} border-transparent font-semibold opacity-70 ${tone}`
 export const DECIDED_OFF = `${DECIDED_BASE} border-zinc-200 font-medium text-zinc-400 dark:border-zinc-800 dark:text-zinc-500`
-/** An item action's colour (model/itemActs), chosen (no hover: it cannot be pressed). */
-export const chosenTone = (id: ItemActId) => ACT_LOOK[ITEM_ACTS[id].tone ?? 'quiet'].chosen
+/** A task action's colour (model/taskActs), chosen (no hover: it cannot be pressed). */
+export const chosenTone = (id: TaskActId) => ACT_LOOK[TASK_ACTS[id].tone ?? 'quiet'].chosen
 export const MODIFY_LINK =
   'relative -my-2 h-9 shrink-0 rounded-lg px-2.5 after:absolute after:inset-x-0 after:-inset-y-1 text-sm font-semibold text-blue-600 hover:bg-blue-50 lg:opacity-0 lg:group-hover/form:opacity-100 lg:focus-visible:opacity-100 dark:text-blue-400 dark:hover:bg-blue-400/10'
 export const CHIP = `${HIT} flex h-8 items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80`
@@ -156,7 +156,7 @@ export function newProjectTone(names: readonly string[], title: string): string 
   return slug ? toneOf(projectTones([...names, slug]), slug) : 'bg-zinc-400 dark:bg-zinc-500'
 }
 
-/** Each colour of an item's actions (model/itemActs): its icon in a row (else grey), its swipe's background (else the
+/** Each colour of a task's actions (model/taskActs): its icon in a row (else grey), its swipe's background (else the
  * greys in turn), its button once chosen. */
 const ACT_LOOK: Record<ActTone, { text?: string; bg?: string; chosen: string }> = {
   done: { text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-600 dark:bg-emerald-500', chosen: 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-emerald-950' },
@@ -165,18 +165,18 @@ const ACT_LOOK: Record<ActTone, { text?: string; bg?: string; chosen: string }> 
   ask: { chosen: 'bg-amber-500 text-amber-950 dark:bg-amber-400 dark:text-amber-950' },
   quiet: { chosen: 'bg-zinc-600 text-white dark:bg-zinc-500 dark:text-zinc-950' },
 }
-const look = (id: ItemActId) => {
-  const t = ITEM_ACTS[id].tone
+const look = (id: TaskActId) => {
+  const t = TASK_ACTS[id].tone
   return t ? ACT_LOOK[t] : null
 }
-/** An item action's icon (on a decision's card, `card`). */
-export const actIcon = (id: ItemActId, card = false) => ((card && ITEM_ACTS[id].cardIcon) || ITEM_ACTS[id].icon) as IconName
+/** A task action's icon (on a decision's card, `card`). */
+export const actIcon = (id: TaskActId, card = false) => ((card && TASK_ACTS[id].cardIcon) || TASK_ACTS[id].icon) as IconName
 /** its icon's colour in a row */
-export const actText = (id: ItemActId) => look(id)?.text ?? 'text-zinc-500 dark:text-zinc-400'
+export const actText = (id: TaskActId) => look(id)?.text ?? 'text-zinc-500 dark:text-zinc-400'
 /** its swipe's background; null: the greys in turn */
-export const actBg = (id: ItemActId) => look(id)?.bg ?? null
-/** The step forward that answers what the item needs (Accept, Approve, Answer, Reply) swipes in that need's colour. */
-export const needOfAct = (id: ItemActId): NeedKind | null => (id in NEED ? (id as NeedKind) : null)
+export const actBg = (id: TaskActId) => look(id)?.bg ?? null
+/** The step forward that answers what the task needs (Accept, Approve, Answer, Reply) swipes in that need's colour. */
+export const needOfAct = (id: TaskActId): NeedKind | null => (id in NEED ? (id as NeedKind) : null)
 
 /** A comment of a document: yours blue, an agent's white; who wrote it, in its tone. */
 export const COMMENT_CARD = (by: string) => (by === 'you' ? 'rounded-xl bg-blue-100/80 px-3 py-2 dark:bg-blue-900/40' : 'rounded-xl bg-white px-3 py-2 ring-1 ring-zinc-200/80 dark:bg-zinc-900 dark:ring-zinc-800')

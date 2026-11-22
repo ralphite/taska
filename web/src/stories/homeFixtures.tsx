@@ -2,7 +2,7 @@
 import type { FindAnswer } from '../model/find'
 import type { Need, ProjectRow } from '../model/types'
 import { Frames } from './Frames'
-import { T, item } from './fixtures'
+import { T, task } from './fixtures'
 import { useState } from 'react'
 import { Home, type HomeEvents, type HomeFacts } from '../features/home/Home'
 import { acts } from './acts'
@@ -24,7 +24,7 @@ export const NEEDS: Need[] = [
 ]
 export const rows = homeRows(PROJECTS, NEEDS, now)
 export const facts: HomeFacts = { rows, needs: 13, away: false, gone: null, none: null, q: '', search: { phase: 'ready', answer: null } }
-/** What the search (/api/find) found for "rewrite" in every project: an item, a done one, a won't do one, an archived
+/** What the search (/api/find) found for "rewrite" in every project: a task, a done one, a won't do one, an archived
  * one, what you said. */
 export const answer: FindAnswer = {
   q: 'rewrite',
@@ -32,10 +32,10 @@ export const answer: FindAnswer = {
   marks: ['rewrite'],
   titles: { taska: 'taska', home: 'Home' },
   found: [
-    { project: 'taska', kind: 'items', key: 'i581', n: 581, item: item({ n: 581, code: 'T581', title: 'Rewrite Taska from scratch', status: 'doing' }) },
-    { project: 'home', kind: 'items', key: 'i3', n: 3, item: item({ n: 3, code: 'B3', tags: ['bug'], title: 'Fix the rewrite of the shelf', status: 'done' }) },
-    { project: 'home', kind: 'items', key: 'i9', n: 9, item: item({ n: 9, code: 'T9', title: 'Rewrite the shopping list', status: 'dropped' }) },
-    { project: 'taska', kind: 'items', key: 'i40', n: 40, item: item({ n: 40, code: 'T40', title: 'Old rewrite notes', archived: true }) },
+    { project: 'taska', kind: 'tasks', key: 'i581', n: 581, task: task({ n: 581, code: 'T581', title: 'Rewrite Taska from scratch', status: 'doing' }) },
+    { project: 'home', kind: 'tasks', key: 'i3', n: 3, task: task({ n: 3, code: 'B3', tags: ['bug'], title: 'Fix the rewrite of the shelf', status: 'done' }) },
+    { project: 'home', kind: 'tasks', key: 'i9', n: 9, task: task({ n: 9, code: 'T9', title: 'Rewrite the shopping list', status: 'dropped' }) },
+    { project: 'taska', kind: 'tasks', key: 'i40', n: 40, task: task({ n: 40, code: 'T40', title: 'Old rewrite notes', archived: true }) },
     { project: 'taska', kind: 'inputs', key: 'r315', n: null, code: '#315', title: 'the rewrite should keep every word the agents read', t: T, became: null },
   ],
 }

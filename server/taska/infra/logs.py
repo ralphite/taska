@@ -23,10 +23,10 @@ from typing import Any, Dict, List, Optional
 log = logging.getLogger("taska")
 
 # the table, as it is in every logs.db there is (its columns are what people's queries name)
-FIELDS = ("source", "kind", "project", "tab", "who", "ses", "item", "ms", "status")
+FIELDS = ("source", "kind", "project", "tab", "who", "ses", "task", "ms", "status")
 TABLE = """
 CREATE TABLE IF NOT EXISTS logs (id INTEGER PRIMARY KEY, t TEXT NOT NULL, level TEXT NOT NULL, source TEXT, kind TEXT,
-  project TEXT, tab TEXT, who TEXT, ses TEXT, item TEXT, ms INTEGER, status TEXT, message TEXT, data TEXT);
+  project TEXT, tab TEXT, who TEXT, ses TEXT, task TEXT, ms INTEGER, status TEXT, message TEXT, data TEXT);
 CREATE INDEX IF NOT EXISTS logs_t ON logs (t);
 """
 INSERT = "INSERT INTO logs (t, level, message, data, {0}) VALUES (:t, :level, :message, :data, {1})".format(
@@ -52,6 +52,8 @@ def open_table(path: str) -> None:
         if have and "message" not in have:
             db.execute("ALTER TABLE logs RENAME COLUMN side TO source")
             db.execute("ALTER TABLE logs ADD COLUMN message TEXT")
+        if "item" in have:  # T864: the task a row is about, by its name now
+            db.execute("ALTER TABLE logs RENAME COLUMN item TO task")
         db.executescript(TABLE)
     db.close()
 
@@ -132,5 +134,5 @@ def setup(db_path: Optional[str], level: str = "INFO") -> None:
 
 
 def voice_fix(wrong: str, right: str, **f: Any) -> None:
-    """A voice note heard `wrong` where the speaker said `right` (project, item, input, file, who, via)."""
+    """A voice note heard `wrong` where the speaker said `right` (project, task, input, file, who, via)."""
     log.info(f"voice fix: {wrong} -> {right}", extra={"f": dict(source="server", kind="voicefix", wrong=wrong, right=right, **f)})

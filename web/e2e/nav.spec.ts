@@ -39,7 +39,7 @@ test('r309 B324: a project opens as itself from the home table, though it has so
   await expect(page).toHaveURL(new RegExp(`${p.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(new)?$`))
   if (isDesk(page)) await expect(composeHead(page)).toBeVisible()
   else await expect(page.locator('#list article[data-n]').first()).toBeVisible()
-  await expect(page.locator('[data-part="pane"] [data-item-top]').filter({ visible: true })).toHaveCount(0)
+  await expect(page.locator('[data-part="pane"] [data-task-top]').filter({ visible: true })).toHaveCount(0)
 })
 
 test('r97 r115 r295 r454: the New input page has the box in the middle and all you said below it', async ({
@@ -94,7 +94,7 @@ test('r454: the list under the New input box is everything you said, more loadin
     .toBe(true)
 })
 
-test("D77 #1 #2, D82 #1-3: an item's address reloaded says Loading in its place until the data comes, then shows the item; an item or a document not in the project says so, and the address keeps it", async ({
+test("D77 #1 #2, D82 #1-3: a task's address reloaded says Loading in its place until the data comes, then shows the task; a task or a document not in the project says so, and the address keeps it", async ({
   page,
   request,
 }) => {
@@ -161,7 +161,7 @@ test('D82 #4: a link to a project that never was says only that it is not there;
   await expect(page).toHaveURL(new RegExp(`/p/${p.name}/`))
 })
 
-test("D82 #5: on the phone an item's page says when Taska is out of reach, as the list does", async ({
+test("D82 #5: on the phone a task's page says when Taska is out of reach, as the list does", async ({
   page,
   request,
 }) => {
@@ -223,7 +223,7 @@ test('r1057 r1066 F667: on the desktop a project in the sidebar shows its card a
   await expect(card).toBeVisible({ timeout: 1000 })
   await expect(card).toContainText(p.title)
   await expect(card.locator('[data-card-open]')).toHaveText('4 open')
-  await expect(card.locator('[data-card-closed]')).toHaveText('1 closed · 5 items')
+  await expect(card.locator('[data-card-closed]')).toHaveText('1 closed · 5 tasks')
   await expect(card).toContainText('3 need you')
   // r1066: right beside the row, its left edge inside the sidebar
   const r = (await row.boundingBox())!,

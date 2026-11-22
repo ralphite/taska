@@ -14,7 +14,7 @@ from taska.domain import skills  # noqa: E402
 from taska.services import organizer  # noqa: E402
 from taska.services.workspace import Workspace  # noqa: E402
 
-QA = "回答问题，只答不做。\n\n- 只回答，不改代码、不改文档、不新建事项。"
+QA = "回答问题，只答不做。\n\n- 只回答，不改代码、不改文档、不新建任务。"
 
 
 class Words(unittest.TestCase):
@@ -55,7 +55,7 @@ class Agents(unittest.TestCase):
         rid = lines[0].split()[1]
         with self.p.lock:
             rd = self.p.reading()
-            card = render.card(rd, self.p.state.items[1])
+            card = render.card(rd, self.p.state.tasks[1])
             inbox = render.input_card(rd, self.p.state.inputs[rid])
         for text in (card, inbox):
             self.assertIn("skill /qa (the user applied it to these words; do as it says):", text)

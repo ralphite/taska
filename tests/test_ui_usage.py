@@ -28,7 +28,7 @@ class UiUsage(unittest.TestCase):
         ])
         self.assertEqual(dict(u["used"]["Type · T"]), {"phone": 2, "desk": 1})
         self.assertEqual(u["again"]["Type · T"], 1)
-        self.assertEqual(u["used"]["row (opens the item)"]["phone"], 1)
+        self.assertEqual(u["used"]["row (opens the task)"]["phone"], 1)
         self.assertEqual(u["used"]["Later (under a swiped row)"]["phone"], 1)
         self.assertEqual(u["swipes"][("right", "Done")], 1)
         self.assertEqual(u["filters"]["status=wait"], 1)

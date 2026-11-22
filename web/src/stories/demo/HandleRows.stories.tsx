@@ -1,5 +1,5 @@
 // Demo (T589, D124): rows of the list put off to Later, marked won't do and put back with Undo, done. The phone swipes
-// them; the desktop opens each and uses the buttons over the item. The real page on the phone and the desktop,
+// them; the desktop opens each and uses the buttons over the task. The real page on the phone and the desktop,
 // answered by a real server's recorded answers (recordings/handleRows.*.json).
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { DemoFrames } from './DemoFrames'

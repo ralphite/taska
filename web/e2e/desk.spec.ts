@@ -3,7 +3,7 @@
 import { createHash } from 'node:crypto'
 import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
-import { blockPick, boxLine, commentMode, docBlock, docCard, itemMenu, menuChoice, pageCount, pane, partPick, row, talk, threadPop } from './ui'
+import { blockPick, boxLine, commentMode, docBlock, docCard, taskMenu, menuChoice, pageCount, pane, partPick, row, talk, threadPop } from './ui'
 
 const frameOf = (page: Page) => pane(page).frameLocator('iframe')
 const sheet = (page: Page) => page.locator('[data-part="sheet"]').first()
@@ -12,7 +12,7 @@ test.beforeEach(({ page }) => {
   test.skip(!isDesk(page), 'desktop only')
 })
 
-test('J opens the next item, the dot opens its menu, Esc steps back, ? shows the keys', async ({ page, request }) => {
+test('J opens the next task, the dot opens its menu, Esc steps back, ? shows the keys', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   await page.keyboard.press('j')
@@ -25,14 +25,14 @@ test('J opens the next item, the dot opens its menu, Esc steps back, ? shows the
   await expect(page.locator('#dlgTitle')).toHaveText('Keyboard shortcuts')
 })
 
-test('r45 r330: E archives the open item and Z puts it back', async ({ page, request }) => {
+test('r45 r330: E archives the open task and Z puts it back', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   await row(page, 'Write the user docs').click()
   await page.keyboard.press('e')
-  await expect.poll(async () => p.read('items?archived=1')).toContain('Write the user docs')
+  await expect.poll(async () => p.read('tasks?archived=1')).toContain('Write the user docs')
   await page.keyboard.press('z')
-  await expect.poll(async () => p.read('items?archived=1')).not.toContain('Write the user docs')
+  await expect.poll(async () => p.read('tasks?archived=1')).not.toContain('Write the user docs')
 })
 
 test('r447 r503: a comment on a paragraph of a document is written in the one box, which stays at the bottom (B340)', async ({
@@ -72,13 +72,13 @@ test('two places picked in one paragraph keep two threads; an answer goes to the
     then: `${LOOP.then}T4 doc The plan
   The plan
 
-  - item one is about apples
-  - item two is about pears
+  - task one is about apples
+  - task two is about pears
 `,
   })
   // each selection is posted by the paragraph's key, as the page does (by paragraph number alone, a comment is an
   // answer and joins the thread waiting on the user)
-  const key = createHash('sha1').update('- item one is about apples - item two is about pears').digest('hex').slice(0, 10)
+  const key = createHash('sha1').update('- task one is about apples - task two is about pears').digest('hex').slice(0, 10)
   for (const quote of ['apples', 'pears']) await p.op({ op: 'dc', d: 1, key, quote, text: `About ${quote}` })
   await p.doAs('D1 reply ¶2 The apples answer')
   await open(page, p, 'D1')
@@ -92,7 +92,7 @@ test('two places picked in one paragraph keep two threads; an answer goes to the
   await expect(thread).not.toContainText('About pears')
 })
 
-test("D115 #11: an open item's bar has its row's buttons, Done, Won't do, Later; Archive only once it is done", async ({ page, request }) => {
+test("D115 #11: an open task's bar has its row's buttons, Done, Won't do, Later; Archive only once it is done", async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   await row(page, 'Write the user docs').click()
@@ -158,8 +158,8 @@ test('a web page document is the page alone: no frame or line over it, its colum
   expect(await frame.getAttribute('title')).toBeNull() // no tooltip over the whole page
   expect(await frame.evaluate((e) => getComputedStyle(e).borderTopWidth)).toBe('0px')
   await expect(pane(page).getByText(/^on T4/)).toBeHidden()
-  // B505 (#6505): the page is the column beside its item's conversation
-  const top = await page.locator('[data-item-top]').filter({ visible: true }).first().boundingBox(),
+  // B505 (#6505): the page is the column beside its task's conversation
+  const top = await page.locator('[data-task-top]').filter({ visible: true }).first().boundingBox(),
     f = await frame.boundingBox(),
     count = await page.locator('button[data-count]').filter({ visible: true }).first().boundingBox()
   if (!top || !f || !count) throw new Error('not drawn')
@@ -259,7 +259,7 @@ test('another document opens out of Comment mode (B500)', async ({ page, request
   const mode = commentMode(page)
   await mode.click()
   await expect(mode).toHaveAttribute('aria-pressed', 'true')
-  // within the page, as you go: back to the item, then its other document
+  // within the page, as you go: back to the task, then its other document
   await page.getByRole('button', { name: /^Back to T0*4/ }).filter({ visible: true }).first().click()
   await docCard(page, 'Other page').filter({ visible: true }).first().click()
   await expect(frameOf(page).getByText('Nothing to see here.')).toBeVisible()
@@ -349,7 +349,7 @@ test('D80 #14: a comment on words since changed in the document says so in the t
   await expect(conversation.locator('button.line-through')).toHaveCount(1)
 })
 
-test("D81 #20: Done is one icon wherever it is offered: the item bar's is the same as its row's", async ({
+test("D81 #20: Done is one icon wherever it is offered: the task bar's is the same as its row's", async ({
   page,
   request,
 }) => {
@@ -365,7 +365,7 @@ test("D81 #20: Done is one icon wherever it is offered: the item bar's is the sa
   expect(bar).toBe(inRow)
 })
 
-test('D77 #3: editing an item with a long description and a long talk, its next step and Save are in sight, not under the line to its talk', async ({
+test('D77 #3: editing a task with a long description and a long talk, its next step and Save are in sight, not under the line to its talk', async ({
   page,
   request,
 }) => {
@@ -383,7 +383,7 @@ test('D77 #3: editing an item with a long description and a long talk, its next 
       ).join('\n') + '\n',
   })
   await open(page, p, 'T1')
-  await itemMenu(page).click()
+  await taskMenu(page).click()
   await menuChoice(page, /^Edit\b/).filter({ visible: true }).first().click()
   const save = pane(page).getByRole('button', { name: 'Save', exact: true }).filter({ visible: true }).first()
   await expect(save).toBeVisible()

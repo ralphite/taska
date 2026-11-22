@@ -2,7 +2,7 @@
 // label, B664), the Needs you view (its chip
 // and its rows), the home table and its total, the phone's project list, and what the server tells the other pages
 // (B482, R483: "this inconsistency must never happen").
-// guards: src/app/project/notices.ts src/features/sidebar/ src/features/list/ src/features/home/ src/features/side/ src/pages/Header.tsx src/model/items.ts src/model/projects.ts src/app/projectLists.ts src/app/actions.ts server/taska/services/ server/taska/http/workspace_routes.py server/taska/domain/
+// guards: src/app/project/notices.ts src/features/sidebar/ src/features/list/ src/features/home/ src/features/side/ src/pages/Header.tsx src/model/tasks.ts src/model/projects.ts src/app/projectLists.ts src/app/actions.ts server/taska/services/ server/taska/http/workspace_routes.py server/taska/domain/
 import { expect, test } from '@playwright/test'
 import type { APIRequestContext, Page } from '@playwright/test'
 import { isDesk, open, project } from './seed'
@@ -12,7 +12,7 @@ import { view } from './ui'
 /** the count on the Needs you view's chip */
 const needsCount = (page: Page) => view(page, 'Needs you').locator('.font-mono')
 /** a project's Needs you mark: the mark alone, how many in its label (B664) */
-const needsSaid = (n: number) => `${n} ${n === 1 ? 'item needs' : 'items need'} you`
+const needsSaid = (n: number) => `${n} ${n === 1 ? 'task needs' : 'tasks need'} you`
 
 const server = async (request: APIRequestContext, p: Project) => {
   const list = (await (await request.get('/api/projects')).json()) as { name: string; needs: number }[]
@@ -23,7 +23,7 @@ const server = async (request: APIRequestContext, p: Project) => {
   }
 }
 
-test('r659 R483: the sidebar badge, the Needs you view and the server count the same items (B482)', async ({
+test('r659 R483: the sidebar badge, the Needs you view and the server count the same tasks (B482)', async ({
   page,
   request,
 }) => {
@@ -82,8 +82,8 @@ test('r659 R483: one number everywhere, on the desktop and the phone, the home t
   page,
   request,
 }) => {
-  // what counts: an ask (T1), an ask for what a stuck agent needs (T2), a proposal (T3), finished work (T4), another ask (T5), a subitem
-  // asking under an item still open (T7); what does not: a proposal you replied on (T8), an ask you answered (T9), an
+  // what counts: an ask (T1), an ask for what a stuck agent needs (T2), a proposal (T3), finished work (T4), another ask (T5), a subtask
+  // asking under a task still open (T7); what does not: a proposal you replied on (T8), an ask you answered (T9), an
   // ask on dropped work (T10), a proposal merged away (T11 into T3)
   const p = await project(request, {
     agent: `new P1 now Pick a format
@@ -92,7 +92,7 @@ new P2 now A proposal
 new P2 now Finished work
 new P2 now Keep commits small
 new P2 now The parent
-new P2 now parent=T6 A subitem asking
+new P2 now parent=T6 A subtask asking
 new P2 now A proposal you replied on
 new P2 now An ask you answered
 new P2 now Asked, then dropped

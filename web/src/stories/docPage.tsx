@@ -1,5 +1,5 @@
 // A document open as the page shows it: on the desktop in the pane beside the list (its bar: what it is, its
-// actions, the way back), on the phone in a sheet over its item. What it shows comes from the page's own factsOf and
+// actions, the way back), on the phone in a sheet over its task. What it shows comes from the page's own factsOf and
 // webFacts with a demo project, and the page's DocView, WebPage, Thread and DocEdit draw it, with the state the page
 // keeps for it. Used by the document's stories.
 import { useEffect, useRef, useState, type ReactNode } from 'react'
@@ -17,12 +17,12 @@ import { tickText, tickedBlock, type TickState } from '../model/docTicks'
 import { blockKeys } from '../model/docs'
 import { findRef } from '../model/project'
 import { clock } from '../model/time'
-import type { Doc, Item } from '../model/types'
+import type { Doc, Task } from '../model/types'
 import type { NotSent } from '../model/voiceComments'
 import { PaneFrame } from '../ui/PaneFrame'
 import { PLACE_LEVELS, RecBar } from '../ui/PlaceVoice'
 import { Sheet, SheetLayout } from '../ui/Sheet'
-import { DIAGRAMS, PICTURE, T, item, modelOf } from './fixtures'
+import { DIAGRAMS, PICTURE, T, task, modelOf } from './fixtures'
 import { inFrame, inLayout } from './Frames'
 import { acts } from './acts'
 import { useMedia } from './liveParts'
@@ -32,7 +32,7 @@ const LEVELS = [0.3, 0.75, 0.5, 0.95, 0.4, 0.65, 0.2, 0.85, 0.55, 0.35, 0.9, 0.6
 export const recMeter = (desk: boolean) => <RecBar time={clock(2000)} levels={LEVELS.slice(-(desk ? PLACE_LEVELS.desk : PLACE_LEVELS.phone))} />
 
 /** A document's handlers, each in the Actions panel (stories that draw a document's part alone). */
-export const docOn: DocEvents = acts('Document', ['copyDoc', 'ref', 'picture', 'play', 'words', 'view', 'edit', 'move', 'takeOff', 'remove', 'menu', 'resolve', 'reply', 'goItem', 'toggle', 'away', 'pick', 'say', 'sayCancel', 'sayCheck', 'saySend', 'type', 'moveDoc', 'deleteDoc', 'circle', 'editDoc', 'tick', 'modifyTicks', 'sendTicks'] as const)
+export const docOn: DocEvents = acts('Document', ['copyDoc', 'ref', 'picture', 'play', 'words', 'view', 'edit', 'move', 'takeOff', 'remove', 'menu', 'resolve', 'reply', 'goTask', 'toggle', 'away', 'pick', 'say', 'sayCancel', 'sayCheck', 'saySend', 'type', 'moveDoc', 'deleteDoc', 'circle', 'editDoc', 'tick', 'modifyTicks', 'sendTicks'] as const)
 
 /** How you have the document open, and what is going on around it. */
 export interface DocHere {
@@ -56,15 +56,15 @@ export interface DocHere {
   notSent?: NotSent[]
   /** when you last saw each thread ("since": anything after is new) */
   seen?: Record<string, string>
-  /** the document's item (its talk says whether you replied there instead of picking) */
-  item?: Partial<Item>
-  /** only the document's words, for a column beside its item's talk (as the desktop's two columns show it) */
+  /** the document's task (its talk says whether you replied there instead of picking) */
+  task?: Partial<Task>
+  /** only the document's words, for a column beside its task's talk (as the desktop's two columns show it) */
   viewOnly?: boolean
   /** its contents opened */
   contentsOpen?: boolean
   /** a web page over all of the window (T751) */
   full?: boolean
-  /** the pointer on an item of a list (the desktop) */
+  /** the pointer on a task of a list (the desktop) */
   pointing?: { key: string; li: number }
   /** a passage brought into view ('doc': its end) */
   aim?: string
@@ -82,8 +82,8 @@ export const envOf = (m: ReturnType<typeof modelOf>, desk: boolean): DocEnv => {
 
 export const docAt = (d: Doc, desk: boolean, h: DocHere = {}) => <LiveDoc d={d} desk={desk} h={h} />
 
-const docActs = acts('Document', ['ref', 'edit', 'move', 'takeOff', 'remove', 'menu', 'resolve', 'goItem', 'saySend', 'sayCheck', 'moveDoc', 'deleteDoc', 'copyDoc', 'editDoc', 'sendTicks'] as const, {
-  goItem: 'Item page',
+const docActs = acts('Document', ['ref', 'edit', 'move', 'takeOff', 'remove', 'menu', 'resolve', 'goTask', 'saySend', 'sayCheck', 'moveDoc', 'deleteDoc', 'copyDoc', 'editDoc', 'sendTicks'] as const, {
+  goTask: 'Task page',
   edit: 'Input box › Commenting on a document › Sent and not sent',
   move: 'Move and pick',
   menu: 'Comment threads › Your comments',
@@ -97,10 +97,10 @@ const sheetActs = acts('Document sheet', ['more', 'done'] as const, { more: 'Doc
  * web page's Comment mode; the ticks; a voice comment recording; Delete asking again; the player and viewer): a
  * paragraph's comments open and close, Comment and a tap pick (the phone's Comment opens its box), Reply picks the
  * thread, the circle draws, choices tick and Modify opens them again, a place's mic records and its x stops it,
- * Delete asks again (T662). Sending, saving, moving and opening its item need Taska or the rest of the page: the
+ * Delete asks again (T662). Sending, saving, moving and opening its task need Taska or the rest of the page: the
  * Actions panel. */
 function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
-  const m = modelOf([item({ n: d.n, title: 'Rewrite Taska from scratch', ...h.item })], [], {}, [d])
+  const m = modelOf([task({ n: d.n, title: 'Rewrite Taska from scratch', ...h.task })], [], {}, [d])
   const [v, setV] = useState({ threads: new Set(h.threads), sel: new Set(h.sel), quote: h.quote ?? null, reply: h.reply ?? null, circle: !!h.circle, typing: !!h.typing })
   const [inspect, setInspect] = useState(!!h.inspect)
   const [full, setFull] = useState(!!h.full)
@@ -272,7 +272,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
         desk
         head={<DocPaneHead d={d} editing={false} />}
         acts={<DocPaneActs web={web} inspect={inspect} whole={v.quote?.key === 'doc'} deleting={!!asked[deleting]} on={{ inspect: () => setInspect(!inspect), full: () => setFull(true), whole: () => setV(v.quote?.key === 'doc' ? { ...v, quote: null } : { ...v, sel: new Set(), quote: { key: 'doc', text: '' }, reply: null, typing: true }), copy: paneActs.copy, edit: paneActs.edit, move: paneActs.move, remove: on.deleteDoc }} />}
-        lead={<DocPaneNav to={facts.itemCode} onBack={paneActs.back} />}
+        lead={<DocPaneNav to={facts.taskCode} onBack={paneActs.back} />}
         onBack={paneActs.back}
       >
         {/* a web page brings its own margins: none are added around it */}

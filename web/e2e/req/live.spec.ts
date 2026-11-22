@@ -13,7 +13,7 @@ test('r4: what an agent writes shows on the open page by itself, no reload', asy
   await expect(page.getByText('The docs outline is ready').filter({ visible: true }).first()).toBeVisible({
     timeout: 20000,
   })
-  // and the list: on the phone the item is a page of its own, so go back to the list without loading anything
+  // and the list: on the phone the task is a page of its own, so go back to the list without loading anything
   if (!(await page.locator('#list').isVisible())) await page.goBack()
   await view(page, 'All').click()
   await expect(page.locator('#list').getByText('Fresh from the agent').first()).toBeVisible({ timeout: 20000 })
