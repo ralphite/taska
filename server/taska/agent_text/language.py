@@ -1,8 +1,8 @@
 """The command language agents write to /do: one command per line; indented lines continue the command above.
 
-    new P1 now #bug parent=B03 src=r12 Export ignores the active filter
-    B03 doing
-    B03 ask Keep the old export?
+    new P1 now #bug parent=T03 src=r12 Export ignores the active filter
+    T03 doing
+    T03 ask Keep the old export?
       - ( ) Yes
       - ( ) No
 
@@ -127,7 +127,7 @@ def command(head: str, cont: str) -> Union[Command, List[Command]]:
     if _DOC_WORD.fullmatch(word):
         return _doc_command(word, rest, cont)
     if not _ITEM_WORD.fullmatch(word):
-        raise Refused(f"unknown command '{word}' (start with new, ack, rules, project or an item code like B03)")
+        raise Refused(f"unknown command '{word}' (start with new, ack, rules, project or an item code like T03)")
     verb, _, rest2 = rest.partition(" ")
     verb_l = verb.lower()
     if verb_l == "doc":
@@ -157,7 +157,7 @@ def command(head: str, cont: str) -> Union[Command, List[Command]]:
     if verb_l == "take" and not rest2.strip():  # doing, taken from the session that holds it, as the user asked (T772)
         return {"op": "set", "ref": word, "f": {"status": "doing"}, "src": None, "take": True}
     until = re.fullmatch(r"(?i)later\s+until\s+(\S+)(?:\s+(.*))?", rest, re.S)
-    if until:  # B03 later until 2026-11-10: Later, and back to Now on that day by itself (D115 #21)
+    if until:  # T03 later until 2026-11-10: Later, and back to Now on that day by itself (D115 #21)
         change: Command = {"op": "set", "ref": word, "f": {"when": "later", "later_until": until[1]}}
         words = ((until[2] or "") + ("\n" + cont if cont else "")).strip()
         return [change, {"op": "say", "ref": word, "kind": "progress", "text": words}] if words else change
@@ -171,10 +171,10 @@ def command(head: str, cont: str) -> Union[Command, List[Command]]:
     out: List[Command] = []
     if opts:
         out.append({"op": "set", "ref": word, "f": opts, "src": src})
-    if add or off:  # B03 #bug -#手机
+    if add or off:  # T03 #bug -#手机
         out.append({"op": "tag", "ref": word, "add": add, "del": off, "src": src})
     words = (left + ("\n" + cont if cont else "")).strip()
-    if words:  # "B03 done <what changed>" says it too
+    if words:  # "T03 done <what changed>" says it too
         out.append({"op": "say", "ref": word, "kind": "progress", "text": words})
     return out[0] if len(out) == 1 else out
 

@@ -1,6 +1,7 @@
 """One project's SQLite file (taska.db): the change log, the current state rows, and small values.
 
-- `events`: the append-only change log, one row per change, in order; never changed or removed.
+- `events`: the append-only change log, one row per change, in order; never removed, and changed only by a change of
+  the format (`rewrite`, from a copy of the file made first), each change in its place.
 - `items`, `inputs`, `docs`: the current state, kept within a second of the log, so the project can be read
   without Taska.
 - `kv`: what changes often and is not history (when each agent was last seen, what it read).
@@ -27,7 +28,8 @@ CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
 """
 # 2: every change in today's kinds; the logs of format 1 were rewritten once (Refactor 8A), nothing reads that format
-FORMAT_VERSION = "2"
+# 3: every item named T and its number in what was written (T863); a log of format 2 is rewritten once at start
+FORMAT_VERSION = "3"
 FILE_NAME = "taska.db"
 
 
@@ -97,6 +99,37 @@ class ProjectDb:
         """The format its log is in."""
         with self._lock:
             return self._meta("version") or FORMAT_VERSION
+
+    def backup(self, to: str) -> None:
+        """A copy of the whole file, as it is now (SQLite's backup: whole even with changes not yet in it)."""
+        with self._lock:
+            target = sqlite3.connect(to)
+            try:
+                self._con.backup(target)
+            finally:
+                target.close()
+
+    def kv(self) -> Dict[str, Any]:
+        """Every small value, by its key."""
+        with self._lock:
+            return {str(k): json.loads(v) for k, v in self._con.execute("SELECT k, v FROM kv").fetchall()}
+
+    def rewrite(self, changed: Dict[int, Dict[str, Any]], kv: Dict[str, Any], version: str) -> None:
+        """Changes rewritten in their places (seq -> its new row), small values rewritten, and the format they are in
+        now, at once."""
+        with self._lock:
+            self._con.execute("BEGIN IMMEDIATE")
+            try:
+                self._con.executemany("UPDATE events SET k = ?, t = ?, by = ?, data = ? WHERE seq = ?",
+                                      [(str(r.get("k", "")), r.get("t"), r.get("by"), dumps(r), seq)
+                                       for seq, r in changed.items()])
+                self._con.executemany("INSERT OR REPLACE INTO kv (k, v) VALUES (?, ?)",
+                                      [(k, dumps(v)) for k, v in kv.items()])
+                self._set_meta("version", version)
+                self._con.execute("COMMIT")
+            except BaseException:
+                self._con.execute("ROLLBACK")
+                raise
 
     # -- the current state -------------------------------------------------------
 

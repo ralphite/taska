@@ -4,55 +4,55 @@ script (/connect, with {name}, {base}, {host})."""
 
 GRAMMAR = (
     "WRITE (plain text, one command per line; indented lines continue the previous command's text):\n"
-    '  new P1 now #bug #phone parent=B03 src=r12 Export ignores the active filter\n'
+    '  new P1 now #bug #phone parent=T03 src=r12 Export ignores the active filter\n'
     '                            priority (P0-P3), now|later, #tags, parent= and src= are each optional and go\n'
     '                            before the title as plain words, no brackets. Items have no types: a tag says\n'
     '                            what it is (#bug), only when it helps\n'
     '    <optional body, indented>\n'
-    "  B03 P1 later doing        set priority / when / status, any mix (status: open|doing|done|drop; drop = won't do)\n"
-    '  B03 #bug -#phone          put on or take off tags\n'
+    "  T03 P1 later doing        set priority / when / status, any mix (status: open|doing|done|drop; drop = won't do)\n"
+    '  T03 #bug -#phone          put on or take off tags\n'
     '  new group <title>         a group: it holds items (put them in with parent=) and gives them its words; it has\n'
     '                            no status, /next never gives it, it is never done by itself (the user archives it)\n'
-    '  B03 group | B03 task      make it a group, or a task again (a task with subitems is done once they are)\n'
+    '  T03 group | T03 task      make it a group, or a task again (a task with subitems is done once they are)\n'
     '  T13 after T12             T13 waits for T12: /next gives T13 once T12 is done (after -T12: no longer).\n'
     '                            On new: after=T12; after=$ waits for the item made just before in the same request,\n'
     '                            so a split writes its order at once. Found you must wait for another item: write\n'
     '                            after, set it back to open and take the next one\n'
-    '  B03 later until 2026-11-10    Later until that day: then it is back to now by itself\n'
-    '  B03 done <text>           words after the fields (and indented lines) are posted as progress, e.g. the done report\n'
-    '  B03 title|body|next <text>      replace that field (body may continue on indented lines)\n'
-    '  B03 say|ask|propose|decide|progress <text>     add to the thread: ask = question for the user, also when\n'
+    '  T03 later until 2026-11-10    Later until that day: then it is back to now by itself\n'
+    '  T03 done <text>           words after the fields (and indented lines) are posted as progress, e.g. the done report\n'
+    '  T03 title|body|next <text>      replace that field (body may continue on indented lines)\n'
+    '  T03 say|ask|propose|decide|progress <text>     add to the thread: ask = question for the user, also when\n'
     '                                  you are stuck and need something from them (say what you need),\n'
     '                                  withdraw = take back your open ask (say why),\n'
     '                                  propose = suggestion (not decided), decide = decision made\n'
-    '  B03 say @worker <text>    to another agent session (its session= name): it gets B03 on its next /next or /do reply\n'
-    '  B03 merge F01             merge B03 into F01 (use only for clear duplicates)\n'
-    '  B03 delete                delete an item you proposed that the user has not answered (an alarm that went away)\n'
-    '  B03 take                  work on an item another session holds, only when the user asked you to (`B03 doing`\n'
+    '  T03 say @worker <text>    to another agent session (its session= name): it gets T03 on its next /next or /do reply\n'
+    '  T03 merge T01             merge T03 into T01 (use only for clear duplicates)\n'
+    '  T03 delete                delete an item you proposed that the user has not answered (an alarm that went away)\n'
+    '  T03 take                  work on an item another session holds, only when the user asked you to (`T03 doing`\n'
     '                            on it says who holds it); the one that had it is told\n'
     '  Messages and docs are Markdown (lists, **bold**, `code`, links). Show an image where it belongs with\n'
     '  ![what it shows](f12-a.png): upload it first with\n'
     '  curl -s BASE/api/file?name=a.png -H \'Content-Type: image/png\' --data-binary @a.png   (prints its "f")\n'
-    '  B03 say files=f12-a.png,f13-b.png <text>   images attached below the message instead\n'
+    '  T03 say files=f12-a.png,f13-b.png <text>   images attached below the message instead\n'
     '  [the report](f12-report.html)   a link to any file sent to Taska (a page, a PDF); opens on the phone too\n'
-    '  B03 ask <question>        with indented choices the user taps: "- ( ) option" lines = pick one (yes/no too),\n'
+    '  T03 ask <question>        with indented choices the user taps: "- ( ) option" lines = pick one (yes/no too),\n'
     '                            "- [ ] option" lines = pick any. The reply lists the picks as "✓ option".\n'
     '                            Several things to ask: one ask each, in a row. The user answers them in one card;\n'
     '                            the reply has a line each, "- <question> → ✓ option" (or their words), and the\n'
     '                            questions not answered yet keep waiting.\n'
-    '  B03 doc [title]           new document on B03 (plans, designs); its Markdown is the indented lines, first line = title\n'
+    '  T03 doc [title]           new document on T03 (plans, designs); its Markdown is the indented lines, first line = title\n'
     "  D1 doc [new title]        replace D1's Markdown with the indented lines; comments stay with unchanged paragraphs\n"
     '                            a ```mermaid block is drawn as a diagram. Keep it small and plain: flowchart or\n'
     '                            sequenceDiagram only; every node label in double quotes (A["Save (draft)"] --> B["Done"]);\n'
     '                            no HTML but <br/>; no special characters outside quotes. One that does not draw comes\n'
     "                            back to you on the doc's item with Mermaid's reason: fix it\n"
-    '  B03 html [title]          new web page document on B03: the indented lines are HTML (scripts allowed), shown as a page\n'
+    '  T03 html [title]          new web page document on T03: the indented lines are HTML (scripts allowed), shown as a page\n'
     '  D1 html [new title]       replace D1 with the indented HTML\n'
     '                            sounds, videos and pictures in it: upload each (as above) and name it BASE/f/<its f>\n'
     '                            (<audio src="BASE/f/f12-a.mp3">); never write them into the page (it gets too big to open)\n'
     '  D1 reply ¶3 <text>        answer the comments on paragraph 3 of D1 (¶3.2: its second thread, as /D1 names it)\n'
     '                            (¶x1: the first thread whose paragraph was rewritten or removed, as /D1 names it)\n'
-    '  B03 archive|unarchive     hide a done/dropped item from the default lists (reopening unarchives)\n'
+    '  T03 archive|unarchive     hide a done/dropped item from the default lists (reopening unarchives)\n'
     '  rules propose <why>       propose a change to the project rules (the user approves or declines it); indented\n'
     '                            under it, each change: replace ## <section> / add ## <section> [after ## <section>]\n'
     '                            / delete ## <section>, its new text indented under that line (whole: all of it)\n'
@@ -61,7 +61,7 @@ GRAMMAR = (
     "  project icon f12-logo.png    the project's picture in place of its letter (e.g. its app's favicon): a png, svg,\n"
     '                            ico, webp or jpg up to 256 KB, uploaded as above; project icon none = the letter again;\n'
     '                            which picture to pick: ICON below\n'
-    '  $ means the item created earlier in the same request. Refs: B03, b3, 3 are the same item.'
+    '  $ means the item created earlier in the same request. Refs: T03, b3, 3 are the same item.'
 )
 
 AGENT = (
@@ -77,7 +77,7 @@ AGENT = (
     '                            it waits for T12 (blocked: /next skips it)\n'
     '                            flag: ? you asked (waits on the user) / < the user replied\n'
     '                            filters: ?q=word&tag=bug&pri=P0&when=now&status=all|open|doing|done|dropped&wait=1&reply=1&archived=1|all&limit=60\n'
-    '  curl -s BASE/B03          full card: fields, body, thread, files (image/audio paths are readable from disk)\n'
+    '  curl -s BASE/T03          full card: fields, body, thread, files (image/audio paths are readable from disk)\n'
     '  curl -s BASE/rules        project rules: one document of standing instructions; follow the parts that apply\n'
     '                            (when they change while you work, your next /next or /do reply says so once, with\n'
     '                            what changed: follow it from then on; the same when this guide changes)\n'
@@ -90,15 +90,15 @@ AGENT = (
     '\n'
     '{grammar}\n'
     "  curl -s BASE/do --data-binary @- <<'EOF'\n"
-    '  B03 doing\n'
-    '  B03 progress Reproduced it: the export ignores the filter\n'
+    '  T03 doing\n'
+    '  T03 progress Reproduced it: the export ignores the filter\n'
     '  EOF\n'
     '\n'
     'Now: {rules}\n'
     'LOOP  doing means you are working on it now. Mark an item doing when you start; when you hand back a result, set it\n'
     '      done (the user reviews it) or ask what you need: never leave a result\n'
     '      sitting in doing (T646). If you stop working on it, set it back to open. Keep going: take /next, mark it doing, do the work, write progress and set done, then GET /next\n'
-    "      again. Don't stop to chat. If you are stuck or need a decision, post `B03 ask <what you need>` and\n"
+    "      again. Don't stop to chat. If you are stuck or need a decision, post `T03 ask <what you need>` and\n"
     '      move on; /next brings the item back once the user replies. Nothing to do: end your turn. Never wait in\n'
     '      the foreground, poll, or set a timer or scheduled task (heartbeat, cron, automation) to look at Taska:\n'
     '      never wake a model just to check for messages, at any frequency. No foreground polling loops either.\n'
@@ -107,25 +107,25 @@ AGENT = (
     '      no tokens while it waits and your session resumes only when it ends with work:\n'
     '      `while o=$(curl -s "BASE/next?wait=540&by=claude-code&sid=$CLAUDE_CODE_SESSION_ID"); [ -z "$o" ] || echo "$o" | grep -q \'nothing to do now\'; do sleep 20; done`\n'
     '      Use this loop as it is: it ends on any work, not only on your own item. A loop that waits for one item\n'
-    '      and passes over the rest leaves that work to nobody (B832); Taska tells the user when it happens.\n'
+    '      and passes over the rest leaves that work to nobody (T832); Taska tells the user when it happens.\n'
     '      Other agents without such a background command: report once that delivery is unavailable and end the turn.\n'
     '      While you work, a /do reply ending "N new inputs since your last /next" means the user wrote meanwhile:\n'
     '      finish the step you are on, then GET /next. Handle pushed messages at the normal message boundary.\n'
-    '      Big items have subitems (parent=B03): /next gives you the subitems first and the parent once they are\n'
-    '      finished; split big work the same way with `new ... parent=B03`.\n'
+    '      Big items have subitems (parent=T03): /next gives you the subitems first and the parent once they are\n'
+    '      finished; split big work the same way with `new ... parent=T03`.\n'
     '      A subitem\'s card has every level it is part of, up to the top ("part of", each body whole, its decisions\n'
     '      and docs) and the items beside it: what is written there applies to it too, follow it (T853).\n'
     '      Always call /next and /do with ?by=<your name>: with several agents on one project, /next gives each of you\n'
     '      its own item and lists "others are on (skip)": another agent holds those, leave them. A hold lapses after\n'
     '      30 minutes without a word from that agent. An item another session holds (Taska says so, also when you\n'
-    '      mark it doing) is theirs: take the next one; write to them with `B03 say @<session> ...` when you need\n'
-    '      something from them; never change it without the user\'s word, and take it only with `B03 take` when the\n'
+    '      mark it doing) is theirs: take the next one; write to them with `T03 say @<session> ...` when you need\n'
+    '      something from them; never change it without the user\'s word, and take it only with `T03 take` when the\n'
     '      user asked you to. /next also says which other sessions are here and what each is on.\n'
     '      /next picks items marked now. Unclear, or more than one way to go: think it through first; post your\n'
-    '      plan (B03 propose ...) and ask before building. Small and clear: do it.\n'
+    '      plan (T03 propose ...) and ask before building. Small and clear: do it.\n'
     'YOURS Items you create start as proposed: the user approves them before anyone works on them. A subitem the\n'
-    '      user asked for (they said to split B03 into parts) starts open when you name their words: `new\n'
-    '      parent=B03 src=r12 <title>`. `B03 done`\n'
+    '      user asked for (they said to split T03 into parts) starts open when you name their words: `new\n'
+    '      parent=T03 src=r12 <title>`. `T03 done`\n'
     "      from you puts the item in review; the user accepts it. Write item content in the user's language.\n"
     '      A question left: ask it instead of done. One after done: set the item back to doing, then ask (r809).\n'
     '      The message with done has these parts, in this order (T814): Result (what is different now, one line);\n'
@@ -137,15 +137,15 @@ AGENT = (
     "      (what you did, how you checked it, screenshots, plans, questions) goes into the item's messages.\n"
     '      First line = the conclusion in one sentence; the page folds long messages to it. Then details, short,\n'
     '      in Markdown, images inline (see `say` above). Don\'t post "starting now": the status already says doing.\n'
-    '      More than 10 lines (a plan, research, a checklist, a long report): write it as a document (`B03 doc`),\n'
+    '      More than 10 lines (a plan, research, a checklist, a long report): write it as a document (`T03 doc`),\n'
     '      choices to tick included, and post one line that names it, e.g. "The plan is in D2; tick at the end".\n'
-    '      Name items, documents and inputs by their code (B03, D2, r12): the page links each code and shows a card\n'
+    '      Name items, documents and inputs by their code (T03, D2, r12): the page links each code and shows a card\n'
     '      about it on hover. A code alone means little to the user: the first time a message names one, add a few\n'
     '      words on what it is, e.g. "D2 (the release plan)".\n'
     "RULES Reuse existing items (/items?q=) instead of duplicating. Keep the user's wording. Never turn a\n"
     '      suggestion into a decision: use propose/ask and wait. Commands with src=rN (or ack rN) mark that\n'
-    '      input handled. An input that is a question for you: answer it in its item with src=rN (`B03 say src=r12 ...`),\n'
-    '      so the input links to the answer; when no item fits, `new src=r12 <the question>` and answer there (B845).\n'
+    '      input handled. An input that is a question for you: answer it in its item with src=rN (`T03 say src=r12 ...`),\n'
+    '      so the input links to the answer; when no item fits, `new src=r12 <the question>` and answer there (T845).\n'
     '      Never `ack` a question alone: the user then sees it handled with nowhere to read the answer.\n'
     'ASK   Ask only when a wrong guess would do damage that is hard to undo: spending money, sending something to\n'
     "      someone, deleting, or a choice of scope or design that is the user's to make. Otherwise take the most\n"
@@ -166,15 +166,15 @@ AGENT = (
     '      A manager session hands items to worker sessions and runs them in parallel; it never edits code itself.\n'
     '      Unrelated items go to different workers at the same time, each in its own working copy; related items go to\n'
     '      the worker already on them. A new item that outranks what the busy workers are on goes out at once, to an idle\n'
-    '      worker or a new one: a P0 never waits behind a P2 (B656).\n'
+    '      worker or a new one: a P0 never waits behind a P2 (T656).\n'
     '      Manager: picks items from /next and the threads, claims each for its worker with /next?by=<worker>, sends the\n'
     '      worker its item (or a short list of related ones), sleeps until an event below, merges and ships finished\n'
     '      work, and puts what needs the user on the item. Worker: does its items and writes progress/done/ask on each\n'
     '      itself (&session=<worker>&parent=<the manager\'s session name>, so the user sees it under its manager);\n'
     '      never polls Taska, never waits on the user, keeps working while a background command runs, says on the item\n'
     '      before a step longer than 15 minutes, and ends every turn with a message there.\n'
-    '      A worker session started for an item is named with that item\'s code first ("B03: export filter"); a Codex\n'
-    '      thread, which has no name of its own, begins its first instruction with it. Taska then shows it on B03 and\n'
+    '      A worker session started for an item is named with that item\'s code first ("T03: export filter"); a Codex\n'
+    '      thread, which has no name of its own, begins its first instruction with it. Taska then shows it on T03 and\n'
     '      tells the user when it waits on them, even if it never calls Taska. Start it with your permission mode.\n'
     '      Never stuck: workers run where nothing prompts for approval (a refused command is refused; it takes\n'
     '      another route); the manager never waits on a prompt or on a worker. A stuck worker: stop its turn, hand\n'
@@ -205,7 +205,7 @@ AGENT = (
 SKILL = (
     '---\n'
     'name: taska\n'
-    "description: Work with Taska, the user's per-project tracker of the work in each project: items with tags, and its rules (a small local web app). Use when the user mentions Taska or item codes like T03 or B12, asks you to work on, continue or keep working through the tasks, or when the project folder has a .taska file.\n"
+    "description: Work with Taska, the user's per-project tracker of the work in each project: items with tags, and its rules (a small local web app). Use when the user mentions Taska or item codes like T03 or T12, asks you to work on, continue or keep working through the tasks, or when the project folder has a .taska file.\n"
     '---\n'
     '\n'
     '# Taska\n'
@@ -236,7 +236,7 @@ SKILL = (
     '     Others: if delivery is unavailable, report it once and end the turn.\n'
     '   - Codex: automatic updates use the native queue setup below. Do not use a second CLI writer\n'
     '     or a relay model. Other agents do not use this Codex-specific transport.\n'
-    '5. **Need the user?** Post `B03 ask <what you need or your question>`, then take the next item.\n'
+    '5. **Need the user?** Post `T03 ask <what you need or your question>`, then take the next item.\n'
     '   /next brings it back once the user replies. When the answer is a choice, list it under the question as\n'
     '   indented `- ( ) option` lines (pick one) or `- [ ] option` lines (pick any): the user taps instead of typing.\n'
     '6. **The user reads Taska only**, usually on a phone, never your terminal or chat. Whatever they should see goes\n'
@@ -244,10 +244,10 @@ SKILL = (
     '   conclusion in one sentence**: the page folds long messages to it. Messages are Markdown:\n'
     '   short paragraphs and lists, images inline with `![what it shows](f12-a.png)` after uploading\n'
     "   (`curl -s BASE/api/file?name=a.png -H 'Content-Type: image/png' --data-binary @a.png`).\n"
-    '   Name items, documents and inputs by code (B03, D2, r12), and the first time add a few words on what each is,\n'
+    '   Name items, documents and inputs by code (T03, D2, r12), and the first time add a few words on what each is,\n'
     '   e.g. "D2 (the release plan)": the page turns codes into links with a card on hover, but a bare code means little.\n'
     '7. Items you create start as proposed until the user approves them, except a subitem the user asked for, made\n'
-    '   with their words (`parent=B03 src=r12`). Never treat a suggestion as decided.\n'
+    '   with their words (`parent=T03 src=r12`). Never treat a suggestion as decided.\n'
 )
 
 CODEX_WORKERS = """
@@ -283,7 +283,7 @@ There is no separate notification acknowledgement. When nothing needs action, en
 If delivery fails, report it once; no polling fallback or scheduled retry.
 """
 ANTIGRAVITY = """
-## Antigravity: one main session, a subagent per item (F755)
+## Antigravity: one main session, a subagent per item (T755)
 
 This section is for Antigravity only; Claude Code and Codex work as described above.
 
@@ -294,10 +294,10 @@ It does not do the items itself.
 1. **Start.** Your session id is $ANTIGRAVITY_CONVERSATION_ID: use it as sid on every call. Take the project:
    `curl -s "BASE/next?by=antigravity&sid=$ANTIGRAVITY_CONVERSATION_ID&lead=1"`. A newer session that does
    this takes over; then your /next answers "replaced": stop and say so in one line. Then start Taska's waker
-   (B762): `curl -s "BASE/waker" | sh -s "$ANTIGRAVITY_CONVERSATION_ID"`. It runs on its own in the background,
+   (T762): `curl -s "BASE/waker" | sh -s "$ANTIGRAVITY_CONVERSATION_ID"`. It runs on its own in the background,
    costs no tokens, and sends you a message when there is work while you are idle.
 2. **An item: a subagent of its own.** For each item /next gives you, mark it doing, then start a subagent
-   with invoke_subagent, named by the item, e.g. "B754 drag to reorder":
+   with invoke_subagent, named by the item, e.g. "T754 drag to reorder":
    - code or design work: the `taska-code` subagent (your model: Opus 5.5 high);
    - anything else: the `taska-work` subagent (pro: the best Gemini);
    - a model the user names on the item wins.
@@ -316,7 +316,7 @@ It does not do the items itself.
 AGENT += CODEX_WORKERS + CODEX_DELIVERY.replace("{", "{{").replace("}", "}}") + ANTIGRAVITY.replace("{", "{{").replace("}", "}}")
 SKILL += CODEX_WORKERS + CODEX_DELIVERY + ANTIGRAVITY
 
-# F755: the subagents the Antigravity main session starts, one per item (~/.gemini/config/agents/<name>.md)
+# T755: the subagents the Antigravity main session starts, one per item (~/.gemini/config/agents/<name>.md)
 _SUB = """---
 name: {name}
 description: {what}
@@ -352,7 +352,7 @@ CONNECT = (
     '    mkdir -p "$d/taska" && curl -fsS \'{host}/skill\' -o "$d/taska/SKILL.md" && echo "skill: $d/taska/SKILL.md"\n'
     '  fi\n'
     'done\n'
-    'if [ -d "$HOME/.gemini/config" ]; then  # F755: the subagents Antigravity starts for Taska items\n'
+    'if [ -d "$HOME/.gemini/config" ]; then  # T755: the subagents Antigravity starts for Taska items\n'
     '  mkdir -p "$HOME/.gemini/config/agents"\n'
     '  for a in taska-code taska-work; do\n'
     '    curl -fsS "{host}/antigravity-agents/$a.md" -o "$HOME/.gemini/config/agents/$a.md" && echo "subagent: $a"\n'

@@ -47,7 +47,7 @@ class ProjectStore:
         if version != FORMAT_VERSION:  # its changes would be read as kinds this version does not know
             self.db.close()
             raise RuntimeError(f"{self.db.path}: its log is in format {version}, this Taska reads only {FORMAT_VERSION}: "
-                               "start the Taska of Refactor 8A on it once to rewrite it")
+                               "Taska rewrites a log of format 2 once when it starts (services/migrate.py); an older one cannot be read")
         rows = []
         for seq, row, _ in self.db.rows():
             if row is None:

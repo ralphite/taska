@@ -63,8 +63,10 @@ Each project stores its event log, projected state and agent metadata in SQLite,
 `~<id>`) that holds only its rules document; `services.shared_rules` opens them, no project list, count, search,
 agent or organizer sees them, and a project's rules put one in by a line `{{name}}` that readers get expanded in
 place (`domain.includes`). Changes must preserve existing user data and replay the event log consistently. Data of an earlier format is
-migrated once, then the code that read it goes: no reader of an earlier format is kept. The logs are in format 2
-(every change in today's kinds, Refactor 8A); a log of another format is refused when its project opens.
+migrated once, then the code that read it goes: no reader of an earlier format is kept. The logs are in format 3
+(every change in today's kinds, Refactor 8A; every item named T and its number in what was written, T863): Taska
+rewrites a log of format 2 once when it starts (`services.migrate`, the file copied beside itself first;
+`tools/migrate_data.py` for a copy), and a log of another format is refused when its project opens.
 
 ## Page: structure
 

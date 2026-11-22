@@ -82,6 +82,9 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
     from .services.voice_health import VoiceHealth
 
     logs.setup(log_db, log_level)
+    from .services.migrate import migrate_all
+    for line in migrate_all(os.path.abspath(os.path.expanduser(root))):  # once: every log in today's format (T863)
+        print(f"taska: {line}", flush=True)
     from .infra import gemini
     gemini.use_key_file(os.path.join(os.path.expanduser(root), "gemini-key"))  # F765: the key set in Settings
     organizers = Organizers(enabled=organizer)

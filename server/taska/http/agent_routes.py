@@ -1,5 +1,5 @@
 """The agent interface: plain text in, plain text out. /agent, /next, /do, /items, /rules, /inbox, /log, /connect,
-an item's card (/B03), an input (/r12), a document (/D1); and a file sent (POST /api/file, its answer in JSON, which
+an item's card (/T03), an input (/r12), a document (/D1); and a file sent (POST /api/file, its answer in JSON, which
 the page uses too). Every word of these answers is part of the interface."""
 
 from __future__ import annotations
@@ -369,8 +369,8 @@ def do(req: Request, p: Project) -> Response:
 
 
 def held_by_others(p: Project, commands: Parsed, by: str, session: str) -> Tuple[Parsed, List[Tuple[str, str]], List[int]]:
-    """T772: `B03 doing` from a session while another one holds B03 is not done: it is told who holds it and since
-    when, and how to go on (leave it, write to the holder, or take it when the user asked: `B03 take`). -> the
+    """T772: `T03 doing` from a session while another one holds T03 is not done: it is told who holds it and since
+    when, and how to go on (leave it, write to the holder, or take it when the user asked: `T03 take`). -> the
     commands to run, the items taken over with who had them, and the items already doing whose hold moves to it."""
     me = ident(by, session)
     rec = p.agents.agents.get(agent_name(by))
