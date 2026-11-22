@@ -31,7 +31,8 @@ domain      pure: typed records, events, the projection, the rules       (knows 
 ```
 
 `cli.py` is the composition root: it makes the workspace, the organizers, the push loop and the server, and wires
-them. The agent interface is `http.agent_routes` (its routes) over `agent_text` (its words); the organizer uses the
+them. The agent interface is `http.agent_routes` (its routes) over `agent_text` (its words), and the same as MCP tools in
+`http.mcp_routes` (T866: each tool asks those routes, so both answer alike); the organizer uses the
 same words, as an agent does.
 
 A project at run time (`services.project.Project`) is put together from parts that each do one thing, under one

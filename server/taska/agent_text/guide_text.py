@@ -68,6 +68,9 @@ AGENT = (
     "Taska is the user's tracker of the work in a project: tasks, with tags (#bug) instead of types. BASE={base}\n"
     'Task code = T + a number (T853); padding may change as the list grows, T3 = T03. Older codes still work:\n'
     '  B838 and T838 are the same task.\n'
+    'MCP: the same as typed tools at BASE/mcp (next, task, tasks, inbox, say, set, new, doc, ack, do, guide). An agent\n'
+    '  that speaks MCP adds it once (Claude Code: claude mcp add --transport http taska BASE/mcp; Codex, in config.toml:\n'
+    '  [mcp_servers.taska] url = "BASE/mcp"), then calls next as below; each connection is one session.\n'
     '\n'
     'READ  (plain text)\n'
     '  curl -s BASE/next         what to do now: the inbox first, tasks the user replied on, then the next task  <- start here\n'

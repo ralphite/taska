@@ -24,7 +24,7 @@ from ..services.page_errors import PageErrorBugs
 from ..services.project import Project
 from ..services.push import Push
 from ..services.workspace import Workspace
-from . import agent_routes, page_routes, workspace_routes
+from . import agent_routes, mcp_routes, page_routes, workspace_routes
 from .access import Access
 from .messages import NOT_FOUND, Request, Response, TooLarge, as_json, redirect, text
 from .static import PageFiles
@@ -162,6 +162,8 @@ class AppContext:
             return self.page_answer()
         if sub == "/":
             return self.page_answer()
+        if sub == "/mcp" and not p.holds_shared:  # T866: Taska over MCP takes posts only
+            return mcp_routes.other(req)
         answer = None if p.holds_shared else agent_routes.get(req, p, sub, base)  # no agent works in shared rules
         if answer is not None:
             return answer
@@ -180,9 +182,11 @@ class AppContext:
             hub = workspace_routes.post(self, req, path)
             if hub is not None:
                 return hub
-            p, sub, _ = self.project_of(req, path)
+            p, sub, base = self.project_of(req, path)
             if sub == "/do" and not p.holds_shared:
                 return agent_routes.do(req, p)
+            if sub == "/mcp" and not p.holds_shared:
+                return mcp_routes.post(self, req, p, base)
             if sub == "/api/file":
                 return agent_routes.upload(req, p)
             return page_routes.post(self, req, p, sub)
@@ -250,4 +254,6 @@ def dispatch(ctx: AppContext, req: Request) -> Optional[Response]:
             with ctx.status.idle:
                 ctx.status.busy -= 1
                 ctx.status.idle.notify_all()
+    if req.method == "DELETE" and bare.endswith("/mcp"):  # T866: an MCP client ends its session; nothing is kept
+        return Response(200, b"")
     return text(501, "Unsupported method\n")

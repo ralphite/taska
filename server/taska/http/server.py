@@ -84,6 +84,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         self._answer()
 
+    def do_DELETE(self) -> None:
+        self._answer()
+
 
 class Server(ThreadingHTTPServer):
     daemon_threads = True

@@ -131,6 +131,12 @@ network**, under the list, copies the same for an agent on a computer outside th
 
 An agent that has worked on the project in the last few days counts as connected.
 
+## Over MCP
+
+An agent that speaks MCP (Claude Code, Codex, Cursor) can use Taska as tools instead of commands: add the project's
+address with \`/mcp\` at the end once. Claude Code: \`claude mcp add --transport http taska <address>/mcp\`. Codex: in
+\`~/.codex/config.toml\`, \`[mcp_servers.taska]\` with \`url = "<address>/mcp"\`.
+
 ## When agents start
 
 When you write, Taska tells the connected agent at once. An agent waiting for work spends no tokens.
