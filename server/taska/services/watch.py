@@ -164,6 +164,7 @@ class Watch:
                     sid = idle[0]
                     rc.add(sid, "claude-code", slug, sessions[sid], why="work", task=code)
                     self.asked[key] = (sid, now)
+                    self.ws._wake_all()  # the sessions waiting now look again: one connected may send it
                     out.append(f"{slug} {code}: asked to wake {sessions[sid] or sid[:8]}")
                     continue
             elif rc.asked(asked[0]):

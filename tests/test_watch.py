@@ -66,7 +66,10 @@ class Watching(unittest.TestCase):
 
     def test_an_idle_session_is_woken_after_five_minutes_through_the_dispatcher(self) -> None:
         self.assertEqual(self.later(w.GRACE - 10), [])  # not yet
+        woken = []
+        self.p.news.wake = lambda: woken.append(1)  # type: ignore[method-assign]
         self.assertEqual(self.later(20), ["default T1: asked to wake idle one"])
+        self.assertTrue(woken)  # the sessions waiting now look again, so one connected may send it at once
         job = self.ws.dispatch("dispatcher-session-id", 0, self.ws.local)
         self.assertIn('Taska asks you to wake the Claude session "idle one" (project default): work waits for it (T1)', job)
         self.assertIn(f'"cliSessionId": "{IDLE}"', job)  # how its app is told (the app's record, read by Taska)
