@@ -249,3 +249,5 @@ def _page_log(ctx: "AppContext", req: Request, p: Project) -> None:
         ctx.log.log(level, page_line(kind, e), extra={"f": {
             **e, "source": "page", "kind": kind, "project": p.slug, "tab": req.header("X-Taska-Tab") or None, "who": "you",
             "item": where.group(1) if where else None, "via": req.via()}})
+        if kind == "error" and level == logging.ERROR:
+            ctx.page_bugs.seen(e, p.slug, ctx.page.version(), ctx.workspace.projects.get("taska"))

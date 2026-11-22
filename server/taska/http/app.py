@@ -20,6 +20,7 @@ from ..infra.images import PictureSizes
 from ..infra.logs import log
 from ..page_api.once import PageOnce
 from ..page_api.sync import Feed
+from ..services.page_errors import PageErrorBugs
 from ..services.project import Project
 from ..services.push import Push
 from ..services.workspace import Workspace
@@ -94,6 +95,7 @@ class AppContext:
         self.access = Access(lambda: workspace.key.value, page.public)
         self.status = Status(workspace.root)
         self.pictures = PictureSizes()
+        self.page_bugs = PageErrorBugs()  # T860: the page's code errors become bugs in the taska project
         self.log = log
         self._pages: "weakref.WeakKeyDictionary[Project, ProjectPages]" = weakref.WeakKeyDictionary()
         self._pages_lock = threading.Lock()
