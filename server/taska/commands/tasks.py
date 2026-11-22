@@ -259,6 +259,9 @@ def set_fields(r: Run, a: Args) -> Outcome:
         left = open_kids(s, it)
         if left:
             note += f" (note: its subtasks {' '.join(s.code(k.n) for k in left)} are not finished yet)"
+        par = s.tasks.get(it.parent) if it.parent else None
+        if par and par.group:  # T867: the group's line says where it stands
+            note += f" (it is in group {s.code(par.n)}: if where that stands changed, say it in one line: `{s.code(par.n)} update ...`)"
     r.emit(ev.FieldsSet(n=it.n, by=r.by, f=f, was=was, src=src, keep=r.keep(), undo_of=a.get("undo_of") or None))
     if not r.person and f.get("status") == task_states.REVIEW and waiting(s, it):  # its result answers its questions
         r.emit(ev.MessagePosted(n=it.n, by=r.by, kind="withdraw", text="Result handed in: the open question is taken back.",

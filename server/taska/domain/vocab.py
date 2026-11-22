@@ -28,7 +28,7 @@ PEOPLE = ("you", "org")
 TASKA = "taska"
 NOTES = ("org", TASKA)
 MESSAGE_KINDS = ("say", "ask", "withdraw", "propose", "decide", "progress")
-TEXT_VERBS = MESSAGE_KINDS + ("title", "body", "next")
+TEXT_VERBS = MESSAGE_KINDS + ("title", "body", "next", "update")  # update: a group's next, where it stands (T867)
 USER_KINDS = ("say", "decide", "propose")  # what the organizer files from an input: the user's words, decision, idea
 DOC_KEY = "doc"  # the comment thread on a document as a whole; a paragraph's key is 10 hex digits
 

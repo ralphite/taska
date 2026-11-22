@@ -138,8 +138,8 @@ def command(head: str, cont: str) -> Union[Command, List[Command]]:
         said = rest2.strip()
         opts, words = options(said) if re.match(r"(?i)(src|files)=", said) else ({}, said)
         words = (words + ("\n" + cont if cont else "")).strip()
-        if verb_l in ("title", "body", "next"):
-            return {"op": "set", "ref": word, "f": {verb_l: words}, "src": opts.get("src")}
+        if verb_l in ("title", "body", "next", "update"):  # update: where a group stands, kept as its next (T867)
+            return {"op": "set", "ref": word, "f": {"next" if verb_l == "update" else verb_l: words}, "src": opts.get("src")}
         return {"op": "say", "ref": word, "kind": verb_l, "text": words, "src": opts.get("src"),
                 "files": [f for f in (opts.get("files") or "").split(",") if f]}
     if verb_l == "merge":

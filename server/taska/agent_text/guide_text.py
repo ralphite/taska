@@ -21,6 +21,8 @@ GRAMMAR = (
     '  T03 later until 2026-11-10    Later until that day: then it is back to now by itself\n'
     '  T03 done <text>           words after the fields (and indented lines) are posted as progress, e.g. the done report\n'
     '  T03 title|body|next <text>      replace that field (body may continue on indented lines)\n'
+    '  T52 update <one line>     where a group stands now (shown with it on the list and its page; a new one replaces\n'
+    '                            the last): write it when a task in it is finished or stuck and that changed\n'
     '  T03 say|ask|propose|decide|progress <text>     add to the thread: ask = question for the user, also when\n'
     '                                  you are stuck and need something from them (say what you need),\n'
     '                                  withdraw = take back your open ask (say why),\n'

@@ -81,6 +81,8 @@ export const ALL_TAGS = ['bug', 'ux', '手机', '打印']
 /** The shop's tasks with these tags. */
 const withTags = (tags: Record<number, string[]>) => TASKS.map((it) => ({ ...it, tags: tags[it.n] ?? [] }))
 export const GROUPS = [840]
+// where each group stands, as its agent wrote it (T867)
+const NOW: Record<number, string> = { 840: 'Checkout is in; the export waits for the new filter (T843)' }
 export const AFTER: Record<number, number[]> = { 845: [843], 846: [838] }
 
 /** How the session on T843 is: at work, or waiting for Yadong to approve a command. */
@@ -126,7 +128,7 @@ export function Proto({ desk, start = {} }: { desk: boolean; start?: Start }) {
   const [tag, setTag] = useState<string | null>(start.tag ?? null)
   const [sheet, setSheet] = useState<null | 'agents' | 'session' | 'filters'>(null)
   const agents = agentsOf(state)
-  const m = modelOf(withTags(tags).map((it) => ({ ...it, group: groups.includes(it.n) })), [], { title: 'Shop', agents, work: true })
+  const m = modelOf(withTags(tags).map((it) => ({ ...it, group: groups.includes(it.n), ...(groups.includes(it.n) && NOW[it.n] ? { next: NOW[it.n] } : {}) })), [], { title: 'Shop', agents, work: true })
   const tagsOf = (it: Task) => tags[it.n] ?? []
   const byN = (n: number) => m.byN.get(n) as Task
   const rowFacts = (it: Task): Partial<RowFacts> => ({

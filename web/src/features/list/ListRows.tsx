@@ -286,6 +286,12 @@ export function TaskRow(props: {
       <Count key="c" icon="comment" n={facts.talk} label={plural(facts.talk, 'comment')} />
     ) : null,
     it.status === 'doing' && facts.worker ? <WorkerMark key="w" worker={facts.worker} /> : null,
+    // where a group stands, in one line (T867)
+    it.group && it.next ? (
+      <span key="now" title={it.next} className="min-w-0 truncate font-normal text-zinc-600 dark:text-zinc-300">
+        {it.next.split('\n')[0]}
+      </span>
+    ) : null,
   ].filter(Boolean)
   return (
     <Shell it={it} look={look} facts={facts} on={on}>

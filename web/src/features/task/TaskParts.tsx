@@ -164,8 +164,8 @@ export function Editor({ it, kept, on }: { it: Task; kept: { title: string; body
           setNext(e.target.value)
           on.editTyped({ title, body, next: e.target.value })
         }}
-        aria-label="Next step"
-        placeholder="Next step"
+        aria-label={it.group ? 'Where it stands now' : 'Next step'}
+        placeholder={it.group ? 'Where it stands now' : 'Next step'}
       />
       <div className="flex justify-end gap-2">
         <button onClick={on.editCancel} className={SECOND}>

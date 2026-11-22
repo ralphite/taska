@@ -97,6 +97,8 @@ def line(st: ProjectState, it: Task) -> str:
         out += " after " + " ".join(st.code(w.n) for w in ws)
     if it.archived:
         out += " [archived]"
+    if it.group and it.next:  # T867: where the group stands
+        out += f" — now: {first_line(it.next, 80)}"
     return out
 
 
@@ -179,8 +181,8 @@ def card(rd: Reading, it: Task) -> str:
                    + f": /next gives {c} once {'it is' if len(ws) == 1 else 'they are'} done")
     elif it.after:
         out.append("waited for " + ", ".join(f"{st.code(n)} ({st.tasks[n].status if n in st.tasks else 'gone'})" for n in it.after))
-    if it.next:
-        out.append("next: " + it.next)
+    if it.next:  # a group's next is where it stands (T867)
+        out.append(("now: " if it.group else "next: ") + it.next)
     out.extend(_above(st, it))
     asks = rules.open_asks(st, it)
     if asks and rules.replied(it):  # answered in part: the rest still waits (T749)
@@ -255,6 +257,8 @@ def _above(st: ProjectState, it: Task) -> List[str]:
         seen.add(par.n)
         c = st.code(par.n)
         out.append(f"part of {c} ({f'group, {finished(st, par)} finished' if par.group else par.status}): {par.title}")
+        if par.group and par.next:
+            out.append(f"  now: {first_line(par.next, 300)}")
         body = (par.body or "").strip()
         if body:
             cut = len(body) > ABOVE_BODY
