@@ -236,9 +236,12 @@ class OrgNote:
     keep: bool  # left for the coding agent
     changed: Optional[bool] = None
     undone: bool = False
+    guess: Optional[str] = None  # T868: where it was filed is the organizer's guess, and why
 
     def to_row(self) -> Row:
         out: Row = {"ok": self.ok, "msg": self.msg, "t": self.t, "keep": self.keep}
+        if self.guess:
+            out["guess"] = self.guess
         if self.changed is not None:
             out["changed"] = self.changed
         if self.undone:

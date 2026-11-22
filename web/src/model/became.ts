@@ -31,7 +31,7 @@ export type Became =
   | { k: 'cancelled' }
   /** `did`: what was done to each ("Created", "Added to"; "" when nothing says); `note`: what else the organizer said;
    * `undo`: Taska would take back what the organizer filed */
-  | { k: 'filed'; tasks: { did: string; task: TaskRef }[]; note: string | null; undo: boolean }
+  | { k: 'filed'; tasks: { did: string; task: TaskRef }[]; note: string | null; undo: boolean; guess?: string }
   | { k: 'answer'; task: TaskRef; undo: boolean }
   /** the organizer had nothing to file, and said why */
   | { k: 'note'; text: string }
@@ -142,7 +142,7 @@ export function becameOf(r: Input, m: ProjectModel, title: (slug: string) => str
   const msg = (r.org?.msg ?? '').toLowerCase()
   const at = (d: string) => (d && msg.includes(d.toLowerCase()) ? msg.indexOf(d.toLowerCase()) : msg.length + (d ? 0 : 1))
   const filed = tasks.map((it) => ({ did: did(it.n), task: it })).sort((a, b) => at(a.did) - at(b.did))
-  if (tasks.length) return { k: 'filed', tasks: filed, note: told.rest.join(' · ') || null, undo: canUndo(r) }
+  if (tasks.length) return { k: 'filed', tasks: filed, note: told.rest.join(' · ') || null, undo: canUndo(r), ...(r.org?.guess ? { guess: r.org.guess } : {}) }
   if (told.rest.length) return { k: 'note', text: told.rest.join(' · ') }
   return r.acked ? { k: 'handled' } : { k: 'agent' }
 }

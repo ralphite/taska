@@ -101,4 +101,5 @@ def by_id(m: Message) -> int:
 
 def org_note(e: ev.Organized) -> OrgNote:
     keep = e.keep if e.keep is not None else "Left for your coding agent" in e.msg
-    return OrgNote(ok=e.ok, msg=e.msg, t=e.t, keep=bool(keep), changed=bool(e.changed) if e.changed is not None else False)
+    return OrgNote(ok=e.ok, msg=e.msg, t=e.t, keep=bool(keep), changed=bool(e.changed) if e.changed is not None else False,
+                   guess=e.guess or None)

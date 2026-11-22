@@ -83,6 +83,17 @@ const ACT: Partial<Record<InputTone, string>> = { failed: 'font-semibold underli
  * once over the tasks it was done to) and the organizer's note; or where it stands, in its tint, with what can be done
  * there now. */
 export function BecameLine({ b, id, place, on }: { b: Became; id: string; place: 'row' | 'inputs'; on: Pick<InputRowEvents, 'goto' | 'retry' | 'send' | 'moved'> }) {
+  if (b.k === 'filed' && b.guess) {
+    // the organizer was not sure where it goes: said under where it went, with why (T868)
+    return (
+      <div className="flex flex-col gap-1">
+        <BecameLine b={{ ...b, guess: undefined }} id={id} place={place} on={on} />
+        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+          <span className="font-semibold text-amber-700 dark:text-amber-400">Guessed</span> · {b.guess}
+        </div>
+      </div>
+    )
+  }
   if (b.k === 'filed' || b.k === 'answer') {
     const rows = b.k === 'filed' ? b.tasks : [{ did: INPUT_STATES.answer.say, task: b.task }]
     const note = b.k === 'filed' ? b.note : null

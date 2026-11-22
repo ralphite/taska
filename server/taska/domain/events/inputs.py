@@ -129,6 +129,7 @@ class Organized(Event):
     changed: Optional[bool] = None
     ms: Optional[int] = None
     retry: bool = False
+    guess: Optional[str] = None  # T868: where it was filed is the organizer's guess, and why
 
     def body(self) -> Row:
         if self.retry:
@@ -138,6 +139,7 @@ class Organized(Event):
         opt(row, "keep", self.keep, self.keep is not None)
         opt(row, "changed", self.changed, self.changed is not None)
         opt(row, "ms", self.ms, self.ms is not None)
+        opt(row, "guess", self.guess, bool(self.guess))
         row["by"] = self.by
         return row
 
@@ -177,7 +179,7 @@ READERS: Dict[str, Reader] = {
     "moved": lambda r: InputMoved(src=need(r, "src"), to=need(r, "to"), as_=need(r, "as"), **common(r)),
     "org": lambda r: Organized(src=need(r, "src"), ok=bool(r.get("ok")), msg=r.get("msg", ""), plan=r.get("plan"),
                                keep=r.get("keep"), changed=r.get("changed"), ms=r.get("ms"), retry=bool(r.get("retry")),
-                               **common(r)),
+                               guess=r.get("guess"), **common(r)),
     "send": lambda r: InputSent(src=need(r, "src"), **common(r)),
     "rescope": lambda r: InputRescoped(src=need(r, "src"), to=need(r, "to"), **common(r)),
 }

@@ -91,6 +91,8 @@ def input_view(inp: Input, filing: Optional[Filing], plan: Optional[DeletionPlan
     if inp.org:
         o = inp.org
         out["org"] = {"ok": o.ok, "msg": o.msg, "t": o.t, "keep": o.keep, "changed": bool(o.changed), "undone": o.undone}
+        if o.guess:  # T868: where it was filed is the organizer's guess, and why
+            out["org"]["guess"] = o.guess
     if inp.kind:
         out["kind"] = inp.kind
     if inp.q:

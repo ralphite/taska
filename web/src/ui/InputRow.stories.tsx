@@ -24,6 +24,7 @@ const BECAME: [string, Became][] = [
   ['made a task', { k: 'filed', tasks: [{ did: 'Created', task: T014 }], note: null, undo: true }],
   ['made two, added to one', { k: 'filed', tasks: [{ did: 'Created', task: T014 }, { did: 'Created', task: it(43, 'T043', 'Close the keyboard by tapping outside it', 'open') }, { did: 'Added to', task: T012 }], note: null, undo: true }],
   ["a task, and the organizer's note", { k: 'filed', tasks: [{ did: 'Created', task: T014 }], note: 'Commented on D1', undo: true }],
+  ['added to a task, as the organizer guessed (T868)', { k: 'filed', tasks: [{ did: 'Added to', task: T012 }], note: null, undo: true, guess: 'it speaks of the export, most like T012' }],
   ['an agent changed a task for it (no organizer)', { k: 'filed', tasks: [{ did: 'Changed', task: T012 }], note: null, undo: false }],
   ['left for an agent, which changed a task', { k: 'filed', tasks: [{ did: '', task: T012 }], note: null, undo: false }],
   ['an answer', { k: 'answer', task: T007, undo: false }],

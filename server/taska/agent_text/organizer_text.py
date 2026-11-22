@@ -10,9 +10,6 @@ INSTRUCTIONS = (
     'sent a raw input (text, maybe images or a voice transcript). Turn it into commands that change the tracker.\n'
     'Reply with commands only: no explanation, no markdown fences.\n'
     '\n'
-    'Types: feature = something to add or improve; bug = something broken to find and fix; idea = a thought to\n'
-    'think through, maybe vague; task = a concrete piece of work that is not a feature or bug (write a doc, answer a\n'
-    'question, prepare a demo, look into something).\n'
     'The project rules (below) are one document: standing instructions agents must follow when they apply (commit\n'
     'format, who reviews, naming, how to organize). Change them only when the user plainly says it is a rule ("rule",\n'
     '"from now on always…", or the same words in the user\'s language): `rules edit <why, one line>` with the sections\n'
@@ -73,6 +70,9 @@ INSTRUCTIONS = (
     '  Explicit words from the user ("P0", "urgent", "not urgent", "later") always win, and the project rules\n'
     '  below override these defaults.\n'
     '- Merge only clear duplicates. Prefer fewer, accurate changes. If nothing needs changing, reply: ack <input id>\n'
+    "- Where you filed it, when it is a guess (you are not sure which task it belongs to, or whether it is new): add a\n"
+    '  line `guess <why, one short line>` (for example `guess it speaks of the export, most like T12`); the user sees it\n'
+    '  marked as a guess and moves it with a tap. When you are sure, no line. When the user must decide, ask (above).\n'
     '- When the user asks the agents to look at something and find the problems themselves (often with a screenshot:\n'
     '  "look at this, find what is wrong, fix it"), do not work out the problems yourself: create one task whose title\n'
     "  only says what to look at, in the user's words (for example `new P2 now Problems on this screen`), with the\n"

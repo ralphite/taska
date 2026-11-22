@@ -202,7 +202,9 @@ class Organizer(threading.Thread):
                 return
             self.later.pop(rid, None)
             keep = had_history or reply or bool(re.search(r"(?im)^\s*pass\s*$", plan))
-            commands = parse(re.sub(r"(?im)^\s*pass\s*$", "", indent_strays(plan)))
+            guessed = re.search(r"(?im)^\s*guess\s+(\S.*)$", plan)  # T868: where it filed it is a guess, and why
+            plan_cmds = re.sub(r"(?im)^\s*(pass|guess\b.*)\s*$", "", plan)
+            commands = parse(indent_strays(plan_cmds))
             commands = [(no, c) for no, c in commands if not echo(p, current, c)]
             if reply:
                 commands = [(no, c) for no, c in (unclosed(p, scope, c) for c in commands) if c is not None]
@@ -218,7 +220,8 @@ class Organizer(threading.Thread):
                 msg = (msg + " · " if msg else "") + "Left for agent"
             if bad:
                 msg += " · Some commands failed: " + "; ".join(bad)
-            p.emit(ev.Organized(src=rid, ok=not bad, msg=msg, plan=plan, keep=keep, changed=bool(labels),
+            guess = guessed.group(1).strip()[:200] if guessed and labels else None
+            p.emit(ev.Organized(src=rid, ok=not bad, msg=msg, plan=plan, keep=keep, changed=bool(labels), guess=guess,
                                 ms=int((time.time() - t0) * 1000), by="org"))
             logging.getLogger("taska").info(f"organized {rid}: {msg}"[:300], extra={"f": {  # T846: what it did, in the log
                 "source": "server", "kind": "organized", "project": p.slug, "input": rid, "ok": not bad, "kept": keep,

@@ -108,6 +108,8 @@ export interface OrgNote {
   keep: boolean
   changed: boolean
   undone: boolean
+  /** where it was filed is the organizer's guess, and why (T868) */
+  guess?: string
 }
 
 export interface Input {

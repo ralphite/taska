@@ -37,7 +37,7 @@ COMMANDS = os.path.join(ROOT, "server", "taska", "commands")
 KEYS = ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY", "GOOGLE_APPLICATION_CREDENTIALS")
 START = 1793984400  # 2026-11-06 09:00 PST: the clock's start, so the samples read alike each time
 WORDS = "Sort the export by date, please."
-PLAN = "new P2 now Sort the export by date\n"
+PLAN = "new P2 now Sort the export by date\nguess it may belong with the export filter\n"  # T868: a guess, so the page sees one
 # a 1x1 PNG, for a picture's size
 PNG = bytes.fromhex("89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478da63f8cf"
                     "c0f01f0005000201a5b1d0b40000000049454e44ae426082")
