@@ -137,6 +137,15 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
         return _next(req, p, by)
     if sub == "/waker":  # T762: the Antigravity session's waker, started in its own terminal
         return text(200, SCRIPT.replace("{base}", base).replace("{slug}", p.slug), "text/x-shellscript; charset=utf-8")
+    if sub == "/open-session":  # T870: a session the user sees in the Claude app, opened by Taska for a task
+        opener = getattr(p.shared, "opener", None)
+        with p.lock:
+            it = rules.task_at(p.state, req.arg("task"))
+            code = p.state.code(it.n)
+        if opener is None:
+            return text(200, "not opened: Taska cannot open sessions here\n")
+        said = opener.open(local_root(p, req), p.slug, code, req.arg("say"))
+        return text(200, f"{said}\n" if said != "opened" else f"opened a session in the Claude app for {code}: it starts on it now\n")
     if sub == "/listen":  # T869: Taska's wait for work, run as it is
         ses = req.session()
         body = reconnect_text.LISTEN.format(base=base, by=quote(by), session=f"&session={quote(ses)}" if ses else "")

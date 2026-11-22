@@ -88,6 +88,9 @@ AGENT = (
     '                            what changed: follow it from then on; the same when this guide changes)\n'
     "  curl -s BASE/D1           a document: numbered paragraphs (¶) with the user's comments under each\n"
     '  curl -s BASE/log?n=30     recent changes\n'
+    '  curl -s "BASE/open-session?task=T03"   Taska opens a new Claude Code session in the Claude app for T03 (the\n'
+    '                            user sees it in the sidebar; only while they leave the Mac alone): for work that needs\n'
+    '                            a session of its own when you may not start one yourself (&say=<more for it>)\n'
     '  optional on any call: &session=<the title your app shows for this session> (or the header X-Taska-Session), so\n'
     '                            the user can tell your sessions apart; and "&sid=$CLAUDE_CODE_SESSION_ID$CODEX_THREAD_ID"\n'
     '                            (the shell fills in your session\'s id; keep the URL in double quotes), so the user\n'

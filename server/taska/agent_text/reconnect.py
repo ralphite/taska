@@ -47,7 +47,9 @@ def relay(root: str, app: str, slug: str, sid: str, name: str, desktop: Optional
             f"reconnect first: the user asked you to bring back {who}, which lost its connection to Taska")
     return (f"{what}. Do only this, then go back to what you were doing.\n"
             f"Send it this message {_send(app, sid, desktop, message(root, app, slug, sid, why, task))}\n"
-            f"Write about it nowhere (no task, no message). Then GET /next again, or start your wait again, as before.\n")
+            f"Write about it nowhere (no task, no message). Then GET /next again, or start your wait again, as before."
+            + (" Taska follows it up itself: if the session does not take the work, it tries another way and tells the "
+               "user if that fails too." if why == "work" else "") + "\n")
 
 
 def all_lost(root: str, app: str, rows: List[Dict[str, object]]) -> str:

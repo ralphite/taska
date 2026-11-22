@@ -121,6 +121,10 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
     ws.local = f"http://127.0.0.1:{port}"  # T833: what the agents here run
     from .infra.agent_sessions import claude_desktop, lookup
     from .services.watch import Watch, run as watch_run
+    live = os.path.realpath(ws.root) == os.path.realpath(os.path.expanduser("~/.taska"))
+    if os.environ.get("TASKA_OPEN_SESSIONS", "1" if live else "0") == "1":  # T870: only the Taska on the live data
+        from .services.opener import Opener
+        ws.opener = Opener()
     watch_run(Watch(ws, ws.listeners, lookup, claude_desktop))  # T869: work nobody takes, handed to someone
     added = ws.shared_rules.seed() if skills else []  # r1450: the skills a release comes with, each added once
     if added:

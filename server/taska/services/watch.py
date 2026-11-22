@@ -10,7 +10,8 @@ was cut off by a restart, and Taska thought the work was in hand. Now:
   seconds is stuck;
 - a stuck task's project has an idle Claude session (its app says idle, not archived): Taska asks for it to be woken
   (services.reconnects): a session connected now, or the dispatcher waiting at /api/dispatch, sends it a message to
-  come and take the work, through its app (the only way into a Claude session);
+  come and take the work, through its app (the only way into a Claude session); with none idle, Taska opens a new
+  session in the Claude app for it (services.opener, T870), once the user leaves the Mac alone;
 - nobody to wake, nobody to send it, or the woken one does not come: the user is told once, by a task in that project
   (proposed), which goes by itself once the work is taken.
 Callers hold no project lock: each project's own is taken while it is looked at."""
@@ -167,6 +168,16 @@ class Watch:
                     self.ws._wake_all()  # the sessions waiting now look again: one connected may send it
                     out.append(f"{slug} {code}: asked to wake {sessions[sid] or sid[:8]}")
                     continue
+                opener = getattr(self.ws, "opener", None)
+                if opener is not None:  # T870: none to wake: Taska opens a session in the Claude app for it
+                    said = opener.open(self.ws.local or "http://127.0.0.1:7340", slug, code)
+                    if said == "opened":
+                        self.asked[key] = ("", now)
+                        out.append(f"{slug} {code}: opened a session for it")
+                        continue
+                    if "using this Mac" in said and now - since < GRACE + COME:
+                        continue  # tried again in a minute, while the user is away from the Mac
+                    out.append(f"{slug} {code}: {said}")
             elif rc.asked(asked[0]):
                 pending = next((a for a in rc.pending() if a.sid == asked[0]), None)
                 late = (pending is not None and not pending.relayed_at and now - asked[1] >= HANDED) or now - asked[1] >= COME
@@ -174,6 +185,18 @@ class Watch:
                     continue
             elif now - asked[1] < COME:
                 continue  # it came (it called Taska); give it time to take the work
+            # followed up (r117): the session asked for did not take it: another way before the user is told
+            opener = getattr(self.ws, "opener", None)
+            if asked is not None and asked[0] and opener is not None and code not in alarm:
+                rc.heard(asked[0])  # the ask to wake it is let go
+                said = opener.open(self.ws.local or "http://127.0.0.1:7340", slug, code)
+                if said == "opened":
+                    self.asked[key] = ("", now)
+                    out.append(f"{slug} {code}: the session asked for did not take it; opened a new one")
+                    continue
+                if "using this Mac" in said and now - asked[1] < 2 * COME:
+                    continue
+                out.append(f"{slug} {code}: {said}")
             if code not in alarm:
                 out.append(self._say(p, alarm, code, it.title, asked))
         return out

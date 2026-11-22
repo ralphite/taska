@@ -28,6 +28,7 @@ from .meaning import Meaning
 from .moves import Moves
 from .project import Project, now_iso
 from .reconnects import APPS as RECONNECT_APPS, Reconnects, connected, session_of
+from .opener import Opener
 from .watch import Listeners
 from .shared_rules import SharedRules, is_shared_slug
 from .settings import AccessKey, ListViews, ProjectOrder, SearchByMeaning, Spellings, VoicePrefs
@@ -78,6 +79,9 @@ class Workspace:
         self.reconnects = Reconnects()  # T833: sessions to bring back after they lost their connection
         self.listeners = Listeners()  # T869: who waits for work with Taska's script, and who with a wait of its own
         self.dispatcher_seen = 0.0  # T869: when the dispatcher last waited for a session to wake
+        # T870: a session the user sees in the Claude app, opened by Taska itself: only the Taska on the live data turns
+        # it on (cli), never a test or a drill (a test once opened a real one)
+        self.opener: Optional[Opener] = None
         self.local = ""  # Taska on this machine ("http://127.0.0.1:7340"), for what the agents here run
         self.projects: Dict[str, Project] = {}
         for name in sorted(os.listdir(self.root)):
