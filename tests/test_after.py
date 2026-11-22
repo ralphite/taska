@@ -39,6 +39,16 @@ class After(ProjectCase):
         self.assertIn("next T2: T1 it waited for is done", got)
         self.assertIn("waited for T1 (done)", got)
 
+    def test_one_done_by_its_agent_and_waiting_for_acceptance_holds_nothing_up(self) -> None:
+        """T872 (Yadong r1477): the work goes on in order; the user's acceptance does not hold up what waits for it."""
+        self.do("T2 after T1\nT1 done\n")  # an agent's done is review: the user accepts it later
+        self.assertEqual(self.p.state.tasks[1].status, "review")
+        got = self.next_text()
+        self.assertNotIn("blocked", got)
+        self.assertIn("next T2: T1 it waited for is done", got)
+        self.assertNotIn("after T1", listing(self.p.state, {}))
+        self.assertIn("waited for T1 (review)", card(self.p.reading(), self.p.state.tasks[2]))
+
     def test_taken_off_and_written_on_new_with_dollar(self) -> None:
         self.do("T2 after T1\n")
         self.assertEqual(self.do("T2 after -T1\n"), ["ok T2 after -T1 (not blocked any more)"])

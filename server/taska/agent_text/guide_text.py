@@ -14,7 +14,7 @@ GRAMMAR = (
     '  new group <title>         a group: it holds tasks (put them in with parent=) and gives them its words; it has\n'
     '                            no status, /next never gives it, it is never done by itself (the user archives it)\n'
     '  T03 group | T03 task      make it a group, or a task again (a task with subtasks is done once they are)\n'
-    '  T13 after T12             T13 waits for T12: /next gives T13 once T12 is done (after -T12: no longer).\n'
+    '  T13 after T12             T13 waits for T12: /next gives T13 once T12 is done (in review counts) (after -T12: no longer).\n'
     '                            On new: after=T12; after=$ waits for the task made just before in the same request,\n'
     '                            so a split writes its order at once. Found you must wait for another task: write\n'
     '                            after, set it back to open and take the next one\n'

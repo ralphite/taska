@@ -180,13 +180,14 @@ export function projectTags(tasks: readonly Task[]): string[] {
 /** A task's tags with `t` put on, or taken off when it has it. */
 export const toggledTag = (tags: readonly string[], t: string) => (tags.includes(t) ? tags.filter((x) => x !== t) : [...tags, t])
 
-/** The tasks it waits for that are not finished (T857: rules.waits_for), a merged one followed to where it went. */
+/** The tasks it waits for that are not done (T857: rules.waits_for), a merged one followed to where it went; one in
+ * review (done, waiting for your acceptance) is done for this (T872). */
 export function waitsFor(byN: ReadonlyMap<number, Task>, it: Task): Task[] {
   const out: Task[] = []
   for (const n of it.after ?? []) {
     let w = byN.get(n)
     for (let i = 0; w?.mergedInto && i < 50; i++) w = byN.get(w.mergedInto)
-    if (w && !closed(w.status) && !out.includes(w)) out.push(w)
+    if (w && !closed(w.status) && w.status !== 'review' && !out.includes(w)) out.push(w)
   }
   return out
 }

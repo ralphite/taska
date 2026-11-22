@@ -138,14 +138,15 @@ def open_kids(state: ProjectState, it: Task) -> List[Task]:
 
 
 def waits_for(state: ProjectState, it: Task) -> List[Task]:
-    """The tasks it waits for that are not finished yet (T857), a merged one followed to what it went into: while there
-    are any, /next does not give it."""
+    """The tasks it waits for that are not done yet (T857), a merged one followed to what it went into: while there are
+    any, /next does not give it. One done by its agent and waiting for the user's acceptance (review) is done for this
+    (T872, Yadong r1477: the work goes on in order; acceptance does not hold it up)."""
     out: List[Task] = []
     for n in it.after:
         w = state.tasks.get(n)
         while w and w.merged_into:
             w = state.tasks.get(w.merged_into)
-        if w and not w.deleted and w.status not in CLOSED and w not in out:
+        if w and not w.deleted and w.status not in CLOSED and w.status != "review" and w not in out:
             out.append(w)
     return out
 

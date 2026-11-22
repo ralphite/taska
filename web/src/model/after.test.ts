@@ -17,3 +17,8 @@ test('waits for the unfinished ones, a merged one followed; holds up who waits f
   expect(holdsUp(tasks, tasks[0]).map((it) => it.n)).toEqual([4])
   expect(holdsUp(tasks, tasks[2])).toEqual([])
 })
+
+test('one done and waiting for your acceptance (review) holds nothing up (T872)', () => {
+  const tasks = [task({ n: 1, status: 'review' }), task({ n: 2, status: 'open', after: [1] })]
+  expect(waitsFor(new Map(tasks.map((it) => [it.n, it])), tasks[1])).toEqual([])
+})
