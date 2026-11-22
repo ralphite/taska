@@ -185,6 +185,9 @@ def _call(ctx: "AppContext", req: Request, p: Project, base: str, who: Tuple[str
     if answer is None:
         return f"nothing at {sub}", True
     said = answer.body.decode("utf-8", "replace")
+    if name == "next" and "\nnothing to do now" in said:  # the curl wait it names is not for a session over MCP
+        said = said[:said.index("\nnothing to do now")] + ("\nnothing to do now. End your turn, or call next with wait "
+                                                          "(up to 540 seconds): it answers as soon as there is work.\n")
     failed = answer.status >= 400 or any(line.startswith("err") for line in said.splitlines())
     return said, failed
 

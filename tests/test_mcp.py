@@ -60,6 +60,9 @@ class OverMcp(ServerCase):
         said, failed = self.call(sid, "say", code="T1", kind="done", text="Fixed; the test covers it")
         self.assertFalse(failed)
         self.assertIn("status=review", said)
+        said, _ = self.call(sid, "next")  # nothing left: told what to do over MCP, not a curl wait with BASE in it
+        self.assertIn("nothing to do now. End your turn, or call next with wait", said)
+        self.assertNotIn("BASE", said)
 
     def test_a_wrong_call_says_what_is_wrong(self) -> None:
         _, sid, _ = self.rpc("initialize", {"clientInfo": {"name": "codex-mcp-client"}})
