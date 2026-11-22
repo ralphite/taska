@@ -11,6 +11,7 @@ from typing import Callable, List, Optional, Tuple
 from urllib.parse import quote, urlsplit
 
 from ..agent_text import log as change_log
+from ..agent_text import reconnect as reconnect_text
 from ..agent_text import render
 from ..agent_text.guide_text import CONNECT
 from ..agent_text.language import Parsed, parse
@@ -30,6 +31,10 @@ from .messages import NOT_FOUND, Request, Response, as_json, text
 TASK_PATH = re.compile(r"/([A-Za-z]?\d+)")
 BYTE_RANGE = re.compile(r"bytes=(\d*)-(\d*)$")
 AGENT_READS = ("/agent", "/next", "/rules", "/inbox", "/tasks", "/log")
+
+
+OWN_WAIT = ("Your wait for work is one you wrote, not Taska's: it may pass over work for you (T869). When you wait, "
+            "wait with Taska's script, as it is (Bash run_in_background): curl -s \"BASE/listen?by=claude-code\" | sh\n")
 
 
 def file_ref(req: Request, p: Project) -> Callable[[str], str]:
@@ -132,6 +137,10 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
         return _next(req, p, by)
     if sub == "/waker":  # T762: the Antigravity session's waker, started in its own terminal
         return text(200, SCRIPT.replace("{base}", base).replace("{slug}", p.slug), "text/x-shellscript; charset=utf-8")
+    if sub == "/listen":  # T869: Taska's wait for work, run as it is
+        ses = req.session()
+        body = reconnect_text.LISTEN.format(base=base, by=quote(by), session=f"&session={quote(ses)}" if ses else "")
+        return text(200, body, "text/x-shellscript; charset=utf-8")
     if sub == "/wake":
         return _wake(req, p)
     if sub == "/rules":
@@ -196,6 +205,13 @@ def _next(req: Request, p: Project, by: str) -> Response:
                 with p.lock:
                     p.agents.saw(by, -1)
             return text(200, REPLACED.format(t=since))
+    lis = getattr(p.shared, "listeners", None)  # T869: whether the wait is Taska's script, which takes any work
+    me_key = ident(by, session)
+    scripted = bool(wait and lis and q.get("listen") and "ui" not in q)
+    if scripted and lis:
+        lis.start(p.slug, me_key)
+    elif wait and lis and by == "claude-code" and "ui" not in q:
+        lis.own_wait(p.slug, req.arg("sid") or me_key)
     try:
         with p.lock:  # ?wait=N: while there is nothing to do, hold until work arrives
             who = req.arg("by") or None if "ui" not in q else None
@@ -244,11 +260,15 @@ def _next(req: Request, p: Project, by: str) -> Response:
             if given is not None and who:  # the card it was given holds what other sessions wrote there
                 p.agents.heard_task(p.state, given, who, session)
     finally:
+        if scripted and lis:
+            lis.stop(p.slug, me_key)
         if q.get("wait"):
             with p.lock:
                 p.agents.saw(by, -1)
                 p.agents.stopped_listening(req.arg("sid"))
     out = w.text
+    if not wait and lis and "ui" not in q and lis.tell(p.slug, req.arg("sid") or me_key):
+        out = OWN_WAIT + out
     if "ui" not in q:
         shared = p.shared_texts()  # before its own lock (T779)
         with p.lock:
@@ -368,6 +388,9 @@ def do(req: Request, p: Project) -> Response:
     job = relay_job(p, req, by) if agent else ""  # T833: told at work too, to do once the step it is on is done
     if job:
         note += "\n" + job.rstrip("\n")
+    lis = getattr(p.shared, "listeners", None)
+    if agent and lis and lis.tell(p.slug, req.arg("sid") or ident(by, session)):  # T869
+        note += "\n" + OWN_WAIT.rstrip("\n")
     return text(200, "\n".join(lines) + f"\nrev {rev}: GET /next to continue{note}\n")
 
 

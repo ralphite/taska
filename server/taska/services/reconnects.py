@@ -38,6 +38,8 @@ class Ask:
     t: float
     relay: str = ""  # the session asked to send it, and when
     relayed_at: float = 0.0
+    why: str = "lost"  # "lost": cut off from Taska; "work": idle while work waits for it (T869)
+    task: str = ""  # the task waiting for it
 
 
 class Reconnects:
@@ -46,12 +48,12 @@ class Reconnects:
         self._clock = clock
         self.asks: Dict[str, Ask] = {}
 
-    def add(self, sid: str, app: str, slug: str, name: str) -> None:
-        """Bring back session `sid` (asked again: it is handed out again at once)."""
+    def add(self, sid: str, app: str, slug: str, name: str, why: str = "lost", task: str = "") -> None:
+        """Bring back session `sid` (asked again: it is handed out again at once): lost, or idle while work waits."""
         if app not in APPS:
             return
         with self._lock:
-            self.asks[sid] = Ask(sid=sid, app=app, slug=slug, name=name, t=self._clock())
+            self.asks[sid] = Ask(sid=sid, app=app, slug=slug, name=name, t=self._clock(), why=why, task=task)
 
     def heard(self, sid: str) -> bool:
         """Session `sid` called Taska: it is back. Whether it had been asked for."""

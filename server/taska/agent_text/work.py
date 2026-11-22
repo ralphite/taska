@@ -134,9 +134,9 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
     if asker.who and asker.who.startswith("claude"):
         # the command itself, so a session that read the guide long ago keeps listening without spending tokens (T633)
         who = asker.who + (f"&session={asker.session}" if asker.session else "")
-        end += ("\nClaude Code: before ending the turn, start this with Bash run_in_background (it costs no tokens; Taska "
-                "answers it only when there is work, and that wakes you):\n"
-                f"  while o=$(curl -s \"BASE/next?wait=540&by={who}&sid=$CLAUDE_CODE_SESSION_ID\"); [ -z \"$o\" ] || echo \"$o\" | grep -q 'nothing to do now'; do sleep 20; done; echo \"$o\"")
+        end += ("\nClaude Code: before ending the turn, start Taska's wait with Bash run_in_background, as it is (it costs "
+                "no tokens; it ends on any work for you, and that wakes you; never write your own loop, T869):\n"
+                f"  curl -s \"BASE/listen?by={who}\" | sh")
     elif asker.who == "antigravity":  # T762: Taska's waker wakes the session with a message when there is work
         end += ("\nAntigravity: before ending the turn, run this (it returns at once: it starts Taska's waker for this "
                 "session when none runs, which costs no tokens and wakes you with a message when there is work):\n  "

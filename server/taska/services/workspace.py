@@ -28,6 +28,7 @@ from .meaning import Meaning
 from .moves import Moves
 from .project import Project, now_iso
 from .reconnects import APPS as RECONNECT_APPS, Reconnects, connected, session_of
+from .watch import Listeners
 from .shared_rules import SharedRules, is_shared_slug
 from .settings import AccessKey, ListViews, ProjectOrder, SearchByMeaning, Spellings, VoicePrefs
 
@@ -75,6 +76,8 @@ class Workspace:
                                path=os.path.join(self.root, "meaning.db"), lists=self.short_lists)
         self.moves = Moves()
         self.reconnects = Reconnects()  # T833: sessions to bring back after they lost their connection
+        self.listeners = Listeners()  # T869: who waits for work with Taska's script, and who with a wait of its own
+        self.dispatcher_seen = 0.0  # T869: when the dispatcher last waited for a session to wake
         self.local = ""  # Taska on this machine ("http://127.0.0.1:7340"), for what the agents here run
         self.projects: Dict[str, Project] = {}
         for name in sorted(os.listdir(self.root)):
@@ -349,7 +352,21 @@ class Workspace:
         a = self.reconnects.for_relay(app, sid)
         if not a:
             return ""
-        return reconnect_text.relay(root, a.app, a.slug, a.sid, a.name, claude_desktop(a.sid) if a.app == "claude-code" else None)
+        return reconnect_text.relay(root, a.app, a.slug, a.sid, a.name, claude_desktop(a.sid) if a.app == "claude-code" else None,
+                                    a.why, a.task)
+
+    def dispatch(self, sid: str, wait: float, root: str) -> str:
+        """GET /api/dispatch?wait=: the dispatcher's wait (T869): a session to wake, as soon as one is asked for (its
+        job, the same a connected session is handed), or nothing to do at the end of the wait."""
+        end = time.time() + max(0.0, min(wait, 540.0))
+        while True:
+            self.dispatcher_seen = time.time()
+            job = self.relay_for("claude-code", sid or "dispatcher", root)
+            if job:
+                return job
+            if time.time() >= end:
+                return "nothing to do now\n"
+            time.sleep(min(2.0, max(0.0, end - time.time())))
 
     def lost_list(self, app: str, root: str) -> str:
         """GET /api/reconnects?app=: for the new session the user started to bring back every lost session of `app`."""

@@ -7,6 +7,7 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING, Optional
 
+from ..agent_text import reconnect as reconnect_text
 from ..agent_text.guide_text import ANTIGRAVITY_AGENTS, SKILL
 from ..domain.vocab import Refused
 from ..infra import gemini, logs
@@ -46,6 +47,13 @@ def get(ctx: "AppContext", req: Request, path: str) -> Optional[Response]:
         return as_json(ws.needs())
     if path == "/api/reconnects":  # T833: for a new session the user started to bring back the lost ones
         return text(200, ws.lost_list(req.arg("app"), ws.local or f"{req.host()}{req.prefix}"))
+    if path == "/api/dispatch":  # T869: the dispatcher's wait for a session to wake
+        return text(200, ws.dispatch(req.arg("sid"), float(req.arg("wait", "0") or 0), ws.local or f"{req.host()}{req.prefix}"))
+    if path == "/dispatch":  # T869: the dispatcher's script
+        return text(200, reconnect_text.DISPATCH.format(root=ws.local or f"{req.host()}{req.prefix}"),
+                    "text/x-shellscript; charset=utf-8")
+    if path == "/api/dispatcher":  # T869: what to give a Claude session to make it the dispatcher
+        return text(200, reconnect_text.dispatcher(ws.local or f"{req.host()}{req.prefix}") + "\n")
     if path == "/api/listening":  # T811: the check at the end of an agent's turn
         return as_json(ws.listening(req.arg("sid")))
     if path == "/api/find":  # the search (T479; Home's, ⌘K, the phone's): every project, by meaning and by the words

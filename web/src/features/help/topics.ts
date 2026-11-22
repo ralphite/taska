@@ -137,6 +137,13 @@ An agent that speaks MCP (Claude Code, Codex, Cursor) can use Taska as tools ins
 address with \`/mcp\` at the end once. Claude Code: \`claude mcp add --transport http taska <address>/mcp\`. Codex: in
 \`~/.codex/config.toml\`, \`[mcp_servers.taska]\` with \`url = "<address>/mcp"\`.
 
+## When nobody takes the work
+
+A Claude Code session waits for work with Taska's own script (it never writes its own wait). When a task waits five
+minutes with nobody on it, Taska has an idle session of the project woken with a message in its app; with none to
+wake, it tells you once, by a task that says what to do and goes by itself once the work is taken. To have sessions
+woken without you, keep one Claude session as Taska's dispatcher: that task gives what to paste into it.
+
 ## When agents start
 
 When you write, Taska tells the connected agent at once. An agent waiting for work spends no tokens.

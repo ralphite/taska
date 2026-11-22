@@ -119,6 +119,9 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
         sys.exit(f"taska: cannot listen on {host}:{port}: {ex}")
     ws.lan = lan_address(host, port)
     ws.local = f"http://127.0.0.1:{port}"  # T833: what the agents here run
+    from .infra.agent_sessions import claude_desktop, lookup
+    from .services.watch import Watch, run as watch_run
+    watch_run(Watch(ws, ws.listeners, lookup, claude_desktop))  # T869: work nobody takes, handed to someone
     added = ws.shared_rules.seed() if skills else []  # r1450: the skills a release comes with, each added once
     if added:
         print("taska: added the skills it comes with: " + " ".join(added), flush=True)
