@@ -118,6 +118,11 @@ class AgentActivity:
         self._db.put("antigravity-lead", {"sid": sid, "t": t})
         self._changed()
 
+    def named(self, name: object, sid: str) -> str:
+        """The session name this agent's session `sid` gave before ('' when it gave none)."""
+        a = self.agents.get(agent_name(name))
+        return next((k for k, v in a.sids.items() if v == sid and k), "") if a else ""
+
     def replaced(self, sid: str) -> Optional[str]:
         """For an Antigravity session that is not the one running this project: since when another is (else None)."""
         return self.lead[1] if self.lead and sid != self.lead[0] else None

@@ -40,6 +40,22 @@ def file_ref(req: Request, p: Project) -> Callable[[str], str]:
     return lambda fid: base + quote(fid)
 
 
+def session_of(p: Project, req: Request, by: str) -> str:
+    """The session a call is from, by its name (T862): the one it gives; else, from its id alone (a Claude Code
+    session's wait gives only sid=), the name that id gave before, the app's title for it, or the id's start. Two
+    sessions that give no name are two sessions, not one "claude-code": what one is on is not the other's, and words
+    one writes there do not wake the other."""
+    given, sid = req.session(), req.arg("sid")
+    if given or not SID.fullmatch(sid or ""):
+        return given
+    with p.lock:
+        named = p.agents.named(by, sid)
+    if named:
+        return named
+    found = lookup(sid)
+    return (found.name if found else "") or sid[:8]
+
+
 def asker(p: Project, who: Optional[str], session: str) -> Asker:
     return Asker(who=who, session=session, holder=lambda it: p.agents.holder(p.state, it),
                  calls=lambda: p.agents.calls_for(p.state, who, session),
@@ -165,7 +181,7 @@ def _next(req: Request, p: Project, by: str) -> Response:
     wait = max(0, min(int(req.arg("wait", "0") or 0), 540))
     end = time.time() + wait
     given: Optional[int] = None
-    session = req.session()
+    session = session_of(p, req, by) if "ui" not in q else req.session()
     sid = req.arg("sid") if by == "antigravity" and "ui" not in q else ""
     if sid:  # F755: one Antigravity session runs a project; a newer one takes over (lead=1), the one before stops
         with p.lock:
@@ -298,7 +314,7 @@ def _card(req: Request, p: Project, ref: str, by: str) -> Response:
         it = rules.item_at(st, ref, follow=False)
         answer = text(200, render.card(p.reading(file_ref(req, p)), it))
         if "ui" not in q:
-            p.agents.heard_item(st, it.n, by, req.session())
+            p.agents.heard_item(st, it.n, by, session_of(p, req, by))
             item_n = it.n
     if item_n is not None:  # an agent read the item, and so your words on it
         with p.lock:
@@ -311,10 +327,11 @@ def do(req: Request, p: Project) -> Response:
     body = req.body(MAX_FILE).decode("utf-8", "replace")
     by = req.arg("by", "agent")[:20]
     agent = by not in PEOPLE
-    session = req.session() if agent else ""
     with p.lock:
         if agent:
-            p.agents.saw(by, 0, session, req.arg("sid"), req.arg("parent"))
+            p.agents.saw(by, 0, req.session(), req.arg("sid"), req.arg("parent"))
+    session = session_of(p, req, by) if agent else ""
+    with p.lock:
         calls: List[str] = p.agents.call_news(p.state, by, session) if agent else []  # what others wrote before
     if agent:
         back(p, req.arg("sid"))
