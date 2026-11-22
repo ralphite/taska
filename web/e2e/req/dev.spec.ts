@@ -1,4 +1,4 @@
-// Yadong's requirements on what is there for making Taska (F448, F508; T475, D45): each check is named by the codes of
+// Yadong's requirements on what is there for making Taska (T448, T508; T475, D45): each check is named by the codes of
 // his inputs, so a change that breaks one is stopped before it ships with his own words.
 // guards: src/features/sidebar/ src/features/dev/ src/pages/App.tsx server/taska/http/workspace_routes.py server/taska/services/devdash.py
 import { expect, test } from '@playwright/test'
@@ -40,7 +40,7 @@ test("r595 r696: what each task cost, from the line ending an agent's done messa
   request,
 }) => {
   const p = await project(request, { agent: 'new P1 now Make the export faster\n', approve: ['T1'] })
-  // "<cost>: 12 min · 34,567 token (cache read 1,234,567) · 21 steps", as agents write it (I447)
+  // "<cost>: 12 min · 34,567 token (cache read 1,234,567) · 21 steps", as agents write it (T447)
   await p.doAs(
     'T1 done Faster now.\n  \u6210\u672c\uff1a12 \u5206\u949f · 34,567 token\uff08\u8bfb\u7f13\u5b58 1,234,567\uff09· 21 \u6b65\n',
   )

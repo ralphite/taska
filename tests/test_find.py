@@ -1,4 +1,4 @@
-"""F479: the phone's search finds things in every project, by the words and (when allowed) by what they mean, with
+"""T479: the phone's search finds things in every project, by the words and (when allowed) by what they mean, with
 embeddings: each line's vector is kept by its words, so only new and changed lines (and the words searched for) are
 embedded, and nothing a search answered is kept. The embedder is always a fake here: no test asks Gemini."""
 
@@ -55,7 +55,7 @@ class ByTheWords(unittest.TestCase):
         found = finding.by_words(st, "where the export loses my filter")
         self.assertEqual([(f.kind, f.key) for f in found][:2], [("tasks", "i1"), ("docs", "d1")])
         self.assertEqual({f.kind for f in found}, {"tasks", "rules", "inputs", "docs"})
-        self.assertIn(("rules", "s0"), [(f.kind, f.key) for f in found])  # a section of the rules (I693)
+        self.assertIn(("rules", "s0"), [(f.kind, f.key) for f in found])  # a section of the rules (T693)
         self.assertNotIn("i2", [f.key for f in found])
         self.assertEqual(finding.by_words(st, "the where my"), [])
 
@@ -167,7 +167,7 @@ class InEveryProject(unittest.TestCase):
         self.assertEqual(view["found"][0]["task"]["title"], "Words go missing after a pause")
         self.assertEqual(embed.texts("RETRIEVAL_DOCUMENT"), [self.line("shop", "T3 ")])
         embed.calls.clear()
-        shop.run(parse("F1 title Export keeps the sort you set\n"), "claude-code")
+        shop.run(parse("T1 title Export keeps the sort you set\n"), "claude-code")
         view = find_view(self.ws, "export with the sort", "shop")
         self.assertEqual(embed.texts("RETRIEVAL_DOCUMENT"), [self.line("shop", "T1 ")])
         self.assertEqual(view["found"][0]["task"]["title"], "Export keeps the sort you set")
@@ -187,7 +187,7 @@ class InEveryProject(unittest.TestCase):
         store = Vectors(os.path.join(self.ws.root, "meaning.db"))
         old = meaning.hash_of(self.line("shop", "T1 "))
         self.assertIn(old, store.all(meaning.MODEL))
-        self.ws.projects["shop"].run(parse("F1 title Export keeps every filter\n"), "claude-code")
+        self.ws.projects["shop"].run(parse("T1 title Export keeps every filter\n"), "claude-code")
         m.warm()
         kept = store.all(meaning.MODEL)
         self.assertNotIn(old, kept)

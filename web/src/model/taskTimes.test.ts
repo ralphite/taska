@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest'
 import { taskTimes } from './taskTimes'
 
-// F704 r1157: one quiet line under the task's chips, "Nov 3 by Organizer · Updated 2h ago"; both times in full on a tap
+// T704 r1157: one quiet line under the task's chips, "Nov 3 by Organizer · Updated 2h ago"; both times in full on a tap
 // (the phone's sheet) or under the pointer (the desktop's tip).
-describe('when a task was made and last changed (F704 r1157)', () => {
+describe('when a task was made and last changed (T704 r1157)', () => {
   const now = new Date(2026, 10, 6, 16, 40).getTime()
   const t = (mo: number, d: number, h: number, mi: number, y = 2026) => new Date(y, mo, d, h, mi).toISOString()
 

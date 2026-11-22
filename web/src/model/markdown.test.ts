@@ -75,7 +75,7 @@ describe('the talk', () => {
     expect(v.get(2)).toEqual({ old: false, text: 'and the sort', label: 'added details' })
   })
 
-  // F692 (r1113): the talk shows whole, no "Show earlier"; change only on Yadong's explicit word
+  // T692 (r1113): the talk shows whole, no "Show earlier"; change only on Yadong's explicit word
   test('the whole talk shows, from its first message', () => {
     const long = task({ n: 1, thread: Array.from({ length: 12 }, (_, i) => message({ id: i + 1 })) })
     expect(talkPlan(long).thread.map((x) => x.id)).toEqual(Array.from({ length: 12 }, (_, i) => i + 1))

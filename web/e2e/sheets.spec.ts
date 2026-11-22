@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
 import { taskMenu, menuChoice, pane, row, sheetBody, undo } from './ui'
 
-test("F479: with a task open, words that name an action show it under the search's Actions, and it acts on the task", async ({
+test("T479: with a task open, words that name an action show it under the search's Actions, and it acts on the task", async ({
   page,
   request,
 }) => {
@@ -91,13 +91,13 @@ test('T529, R4-5 #8: Put under… says No matches for the words when the search 
   await expect(sheet.getByRole('button', { name: /^No parent/ })).toBeVisible()
 })
 
-test('F628: the agent pill opens Agents, its guide laid out; Settings has no Agents', async ({ page, request }) => {
+test('T628: the agent pill opens Agents, its guide laid out; Settings has no Agents', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   await page.getByRole('button', { name: 'Agents', exact: true }).filter({ visible: true }).first().click()
   const sheet = sheetBody(page)
   await expect(sheet.locator('#dlgTitle')).toHaveText('Agents')
-  // the way to connect, in sight beside Close, never folded away (F768 r1300, r1305, r1309: one Copy, no command)
+  // the way to connect, in sight beside Close, never folded away (T768 r1300, r1305, r1309: one Copy, no command)
   await expect(page.getByRole('button', { name: 'Connect new agent' }).filter({ visible: true })).toBeVisible()
   await expect(sheet.getByRole('button', { name: 'Copy command' })).toHaveCount(0)
   await sheet.getByRole('button', { name: 'What agents read' }).click()

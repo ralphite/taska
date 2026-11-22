@@ -1,4 +1,4 @@
-"""B830 (T789): the logs say what happened. A model that gave no answer is not written as 200, and a request turned
+"""T830 (T789): the logs say what happened. A model that gave no answer is not written as 200, and a request turned
 away says where it came from and how it was asked, without the asking page's address (it may hold the key)."""
 
 from __future__ import annotations
@@ -40,12 +40,12 @@ class LogWords(unittest.TestCase):
 
 
     def test_a_page_record_says_what_it_is_about(self) -> None:
-        """B842: a request the page found slow says which (108 slow ones read "page net "); a sheet, which one."""
+        """T842: a request the page found slow says which (108 slow ones read "page net "); a sheet, which one."""
         self.assertEqual(page_line("net", {"why": "slow", "method": "GET", "url": "/api/needs", "ms": 4539}), "page net slow GET /api/needs")
         self.assertEqual(page_line("net", {"why": "failed", "msg": "Taska is unreachable"}), "page net Taska is unreachable")
         self.assertEqual(page_line("sheet", {"what": "task-menu", "arm": "t", "where": "/p/sd/T10"}), "page sheet task-menu")
         self.assertEqual(page_line("view", {"where": "/p/sd/T10"}), "page view /p/sd/T10")
-        self.assertEqual(page_line("swipe", {"dir": "right", "what": "Done", "n": "12"}), "page swipe right Done")  # F846
+        self.assertEqual(page_line("swipe", {"dir": "right", "what": "Done", "n": "12"}), "page swipe right Done")  # T846
         self.assertEqual(page_line("tap", {"what": "Accept", "role": "button", "where": "/p/sd/"}), "page tap Accept")
         self.assertEqual(page_line("pick", {"what": "Priority", "to": "P2", "where": "/p/sd/T10"}), "page pick Priority P2")
 

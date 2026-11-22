@@ -60,7 +60,7 @@ B1 doc Plan
   graph TD; A-->
   ```
 D1 reply ¶1 Checked the plan.
-F3 doc Page
+T3 doc Page
   <html><head><title>Mock</title></head><body><h1>Mock</h1><p>The export page.</p></body></html>
 rules propose Keep the filter in every export
   add ## Exports
@@ -238,42 +238,42 @@ def record(base: str) -> Dict[str, Any]:
     other = c.json("/api/projects", {"title": "Garden"})["name"]
     p = f"/p/{slug}/api/"
     agent = lambda words, session="sample": c.raw(f"/p/{slug}/do?by=claude-code&session={session}", words.encode(), "text/plain")  # noqa: E731
-    # a worker (F768): started by the session "sample", known by its app's id
+    # a worker (T768): started by the session "sample", known by its app's id
     c.raw(f"/p/{slug}/do?by=claude-code&session=helper&parent=sample&sid=aaaaaaaa-1111-2222-3333-444444444444",
           b"T2 progress Looking at the address.\n", "text/plain")
     agent(SEED)
-    # the worker on a task you approved (it holds it: Agents says what each session is on, F768)
-    c.raw(f"/p/{slug}/do?by=you", b"F3 open\n", "text/plain")
+    # the worker on a task you approved (it holds it: Agents says what each session is on, T768)
+    c.raw(f"/p/{slug}/do?by=you", b"T3 open\n", "text/plain")
     c.raw(f"/p/{slug}/do?by=claude-code&session=helper&parent=sample&sid=aaaaaaaa-1111-2222-3333-444444444444",
-          b"F3 doing\n", "text/plain")
-    # a web page too big for the view (B756: its sound written into it): its text comes by itself (api/doc)
+          b"T3 doing\n", "text/plain")
+    # a web page too big for the view (T756: its sound written into it): its text comes by itself (api/doc)
     agent("T2 html\n  <html><head><title>Lecture</title></head><body><audio src='data:audio/mp3;base64," + "A" * 1_000_000 + "'></audio></body></html>\n")
     out["upload"] = c.json(p + "file?name=note.webm&transcribe=1&scope=B1", b"\x1aE\xdf\xa3 not really audio", "audio/webm")
     voice = out["upload"]
-    # its final words, so the answer's shape never depends on whether the first words came early (B735: `more` is
+    # its final words, so the answer's shape never depends on whether the first words came early (T735: `more` is
     # sent only while a note is worked out)
     out["words"] = c.json(p + f"words?f={voice['f']}&more=1", b"")
     picture = c.json(p + "file?name=shot.png", PNG, "image/png")
     shot = c.json(p + "file?name=shot2.png", PNG, "image/png")
     logo = c.json(p + "file?name=logo.png", PNG, "image/png")
-    agent(f"project icon {logo['f']}\n")  # the project's picture (F743): its rows and facts carry it
+    agent(f"project icon {logo['f']}\n")  # the project's picture (T743): its rows and facts carry it
     agent(f"B1 say files={shot['f']} @helper the export as it is now\n"
           f"new P1 now Pick the columns\nT4 ask files={shot['f']} Which columns?\n  - [ ] Date\n  - [ ] Total\n")
     c.raw(f"/p/{slug}/B1?by=claude-code&session=sample")  # an agent reads it: Read by
     page = lambda rid, *cmds: c.json(p + "commands", {"id": rid, "commands": list(cmds)})  # noqa: E731
     page("s1", {"op": "input", "text": "And the sort, please.", "scope": "B1", "q": "page-1"},
-         {"op": "input", "text": "", "files": [{**voice, "at": 0}], "words": {voice["f"]: WORDS}, "q": "page-2"},  # B838: its place
+         {"op": "input", "text": "", "files": [{**voice, "at": 0}], "words": {voice["f"]: WORDS}, "q": "page-2"},  # T838: its place
          {"op": "input", "text": "Look at this", "files": [picture], "q": "page-3"},
          {"op": "input", "text": "Never mind", "kind": "cancelled", "q": "page-4"},
          {"op": "rules", "md": "## Commits\n\n- In English.", "why": "Commits"})
-    page("s2", {"op": "set", "ref": "F3", "f": {"status": "open", "later_until": "2026-12-01", "rank": -5}},
+    page("s2", {"op": "set", "ref": "T3", "f": {"status": "open", "later_until": "2026-12-01", "rank": -5}},
          {"op": "dc", "d": 1, "para": 1, "text": "Read it from the address.", "files": [picture]},
          {"op": "dc", "d": 1, "key": "doc", "text": "Looks right.", "files": [picture]},
          {"op": "input", "text": "One more thing", "q": "page-5"})
     view = _settle(c, p)
     r = {i["q"]: i["id"] for i in view["inputs"] if i.get("q")}
     told = next(x["id"] for it in view["tasks"] if it["code"] == "T1" for x in it["thread"] if x["kind"] == "progress")
-    # questions in a row, one of them answered (B749): the answer names it (`of`), the other still waits
+    # questions in a row, one of them answered (T749): the answer names it (`of`), the other still waits
     agent(f"T4 ask files={shot['f']} Anything else?\n")
     first = next(x for it in _settle(c, p)["tasks"] if it["code"] == "T4" for x in it["thread"] if x["kind"] == "ask")
     page("s2b", {"op": "input", "text": "- Which columns? → ✓ Date", "scope": "T4", "kind": "answer", "of": [first["id"]], "q": "page-6"})
@@ -293,14 +293,14 @@ def record(base: str) -> Dict[str, Any]:
     out["changes"] = c.json(p + f"changes?cursor={cursor}&wait=0")
     out["commands"] = c.json(p + f"commands?cursor={cursor}", {"id": "s5", "commands": [{"op": "set", "ref": "B1", "f": {"pri": "P0"}}]})
     out["moveInput"] = c.json(p + "move-input", {"id": r["page-2"], "to": other})
-    out["moveTask"] = c.json(p + "move-task?id=s6", {"to": other, "ref": "F3"})
+    out["moveTask"] = c.json(p + "move-task?id=s6", {"to": other, "ref": "T3"})
     out["activity"] = c.json(p + "activity?n=100")
     out["pictureSizes"] = c.json(p + "picture-sizes")
     out["diagramFailed"] = c.json(p + "diagram-failed", {"d": 1, "v": 1, "key": "x", "error": "Parse error"})
     out["pageLog"] = c.json(p + "page-log", {"list": [{"kind": "action", "msg": "sample"}]})
-    # I833: bring back a session (none of its app is connected: what to give a new session)
+    # T833: bring back a session (none of its app is connected: what to give a new session)
     out["reconnect"] = c.json(p + "reconnect", {"sid": "aaaaaaaa-1111-2222-3333-444444444444"})
-    out["newSharedRules"] = c.json("/api/shared-rules", {"name": "Coding"})  # I779
+    out["newSharedRules"] = c.json("/api/shared-rules", {"name": "Coding"})  # T779
     rule = "/p/" + out["newSharedRules"]["slug"] + "/api/"
     c.json(rule + "commands", {"id": "s7", "commands": [{"op": "rules", "md": "## Tests (when to run them)\n\n- Run them.", "why": "First"}]})
     c.json(p + "commands", {"id": "s8", "commands": [{"op": "rules", "md": "{{Coding}}\n\n## Own\n\n- Mine."}]})
@@ -328,7 +328,7 @@ def record(base: str) -> Dict[str, Any]:
     out["pushKey"] = c.json("/api/push?endpoint=")
     out["setPush"] = c.json("/api/push", {"endpoint": "https://push.invalid/x", "off": True})
     out["devDashboard"] = c.json("/dev/api/dashboard?days=7")
-    out["setGemini"] = c.json("/api/gemini", {"key": ""})  # F765: forgetting a key that is not set restarts nothing
+    out["setGemini"] = c.json("/api/gemini", {"key": ""})  # T765: forgetting a key that is not set restarts nothing
     out["newKey"] = c.json("/api/key", b"")
     key = out["newKey"]["key"]
     out["login"] = c.json("/api/login", {"key": key}, headers={"X-Forwarded-For": "203.0.113.9"})

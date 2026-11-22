@@ -10,9 +10,9 @@ import { box, boxAux, boxMain, buttonAt, docEdit, docHint, docMic, draftFiles, f
 
 test.use({ launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] } })
 
-// Safari's engine runs the check of the iPhone's microphone (B800) only; the rest are Chromium's, on the phone and the desktop
+// Safari's engine runs the check of the iPhone's microphone (T800) only; the rest are Chromium's, on the phone and the desktop
 test.beforeEach(async ({ page, browserName }, info) => {
-  test.skip(browserName === 'webkit' && !info.title.startsWith('B800'), "Chromium's check")
+  test.skip(browserName === 'webkit' && !info.title.startsWith('T800'), "Chromium's check")
   if (browserName === 'webkit') await fakeMic(page)
 })
 
@@ -120,12 +120,12 @@ test('r512: a voice note you sent never comes back to the box: it goes once the 
   // offline long enough for its tries to space out (2, 4, 8 s): the next pause would be 16 s
   await expect.poll(() => tried, { timeout: 40000 }).toBeGreaterThanOrEqual(4)
   await context.setOffline(false)
-  // "the moment it can go, it goes" (r512, B538): well inside that 16 s pause, even on a busy machine
+  // "the moment it can go, it goes" (r512, T538): well inside that 16 s pause, even on a busy machine
   await expect.poll(() => voices(p), { timeout: 10000 }).toBe(before + 1)
   await expect(draftFiles(page)).toHaveCount(0)
 })
 
-test('r512 B538: a voice note that waited offline a while goes within seconds of the network coming back', async ({
+test('r512 T538: a voice note that waited offline a while goes within seconds of the network coming back', async ({
   page,
   context,
   request,
@@ -150,7 +150,7 @@ test('r512 B538: a voice note that waited offline a while goes within seconds of
   await expect.poll(() => voices(p), { timeout: 10000 }).toBe(before + 1)
 })
 
-test('r485 r497 B640: pointing at a voice note shows its original words at once, beside it; the phone opens them from its icon', async ({
+test('r485 r497 T640: pointing at a voice note shows its original words at once, beside it; the phone opens them from its icon', async ({
   page,
   request,
 }) => {
@@ -188,7 +188,7 @@ test('r485 r497 B640: pointing at a voice note shows its original words at once,
     if (!t || !c) throw new Error('not drawn')
     expect(t.y + t.height <= c.y + 1 || t.y >= c.y + c.height - 1, 'above or below the note, not over it').toBe(true)
     // T697: the words are in the tip at once; one read of the note's record (a GET) may follow for the steps that
-    // worked them out, and nothing writes the note down again (no POST: that took seconds, r485, B363)
+    // worked them out, and nothing writes the note down again (no POST: that took seconds, r485, T363)
     expect(asked.length).toBeLessThanOrEqual(1)
     expect(asked.filter((m) => m !== 'GET')).toEqual([])
     return
@@ -200,7 +200,7 @@ test('r485 r497 B640: pointing at a voice note shows its original words at once,
   expect(w.x + w.width).toBeLessThanOrEqual(c.x + c.width + 1)
   expect(w.y).toBeGreaterThanOrEqual(c.y - 1)
   // they open from one question to Taska at most, not a second try that writes the note down again (that took
-  // seconds, r485, B363)
+  // seconds, r485, T363)
   await words.first().click()
   await expect(page.getByRole('dialog', { name: 'Original words', exact: true })).toBeVisible({ timeout: 15000 })
   expect(asked.length).toBeLessThanOrEqual(1)
@@ -239,7 +239,7 @@ const mics = (page: Page) =>
     return { asked: w.micAsked, hearing: w.mics.flatMap((s) => s.getTracks()).filter((t) => t.readyState !== 'ended').length }
   })
 
-test('B800 r1371: from the Home Screen, each recording opens the microphone and lets it go at its end: two voice notes, a spoken search, dictation into a document; the phone as the desktop', async ({
+test('T800 r1371: from the Home Screen, each recording opens the microphone and lets it go at its end: two voice notes, a spoken search, dictation into a document; the phone as the desktop', async ({
   page,
   request,
 }) => {

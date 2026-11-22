@@ -6,7 +6,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project, type Project } from '../seed'
 import { box, boxMain, fakeMic, fingerScroll, pane, recording, talk as talkOf, tip } from '../ui'
 
-// a voice reply is recorded from the test browser's fake microphone (B770); WebKit has none of its own (B786)
+// a voice reply is recorded from the test browser's fake microphone (T770); WebKit has none of its own (T786)
 test.use({ launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] } })
 test.beforeEach(async ({ page, browserName }) => {
   if (browserName === 'webkit') await fakeMic(page)
@@ -54,10 +54,10 @@ test('r368: a code in a message is a link to its task, and pointing at it shows 
   await expect(page).toHaveURL(/\/T0*2(\?|$)/)
 })
 
-// B507: how far down the talk a thing is drawn
+// T507: how far down the talk a thing is drawn
 const top = async (l: Locator) => (await l.boundingBox())?.y ?? NaN
 
-test('r693: a card you replied on instead of deciding stays where it was, updated, and your reply comes after it; a card nothing came after is still last (B507)', async ({
+test('r693: a card you replied on instead of deciding stays where it was, updated, and your reply comes after it; a card nothing came after is still last (T507)', async ({
   page,
   request,
 }) => {
@@ -79,7 +79,7 @@ new P2 now Still waits
   const above = (a: Locator, b: Locator, what: string) =>
     expect.poll(async () => (await top(a)) < (await top(b)), what).toBe(true)
   // a proposal and finished work: the card, updated, where it was; your reply after it
-  // (a proposal you reply on is approved, B818 r1401; finished work you reply on goes back to work, B607/B606: its
+  // (a proposal you reply on is approved, T818 r1401; finished work you reply on goes back to work, T607/B606: its
   // card says Sent back)
   for (const [code, said, shown] of [
     ['T3', 'Do it this way.', 'Approved'],
@@ -91,7 +91,7 @@ new P2 now Still waits
     await above(card(shown), words('Let us talk first'), `${code}: the card above your reply`)
     await above(words(said), words('Let us talk first'), `${code}: what the agent said above your reply`)
   }
-  // an agent's task with no words of its own: its card heads the talk, before your reply, approved by it (B818)
+  // an agent's task with no words of its own: its card heads the talk, before your reply, approved by it (T818)
   await open(page, p, 'T1')
   await expect.poll(async () => p.read('T1')).toMatch(/^T0*1 P\d \w+ open/)
   await expect(card('proposed this').getByRole('button', { name: 'Approved', exact: true })).toBeVisible()
@@ -127,7 +127,7 @@ test('T589 #10486: a task opens at its latest message, and what you send and the
 
 /** `eachFrame(look)` in the page: `look` runs as each frame is drawn, after the page's own ResizeObservers ran (they
  * keep the talk at its end) and before it is painted, for as long as it says true. An observer made after the page's,
- * of a probe resized every frame, runs then (B770: a look from a task between frames also saw the page's changes
+ * of a probe resized every frame, runs then (T770: a look from a task between frames also saw the page's changes
  * before those observers ran, as frames that were never painted). */
 const frames = (page: Page) =>
   page.evaluate(() => {
@@ -153,7 +153,7 @@ const frames = (page: Page) =>
   })
 type Frames = { eachFrame: (look: () => boolean) => void }
 
-// B719: what scrolls the talk, looked at as each frame is drawn: the frames it did not show its end, the most it went
+// T719: what scrolls the talk, looked at as each frame is drawn: the frames it did not show its end, the most it went
 // up in a frame, the most times the words sent showed
 async function watchEnd(page: Page, words: string) {
   await frames(page)
@@ -185,7 +185,7 @@ async function watchEnd(page: Page, words: string) {
     })
 }
 
-test('B719 r1178: replying keeps the talk at its end and it never jumps: the box shrinking, Taska’s news of the reply before its answer to the send, the agent’s reply; the phone as the desktop', async ({
+test('T719 r1178: replying keeps the talk at its end and it never jumps: the box shrinking, Taska’s news of the reply before its answer to the send, the agent’s reply; the phone as the desktop', async ({
   page,
   request,
 }) => {
@@ -267,7 +267,7 @@ async function hearing(page: Page) {
   }
 }
 
-/** B770: a voice reply recorded and sent from the task's box, its words told by `h` as they come: the first words, then the final
+/** T770: a voice reply recorded and sent from the task's box, its words told by `h` as they come: the first words, then the final
  * ones in their place. */
 async function voiceReply(page: Page, p: Project, h: Awaited<ReturnType<typeof hearing>>, first: string, final: string) {
   const mic = page.locator('#composer').getByRole('button', { name: 'Record a voice note', exact: true }).filter({ visible: true }).last()
@@ -293,7 +293,7 @@ async function voiceReply(page: Page, p: Project, h: Awaited<ReturnType<typeof h
 const FIRST = 'First words of it'
 const FINAL = 'First words of it, as heard in the end'
 
-test('B770 r1292: replying by voice at the talk’s end keeps it at its end: recording, sent, transcribing, the first words, the final words in their place; it never goes up; the phone as the desktop', async ({
+test('T770 r1292: replying by voice at the talk’s end keeps it at its end: recording, sent, transcribing, the first words, the final words in their place; it never goes up; the phone as the desktop', async ({
   page,
   request,
 }) => {
@@ -313,7 +313,7 @@ test('B770 r1292: replying by voice at the talk’s end keeps it at its end: rec
   expect({ off: got.off, up: got.up }, 'at its end all along, never up').toEqual({ off: 0, up: 0 })
 })
 
-test('B770 r1292: scrolled up to read, replying by voice moves the talk once, down to its end where the reply is (T589), and from then on never up nor away from its end: recording, sent, transcribing, the first words, the final words; the phone as the desktop', async ({
+test('T770 r1292: scrolled up to read, replying by voice moves the talk once, down to its end where the reply is (T589), and from then on never up nor away from its end: recording, sent, transcribing, the first words, the final words; the phone as the desktop', async ({
   page,
   request,
 }) => {
@@ -362,7 +362,7 @@ test('B770 r1292: scrolled up to read, replying by voice moves the talk once, do
   expect(got, 'down to its end once, then at its end all along, never up').toEqual({ up: 0, offAfter: 0, reached: true })
 })
 
-// B786: a long talk of an agent's long messages, as a tutor writes them, the last a question waiting on you (system-design
+// T786: a long talk of an agent's long messages, as a tutor writes them, the last a question waiting on you (system-design
 // T27 on Yadong's iPhone); you answer it by voice, the agent's reply asks the next one
 const lesson = (i: number) =>
   `T1 say Part ${i} of the lesson. ` +
@@ -379,7 +379,7 @@ async function tutorTalk(request: Parameters<typeof project>[0]) {
 const reply = (p: Project) => p.doAs(`T1 say Got it: the scope as it was, the time on what carries over to other problems.\nT1 ask ${NEXT}\n`)
 const shows = (page: Page, words: string) => page.getByText(words).filter({ visible: true }).last()
 
-test('B786 r1337: replying by voice at the end of a long talk whose last message asks you keeps it at its end, looked at as each frame is drawn: sent, transcribing, the first words, the final words, the agent’s reply with a new question; it never goes up; the phone as the desktop', async ({
+test('T786 r1337: replying by voice at the end of a long talk whose last message asks you keeps it at its end, looked at as each frame is drawn: sent, transcribing, the first words, the final words, the agent’s reply with a new question; it never goes up; the phone as the desktop', async ({
   page,
   request,
 }) => {
@@ -397,7 +397,7 @@ test('B786 r1337: replying by voice at the end of a long talk whose last message
   expect({ off: got.off, up: got.up }, 'at its end all along, never up').toEqual({ off: 0, up: 0 })
 })
 
-test('B786 r1337: scrolled up to read after replying by voice at the end of a long talk, nothing moves the talk, not the agent’s reply with a new question either; the phone (a finger) as the desktop (the wheel)', async ({
+test('T786 r1337: scrolled up to read after replying by voice at the end of a long talk, nothing moves the talk, not the agent’s reply with a new question either; the phone (a finger) as the desktop (the wheel)', async ({
   page,
   request,
 }) => {
@@ -440,7 +440,7 @@ test('B786 r1337: scrolled up to read after replying by voice at the end of a lo
   expect(got, 'where you scrolled it all along').toEqual({ moved: 0 })
 })
 
-test('B721 r1183: scrolled up right after a task opens, the talk stays where you scrolled it, never pulled back to its end; the phone (a finger) as the desktop (the wheel)', async ({
+test('T721 r1183: scrolled up right after a task opens, the talk stays where you scrolled it, never pulled back to its end; the phone (a finger) as the desktop (the wheel)', async ({
   page,
   request,
 }) => {
@@ -478,8 +478,8 @@ test('B721 r1183: scrolled up right after a task opens, the talk stays where you
   }
 })
 
-// B801: an edited input shows the words from before the change when it is pointed at (desktop; the tip is the page's own)
-test('r978 (B640 #8700, B801): an edited input says "edited", and pointing at it shows the words from before the change; clicking it still opens the history', async ({
+// T801: an edited input shows the words from before the change when it is pointed at (desktop; the tip is the page's own)
+test('r978 (T640 #8700, T801): an edited input says "edited", and pointing at it shows the words from before the change; clicking it still opens the history', async ({
   page,
   request,
 }) => {
@@ -507,7 +507,7 @@ test('r978 (B640 #8700, B801): an edited input says "edited", and pointing at it
   await expect(page.locator('[role="dialog"]').filter({ visible: true }).last()).toContainText('The first words of mine')
 })
 
-test('r978 (B640 #8700, B801): in the list of what you said, an edited input\'s "edited" shows the words from before the change when pointed at', async ({
+test('r978 (T640 #8700, T801): in the list of what you said, an edited input\'s "edited" shows the words from before the change when pointed at', async ({
   page,
   request,
 }) => {

@@ -39,7 +39,7 @@ SYSTEM = """You are a senior product designer who also writes production HTML. Y
 
 Taska is a personal tracker the user shares with AI coding agents. The user drops thoughts (text, voice, images) into
 an input box; a built-in organizer turns them into tasks: features (F), bugs (B), ideas (I), tasks (T) and rules (R),
-each with a code like F47, a priority P0-P3, now/later, and a status (proposed, open, in progress, in review, done,
+each with a code like T47, a priority P0-P3, now/later, and a status (proposed, open, in progress, in review, done,
 won't do). Agents work through the tasks and write back; the user reviews and answers on the phone. Tasks that need
 the user (proposed, in review, an agent asking) must stand out. Text is often Chinese, sometimes English.
 

@@ -1,4 +1,4 @@
-"""B606 (Yadong's choice, #8331): /next puts a task Yadong replied on first while an agent is working on it (in
+"""T606 (Yadong's choice, #8331): /next puts a task Yadong replied on first while an agent is working on it (in
 progress); otherwise his reply waits its turn by priority, so a P2 he wrote on does not jump ahead of a P0. In progress
 means an agent is working on it now (r942); asking does not change the status (D110)."""
 

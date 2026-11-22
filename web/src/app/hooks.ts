@@ -91,7 +91,7 @@ export function useTaskWorld(m: ProjectModel | null, slug: string): InlineWorld 
   )
 }
 
-/** A document's world: a diagram of it that does not draw is told to the agent that wrote it (B714 r1181); the
+/** A document's world: a diagram of it that does not draw is told to the agent that wrote it (T714 r1181); the
  * rules and web pages have no such diagrams. */
 export function useDocWorld(m: ProjectModel | null, slug: string, d: Doc | undefined): InlineWorld {
   const { diagrams } = useApp()

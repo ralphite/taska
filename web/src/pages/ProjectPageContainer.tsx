@@ -37,7 +37,7 @@ import { agentInfo, deskTabs, phoneTabs, tabCounts } from './headFacts'
 import { SharedRuleContainer } from './SharedRuleContainer'
 import { isSharedSlug } from '../model/includes'
 
-/** Settings › Organizer, where the Gemini API key is set (F765) */
+/** Settings › Organizer, where the Gemini API key is set (T765) */
 const organizerHref = (slug: string) => `/p/${encodeURIComponent(slug)}/${SECTIONS.organizer.path}`
 
 function useHeadFacts(route: ProjectRoute, desk: boolean) {
@@ -52,7 +52,7 @@ function useHeadFacts(route: ProjectRoute, desk: boolean) {
   // the agent whose session waits on the user: the bar floating at the bottom says so until it does not (T711)
   const blocked = m ? blockedAgent(m.facts.agents, m.at) : null
   const counts = useMemo(() => (m ? tabCounts(m, route.tab, route.list, desk) : null), [m, route.tab, route.list, desk])
-  // no Gemini API key: the organizer and voice notes are off until one is set (F765)
+  // no Gemini API key: the organizer and voice notes are off until one is set (T765)
   const noKey = m?.facts.organizer.key?.from === ''
   return { m, title, agent, blocked, counts, notSaved, away, otherNeeds, noKey }
 }
@@ -66,7 +66,7 @@ export function ProjectPageContainer({ route }: { route: ProjectRoute }) {
   useEffect(() => {
     const waiting = m ? needsCount(m, needsYou) : 0
     const sec = settingsTitle(route.place, layout === 'desk')
-    const shared = isSharedSlug(route.slug) ? 'Shared rules · ' : '' // a shared rule's page (I779)
+    const shared = isSharedSlug(route.slug) ? 'Shared rules · ' : '' // a shared rule's page (T779)
     document.title = (waiting ? `(${waiting}) ` : '') + (sec ? sec + ' · ' : '') + shared + (m ? `${m.facts.title} · Taska` : 'Taska')
   }, [m, route.place, route.slug, layout])
   return (
@@ -88,7 +88,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const settings = route.place.kind === 'settings' || help
   const full = useStoreValue(stores.route, (s) => s.full) && route.place.kind === 'task' && !settings
   const shownSide = useStoreValue(stores.route, (s) => s.side)
-  // the Rules tab is the rules document over both columns (I693)
+  // the Rules tab is the rules document over both columns (T693)
   const rulesTab = route.tab === 'rules' && (route.place.kind === 'tab' || route.place.kind === 'rules')
   // a document edited in the pane has no box under it
   const docEditing = useStoreValue(stores.docView, (s) => s.editing && s.newFor == null) && (route.place.kind === 'doc' || rulesTab)
@@ -101,7 +101,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const tags = useMemo(() => (model ? projectTags(model.tasks) : []), [model])
   const set = filtersSet(route.tab, route.list)
   // the foot's height and its box's middle (from the foot's top): what scrolls runs on under the box to its middle in
-  // dark, where the box floats over the talk, and stops at the foot's top in light, so a scrollbar is never under it (B739)
+  // dark, where the box floats over the talk, and stops at the foot's top in light, so a scrollbar is never under it (T739)
   const [foot, setFoot] = useState({ h: 0, cut: 0 })
   const onFoot = useCallback((h: number, cut: number) => setFoot((f) => (f.h === h && f.cut === cut ? f : { h, cut })), [])
   const tabs = deskTabs(counts, route.tab, settings || side)
@@ -128,7 +128,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           on={{ tab: (t) => app.nav.tab(t), agents: () => app.sheets.open(...AGENTS_SHEET), notSaved: (from) => app.sheets.openFrom(from, { kind: 'not-saved' }, { focus: false }), noKey: () => app.nav.to(organizerHref(route.slug)) }}
         />
         {/* two columns under the bar, each laid out by itself: nothing the pane shows moves the list, or the other way
-            round (B663) */}
+            round (T663) */}
         <div data-part="list-column" hidden={settings || full || rulesTab} className="col-start-1 row-start-2 flex min-h-0 min-w-0 flex-col">
           <DeskFilters
             tab={route.tab}
@@ -160,7 +160,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
         {settings && !help ? <SettingsContainer route={route} place="col-span-2 col-start-1 row-span-2 row-start-1" prefsBox={<BoxContainer route={route} composePage={false} bare />} /> : null}
         {settings || full || rulesTab ? null : (
           // the line between the list and the pane, from under the project's bar to the bottom: one line, drawn here only
-          // (B573), dragged sideways like the other lines; grabbed only right of the line, never over the list's scrollbar (B739)
+          // (T573), dragged sideways like the other lines; grabbed only right of the line, never over the list's scrollbar (T739)
           <Grip
             name="list"
             axis="x"
@@ -231,16 +231,16 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
   const help = route.place.kind === 'help'
   const settings = route.place.kind === 'settings' || route.place.kind === 'side' || help
   const prefsEditing = useStoreValue(stores.box, (s) => s.mode?.kind === 'prefs')
-  // a document on the phone has no box (B643): a part picked has its own Voice and Comment under it; the box comes
-  // only to write: that Comment (B498), or an edit (a comment of yours, or the document, whose editor speaks through it)
+  // a document on the phone has no box (T643): a part picked has its own Voice and Comment under it; the box comes
+  // only to write: that Comment (T498), or an edit (a comment of yours, or the document, whose editor speaks through it)
   const boxMode = useStoreValue(stores.box, (s) => !!s.mode)
   const docEdit = useStoreValue(stores.docView, (s) => s.editing || s.typing)
   const docNoBox = route.place.kind === 'doc' && !boxMode && !docEdit
-  // the Rules tab reads the rules document in place of the list (I693); its editor has no box under it
+  // the Rules tab reads the rules document in place of the list (T693); its editor has no box under it
   const rulesTab = route.tab === 'rules' && (route.place.kind === 'tab' || route.place.kind === 'rules')
   const rulesEditing = useStoreValue(stores.docView, (s) => s.editing && s.newFor == null) && rulesTab
   // while the task's page is swiped back, what it was opened from shows underneath it: the list, or the search page
-  // (F479), which stays while a result is open, as you left it
+  // (T479), which stays while a result is open, as you left it
   const beneath = (!open && !settings) || !!floating
   const under = beneath && !searching
   const searchShown = beneath && searching

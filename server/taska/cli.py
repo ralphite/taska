@@ -45,7 +45,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         install_antigravity_agents(ANTIGRAVITY_AGENTS)
         return
     from .infra import gemini
-    gemini.use_key_file(os.path.join(os.path.expanduser(args.root), "gemini-key"))  # F765: the key set in Settings
+    gemini.use_key_file(os.path.join(os.path.expanduser(args.root), "gemini-key"))  # T765: the key set in Settings
     serve(args.root, args.host, args.port, args.organizer == "auto" and bool(gemini.api_key()), args.public,
           os.path.join(os.path.expanduser(args.root), "logs.db") if args.log_db is None else args.log_db, args.log_level,
           args.skills == "on")
@@ -86,7 +86,7 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
     for line in migrate_all(os.path.abspath(os.path.expanduser(root))):  # once: every log in today's format (T863)
         print(f"taska: {line}", flush=True)
     from .infra import gemini
-    gemini.use_key_file(os.path.join(os.path.expanduser(root), "gemini-key"))  # F765: the key set in Settings
+    gemini.use_key_file(os.path.join(os.path.expanduser(root), "gemini-key"))  # T765: the key set in Settings
     organizers = Organizers(enabled=organizer)
 
     health = VoiceHealth(root)  # T822: how notes are heard lately, every project's together
@@ -118,7 +118,7 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
     except OSError as ex:
         sys.exit(f"taska: cannot listen on {host}:{port}: {ex}")
     ws.lan = lan_address(host, port)
-    ws.local = f"http://127.0.0.1:{port}"  # I833: what the agents here run
+    ws.local = f"http://127.0.0.1:{port}"  # T833: what the agents here run
     added = ws.shared_rules.seed() if skills else []  # r1450: the skills a release comes with, each added once
     if added:
         print("taska: added the skills it comes with: " + " ".join(added), flush=True)
@@ -130,7 +130,7 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
           + "\n  key        in " + os.path.join(ws.root, "key") + "  (needed from outside this machine and its network)",
           flush=True)
 
-    def job_failed(job: str, ex: Exception) -> None:  # F846: a job of its own that failed is in the log, not only on stderr
+    def job_failed(job: str, ex: Exception) -> None:  # T846: a job of its own that failed is in the log, not only on stderr
         print(f"taska: {job}: {ex}", file=sys.stderr)
         logs.log.error(f"{job} failed: {ex}"[:300], extra={"f": {"source": "server", "kind": "job", "job": job}})
 
@@ -143,7 +143,7 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
 
     threading.Thread(target=pushes, daemon=True).start()
 
-    def sessions() -> None:  # every 10 s (I810): the workers found by their titles, and how every session is now
+    def sessions() -> None:  # every 10 s (T810): the workers found by their titles, and how every session is now
         while not stop.wait(10):
             try:
                 ws.find_workers(running())
@@ -158,7 +158,7 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
         while True:
             try:
                 back = ws.bring_back_laters(time.strftime("%Y-%m-%d"))
-                if back:  # F846: what Taska does by itself is in the log too
+                if back:  # T846: what Taska does by itself is in the log too
                     logs.log.info(f"later: {back} back to Now", extra={"f": {"source": "server", "kind": "later", "n": back}})
             except Exception as ex:  # a Later coming back must never stop Taska
                 job_failed("later", ex)

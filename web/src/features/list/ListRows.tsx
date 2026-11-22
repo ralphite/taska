@@ -219,7 +219,7 @@ function Shell({ it, look, facts, on, children }: { it: Task; look: RowLook; fac
 
 
 /** The list narrower than about 90% of its width by default on the desktop (360px; 420px wide, 460px huge): an
- * action's pill (Answer, Accept ...) keeps its icon only, its name in the tip (F764, Yadong r1284; B678). */
+ * action's pill (Answer, Accept ...) keeps its icon only, its name in the tip (T764, Yadong r1284; T678). */
 export const NARROW_HIDE = '@max-[324px]/list:hidden wide:@max-[378px]/list:hidden huge:@max-[414px]/list:hidden'
 export const NARROW_PILL =
   '@max-[324px]/list:w-8 @max-[324px]/list:min-w-0 @max-[324px]/list:px-0 wide:@max-[378px]/list:w-8 wide:@max-[378px]/list:min-w-0 wide:@max-[378px]/list:px-0 huge:@max-[414px]/list:w-8 huge:@max-[414px]/list:min-w-0 huge:@max-[414px]/list:px-0'
@@ -233,9 +233,9 @@ export function TaskRow(props: {
   facts: RowFacts
   look: RowLook
   on: RowEvents
-  /** what you just did to it, while the list holds still: the row stays, saying it (B699) */
+  /** what you just did to it, while the list holds still: the row stays, saying it (T699) */
   said?: string
-  /** that change closed it (done, Won't do ...): its title struck and faded; approved or sent back it is not (B766) */
+  /** that change closed it (done, Won't do ...): its title struck and faded; approved or sent back it is not (T766) */
   struck?: boolean
 }) {
   const { it, depth, band, foldable, folded, facts, look, on, said, struck = false } = props
@@ -333,8 +333,8 @@ export function TaskRow(props: {
 }
 
 /** `said`: what you just did, while the list holds still: the same row, its button disabled saying it in the past tense
- * (B699, as a decided card, r1003); its title struck only when that closed it (Accepted, Declined), never when approved
- * (B766: it is work to do now). */
+ * (T699, as a decided card, r1003); its title struck only when that closed it (Accepted, Declined), never when approved
+ * (T766: it is work to do now). */
 export function NeedsRow({ it, depth, facts, look, excerpt, said, struck = false, act, on }: { it: Task; depth: number; facts: RowFacts; look: RowLook; excerpt: string; said?: string; struck?: boolean; act?: NeedAct; on: RowEvents }) {
   // its pill: what it needs from you (model/needStates); held after you acted, as it was
   const v = act ?? needRow(it)?.act ?? 'accept'
@@ -387,7 +387,7 @@ export function NeedsRow({ it, depth, facts, look, excerpt, said, struck = false
             className={`${ACTION_PILL(v)} ${NARROW_PILL} group-disabled/pill:opacity-60 group-enabled/pill:group-hover/pill:brightness-95 group-focus-visible/pill:outline-2 group-focus-visible/pill:outline-offset-2 group-focus-visible/pill:outline-blue-500 dark:group-hover/pill:brightness-125 dark:group-focus-visible/pill:outline-blue-400`}
           >
             <Icon n={NEED[v].icon} c="size-3.5" sw="2.25" />
-            {/* a narrow list keeps the icon only, its name in the tip (B678) */}
+            {/* a narrow list keeps the icon only, its name in the tip (T678) */}
             <span className={NARROW_HIDE}>{label}</span>
           </span>
         </button>
@@ -396,7 +396,7 @@ export function NeedsRow({ it, depth, facts, look, excerpt, said, struck = false
   )
 }
 
-/** An agent's proposed change to the rules, waiting on you (I693): first in Needs you, as a task's proposal is; it
+/** An agent's proposed change to the rules, waiting on you (T693): first in Needs you, as a task's proposal is; it
  * opens the proposal, where its changes are seen before Approve. */
 export function ProposalRow({ p, onOpen }: { p: RuleProposal; onOpen(): void }) {
   return (

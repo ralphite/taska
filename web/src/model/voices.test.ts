@@ -1,4 +1,4 @@
-// B682 (Yadong: every voice note has its words, bound to the voice, the same everywhere): the page reads a voice
+// T682 (Yadong: every voice note has its words, bound to the voice, the same everywhere): the page reads a voice
 // note's words from its one record wherever the note shows, and sends what was typed apart from the notes' words.
 import { describe, expect, test } from 'vitest'
 import { merge, project } from './project'
@@ -62,9 +62,9 @@ describe('sending, what was typed and each voice note’s words go apart', () =>
   })
 })
 
-// B838 (Yadong r1439 r1440): what was said is one text, as in Nota: each voice note's words where it was put in the
+// T838 (Yadong r1439 r1440): what was said is one text, as in Nota: each voice note's words where it was put in the
 // words typed; sending keeps that place, and every place that shows what was said puts the words back there
-describe('a voice note keeps its place in the words (B838)', () => {
+describe('a voice note keeps its place in the words (T838)', () => {
   const v = (f: string, words: string, at?: number): PlacedFile => ({ f, name: f, mime: 'audio/webm', ...(at != null ? { at } : {}), voice: { state: 'done', tidied: words } as never })
   test('sending, a note put between the words is placed there', () => {
     expect(splitVoices(`Before it.\n${WORDS}\nAfter it.`, [{ f: 'k1', words: WORDS }])).toEqual({ text: 'Before it.\n\nAfter it.', words: { k1: WORDS }, at: { k1: 10 } })

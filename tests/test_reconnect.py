@@ -1,4 +1,4 @@
-"""I833 (Yadong r1433 r1435): a session that lost its connection (the machine restarted) is brought back by another
+"""T833 (Yadong r1433 r1435): a session that lost its connection (the machine restarted) is brought back by another
 session of its app. With one connected, the user's Reconnect hands it a narrow job first (send the lost one a message,
 then go back to its own work); with none, the answer is what to give one new session, which brings back every lost
 one. A session that waited for work before a restart and has not called since is lost; one that calls is back."""

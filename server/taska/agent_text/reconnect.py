@@ -1,4 +1,4 @@
-"""What agents read to bring back a session that lost its connection to Taska (I833): the message the lost session
+"""What agents read to bring back a session that lost its connection to Taska (T833): the message the lost session
 gets, the narrow job a connected session is handed, and the list a new session works through when none is
 connected. `root` is Taska's own address on this machine (the sessions run here)."""
 

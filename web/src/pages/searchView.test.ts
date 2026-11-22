@@ -33,12 +33,12 @@ describe("the phone search's page", () => {
   })
 })
 
-// B710 (r1160): the phone's search opened white when Recent held a task of a project whose model was not here
+// T710 (r1160): the phone's search opened white when Recent held a task of a project whose model was not here
 describe('Recent, a project not loaded', () => {
   it('draws the visit as a whole task row', async () => {
     const { visitFound } = await import('./searchDialogView')
-    const f = visitFound({ project: 'home', kind: 'tasks', n: 21, code: 'F021', title: 'Export contacts', status: 'open', pri: 'P1' }, () => null)
+    const f = visitFound({ project: 'home', kind: 'tasks', n: 21, code: 'T021', title: 'Export contacts', status: 'open', pri: 'P1' }, () => null)
     expect(f.task?.thread).toEqual([])
-    expect([f.task?.code, f.task?.pri]).toEqual(['F021', 'P1'])
+    expect([f.task?.code, f.task?.pri]).toEqual(['T021', 'P1'])
   })
 })

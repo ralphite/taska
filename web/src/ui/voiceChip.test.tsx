@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest'
 import type { FileRef } from '../model/types'
 import { FileChips, Thumbs, VoiceBubble, type FileEvents, type PlayState } from './Files'
 
-// B712 (r1165): a voice note is one chip in every place: play, its length, then the mark for its original words; your
+// T712 (r1165): a voice note is one chip in every place: play, its length, then the mark for its original words; your
 // blue bubble holds the same chip, never a pill of its own with "0:00 / 0:21".
 const note: FileRef = { f: 'f1-voice_0-21.webm', name: 'voice_0-21.webm', mime: 'audio/webm' }
 const still = (): PlayState => ({ playing: false, t: null })

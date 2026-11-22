@@ -186,17 +186,17 @@ class OrganizerBody(ProjectCase):
 
 class TidyTime(unittest.TestCase):
     def test_a_long_note_is_given_time_to_tidy(self):
-        # B788 (r1338): a 5-minute note (1636 characters, tidied in 10.5 to 11.6 s) was cut off at 8 s and kept its fillers
+        # T788 (r1338): a 5-minute note (1636 characters, tidied in 10.5 to 11.6 s) was cut off at 8 s and kept its fillers
         self.assertEqual(tr.tidy_cap("短" * 20), tr.TIDY_CAP + 0.2)
         self.assertGreaterEqual(tr.tidy_cap("嗯" * 1636), 20)
 
     def test_a_long_note_is_given_time_to_hear(self):
-        # B788 (r1339 "都做"): one try of the strong model waits 30 s and 1 s more for each 10 s of the note
+        # T788 (r1339 "都做"): one try of the strong model waits 30 s and 1 s more for each 10 s of the note
         self.assertEqual(tr.try_cap(0), tr.PRO_TRY)
         self.assertEqual(tr.try_cap(300), tr.PRO_TRY + 30)
 
     def test_what_the_words_fell_back_from_is_told(self):
-        # B788 (r1339): a fall back is not left silent: the nightly checks file it
+        # T788 (r1339): a fall back is not left silent: the nightly checks file it
         steps = [{"step": "pro", "model": "gemini-4-hydrogen", "error": "the strong model timed out after 30 s"},
                  {"step": "pro_2", "model": "gemini-3.1-pro-preview", "text": "words"},
                  {"step": "asr", "model": "x", "text": "words"},

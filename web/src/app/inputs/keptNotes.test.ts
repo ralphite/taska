@@ -34,17 +34,17 @@ function page(vault = memoryVault(), sending = false) {
   return { box, outbox, kept, vault, pushed, resumed, toasts }
 }
 
-describe('a draft whose task went to another project (B799)', () => {
+describe('a draft whose task went to another project (T799)', () => {
   it('its voice note goes along: kept for the task there, not up there yet, and back in its box when that project opens', async () => {
     const a = page()
     const there = { ...model, width: 1, byN: new Map([[5, { n: 5 }]]) } as unknown as ProjectModel
     await a.kept.restore('q', there) // that project had opened in this page before
     const rid = a.kept.id()
     a.kept.hold(rid, new Blob(['sound'], { type: 'audio/webm' }))
-    a.box.getState().addFile(replyDraft('B12'), { key: rid, rid, f: 'f3-voice.webm', name: 'voice 0-03.webm', mime: 'audio/webm', ms: 3000, size: 5 })
+    a.box.getState().addFile(replyDraft('T12'), { key: rid, rid, f: 'f3-voice.webm', name: 'voice 0-03.webm', mime: 'audio/webm', ms: 3000, size: 5 })
     await tick()
     await tick()
-    a.kept.carry(a.box.getState().takeFiles(replyDraft('B12')), 'q', replyDraft('T5'))
+    a.kept.carry(a.box.getState().takeFiles(replyDraft('T12')), 'q', replyDraft('T5'))
     await tick()
     await tick()
     expect((await a.vault.all()).map((n) => [n.project, n.key, n.f])).toEqual([['q', 'T5', null]])
@@ -61,13 +61,13 @@ describe('voice notes kept over a reload', () => {
     const a = page()
     const rid = a.kept.id()
     a.kept.hold(rid, new Blob(['sound'], { type: 'audio/webm' }))
-    a.box.getState().addFile(replyDraft('B12'), { key: rid, rid, f: '', name: 'voice 0-03.webm', mime: 'audio/webm', ms: 3000, uploading: true, transcript: 'wait' })
+    a.box.getState().addFile(replyDraft('T12'), { key: rid, rid, f: '', name: 'voice 0-03.webm', mime: 'audio/webm', ms: 3000, uploading: true, transcript: 'wait' })
     await tick()
     await tick()
-    expect((await a.vault.all()).map((n) => [n.key, n.tr])).toEqual([['B12', null]])
+    expect((await a.vault.all()).map((n) => [n.key, n.tr])).toEqual([['T12', null]])
     const b = page(a.vault)
     await b.kept.restore('p', model)
-    expect(b.box.getState().files.new?.map((f) => f.rid)).toEqual([rid]) // B12 is not there any more: New input
+    expect(b.box.getState().files.new?.map((f) => f.rid)).toEqual([rid]) // T12 is not there any more: New input
     expect(b.resumed).toEqual([`new ${rid}`])
     expect(b.toasts).toEqual(['Voice note kept'])
   })

@@ -1,7 +1,7 @@
 // The projects: on the desktop the sidebar (or the narrow rail when you fold it), on the phone the drawer. Each
 // project with how many things need you there and how many are open; New input, New project; at the foot the
 // project's Documents, Activity, Deleted, and Settings; on the desktop a project's card beside it while the pointer is
-// on it (F667). Props only.
+// on it (T667). Props only.
 
 import { useLayoutEffect, useRef, type MouseEvent, type ReactNode, type Ref, type RefObject } from 'react'
 import type { ProjectCardFacts } from '../../model/projects'
@@ -44,7 +44,7 @@ export interface SidebarEvents {
   newProject(from: HTMLElement, beside?: boolean): void
   hide(): void
   settings(): void
-  /** how agents get work, without spending tokens (F613) */
+  /** how agents get work, without spending tokens (T613) */
   help(): void
   keys(): void
   go(href: string, e: { preventDefault(): void; metaKey: boolean; ctrlKey: boolean }): void
@@ -59,7 +59,7 @@ export interface SidebarEvents {
   projectMenu(slug: string, x: number, y: number): void
   /** a ⋯: the menu at it */
   projectMenuFrom(slug: string, from: HTMLElement): void
-  /** the desktop's search (F479): every project, by meaning and by the words */
+  /** the desktop's search (T479): every project, by meaning and by the words */
   search(): void
 }
 
@@ -94,7 +94,7 @@ export interface SidebarProps {
   edge?: ReactNode
   /** Taska, at its top, pressed (a finger on it) */
   brandPressed?: boolean
-  /** the project whose menu is open: its card stays while it is (F767) */
+  /** the project whose menu is open: its card stays while it is (T767) */
   menuFor?: string | null
   on: SidebarEvents
 }
@@ -176,7 +176,7 @@ function ProjectRows({ phone, projects, hover, on }: { phone: boolean; projects:
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-1.5">
                 <span className={`min-w-0 flex-1 truncate text-sm ${p.current ? 'font-semibold' : 'font-medium'}`}>{p.title}</span>
-                {/* under the pointer its count gives way to ⋯, the project's menu (as a right click; F767) */}
+                {/* under the pointer its count gives way to ⋯, the project's menu (as a right click; T767) */}
                 <span className="grid shrink-0 place-items-center *:col-start-1 *:row-start-1">
                   {p.needs ? <span className="group-hover/row:invisible">{<NeedsCount n={p.needs} />}</span> : null}
                   <span
@@ -268,7 +268,7 @@ export function Sidebar(props: SidebarProps) {
         </div>
       </div>
       <div className="group/ni relative mx-2.5 mb-3 hidden shrink-0 lg:block">
-        {/* the voice button always in sight (F777 r1301); its centre, the projects' marks and the sidebar's fold button
+        {/* the voice button always in sight (T777 r1301); its centre, the projects' marks and the sidebar's fold button
             in one line, 30px from the sidebar's right edge */}
         <button
           onClick={on.newInput}
@@ -397,7 +397,7 @@ export function Sidebar(props: SidebarProps) {
 }
 
 /** The sidebar folded: a narrow rail of the same. */
-export function Rail({ keys, projects, links, composing, settingsOpen, hidden, menuFor = null, on }: { keys: SideKeys; projects: SideProject[] | null; links: SideLinkInfo[]; composing: boolean; settingsOpen: boolean; hidden?: boolean; /** the project whose menu is open: its card stays (F767) */ menuFor?: string | null; on: SidebarEvents }) {
+export function Rail({ keys, projects, links, composing, settingsOpen, hidden, menuFor = null, on }: { keys: SideKeys; projects: SideProject[] | null; links: SideLinkInfo[]; composing: boolean; settingsOpen: boolean; hidden?: boolean; /** the project whose menu is open: its card stays (T767) */ menuFor?: string | null; on: SidebarEvents }) {
   const hover = useProjectCard(!!hidden, menuFor)
   // the projects more than it holds: its edges fade where more of them are above or below (no scrollbar on the rail)
   const list = useRef<HTMLDivElement>(null)

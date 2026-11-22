@@ -37,7 +37,7 @@ export interface TalkLineEvents extends CardEvents {
   unhide(id: number): void
   /** a place in one of the task's documents */
   docAt(d: number, key: string): void
-  /** what you sent and Taska has not yet, cancelled (its ×, B666): it does not go */
+  /** what you sent and Taska has not yet, cancelled (its ×, T666): it does not go */
   cancel(q: string): void
   /** one Taska said no to, sent again */
   outboxRetry(q: string): void
@@ -64,13 +64,13 @@ export interface TalkFacts {
   /** the question being answered again */
   reask: number | null
   /** an answer on its way: its words, and where it is as its question's card says it; `of`: the questions in a row
-   * it answers (B749) */
+   * it answers (T749) */
   going: { text: string; card: OutShow; of?: readonly number[] } | null
   /** what you sent to this task and Taska has not yet */
   outgoing: Outgoing[]
   /** what became of an input your messages came from (model/became) */
   became(id: string): Became | null
-  /** the tasks an input made, besides the task it was said in (B714 #10594) */
+  /** the tasks an input made, besides the task it was said in (T714 #10594) */
   made(id: string): readonly TaskRef[]
 }
 
@@ -156,13 +156,13 @@ function YourMessage({ x, env, on, facts, ver, read }: { x: Message; env: TalkEn
   const y = ver ? { ...x, text: ver.text } : x
   const strip = (files: FileRef[] | undefined) => (files?.length ? <FileRows files={files} url={env.url} play={env.play} tidy={env.tidy} on={on} cls="items-end max-w-full [&>div]:max-w-full" /> : null)
   if (y.text && y.text.trim().split('\n').every((l) => /^\s*✓/.test(l)) && !src?.files?.length) return null // an answer's ticks show on its card
-  if (x.of?.length && !src?.files?.length) return null // so do your answers to questions in a row (B749)
+  if (x.of?.length && !src?.files?.length) return null // so do your answers to questions in a row (T749)
   // what became of the input it came from, as the talk shows it (model/inputStates): moved, what it made, its words
   // still to come
   const b = src ? facts.became(src.id) : null
   const shown = b && showsIn(b, 'talk') ? b : null
   const moved = shown?.k === 'moved' && !ver?.old ? shown : null
-  // B714 #10594: what your words here made, as one line under them; the same on the phone and the desktop
+  // T714 #10594: what your words here made, as one line under them; the same on the phone and the desktop
   const made = src && shown?.k === 'filed' && !ver?.old ? facts.made(src.id) : []
   // your voice notes inside your bubble, under your words (T668); an earlier version shows its words only
   const voices = ver?.old ? [] : (src?.files || []).filter(isAudio)
@@ -204,7 +204,7 @@ function YourMessage({ x, env, on, facts, ver, read }: { x: Message; env: TalkEn
               {src?.history?.length ? (
                 <button
                   onClick={() => on.inputHistory(src.id)}
-                  // pointed at: the words before this edit (B801, B640 #8700); clicked: the whole history
+                  // pointed at: the words before this edit (T801, T640 #8700); clicked: the whole history
                   data-tip={src.history[src.history.length - 1].text.slice(0, 400)}
                   className="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300"
                 >
@@ -446,7 +446,7 @@ export function Talk({ it, list, notes, card, env, on, facts, docs, code }: {
   const vers = versions(th)
   const gone = withdrawn(th)
   const read = readMark(it)
-  // questions in a row are one card, where the last of them is (B749)
+  // questions in a row are one card, where the last of them is (T749)
   const rows = askRows(th)
   const rowOf = new Map(rows.flatMap((r) => r.map((x) => [x.id, r] as const)))
   const rowGoing = facts.going?.of?.length ? { of: facts.going.of, card: facts.going.card } : null

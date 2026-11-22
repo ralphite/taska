@@ -1,4 +1,4 @@
-// F479: the phone's search page. The magnifier opens it and its box listens at once (here the browser has no
+// T479: the phone's search page. The magnifier opens it and its box listens at once (here the browser has no
 // microphone: it says so, and you type); what you type searches every project, the one you are in first; a result
 // opens its page and Back comes back to the same search; the back arrow at the top leaves it.
 // guards: src/pages/SearchPage.tsx src/pages/SearchContainer.tsx src/pages/searchView.ts src/app/search/ src/model/find.ts src/stores/find.ts src/app/page/navigation.ts server/taska/domain/finding.py server/taska/page_api/find.py server/taska/services/meaning.py

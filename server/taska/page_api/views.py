@@ -23,7 +23,7 @@ View = Dict[str, Any]
 def file_view(f: FileRef) -> View:
     """A file by its name; a voice note's words are its record's (voice_view), read by its file."""
     out: View = {"f": f.f, "name": f.name}
-    for k in ("mime", "size", "at"):  # at: a voice note's place in the words of the input it is in (B838)
+    for k in ("mime", "size", "at"):  # at: a voice note's place in the words of the input it is in (T838)
         v = getattr(f, k)
         if v is not None:
             out[k] = v
@@ -31,7 +31,7 @@ def file_view(f: FileRef) -> View:
 
 
 def voice_view(v: Voice) -> View:
-    """A voice note's words (B682): the one record every place that shows the note reads."""
+    """A voice note's words (T682): the one record every place that shows the note reads."""
     out: View = {"f": v.f, "state": v.state, "said": v.said, "tidied": v.tidied}
     if v.early:
         out["early"] = v.early
@@ -118,7 +118,7 @@ def comment_view(c: Comment) -> View:
 
 
 def rules_view(st: ProjectState, d: Doc) -> View:
-    """The rules document's own facts (I693): its versions (who, when, every why, the text each left) and its
+    """The rules document's own facts (T693): its versions (who, when, every why, the text each left) and its
     proposals (what each would make of the text now, its thread)."""
     vs = versions.versions(st, d)
     props: List[View] = []
@@ -140,9 +140,9 @@ def rules_view(st: ProjectState, d: Doc) -> View:
                           **({"p": x.p} if x.p else {}), **({"ses": x.ses} if x.ses else {})} for x in vs]}
 
 
-# B756: a web page bigger than this is not in the project's view: the page asks for it when it is opened (GET
-# api/doc), so the project opens fast over a slow connection. B792: ten pages of 85 KB each, their sounds no longer
-# written into them (B790), made the view 1.5 MB; a page is seldom opened, so all but a small one waits to be asked for.
+# T756: a web page bigger than this is not in the project's view: the page asks for it when it is opened (GET
+# api/doc), so the project opens fast over a slow connection. T792: ten pages of 85 KB each, their sounds no longer
+# written into them (T790), made the view 1.5 MB; a page is seldom opened, so all but a small one waits to be asked for.
 BIG_PAGE = 50_000
 
 

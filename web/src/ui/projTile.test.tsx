@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest'
 import { iconUrl } from '../model/projects'
 import { ProjTile } from './bits'
 
-// F743: a project with a picture (an agent set it: `project icon f12-logo.png`) is drawn by it wherever its tile is;
+// T743: a project with a picture (an agent set it: `project icon f12-logo.png`) is drawn by it wherever its tile is;
 // without one, or when the picture does not load, its letter on its colour, as before.
 describe("a project's tile", () => {
   test('its letter when it has no picture', () => {

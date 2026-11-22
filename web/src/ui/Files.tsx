@@ -34,7 +34,7 @@ const stepName = (step: string) => {
   return n && STEP_NAME[n[1]] ? `${STEP_NAME[n[1]]}, try ${n[2]}` : STEP_NAME[step] || step
 }
 
-/** How a voice note's words came about (T697, B727): every step in the order its words arrived, the first words in
+/** How a voice note's words came about (T697, T727): every step in the order its words arrived, the first words in
  * full, each later step only as what it changed (struck out, and marked), so no words show twice; a check on the
  * words chosen. The same in the phone's sheet and the desktop's tip (`tip`: on the tip's dark ground). */
 export function VoiceSteps({ steps, tip = false }: { steps: VoiceStep[]; tip?: boolean }) {
@@ -84,7 +84,7 @@ function VoiceTime({ total, play, quiet = MUTED }: { total: number | null; play:
 }
 
 /** On the desktop, pointing at a voice note's play button shows its original words in the page's tooltip (they are
- * here already: nothing to click, B640). Its word-for-word words and the tidied ones go to the tooltip as data, and
+ * here already: nothing to click, T640). Its word-for-word words and the tidied ones go to the tooltip as data, and
  * its file, for the steps that worked them out (T697); the tip goes under the note, clear of the words written above
  * it (above only when there is no room below). */
 const saidTip = (f: FileRef, tidy: boolean) => (tidy && f.voice ? { 'data-heard': f.voice.said, 'data-tidied': f.voice.tidied, 'data-voice': f.f, 'data-tip-side': 'bottom' } : {})
@@ -202,7 +202,7 @@ export function Thumbs({
 /** A file's size as a list says it: 34 KB, 1.2 MB. */
 export const sizeWord = (n: number) => (n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${Math.round(n / 1024)} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`)
 
-// as tall as a voice note's chip (h-9), so a row of files lines up (B733)
+// as tall as a voice note's chip (h-9), so a row of files lines up (T733)
 const CHIP =
   'inline-flex h-9 max-w-full min-w-0 items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-100/90 p-0.5 pr-3 shadow-2xs transition-colors hover:bg-zinc-200/80 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800'
 

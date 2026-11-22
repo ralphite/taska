@@ -15,10 +15,10 @@ export interface DocEditEvents {
 export function DocEdit({ isNew, text, hint, mic, tools, fieldRef, on }: {
   isNew: boolean
   text: string
-  /** a word beside the buttons (Esc keeps draft; what is wrong in the text, I779) */
+  /** a word beside the buttons (Esc keeps draft; what is wrong in the text, T779) */
   hint: ReactNode
   mic: { on: boolean; text: string }
-  /** buttons of this kind of document, before Speak (the rules: Insert shared rules, I779) */
+  /** buttons of this kind of document, before Speak (the rules: Insert shared rules, T779) */
   tools?: ReactNode
   /** where you write, for Speak (its words go at the caret) */
   fieldRef?: (el: HTMLTextAreaElement | null) => void

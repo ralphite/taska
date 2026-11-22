@@ -106,7 +106,7 @@ function stillDecided(it: Task): Decided | null {
   return (lastAgentMessage(it)?.id ?? null) === dec.msg ? dec : null
 }
 
-/** Questions in a row, every one answered (B749). */
+/** Questions in a row, every one answered (T749). */
 const rowAnswered = (it: Task, x: Message | undefined) => {
   const row = x ? askRowOf(it.thread, x.id) : null
   return !!row && row.every((q) => rowAnswer(it.thread, row, q))
@@ -181,13 +181,13 @@ export function yourStep(it: Task): YourStep {
 export function talkPlan(it: Task, opts: { going?: string | null } = {}) {
   const n = needOf(it, opts.going)
   const card = NEED_STATES[n.state].card
-  // questions in a row are one card, where the last of them is (B749)
+  // questions in a row are one card, where the last of them is (T749)
   const cardId = card && card !== 'onQuestion' ? (card === 'question' ? askRowOf(it.thread, n.msg?.id)?.at(-1)?.id : null) ?? n.msg?.id ?? null : null
   const thread = it.thread.filter((x) => x.id !== it.wait?.id || x.id === cardId)
   // a card with no message of its own heads the talk once you said something (all of it came after the card)
   const first = cardId == null && !lastAgentMessage(it) && (it.talked || thread.length > 0)
   const at = thread.findIndex((x) => x.id === cardId)
-  // the whole talk shows, from its first message (F692: no "Show earlier")
+  // the whole talk shows, from its first message (T692: no "Show earlier")
   return { cardId, thread, first, inline: at >= 0 }
 }
 

@@ -1,4 +1,4 @@
-"""B682 (Yadong: every voice note has its words, bound to the voice, the same everywhere): wherever a voice note is
+"""T682 (Yadong: every voice note has its words, bound to the voice, the same everywhere): wherever a voice note is
 (an input, a reply on a task, a document's comment), agents, the change log, search and moves read its one record;
 what was typed stays only what was typed."""
 
@@ -65,7 +65,7 @@ class VoiceEverywhere(unittest.TestCase):
 
     def test_a_voice_comment_is_read_with_its_words_and_found(self):
         n = self.task()
-        self.run_one({"op": "doc", "ref": "F1", "title": "Plan", "md": "# Plan\n\nThe export keeps the filter."})
+        self.run_one({"op": "doc", "ref": "T1", "title": "Plan", "md": "# Plan\n\nThe export keeps the filter."})
         self.run_one({"op": "dc", "d": 1, "key": "doc", "text": "", "files": [self.note()]})
         st = self.p.state
         self.assertEqual(st.docs[1].comments[0].text, "")
@@ -93,7 +93,7 @@ class VoiceEverywhere(unittest.TestCase):
             moved = there.state.inputs[got["as"]]
             self.assertEqual([there.state.voices[f.f].tidied for f in moved.files], [WORDS])
             n = self.task()
-            self.run_one({"op": "doc", "ref": "F1", "title": "Plan", "md": "# Plan\n\nThe export keeps the filter."})
+            self.run_one({"op": "doc", "ref": "T1", "title": "Plan", "md": "# Plan\n\nThe export keeps the filter."})
             self.run_one({"op": "dc", "d": 1, "key": "doc", "text": "", "files": [self.note(words="还要保留排序")]})
             Moves().task(self.p, there, f"F{n}")
             doc = next(d for d in there.state.docs.values())

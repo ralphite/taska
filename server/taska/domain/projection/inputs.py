@@ -18,7 +18,7 @@ def _input(state: ProjectState, e: ev.Event) -> None:
     inp = Input(id=e.id, t=e.t, by=e.by, text=e.text, scope=e.scope, files=list(e.files), seq=e.seq, q=e.q)
     if e.kind == "answer":  # a form you sent: in its task's talk as it is, nothing more to do
         inp.kind, inp.acked = "answer", True
-    elif e.kind == "cancelled":  # a recording you cancelled: kept to listen to and send later, not work (B627)
+    elif e.kind == "cancelled":  # a recording you cancelled: kept to listen to and send later, not work (T627)
         inp.kind = "cancelled"
     state.inputs[inp.id] = inp
     state.max_input = max(state.max_input, inp.number)
@@ -47,7 +47,7 @@ def _amend(state: ProjectState, e: ev.Event) -> None:
     inp.history.append(InputVersion(text=inp.text, t=e.t, mode=e.mode))
     inp.text = e.text
     changed_words(inp, e)
-    if e.places:  # B838: where its voice notes are in the words now
+    if e.places:  # T838: where its voice notes are in the words now
         inp.files = [replace(f, at=e.places[f.f]) if f.f in e.places else f for f in inp.files]
     if e.files:
         inp.files = inp.files + list(e.files)

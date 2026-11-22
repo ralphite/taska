@@ -49,30 +49,30 @@ def context(p: Project, inp: Input) -> str:
     # T697 r(D121): a voice note's tidied words are what the body is written from; its words word for word come only
     # to judge whether something was misheard
     said = for_agents(st, inp.text, inp.files, as_said=True, said_as=AS_SAID_LABEL)
-    used = skills.applied(one_line(st, inp.text, inp.files), rd.skills)  # I821: a skill the user applied to it
+    used = skills.applied(one_line(st, inp.text, inp.files), rd.skills)  # T821: a skill the user applied to it
     out.append(f"New input {inp.id} at {hm(inp.t)}{scope}:\n{said or '(no text)'}" + ("\n" + "\n".join(used) if used else ""))
     return "\n\n".join(out)
 
 
 PARALLEL = int(os.environ.get("TASKA_ORGANIZE_PARALLEL", 4))  # inputs organized at the same time
-# B684 (Yadong, #9933): each input is asked of both models at once, and the first good answer is the plan.
+# T684 (Yadong, #9933): each input is asked of both models at once, and the first good answer is the plan.
 # T783 (Yadong, r1335): gemini-4-hydrogen in place of 3.1 Pro (D135: on 20 real inputs judged 4.80 against 4.05,
 # none needing a fix, median 3.2 s against 6.5 s, no failure in 40 calls); 3.8 Flash stays as the second.
 MODELS = [m.strip() for m in os.environ.get("TASKA_ORGANIZER_MODELS", "gemini-4-hydrogen,gemini-3.8-flash").split(",") if m.strip()]
 
 
 def echo(p: Project, inp: Input, c: Any) -> bool:
-    """A message from the organizer on the task the input was said in (B703, r1144, #10330), or on the task its plan
-    just made from it (B714, r1167): the user's own words and files are already there (tidied); with nothing to do
+    """A message from the organizer on the task the input was said in (T703, r1144, #10330), or on the task its plan
+    just made from it (T714, r1167): the user's own words and files are already there (tidied); with nothing to do
     they stay as said, and anything to do is done by changing things, never by writing them again in a message. So
     no organizer message goes on that task; it is dropped here. The one exception is a question to the user (ask, with
-    its choices): when the organizer is unsure, it asks there, so its doubt is seen, not dropped (B714 #10594)."""
+    its choices): when the organizer is unsure, it asks there, so its doubt is seen, not dropped (T714 #10594)."""
     if not isinstance(c, dict) or c.get("op") != "say" or c.get("kind") == "ask":
         return False
     ref = str(c.get("ref") or "").strip()
     num = re.fullmatch(r"[A-Za-z]?(\d+)", ref)
     if ref == "$" or (num and int(num.group(1)) > p.state.max_n):
-        return True  # on a task this plan makes from the input: it already shows the input's words and files (B714)
+        return True  # on a task this plan makes from the input: it already shows the input's words and files (T714)
     if inp.scope is None:
         return False
     try:
@@ -82,7 +82,7 @@ def echo(p: Project, inp: Input, c: Any) -> bool:
 
 
 def unclosed(p: Project, scope: Optional[int], cmd: Tuple[int, Any]) -> Tuple[int, Any]:
-    """A reply on a task is for the agent on it, who reads it and decides (B760, Yadong r1278 r1281): the organizer
+    """A reply on a task is for the agent on it, who reads it and decides (T760, Yadong r1278 r1281): the organizer
     never changes that task's status (done, drop, open ...) from it; its other changes (priority, Now/Later) stay."""
     no, c = cmd
     if not isinstance(c, dict) or c.get("op") != "set" or "status" not in (c.get("f") or {}):
@@ -142,7 +142,7 @@ class Organizer(threading.Thread):
         return max(1.0, min([30.0] + [until - now for until, _ in self.later.values() if until > now]))
 
     def run(self) -> None:
-        """Inputs are organized several at once, as they come (B684: one at a time was not needed), at most
+        """Inputs are organized several at once, as they come (T684: one at a time was not needed), at most
         PARALLEL; each in its own thread, the oldest first."""
         p = self.p
         while True:
@@ -169,7 +169,7 @@ class Organizer(threading.Thread):
             files = list(inp.files)
             heard = {f.f: words_of(p.state, f.f) for f in files}  # a voice note without words goes as its audio
             scope, had_history = inp.scope, bool(inp.history)
-            reply = scope in p.state.tasks  # a reply on a task: for the agent on it (B760)
+            reply = scope in p.state.tasks  # a reply on a task: for the agent on it (T760)
         err: Optional[str] = None
         try:
             for f in files:
@@ -220,7 +220,7 @@ class Organizer(threading.Thread):
                 msg += " · Some commands failed: " + "; ".join(bad)
             p.emit(ev.Organized(src=rid, ok=not bad, msg=msg, plan=plan, keep=keep, changed=bool(labels),
                                 ms=int((time.time() - t0) * 1000), by="org"))
-            logging.getLogger("taska").info(f"organized {rid}: {msg}"[:300], extra={"f": {  # F846: what it did, in the log
+            logging.getLogger("taska").info(f"organized {rid}: {msg}"[:300], extra={"f": {  # T846: what it did, in the log
                 "source": "server", "kind": "organized", "project": p.slug, "input": rid, "ok": not bad, "kept": keep,
                 "ms": int((time.time() - t0) * 1000)}})
 
@@ -230,7 +230,7 @@ _HEAD = re.compile(r"(?i)(new|ack|pass)\b|\$|[A-Za-z]?\d+\b")
 
 
 def indent_strays(plan: str) -> str:
-    """B623: the model sometimes writes a body or a message over several lines and leaves the later ones unindented,
+    """T623: the model sometimes writes a body or a message over several lines and leaves the later ones unindented,
     which the command language reads as commands of their own (unknown command). A line that starts no command, after a
     command that takes text, is that command's text."""
     out: List[str] = []

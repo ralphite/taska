@@ -1,5 +1,5 @@
-"""B816 (Yadong r1383, r1397): a task's states in one place (domain/task_states). Who may change a status; an agent's
-done is review and takes back its own open questions (I779 waited for an answer and an acceptance at once); the agent
+"""T816 (Yadong r1383, r1397): a task's states in one place (domain/task_states). Who may change a status; an agent's
+done is review and takes back its own open questions (T779 waited for an answer and an acceptance at once); the agent
 on a task you close or drop is told at once to stop, once; an approval needs no telling (it joins the queue)."""
 
 from __future__ import annotations
@@ -91,7 +91,7 @@ class Commands(ServerCase):
         self.assertIn(f"next {code}", self.nxt())
 
     def test_your_reply_on_a_proposal_approves_it(self) -> None:
-        # B818 r1401: replying on an agent's proposal approves it; the agent's own words do not
+        # T818 r1401: replying on an agent's proposal approves it; the agent's own words do not
         code = self.do("new proposed by an agent").split()[1]
         self.do(f"{code} say should I start with the export?")
         self.assertIn("proposed", self.get(f"/{code}").split("\n")[0])
@@ -101,7 +101,7 @@ class Commands(ServerCase):
         self.assertIn(f"resume {code}: the user replied", self.nxt())
 
     def test_a_subtask_you_asked_for_starts_open(self) -> None:
-        # B818 r1404: the parts the user asked a task to be split into start open, their words on them
+        # T818 r1404: the parts the user asked a task to be split into start open, their words on them
         parent = self.new("a big feature")
         rid = self.page({"op": "input", "text": "split it into subtasks so we can track them", "scope": int(parent[1:])}
                         )["results"][0].split()[1]

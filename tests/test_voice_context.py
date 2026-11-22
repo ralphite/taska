@@ -1,4 +1,4 @@
-"""B809: what a voice note is told about the task it is said on takes a web page document's words as it reads, never
+"""T809: what a voice note is told about the task it is said on takes a web page document's words as it reads, never
 its markup, styles or scripts ("font-size" and "border-radius" were the spelling hints for a note on T27)."""
 
 from __future__ import annotations

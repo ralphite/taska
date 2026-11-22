@@ -17,7 +17,7 @@ export type SheetRequest =
   | { kind: 'task-move-project'; n: number }
   /** the inputs a task came from */
   | { kind: 'task-sources'; n: number }
-  /** when a task was made and last changed, in full (F704) */
+  /** when a task was made and last changed, in full (T704) */
   | { kind: 'task-times'; n: number }
   | { kind: 'message-menu'; n: number; id: number }
   | { kind: 'input-menu'; id: string }
@@ -25,19 +25,19 @@ export type SheetRequest =
   | { kind: 'input-move'; id: string }
   /** put an input with another task */
   | { kind: 'input-rescope'; id: string }
-  /** what an agent reading task n gets (F568) */
+  /** what an agent reading task n gets (T568) */
   | { kind: 'agent-card'; n: number }
   /** Later, until a day or with none (D115 #21) */
   | { kind: 'later'; n: number }
   /** who works on the project, how to connect one more, what they read */
   | { kind: 'agents' }
-  /** how a connected agent gets work without spending tokens (F613) */
+  /** how a connected agent gets work without spending tokens (T613) */
   /** a voice note's words as said, and the steps that worked them out (T697) */
   | { kind: 'as-said'; f: string; heard: string; tr: string; steps?: VoiceStep[] }
   | { kind: 'filters' }
   | { kind: 'keys' }
   | { kind: 'switch-project' }
-  /** the desktop's search (F479) */
+  /** the desktop's search (T479) */
   | { kind: 'search' }
   /** a document onto another task; a comment to another paragraph */
   | { kind: 'doc-move'; d: number }
@@ -59,11 +59,11 @@ export type SheetRequest =
   /** a document's editor (the phone's, and a new one's): an existing one, or a new one on task n */
   | { kind: 'doc-edit'; d: number }
   | { kind: 'doc-edit'; n: number }
-  /** restoring a version of the rules asks once (I693) */
+  /** restoring a version of the rules asks once (T693) */
   | { kind: 'rules-restore'; v: number }
-  /** the rules' editor: a shared rule (or one of its sections) to put in where the caret is (I779) */
+  /** the rules' editor: a shared rule (or one of its sections) to put in where the caret is (T779) */
   | { kind: 'shared-insert' }
-  /** Settings › Shared rules: new shared rules, by name (I779) */
+  /** Settings › Shared rules: new shared rules, by name (T779) */
   | { kind: 'new-shared' }
 
 export type SheetKind = SheetRequest['kind']

@@ -85,7 +85,7 @@ class Changes(Protocol):
 
     @property
     def holds_shared(self) -> bool:
-        """One of the shared rules (I779): its rules put no other shared rules in."""
+        """One of the shared rules (T779): its rules put no other shared rules in."""
         ...
 
 

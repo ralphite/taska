@@ -1,7 +1,7 @@
-// The button to the talk's end (F716, Yadong r1171, as Codex has it): a small round button with a down arrow, floating
+// The button to the talk's end (T716, Yadong r1171, as Codex has it): a small round button with a down arrow, floating
 // just above the box over the middle of the talk, never moving what is on the page. It shows while what scrolls the
 // talk does not show its end, and a tap scrolls there; at the end its arrow points up, and a tap goes back to the top
-// (F752 r1250). With nothing to scroll it does not show. The same on the phone and the desktop.
+// (T752 r1250). With nothing to scroll it does not show. The same on the phone and the desktop.
 // Props only: the element it is about (`of`, the talk); it listens to what scrolls it while it is shown.
 
 import { useLayoutEffect, useState } from 'react'
@@ -29,7 +29,7 @@ export function ToEnd({ of }: { of: HTMLElement | null }) {
   }, [of])
   const go = () => {
     const sc = of && scrollerOf(of)
-    sc?.dispatchEvent(new Event(YOUR_SCROLL)) // you scroll it (B786): the talk leaves its end when it goes up
+    sc?.dispatchEvent(new Event(YOUR_SCROLL)) // you scroll it (T786): the talk leaves its end when it goes up
     sc?.scrollTo({ top: way === 'up' ? 0 : sc.scrollHeight, behavior: 'smooth' })
   }
   const shown = way !== 'none'

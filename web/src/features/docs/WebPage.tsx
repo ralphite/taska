@@ -2,7 +2,7 @@
 // happens in it). Over it, as over a Markdown document: in Comment mode (the desktop) the part under the pointer is
 // outlined with the speak and comment buttons at its corner; a tap picks a part (the phone); a picked part has the
 // amber ring, its speak and comment buttons (on the phone a row floating under it; speaking, they become its
-// recording strip, B498) and the box says what you comment on; each thread's count sits in its part's corner, and opens its
+// recording strip, T498) and the box says what you comment on; each thread's count sits in its part's corner, and opens its
 // comments under it. Words selected are only selected, as on any page. Props, and the page's own state.
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
@@ -37,13 +37,13 @@ export interface WebPageEvents {
   pick(part: { key: string; text: string }): void
   /** a part's Comment: write about it in the box */
   comment(part: { key: string; text: string }): void
-  /** a part's Voice; its recording strip's ✕, ✓ and ↑ (B498) */
+  /** a part's Voice; its recording strip's ✕, ✓ and ↑ (T498) */
   say(part: { key: string; text: string }): void
   cancel(): void
   check(): void
   send(): void
   esc(): void
-  /** back from over the window to the pane (F751) */
+  /** back from over the window to the pane (T751) */
   exit(): void
   toggle(tk: string): void
   /** a click away from the open comments */
@@ -54,7 +54,7 @@ export interface WebPageEvents {
 const shown = (r: Box | undefined): r is Box => !!r && r.w > 0 && r.h > 0
 
 const plain = (t: string) => t.replace(/\s+/g, ' ').trim()
-/** Whether a part's words now still have what its comments were about (F432 #5145: the place and the words both, else
+/** Whether a part's words now still have what its comments were about (T432 #5145: the place and the words both, else
  * the words changed). A part whose words are not known yet keeps its comments. */
 export const stillSays = (now: string | undefined, quote: string) => now == null || !plain(quote) || plain(now).includes(plain(quote).slice(0, 80))
 
@@ -96,7 +96,7 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
   desk: boolean
   /** the desktop's Comment mode */
   inspect: boolean
-  /** over all of the window (F751): the phone's screen, the desktop's browser window */
+  /** over all of the window (T751): the phone's screen, the desktop's browser window */
   full?: boolean
   /** a thread's comments (`rail`: a card over the page) */
   renderThread(tk: string, rail: boolean): ReactNode
@@ -174,7 +174,7 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
     // under the box, kept clear by its padding: r672); a page as tall as its window (an app, which follows it) keeps
     // filling it when the pane changes (the phone's sheet takes its full height after this); one that said it has a
     // height of its own keeps that, and never less than what the pane shows: a short page's own background fills the
-    // pane, and a page that lays itself out to its window has all of it (B748)
+    // pane, and a page that lays itself out to its window has all of it (T748)
     const f = frame.current
     const pane = f?.closest('.overflow-y-auto')
     if (!f || !pane) return
@@ -324,7 +324,7 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
         }}
       >
         {/* the part spoken about keeps its buttons right there; speaking, they are its recording strip, which ends
-            where they end (B498) */}
+            where they end (T498) */}
         <PlaceVoice rec={rec && !hovering} meter={meter} {...marks(p)} on={{ ...voiceOn(p), send: on.send }} />
       </div>
     )
@@ -356,7 +356,7 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
       {desk && held && rects[held.key] ? buttons(held, rects[held.key], false) : hover && mode === true && !held ? buttons(hover, hover.rect, true) : null}
       {!desk && held && rects[held.key] ? (
         // the phone's row on the part picked, floating over the page under it (over it when the screen has no room
-        // under it; B715 r1169): speak or write about it (B498)
+        // under it; T715 r1169): speak or write about it (T498)
         <PlaceVoiceFloat rec={rec} meter={meter} {...marks(held)} place={{ y: rects[held.key].y, h: rects[held.key].h }} x={rec ? 'inset-x-3' : 'right-3'} on={voiceOn(held)} />
       ) : null}
       {counts.map((c) => (
@@ -394,10 +394,10 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
   )
 }
 
-/** how long Exit stays after the pointer last moved or the page was touched (F751 r1251) */
+/** how long Exit stays after the pointer last moved or the page was touched (T751 r1251) */
 const EXIT_FADES = 2500
 
-/** The page over all of the window (F751): the phone's whole screen, all of the desktop's browser window (not the
+/** The page over all of the window (T751): the phone's whole screen, all of the desktop's browser window (not the
  * screen's), the page as a browser shows it, scrolling in itself; Exit (Esc) over its top right corner. Left alone a
  * moment, Exit fades away, out of the page's way; the pointer moving, a click or a tap brings it back (r1251). The page
  * runs again from its start, in a frame of its own. */

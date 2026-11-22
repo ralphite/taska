@@ -33,7 +33,7 @@ export interface ListEvents extends RowEvents {
   renameStop(): void
   subMore(parent: number): void
   archiveAll(): void
-  /** an agent's proposed change to the rules: opened (I693) */
+  /** an agent's proposed change to the rules: opened (T693) */
   proposal(p: number): void
 }
 
@@ -46,9 +46,9 @@ export interface TaskListProps {
   empty?: ReactNode
   /** above the rows: the bar of what is selected */
   top?: ReactNode
-  /** at the start of the views' row (the desktop's Filters button, F670) */
+  /** at the start of the views' row (the desktop's Filters button, T670) */
   viewsLead?: ReactNode
-  /** the desktop's views row opened onto all its lines (⌄, ⌃; F670) */
+  /** the desktop's views row opened onto all its lines (⌄, ⌃; T670) */
   viewsMore?: { open: boolean; toggle(): void }
   on: ListEvents
   /** room for the box over the list's end on the phone */
@@ -109,11 +109,11 @@ export const TaskList = forwardRef<HTMLDivElement, TaskListProps>(function TaskL
   const rowOf = (t: EventTarget) => (t as Element).closest?.<HTMLElement>('article[data-n]') ?? null
   return (
     // The views' row is above the list, not in it: the list scrolls and bounces (the phone's pull at its top) under it,
-    // and the row never moves (B758)
+    // and the row never moves (T758)
     <div id="list" className="flex min-h-0 flex-1 flex-col">
       {loading ? null : top}
       {views && !loading ? (
-        // the desktop: as high as the pane's bar beside it, one line under both (B669); opened, as tall as its lines
+        // the desktop: as high as the pane's bar beside it, one line under both (T669); opened, as tall as its lines
         <div className="flex shrink-0 items-stretch lg:min-h-bar">
           <div className="min-w-0 flex-1">
             <ViewBar views={views} own={ownViews} lead={viewsLead} more={viewsMore} onView={on.view} onOwn={on.ownView} onOwnMenu={on.ownMenu} onRename={on.rename} onRenameStop={on.renameStop} />

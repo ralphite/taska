@@ -60,7 +60,7 @@ def show_edit(state: ProjectState, inp: Input, e: ev.Event, mark: bool = True, e
     """An input you changed shows as its one message, with the new words, marked edited, wherever it is in a talk.
     When someone wrote there since, a short note after theirs says what changed; where the input only started an
     task, one "rN updated" message carries the latest words. `edited`: False when the words are not yours to have
-    changed (a voice note's words, in after it was sent: B626), so the message is not marked edited."""
+    changed (a voice note's words, in after it was sent: T626), so the message is not marked edited."""
     rid, head = inp.id, f"{inp.id} updated:\n"
     old = inp.history[-1].text if inp.history else ""
     for n in dict.fromkeys(inp.touched + ([inp.scope] if inp.scope else [])):

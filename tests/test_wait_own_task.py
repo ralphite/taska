@@ -1,4 +1,4 @@
-"""B741: a session waiting for work (/next?wait=N) is not woken by the task it already holds and works on, so a
+"""T741: a session waiting for work (/next?wait=N) is not woken by the task it already holds and works on, so a
 background wait that only gets its own doing task back holds instead of answering at once; a plain /next still gives
 that task (a session that lost its place finds it again), and anything new wakes the wait."""
 

@@ -1,4 +1,4 @@
-// The search (F479; Home's field, ⌘K, the phone's page): what the server found in every project (/api/find), and how
+// The search (T479; Home's field, ⌘K, the phone's page): what the server found in every project (/api/find), and how
 // the page puts it: grouped by project (the one you are in first, then the others in the sidebar's order), closest
 // first in each, a kind chip showing only that kind; on the home page, one line each. Pure.
 
@@ -94,7 +94,7 @@ export function byKind<T extends { found: Pick<Found, 'kind'> }>(rows: readonly 
 export const foundKinds = (a: FindAnswer): [FindKind, string, number][] =>
   FIND_KINDS.map(([k, label]) => [k, label, a.found.filter((x) => x.kind === k).length] as [FindKind, string, number]).filter(([, , n]) => n > 0)
 
-/** The line under an input or a document: "Oct 23 09:12 · became F001", "09:12", "On F001". */
+/** The line under an input or a document: "Oct 23 09:12 · became T001", "09:12", "On T001". */
 export function foundMeta(x: Found, now: number): string {
   if (x.kind === 'docs') return x.on ? `On ${x.on}` : ''
   if (x.kind === 'rules') return 'A section of the rules'

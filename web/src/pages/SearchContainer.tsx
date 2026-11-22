@@ -1,4 +1,4 @@
-// The phone's search page (F479) with the page's data: where the search is, the project you are in (its rows drawn
+// The phone's search page (T479) with the page's data: where the search is, the project you are in (its rows drawn
 // as the list draws them), the projects in the sidebar's order; a result opens over it, and Back comes back to it.
 
 import { useEffect, useMemo } from 'react'

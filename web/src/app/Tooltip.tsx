@@ -2,8 +2,8 @@
 // label): after half a second under a fine pointer, at once when you move from one to the next, beside the sidebar's
 // buttons, under the heads' buttons, above the rest. A key at the end of the words ("Done · D") shows as a key cap. A
 // code in some words (data-ref) shows a card about what it names instead; a voice note's play button (data-heard) shows
-// its original words: word for word, and tidied (what agents get) when they differ (B640), then the steps that worked
-// them out (T697). It shows and hides at once, where it belongs: no fade, no movement (B665).
+// its original words: word for word, and tidied (what agents get) when they differ (T640), then the steps that worked
+// them out (T697). It shows and hides at once, where it belongs: no fade, no movement (T665).
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { RefCard } from '../model/refCard'
@@ -40,7 +40,7 @@ function split(text: string): { text: string; key: string } {
   return { text: parts.join(' · '), key }
 }
 
-/** A voice note's words, as its sheet shows them on the phone (F568, T697, B727): each step in the order its words
+/** A voice note's words, as its sheet shows them on the phone (T568, T697, T727): each step in the order its words
  * came, no words twice. */
 function SaidWords({ heard, tidied, steps = [] }: { heard: string; tidied: string; steps?: VoiceStep[] }) {
   return heard || tidied || steps.length ? <VoiceSteps steps={stepsOf(steps, heard, tidied)} tip /> : <span>No words heard</span>
@@ -66,7 +66,7 @@ export function Tooltip({ card, steps, at = null }: { card(ref: string): RefCard
     let current: HTMLElement | null = null
     let closedAt = 0
     let hush: Element | null = null
-    // a press that began inside the tip (selecting its words, B729): the tip stays until the press ends
+    // a press that began inside the tip (selecting its words, T729): the tip stays until the press ends
     let pressedIn = false
     const inTip = (n: EventTarget | Node | null) => !!n && !!tip.current?.contains(n as Node)
     const show = (el: HTMLElement) => {
@@ -176,7 +176,7 @@ export function Tooltip({ card, steps, at = null }: { card(ref: string): RefCard
   useLayoutEffect(() => {
     const t = tip.current
     const a = arrow.current
-    // measured and placed before the browser paints, so it appears where it belongs (B665: nothing flies in)
+    // measured and placed before the browser paints, so it appears where it belongs (T665: nothing flies in)
     if (!t || !a || !shown) return
     const r = shown.el.getBoundingClientRect()
     const w = t.offsetWidth

@@ -10,7 +10,7 @@ export interface UpFields {
   f?: string
   /** going up to Taska */
   uploading?: boolean
-  /** Taska refused it (B725): it is not up */
+  /** Taska refused it (T725): it is not up */
   failed?: boolean
 }
 

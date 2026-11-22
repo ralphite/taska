@@ -2,7 +2,7 @@
 // once scrolls). The row you hold follows the pointer, lifted; the others slide out of its way; on release it settles
 // into the gap and the new order is told. The rows only move with transforms while you drag: React keeps the rows
 // and draws the new order once it is told. A finger that holds still and lets go without moving opens the project's
-// menu instead (`onHold`, F767: as an iPhone's home screen, hold to move or for the menu).
+// menu instead (`onHold`, T767: as an iPhone's home screen, hold to move or for the menu).
 
 import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react'
 

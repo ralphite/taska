@@ -84,7 +84,7 @@ class Lookup(unittest.TestCase):
         codex_log(self.codex, CX, "task_started", "exec_approval_request", "message")  # answered: it went on
         self.assertEqual(codex(CX).status, "busy")  # type: ignore[union-attr]
 
-    def test_codex_waits_on_an_approval_its_hook_marked(self) -> None:  # I810 r1373: Codex logs nothing while it waits
+    def test_codex_waits_on_an_approval_its_hook_marked(self) -> None:  # T810 r1373: Codex logs nothing while it waits
         waits = os.path.join(self.dir.name, "waits")
         codex_log(self.codex, CX, "task_started", "message", "token_count")  # its last line: 10:00:03
         hook = os.path.join(ROOT, "tools", "codex_waiting_hook.py")
@@ -100,7 +100,7 @@ class Lookup(unittest.TestCase):
                 json.dump({"t": _ms("10:00:02"), "for": "approve"}, f)  # answered: it logged more after
             self.assertEqual(codex(CX).status, "busy")  # type: ignore[union-attr]
 
-    def test_antigravity_by_id(self) -> None:  # I810: CortexStepStatus 9 is waiting (a command waits for approval)
+    def test_antigravity_by_id(self) -> None:  # T810: CortexStepStatus 9 is waiting (a command waits for approval)
         home = os.path.join(self.dir.name, "ag")
         os.makedirs(os.path.join(home, "conversations"))
         ag = "585097f5-5a87-45d6-8c7a-065799deb358"
@@ -109,7 +109,7 @@ class Lookup(unittest.TestCase):
             return bytes([field << 3 | 2, len(v)]) + v
 
         with open(os.path.join(home, "agyhub_summaries_proto.pb"), "wb") as f:
-            f.write(pb(1, pb(1, ag.encode()) + pb(2, pb(1, b"I810: check the waits") + b"\x10\x09")))
+            f.write(pb(1, pb(1, ag.encode()) + pb(2, pb(1, b"T810: check the waits") + b"\x10\x09")))
 
         def conversation(*statuses: int) -> None:
             path = os.path.join(home, "conversations", f"{ag}.db")
@@ -127,7 +127,7 @@ class Lookup(unittest.TestCase):
             conversation(3, 3, 9)
             s = lookup(ag)
             self.assertEqual((s.agent, s.name, s.cwd, s.status, s.waiting_for),  # type: ignore[union-attr]
-                             ("antigravity", "I810: check the waits", "/Users/x/dev/app", "waiting", "approve a command"))
+                             ("antigravity", "T810: check the waits", "/Users/x/dev/app", "waiting", "approve a command"))
             conversation(3, 2)
             self.assertEqual(lookup(ag).status, "busy")  # type: ignore[union-attr]
             conversation(3, 3)
@@ -268,7 +268,7 @@ class OverHttp(unittest.TestCase):
 
 
 class CodexHookInstall(unittest.TestCase):
-    def test_it_adds_its_group_keeps_the_others_and_once(self) -> None:  # I810 r1373
+    def test_it_adds_its_group_keeps_the_others_and_once(self) -> None:  # T810 r1373
         import importlib.util
         spec = importlib.util.spec_from_file_location("inst", os.path.join(ROOT, "tools", "install_codex_waiting_hook.py"))
         inst = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]

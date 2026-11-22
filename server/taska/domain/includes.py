@@ -1,4 +1,4 @@
-"""Shared rules put into a project's rules by a line of their text (I779, D134). A project's rules document is a
+"""Shared rules put into a project's rules by a line of their text (T779, D134). A project's rules document is a
 template: a line of its own `{{编程}}` puts the shared rules called 编程 there, `{{编程 › 测试}}` only its section 测试.
 What is kept is the line; whoever reads the rules (an agent, the organizer) gets the text in its place, each part
 saying which shared rules it came from, and first that the project's own words win. Shared rules are one level: a

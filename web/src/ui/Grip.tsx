@@ -49,7 +49,7 @@ export function Grip({ name, axis, place, measure, onSize, onDone, onReset, drag
       }}
       onPointerUp={end}
       // the release can be lost (a gesture took the pointer, it left the window): the drag ends then too, so the
-      // line never stays blue (B638)
+      // line never stays blue (T638)
       onPointerCancel={end}
       onLostPointerCapture={end}
       onDoubleClick={(e) => {

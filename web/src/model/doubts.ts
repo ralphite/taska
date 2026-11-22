@@ -27,7 +27,7 @@ export interface Spot {
 const now = (x: Doubt, o: { was: string; alt: string }) => (x.pick === 'alt' ? o.alt : o.was)
 
 /** Every place of every doubt in the words now, in order, none overlapping. */
-/** How many words are still to check (B723: the box and the Draft card count them this one way): each spot not
+/** How many words are still to check (T723: the box and the Draft card count them this one way): each spot not
  * picked yet, whether it has two versions to pick from or a model was unsure of it. */
 export const toCheckOf = (spots: readonly Spot[]) => new Set(spots.filter((p) => !p.x.pick).map((p) => `${p.fk} ${p.k}`)).size
 

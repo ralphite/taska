@@ -1,4 +1,4 @@
-"""Settling where the fast and the strong model heard a voice note differently (B724), the pure part: which
+"""Settling where the fast and the strong model heard a voice note differently (T724), the pure part: which
 differences change the meaning (not punctuation, spaces, case, fillers, a word said twice, the same number or the
 same English word in another form), what the reviewers are asked and how their answers are read, and what most of
 them agreed on. The calls themselves are in services.voice_vote. No I/O, no models."""

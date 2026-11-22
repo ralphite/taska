@@ -1,4 +1,4 @@
-// The project's rules as one document with versions (I693, r1116/r1118/r1128): which document it is, its versions,
+// The project's rules as one document with versions (T693, r1116/r1118/r1128): which document it is, its versions,
 // the proposals waiting on you, a version's changes as marked chunks (added, removed, one column), the history by day,
 // and the rules' own addresses (/rules, /rules/history, /rules/v5, /rules/v5/now, /rules/p12). Pure.
 
@@ -160,7 +160,7 @@ export function placeDoc(r: { tab: string; place: { kind: string; d?: number } }
 /** How the box names the document a comment goes to: D4, or the rules (whose number is nobody's business). */
 export const docName = (d: Doc) => (d.kind === 'rules' ? 'the rules' : `D${d.d}`)
 
-/** What needs you in a project: the tasks waiting on you and the proposed changes to the rules (I693). */
+/** What needs you in a project: the tasks waiting on you and the proposed changes to the rules (T693). */
 export const needsCount = (m: ProjectModel, needsYou: (it: ProjectModel['tasks'][number]) => boolean) => m.tasks.filter(needsYou).length + waitingProposals(rulesDoc(m)).length
 
 /** The text a version changed from: the one before it ('' for the first). */

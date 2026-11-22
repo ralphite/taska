@@ -12,7 +12,7 @@ import type { InputFacts } from './InputsView'
 export interface InputRowsWith extends InputLineWith {
   lit: string | null
   litStill: boolean
-  /** how many to draw, newest first (more come as the list scrolls to its end, B645); the one gone to is always
+  /** how many to draw, newest first (more come as the list scrolls to its end, T645); the one gone to is always
    * among them */
   upTo: number
 }

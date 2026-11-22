@@ -89,7 +89,7 @@ class VoiceHealth:
             return 0.0
 
     def _again(self) -> None:
-        """Counting starts again now, also after a restart (B825: a restart read the notes counted before back in)."""
+        """Counting starts again now, also after a restart (T825: a restart read the notes counted before back in)."""
         self.tries.clear()
         self.totals.clear()
         try:

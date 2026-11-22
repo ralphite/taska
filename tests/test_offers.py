@@ -1,4 +1,4 @@
-"""B832 (r1423): a waiting session handed the same task, unchanged, three times in a row and not taking it (it waited
+"""T832 (r1423): a waiting session handed the same task, unchanged, three times in a row and not taking it (it waited
 for its own task only: a P0 task went to nobody for nine hours) is told about once to the user on that task; the task
 is no longer held for it, so other sessions get it, and its own wait holds instead of answering at once again."""
 

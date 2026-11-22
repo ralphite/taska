@@ -53,7 +53,7 @@ def _desktop_folder() -> str:
 
 
 def claude_desktop(sid: str) -> Optional[Dict[str, object]]:
-    """I833: the Claude desktop app's own record of the session whose id is `sid` (its `cliSessionId`): the id another
+    """T833: the Claude desktop app's own record of the session whose id is `sid` (its `cliSessionId`): the id another
     session sends it a message by (local_...), its title, and whether it is archived; None when the app has none."""
     if not SID.fullmatch(sid or ""):
         return None
@@ -120,7 +120,7 @@ def claude_code(sid: str) -> Optional[Session]:
 
 
 def running(window: float = 86400) -> List[Session]:
-    """The agent sessions on this machine, whoever started them (I810: a manager's worker that never calls Taska is
+    """The agent sessions on this machine, whoever started them (T810: a manager's worker that never calls Taska is
     among them, by the title its manager gave it): every Claude Code session running, and every Codex thread that
     wrote in the last day (`window` seconds; Codex keeps no list of the ones running), and every Antigravity
     conversation that changed in it."""
@@ -225,7 +225,7 @@ def codex(sid: str) -> Optional[Session]:
         with open(files[0], encoding="utf-8") as f:
             meta = json.loads(f.readline())
             cwd = str((meta.get("payload") or {}).get("cwd") or "")
-            if not name:  # I810: a thread its manager started has no title: its first instruction says what it is
+            if not name:  # T810: a thread its manager started has no title: its first instruction says what it is
                 for line in f:
                     if '"user_message"' not in line:
                         continue

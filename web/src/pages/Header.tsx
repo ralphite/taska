@@ -43,7 +43,7 @@ export function OfflinePill() {
 export function AgentPill({ tone, label, who, offline }: { tone: AgentTone; label: string; who?: AgentWho; offline: boolean }) {
   if (offline) return <OfflinePill />
   const words = who ? [hasIcon(who.by) ? '' : whoName(who.by), who.session].filter(Boolean) : []
-  // the agent's own icon is the mark: no dot beside it, the pill's color says how it is (B759)
+  // the agent's own icon is the mark: no dot beside it, the pill's color says how it is (T759)
   const icon = !!who && hasIcon(who.by)
   return (
     <span className={`flex h-8 max-w-52 items-center gap-2 rounded-full px-3 text-[13px] font-medium ring-1 ring-inset lg:max-w-80 ${PILL[tone][0]}`}>
@@ -77,7 +77,7 @@ export function NotSavedPill({ n, onOpen }: { n: number; onOpen(from: HTMLElemen
   )
 }
 
-/** No Gemini API key (F765): the organizer and voice notes are off until one is set; it opens Settings › Organizer. */
+/** No Gemini API key (T765): the organizer and voice notes are off until one is set; it opens Settings › Organizer. */
 export function NoKeyPill({ show, onOpen }: { show: boolean; onOpen(): void }) {
   if (!show) return null
   return (
@@ -127,7 +127,7 @@ export function ProjectBar({
   /** null: the project's data has not come yet */
   agent: AgentInfo | null
   notSaved: number
-  /** no Gemini API key (F765) */
+  /** no Gemini API key (T765) */
   noKey?: boolean
   place: string
   hidden?: boolean
@@ -168,7 +168,7 @@ export function ProjectBar({
 }
 
 /** The phone's head over the list: menu, name, agent, and Search, which opens the search page (the desktop has no
- * head over the list: its search is the dialog, its filter at the end of the views' row, F479). */
+ * head over the list: its search is the dialog, its filter at the end of the views' row, T479). */
 export function ListHead({
   title,
   otherNeeds,
@@ -183,7 +183,7 @@ export function ListHead({
   otherNeeds: boolean
   agent: AgentInfo | null
   notSaved: number
-  /** no Gemini API key (F765) */
+  /** no Gemini API key (T765) */
   noKey?: boolean
   hidden?: boolean
   /** its menu and Search pressed (a finger on them) */

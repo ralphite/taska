@@ -25,7 +25,7 @@ describe('what the box writes to', () => {
     expect(boxRole(m, at({ kind: 'tab' }), false, 'taska', null, nothing, noTicks).line).toBeNull()
   })
 
-  // Yadong (F706, r1146): on the rules, the box comments on them; change only on his explicit word
+  // Yadong (T706, r1146): on the rules, the box comments on them; change only on his explicit word
   test('the rules open, nothing picked: a comment on the rules, desktop and phone', () => {
     const rules = { ...doc(), d: 9, n: 0, kind: 'rules' as const }
     const rm = modelOf([task({ n: 12 })], [], {}, [rules])
@@ -76,7 +76,7 @@ describe('what the box writes to', () => {
 describe('a recording in the box', () => {
   const row = draftKey({ kind: 'amend', mode: 'append', id: 'r7' })
   const list = { place: at({ kind: 'tab' }).place, list: true, key: 'new' }
-  test('more said into an input from its row: its strip there says it, the box adds nothing and the list never moves (B720, B498)', () => {
+  test('more said into an input from its row: its strip there says it, the box adds nothing and the list never moves (T720, T498)', () => {
     expect(boxShowsRecording({ key: row }, list)).toBe(false)
     // no list in sight (another page): the box says where it goes
     expect(boxShowsRecording({ key: row }, { ...list, list: false })).toBe(true)

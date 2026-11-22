@@ -1,4 +1,4 @@
-// The desktop's search (F479), the way desktop apps have it: a dialog over nearly the whole window whose top is a large
+// The desktop's search (T479), the way desktop apps have it: a dialog over nearly the whole window whose top is a large
 // field with the focus (typing is the default; an x clears the words; the mic at its end records, with the time and
 // the level only, then Transcribing…, as the phone does); under it the kinds and the Project and Status filters; then
 // one list, best first (All: by kind, each kind named), each row with its project as a path (nothing typed: Recent;

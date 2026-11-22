@@ -165,7 +165,7 @@ export function SourcesSheet({ req }: Req<'task-sources'>) {
   )
 }
 
-/** When the task was made and last changed, in full (F704 r1157). */
+/** When the task was made and last changed, in full (T704 r1157). */
 export function TimesSheet({ req }: Req<'task-times'>) {
   const { m, it } = useSubject(req.n)
   if (!m || !it) return null

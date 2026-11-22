@@ -30,7 +30,7 @@ export const STATE_ON: Record<Status, string> = {
 export const PAGE_BODY = 'min-h-dvh bg-zinc-100 text-zinc-900 antialiased dark:bg-zinc-900 dark:text-zinc-100'
 
 export const HIT = 'relative after:absolute after:inset-x-0 after:-inset-y-1.5'
-/** A phone scroll area always gives the elastic pull, even when what it holds is shorter than it (B713): iOS Safari
+/** A phone scroll area always gives the elastic pull, even when what it holds is shorter than it (T713): iOS Safari
  * bounces only an area that can scroll, and the page itself never scrolls (html and body are overflow: hidden), so an
  * invisible mark 1px taller than the area keeps it scrollable by 1px. */
 export const PULL = 'phone:relative phone:after:pointer-events-none phone:after:absolute phone:after:top-0 phone:after:left-0 phone:after:h-[calc(100%+1px)] phone:after:w-px'
@@ -51,7 +51,7 @@ export const MUTED = 'text-zinc-500 dark:text-zinc-400'
 /** your words in a task's talk: a blue bubble on the right */
 export const YOU_BUBBLE =
   'max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_[data-ref]]:text-white [&_[data-ref]]:underline [&_[data-ref]]:decoration-white/60 [&_[data-ref]]:underline-offset-2 [&_a]:text-white [&_a]:decoration-white/60 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_button[data-more]]:text-white [&_code]:bg-white/15 [&_code]:text-white [&_mark]:text-zinc-900 [&_pre]:bg-white/15 [&_pre]:text-white'
-/** A main button; a button's label never wraps (B785). */
+/** A main button; a button's label never wraps (T785). */
 export const PRIMARY_BASE = `inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-transparent px-4 text-[15px] font-semibold ${DISABLED}`
 export const PRIMARY = PRIMARY_BASE + ' bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200'
 export const SECOND =
@@ -109,7 +109,7 @@ export const NEED = {
 } as const
 export type NeedKind = keyof typeof NEED
 /** One width for every row's pill, so the row's other buttons sit at the same place on every row (a word said after
- * you acted, "Sent back", may make it a little wider, on one line, B699). */
+ * you acted, "Sent back", may make it a little wider, on one line, T699). */
 export const ACTION_PILL = (v: NeedKind) =>
   `inline-flex h-8 min-w-24 items-center whitespace-nowrap justify-center gap-1 rounded-full pr-3 pl-2.5 text-[13px] font-semibold ring-1 ring-inset ${NEED[v].pill}`
 

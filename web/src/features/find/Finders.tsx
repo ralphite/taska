@@ -1,5 +1,5 @@
 // The project switcher (G P: Up and Down choose, Enter opens) and the sheet of every key (?). Props only. Finding
-// anything else, and the actions by their words, is the search's (F479: pages/SearchDialog).
+// anything else, and the actions by their words, is the search's (T479: pages/SearchDialog).
 
 import { useLayoutEffect, useRef, useState } from 'react'
 import { CurrentMark, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'

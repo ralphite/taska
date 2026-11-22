@@ -13,7 +13,7 @@ class FakeRecorder extends EventTarget {
   }
 }
 
-describe('stopRecorder (B745)', () => {
+describe('stopRecorder (T745)', () => {
   it('stops a recorder and gives what it recorded once it says it stopped', async () => {
     const rec = new FakeRecorder()
     const blob = await stopRecorder(rec, [new Blob(['ab']), new Blob(['c'])])
@@ -31,7 +31,7 @@ describe('stopRecorder (B745)', () => {
   })
 })
 
-describe('keepAwake (B745)', () => {
+describe('keepAwake (T745)', () => {
   const asked: { released: boolean; release: () => Promise<void> }[] = []
   const wakeLock = {
     request: vi.fn(async () => {
@@ -89,7 +89,7 @@ function stream() {
   return { track, s: { getAudioTracks: () => [track], getTracks: () => [track] } as unknown as MediaStream }
 }
 
-describe('the microphone (B800 r1370)', () => {
+describe('the microphone (T800 r1370)', () => {
   // kept between recordings from the Home Screen, iPhone refused it after Taska came back from the background
   it('each recording opens it and lets it go at its end, from the Home Screen too', async () => {
     const given: ReturnType<typeof stream>[] = []
@@ -101,7 +101,7 @@ describe('the microphone (B800 r1370)', () => {
   })
 })
 
-describe('openMic (B829)', () => {
+describe('openMic (T829)', () => {
   const refused = () => Object.assign(new Error('The request is not allowed'), { name: 'NotAllowedError' })
   const stream = { getAudioTracks: () => [{ getSettings: () => ({}) }] } as unknown as MediaStream
   const withMedia = (getUserMedia: () => Promise<MediaStream>) =>

@@ -1,11 +1,11 @@
-// Replies leave questions skipped; a reply on a proposal approves it (B818); replying to finished work sends it back to
-// the agent (B607).
+// Replies leave questions skipped; a reply on a proposal approves it (T818); replying to finished work sends it back to
+// the agent (T607).
 // guards: src/features/task/ src/features/docs/ src/ui/Markdown.tsx src/app/actions.ts src/app/docs/ src/model/docTicks.ts server/
 import { expect, test } from '@playwright/test'
 import { open, project } from './seed'
 import { box } from './ui'
 
-test('r637 r140 r349: a question answered by a reply shows Replied; a proposal replied on is approved (B471, B818)', async ({
+test('r637 r140 r349: a question answered by a reply shows Replied; a proposal replied on is approved (T471, T818)', async ({
   page,
   request,
 }) => {
@@ -23,7 +23,7 @@ new P2 now A proposal
   // a question answered by a reply: Replied where Send answer was (r1003)
   await open(page, p, 'T1')
   await expect(page.getByText(/^Replied/).filter({ visible: true }).first()).toBeVisible()
-  // a proposal you replied on is approved (B818 r1401): open, its card decided in place
+  // a proposal you replied on is approved (T818 r1401): open, its card decided in place
   await open(page, p, 'T2')
   await expect.poll(async () => p.read('T2')).toMatch(/^T2 P\d \w+ open/)
   await expect(page.getByText('Skipped · you replied').filter({ visible: true })).toHaveCount(0)
@@ -52,7 +52,7 @@ T1 ask Pick one in D1 (the colour plan).
   await expect(page.getByText('Skipped · you replied', { exact: true }).filter({ visible: true })).toBeVisible()
 })
 
-test('B818 r1401: a reply on a proposal approves it; its card stays where it was, Approve greyed and not to be pressed (r1003)', async ({
+test('T818 r1401: a reply on a proposal approves it; its card stays where it was, Approve greyed and not to be pressed (r1003)', async ({
   page,
   request,
 }) => {
@@ -68,7 +68,7 @@ test('B818 r1401: a reply on a proposal approves it; its card stays where it was
   await expect(page.getByText('Skipped · you replied').filter({ visible: true })).toHaveCount(0)
 })
 
-test('B607: replying to finished work resumes it; Accept returns when the agent hands it over again', async ({ page, request }) => {
+test('T607: replying to finished work resumes it; Accept returns when the agent hands it over again', async ({ page, request }) => {
   const p = await project(request, {
     agent: 'new P2 now Some work\n',
     approve: ['T1'],

@@ -5,7 +5,7 @@ import type { SharedRule } from './types'
 const rule = (name: string, md: string): SharedRule => ({ slug: '~a', name, md, parts: [], used: [] })
 const skills = skillsOf([rule('编程', '## 测试'), rule('/qa', '回答问题，只答不做。\n\n- 只回答'), rule('/plan', '# Plan it first')])
 
-describe('skills in the box (I821)', () => {
+describe('skills in the box (T821)', () => {
   test('the shared rules named /name, each with what it is for', () => {
     expect(skills).toEqual([
       { name: '/plan', what: 'Plan it first' },

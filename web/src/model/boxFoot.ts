@@ -120,7 +120,7 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
       : { aim: { d: docOf.d, target: { key: 'doc', quote: '' } }, scope: null, doc: docOf.d, line, placeholder: `Comment on D${docOf.d}…`, send: 'Comment' }
   }
   if (docOf && !mode && docOf.kind === 'rules') {
-    // the rules, nothing picked: the box comments on them, desktop and phone alike (F706, r1145, r1146)
+    // the rules, nothing picked: the box comments on them, desktop and phone alike (T706, r1145, r1146)
     return { aim: { d: docOf.d, target: { key: 'doc', quote: '' } }, scope: null, doc: docOf.d, line: null, placeholder: 'Comment on the rules…', send: 'Comment' }
   }
   if (docOf && !desk && !mode) {
@@ -149,9 +149,9 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
 }
 
 /** Whether the box shows a recording (its time and level, and where it goes when that is another draft): not one
- * whose own strip is in sight, where the box stays as it was and the page under it never moves (B498): a voice
+ * whose own strip is in sight, where the box stays as it was and the page under it never moves (T498): a voice
  * comment from the bar on a selection or about a document in view, or more said into an input from its row in the
- * list under the box (the desktop's New input page, B720). `list`: that list is shown; `key`: the box's own draft. */
+ * list under the box (the desktop's New input page, T720). `list`: that list is shown; `key`: the box's own draft. */
 export function boxShowsRecording(rec: { key: string; about?: { d: number | null; bar: boolean } | null }, here: { place: ProjectPlace['place']; list: boolean; key: string }): boolean {
   const a = rec.about
   if (a && (a.bar || (here.place.kind === 'doc' && here.place.d === a.d))) return false

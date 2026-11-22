@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Storybook's watchdog and health log (B517). Run by the LaunchAgent com.taska.storybook-watchdog (KeepAlive).
+"""Storybook's watchdog and health log (T517). Run by the LaunchAgent com.taska.storybook-watchdog (KeepAlive).
 
 Once a minute it opens Storybook (http://127.0.0.1:6007/ and /index.json, as an open page does) and writes one JSON
-line to .logs/storybook-health.jsonl, which the Dashboard (F448) reads:
+line to .logs/storybook-health.jsonl, which the Dashboard (T448) reads:
 
   {"t": "2026-10-22T23:50:00", "up": true, "page_ms": 12, "index": "ok", "index_ms": 40, "pid": 123,
    "uptime_s": 5400, "load": 12.3, "started": false, "restart": null}
@@ -22,7 +22,7 @@ From the last 24 hours of that log it rewrites the Dashboard's panel ~/.taska/de
 It restarts Storybook only when it is stuck, never on a slow minute:
   - the page has not answered for 5 minutes in a row, or
   - the story list has failed for 5 minutes naming files that no longer exist (the index kept files that moved).
-  - the page has been blank for 5 minutes: the addon files it names answer 404 (B612: their cache was cleared under
+  - the page has been blank for 5 minutes: the addon files it names answer 404 (T612: their cache was cleared under
     a running Storybook).
 Not more than once in 15 minutes. A restart goes through storybook-restart.sh, which logs it in
 .logs/storybook-restarts.log. Nothing else restarts Storybook: agents never do (rule R489).
@@ -166,7 +166,7 @@ def main() -> None:
     trim()
     down_since: Optional[float] = None  # first minute in the current run without a page answer
     stale_since: Optional[float] = None  # first minute in the current run of a story list naming gone files
-    blank_since: Optional[float] = None  # first minute in the current run of a page whose addon files are gone (B612)
+    blank_since: Optional[float] = None  # first minute in the current run of a page whose addon files are gone (T612)
     last_restart = 0.0
     last_pid: Optional[int] = None
     n = 0
@@ -174,7 +174,7 @@ def main() -> None:
         now = time.time()
         status, page_ms, html = get("/", PAGE_TIMEOUT)
         up = status == 200
-        # B612: the page answers but draws nothing when the addon files it names are gone (their cache was cleared
+        # T612: the page answers but draws nothing when the addon files it names are gone (their cache was cleared
         # under a running Storybook)
         missing = [a for a in sorted(set(re.findall(r"\./(sb-addons/[^'\"]+\.js)", html or "")))[:4] if get("/" + a, PAGE_TIMEOUT)[0] == 404] if up else []
         istatus, index_ms, body = get("/index.json", INDEX_TIMEOUT) if up else (None, None, "")

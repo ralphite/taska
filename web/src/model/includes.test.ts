@@ -1,4 +1,4 @@
-// I779 (D134): the page reads a project's lines `{{name}}` / `{{name › section}}` as the server does
+// T779 (D134): the page reads a project's lines `{{name}}` / `{{name › section}}` as the server does
 // (server/taska/domain/includes.py, tests/test_shared_rules.py): which lines a text has, what each puts in, which name
 // nothing, where Insert puts one.
 import { expect, test } from 'vitest'

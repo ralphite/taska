@@ -41,7 +41,7 @@ test('D84 #2: a row dragged over another shows where it would go, drawn over tha
   expect(mark.over).toMatch(/rgb|oklch/) // a ring drawn on the layer over the row, not under its own colour
 })
 
-test('F479: in the search, the keys and the pointer move the one highlighted row', async ({ page, request }) => {
+test('T479: in the search, the keys and the pointer move the one highlighted row', async ({ page, request }) => {
   test.skip(!isDesk(page), 'the search dialog is the desktop')
   const p = await project(request, SEED)
   await open(page, p, 'T2')

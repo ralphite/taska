@@ -29,7 +29,7 @@ interface Kept {
   kind?: 'answer' | 'cancelled'
   of?: number[]
   files?: FileRef[]
-  /** each voice note's words as you left them in the box (B682) */
+  /** each voice note's words as you left them in the box (T682) */
   words?: Record<string, string>
 }
 

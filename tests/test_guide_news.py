@@ -1,4 +1,4 @@
-"""F743 (approved by Yadong): when the guide for agents changes, agents already connected learn what changed the next
+"""T743 (approved by Yadong): when the guide for agents changes, agents already connected learn what changed the next
 time they talk to Taska: once, in their next /next or /do reply, with the lines that changed. A session Taska has
 never seen gets no notice (it reads /agent); reading /agent marks the guide as read. The marks survive a restart."""
 

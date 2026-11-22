@@ -1,4 +1,4 @@
-// The project's rules (I693, r1116/r1118/r1128): the document edited whole with an optional why (every save is a
+// The project's rules (T693, r1116/r1118/r1128): the document edited whole with an optional why (every save is a
 // version), a version restored (it asks once; the restore is a new version, Undo in the toast takes it back), an
 // agent's proposal approved or declined, the rules' own pages opened (history, a version, a proposal). Each change
 // shows at once and is saved behind you.

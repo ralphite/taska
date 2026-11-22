@@ -27,7 +27,7 @@ export const esc = (s: unknown) =>
 const refHtml = (c: string, to: RefTarget | null): string | null =>
   to ? `<span role="link" tabindex="0" data-ref="${c}" class="${REF_CLS}">${c}</span>` : null
 
-/** A video's file or address (F747): `![a walk-through](f12-demo.mp4)` plays where it stands. */
+/** A video's file or address (T747): `![a walk-through](f12-demo.mp4)` plays where it stands. */
 export const isVideo = (src: string) => /\.(mp4|m4v|mov|webm)$/i.test(src.split(/[?#]/)[0])
 
 function pictureHtml(said: string, src: string, world: InlineWorld): string {
@@ -70,7 +70,7 @@ export function inlineHtml(s: string, world: InlineWorld, refs = true): string {
       .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, t: string, url: string) =>
         keep(`<a href="${url}" target="_blank" rel="noopener" class="text-blue-600 underline underline-offset-2 dark:text-blue-400">${emph(t)}</a>`),
       )
-      // a link to a file sent to Taska ([the report](f12-report.html)): it opens, from wherever the page is (F782)
+      // a link to a file sent to Taska ([the report](f12-report.html)): it opens, from wherever the page is (T782)
       .replace(/\[([^\]]+)\]\((f\d+-[^)\s/]+)\)/g, (_, t: string, fid: string) =>
         keep(`<a href="${world.url(fid)}" target="_blank" rel="noopener" class="text-blue-600 underline underline-offset-2 dark:text-blue-400">${emph(t)}</a>`),
       )

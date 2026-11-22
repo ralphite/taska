@@ -1,4 +1,4 @@
-// The phone's search page (F479), voice first: its head (back to where you were), the kinds it found, what it found
+// The phone's search page (T479), voice first: its head (back to where you were), the kinds it found, what it found
 // (by project, the one you are in first, each under its tile and name, which stay at the top while its rows scroll)
 // or what it is doing, and the box at the bottom, which is the search box: what you said (or typed) is its words.
 // Words on the screen are as few as will do. Props only.

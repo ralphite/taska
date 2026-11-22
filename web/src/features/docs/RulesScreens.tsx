@@ -1,4 +1,4 @@
-// The Rules tab's screens (I693), each on the desktop (the pane over both columns) and the phone (the rules read in
+// The Rules tab's screens (T693), each on the desktop (the pane over both columns) and the phone (the rules read in
 // the tab; the rest over the whole screen): the rules read with the proposals waiting above them, the editor with its
 // why line, the history, one version (its changes, or against now), a proposal opened. Props only; the document's own
 // view and the editor come as slots.
@@ -46,7 +46,7 @@ export interface ProposalShown {
   on: ProposalEvents
 }
 
-/** A shared rule's page (I779): its name for Rules, the way back to Settings › Shared rules, what an empty one is
+/** A shared rule's page (T779): its name for Rules, the way back to Settings › Shared rules, what an empty one is
  * for, and the projects that use it under its text. */
 export interface SharedPage {
   name: string

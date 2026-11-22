@@ -15,17 +15,17 @@ export interface FileRef {
   name: string
   mime?: string
   size?: number
-  /** a voice note's words: its one record (B682), put here by the page's model from the project's voices (never
+  /** a voice note's words: its one record (T682), put here by the page's model from the project's voices (never
    * sent or kept with the file) */
   voice?: Voice
 }
 
-/** A file of an input (B838): a voice note's place in the words typed (its words show there); none: after them. */
+/** A file of an input (T838): a voice note's place in the words typed (its words show there); none: after them. */
 export interface PlacedFile extends FileRef {
   at?: number
 }
 
-/** A voice note's words (B682): the one record every place that shows the note reads. `said`: word for word;
+/** A voice note's words (T682): the one record every place that shows the note reads. `said`: word for word;
  * `tidied`: what everyone reads (yours once you changed them: `fixed`, when); `early`: the first words while it is
  * worked out (state wait); none: nobody was heard; failed: `err` says why. */
 export interface Voice {
@@ -54,7 +54,7 @@ export interface Message {
   edited?: string
   change?: boolean
   hidden?: boolean
-  /** your answer to these of the questions in a row; the others still wait (B749) */
+  /** your answer to these of the questions in a row; the others still wait (T749) */
   of?: number[]
 }
 
@@ -115,7 +115,7 @@ export interface Input {
   t: string
   by: string
   /** what was said: the words typed with each voice note's words where it was put (the page's model puts them
-   * together, B838) */
+   * together, T838) */
   text: string
   /** the words typed alone, as Taska keeps them */
   typed?: string
@@ -126,7 +126,7 @@ export interface Input {
   org: OrgNote | null
   seq: number
   v: number
-  /** answer: a form sent on its task; cancelled: a recording cancelled with Esc, kept, not sent (B627) */
+  /** answer: a form sent on its task; cancelled: a recording cancelled with Esc, kept, not sent (T627) */
   kind?: 'answer' | 'cancelled'
   /** the page's own id for it, as it was sent (its outbox entry's): one still on its way that Taska has shows once */
   q?: string
@@ -171,7 +171,7 @@ export interface Doc {
   by: string
   versions: number
   fmt: 'md' | 'html'
-  /** a web page too big for the project's view (B756: its sound and pictures are written into it): its length; its
+  /** a web page too big for the project's view (T756: its sound and pictures are written into it): its length; its
    * text (md is empty) comes when it is opened (Docs.loadPage) */
   size?: number
   blocks: Block[]
@@ -179,13 +179,13 @@ export interface Doc {
   whole: Comment[]
   unanswered: number
   resolved: Record<string, string>
-  /** the project's rules (I693): one document of the project, not of a task (n 0) */
+  /** the project's rules (T693): one document of the project, not of a task (n 0) */
   kind?: 'rules'
   proposals?: RuleProposal[]
   history?: RuleVersion[]
 }
 
-/** Shared rules (I779): kept once for every project, put into a project's rules by a line `{{name}}`. Its address
+/** Shared rules (T779): kept once for every project, put into a project's rules by a line `{{name}}`. Its address
  * (`~<id>`) opens it as the Rules tab opens a project's rules; `parts` are the sections a line can name (`name`: the
  * heading's words before a "（…）"); `used`: each project's line that puts it in. */
 export interface SharedRule {
@@ -200,7 +200,7 @@ export interface SharedRule {
   used: { project: string; title: string; line: string }[]
 }
 
-/** A version of the rules (I693): who, when (its first and last save), every why (newest first), the inputs it came
+/** A version of the rules (T693): who, when (its first and last save), every why (newest first), the inputs it came
  * from, the text it left; a restore says which version it put back; an approved proposal, which one. */
 export interface RuleVersion {
   v: number
@@ -235,7 +235,7 @@ export interface RuleProposal {
   comments: Comment[]
 }
 
-/** One session of an agent (F768): its name and last call; the id its app knows it by (sid) and what the app says
+/** One session of an agent (T768): its name and last call; the id its app knows it by (sid) and what the app says
  * of it now (Claude Code and Codex: busy, idle, waiting on the user, exited; since when, what it waits on, its
  * folder); whether a waker waits for work for it (Antigravity); the task it is on and since when; the session that
  * started it (a manager's worker). */
@@ -397,7 +397,7 @@ export interface DeletedThing {
   on?: string
 }
 
-/** Where the Gemini API key comes from (F765): set in Settings, from the environment, or none; its last 4 characters,
+/** Where the Gemini API key comes from (T765): set in Settings, from the environment, or none; its last 4 characters,
  * never the key */
 export interface GeminiKey {
   from: 'settings' | 'env' | ''
@@ -409,7 +409,7 @@ export interface ProjectFacts {
   damaged?: number
   slug: string
   title: string
-  /** its picture (F743), one of its files; '' for none (a copy kept from before may not have it) */
+  /** its picture (T743), one of its files; '' for none (a copy kept from before may not have it) */
   icon?: string
   width: number
   file: string
@@ -427,7 +427,7 @@ export interface ProjectFacts {
   /** this project on Taska's own network ("http://192.168.1.20:7340/p/x"): a phone there needs no key; '' when Taska
    * listens on this machine only */
   lan: string
-  /** the pass a web page document's frame puts on this project's files it asks for (B790) */
+  /** the pass a web page document's frame puts on this project's files it asks for (T790) */
   filesCap: string
   /** Taska was opened on a phone, or a phone gets its pushes (D115 #20) */
   phone?: boolean
@@ -436,7 +436,7 @@ export interface ProjectFacts {
 export interface ServerFacts {
   page: string
   update: boolean
-  /** Taska runs from its source (a checkout), not the released taska.pyz: the tools for making it show (B740) */
+  /** Taska runs from its source (a checkout), not the released taska.pyz: the tools for making it show (T740) */
   dev: boolean
 }
 
@@ -448,7 +448,7 @@ export interface ViewAnswer {
   tasks: Task[]
   inputs: Input[]
   docs: Doc[]
-  /** every voice note's words (B682) */
+  /** every voice note's words (T682) */
   voices?: Voice[]
   removed?: { tasks: number[]; inputs: string[]; docs: number[]; voices?: string[] }
   project: ProjectFacts
@@ -466,11 +466,11 @@ export interface NoNews {
 export interface ProjectRow {
   name: string
   title: string
-  /** its picture (F743), one of its files ('' or none: its letter) */
+  /** its picture (T743), one of its files ('' or none: its letter) */
   icon?: string
   open: number
   needs: number
-  /** done or dropped on Tasks (F667: a list kept from before may not have these) */
+  /** done or dropped on Tasks (T667: a list kept from before may not have these) */
   closed?: number
   inputs?: number
   docs?: number

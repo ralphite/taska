@@ -1,5 +1,5 @@
 // The home page: one table of the projects and what needs you in each; a search across every project (the phone: a
-// field; the desktop: the search dialog, F479); New project in a popover (the phone: a sheet), and with no projects yet one line and its button; a deleted project's old link says so
+// field; the desktop: the search dialog, T479); New project in a popover (the phone: a sheet), and with no projects yet one line and its button; a deleted project's old link says so
 // (Restore), and so does a project that never was. Props only.
 
 import type { MouseEvent, Ref } from 'react'
@@ -14,7 +14,7 @@ export interface HomeRow {
   name: string
   title: string
   tone: string
-  /** its picture's address (F743) */
+  /** its picture's address (T743) */
   icon?: string
   open: number
   needs: number
@@ -42,7 +42,7 @@ export interface HomeFacts {
 export interface HomeEvents {
   /** the phone's search field */
   query(q: string): void
-  /** the desktop's search (F479): the dialog, as ⌘K */
+  /** the desktop's search (T479): the dialog, as ⌘K */
   search(): void
   restore(): void
   closeGone(): void
@@ -64,7 +64,7 @@ function AgentCell({ agent }: { agent: HomeRow['agent'] }) {
   return (
     <span className="flex min-w-0 items-center gap-1.5 text-zinc-600 dark:text-zinc-300">
       <span className={`size-1.5 shrink-0 rounded-full ${dot}`} />
-      {/* the agent by its icon where it has one (T711), then what it does in the pill's words (B784) */}
+      {/* the agent by its icon where it has one (T711), then what it does in the pill's words (T784) */}
       {agent ? <Who by={agent.by} cls="truncate" /> : null}
       <span className="truncate">{!agent ? 'No agent' : `${hasIcon(agent.by) ? '' : '· '}${agent.state}`}</span>
     </span>
@@ -84,7 +84,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
   }
   return (
     <main className="mx-auto max-w-[1200px] px-3 pt-[env(safe-area-inset-top)] pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:px-10 lg:pt-8">
-      {/* the phone (B812): the search as wide as the projects' card, and the logo, the search's magnifier, each
+      {/* the phone (T812): the search as wide as the projects' card, and the logo, the search's magnifier, each
           project's picture and New project's plus on one line down the page (their middles where the pictures' are),
           their words starting together after them */}
       <header data-tip-side="bottom" className="flex min-h-14 flex-wrap items-center gap-x-3 gap-y-2 py-2 lg:px-1">

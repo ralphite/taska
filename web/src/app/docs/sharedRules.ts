@@ -1,4 +1,4 @@
-// Shared rules (I779): the list (loaded when Settings › Shared rules or a project's Rules shows them, again after a
+// Shared rules (T779): the list (loaded when Settings › Shared rules or a project's Rules shows them, again after a
 // change), new ones made by name, one opened (its address is its own, `~<id>`, and its page is the Rules tab's: the
 // project you came from is kept, for the way back), and a line put into the rules being edited where the caret is.
 

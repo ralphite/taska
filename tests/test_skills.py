@@ -1,4 +1,4 @@
-"""I821 (Yadong r1402, r1406): a skill is a shared document named /name, kept once for every project; words that start
+"""T821 (Yadong r1402, r1406): a skill is a shared document named /name, kept once for every project; words that start
 with its name (typed `/qa ...`, said "斜杠 QA ...") come to every agent with its text under them; agents see the list
 with the rules, and read one by name to apply it themselves when it fits."""
 

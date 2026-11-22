@@ -30,7 +30,7 @@ test('a subtask is added under its task', async ({ page, request }) => {
   await expect.poll(async () => p.read('tasks')).toMatch(/Install page.*\^T4/)
 })
 
-test('B666: an input can be deleted from its ⋯ (Delete asks again in place) and restored', async ({ page, request }) => {
+test('T666: an input can be deleted from its ⋯ (Delete asks again in place) and restored', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   await box(page).click()
@@ -48,7 +48,7 @@ test('B666: an input can be deleted from its ⋯ (Delete asks again in place) an
     await expect(page.locator('section[data-part="inputs"]').getByRole('button', { name: /^More for / })).toHaveCount(0)
     await touchRow(page, page.locator('[data-swipe]').filter({ hasText: 'A thought to throw away' }).first())
   }
-  // no Undo after sending (B666)
+  // no Undo after sending (T666)
   await expect(page.getByRole('button', { name: 'Undo', exact: true }).filter({ visible: true })).toHaveCount(0)
   await sheetBody(page).getByRole('button', { name: /^Delete/ }).first().click()
   // asked once: it says Delete? and nothing is deleted yet
@@ -105,7 +105,7 @@ test('the desktop: picked rows change together', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   const pick = (t: string) => row(page, t).first()
-  await view(page, 'All').click() // the tree's Active view leaves later work out (F291)
+  await view(page, 'All').click() // the tree's Active view leaves later work out (T291)
   await pick('Write the user docs').click({ modifiers: ['Meta'] })
   await pick('Clean up old branches').click({ modifiers: ['Meta'] })
   await expect(page.locator('#list')).toContainText('2 selected')
@@ -142,7 +142,7 @@ test('the desktop: G then N shows the inputs, Settings opens on G S and Esc goes
   await open(page, p)
   await page.keyboard.press('g')
   await page.keyboard.press('n')
-  await expect(page).toHaveURL(/\/new$/) // F347: what you said is under New input
+  await expect(page).toHaveURL(/\/new$/) // T347: what you said is under New input
   await expect(page.locator('[data-compose]').first()).toBeAttached() // the New input page (its Inputs heading shows once there is something)
   await box(page).blur() // New input puts you in its box: keys there are words
   await page.keyboard.press('g')
@@ -152,7 +152,7 @@ test('the desktop: G then N shows the inputs, Settings opens on G S and Esc goes
   await expect(page.locator('[data-part="settings"]').filter({ visible: true })).toHaveCount(0)
 })
 
-test('F347 T545: on the desktop the /inputs address opens New input, and Esc from there never opens an Inputs page', async ({
+test('T347 T545: on the desktop the /inputs address opens New input, and Esc from there never opens an Inputs page', async ({
   page,
   request,
 }) => {

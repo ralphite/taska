@@ -12,11 +12,11 @@ export interface SentFile {
   name?: string
   mime?: string
   size?: number
-  /** B838: a voice note's place in the words sent with it */
+  /** T838: a voice note's place in the words sent with it */
   at?: number
 }
 
-/** A voice note's words as you left them, by its file: they become the note's words (B682). */
+/** A voice note's words as you left them, by its file: they become the note's words (T682). */
 export type SentWords = Record<string, string>
 
 /** The fields `set` changes, as the server takes them (commands/tasks.py field_value): a parent by its code, or
@@ -38,7 +38,7 @@ export interface SetFields {
   parent?: string
 }
 
-/** One change to the rules by its sections (I693): replace a section, add one (after a section), or remove one. */
+/** One change to the rules by its sections (T693): replace a section, add one (after a section), or remove one. */
 export interface SectionEdit {
   op: string
   section?: string

@@ -123,7 +123,7 @@
      "project": "mobile-app",
      "ptitle": "Mobile app",
      "n": 5,
-     "code": "I5",
+     "code": "T5",
      "title": "深色模式下图表颜色对比度不够",
      "kind": "ask",
      "pri": "P2",
@@ -213,7 +213,7 @@
     "tasks": [
      {
       "n": 1,
-      "code": "F01",
+      "code": "T01",
       "type": "feature",
       "title": "导出 CSV 时只导出筛选后看到的行",
       "body": "在订单列表里设了筛选（比如只看 **已付款**），点 **Export** 导出的 CSV 还是全部订单。应该只导出当前看到的行，列的顺序也和屏幕上一样。",
@@ -642,7 +642,7 @@
      },
      {
       "n": 8,
-      "code": "F08",
+      "code": "T08",
       "type": "feature",
       "title": "礼品卡：购买、兑换、查余额",
       "body": "顾客可以买礼品卡送人；结账时输入卡号抵扣；在账户页查余额。",
@@ -1004,7 +1004,7 @@
      },
      {
       "n": 19,
-      "code": "F19",
+      "code": "T19",
       "type": "feature",
       "title": "订单列表加按日期筛选",
       "body": "可以选今天、最近 7 天、本月，或者自定义起止日期。",
@@ -1391,7 +1391,7 @@
      },
      {
       "n": 28,
-      "code": "F28",
+      "code": "T28",
       "type": "feature",
       "title": "后台可以批量修改商品价格（按分类、按百分比，或者导入 CSV）",
       "body": "",
@@ -1520,7 +1520,7 @@
      },
      {
       "n": 31,
-      "code": "B31",
+      "code": "T31",
       "type": "bug",
       "title": "Footer 的版权年份还是 2025",
       "body": "",
@@ -2239,7 +2239,7 @@
       ],
       "org": {
        "ok": true,
-       "msg": "Created F1",
+       "msg": "Created T1",
        "t": "2026-09-27T08:55:10-07:00",
        "keep": false,
        "changed": true,
@@ -2249,8 +2249,8 @@
       "v": 0,
       "filing": {
        "can": false,
-       "what": "removes F01",
-       "why": "F01 changed since"
+       "what": "removes T01",
+       "why": "T01 changed since"
       },
       "deletion": {
        "go": [],
@@ -2318,7 +2318,7 @@
       ],
       "org": {
        "ok": true,
-       "msg": "Added to F1",
+       "msg": "Added to T1",
        "t": "2026-09-27T19:55:10-07:00",
        "keep": false,
        "changed": true,
@@ -2347,7 +2347,7 @@
       ],
       "org": {
        "ok": true,
-       "msg": "Added to F1",
+       "msg": "Added to T1",
        "t": "2026-09-28T14:55:10-07:00",
        "keep": false,
        "changed": true,
@@ -2369,7 +2369,7 @@
       ],
       "org": {
        "ok": true,
-       "msg": "Added to F1",
+       "msg": "Added to T1",
        "t": "2026-09-29T09:55:10-07:00",
        "keep": false,
        "changed": true,
@@ -3102,7 +3102,7 @@
         "on": 2,
         "comments": [],
         "ses": "worker",
-        "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。iPhone Safari 之外，安卓 Chrome 也要走一次完整的下单和付款。测完在事项里贴截图。"
+        "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (T12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。iPhone Safari 之外，安卓 Chrome 也要走一次完整的下单和付款。测完在事项里贴截图。"
        }
       ],
       "history": [
@@ -3111,7 +3111,7 @@
         "by": "taska",
         "t0": "2026-10-23T11:50:10-07:00",
         "t": "2026-10-23T11:50:10-07:00",
-        "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode",
+        "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (T12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode",
         "whys": [
          "Rules moved into one document"
         ],
@@ -3123,7 +3123,7 @@
         "by": "claude-code",
         "t0": "2026-10-23T11:51:00-07:00",
         "t": "2026-10-23T11:51:00-07:00",
-        "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。测完在事项里贴截图。",
+        "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (T12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。测完在事项里贴截图。",
         "whys": [
          "改到结账流程的，上线前先在真 iPhone Safari 上测一遍"
         ],
@@ -3135,7 +3135,7 @@
       "d": 5,
       "n": 0,
       "title": "Rules",
-      "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。测完在事项里贴截图。",
+      "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (T12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。测完在事项里贴截图。",
       "t0": "2026-10-23T11:50:10-07:00",
       "t1": "2026-10-23T11:51:00-07:00",
       "by": "claude-code",
@@ -3151,7 +3151,7 @@
        {
         "key": "a2750d23e5",
         "kind": "para",
-        "text": "一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。",
+        "text": "一行，大白话；事项编号放在最后，比如 (T12)。不写“refactor”“fix bug”这种看不出变化的话。",
         "comments": []
        },
        {
@@ -3355,7 +3355,7 @@
         "by": "taska",
         "t0": "2026-10-23T11:50:10-07:00",
         "t": "2026-10-23T11:50:10-07:00",
-        "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode",
+        "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (T12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode",
         "whys": [
          "Rules moved into one document"
         ],
@@ -3367,7 +3367,7 @@
         "by": "claude-code",
         "t0": "2026-10-23T11:51:00-07:00",
         "t": "2026-10-23T11:51:00-07:00",
-        "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。测完在事项里贴截图。",
+        "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (T12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。测完在事项里贴截图。",
         "whys": [
          "改到结账流程的，上线前先在真 iPhone Safari 上测一遍"
         ],
@@ -3380,7 +3380,7 @@
         "by": "claude-code",
         "t0": "2026-10-23T11:55:14-07:00",
         "t": "2026-10-23T11:55:14-07:00",
-        "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。iPhone Safari 之外，安卓 Chrome 也要走一次完整的下单和付款。测完在事项里贴截图。",
+        "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (T12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。iPhone Safari 之外，安卓 Chrome 也要走一次完整的下单和付款。测完在事项里贴截图。",
         "whys": [
          "B22 和 B02 都只在手机浏览器上出问题，只测 iPhone Safari 不够"
         ],
@@ -3393,7 +3393,7 @@
       "d": 5,
       "n": 0,
       "title": "Rules",
-      "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。iPhone Safari 之外，安卓 Chrome 也要走一次完整的下单和付款。测完在事项里贴截图。",
+      "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (T12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。iPhone Safari 之外，安卓 Chrome 也要走一次完整的下单和付款。测完在事项里贴截图。",
       "t0": "2026-10-23T11:50:10-07:00",
       "t1": "2026-10-23T11:55:14-07:00",
       "by": "claude-code",
@@ -3409,7 +3409,7 @@
        {
         "key": "a2750d23e5",
         "kind": "para",
-        "text": "一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。",
+        "text": "一行，大白话；事项编号放在最后，比如 (T12)。不写“refactor”“fix bug”这种看不出变化的话。",
         "comments": []
        },
        {
@@ -3605,7 +3605,7 @@
          "by": "taska",
          "t0": "2026-10-23T11:50:10-07:00",
          "t": "2026-10-23T11:50:10-07:00",
-         "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode",
+         "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (T12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode",
          "whys": [
           "Rules moved into one document"
          ],
@@ -3617,7 +3617,7 @@
          "by": "claude-code",
          "t0": "2026-10-23T11:51:00-07:00",
          "t": "2026-10-23T11:51:00-07:00",
-         "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。测完在事项里贴截图。",
+         "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (T12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。测完在事项里贴截图。",
          "whys": [
           "改到结账流程的，上线前先在真 iPhone Safari 上测一遍"
          ],
@@ -3630,7 +3630,7 @@
          "by": "claude-code",
          "t0": "2026-10-23T11:55:14-07:00",
          "t": "2026-10-23T11:55:14-07:00",
-         "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。iPhone Safari 之外，安卓 Chrome 也要走一次完整的下单和付款。测完在事项里贴截图。",
+         "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (T12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。iPhone Safari 之外，安卓 Chrome 也要走一次完整的下单和付款。测完在事项里贴截图。",
          "whys": [
           "B22 和 B02 都只在手机浏览器上出问题，只测 iPhone Safari 不够"
          ],
@@ -3643,7 +3643,7 @@
        "d": 5,
        "n": 0,
        "title": "Rules",
-       "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。iPhone Safari 之外，安卓 Chrome 也要走一次完整的下单和付款。测完在事项里贴截图。",
+       "md": "## 提交说明写清楚对顾客有什么变化\n\n一行，大白话；事项编号放在最后，比如 (T12)。不写“refactor”“fix bug”这种看不出变化的话。\n\n## 新功能先在 5% 的顾客上打开，看一天数据再全量\n\n用 feature flag 控制。打开前在事项里写好要看哪个数字。\n\n## Never log full card numbers or CVV, even in debug mode\n\n## 改到结账流程的，上线前先在真 iPhone Safari 上测一遍\n\n模拟器不算。iPhone Safari 之外，安卓 Chrome 也要走一次完整的下单和付款。测完在事项里贴截图。",
        "t0": "2026-10-23T11:50:10-07:00",
        "t1": "2026-10-23T11:55:14-07:00",
        "by": "claude-code",
@@ -3659,7 +3659,7 @@
         {
          "key": "a2750d23e5",
          "kind": "para",
-         "text": "一行，大白话；事项编号放在最后，比如 (B12)。不写“refactor”“fix bug”这种看不出变化的话。",
+         "text": "一行，大白话；事项编号放在最后，比如 (T12)。不写“refactor”“fix bug”这种看不出变化的话。",
          "comments": []
         },
         {

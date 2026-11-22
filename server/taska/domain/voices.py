@@ -1,4 +1,4 @@
-"""A voice note's words as everyone reads them (B682): one record per voice note (state.voices), named by its file
+"""A voice note's words as everyone reads them (T682): one record per voice note (state.voices), named by its file
 wherever the note is (an input, a message, a comment). What was typed and each voice note's words together are
 what was said; agents read each note as "voice 0:21: <its words>". Pure: no I/O."""
 
@@ -73,7 +73,7 @@ def voice_line(st: ProjectState, f: FileRef, as_said: bool = False, said_as: str
 
 
 def in_place(text: str, files: Iterable[FileRef]) -> List[Union[str, FileRef]]:
-    """What was said in order (B838): the words typed, each voice note where it was put in them (its place), the
+    """What was said in order (T838): the words typed, each voice note where it was put in them (its place), the
     notes with no place after all the words."""
     notes = voices_of(files)
     out: List[Union[str, FileRef]] = []
@@ -91,7 +91,7 @@ def in_place(text: str, files: Iterable[FileRef]) -> List[Union[str, FileRef]]:
 
 def for_agents(st: ProjectState, text: str, files: Iterable[FileRef], as_said: bool = False, said_as: str = AS_SAID) -> str:
     """What was said as agents read it: the words typed, with a line for each voice note, with its words, where it
-    was put in them (B838)."""
+    was put in them (T838)."""
     return "\n".join(x if isinstance(x, str) else voice_line(st, x, as_said, said_as) for x in in_place(text, files))
 
 

@@ -64,7 +64,7 @@ class GeminiTest(unittest.TestCase):
         self.assertEqual(waits, [1, 2])
 
     def test_servers_busy_waits_longer_each_time(self):
-        """B684 (Yadong: aim the retries at what happens most, its servers busy and its rates): 1, 2, 4, 8, 16 s."""
+        """T684 (Yadong: aim the retries at what happens most, its servers busy and its rates): 1, 2, 4, 8, 16 s."""
         g, waits = client(Fake(*[Failed(503, "high demand")] * 5, REPLY))
         self.assertEqual(g.ask("voice", Question("", [])), "Hello")
         self.assertEqual(waits, [1, 2, 4, 8, 16])

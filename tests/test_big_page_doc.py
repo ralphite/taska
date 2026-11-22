@@ -1,4 +1,4 @@
-"""B756 (Yadong r1262): a project whose web page documents carry their sound (20 MB each) did not open over the
+"""T756 (Yadong r1262): a project whose web page documents carry their sound (20 MB each) did not open over the
 phone's connection, so the phone showed the project as it was before and refused what was decided since. A big web page
 is not in the project's view; the page asks for its text when it is opened."""
 

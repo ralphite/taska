@@ -1,4 +1,4 @@
-// A document's diagram or table seen on the whole window (F839, Yadong r1441 r1443): its button at the top right
+// A document's diagram or table seen on the whole window (T839, Yadong r1441 r1443): its button at the top right
 // (on the desktop when it is pointed at, on the phone always, as nothing hovers there) opens it over everything, the
 // width of the window, scrolling either way; × or Esc closes it. Pictures have the viewer and videos their own
 // full screen. Props only.

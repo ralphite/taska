@@ -27,7 +27,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
   const dropOn = useStoreValue(stores.drag, (s) => s.project)
   const list = dropOn && listed ? listed.map((p) => (p.slug === dropOn ? { ...p, drop: true } : p)) : listed
   const route = useStoreValue(stores.route, (s) => s.route)
-  // the project whose menu is open: its card beside the sidebar stays while it is (F767 r1299)
+  // the project whose menu is open: its card beside the sidebar stays while it is (T767 r1299)
   const menuFor = useStoreValue(stores.sheet, (s) => (s.spec?.req.kind === 'project-menu' ? s.spec.req.slug : null))
   const undo = useStoreValue(stores.feedback, (s) => s.undo.at(-1) ?? null)
   const sideHidden = useStoreValue(stores.ui, (s) => s.sideHidden)
@@ -53,7 +53,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
     undo: () => void undo?.run(),
     order: (names, moved) => void app.projects.order(names, `${list?.find((p) => p.slug === moved)?.title || moved} moved`),
     dragProject: (to) => app.taskDrag.overProject(to),
-    // the desktop's menu where it was asked for (a right click, ⋯); the phone's (a long press) as its sheets are (F767)
+    // the desktop's menu where it was asked for (a right click, ⋯); the phone's (a long press) as its sheets are (T767)
     projectMenuFrom: (to, from) => (layout === 'desk' ? app.sheets.openFrom(from, { kind: 'project-menu', slug: to }, { focus: false }) : app.sheets.open({ kind: 'project-menu', slug: to }, { focus: false })),
     projectMenu: (to, x, y) => (layout === 'desk' ? app.sheets.open({ kind: 'project-menu', slug: to }, { pop: true, focus: false, at: { x, y } }) : app.sheets.open({ kind: 'project-menu', slug: to }, { focus: false })),
     dropProject: () => app.taskDrag.drop(),
@@ -65,7 +65,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
       else app.nav.to(href)
     },
   }
-  // the tools for making Taska: from its source only, opened on this computer; never in a release (B740)
+  // the tools for making Taska: from its source only, opened on this computer; never in a release (T740)
   const fromSource = useStoreValue(stores.data, (s) => s.dev)
   const dev = fromSource && typeof location !== 'undefined' && /^(localhost|127(\.\d{1,3}){3}|\[::1\])$/.test(location.hostname)
   if (rail) return <Rail keys={SIDE_KEYS} projects={list} links={links} composing={composingNow && layout === 'desk'} settingsOpen={route.page === 'project' && route.place.kind === 'settings'} hidden={hidden} menuFor={menuFor} on={on} />
@@ -84,7 +84,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
       hidden={hidden}
       edge={
         layout === 'desk' ? (
-          // the edge to drag, wholly outside the sidebar: never over its scrollbar (B739)
+          // the edge to drag, wholly outside the sidebar: never over its scrollbar (T739)
           <Grip
             name="side"
             axis="x"

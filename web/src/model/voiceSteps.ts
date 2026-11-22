@@ -1,4 +1,4 @@
-// How a voice note's words came about, step by step, in the order its words arrived (B727): the first words in full,
+// How a voice note's words came about, step by step, in the order its words arrived (T727): the first words in full,
 // then each later step only as what it changed from the words before it, so no words show twice. Generic over the
 // steps the server reports (any model, any retries); only `tidy` (the words agents get) is known to come last.
 

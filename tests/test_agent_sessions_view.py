@@ -1,4 +1,4 @@
-"""F768 (Yadong r1290, r1296): the Agents dialog lists every agent session seen in a project, each with what its app
+"""T768 (Yadong r1290, r1296): the Agents dialog lists every agent session seen in a project, each with what its app
 says of it now (working, idle, waiting on the user, gone), the task it is on, and the session that started it (a
 manager's worker says &parent=<the manager's session name>). What the page gets for each session."""
 
@@ -46,7 +46,7 @@ class SessionsInPresence(ProjectCase):
         self.assertNotIn("on", s["Manager"])
 
     def test_sessions_and_their_ids_survive_a_restart(self) -> None:
-        """B784: after Taska restarts, the page still knows each session by its app's id, so it shows the state the
+        """T784: after Taska restarts, the page still knows each session by its app's id, so it shows the state the
         app gives (working) instead of guessing "no agent" from the last call."""
         from taska.services.project import Project  # noqa: E402
         self.call(f"/next?by=claude-code&session=Manager&sid={CC}")

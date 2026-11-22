@@ -14,7 +14,7 @@ import { MENU_ROW, MUTED } from '../../ui/tones'
 import { Skeleton, Who } from '../../ui/bits'
 import { MadeBy } from './TimesLine'
 
-/** What an agent reading the task gets, word for word (F568); null while it comes. */
+/** What an agent reading the task gets, word for word (T568); null while it comes. */
 /** Later (D115 #21): Tomorrow, Next week, a day picked (then back to Now by itself), or no day; Back to now when it is
  * Later already. `days`: from laterDays; `until`: its day now. */
 export function laterSheet(code: string, f: { later: boolean; until: string | null; days: { today: string; tomorrow: string; nextWeek: string }; say(day: string): string }, on: { pick(day: string | null): void; now(): void }): SheetParts {
@@ -133,7 +133,7 @@ export function sourcesSheet({ code, inputs, world, now, files }: { code: string
   }
 }
 
-/** When a task was made (by whom) and last changed, in full (F704 r1157): the phone's sheet from the line under its
+/** When a task was made (by whom) and last changed, in full (T704 r1157): the phone's sheet from the line under its
  * chips. */
 export function timesSheet(x: Pick<TaskTimes, 'by' | 'created' | 'last'>): SheetParts {
   const row = (label: string, at: string, who: ReactNode) => (

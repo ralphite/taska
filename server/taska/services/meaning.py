@@ -1,4 +1,4 @@
-"""Finding things by what the words mean (F479), with embeddings: every line of every project's short list
+"""Finding things by what the words mean (T479), with embeddings: every line of every project's short list
 (domain.finding.short_list) and the words searched for become Gemini embeddings; the lines closest to the words,
 above a floor, are what they mean, closest first (the project you are in first when as close).
 

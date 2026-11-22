@@ -29,7 +29,7 @@ def transcriber_for(p: Project, workspace: Callable[[], Any], health: Optional[V
 
     def run(data: bytes, mime: str, scope: Optional[int], path: Optional[str], first: Callable[[str], None]) -> Dict[str, Any]:
         res = transcribe(hearing, data, mime, scope, path, first)
-        # B788: what its words fell back from is logged, for the log review every few days (r1340) to find
+        # T788: what its words fell back from is logged, for the log review every few days (r1340) to find
         for why in fell_back(res.get("steps") or []):
             log.warning(f"voice fallback: {why}", extra={"f": {"source": "server", "kind": "voicefallback", "project": p.slug,
                                                                  "f": os.path.basename(path or ""), "why": why}})

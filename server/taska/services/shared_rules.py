@@ -1,4 +1,4 @@
-"""Shared rules (I779, D134): documents kept once for the whole Taska, each with a name, that a project's rules put in
+"""Shared rules (T779, D134): documents kept once for the whole Taska, each with a name, that a project's rules put in
 by a line `{{name}}`. Each is kept as a small project of its own that only holds its rules document, so it has
 versions, comments, History and the editor as a project's rules have, and the page opens it as it opens the Rules
 tab. They are not projects: no list, count, search, agent or organizer sees them.
@@ -49,7 +49,7 @@ class SharedRules:
         return p
 
     def refresh(self, slug: str) -> None:
-        """One has changed (its lock held, or no one else has it yet): what skills() gives (I821)."""
+        """One has changed (its lock held, or no one else has it yet): what skills() gives (T821)."""
         p = self.rules.get(slug)
         if p is not None:
             now = dict(self._now)

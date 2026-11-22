@@ -28,7 +28,7 @@ describe('misheard words', () => {
   it('takes the model mark out', () => expect(unmarked('colours (?)')).toBe('colours'))
 })
 
-it('the box and the Draft card count the words to check one way: picked ones out, unsure ones in (B723)', () => {
+it('the box and the Draft card count the words to check one way: picked ones out, unsure ones in (T723)', () => {
   const spots = [
     { fk: 'v', k: 0, x: { was: 'filter', alt: 'filters' } },
     { fk: 'v', k: 1, x: { was: 'sort', why: 'unsure' } },

@@ -1,4 +1,4 @@
-"""A voice note's words (B682): each step of working them out, a correction of yours, and taking them out of the
+"""A voice note's words (T682): each step of working them out, a correction of yours, and taking them out of the
 texts once. Typed events and how their stored rows read."""
 
 from __future__ import annotations
@@ -56,8 +56,8 @@ class VoiceFixed(Event):
 @dataclass
 class VoicesSplit(Event):
     """Voice notes' records set as they are, and texts that held voice words set to only what was typed: {input id:
-    text}, {"<d>": {"<comment id>": text}}. Written once per project by B682 (and, in format 2, for the words as said
-    that F568 kept once)."""
+    text}, {"<d>": {"<comment id>": text}}. Written once per project by T682 (and, in format 2, for the words as said
+    that T568 kept once)."""
 
     KIND: ClassVar[str] = "voices"
     voices: Dict[str, Voice] = field(default_factory=dict)

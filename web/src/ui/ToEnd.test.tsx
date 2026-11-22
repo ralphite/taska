@@ -3,8 +3,8 @@ import { describe, expect, test, vi } from 'vitest'
 import { toEndWay } from './scroller'
 import { ToEnd } from './ToEnd'
 
-// F716 r1171 (Yadong): a page with a talk above the box has a floating button to its end, as Codex has it: it points
-// down while the talk is not at its end, and a tap scrolls to the end. F752 r1250 (Yadong): at the end it does not go
+// T716 r1171 (Yadong): a page with a talk above the box has a floating button to its end, as Codex has it: it points
+// down while the talk is not at its end, and a tap scrolls to the end. T752 r1250 (Yadong): at the end it does not go
 // away: its arrow points up, and a tap goes back to the top. With nothing to scroll it does not show.
 
 /** a part 2000 high showing 600 (`high`: how high its content is), scrolled to `top`, with the talk in it */
@@ -23,14 +23,14 @@ const part = (top: number, high = 2000) => {
   return { sc, talk, scrollTo }
 }
 
-describe('which way the button to the end points (F716 r1171, F752 r1250)', () => {
+describe('which way the button to the end points (T716 r1171, T752 r1250)', () => {
   test('at the end: up', () => expect(toEndWay(part(1400).sc)).toBe('up'))
   test('a few px short of the end: still up', () => expect(toEndWay(part(1397).sc)).toBe('up'))
   test('scrolled up: down', () => expect(toEndWay(part(1000).sc)).toBe('down'))
   test('a talk shorter than its part, nothing to scroll: none', () => expect(toEndWay(part(0, 500).sc)).toBe('none'))
 })
 
-describe('the button to the end (F716 r1171, F752 r1250)', () => {
+describe('the button to the end (T716 r1171, T752 r1250)', () => {
   const button = () => screen.getByRole('button', { hidden: true })
   test('at the end it shows Back to top; a tap scrolls smoothly to the top, and there it points down again', () => {
     const { sc, talk, scrollTo } = part(1400)

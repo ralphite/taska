@@ -29,7 +29,7 @@ export interface Dash {
     median_minutes: number
     median_tokens: number
   }
-  /** each round of work on a task, the latest first (F576) */
+  /** each round of work on a task, the latest first (T576) */
   rounds: Round[]
   panels: { name: string; updated: string; title: string; md: string }[]
   analyses: { name: string; date: string; title: string; md: string }[]

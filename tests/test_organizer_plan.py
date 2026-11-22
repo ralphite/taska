@@ -1,4 +1,4 @@
-"""The organizer's plan from the model, as the command language reads it (B623)."""
+"""The organizer's plan from the model, as the command language reads it (T623)."""
 
 import unittest
 
@@ -7,12 +7,12 @@ from taska.services.organizer import indent_strays
 from taska.domain.vocab import Refused
 
 # what the model answered for r894 on 10-30: the body's second line was not indented
-B623 = "T622 P0\nT622 body \u8fd9\u79cd more finished \u5220\u6389\u3002\n\u8fd9\u4e2a\u6539\u6210 P0\u3002\npass"
+T623 = "T622 P0\nT622 body \u8fd9\u79cd more finished \u5220\u6389\u3002\n\u8fd9\u4e2a\u6539\u6210 P0\u3002\npass"
 
 
 class IndentStrays(unittest.TestCase):
     def test_a_body_over_two_lines_is_one_body(self):
-        got = parse(indent_strays(B623).replace("\npass", ""))
+        got = parse(indent_strays(T623).replace("\npass", ""))
         self.assertFalse([c for _, c in got if isinstance(c, Refused)])
         body = [c for _, c in got if c.get("op") == "set"][-1]["f"]["body"]
         self.assertTrue(body.endswith("\u8fd9\u4e2a\u6539\u6210 P0\u3002"), body)

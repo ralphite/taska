@@ -203,7 +203,7 @@ def _new(rest: str, cont: str) -> Command:
 
 
 def _rules(rest: str, cont: str) -> Command:
-    """The project's rules (I693): `rules propose <why>` (an agent's change; the user approves it) or `rules edit
+    """The project's rules (T693): `rules propose <why>` (an agent's change; the user approves it) or `rules edit
     <why>` (the organizer, from the user's words), the changes by section indented under it; `rules reply P12 <text>`
     on a proposal's thread."""
     verb, _, why = rest.partition(" ")
@@ -226,7 +226,7 @@ def _rules(rest: str, cont: str) -> Command:
 
 
 def _project(rest: str) -> Command:
-    """The project's picture (F743): `project icon f12-logo.png` (an image uploaded first) or `project icon none`."""
+    """The project's picture (T743): `project icon f12-logo.png` (an image uploaded first) or `project icon none`."""
     verb, _, f = rest.partition(" ")
     if verb.lower() != "icon" or not f.strip() or len(f.split()) > 1:
         raise Refused("use: project icon f12-logo.png (an image uploaded first with POST /api/file), or project icon none")
@@ -242,7 +242,7 @@ def _doc_command(word: str, rest: str, cont: str) -> Command:
         return {"op": "doc", "d": word[1:], "title": rest2.strip(), "md": cont, "fmt": "html"}
     if v == "reply":
         x = re.match(r"¶?x(\d+)\s+(.*)", rest2.strip(), re.S)
-        if x:  # ¶x2: the second thread whose paragraph was rewritten or removed (B837)
+        if x:  # ¶x2: the second thread whose paragraph was rewritten or removed (T837)
             return {"op": "dc", "d": word[1:], "detached": x.group(1), "text": (x.group(2) + ("\n" + cont if cont else "")).strip()}
         m = re.match(r"¶?(\d+)(?:\.(\d+))?\s+(.*)", rest2.strip(), re.S)
         if not m:

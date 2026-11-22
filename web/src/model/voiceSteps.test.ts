@@ -25,7 +25,7 @@ describe('wordDiff', () => {
   })
 })
 
-describe('stepsInOrder (B727)', () => {
+describe('stepsInOrder (T727)', () => {
   const steps = [
     { step: 'pro', model: 'strong', error: 'no answer within 30 s', secs: 30 },
     { step: 'asr', model: 'speech', text: '回复在最上面', secs: 2 },

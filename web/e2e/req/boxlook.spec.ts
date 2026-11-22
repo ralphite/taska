@@ -7,7 +7,7 @@ import { LOOP, isDesk, open, project } from '../seed'
 import { FOOT, TALK, box, duo, foot, talk as talkOf } from '../ui'
 
 /** The box's colour and the colour of the page it stands on: the nearest painted one around it (by what holds it, not by
- * what a point beside it hits: around the box the foot lets a press through to what is under it, B739). */
+ * what a point beside it hits: around the box the foot lets a press through to what is under it, T739). */
 const colours = (page: Page) =>
   page.evaluate(() => {
     const box = document.getElementById('composer') as HTMLElement
@@ -24,7 +24,7 @@ const colours = (page: Page) =>
 
 for (const scheme of ['light', 'dark'] as const)
   test(`r469: the box stands apart from the page around it (${scheme})`, async ({ page, request }) => {
-    // light: the white box stands on a light grey strip (B536, Yadong's pick 2, #6715)
+    // light: the white box stands on a light grey strip (T536, Yadong's pick 2, #6715)
     await page.emulateMedia({ colorScheme: scheme })
     const p = await project(request, LOOP)
     for (const at of ['', 'T1']) {
@@ -34,7 +34,7 @@ for (const scheme of ['light', 'dark'] as const)
     }
   })
 
-test('r469 #6715: in light the talk of a task in one column runs down to the strip under the box, no white gap above it (B536)', async ({
+test('r469 #6715: in light the talk of a task in one column runs down to the strip under the box, no white gap above it (T536)', async ({
   page,
   request,
 }) => {
@@ -51,7 +51,7 @@ test('r469 #6715: in light the talk of a task in one column runs down to the str
   expect(t.y + t.height, 'the talk ends at the strip, not above it').toBeGreaterThanOrEqual(f.y - 1)
 })
 
-test('#6915 r711 r712: in dark the talk of a task in one column runs on under the box as in two columns: its words show above the box, and its end stays clear of it (F478)', async ({
+test('#6915 r711 r712: in dark the talk of a task in one column runs on under the box as in two columns: its words show above the box, and its end stays clear of it (T478)', async ({
   page,
   request,
 }) => {

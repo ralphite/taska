@@ -1,4 +1,4 @@
-// The desktop's search dialog (F479) with the page's data: where the search is, the projects (their models where the
+// The desktop's search dialog (T479) with the page's data: where the search is, the projects (their models where the
 // page has them), what you opened lately, the actions the words may name (on the task open), and the highlighted
 // row's preview: a task of a project the page has, as its page draws it (read only); anything else, what the search
 // knows of it.

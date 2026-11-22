@@ -18,7 +18,7 @@ export interface DataState {
   /** how sure the page is that Taska is out of reach for the list of projects (model/reach `away`): the one shown is
    * the one kept from before */
   listAway: number
-  /** Taska runs from its source, not a release (B740): its development links show */
+  /** Taska runs from its source, not a release (T740): its development links show */
   dev: boolean
   /** each project's pictures' sizes, by file */
   sizes: Readonly<Record<string, Readonly<Record<string, readonly [number, number]>>>>

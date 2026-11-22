@@ -11,7 +11,7 @@ import type { Input } from './types'
 export type SaidInput = InputLine
 
 /** What you said (`all`) and the rows shown of it (the first `upTo`, and down to the input gone to, `lit`); `adding`:
- * the inputs a voice note said on their own line is on its way to (F657), transcribing until Taska has it and its
+ * the inputs a voice note said on their own line is on its way to (T657), transcribing until Taska has it and its
  * words. */
 export function saidRows(m: ProjectModel, a: { upTo: number; lit?: string | null; opened: ReadonlySet<string>; drafts: Readonly<Record<string, string>>; mode: BoxMode; title(slug: string): string; adding?: ReadonlySet<string> }): { all: Input[]; rows: SaidInput[] } {
   const all = newestFirst(m.inputs)

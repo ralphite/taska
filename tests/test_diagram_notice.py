@@ -1,4 +1,4 @@
-"""B714 r1181 (Yadong's choice): a diagram in a document that does not draw goes back to the agent that wrote it, so
+"""T714 r1181 (Yadong's choice): a diagram in a document that does not draw goes back to the agent that wrote it, so
 errors fix themselves without Yadong noticing. The page reports what Mermaid said; Taska writes "D<n> ¶<k>: this
 diagram does not draw: <why>. Fix it." on the document's task, addressed to the writer's session (it reads it in
 /next), once per version of the document and paragraph; nothing when the user wrote the diagram. Taska's note is

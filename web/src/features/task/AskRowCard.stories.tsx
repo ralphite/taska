@@ -9,7 +9,7 @@ import { Frames } from '../../stories/Frames'
 import { task, message, modelOf } from '../../stories/fixtures'
 import { noTaskEvents, talkEnv } from '../../stories/taskFixtures'
 
-export default { title: 'Task/Questions in a row (B749)' } satisfies Meta
+export default { title: 'Task/Questions in a row (T749)' } satisfies Meta
 type Story = StoryObj
 
 const by = { by: 'claude-code', ses: 'Shop project work' }

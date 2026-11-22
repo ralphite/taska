@@ -15,8 +15,8 @@ export const overflows = (el: HTMLElement) => el.scrollTop + el.clientHeight < e
 /** Whether the part that scrolls `sc` shows its end. */
 export const atEnd = (sc: HTMLElement) => sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4
 
-/** What the button to the end is: down to the end while what scrolls `sc` does not show its end (F716 r1171); at the
- * end, up, back to the top (F752 r1250); none when there is nothing to scroll. */
+/** What the button to the end is: down to the end while what scrolls `sc` does not show its end (T716 r1171); at the
+ * end, up, back to the top (T752 r1250); none when there is nothing to scroll. */
 export const toEndWay = (sc: HTMLElement): 'down' | 'up' | 'none' => (sc.scrollHeight <= sc.clientHeight + 4 ? 'none' : atEnd(sc) ? 'up' : 'down')
 
 /** Whether the talk keeps to its end after `sc` scrolled from `was`: it shows its end, or it kept to it and nothing
@@ -29,7 +29,7 @@ export const YOUR_SCROLL = 'taska-your-scroll'
 /** a key that scrolls what has the focus */
 const scrollKey = (k: string) => /^(PageUp|PageDown|Home|End|ArrowUp|ArrowDown| )$/.test(k)
 
-/** Whether you scroll `sc` now (B786): a finger moving on it, the wheel or its scrollbar, a key that scrolls it (not
+/** Whether you scroll `sc` now (T786): a finger moving on it, the wheel or its scrollbar, a key that scrolls it (not
  * one typed into a box), the button to its end; and the scroll each set going (a finger's momentum, a smooth scroll)
  * for as long as it goes on. A tap is not a scroll: a message tapped, a choice made, Send. The browser moving it by
  * itself (Safari draws the frame where a message taking another's place makes the talk shorter for a moment, and takes
@@ -62,7 +62,7 @@ export function yourScroll(sc: HTMLElement): { now(): boolean; stop(): void } {
   }
 }
 
-/** At its end the talk never gets shorter under you (B770 r1292): what it shows last getting shorter (a voice note's
+/** At its end the talk never gets shorter under you (T770 r1292): what it shows last getting shorter (a voice note's
  * "confirming" line going as its final words come) would take what scrolls it up with it. While `end`, `body` keeps
  * the height it had (`tall`); once it is taller again, or the talk left its end, nothing is held. -> its height now. */
 export function holdHeight(body: HTMLElement, tall: number, end: boolean): number {

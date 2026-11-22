@@ -1,4 +1,4 @@
-"""B724 (approved by Yadong: "cost doesn't matter, user experience does"; "use five models and take the first three
+"""T724 (approved by Yadong: "cost doesn't matter, user experience does"; "use five models and take the first three
 results"; "watch for rate limits and change strategy if it happens"): where the fast and the strong model heard a
 voice note differently in a way that changes the meaning, five reviewers hear it again with both transcripts and the
 project's words; the first three answers count, a reading two of them give is used, and a spot they split on is
@@ -181,7 +181,7 @@ class Glossary(unittest.TestCase):
         prompts, vocabs = [], []
         r = Reviewers(*[(0.0, {1: "P2", 2: "story"})] * 5)
         fixes = [{"wrong": "task 啊", "right": "Taska"}, {"right": "Nota"}]
-        h = tr.Hearing(context=lambda scope: (Counter({"VoiceSteps": 3}), ["B724 Make the voice words right"], ["Make the voice words right"]),
+        h = tr.Hearing(context=lambda scope: (Counter({"VoiceSteps": 3}), ["T724 Make the voice words right"], ["Make the voice words right"]),
                        fixes=lambda: fixes, prefs=lambda: "", tidy=lambda: True)
         tidied = []
 
@@ -201,11 +201,11 @@ class Glossary(unittest.TestCase):
                 mock.patch.object(vv, "ask_reviewer", r), mock.patch.object(vv, "recent_limits", lambda models: 0):
             out = tr.transcribe(h, b"audio", "audio/webm", None)
         for text in (prompts[0], r.prompts[0]):
-            for word in ("B724 Make the voice words right", "Taska (not task 啊)", "Storybook", "VoiceSteps"):
+            for word in ("T724 Make the voice words right", "Taska (not task 啊)", "Storybook", "VoiceSteps"):
                 self.assertIn(word, text)
         self.assertIn("Nota", r.prompts[0])
         self.assertTrue(set(PRODUCT_WORDS) <= set(vocabs[0]))
-        self.assertTrue({"B724", "Taska", "Nota", "VoiceSteps"} <= set(vocabs[0]))
+        self.assertTrue({"T724", "Taska", "Nota", "VoiceSteps"} <= set(vocabs[0]))
         self.assertLessEqual(len(vocabs[0]), 100)
         self.assertEqual([s["step"] for s in out["steps"]], ["pro", "asr", "vote", "tidy"])
         self.assertTrue(out["steps"][2]["chosen"])

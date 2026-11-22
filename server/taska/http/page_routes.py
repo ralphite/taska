@@ -6,7 +6,7 @@
     (a file is sent as an agent sends one: POST /api/file, in agent_routes)
     GET  words?f=   POST words?f=&more=1             a voice note's words (POST waits for them)
     GET  activity?n=&before=    the change log, newest first
-    GET  doc?d=&t=              a big web page document's text (B756: not in the view)
+    GET  doc?d=&t=              a big web page document's text (T756: not in the view)
     GET  picture-sizes          each picture's width and height
     POST page-log               the page's own records, into the log
     POST diagram-failed         {d, v, key, error}: a document's diagram the page could not draw, to its writer
@@ -101,7 +101,7 @@ def get(ctx: "AppContext", req: Request, p: Project, sub: str) -> Optional[Respo
         n, before = min(int(req.arg("n", "300") or 300), 2000), int(req.arg("before", "0") or 0)
         with p.lock:
             return as_json(change_log.entries(p.state, n, before)[::-1])
-    if sub == "/api/doc":  # a big web page's text (B756), as text: it is drawn in the page's own sandboxed frame
+    if sub == "/api/doc":  # a big web page's text (T756), as text: it is drawn in the page's own sandboxed frame
         with p.lock:
             d = p.state.docs.get(int(req.arg("d"))) if req.arg("d").isdigit() else None
             md = d.md if d and not d.deleted else None
@@ -137,14 +137,14 @@ def post(ctx: "AppContext", req: Request, p: Project, sub: str) -> Response:
     if sub == "/api/page-log":
         _page_log(ctx, req, p)
         return as_json({"ok": True})
-    if sub == "/api/diagram-failed":  # B714 r1181: Taska tells the agent that wrote it
+    if sub == "/api/diagram-failed":  # T714 r1181: Taska tells the agent that wrote it
         d = req.json_body(10_000)
         if not isinstance(d, dict):
             raise ValueError("expected an object")
         cmd = {"op": "diagram-failed", **{k: d[k] for k in ("d", "v", "key", "error") if k in d}}
         lines, _ = p.run([(0, cmd)], TASKA)
         return as_json({"ok": not lines[0].startswith("err"), "result": lines[0]})
-    if sub == "/api/reconnect":  # I833: bring back a session that lost its connection
+    if sub == "/api/reconnect":  # T833: bring back a session that lost its connection
         d = req.json_body(10_000)
         if not isinstance(d, dict):
             raise ValueError("expected an object")
@@ -190,13 +190,13 @@ def _commands(ctx: "AppContext", req: Request, p: Project) -> Response:
             lines, _ = p.run([(0, c) for c in commands if isinstance(c, dict)], "you")
             code = 400 if any(x.startswith("err") for x in lines) or len(lines) != len(commands) else 200
             done = ({"ok": code == 200, "results": lines}, code)
-            if code == 200:  # every change you make, as it was done (F846 r1451: a log for product analysis)
+            if code == 200:  # every change you make, as it was done (T846 r1451: a log for product analysis)
                 whats = [_what(c) for c in commands[:20]]
                 ctx.log.info("page changes: " + "; ".join(" ".join(str(w.get(k)) for k in ("op", "ref", "d") if k in w)
                                                           for w in whats)[:300], extra={"f": {
                     "source": "server", "kind": "change", "project": p.slug, "via": req.via(),
                     "tab": req.header("X-Taska-Tab") or None, "commands": whats, "results": [x[:120] for x in lines[:20]]}})
-            if code == 400:  # what was refused, and why (B792 r1340: three refused changes could not be told apart)
+            if code == 400:  # what was refused, and why (T792 r1340: three refused changes could not be told apart)
                 ctx.log.warning(f"page commands refused: {'; '.join(x for x in lines if x.startswith('err'))[:300]}", extra={"f": {
                     "source": "server", "kind": "refused", "project": p.slug, "via": req.via(),
                     "commands": [_what(c) for c in commands[:20]], "results": [x[:200] for x in lines[:20]]}})
@@ -228,9 +228,9 @@ def _words(req: Request, p: Project) -> Response:
 
 
 def page_line(kind: str, e: Dict[str, Any]) -> str:
-    """A page record's line: its words, else what it is about (B842: a request the page found slow or failed says
+    """A page record's line: its words, else what it is about (T842: a request the page found slow or failed says
     which, as 108 slow ones read "page net "; a sheet, which one; a swipe, which way and what it did; any other, what
-    it was done to, F846), else where it was."""
+    it was done to, T846), else where it was."""
     said = e.get("msg") or (f"{e.get('why', '')} {e.get('method', '')} {e.get('url', '')}".strip() if kind == "net" else "") \
         or (f"{e.get('dir', '')} {e.get('what', '')}".strip() if kind == "swipe" else "") \
         or " ".join(str(e[k]) for k in ("what", "on", "into", "to") if e.get(k) not in (None, "")) or e.get("where") or ""

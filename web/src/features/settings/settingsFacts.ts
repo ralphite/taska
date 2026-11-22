@@ -49,7 +49,7 @@ export function navFacts(m: ProjectModel | null, said: { notifications: string; 
   return { right: { notifications: said.notifications, projects: said.projects, spellings: said.spellings, organizer: m?.facts.organizer.on ? 'On' : 'Off', shared: said.shared ?? '' } }
 }
 
-/** Shared rules (I779): each by name, how many projects put it in, when it last changed. */
+/** Shared rules (T779): each by name, how many projects put it in, when it last changed. */
 export function sharedRows(rules: readonly SharedRule[] | null, now: number): SharedRow[] | null {
   return rules ? rules.map((r) => ({ slug: r.slug, name: r.name, meta: [plural(usedCount(r), 'project'), r.t ? `changed ${ago(r.t, now, 'long')}` : 'nothing written yet'].join(' · ') })) : null
 }

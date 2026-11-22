@@ -1,4 +1,4 @@
-// Settings › Shared rules (I779): New shared rules first (as Projects' New project), then each one: its name, how many
+// Settings › Shared rules (T779): New shared rules first (as Projects' New project), then each one: its name, how many
 // projects put it in, when it last changed; a row opens it (its page is the Rules tab's). No switches: a project puts
 // one in by a line of its rules. Props only.
 

@@ -72,7 +72,7 @@ export const scopeDraft = (scope: string | null) => (scope ? replyDraft(scope) :
 
 const inputNo = (id: string) => id.replace(/^r(\d+)$/, '#$1')
 
-/** A draft's name in what the page says ("a new input", "B12", "the edit of #461"...). */
+/** A draft's name in what the page says ("a new input", "T12", "the edit of #461"...). */
 export function draftName(key: string): string {
   const t = draftTarget(key)
   switch (t.kind) {

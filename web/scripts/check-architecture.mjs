@@ -27,7 +27,7 @@ function files(dir) {
 }
 
 /** Every break of the rules in the page's source folder; `allow`: the components that need no story. */
-/** The one place code is loaded when it is needed (B836). */
+/** The one place code is loaded when it is needed (T836). */
 const LAZY = 'app/page/diagrams.ts'
 
 export function check(src, allow = readAllow(WEB)) {
@@ -71,7 +71,7 @@ export function check(src, allow = readAllow(WEB)) {
       if (r !== DEMO_PAGE) say(p, "a story that loads the app (only a Demo's frame does: stories/demo/DemoPage.tsx)")
       else if (!/\blockNetwork\(/.test(text) || !/createApp\(frameEnv\(/.test(text)) say(p, 'loads the app without closing its network (lockNetwork, frameEnv)')
     }
-    // code loaded only when it is needed fails when the phone is back on the page before its connection (B836): one
+    // code loaded only when it is needed fails when the phone is back on the page before its connection (T836): one
     // place loads it, trying again by itself; another import() there needs the same
     if (!story && !test && r !== LAZY && /(?<![\w.])import\(\s*['"`]/.test(text.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '')))
       say(p, `code loaded when needed outside ${LAZY} (load it there, which tries again when it does not load)`)

@@ -1,4 +1,4 @@
-"""B682 (Yadong: every voice note has its words, in versions bound to the voice, the same everywhere): one record of
+"""T682 (Yadong: every voice note has its words, in versions bound to the voice, the same everywhere): one record of
 a voice note's words, written by every step of working them out and by a correction of yours."""
 
 import os

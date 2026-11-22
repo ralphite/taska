@@ -1,4 +1,4 @@
-// The tasks and documents you opened lately, for the desktop search's Recent (F479): newest first, at most 12, each
+// The tasks and documents you opened lately, for the desktop search's Recent (T479): newest first, at most 12, each
 // as it was when you opened it (its words show while its project's data is not here). Kept in this browser
 // ("taska.recent").
 

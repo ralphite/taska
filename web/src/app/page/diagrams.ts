@@ -1,7 +1,7 @@
 // Mermaid diagrams drawn from their words, as Nota draws them. Mermaid is large: it is loaded the first time a diagram
 // is shown. Its strict mode cleans the drawing (no scripts, no clicks). Drawings are remembered per words and theme,
 // so showing one again does not draw it again; each place gets its own ids. A document's diagram that does not draw
-// is told to the server, which tells the agent that wrote it (B714 r1181).
+// is told to the server, which tells the agent that wrote it (T714 r1181).
 
 import { isolateSvg, mermaidError } from '../../ui/markdown/mermaid'
 
@@ -12,12 +12,12 @@ export class DrawerUnavailable extends Error {}
 
 const LOAD_FAILED = /dynamically imported module|importing a module script failed|failed to fetch|loading (css )?chunk|networkerror/i
 
-/** The diagram failed because its drawing code did not load, not because of its words: nobody is told (B714). */
+/** The diagram failed because its drawing code did not load, not because of its words: nobody is told (T714). */
 export const loadFailed = (e: unknown) => e instanceof DrawerUnavailable || (e instanceof Error && (e.name === 'ChunkLoadError' || LOAD_FAILED.test(e.message)))
 
 const unavailable = (e: unknown) => new DrawerUnavailable(`The diagram drawer could not load: ${e instanceof Error ? e.message : String(e)}`)
 
-/** How long to wait before each new try when the drawing code did not load (B836: the phone came back to the page
+/** How long to wait before each new try when the drawing code did not load (T836: the phone came back to the page
  * before its connection did): about two minutes in all, and an offline wait does not count; then the block says so. */
 export const RETRY_MS = [1000, 2000, 4000, 8000, 15000, 30000, 30000, 30000]
 
@@ -69,7 +69,7 @@ export class Diagrams {
     const hit = this.drawn.get(key)
     if (hit) return Promise.resolve(isolateSvg(hit, id))
     // initialize() changes Mermaid's global settings: drawings go one at a time so a theme can't change mid-draw
-    // the drawing code not loading is tried again by itself while the block shows it drawing (B836); words that are
+    // the drawing code not loading is tried again by itself while the block shows it drawing (T836); words that are
     // not a diagram fail at once
     const job = this.queue.then(async () => {
       for (let i = 0; ; i++) {

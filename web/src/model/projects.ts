@@ -1,11 +1,11 @@
 // The projects as the home page lists them: in your order (as dragged in the sidebar), the rest the latest first. And
-// a project's card in the sidebar (F667): its counts, the agent last heard of, when it last changed.
+// a project's card in the sidebar (T667): its counts, the agent last heard of, when it last changed.
 
 import { agentLine, type AgentTone } from './agents'
 import { ago } from './time'
 import type { ProjectRow } from './types'
 
-/** Where a project's picture is (F743): the address of the file it names; undefined for none (its letter). */
+/** Where a project's picture is (T743): the address of the file it names; undefined for none (its letter). */
 export const iconUrl = (slug: string, f: string | undefined): string | undefined => (f ? `/p/${encodeURIComponent(slug)}/f/${encodeURIComponent(f)}` : undefined)
 
 export const homeOrder = (rows: readonly ProjectRow[]): ProjectRow[] => [...rows].sort((a, b) => (a.pos ?? 1e9) - (b.pos ?? 1e9) || (b.t || 0) - (a.t || 0))

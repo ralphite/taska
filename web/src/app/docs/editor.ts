@@ -20,7 +20,7 @@ export interface DocEditorDeps extends DocPlace {
   toasts: Toasts
   kv: KeyValueStore
   desk(): boolean
-  /** a big web page's text (B756: not in the view): edited once it came */
+  /** a big web page's text (T756: not in the view): edited once it came */
   page: { pageText(slug: string, doc: Doc): string | undefined; loadPage(slug: string, doc: Doc): Promise<string> }
   /** the document, opened (a new one once it is here) */
   open(dn: number): void

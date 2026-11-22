@@ -27,7 +27,7 @@ def user_word(x: Message) -> bool:
 
 def open_asks(state: ProjectState, it: Task) -> List[Message]:
     """The questions (asks) an agent posted that the user has not answered yet, in order: the latest, and the ones
-    asked in a row with it (B749). Whatever the user says after a question answers it, and so does a comment of theirs
+    asked in a row with it (T749). Whatever the user says after a question answers it, and so does a comment of theirs
     on one of the task's documents; an answer that names its questions (`of`) answers those, the others still wait."""
     said = [c.t for d in state.docs.values() if d.n == it.n and not d.deleted for c in d.comments if c.by == "you"]
     answered: Set[int] = set()
@@ -54,7 +54,7 @@ def waiting(state: ProjectState, it: Task) -> Optional[Message]:
 
 
 def in_progress(it: Task) -> bool:
-    """An agent is working on it now (B606, r942): in progress. One that asked the user is not."""
+    """An agent is working on it now (T606, r942): in progress. One that asked the user is not."""
     return it.status == "doing"
 
 
@@ -103,7 +103,7 @@ def needs_you(state: ProjectState, it: Task) -> bool:
 
 
 def pending(state: ProjectState) -> List[Input]:
-    """Inputs not handled yet. A cancelled recording kept in the inputs (B627) is no one's work until it is sent."""
+    """Inputs not handled yet. A cancelled recording kept in the inputs (T627) is no one's work until it is sent."""
     return [i for i in state.inputs.values() if not i.acked and not i.deleted and i.kind != "cancelled"]
 
 
@@ -233,7 +233,7 @@ class Detached:
 
 def detached_threads(d: Doc) -> List[Tuple[str, int, str]]:
     """Each thread whose paragraph was rewritten or removed, in order: its paragraph's key, the thread, its quote.
-    ¶x1 is the first (B837): so a reply goes into it."""
+    ¶x1 is the first (T837): so a reply goes into it."""
     return [(t.key, th, t.quote) for t in doc_view(d)[1] for th in dict.fromkeys(c.th for c in t.comments)]
 
 
@@ -264,7 +264,7 @@ def doc_view(d: Doc) -> Tuple[List[DocBlock], List[Detached]]:
 
 
 def is_proposal_key(key: str) -> bool:
-    """The thread on a proposed change to the rules (I693) is keyed "p<its number>"; a paragraph's key is hex."""
+    """The thread on a proposed change to the rules (T693) is keyed "p<its number>"; a paragraph's key is hex."""
     return key[:1] == "p" and key[1:].isdigit()
 
 
@@ -281,7 +281,7 @@ def doc_unanswered(d: Doc) -> int:
     """Threads whose last word is the user's and that are not resolved: an agent should answer them."""
     last: Dict[str, str] = {}
     for c in d.comments:
-        if not is_proposal_key(c.key):  # a proposal's thread is its agent's (I693)
+        if not is_proposal_key(c.key):  # a proposal's thread is its agent's (T693)
             last[f"{c.key}#{c.th}"] = c.by
     return sum(1 for k, by in last.items() if by == "you" and k not in d.resolved)
 

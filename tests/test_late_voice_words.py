@@ -1,5 +1,5 @@
-"""B626: a voice note's words that come in after its input was sent (an agent or the organizer read it without them)
-reach the agents as an update, but the message is not marked edited: you changed nothing. B682: the words are the
+"""T626: a voice note's words that come in after its input was sent (an agent or the organizer read it without them)
+reach the agents as an update, but the message is not marked edited: you changed nothing. T682: the words are the
 note's record; the input and its message keep what was typed."""
 
 import sys

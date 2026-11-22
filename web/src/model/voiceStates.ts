@@ -157,7 +157,7 @@ export const VOICE_STEPS: readonly VoiceStep[] = [
   { from: 'transcribing', on: 'strong', to: 'words' },
   { from: 'transcribing', on: 'nothing', to: 'noWords', toast: 'No words heard. Audio is ready to send' },
   { from: 'transcribing', on: 'failed', to: 'wordsFailed', toast: 'Transcription failed. Audio is ready to send' },
-  // the strong words take the fast ones' place, with what may be misheard in them (B724: kept, to check)
+  // the strong words take the fast ones' place, with what may be misheard in them (T724: kept, to check)
   { from: 'fastWords', on: 'strong', to: 'words', toast: 'More complete transcription added' },
   { from: 'fastWords', on: 'fastKept', to: 'words' },
   // sent at any time, also before its words are in (they come after: sentTranscribing, sentFastWords)

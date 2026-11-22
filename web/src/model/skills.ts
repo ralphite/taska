@@ -1,4 +1,4 @@
-// Skills (I821): shared documents named /name (Settings › Shared rules). Words that start with a skill's name apply
+// Skills (T821): shared documents named /name (Settings › Shared rules). Words that start with a skill's name apply
 // it: every agent gets the skill's text with them (the server, domain/skills.py). Typing "/" at the start of the box
 // lists them, to pick one. Pure.
 

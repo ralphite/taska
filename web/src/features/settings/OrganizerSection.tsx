@@ -1,4 +1,4 @@
-// Settings' Organizer: whether it runs, and the Gemini API key it needs (F765). Props only.
+// Settings' Organizer: whether it runs, and the Gemini API key it needs (T765). Props only.
 
 import { useState } from 'react'
 import type { GeminiKey } from '../../model/types'
@@ -12,7 +12,7 @@ export interface GeminiKeyEvents {
   forget(): void
 }
 
-/** The organizer, and the Gemini API key it needs (F765): none (where to get one, and a box to paste it in), set here
+/** The organizer, and the Gemini API key it needs (T765): none (where to get one, and a box to paste it in), set here
  * (its last 4 characters; change or remove), or from the environment (change sets one here). Saving: the box waits
  * while Google checks it and Taska restarts. */
 export function OrganizerBody({ on, model, gemini = { from: '', tail: '' }, saving = false, events }: { on: boolean; model: string; gemini?: GeminiKey; saving?: boolean; events?: GeminiKeyEvents }) {

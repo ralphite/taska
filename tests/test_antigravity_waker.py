@@ -1,4 +1,4 @@
-"""B762 (Yadong r1280, r1283, r1286, 11-13): Taska cannot wake an Antigravity session from outside, so the session
+"""T762 (Yadong r1280, r1283, r1286, 11-13): Taska cannot wake an Antigravity session from outside, so the session
 keeps Taska's waker running in its own terminal. The waker is woken by Taska only when there is work and the session
 is idle (once, not again while it works); nothing shows on the page while it works; only when the user writes and no
 waker has waited for 15 minutes is it said, once, as a task, closed again when a waker comes back. Change only on
@@ -119,7 +119,7 @@ class Waker(ProjectCase):
             os.unlink(f.name)
 
     def test_a_waker_answered_anything_else_waits_before_asking_again(self) -> None:
-        # B786: a waker for a deleted project asked again at once, 4.5 million times in 15 hours
+        # T786: a waker for a deleted project asked again at once, 4.5 million times in 15 hours
         import http.server
         asked = []
 

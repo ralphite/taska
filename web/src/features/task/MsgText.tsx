@@ -6,7 +6,7 @@ import type { Message } from '../../model/types'
 import { Rich } from '../../ui/Markdown'
 import type { TalkEnv, TalkEvents } from './talkEnv'
 
-/** A message is folded (Show more, Show all) only past this many lines as it reads (F692, r1113). */
+/** A message is folded (Show more, Show all) only past this many lines as it reads (T692, r1113). */
 export const FOLD_FROM = 20
 
 /** About how many lines the words take as they read: a long line wraps (a wide character, as in Chinese, takes the
@@ -27,7 +27,7 @@ export function MsgText({ x, env, on, done = null, whole = false }: {
   whole?: boolean
 }) {
   const latest = whole || env.latest === x.id
-  // F692 (r1113): folded only from 20 lines as it reads (the latest message from 50)
+  // T692 (r1113): folded only from 20 lines as it reads (the latest message from 50)
   const long = (x.by !== 'you' || env.desk) && x.kind !== 'ask' && shownLines(x.text, env.desk) > (latest ? 50 : FOLD_FROM)
   const open = env.opened.has(x.id)
   const rich = (text: string) => <Rich text={text} world={env.world} done={done} onRef={on.ref} onPicture={on.picture} />

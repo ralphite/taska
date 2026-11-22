@@ -14,7 +14,7 @@ export function DocEditContainer({ slug }: { slug: string }) {
   const m = useProjectModel(slug)
   const v = useStoreValue(stores.docView, (s) => s)
   const found = v.newFor == null && v.d != null ? m?.docs.find((x) => x.d === v.d) : undefined
-  // a big web page's text (B756: not in the view) is the one that came when Edit was pressed
+  // a big web page's text (T756: not in the view) is the one that came when Edit was pressed
   const d = found && { ...found, md: app.docs.pageText(slug, found) ?? '' }
   const text = v.text ?? (d ? noteText(d) : '')
   const rec = useStoreValue(stores.dictation, (s) => s.rec)

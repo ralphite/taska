@@ -1,4 +1,4 @@
-"""Finding things in a project by what you said or typed (F479): its tasks and rules, what you said (inputs) and its
+"""Finding things in a project by what you said or typed (T479): its tasks and rules, what you said (inputs) and its
 documents, closest first. Pure: a function of the state and the words.
 
 By the words: the words that carry meaning (not "the", "where", "my"; for Chinese, each two characters in a row) are
@@ -102,7 +102,7 @@ def _docs(st: ProjectState) -> List[Doc]:
 
 
 def rule_sections(st: ProjectState) -> List[Tuple[int, str, str]]:
-    """The rules document's top sections (I693): (its place, its title, its text)."""
+    """The rules document's top sections (T693): (its place, its title, its text)."""
     d = st.rules
     if not d:
         return []

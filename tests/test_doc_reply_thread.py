@@ -31,7 +31,7 @@ class DocReplyThread(ProjectCase):
         self.assertEqual(rules.doc_unanswered(self.p.state.docs[d.d]), 0)
 
     def test_a_thread_whose_paragraph_was_rewritten_is_answered_by_its_x_name(self):
-        """B837: the paragraph commented on was written again; its thread comes under "rewritten or removed" and was
+        """T837: the paragraph commented on was written again; its thread comes under "rewritten or removed" and was
         not answerable, so /next asked for an answer forever. ¶xK answers it, as /D names it."""
         from taska.agent_text.render import doc_text
         from taska.agent_text.render import Reading

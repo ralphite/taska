@@ -1,4 +1,4 @@
-"""I810: a manager's worker that never calls Taska is found by its title (the task's code first), in a folder this
+"""T810: a manager's worker that never calls Taska is found by its title (the task's code first), in a folder this
 project's own sessions work in; waiting on the user, its task needs you after a minute, and a push goes after three."""
 
 from __future__ import annotations
@@ -80,7 +80,7 @@ class Workers(unittest.TestCase):
 
 
 class CodexWorkers(unittest.TestCase):
-    """I810 r1369: a Codex thread its manager started is found by its first instruction (it has no title), and
+    """T810 r1369: a Codex thread its manager started is found by its first instruction (it has no title), and
     waiting on an approval it needs you, as a Claude Code worker does."""
 
     def setUp(self) -> None:
@@ -128,7 +128,7 @@ class CodexWorkers(unittest.TestCase):
 
 
 class Listening(unittest.TestCase):
-    """B811: whether an agent session waits for work now, for the check at the end of its turns."""
+    """T811: whether an agent session waits for work now, for the check at the end of its turns."""
 
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()

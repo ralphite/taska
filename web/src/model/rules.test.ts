@@ -1,4 +1,4 @@
-// I693 (r1116, r1118, r1128): what Yadong decided about the rules document, as the page works it out. Change these only
+// T693 (r1116, r1118, r1128): what Yadong decided about the rules document, as the page works it out. Change these only
 // on his explicit word, and cite it.
 import { describe, expect, test } from 'vitest'
 import { diffChunks, foldRuns, historyRows, lineCounts, placeDoc, readRulesView, rulesSeg, waitingProposals } from './rules'

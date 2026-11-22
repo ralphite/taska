@@ -8,7 +8,7 @@ from __future__ import annotations
 import re
 
 # tasks have no types (T855, D152): every code is T and a number; the letters of the old types still name the same
-# task (B838 is T838). The project's rules are one document, not tasks (I693, r1118): R is no code
+# task (T838 is T838). The project's rules are one document, not tasks (T693, r1118): R is no code
 CODE_LETTER = "T"
 OLD_LETTERS = "FBIT"
 OLD_TYPES = ("feature", "bug", "idea", "task")  # what `new bug ...` and `B03 bug` once said: refused with a rewrite
@@ -24,7 +24,7 @@ CLOSED = ("done", "dropped")
 DECISIONS = {"proposed": ("open", "dropped"), "review": ("done", "open")}
 # "you" is the user; the organizer writes down what the user said, so it acts for the user
 PEOPLE = ("you", "org")
-# Taska's own notes to an agent (a diagram that does not draw, B714 r1181) are neither side's word, as the organizer's
+# Taska's own notes to an agent (a diagram that does not draw, T714 r1181) are neither side's word, as the organizer's
 TASKA = "taska"
 NOTES = ("org", TASKA)
 MESSAGE_KINDS = ("say", "ask", "withdraw", "propose", "decide", "progress")

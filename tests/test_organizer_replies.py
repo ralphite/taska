@@ -1,6 +1,6 @@
-"""B760 (Yadong r1278, r1281, 11-12): a reply on a task is for the agent on it. It always stays in that agent's
-inbox (the organizer never acks it), and the organizer never changes that task's status from it (r1268 on B745 was
-turned into "B745 done", unseen by its agent); a priority or Now/Later it asks for, and tasks for other things it
+"""T760 (Yadong r1278, r1281, 11-12): a reply on a task is for the agent on it. It always stays in that agent's
+inbox (the organizer never acks it), and the organizer never changes that task's status from it (r1268 on T745 was
+turned into "T745 done", unseen by its agent); a priority or Now/Later it asks for, and tasks for other things it
 mentions, are still made. Change only on Yadong's explicit word."""
 
 import os

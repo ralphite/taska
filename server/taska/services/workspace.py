@@ -40,8 +40,8 @@ def short_slug() -> str:
 
 def tally(st: ProjectState) -> Dict[str, int]:
     """A project's counts, as its page counts them: what needs you (archived is not on the page's list, so not here;
-    a proposed change to the rules waiting counts, I693); what Tasks holds, open and finished (done or dropped); its
-    inputs and documents (the rules are not one of them; F667: the sidebar's card)."""
+    a proposed change to the rules waiting counts, T693); what Tasks holds, open and finished (done or dropped); its
+    inputs and documents (the rules are not one of them; T667: the sidebar's card)."""
     needs = {i.n for i in st.live_tasks() if rules.needs_you(st, i)}
     listed = [i for i in st.live_tasks() if not i.archived]
     closed = sum(1 for i in listed if i.status in CLOSED)
@@ -51,7 +51,7 @@ def tally(st: ProjectState) -> Dict[str, int]:
             "inputs": sum(1 for r in st.inputs.values() if not r.deleted), "docs": docs}
 
 
-# I810: a worker's title starting with the code of the task it works on ("T28: the tutor skill", "T28 · …")
+# T810: a worker's title starting with the code of the task it works on ("T28: the tutor skill", "T28 · …")
 WORKER_TITLE = re.compile(r"\s*([A-Z])0*(\d+)(?=$|[\s:\uff1a\u00b7,\uff0c.\-\u2014])")
 
 
@@ -74,7 +74,7 @@ class Workspace:
         self.meaning = Meaning(SearchByMeaning(self.root), allowed=gemini,  # gemini: the server may ask it (cli)
                                path=os.path.join(self.root, "meaning.db"), lists=self.short_lists)
         self.moves = Moves()
-        self.reconnects = Reconnects()  # I833: sessions to bring back after they lost their connection
+        self.reconnects = Reconnects()  # T833: sessions to bring back after they lost their connection
         self.local = ""  # Taska on this machine ("http://127.0.0.1:7340"), for what the agents here run
         self.projects: Dict[str, Project] = {}
         for name in sorted(os.listdir(self.root)):
@@ -82,7 +82,7 @@ class Workspace:
                 self._open(name)
         if not self.projects:
             self.add("default")
-        self.shared_rules = SharedRules(self.root, self)  # I779: kept once for every project
+        self.shared_rules = SharedRules(self.root, self)  # T779: kept once for every project
         self.meaning.soon()  # the lines' embeddings, before the first search asks for them
 
     # -- what projects share (services.project.Shared) -------------------------------------
@@ -110,7 +110,7 @@ class Workspace:
         return self.shared_rules.texts()
 
     def shared_listing(self) -> List[Dict[str, Any]]:
-        """Settings › Shared rules: each with the projects that put it in (I779)."""
+        """Settings › Shared rules: each with the projects that put it in (T779)."""
         return self.shared_rules.listing(dict(self.projects))
 
     # -- opening and changing projects ---------------------------------------------------------
@@ -255,7 +255,7 @@ class Workspace:
         return sum(p.bring_back_laters(today) for p in list(self.projects.values()))
 
     def find_workers(self, running: List[Session]) -> None:
-        """I810: which running sessions are a manager's workers on which tasks, by their titles: a title starting with
+        """T810: which running sessions are a manager's workers on which tasks, by their titles: a title starting with
         a task's code ("T28: the tutor skill"), in a folder this project's own sessions work in. A code that fits
         tasks in several projects goes to the one whose task is in progress, and to none when that does not settle it."""
         found: Dict[str, Dict[str, Tuple[str, int]]] = {name: {} for name in self.projects}
@@ -287,7 +287,7 @@ class Workspace:
                 p.agents.adopt(found.get(name, {}), titled.get(name, {}))
 
     def listening(self, sid: str) -> Dict[str, bool]:
-        """B811: whether session `sid` is an agent session here (it gave Taska its id), and whether it waits for work
+        """T811: whether session `sid` is an agent session here (it gave Taska its id), and whether it waits for work
         now in any project: the check at the end of each of its turns (a session that stopped listening takes no work)."""
         now = time.time()
         known = listens = False
@@ -300,7 +300,7 @@ class Workspace:
                     listens = listens or busy or p.agents.listens(sid, now)
         return {"known": known, "listening": listens}
 
-    # -- bringing back lost sessions (I833) ---------------------------------------------------
+    # -- bringing back lost sessions (T833) ---------------------------------------------------
 
     def _connected(self, app: str, but: str = "") -> List[str]:
         """The sessions of `app` that wait for work now, in any project (one may bring back another)."""
@@ -363,7 +363,7 @@ class Workspace:
 
     def needs(self, push: bool = False) -> List[Dict[str, Any]]:
         """What needs you in every project, newest first. A session working on a task and waiting on you counts
-        once it has waited a minute (I810), and for a push once it has waited three."""
+        once it has waited a minute (T810), and for a push once it has waited three."""
         out: List[Dict[str, Any]] = []
         now_ms = time.time() * 1000
         for name, p in sorted(self.projects.items()):
@@ -388,13 +388,13 @@ class Workspace:
                     if kind:
                         out.append({"project": name, "ptitle": p.title, "n": i.n, "code": st.code(i.n), "title": i.title,
                                     "kind": kind, "pri": i.pri, "t": i.t1 or ""})
-                for x in versions.waiting(st.rules):  # a proposed change to the rules (I693)
+                for x in versions.waiting(st.rules):  # a proposed change to the rules (T693)
                     out.append({"project": name, "ptitle": p.title, "n": 0, "code": "Rules", "title": x.why,
                                 "kind": "rules", "pri": "P1", "t": x.t, "p": x.id})
         return sorted(out, key=lambda x: x["t"], reverse=True)
 
     def find(self, q: str, here: str = "") -> Tuple[str, List[Tuple[str, finding.Found]]]:
-        """F479: what `q` finds in every project, closest first, each with its project: by what it means when that is
+        """T479: what `q` finds in every project, closest first, each with its project: by what it means when that is
         on (Meaning), then by its words (what the meaning did not find after it); -> (how: "meaning" or "words", it)."""
         words: List[Tuple[float, str, finding.Found]] = []
         for name in self._here_first(here):

@@ -41,7 +41,7 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
   const [titledRef, setTitledRef] = useState<string | null>(null)
   const taskN = route.place.kind === 'task' ? route.place.ref : ''
   const titled = !!taskN && titledRef === taskN
-  // the task's talk, for the pane's button to its end (F716)
+  // the task's talk, for the pane's button to its end (T716)
   const [talk, setTalk] = useState<HTMLElement | null>(null)
   useEffect(() => {
     const h = !desk && body ? body.querySelector('[data-part=task-title]') : null
@@ -54,7 +54,7 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
   const editingDoc = useStoreValue(stores.docView, (s) => s.editing)
   const docIt = doc && m ? m.byN.get(liveN(m, doc.n)) : undefined
   useTwoColumns(desk && !hidden ? body : null, desk && !compose && (!!it || (!!doc && !editingDoc && !!docIt)), !!doc && !editingDoc, (on) => stores.ui.getState().setDuo(on))
-  // the Rules tab: the rules document (I693), over both columns on the desktop
+  // the Rules tab: the rules document (T693), over both columns on the desktop
   if (route.tab === 'rules' && (route.place.kind === 'tab' || route.place.kind === 'rules')) return <RulesContainer route={route} place={place} hidden={hidden} />
   // a document the address names: on the desktop in the pane; on the phone, while it loads or when it is not in the
   // project, in the pane too (one that is there opens over its task, below)

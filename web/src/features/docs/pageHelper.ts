@@ -88,7 +88,7 @@ export const PAGE_HELPER = String.raw`<script>(() => {
         const e = document.querySelector(k.slice(2))
         if (e && e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden') {
           const r = e.getBoundingClientRect()
-          // its words now too: a comment whose words are not there any more is not on it (F432 #5145)
+          // its words now too: a comment whose words are not there any more is not on it (T432 #5145)
           out[k] = Object.assign(box(r), corner(e, r), { text: (e.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 4000) })
         }
       } catch (_) {}
@@ -113,14 +113,14 @@ export const PAGE_HELPER = String.raw`<script>(() => {
     // let go where it was clicked (Esc), nothing lights until the pointer moves
     if (was && !picked && mode === true && at && moved) hoverAt(at[0], at[1], document.elementFromPoint(at[0], at[1]))
   })
-  // B497: once a part is picked, no other one lights or can be picked until Esc lets it go
+  // T497: once a part is picked, no other one lights or can be picked until Esc lets it go
   addEventListener('mousemove', (e) => {
     at = [e.clientX, e.clientY]
     moved = true
     if (mode === true && !picked) hoverAt(e.clientX, e.clientY, e.target)
   })
   document.addEventListener('mouseleave', () => { at = null; if (mode === true) send({ hover: null }) })
-  // B502: a drag selects words (and only that); a click where the pointer went down picks the part
+  // T502: a drag selects words (and only that); a click where the pointer went down picks the part
   let down = [0, 0]
   addEventListener('mousedown', (e) => { down = [e.clientX, e.clientY]; moved = false }, true)
   addEventListener('click', (e) => {
@@ -129,7 +129,7 @@ export const PAGE_HELPER = String.raw`<script>(() => {
       if (!shutting && Math.abs(e.clientX - down[0]) + Math.abs(e.clientY - down[1]) <= 4) { const el = part(e.target); if (el) send({ maybe: info(el) }) }
       return
     }
-    // B497: nothing else is picked while one part is; B503: a click that closes open comments only closes them
+    // T497: nothing else is picked while one part is; T503: a click that closes open comments only closes them
     if ((mode === true && picked) || shutting) { e.preventDefault(); e.stopPropagation(); return }
     if (Math.abs(e.clientX - down[0]) + Math.abs(e.clientY - down[1]) > 4) return
     // r672: on the phone a tap on one of the page's own controls (a button, a link, a field) works it, as in any
@@ -143,17 +143,17 @@ export const PAGE_HELPER = String.raw`<script>(() => {
     send({ pick: info(el) })
   }, true)
   addEventListener('keydown', (e) => { if (e.key === 'Escape') send({ esc: 1 }) })
-  let usedAt = 0 // F449: Taska does not reload under you while you use the page
+  let usedAt = 0 // T449: Taska does not reload under you while you use the page
   let pointer = ''
   const used = (e) => {
     if (e.type === 'pointermove') { if (e.screenX + ',' + e.screenY === pointer) return; pointer = e.screenX + ',' + e.screenY }
     const n = Date.now(); if (n - usedAt > 10000) { usedAt = n; send({ used: 1 }) }
   }
   for (const t of ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart', 'input']) addEventListener(t, used, true)
-  // F751 r1251: the pointer moving in the page (at most a few times a second): the page over the window shows its Exit
+  // T751 r1251: the pointer moving in the page (at most a few times a second): the page over the window shows its Exit
   let stirAt = 0
   addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse' && Date.now() - stirAt > 300) { stirAt = Date.now(); send({ stir: 1 }) } }, true)
-  // B503: a click in the page closes open comments, and does nothing else (whatever Taska says meanwhile)
+  // T503: a click in the page closes open comments, and does nothing else (whatever Taska says meanwhile)
   addEventListener('pointerdown', () => { shutting = shut; send({ down: 1 }) }, true)
   // r799, r672: the page changes itself (its script shows another view, moves a card, adds a line): the counts and
   // outlines follow at the next frame

@@ -180,7 +180,7 @@ export const handleRows: Demo = {
   recordings: { phone: rowsPhone, desk: rowsDesk },
 }
 
-// Reply to Claude Code on F01: typed, then said; its replies come (replyOnTask.json).
+// Reply to Claude Code on T01: typed, then said; its replies come (replyOnTask.json).
 /** A paragraph on the page with these words (a message in a task's talk). */
 const words = (name: RegExp, label: string): Target => ({ css: 'p', name, label })
 const typed = 'iOS 先在新标签页打开，让用户自己点分享存到“文件”。'
@@ -197,7 +197,7 @@ export const replyOnTask: Demo = {
   tours: {
     phone: {
       steps: [
-        { say: 'Open a task Claude Code is working on.', target: title(1, 'F01'), wait: 15000 },
+        { say: 'Open a task Claude Code is working on.', target: title(1, 'T01'), wait: 15000 },
         { say: 'Tap the box and type a reply.', target: role('textbox', 'Input', { label: 'The box' }), type: typed, until: shows(button('Send')) },
         { say: 'Tap ↑ to send it.', target: button('Send') },
         { say: 'Claude Code’s reply comes here.', until: shows(reply1) },
@@ -209,7 +209,7 @@ export const replyOnTask: Demo = {
     },
     desk: {
       steps: [
-        { say: 'Open a task Claude Code is working on.', target: title(1, 'F01'), wait: 15000 },
+        { say: 'Open a task Claude Code is working on.', target: title(1, 'T01'), wait: 15000 },
         { say: 'Click the box and type a reply.', target: role('textbox', 'Input', { label: 'The box' }), type: typed, until: shows(button('Send')) },
         { say: 'Click ↑ to send it.', target: button('Send') },
         { say: 'Claude Code’s reply comes here.', until: shows(reply1) },

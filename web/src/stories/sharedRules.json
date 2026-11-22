@@ -1,5 +1,5 @@
 {
- "//": "I779: the stories' shared rules and Taska's rules that put two of them in; `agent` is what the server gives an agent for them (tests/test_shared_rules.py holds it to the server's code).",
+ "//": "T779: the stories' shared rules and Taska's rules that put two of them in; `agent` is what the server gives an agent for them (tests/test_shared_rules.py holds it to the server's code).",
  "shared": [
   {
    "name": "通用",

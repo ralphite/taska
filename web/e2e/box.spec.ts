@@ -1,4 +1,4 @@
-// The box keeps its height while you record, whatever else the page draws meanwhile (B481); the line on top names what
+// The box keeps its height while you record, whatever else the page draws meanwhile (T481); the line on top names what
 // it writes to as the page does everywhere (T529).
 // guards: src/features/composer/ src/pages/ProjectPageContainer.tsx src/ui/PaneFrame.tsx src/features/task/ src/app/voice/ src/app/inputs/ src/stores/box.ts src/stores/outbox.ts
 import { expect, test, type Page } from '@playwright/test'
@@ -9,7 +9,7 @@ const fix = (page: Page) => page.getByRole('button', { name: 'Correct the words'
 
 test.use({ launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] } })
 
-test('a pasted link keeps the box still while you record and agents write (B481)', async ({ page, request }) => {
+test('a pasted link keeps the box still while you record and agents write (T481)', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await page.goto(p.url + 'new')
   const box = page.locator('#composer'),
@@ -29,7 +29,7 @@ test('a pasted link keeps the box still while you record and agents write (B481)
   await box.getByRole('button', { name: 'Discard the recording', exact: true }).first().click()
 })
 
-test('what scrolls shows only around the top of the box: from its middle down the page covers it, and the end clears the box (F478)', async ({
+test('what scrolls shows only around the top of the box: from its middle down the page covers it, and the end clears the box (T478)', async ({
   page,
   request,
 }) => {
@@ -42,7 +42,7 @@ test('what scrolls shows only around the top of the box: from its middle down th
     approve: Array.from({ length: 31 }, (_, i) => `T${String(i + 1).padStart(2, '0')}`),
   })
   await open(page, p, isDesk(page) ? 'T31' : '')
-  const scroller = isDesk(page) ? pane(page) : page.locator('#list [data-list-scroll]') // the list under its views' row (B758)
+  const scroller = isDesk(page) ? pane(page) : page.locator('#list [data-list-scroll]') // the list under its views' row (T758)
   // the page's own colour from the box's middle to the bottom of the screen
   const cover = await page.evaluate((foot) => {
     const f = document.querySelector(foot) as HTMLElement,
@@ -59,7 +59,7 @@ test('what scrolls shows only around the top of the box: from its middle down th
   const gap = await scroller.evaluate(
     (e, [TALK, FOOT]) => {
     // in one column the talk is what runs down to the box: what ends there is its last message, kept clear by the
-    // talk's own padding (B536); otherwise the scroller's own padding keeps its end clear
+    // talk's own padding (T536); otherwise the scroller's own padding keeps its end clear
     const talk = e.hasAttribute('data-split') ? document.querySelector<HTMLElement>(TALK) : null
     if (talk) talk.scrollTop = talk.scrollHeight
     const last = talk?.firstElementChild?.lastElementChild,
@@ -75,7 +75,7 @@ test('what scrolls shows only around the top of the box: from its middle down th
   expect(gapPx).toBeGreaterThanOrEqual(20)
 })
 
-test('in two columns the line between them is one line to the bottom of the screen, and the task beside the box can be pointed at (B495)', async ({
+test('in two columns the line between them is one line to the bottom of the screen, and the task beside the box can be pointed at (T495)', async ({
   page,
   request,
 }) => {
@@ -98,7 +98,7 @@ test('in two columns the line between them is one line to the bottom of the scre
       footLeft: f.left,
       height: innerHeight,
       inFoot: !!hit?.closest(foot),
-      // at the bottom of the screen, beside the box, the line itself is what shows (B638: not covered by the box)
+      // at the bottom of the screen, beside the box, the line itself is what shows (T638: not covered by the box)
       lineShows: !!document.elementFromPoint(g.left + g.width / 2, innerHeight - 10)?.closest('[data-grip="duo"]'),
     }
   }, FOOT)
@@ -194,7 +194,7 @@ test('T529 #24: on the desktop New input page, words selected in a voice note un
   await expect(boxLine(page)).toContainText('Correct \u201cexport\u201d')
 })
 
-test('F657: a line\u2019s Voice records right there and adds the note to that input as Add more does; Esc lets it go', async ({
+test('T657: a line\u2019s Voice records right there and adds the note to that input as Add more does; Esc lets it go', async ({
   page,
   request,
 }) => {
@@ -223,7 +223,7 @@ test('F657: a line\u2019s Voice records right there and adds the note to that in
   const at = await voice.boundingBox()
   await voice.click()
   const stop = row.getByRole('button', { name: /^Stop and add to / })
-  // B498's strip in place: ✓ under the pointer where Voice was, so the same spot stops it
+  // T498's strip in place: ✓ under the pointer where Voice was, so the same spot stops it
   const was = await stop.boundingBox()
   if (!at || !was) throw new Error('not drawn')
   const [x, y] = [at.x + at.width / 2, at.y + at.height / 2]
@@ -232,7 +232,7 @@ test('F657: a line\u2019s Voice records right there and adds the note to that in
   await expect(stop).toBeVisible()
   await expect(row.getByRole('status', { name: 'Recording' })).toContainText('0:01')
   await stop.click()
-  // each voice note as agents read it (B682): "voice 0:01: <its words>"
+  // each voice note as agents read it (T682): "voice 0:01: <its words>"
   await expect.poll(() => p.read(id), { timeout: 15000 }).toMatch(/^\s*voice 0:\d\d: /m)
   expect((await p.read(id)).match(/^\s*voice /gm)).toHaveLength(1) // the note let go with Esc is not there
   await expect(stop).toHaveCount(0)

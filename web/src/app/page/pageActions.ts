@@ -1,4 +1,4 @@
-// What you do on the page goes to Taska's log (B791; F407, T453: every action, so what went wrong where can be found
+// What you do on the page goes to Taska's log (T791; T407, T453: every action, so what went wrong where can be found
 // later): the page opening, each control you tap (its name, not what you typed), the keys that act, each place you
 // go to, leaving the page and coming back, what you send (where, how long, how many files: never its words) and a
 // send that failed, and each request that failed (with the server's reason) or was slow.
@@ -64,14 +64,14 @@ export class PageActions {
       // the row itself, not the phone's swipe layers under it
       else if (row) this.note({ kind: 'tap', what: nameOf(row.querySelector('[data-swipe]') ?? row), role: 'row', n: row.getAttribute('data-n'), where: where() })
     }
-    // a swipe on a row (the phone, F846): right, the way forward it did (or none); left, the ways back it opened
+    // a swipe on a row (the phone, T846): right, the way forward it did (or none); left, the ways back it opened
     const onSwipe = (e: Event) => {
       const { dir, did } = (e as CustomEvent<Swiped>).detail
       const el = e.target instanceof HTMLElement ? e.target : null
       const shown = dir === 'hold' ? el : el?.parentElement?.querySelector(dir === 'right' ? '[data-swipe-left]' : '[data-swipe-right]')
       this.note({ kind: 'swipe', dir, what: did && shown ? nameOf(shown) : 'nothing', n: el?.closest(ROW)?.getAttribute('data-n') ?? el?.dataset.swipe, where: where() })
     }
-    // the rest you do (F846 r1451: every action in the log): what it was done to, never the words in it
+    // the rest you do (T846 r1451: every action in the log): what it was done to, never the words in it
     const target = (e: Event) => {
       const at = e.target instanceof Element ? e.target : null
       const field = at?.closest(FIELD)
@@ -118,7 +118,7 @@ export class PageActions {
       url = s.url
       this.note({ kind: 'view', where: where(), to: s.url })
     })
-    // each sheet or menu that opens (B842: taps on a button that opens one could not be told from taps on nothing)
+    // each sheet or menu that opens (T842: taps on a button that opens one could not be told from taps on nothing)
     let sheet = d.sheet?.getState().spec?.req ?? null
     const unSheet = d.sheet?.subscribe((s) => {
       const req = s.spec?.req ?? null
@@ -137,7 +137,7 @@ export class PageActions {
       }
       for (const q of [...told.keys()]) if (!s.list.some((o) => o.q === q)) told.delete(q)
     })
-    // each request that failed or was slow, with the server's reason (B792: why a change was refused was not known)
+    // each request that failed or was slow, with the server's reason (T792: why a change was refused was not known)
     d.api.http.watch = (w: Watched) => {
       // the page's own log, and the long wait for news (slow on purpose; stopped when the page moves on)
       if (/\/page-log\b/.test(w.url) || (w.ok && w.ms < SLOW) || (/[?&]wait=/.test(w.url) && (w.ok || !w.status))) return

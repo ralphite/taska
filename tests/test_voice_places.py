@@ -1,4 +1,4 @@
-"""B838 (Yadong r1434 r1437 r1439 r1440): what was said is one text, as in Nota: a voice note's words show where it was
+"""T838 (Yadong r1434 r1437 r1439 r1440): what was said is one text, as in Nota: a voice note's words show where it was
 put in the words typed (its place), whatever was added first; a note with no place (said before this) shows after
 them, as before. Agents read the same order."""
 

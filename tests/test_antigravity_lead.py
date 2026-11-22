@@ -1,6 +1,6 @@
-"""F755 (Yadong r1259/r1260, D133): Antigravity only. One Antigravity session runs a project; a newer one that takes it
+"""T755 (Yadong r1259/r1260, D133): Antigravity only. One Antigravity session runs a project; a newer one that takes it
 (lead=1) replaces the one before, whose /next then says to stop, at once also while it waits. Taska's waker wakes it with
-a message when there is work (B762). Claude Code and Codex are told what they were told before."""
+a message when there is work (T762). Claude Code and Codex are told what they were told before."""
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ class AntigravityLead(ProjectCase):
         self.assertLess(time.time() - start, 5)
 
     def test_it_is_told_to_keep_taskas_waker_running(self) -> None:
-        # B762 (r1283 r1286): no wait of its own each turn; Taska's waker wakes it (tests/test_antigravity_waker.py)
+        # T762 (r1283 r1286): no wait of its own each turn; Taska's waker wakes it (tests/test_antigravity_waker.py)
         out = self.call(f"/next?by=antigravity&sid={A}&lead=1")
         self.assertIn('curl -s "BASE/waker" | sh -s "$ANTIGRAVITY_CONVERSATION_ID"', out)
         self.assertNotIn("next?wait", out)

@@ -1,7 +1,7 @@
 // What needs you is one number wherever it is shown: the project's Needs you mark in the sidebar (its number in its
-// label, B664), the Needs you view (its chip
+// label, T664), the Needs you view (its chip
 // and its rows), the home table and its total, the phone's project list, and what the server tells the other pages
-// (B482, R483: "this inconsistency must never happen").
+// (T482, R483: "this inconsistency must never happen").
 // guards: src/app/project/notices.ts src/features/sidebar/ src/features/list/ src/features/home/ src/features/side/ src/pages/Header.tsx src/model/tasks.ts src/model/projects.ts src/app/projectLists.ts src/app/actions.ts server/taska/services/ server/taska/http/workspace_routes.py server/taska/domain/
 import { expect, test } from '@playwright/test'
 import type { APIRequestContext, Page } from '@playwright/test'
@@ -11,7 +11,7 @@ import { view } from './ui'
 
 /** the count on the Needs you view's chip */
 const needsCount = (page: Page) => view(page, 'Needs you').locator('.font-mono')
-/** a project's Needs you mark: the mark alone, how many in its label (B664) */
+/** a project's Needs you mark: the mark alone, how many in its label (T664) */
 const needsSaid = (n: number) => `${n} ${n === 1 ? 'task needs' : 'tasks need'} you`
 
 const server = async (request: APIRequestContext, p: Project) => {
@@ -23,7 +23,7 @@ const server = async (request: APIRequestContext, p: Project) => {
   }
 }
 
-test('r659 R483: the sidebar badge, the Needs you view and the server count the same tasks (B482)', async ({
+test('r659 R483: the sidebar badge, the Needs you view and the server count the same tasks (T482)', async ({
   page,
   request,
 }) => {

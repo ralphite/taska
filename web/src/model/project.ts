@@ -13,7 +13,7 @@ export interface ServerCopy {
   tasks: ReadonlyMap<number, Task>
   inputs: ReadonlyMap<string, Input>
   docs: ReadonlyMap<number, Doc>
-  /** every voice note's words, by its file (B682) */
+  /** every voice note's words, by its file (T682) */
   voices: ReadonlyMap<string, Voice>
   facts: ProjectFacts
   server: ServerFacts
@@ -47,7 +47,7 @@ export function merge(prev: ServerCopy | null, a: ViewAnswer | NoNews, at: numbe
   return { cursor: a.cursor, tasks, inputs, docs, voices, facts: a.project ?? prev?.facts, server: a.server ?? prev?.server, at }
 }
 
-// -- what was said, with each voice note's words (B682) ---------------------------------------------------------
+// -- what was said, with each voice note's words (T682) ---------------------------------------------------------
 
 type Voices = ReadonlyMap<string, Voice>
 const joined = new WeakMap<object, { voices: Voices; out: unknown }>()
@@ -130,7 +130,7 @@ export interface ProjectModel {
   inputs: Input[]
   byId: ReadonlyMap<string, Input>
   docs: Doc[]
-  /** every voice note's words, by its file (B682) */
+  /** every voice note's words, by its file (T682) */
   voices: ReadonlyMap<string, Voice>
   facts: ProjectFacts
   width: number
@@ -276,7 +276,7 @@ export const sourceCount = (m: Pick<ProjectModel, 'byId'>, it: Task) => it.srcs.
 /** A task's documents (not deleted). */
 export const docsOf = (m: Pick<ProjectModel, 'docs'>, n: number) => m.docs.filter((d) => d.n === n)
 
-/** What a code in some words names in this project: a task (T12, or an older code: B12), a document, an input. */
+/** What a code in some words names in this project: a task (T12, or an older code: T12), a document, an input. */
 export function findRef(m: Pick<ProjectModel, 'byN' | 'byId' | 'docs'>, c: string): { kind: 'task'; n: number } | { kind: 'doc'; d: number } | { kind: 'input'; id: string } | null {
   if (/^[r#]\d+$/.test(c)) {
     const r = 'r' + c.slice(1)

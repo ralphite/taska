@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Agents working together, checked with real agents on the real Taska (I769 r1307; docs/collaboration.md).
+"""Agents working together, checked with real agents on the real Taska (T769 r1307; docs/collaboration.md).
 
     python3 tools/collab_check.py [--base http://127.0.0.1:7340] [--keep]
 

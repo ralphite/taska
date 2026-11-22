@@ -1,5 +1,5 @@
 // A page left running old code after Taska got new code offers Reload while you use it, and reloads by itself once
-// nobody has touched it for a minute or its tab is put away (F449, R284, B654).
+// nobody has touched it for a minute or its tab is put away (T449, R284, T654).
 // guards: src/app/project/updates.ts src/app/project/ src/sync/ src/features/feedback/ src/worker/ server/taska/http/page_routes.py server/taska/http/static.py
 import { expect, test, type Page, type Route } from '@playwright/test'
 import { LOOP, open, project } from './seed'
@@ -27,7 +27,7 @@ const marked = async (page: Page) => {
   return () => page.evaluate(() => (window as unknown as { mark?: number }).mark === 1)
 }
 
-test('a page on old code reloads by itself after a minute untouched, not while it is used (F449, B654)', async ({ page, request }) => {
+test('a page on old code reloads by itself after a minute untouched, not while it is used (T449, T654)', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await page.clock.install()
   await newerOnce(page)
@@ -46,7 +46,7 @@ test('a page on old code reloads by itself after a minute untouched, not while i
   expect(await same()).toBe(false)
 })
 
-test('a page on old code reloads by itself when its tab is put away, even just used (B654)', async ({ page, request }) => {
+test('a page on old code reloads by itself when its tab is put away, even just used (T654)', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await page.clock.install()
   await newerOnce(page)
@@ -64,7 +64,7 @@ test('a page on old code reloads by itself when its tab is put away, even just u
   expect(await same()).toBe(false)
 })
 
-test('a reload that comes back on old code goes again at once, 3 times at most, then leaves Reload to you (F449)', async ({ page, request }) => {
+test('a reload that comes back on old code goes again at once, 3 times at most, then leaves Reload to you (T449)', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await page.clock.install()
   // Taska keeps saying it has newer code than any page it gives: the new code never comes

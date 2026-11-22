@@ -7,7 +7,7 @@ import { doc } from './docFixtures'
 import { T, input, task, message, modelOf } from './fixtures'
 import { PROJECT } from './listFixtures'
 
-const F1: Task = {
+const T1: Task = {
   ...PROJECT[0],
   body: 'The export writes **every** row; it should write the rows the list shows, with the filter and the sort.',
   thread: [
@@ -23,7 +23,7 @@ const B18 = task({
   body: 'On the phone the export writes every row again, whatever the filter.',
   thread: [message({ id: 5, by: 'you', kind: 'say', text: 'On my phone the export gives me every row again.', t: '2026-11-02T09:12:00-08:00' })],
 })
-export const TASKS: Task[] = [F1, ...PROJECT.slice(1), B18]
+export const TASKS: Task[] = [T1, ...PROJECT.slice(1), B18]
 export const D1 = doc({ d: 1, n: 1, title: 'Plan: the export keeps the filter' })
 const INPUTS = [
   input({ id: 'r12', text: 'On my phone the export gives me every row again.', acked: true, touched: [18] }),

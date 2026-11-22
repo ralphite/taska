@@ -28,7 +28,7 @@ export interface DocsDeps extends DocPlace {
 
 export class Docs {
   private readonly d: DocsDeps
-  /** big web pages' texts (B756), by project, document and version: the latest of each document */
+  /** big web pages' texts (T756), by project, document and version: the latest of each document */
   private readonly pages = new Map<string, string>()
   private readonly asking = new Map<string, Promise<string>>()
   readonly stop: () => void
@@ -52,25 +52,25 @@ export class Docs {
     const h = docHere(this.d)
     if (!h) return
     const doc = h.m.docs.find((x) => x.d === dn)
-    if (doc?.kind === 'rules') return this.d.nav.rules('', true) // the rules are the Rules tab (I693)
+    if (doc?.kind === 'rules') return this.d.nav.rules('', true) // the rules are the Rules tab (T693)
     const it = doc ? h.m.byN.get(liveN(h.m, doc.n)) : undefined
     const tab: Tab = it?.archived ? 'archive' : 'tasks'
     this.d.nav.openDoc(dn, this.d.route.getState().side ? undefined : tab)
   }
 
-  /** Its whole text, as written (Markdown, or a web page's HTML), on the clipboard (F625). */
+  /** Its whole text, as written (Markdown, or a web page's HTML), on the clipboard (T625). */
   copy(dn: number): void {
     const h = docHere(this.d)
     const doc = h?.m.docs.find((x) => x.d === dn)
     if (h && doc) void this.loadPage(h.slug, doc).then(copyText).then(() => this.d.toasts.show('Copied'), () => this.d.toasts.show('Not copied: try again'))
   }
 
-  /** A document's text: a big web page's (B756) once it came, else undefined. */
+  /** A document's text: a big web page's (T756) once it came, else undefined. */
   pageText(slug: string, doc: Doc): string | undefined {
     return doc.size ? this.pages.get(pageKey(slug, doc)) : doc.md
   }
 
-  /** A big web page's text (B756), asked for once per version; any other document's is in the view. */
+  /** A big web page's text (T756), asked for once per version; any other document's is in the view. */
   loadPage(slug: string, doc: Doc): Promise<string> {
     const k = pageKey(slug, doc)
     const had = this.pageText(slug, doc)
@@ -169,7 +169,7 @@ export class Docs {
     this.d.fields.focus('box')
   }
 
-  /** A comment on an agent's proposed change to the rules (I693): the box writes it on the proposal's thread, which
+  /** A comment on an agent's proposed change to the rules (T693): the box writes it on the proposal's thread, which
    * its agent reads and answers. */
   proposalComment(p: number, why: string): void {
     const v = this.d.view.getState()
@@ -178,7 +178,7 @@ export class Docs {
     this.d.fields.focus('box')
   }
 
-  /** Comment on what is picked: the box (on the phone it comes for it, B498). */
+  /** Comment on what is picked: the box (on the phone it comes for it, T498). */
   type(): void {
     this.d.view.getState().setTyping(true)
     this.d.fields.focus('box')

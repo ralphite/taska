@@ -1,4 +1,4 @@
-// Shared rules in the rules (I779, D134). Read: a line `{{编程}}` is a dashed block "Shared rules · 编程 · 3 projects"
+// Shared rules in the rules (T779, D134). Read: a line `{{编程}}` is a dashed block "Shared rules · 编程 · 3 projects"
 // that opens its text in place (its name goes to that shared rule); a name not found is red. Editing: what is not
 // found, said beside the buttons; the editor's Shared button; the list Insert picks from (each shared rule, and its
 // sections, those in the text ticked). A shared rule's page: the projects that put it in, each with its line. Props

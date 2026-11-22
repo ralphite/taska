@@ -1,4 +1,4 @@
-// New shared rules with the page's data (I779): named as a new project is (a popover on the desktop, a sheet on the
+// New shared rules with the page's data (T779): named as a new project is (a popover on the desktop, a sheet on the
 // phone); made, it opens to be written.
 
 import { useState } from 'react'

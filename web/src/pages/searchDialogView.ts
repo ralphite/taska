@@ -1,4 +1,4 @@
-// The desktop's search dialog as it is drawn (F479), from where the search is (stores/find) and the page's data: the
+// The desktop's search dialog as it is drawn (T479), from where the search is (stores/find) and the page's data: the
 // field's words (as typed, or as said: lit, or with a word to check), the kinds and filters, one list of rows best
 // first (All: by kind, each kind named; each row with its project as a path), Recent while nothing is typed, the Actions its words name, the
 // highlighted row. Pure: the container and the stories draw the same dialog from the same data.
@@ -84,7 +84,7 @@ export interface DialogPlace {
   model(slug: string): ProjectModel | null
   title(slug: string): string
   tone(slug: string): string
-  /** a project's picture's address (F743) */
+  /** a project's picture's address (T743) */
   icon?(slug: string): string | undefined
   /** the projects in the sidebar's order */
   projects: readonly string[]
@@ -125,7 +125,7 @@ export function visitFound(v: Visit, model: (slug: string) => ProjectModel | nul
     return { project: v.project, kind: 'docs', key: 'd' + v.d, n: v.n, d: v.d, code: 'D' + v.d, title: d?.title ?? v.title, on: v.on }
   }
   const it = m?.byN.get(v.n)
-  // a project whose model is not here: the row drawn from what was kept of the visit, a whole task (B710: a partial
+  // a project whose model is not here: the row drawn from what was kept of the visit, a whole task (T710: a partial
   // one, cast, had no thread, and the phone's search went white opening on its Recent)
   const task: Task = it ?? { n: v.n, code: v.code, tags: [], title: v.title, body: '', pri: v.pri ?? 'P2', when: 'now', status: v.status ?? 'open', parent: null, next: '', srcs: [], mergedInto: null, archived: false, t0: '', t1: '', by: null, thread: [], wait: null, talked: false }
   return { project: v.project, kind: 'tasks', key: 'i' + v.n, n: v.n, task: it ? undefined : { ...task, code: v.code } }

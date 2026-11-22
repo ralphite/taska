@@ -27,7 +27,7 @@ import { TimesLine } from './TimesLine'
 import type { TalkEnv } from './talkEnv'
 
 export interface TaskEvents extends TalkLineEvents {
-  /** the Agents sheet: the sessions, what each is on and how it is (I810) */
+  /** the Agents sheet: the sessions, what each is on and how it is (T810) */
   agents?(): void
   /** a # tag tapped: the list of the tasks with it (T855) */
   tag(t: string): void
@@ -77,7 +77,7 @@ export interface TaskFacts {
   addingSub: boolean
   /** a subtask title you started before */
   subDraft?: string
-  /** the sessions working on it now, and how each is (I810) */
+  /** the sessions working on it now, and how each is (T810) */
   workers?: { by: string; name: string; state: 'working' | 'idle' | 'waiting'; text: string; age: string }[]
   /** D152 prototype: the tasks it waits for, and the tasks it holds up */
   waitsFor?: Task[]
@@ -137,10 +137,10 @@ export function TaskPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     let end = go
     // it leaves its end only as you scroll up: the scroll this page made comes after the talk may have grown again
     let was = sc.scrollTop
-    // at its end it never gets shorter: its last message shorter would scroll it up (B770 r1292)
+    // at its end it never gets shorter: its last message shorter would scroll it up (T770 r1292)
     const body = el.firstElementChild instanceof HTMLElement ? el.firstElementChild : null
     let tall = body?.offsetHeight ?? 0
-    // it leaves its end only as you scroll it: what moves it up by itself is put back (B786: Safari, as a message
+    // it leaves its end only as you scroll it: what moves it up by itself is put back (T786: Safari, as a message
     // takes the place of the one being sent)
     const you = yourScroll(sc)
     const seen = () => {
@@ -161,9 +161,9 @@ export function TaskPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     })
     sc.addEventListener('scroll', seen, { passive: true })
     for (const part of [el, el.firstElementChild]) if (part) ro.observe(part)
-    ro.observe(sc, { box: 'border-box' }) // what scrolls it resized: the box grew as you wrote, shrank as you sent (B719)
+    ro.observe(sc, { box: 'border-box' }) // what scrolls it resized: the box grew as you wrote, shrank as you sent (T719)
     // the task opens at its latest message, again a moment later as the page settles (pictures, the parts above),
-    // unless you scrolled away from it by then: your first scroll is never pulled back (B721 r1183)
+    // unless you scrolled away from it by then: your first scroll is never pulled back (T721 r1183)
     const toLast = () => {
       if (end) sc.scrollTop = sc.scrollHeight
     }
@@ -180,7 +180,7 @@ export function TaskPage({ it, f, env, facts, on, talkRef, duo = false, left = n
   const asked = useRef({ n: it.n, on: asks, said })
   useLayoutEffect(() => {
     // the card that asks you comes back (an Undo, a change put back): the talk shows it, at its end. A new question
-    // (a new message) does not move it: it keeps to its end as it grows only when it showed its end (B786)
+    // (a new message) does not move it: it keeps to its end as it grows only when it showed its end (T786)
     const el = talk.current
     const was = asked.current
     if (asks && was.n === it.n && !was.on && said <= was.said && el) toEnd(el)
@@ -240,7 +240,7 @@ export function TaskPage({ it, f, env, facts, on, talkRef, duo = false, left = n
       )}
       {duo ? (
         // the line between the two columns, dragged sideways like the other lines: one line to the screen's bottom,
-        // over the box's row (B638); grabbed only right of the line, never over the left column's scrollbar (B739)
+        // over the box's row (T638); grabbed only right of the line, never over the left column's scrollbar (T739)
         <Grip
           name="duo"
           axis="x"
@@ -278,7 +278,7 @@ export function TaskPage({ it, f, env, facts, on, talkRef, duo = false, left = n
         }}
         onScroll={(e) => marks(e.currentTarget)}
         // it runs on under the box only where the box floats over it (dark: to the box's middle), so its scrollbar is never
-        // under the box (B739); its own padding keeps its end clear above the box
+        // under the box (T739); its own padding keeps its end clear above the box
         className={`lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto outline-none lg:data-up:mask-t-from-[calc(100%-2rem)] ${duo ? 'lg:h-[calc(100%-var(--foot-h,0px)+var(--foot-under,0px))] lg:min-w-0 lg:pb-[calc(var(--foot-under,0px)+var(--float-h,0px)+1.5rem)]' : 'lg:-mb-[calc(var(--foot-under,0px)+var(--float-h,0px))] lg:pb-[calc(var(--foot-under,0px)+2*var(--float-h,0px))] dark:lg:-mb-[calc(var(--foot-under,0px)+var(--float-h,0px)+1.5rem)] dark:lg:pb-[calc(var(--foot-under,0px)+2*var(--float-h,0px)+1.5rem)]'}`}
       >
         <div inert={readOnly} className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:py-6">
@@ -334,7 +334,7 @@ export function TaskHead({ it, code, titled = false }: { it: Task; code: string;
         {it.group ? <Icon n="folder" c="size-[18px] text-zinc-500 dark:text-zinc-400" /> : <StateIcon {...shownStatus(it)} cls="size-[18px]" />}
       </span>
       <span className={`shrink-0 font-mono text-sm font-bold ${CODE_TEXT}`}>{code}</span>
-      {/* after the code on one line, cut short to the space between Back and ⋯ (B696) */}
+      {/* after the code on one line, cut short to the space between Back and ⋯ (T696) */}
       {titled ? <span className="min-w-0 truncate text-[13px] font-medium text-zinc-600 dark:text-zinc-300">{it.title}</span> : null}
     </>
   )

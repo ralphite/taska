@@ -11,7 +11,7 @@
 @custom-variant huge (@container frame (width >= 96rem));
 @custom-variant roomy (@container frame (width >= 40rem));
 @custom-variant wide-phone (@container frame (width >= 400px));
-/* Tailwind's own widths answer to the frame too, never to the window (B593): a story's 393 frame inside a wide
+/* Tailwind's own widths answer to the frame too, never to the window (T593): a story's 393 frame inside a wide
    Storybook draws as the phone does. On the page the frame is the window, so nothing there changes. max-lg: is the
    phone's layout, as lg: is the desktop's. */
 @custom-variant sm (@container frame (width >= 40rem));
@@ -37,7 +37,7 @@
 }
 
 /* The height of the desktop's bars under the project's: the pane's bar and, beside it, the list's views row, so their
-   bottom borders are one line (B669). h-bar. */
+   bottom borders are one line (T669). h-bar. */
 @theme {
   --spacing-bar: 3.5rem;
 }

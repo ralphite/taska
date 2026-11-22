@@ -30,7 +30,7 @@ export interface UiState {
   /** the desktop's filters opened under the search (F) */
   deskFilters: boolean
   setDeskFilters(on: boolean): void
-  /** the desktop list's views opened onto all their lines (F670; kept in this browser) */
+  /** the desktop list's views opened onto all their lines (T670; kept in this browser) */
   viewsOpen: boolean
   setViewsOpen(on: boolean): void
   /** long inputs opened whole (More) */

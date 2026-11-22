@@ -155,7 +155,7 @@ def new_task(r: Run, a: Args) -> Outcome:
     parent = field_value(s, "parent", a.get("parent"), r.ctx) if a.get("parent") else None
     src = a.get("src") or r.ctx.src
     said = s.inputs.get(str(src)) if src else None
-    asked_for = parent is not None and said is not None and said.by in PEOPLE  # a part the user asked for (B818)
+    asked_for = parent is not None and said is not None and said.by in PEOPLE  # a part the user asked for (T818)
     # a group holds work and does none: an agent's group needs no approval (T856, D153)
     status = task_states.starts(r.by, asked_for or group) if not r.person else field_value(s, "status", a.get("status") or "open")
     e = ev.TaskAdded(n=s.max_n + 1, by=r.by, title=title, src=src, tags=tags, pri=pri, when=when,

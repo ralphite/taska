@@ -1,4 +1,4 @@
-// A voice note's words (B682): one record per note (Voice), named by its file wherever the note is: an input, a
+// A voice note's words (T682): one record per note (Voice), named by its file wherever the note is: an input, a
 // message, a comment. What was typed and each note's words together are what was said, as every place shows it
 // (what a note says while its words are worked out, or why it has none: model/voiceStates). Sending, the words of
 // each note are taken out of what was typed and go to the note (changed by you: they are yours from then on).
@@ -16,7 +16,7 @@ export const withVoice = (f: FileRef, voices: ReadonlyMap<string, Voice>): FileR
   return v ? { ...f, voice: v } : f
 }
 
-/** What was said in order (B838): the words typed, each voice note where it was put in them (its place), the notes
+/** What was said in order (T838): the words typed, each voice note where it was put in them (its place), the notes
  * with no place after all the words. */
 export function inPlace(typed: string, files: readonly PlacedFile[] | undefined): (string | PlacedFile)[] {
   const notes = (files || []).filter(isVoice)
@@ -32,7 +32,7 @@ export function inPlace(typed: string, files: readonly PlacedFile[] | undefined)
   return [...out, ...notes.filter((x) => x.at == null)]
 }
 
-/** What was said: the words typed with each voice note's words where it was put in them (B838). */
+/** What was said: the words typed with each voice note's words where it was put in them (T838). */
 export function saidText(typed: string, files: readonly PlacedFile[] | undefined): string {
   return inPlace(typed, files)
     .map((x) => (typeof x === 'string' ? x : voiceWords(x.voice)))
@@ -48,7 +48,7 @@ export interface VoiceInText {
   around?: readonly [string, string]
 }
 
-// B838: where a note's words were is kept as a mark in the text while the others are taken out (a character of the
+// T838: where a note's words were is kept as a mark in the text while the others are taken out (a character of the
 // Private Use Area, never typed), then read as its place once the text is tidied
 const MARK0 = 0xe000
 const isMark = (c: string) => c.charCodeAt(0) >= MARK0 && c.charCodeAt(0) < MARK0 + 0x1000
@@ -97,7 +97,7 @@ export function splitVoices(text: string, notes: readonly VoiceInText[], typed?:
   const words: Record<string, string> = {}
   const left: VoiceInText[] = []
   const keys: string[] = []
-  // each note found leaves its mark where its words were (B838)
+  // each note found leaves its mark where its words were (T838)
   const mark = (f: string) => String.fromCharCode(MARK0 + keys.push(f) - 1)
   for (const n of notes) {
     const w = n.words.trim()

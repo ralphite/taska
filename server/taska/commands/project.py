@@ -1,4 +1,4 @@
-"""Commands on the project itself: its name for people (its address never changes) and its picture (F743)."""
+"""Commands on the project itself: its name for people (its address never changes) and its picture (T743)."""
 
 from __future__ import annotations
 

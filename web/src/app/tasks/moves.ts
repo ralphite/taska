@@ -1,7 +1,7 @@
 // A task going to another project: it leaves this one at once (with its subtasks: here they show won't do and
 // archived), and Taska is told behind you, asked again until it answers (api/delivery); it comes back, with why, only
 // when Taska says no. The toast's Open goes to it there, and what you wrote in its box and did not send yet goes along
-// (B799, B408): the words into its box there, its voice notes and files back into it when it opens there.
+// (T799, T408): the words into its box there, its voice notes and files back into it when it opens there.
 
 import type { Delivery } from '../../api/delivery'
 import type { TaskaApi } from '../../api/taska'

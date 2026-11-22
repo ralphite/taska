@@ -1,7 +1,7 @@
 """/next: what an agent should do now. New inputs first, then a document's unanswered comments, then the tasks the
 user replied on while an agent is working on them (in progress), then what another session wrote for it, then the
 queue (doing first, then by priority, oldest first; subtasks before their parent), skipping what another session
-holds. Any other task the user replied on (open, proposed, a question answered) waits its turn by priority (B606,
+holds. Any other task the user replied on (open, proposed, a question answered) waits its turn by priority (T606,
 Yadong's choice): it comes before the queue's next task only when that one is not in progress and is no more
 urgent."""
 
@@ -21,7 +21,7 @@ Holder = Callable[[Task], Optional[Tuple[str, float]]]
 Calls = Callable[[], List[Tuple[Task, Message, bool]]]
 
 
-# B762: the Antigravity session's waker, started (or left running) before each turn ends; it wakes the session
+# T762: the Antigravity session's waker, started (or left running) before each turn ends; it wakes the session
 ANTIGRAVITY_WAKER = 'curl -s "BASE/waker" | sh -s "$ANTIGRAVITY_CONVERSATION_ID"'
 
 @dataclass
@@ -30,7 +30,7 @@ class Work:
     has_work: bool
     given: Optional[int] = None  # the task whose card it holds
     claim: Optional[Tuple[int, str]] = None  # (task, session): the queue task it takes
-    stop: Optional[Tuple[int, int]] = None  # (task, the change): told to stop it (B816)
+    stop: Optional[Tuple[int, int]] = None  # (task, the change): told to stop it (T816)
 
 
 @dataclass
@@ -68,7 +68,7 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
     live = rules.by_priority(i for i in st.live_tasks() if i.status not in CLOSED and not i.archived)
     talking = {n for r in st.inputs.values() if rd.held(r) for n in [r.scope, *r.touched] if n}
     for label, rows in (
-            # answered in part (B749): what was answered is the agent's to pick up, the rest still waits
+            # answered in part (T749): what was answered is the agent's to pick up, the rest still waits
             ("waiting on the user (skip)", [i for i in live if rules.waiting(st, i) and not rules.replied(i)]),
             ("proposed, the user has not approved yet (skip)", [i for i in live if i.status == "proposed" and not rules.replied(i)]),
             ("in review, the user accepts them (skip)", [i for i in live if i.status == "review" and not rules.replied(i)]),
@@ -81,7 +81,7 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         cards = "".join(input_card(rd, i) + "\n" for i in rules.by_number(inbox))
         return Work(f"{head}\nfirst handle the inbox ({len(inbox)}):\n{cards}", True)
     stop = _stop(st, asker)
-    if stop:  # you closed what it was doing: at once, before anything else (B816)
+    if stop:  # you closed what it was doing: at once, before anything else (T816)
         it = st.tasks[stop[0]]
         how = "marked it won't do" if it.status == "dropped" else "closed it"
         return Work(f"{head}\nstop {st.code(it.n)}: the user {how} while you were on it. Stop working on it now (a "
@@ -93,7 +93,7 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         d = min(docs, key=lambda d: d.t1)
         return Work(f"{head}\nanswer the user's comments on D{d.d} (GET /D{d.d}):\n" + doc_text(rd, d), True)
     mine = proposals_for(st, asker.who) if asker.who else []
-    if mine:  # the user wrote on its proposed change to the rules, or it was sent back to write again (I693)
+    if mine:  # the user wrote on its proposed change to the rules, or it was sent back to write again (T693)
         return Work(f"{head}\n" + proposal_text(st, mine[0]), True)
     live = [i for i in live if i.n not in talking]  # their latest words are not in yet: they come next
     replied = [i for i in live if rules.replied(i)]
@@ -137,7 +137,7 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         end += ("\nClaude Code: before ending the turn, start this with Bash run_in_background (it costs no tokens; Taska "
                 "answers it only when there is work, and that wakes you):\n"
                 f"  while o=$(curl -s \"BASE/next?wait=540&by={who}&sid=$CLAUDE_CODE_SESSION_ID\"); [ -z \"$o\" ] || echo \"$o\" | grep -q 'nothing to do now'; do sleep 20; done; echo \"$o\"")
-    elif asker.who == "antigravity":  # B762: Taska's waker wakes the session with a message when there is work
+    elif asker.who == "antigravity":  # T762: Taska's waker wakes the session with a message when there is work
         end += ("\nAntigravity: before ending the turn, run this (it returns at once: it starts Taska's waker for this "
                 "session when none runs, which costs no tokens and wakes you with a message when there is work):\n  "
                 + ANTIGRAVITY_WAKER)

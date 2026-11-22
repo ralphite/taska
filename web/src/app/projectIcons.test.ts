@@ -3,7 +3,7 @@ import type { ProjectModel } from '../model/project'
 import type { ProjectRow } from '../model/types'
 import { sideProjects } from './sideProjects'
 
-// F743: the projects as the page lists them carry each one's picture (an agent set it), this one's from its own data.
+// T743: the projects as the page lists them carry each one's picture (an agent set it), this one's from its own data.
 describe("the projects' pictures", () => {
   test('the sidebar lists each project with its picture, as listed', () => {
     const rows: ProjectRow[] = [

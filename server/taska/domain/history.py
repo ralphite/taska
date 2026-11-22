@@ -21,8 +21,8 @@ class Filing:
     takes back only its own work, not what you or an agent did after)."""
 
     can: bool
-    what: str  # "removes F08 · B12 back to P2"
-    why: str  # "F08 changed since"
+    what: str  # "removes T08 · T12 back to P2"
+    why: str  # "T08 changed since"
 
 
 def filings(state: ProjectState) -> Dict[str, Filing]:
@@ -183,7 +183,7 @@ STOP_FRESH = 12 * 3600  # an older one: that agent has long stopped (and the fir
 def to_stop(state: ProjectState, now: float) -> List[Tuple[int, int]]:
     """The tasks you (or the organizer, from your words) closed or dropped while an agent was doing them, in the last
     STOP_FRESH seconds, with no agent's word on them since: (task, the change's place in the log). That agent stops
-    (B816, task_states.STOP)."""
+    (T816, task_states.STOP)."""
     seen: Set[int] = set()
     out: List[Tuple[int, int]] = []
     for e in reversed(state.events[-STOP_LOOK:]):

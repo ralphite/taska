@@ -1,4 +1,4 @@
-"""B790: a web page document's sandboxed frame has the project's files with the project's files pass, and nothing else."""
+"""T790: a web page document's sandboxed frame has the project's files with the project's files pass, and nothing else."""
 
 from __future__ import annotations
 

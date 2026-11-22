@@ -22,7 +22,7 @@ const width = async (page: Page, w: number) => {
   await settled(page)
 }
 
-test('r683: the window made narrow and wide again closes nothing: the document stays open, the sidebar stays (B496)', async ({
+test('r683: the window made narrow and wide again closes nothing: the document stays open, the sidebar stays (T496)', async ({
   page,
   request,
 }) => {
@@ -51,7 +51,7 @@ test('r683: the window made narrow and wide again closes nothing: the document s
   await expect(sidebar(page)).toBeVisible()
 })
 
-test('r683: the desktop sidebar and phone drawer keep their own state across widths (B496)', async ({
+test('r683: the desktop sidebar and phone drawer keep their own state across widths (T496)', async ({
   page,
   request,
 }) => {
@@ -97,7 +97,7 @@ test('r683: the desktop sidebar and phone drawer keep their own state across wid
   await expect(page.locator('#rail')).toBeHidden()
 })
 
-test('r743: once a task is in two columns it stays so: another task that would fit in one does not take it back (B539)', async ({
+test('r743: once a task is in two columns it stays so: another task that would fit in one does not take it back (T539)', async ({
   page,
   request,
 }) => {
@@ -159,7 +159,7 @@ for (const [name, path, fold] of [
   ['the sidebar folded, a task open', 'T4', true],
   ['the list alone', '', false],
 ] as const)
-  test(`r749 #6525: at any width the page is the same however the width got there, only the width changing: ${name} (B496)`, async ({
+  test(`r749 #6525: at any width the page is the same however the width got there, only the width changing: ${name} (T496)`, async ({
     page,
     request,
   }) => {
@@ -191,7 +191,7 @@ for (const [name, path, fold] of [
     }
   })
 
-test('B669 r1065: the list\'s views row and the pane\'s bar are one height, their bottom borders one line (New input, Inputs, a task, a document)', async ({
+test('T669 r1065: the list\'s views row and the pane\'s bar are one height, their bottom borders one line (New input, Inputs, a task, a document)', async ({
   page,
   request,
 }) => {
@@ -213,7 +213,7 @@ test('B669 r1065: the list\'s views row and the pane\'s bar are one height, thei
   }
 })
 
-test('F670 r1065: on the desktop Filters is first in the views row; ⌄ at its end opens it onto all its lines, ⌃ closes it, and it stays so after a reload', async ({
+test('T670 r1065: on the desktop Filters is first in the views row; ⌄ at its end opens it onto all its lines, ⌃ closes it, and it stays so after a reload', async ({
   page,
   request,
 }) => {
@@ -245,7 +245,7 @@ test('F670 r1065: on the desktop Filters is first in the views row; ⌄ at its e
   await expect((await viewsRow.boundingBox())?.height).toBeLessThan(57)
 })
 
-test('r1052: what the pane shows never moves the list: on the New input page the views sit right under the bar and the filters, as with a task open (B663)', async ({
+test('r1052: what the pane shows never moves the list: on the New input page the views sit right under the bar and the filters, as with a task open (T663)', async ({
   page,
   request,
 }) => {

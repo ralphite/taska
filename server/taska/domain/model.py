@@ -17,13 +17,13 @@ Row = Dict[str, Any]
 @dataclass(frozen=True)
 class FileRef:
     """A file that came with an input, a message or a comment: taska-files/<f>. A voice note's words are not here:
-    they are its one record (Voice, state.voices), by its file (B682)."""
+    they are its one record (Voice, state.voices), by its file (T682)."""
 
     f: str
     name: str
     mime: Optional[str] = None
     size: Optional[int] = None
-    at: Optional[int] = None  # B838: a voice note's place in the words typed (its words show there); None: after them
+    at: Optional[int] = None  # T838: a voice note's place in the words typed (its words show there); None: after them
 
     @classmethod
     def from_row(cls, d: Any) -> FileRef:
@@ -54,7 +54,7 @@ def files_row(files: List[FileRef]) -> List[Row]:
 
 @dataclass
 class Voice:
-    """A voice note's words: the one record of them (B682). Every place that shows or reads a voice note (an input, a
+    """A voice note's words: the one record of them (T682). Every place that shows or reads a voice note (an input, a
     message, a comment, a draft) names it by its file and reads its words here; every step of working them out, and a
     correction of yours, changes only this.
 
@@ -111,7 +111,7 @@ class Message:
     edited: Optional[str] = None
     change: bool = False  # a note on an edit of the input, not the input's words
     hidden: Optional[bool] = None
-    of: Optional[List[int]] = None  # your answer to these of the questions in a row, the others still wait (B749)
+    of: Optional[List[int]] = None  # your answer to these of the questions in a row, the others still wait (T749)
 
     def to_row(self) -> Row:
         out: Row = {"id": self.id, "by": self.by, "kind": self.kind, "text": self.text, "t": self.t, "src": self.src,
@@ -294,7 +294,7 @@ class Input:
     acked: bool = False  # handled
     touched: List[int] = field(default_factory=list)  # the tasks it made or changed
     org: Optional[OrgNote] = None
-    kind: Optional[str] = None  # "answer": a form sent on its task, filed as it is; "cancelled": not sent (B627)
+    kind: Optional[str] = None  # "answer": a form sent on its task, filed as it is; "cancelled": not sent (T627)
     history: List[InputVersion] = field(default_factory=list)
     v: int = 0  # bumps on every change of its words
     edit_seq: int = 0
@@ -352,7 +352,7 @@ class Comment:
 
 @dataclass
 class SectionEdit:
-    """One change to the rules document by its sections (I693): replace, add (after a section, else at the end) or
+    """One change to the rules document by its sections (T693): replace, add (after a section, else at the end) or
     delete a section named by its heading, or the whole text."""
 
     op: str
@@ -375,7 +375,7 @@ class SectionEdit:
 
 @dataclass
 class Proposal:
-    """An agent's proposed change to the rules (I693), written on the text as it was at `base` (its write's number in
+    """An agent's proposed change to the rules (T693), written on the text as it was at `base` (its write's number in
     the log): waiting for the user, approved, declined, or sent back because a section it changes changed since."""
 
     id: int  # its event's number in the log
@@ -402,7 +402,7 @@ class Proposal:
 @dataclass
 class Doc:
     """A document on a task: Markdown (the default) or a web page (fmt "html"), with its comments. The project's rules
-    are one document of the project itself (kind "rules", no task: n 0), with its proposals (I693)."""
+    are one document of the project itself (kind "rules", no task: n 0), with its proposals (T693)."""
 
     d: int
     n: int  # the task it belongs to (0: the project's)

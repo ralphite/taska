@@ -32,14 +32,14 @@ test('r68 r326 T646: work an agent is stuck on asks you for what it needs: in Ne
   await expect(body.getByText('I need the export key').filter({ visible: true }).first()).toBeVisible()
 })
 
-// B535: the task's status as a row and the task page show it: each status icon's label and its tooltip, and the chip
+// T535: the task's status as a row and the task page show it: each status icon's label and its tooltip, and the chip
 const said = (l: Locator) =>
   l.evaluateAll((els) => els.map((e) => `${e.getAttribute('aria-label')} | ${e.querySelector('title')?.textContent}`))
 const rowIcons = (page: Page) => row(page, 'Ship the export').locator('svg[role="img"]')
 const chip = statusChip
 
 for (const [kind, words] of [['ask', 'Which export key should I use?']] as const)
-  test(`r326 R055: a task in progress whose agent asks reads Needs you, not In progress, on its row and its page; its status stays In progress, and it reads that again once you answer (B535)`, async ({
+  test(`r326 R055: a task in progress whose agent asks reads Needs you, not In progress, on its row and its page; its status stays In progress, and it reads that again once you answer (T535)`, async ({
     page,
     request,
   }) => {
@@ -79,7 +79,7 @@ for (const [kind, words] of [['ask', 'Which export key should I use?']] as const
   })
 
 for (const [kind, words] of [['ask', 'Which export key should I use?']] as const)
-  test(`r781: a task whose agent asks says so once: its status reads Needs you, and the line above it has only its code, no Asks you (B555)`, async ({
+  test(`r781: a task whose agent asks says so once: its status reads Needs you, and the line above it has only its code, no Asks you (T555)`, async ({
     page,
     request,
   }) => {
@@ -93,7 +93,7 @@ for (const [kind, words] of [['ask', 'Which export key should I use?']] as const
     await expect.poll(() => paneHead(page).innerText(), 'the words on the line above').toBe('T1')
   })
 
-test('r802: in a list sorted another way (Filters › Sort) what waits on you is the Needs-you row, its Approve the button on its right, as in Active; no plain row with a word for it (B565)', async ({
+test('r802: in a list sorted another way (Filters › Sort) what waits on you is the Needs-you row, its Approve the button on its right, as in Active; no plain row with a word for it (T565)', async ({
   page,
   request,
 }) => {
@@ -112,7 +112,7 @@ test('r802: in a list sorted another way (Filters › Sort) what waits on you is
   }
 })
 
-test("r802: the card a task's code shows under the pointer says its status in one word, as its row and its page do: Needs you for a task whose agent asks, not In progress and Needs you (B555)", async ({
+test("r802: the card a task's code shows under the pointer says its status in one word, as its row and its page do: Needs you for a task whose agent asks, not In progress and Needs you (T555)", async ({
   page,
   request,
 }) => {
@@ -128,7 +128,7 @@ test("r802: the card a task's code shows under the pointer says its status in on
   await expect(tip(page)).not.toContainText('In progress')
 })
 
-test('D115 #8: a proposal you decline and work you send back from the list say so on their rows as their cards do: the row stays, its button saying Declined or Sent back; only the declined one struck (B766)', async ({
+test('D115 #8: a proposal you decline and work you send back from the list say so on their rows as their cards do: the row stays, its button saying Declined or Sent back; only the declined one struck (T766)', async ({
   page,
   request,
 }) => {
@@ -146,8 +146,8 @@ test('D115 #8: a proposal you decline and work you send back from the list say s
   ] as const) {
     await row(page, title).first().hover()
     await rowActs(page, n).and(page.getByRole('button', { name: button, exact: true })).click()
-    // B699 (r1126): the row you acted on stays the row it was, in its place, its button disabled saying what you did
-    // (not swapped for a one-line "Declined · title" as R6-1 #11 first had it); B766 (r1293 r1294): its title struck only
+    // T699 (r1126): the row you acted on stays the row it was, in its place, its button disabled saying what you did
+    // (not swapped for a one-line "Declined · title" as R6-1 #11 first had it); T766 (r1293 r1294): its title struck only
     // when that closed it: struck says done, dropped or not needed, and work sent back is still to do
     const held = page.locator(`#list article[data-n="${n}"]`)
     await expect(held).toContainText(title)

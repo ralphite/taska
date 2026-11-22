@@ -22,7 +22,7 @@ def install_skill(text: str) -> None:
 
 
 def install_antigravity_agents(agents: dict) -> None:
-    """F755: the subagents Antigravity's main session starts for Taska tasks (~/.gemini/config/agents)."""
+    """T755: the subagents Antigravity's main session starts for Taska tasks (~/.gemini/config/agents)."""
     root = os.path.expanduser("~/.gemini/config")
     if not os.path.isdir(root):
         return

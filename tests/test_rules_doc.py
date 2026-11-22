@@ -1,4 +1,4 @@
-"""I693 (r1116, r1118, r1128): a project's rules are one Markdown document with versions. Yadong decided: every save is
+"""T693 (r1116, r1118, r1128): a project's rules are one Markdown document with versions. Yadong decided: every save is
 a version (who, when, why; the same writer's saves less than 10 minutes apart are one version that keeps every why,
 newest first), restored versions are new versions, agents only propose changes by named sections with a why and
 Yadong approves or declines, a proposal whose sections changed since it was written goes back to its agent, the

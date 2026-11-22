@@ -7,7 +7,7 @@
 # docs/known-issues.md failing does not stop it). The page is copied to web/live, which the service serves, as Taska
 # restarts (a build made to test something never goes live by itself). If nobody used Taska in the last minute, it
 # restarts now. Otherwise this waits and restarts it by itself once Taska has been left alone for a minute; the open
-# pages then reload by themselves at a good moment (B654).
+# pages then reload by themselves at a good moment (T654).
 cd "$(dirname "$0")/.." || exit 1
 URL=${TASKA_URL:-http://127.0.0.1:7340}
 export PATH="$PATH:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin"
@@ -29,7 +29,7 @@ serving() { lsof -tiTCP:${URL##*:} -sTCP:LISTEN 2>/dev/null | head -n 1; }
 # the page goes live with the server that answers it: a new page talking to the old server for the minute this may wait
 # breaks on what changed between them (r1125)
 # the page's built files of earlier versions stay two weeks: a page still open (or kept by the phone app) loads parts
-# of itself later (a diagram's drawing code); gone, that part fails to load (B714 r1179)
+# of itself later (a diagram's drawing code); gone, that part fails to load (T714 r1179)
 golive() {
   rsync -a --delete --exclude /storybook/ --exclude /assets/ web/dist/ web/live/  # Storybook is its own server
   rsync -a web/dist/assets/ web/live/assets/

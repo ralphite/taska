@@ -1,4 +1,4 @@
-"""B607 (Yadong's choice, #7744): words Yadong writes on a task that waits for review, without Accept, take it back to
+"""T607 (Yadong's choice, #7744): words Yadong writes on a task that waits for review, without Accept, take it back to
 in progress, so its mark and "Your agent's turn" agree. An agent's words, and Accept, do not. r1082: a reply on a task
 already done opens it again too. Change only on Yadong's explicit word."""
 

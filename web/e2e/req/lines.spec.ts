@@ -142,7 +142,7 @@ async function downTheLine(page: Page): Promise<string[]> {
 }
 
 for (const scheme of ['light', 'dark'] as const)
-  test(`r558 r682 r813: the line between the list and the pane is one line from under the project's bar to the bottom, in a task, a document and the new input (B573, ${scheme})`, async ({
+  test(`r558 r682 r813: the line between the list and the pane is one line from under the project's bar to the bottom, in a task, a document and the new input (T573, ${scheme})`, async ({
     page,
     request,
   }) => {

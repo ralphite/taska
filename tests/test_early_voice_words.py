@@ -1,7 +1,7 @@
 """T687 (Yadong's choice, #9729): a voice note's first words show as soon as the speech model has them (about 2 s); the
 main model's and tidied words take their place when they are in. Until then the input waits for them, so nobody
 organizes or reads it twice, and the change is not an edit of yours. Change only on Yadong's explicit word.
-B682: the words are the voice note's own record; the input keeps only what was typed."""
+T682: the words are the voice note's own record; the input keeps only what was typed."""
 
 import os
 import sys

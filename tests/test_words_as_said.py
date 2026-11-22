@@ -1,4 +1,4 @@
-"""F568: a voice note's words as said, word for word, are kept with it (before, only next to the audio). B682: in the
+"""T568: a voice note's words as said, word for word, are kept with it (before, only next to the audio). T682: in the
 note's one record, beside its tidied words; the input keeps only what was typed."""
 
 import unittest

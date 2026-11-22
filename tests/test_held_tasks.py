@@ -1,4 +1,4 @@
-"""T772 (I769, Yadong approved 11-13): a session that marks doing a task another session holds is not let do it
+"""T772 (T769, Yadong approved 11-13): a session that marks doing a task another session holds is not let do it
 unknowingly: it is told who holds it and how to go on; only when the user asked it to, `B03 take` takes it, said on
 the task so the session that had it hears it. Change only on Yadong's explicit word."""
 
@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
 
 class WhoIsHere(HeldTasks):
-    """T774 (I769): a session's /next says who else works here, on its first call and then only when that changed."""
+    """T774 (T769): a session's /next says who else works here, on its first call and then only when that changed."""
 
     def test_told_once_then_only_when_it_changed(self) -> None:
         self.get("/next?by=codex&session=main")
@@ -68,7 +68,7 @@ class WhoIsHere(HeldTasks):
 
 
 class HoldMoves(HeldTasks):
-    """Found by tools/collab_check.py with real agents (I769 r1307): `doing` on a task already doing changed nothing,
+    """Found by tools/collab_check.py with real agents (T769 r1307): `doing` on a task already doing changed nothing,
     so a take or a manager's hand-on left the hold where it was."""
 
     def holder(self) -> str:

@@ -9,7 +9,7 @@ import type { Comment, Doc, Task, Message } from './types'
 /** The task's latest message from anyone but the organizer: what you came to read, shown whole. */
 export const latestMessage = (it: Task): number | null => it.thread.filter((x) => x.by !== 'org').at(-1)?.id ?? null
 
-/** B749 (D132): an agent's questions in a row: two or more asks one after another, with only your answers to some of
+/** T749 (D132): an agent's questions in a row: two or more asks one after another, with only your answers to some of
  * them (`of`) between. They are answered in one card, a question a page. Each row, in the talk's order. */
 export function askRows(thread: readonly Message[]): Message[][] {
   const gone = withdrawn(thread)

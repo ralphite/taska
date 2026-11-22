@@ -4,14 +4,14 @@ import type { RuleProposal } from '../../model/types'
 import { NEED, NEEDS_CARD, PRIMARY_BASE, SECOND } from '../../ui/tones'
 import { ProposalCard } from './Rules'
 
-// B763 (Yadong r1282): a rules proposal is drawn in the same card as a task's needs, with the same buttons: View
+// T763 (Yadong r1282): a rules proposal is drawn in the same card as a task's needs, with the same buttons: View
 // changes and Approve are the task card's Approve button, Not now its quieter one (the same component, reused).
 const p: RuleProposal = { id: 1, by: 'claude-code', t: '2026-11-13T09:00:00-08:00', why: 'Ask before pushing', state: 'wait', on: 3, comments: [] }
 const on = { view() {}, comment() {}, decline() {}, approve() {} }
 const f = { p, who: 'Claude Code', now: Date.parse('2026-11-13T10:00:00-08:00'), talk: 0 }
 const has = (el: HTMLElement, cls: string) => cls.split(' ').every((c) => el.className.split(' ').includes(c))
 
-test('B763: a proposal is in the needs card, its buttons the task card buttons', () => {
+test('T763: a proposal is in the needs card, its buttons the task card buttons', () => {
   const { container, unmount } = render(<ProposalCard f={f} on={on} />)
   expect(has(container.querySelector('section') as HTMLElement, NEEDS_CARD)).toBe(true)
   const view = screen.getByRole('button', { name: /View changes/ })

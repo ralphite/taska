@@ -44,7 +44,7 @@ describe('the talk keeps to its end (T589 #10486)', () => {
   test('let go, scrolled down short of the end: still let go', () => expect(keepsEnd(at(1300), 1000, false)).toBe(false))
 })
 
-describe('at its end the talk never gets shorter under you (B770 r1292)', () => {
+describe('at its end the talk never gets shorter under you (T770 r1292)', () => {
   /** the talk's messages, `h` high as drawn (and no less than a height kept for them) */
   const body = (h: number) => {
     const el = document.createElement('div')
@@ -73,10 +73,10 @@ describe('at its end the talk never gets shorter under you (B770 r1292)', () => 
   })
 })
 
-// B786 (r1337): Safari moved the talk up by itself as a message took the place of the one being sent, and the talk
+// T786 (r1337): Safari moved the talk up by itself as a message took the place of the one being sent, and the talk
 // took that for you scrolling away from its end. Only you leave it: a finger moving, the wheel, its scrollbar, a key,
 // the button to its end; and what each set going, for as long as it goes on.
-describe('you scroll the talk, the browser does not (B786 r1337)', () => {
+describe('you scroll the talk, the browser does not (T786 r1337)', () => {
   const at = (sc: HTMLElement, type: string, init: EventInit = {}, target: EventTarget = sc) => target.dispatchEvent(Object.assign(new Event(type, { bubbles: true, ...init })))
   test('a tap, Send, a message changing: not you', () => {
     const sc = document.createElement('div')

@@ -28,7 +28,7 @@ function page() {
   return { box, drafts, pushed, answer, ended: () => ended }
 }
 
-describe('an answer with words (B145, B802)', () => {
+describe('an answer with words (T145, T802)', () => {
   it('the choices picked and what you wrote in the box go as one answer, whichever you send with', () => {
     const a = page()
     a.drafts.getState().set('p', replyDraft('T5'), 'and keep the old one a week')

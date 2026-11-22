@@ -1,5 +1,5 @@
 """Voice notes being turned into words in the background. You can send before the words are in: the message goes at
-once with its recording; the words come into the note's one record (state.voices, B682) as they are worked out, and
+once with its recording; the words come into the note's one record (state.voices, T682) as they are worked out, and
 agents and the organizer get the input then.
 
 What transcription found (its words, what may be misheard, its times, and every step that ran with its model, its
@@ -186,7 +186,7 @@ class VoiceJobs:
             job.early = words
             self.record(fid, WAIT, early=words)
 
-    # -- the note's one record (B682) ---------------------------------------------------
+    # -- the note's one record (T682) ---------------------------------------------------
 
     def record(self, fid: str, state: str, said: str = "", tidied: str = "", early: str = "", err: str = "",
                late: bool = False) -> None:

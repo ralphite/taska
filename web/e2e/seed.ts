@@ -77,7 +77,7 @@ export async function open(page: Page, p: Project, path = '') {
   await drawn(page)
 }
 export async function drawn(page: Page) {
-  // a document on the phone has no box over it (B643): its words say it is drawn, a web page's frame (F432) its own
+  // a document on the phone has no box over it (T643): its words say it is drawn, a web page's frame (T432) its own
   await page.locator('#list article[data-n], #list [data-zone], #composer textarea, [data-part="settings"], [data-part="help"], [data-part="tasks"] h2, [data-doc-blocks] section, iframe[srcdoc]').filter({ visible: true }).first().waitFor()
 }
 /** The page done moving: no transition or animation running (but those that never end, a pulse), and two frames drawn

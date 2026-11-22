@@ -17,7 +17,7 @@ from ..domain.text import plain_key
 from .messages import Request, Response, as_json, redirect, text
 
 _KEY_PATH = re.compile(r"/k/([A-Za-z0-9-]+)(/.*)?")
-# a file asked for by a web page document (B790): its sandboxed frame is no site, so it sends no cookie and its
+# a file asked for by a web page document (T790): its sandboxed frame is no site, so it sends no cookie and its
 # requests come cross-site; the project's files pass (`files_cap`) lets it have that project's files and nothing else
 _FRAME_FILE = re.compile(r"/p/([A-Za-z0-9_-]+)/f/[^/?#]+\?cap=([0-9a-f]+)")
 LOGIN_PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -43,7 +43,7 @@ class Access:
         return {"Set-Cookie": f"taska_key={self._key()}; Path=/; Max-Age=34560000; HttpOnly; SameSite=Lax{secure}"}
 
     def files_cap(self, slug: str) -> str:
-        """The pass a web page document's frame puts on the files of project `slug` it asks for (B790): made from the
+        """The pass a web page document's frame puts on the files of project `slug` it asks for (T790): made from the
         key, so it changes with it, and good for that project's files only."""
         return hmac.new(plain_key(self._key()).encode(), f"files {slug}".encode(), hashlib.sha256).hexdigest()[:24]
 
@@ -56,7 +56,7 @@ class Access:
         if framed and hmac.compare_digest(framed.group(2), self.files_cap(framed.group(1))):
             req.prefix = ""
             return req
-        # a visit from another app opens the page (B841: one app's browser says its visits are for "empty"); a frame
+        # a visit from another app opens the page (T841: one app's browser says its visits are for "empty"); a frame
         # in another site is not one
         visit = req.method in ("GET", "HEAD") and req.header("Sec-Fetch-Mode") == "navigate" \
             and req.headers.get("Sec-Fetch-Dest") in ("document", "empty", None)

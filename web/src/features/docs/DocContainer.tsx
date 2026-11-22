@@ -86,7 +86,7 @@ export function useDoc(slug: string, dn: number) {
     toggle: (tk) => docs.toggle(tk),
     away: (tk) => docs.away(tk),
     pick: (key, quote, by) => docs.pick(key, quote, by),
-    // a place's Voice, and its recording strip's ✕, ✓ (the phone sends) and ↑ (B498)
+    // a place's Voice, and its recording strip's ✕, ✓ (the phone sends) and ↑ (T498)
     say: (key, quote) => void app.docVoice.say(slug, dn, key, quote ?? d?.blocks.find((b) => b.key === key)?.text ?? ''),
     sayCancel: () => void app.voice.cancel(),
     sayCheck: () => void app.docVoice.check(),
@@ -107,7 +107,7 @@ export function useDoc(slug: string, dn: number) {
   return { m, d, facts, env, on, v, desk, page, aimed }
 }
 
-/** A web page's text: a big one's (B756: not in the project's view) once it came, asked for again until it does. */
+/** A web page's text: a big one's (T756: not in the project's view) once it came, asked for again until it does. */
 function usePageText(slug: string, d: Doc): string | null {
   const app = useServices('docs')
   const k = `${slug} ${d.d} ${d.t1}`
@@ -134,7 +134,7 @@ function usePageText(slug: string, d: Doc): string | null {
 }
 
 /** A web page document's own view, with its threads. */
-function WebPageContainer({ slug, cap, d, v, seen, env, on, waiting }: { slug: string; /** the project's files pass (B790) */ cap: string; d: Doc; v: DocViewState; seen: Readonly<Record<string, string>>; env: DocEnv; on: DocEvents; waiting: readonly NotSent[] }) {
+function WebPageContainer({ slug, cap, d, v, seen, env, on, waiting }: { slug: string; /** the project's files pass (T790) */ cap: string; d: Doc; v: DocViewState; seen: Readonly<Record<string, string>>; env: DocEnv; on: DocEvents; waiting: readonly NotSent[] }) {
   const app = useServices('actions', 'docVoice', 'docs', 'fields', 'voice')
   const stores = useStores('docView', 'recording', 'sheet')
   const asked = useStoreValue(stores.sheet, (s) => s.asked)
@@ -187,7 +187,7 @@ function WebPageContainer({ slug, cap, d, v, seen, env, on, waiting }: { slug: s
 }
 
 /** The desktop's pane with a document. */
-export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside, talk = null }: { route: ProjectRoute; dn: number; place: string; hidden?: boolean; bodyRef?: (el: HTMLElement | null) => void; /** wide: the document on the left, its task's talk on the right */ beside?: (view: ReactNode, web: boolean) => ReactNode; /** that talk: the button to its end over it (F716) */ talk?: HTMLElement | null }) {
+export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside, talk = null }: { route: ProjectRoute; dn: number; place: string; hidden?: boolean; bodyRef?: (el: HTMLElement | null) => void; /** wide: the document on the left, its task's talk on the right */ beside?: (view: ReactNode, web: boolean) => ReactNode; /** that talk: the button to its end over it (T716) */ talk?: HTMLElement | null }) {
   const app = useServices('docEditor', 'docs')
   const stores = useStores('docView', 'route', 'sheet')
   const pane = usePaneRef('detail')

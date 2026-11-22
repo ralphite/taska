@@ -1,6 +1,6 @@
 // The desktop pane's bar over a document: what it is (D4 and its title, or Editing), what can be done to it (Comment
 // mode and Full screen for a web page, Copy, Edit, Move, Delete), and the way back, first and plain to see. A narrow
-// bar (B547: a 1100 wide window) keeps the buttons' icons and says their words under the pointer, so the title stays
+// bar (T547: a 1100 wide window) keeps the buttons' icons and says their words under the pointer, so the title stays
 // and nothing is cut.
 // Props only.
 
@@ -12,7 +12,7 @@ import type { IconName } from '../../ui/icon-paths'
 import { SEP_V } from '../../ui/tones'
 
 // words shown only when the bar has room (the pane's header is the container "bar"); a web page's bar has one button
-// more (Full screen, F751), so its words need more room before the title is squeezed out
+// more (Full screen, T751), so its words need more room before the title is squeezed out
 const WIDE = 'hidden @2xl/bar:inline'
 const WIDER = 'hidden @4xl/bar:inline'
 

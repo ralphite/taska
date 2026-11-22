@@ -62,7 +62,7 @@ export interface Answers {
   pictureSizes: Record<string, [number, number]>
   activity: LogRow[]
   diagramFailed: Ok & { result: string }
-  /** I833: relay, a connected session of its app is handed it; else `text` is what to give a new session */
+  /** T833: relay, a connected session of its app is handed it; else `text` is what to give a new session */
   reconnect: Ok & { relay: boolean; text?: string }
   pageLog: Ok
   sharedRules: SharedRule[]
@@ -129,7 +129,7 @@ export class TaskaApi {
     return this.http.json(P(slug) + 'words?' + q.toString(), wait ? { method: 'POST', timeout: 60000 } : {})
   }
 
-  /** A task's card, word for word what an agent reading it gets (F568); read with ui=1, so it is no agent's visit. */
+  /** A task's card, word for word what an agent reading it gets (T568); read with ui=1, so it is no agent's visit. */
   card(slug: string, code: string): Promise<string> {
     return this.http.text(`/p/${encodeURIComponent(slug)}/${encodeURIComponent(code)}?ui=1`)
   }
@@ -163,7 +163,7 @@ export class TaskaApi {
     return this.http.json('/api/projects/deleted')
   }
 
-  /** Shared rules (I779): each with its text, sections and the projects that put it in. */
+  /** Shared rules (T779): each with its text, sections and the projects that put it in. */
   sharedRules(): Promise<Answers['sharedRules']> {
     return this.http.json('/api/shared-rules')
   }
@@ -180,7 +180,7 @@ export class TaskaApi {
     return this.http.json('/api/needs')
   }
 
-  /** The search (F479: Home's, ⌘K, the phone's): what the words find in every project, by meaning and by the words;
+  /** The search (T479: Home's, ⌘K, the phone's): what the words find in every project, by meaning and by the words;
    * `here`: the project you are in. */
   find(q: string, here: string): Promise<Answers['find']> {
     return this.http.json(`/api/find?q=${encodeURIComponent(q)}&here=${encodeURIComponent(here)}`, { timeout: 60000 })
@@ -246,7 +246,7 @@ export class TaskaApi {
     return this.http.json('/api/voicetidy', { method: 'POST', body: { on } })
   }
 
-  /** F765: the Gemini API key set in Settings ("" forgets it); Taska restarts to use it when `restart`. */
+  /** T765: the Gemini API key set in Settings ("" forgets it); Taska restarts to use it when `restart`. */
   setGemini(key: string): Promise<Answers['setGemini']> {
     return this.http.json('/api/gemini', { method: 'POST', body: { key } })
   }
@@ -256,7 +256,7 @@ export class TaskaApi {
     return this.http.json('/api/key', { method: 'POST' })
   }
 
-  /** A big web page document's text (B756: not in the view), each version once: the browser keeps it. */
+  /** A big web page document's text (T756: not in the view), each version once: the browser keeps it. */
   docText(slug: string, d: number, t1: string): Promise<string> {
     return this.http.text(P(slug) + `doc?d=${d}&t=${encodeURIComponent(t1)}`, { timeout: 180000, cache: true })
   }
@@ -271,12 +271,12 @@ export class TaskaApi {
     return this.http.json(P(slug) + `activity?n=${n}` + (before ? `&before=${before}` : ''))
   }
 
-  /** A document's diagram that did not draw (B714 r1181): Taska tells the agent that wrote it, once. */
+  /** A document's diagram that did not draw (T714 r1181): Taska tells the agent that wrote it, once. */
   diagramFailed(slug: string, body: { d: number; v: number; key: string; error: string }): Promise<Answers['diagramFailed']> {
     return this.http.json(P(slug) + 'diagram-failed', { method: 'POST', body })
   }
 
-  /** Bring back an agent session that lost its connection (I833), by the id its app knows it by. */
+  /** Bring back an agent session that lost its connection (T833), by the id its app knows it by. */
   reconnect(slug: string, sid: string): Promise<Answers['reconnect']> {
     return this.http.json(P(slug) + 'reconnect', { method: 'POST', body: { sid } })
   }

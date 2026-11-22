@@ -1,5 +1,5 @@
 // A task dragged in the list (the desktop, with a mouse): onto a row to go under it, near a row's top or bottom to go
-// before or after it in the list's order (work in review too, B754), off every row to stand on its own, onto another
+// before or after it in the list's order (work in review too, T754), off every row to stand on its own, onto another
 // project in the sidebar to move there (with its subtasks).
 
 import { closed, dropOn } from '../../model/tasks'

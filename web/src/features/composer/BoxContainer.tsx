@@ -30,7 +30,7 @@ export function BoxContainer({ route, composePage, boxRef, bare = false }: { rou
   }, [app, stores, key, role.scope, bare])
   const recording = useStoreValue(stores.recording, (s) => s.rec)
   // the recording shows in the box wherever you are (it goes to the draft it was started in), except one whose own
-  // strip is in sight (B498, B720)
+  // strip is in sight (T498, T720)
   const inBox = !!recording && boxShowsRecording(recording, { place: route.place, list: desk && composePage, key })
   const rec = recording && recording.slug === route.slug && inBox ? { time: clock(recording.ms), levels: recording.levels, from: recording.from } : null
   const drafts = useStoreValue(stores.drafts, (s) => s.bySlug[route.slug]) || EMPTY
@@ -45,7 +45,7 @@ export function BoxContainer({ route, composePage, boxRef, bare = false }: { rou
     if (mode?.kind === 'comment') return void app.docComments.saveComment(route.slug, mode.d, mode.id, key)
     if (shown.voiceComments && role.doc != null) return void app.docVoice.post(route.slug, role.doc, key) // each quote's words, a comment on its passage
     if (role.aim) return void app.docComments.comment(route.slug, role.aim.d, role.aim.target, key)
-    // on a task with its question's choices picked: they go with what you wrote, as one answer (B145)
+    // on a task with its question's choices picked: they go with what you wrote, as one answer (T145)
     const it = role.scope && m ? m.byN.get(liveN(m, Number(role.scope.slice(1)))) : undefined
     void app.box.send(route.slug, m, role.scope, key, it && m ? app.answers.picks(m, route.slug, it) : null)
   }

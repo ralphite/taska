@@ -25,7 +25,7 @@ export interface RowSwipe {
 const still = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 const layer = (el: HTMLElement, which: 'left' | 'right') => el.parentElement?.querySelector<HTMLElement>(`[data-swipe-${which}]`) ?? null
 
-/** A swipe that ended (F846): right, whether the row had a way forward; left, the ways back opened; hold, a long
+/** A swipe that ended (T846): right, whether the row had a way forward; left, the ways back opened; hold, a long
  * press that opened the row's menu. The page's log
  * listens for it (app/page/pageActions), as it does for taps. */
 export const SWIPED = 'rowswipe'

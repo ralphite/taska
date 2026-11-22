@@ -83,7 +83,7 @@ export class Navigation {
     this.route.getState().go(projectPath(r.slug, tab, place, list), push, push && searching ? ['search'] : undefined, from, place.kind === 'task' || place.kind === 'doc' ? tab : undefined)
   }
 
-  /** The phone's search (F479): a result opens over it (a step Back comes back to it, as you left it). */
+  /** The phone's search (T479): a result opens over it (a step Back comes back to it, as you left it). */
   fromSearch(url: string): void {
     this.route.getState().go(url, true, ['search'])
   }
@@ -251,7 +251,7 @@ export class Navigation {
     this.go(tab ?? (r.tab === 'inputs' ? 'tasks' : r.tab), { kind: 'doc', d }, r.list, !(r.place.kind === 'doc' && r.place.d === d))
   }
 
-  /** The rules (I693): the document (`at` ''), its history, a version, a proposal (model/rules: rulesSeg). */
+  /** The rules (T693): the document (`at` ''), its history, a version, a proposal (model/rules: rulesSeg). */
   rules(at: string, push: boolean): void {
     const r = this.here()
     if (!r) return

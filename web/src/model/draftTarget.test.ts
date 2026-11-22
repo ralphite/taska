@@ -14,7 +14,7 @@ describe('draft targets', () => {
   })
   it('name them as the page says them', () => {
     expect(draftName('new')).toBe('a new input')
-    expect(draftName('B12')).toBe('B12')
+    expect(draftName('T12')).toBe('T12')
     expect(draftName('edit r461')).toBe('the edit of #461')
     expect(draftName('append r461')).toBe('the details for #461')
     expect(draftName('correct r3')).toBe('the correction in #3')

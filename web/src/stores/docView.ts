@@ -20,7 +20,7 @@ export interface DocViewState {
   circle: boolean
   /** a web page's Comment mode */
   inspect: boolean
-  /** a web page over all of the window (F751) */
+  /** a web page over all of the window (T751) */
   full: boolean
   /** the phone's box is shown to type a comment */
   typing: boolean

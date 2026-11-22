@@ -1,6 +1,6 @@
 // The desktop's New input page under the box, with the page's data: what you said lately (a page more at a time, each
 // opened in full when asked), what is on its way, and the draft over it while a voice note's words are there to check;
-// more being said into one of them on its line (F657), and on its way there.
+// more being said into one of them on its line (T657), and on its way there.
 
 import { useMemo, useState, type ReactNode } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
@@ -38,7 +38,7 @@ export type SaidView = ReturnType<typeof useSaidView>
 export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: ProjectRoute; boxKey: DraftKey; view: SaidView; draft: ReactNode }) {
   const app = useServices('box', 'docs', 'fields', 'inputActions', 'inputs', 'nav', 'sheets', 'voice')
   const stores = useStores('box', 'recording', 'data', 'drafts', 'outbox', 'ui')
-  // a voice note being recorded into a new input here: its row comes first, with how long so far (B627)
+  // a voice note being recorded into a new input here: its row comes first, with how long so far (T627)
   // more being said into one of them, on its line (its Voice): which
   const adding = useStoreValue(stores.recording, (st) => {
     const t = st.rec && st.rec.slug === route.slug ? draftTarget(st.rec.key) : null

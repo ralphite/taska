@@ -1,5 +1,5 @@
 // The bar on selected words: speak a comment about them (the bar becomes its recording strip, where it is: ✕, ✓ and
-// on the desktop ↑, as on any place picked to comment on, B498), comment on them (a document's words), correct them (a voice note's
+// on the desktop ↑, as on any place picked to comment on, T498), comment on them (a document's words), correct them (a voice note's
 // words). It sits under the words, or over them when there is no room below; a
 // press on it keeps the selection. Props only.
 
@@ -54,7 +54,7 @@ export function SelectionBar({ at, recording, desk = true, meter, comment, fix, 
       </div>
     )
   }
-  // the same small white buttons as beside a paragraph (B708, r1153: not a black pill); on the phone made for a thumb
+  // the same small white buttons as beside a paragraph (T708, r1153: not a black pill); on the phone made for a thumb
   const size = desk ? 'size-7' : 'size-10'
   const btn = PLACE_BUTTON.replace('size-7', size)
   return (

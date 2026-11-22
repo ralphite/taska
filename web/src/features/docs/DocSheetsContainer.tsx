@@ -1,5 +1,5 @@
 // A document's sheets with the page's data: putting it on another task, moving one of its comments, restoring a
-// version of the rules, putting shared rules into them (I779).
+// version of the rules, putting shared rules into them (T779).
 
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { useCloseSheetWhen, useProjectModel, useProjectRoute } from '../../app/hooks'
@@ -106,7 +106,7 @@ export function DocEditSheet({ req }: Req<'doc-edit'>) {
   return <SheetLayout title={d ? `D${d.d}` : `New doc on ${codeOf(m, (req as { n: number }).n)}`} body={<DocEditContainer slug={slug} />} />
 }
 
-/** Restoring a version of the rules asks once: it becomes the next version (I693). */
+/** Restoring a version of the rules asks once: it becomes the next version (T693). */
 export function RulesRestoreSheet({ req }: Req<'rules-restore'>) {
   const app = useServices('rules', 'sheets')
   const slug = useProjectRoute()?.slug ?? ''

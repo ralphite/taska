@@ -31,7 +31,7 @@ export interface CardEvents extends TalkEvents {
   modify(n: number): void
   cancelModify(): void
   sendAnswer(n: number): void
-  /** your answers to some of the questions in a row (`of`), as one reply (B749) */
+  /** your answers to some of the questions in a row (`of`), as one reply (T749) */
   sendRow(n: number, of: number[], text: string): void
   /** answer a question again; cancel leaves the answer as it was */
   reask(n: number, id: number): void
@@ -145,7 +145,7 @@ export function NeedsCard({ it, env, on, remodify, going = null, rowGoing = null
   const card = (icon: IconName, title: ReactNode, body: ReactNode, buttons: ReactNode, hint = '') => (
     <NeedFrame icon={icon} title={title} t={m?.t} quiet={icon === 'ask'} body={body} foot={buttons} hint={hint} now={env.now} />
   )
-  // questions in a row: one card (B749)
+  // questions in a row: one card (T749)
   const row = kind === 'question' ? askRowOf(it.thread, it.wait?.id) : null
   if (row) return <AskRowCard it={it} row={row} env={env} on={on} going={rowGoing} />
   if (kind === 'question' && it.wait) {

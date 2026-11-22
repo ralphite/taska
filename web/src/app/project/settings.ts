@@ -187,7 +187,7 @@ export class Settings {
     if (await this.spell({ wrong })) this.d.toasts.show(`Forgot “${wrong}”`, () => this.spell({ wrong, right: c.right }))
   }
 
-  /** The switch moves at once and goes back only if Taska says no (B645: nothing waits on Taska). */
+  /** The switch moves at once and goes back only if Taska says no (T645: nothing waits on Taska). */
   async toggleTidy(): Promise<void> {
     const was = this.s.prefs
     const tidy = !was?.tidy
@@ -230,7 +230,7 @@ export class Settings {
     }
   }
 
-  // ---- the Gemini API key (F765)
+  // ---- the Gemini API key (T765)
 
   /** Keep a key ("" forgets the one set here): Google checks it first; Taska restarts to use it and the page
    * comes back by itself. */

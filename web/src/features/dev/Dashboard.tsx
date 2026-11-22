@@ -1,5 +1,5 @@
 // The dashboard for making Taska, on this computer only (/dev/dashboard): what you did in Taska, from its log, worked
-// out each time it opens; the panels agents and scripts keep up to date, how long each task took and its tokens (F576),
+// out each time it opens; the panels agents and scripts keep up to date, how long each task took and its tokens (T576),
 // what each task cost to make and the analyses agents wrote. Counts and times only, never your words. Props only.
 
 import type { ReactNode } from 'react'
@@ -76,7 +76,7 @@ function RoundBars({ rows, value, label }: { rows: Round[]; value(r: Round): num
   )
 }
 
-/** How long each task took, from started to handed over, and its tokens (F576): the rounds of the time picked, how
+/** How long each task took, from started to handed over, and its tokens (T576): the rounds of the time picked, how
  * they spread over groups of time, and each one. */
 function Rounds({ all, range, now, onRange }: { all: Round[]; range: string; now: number; onRange(r: string): void }) {
   const rs = roundsIn(all, range, now)

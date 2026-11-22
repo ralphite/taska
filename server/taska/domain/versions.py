@@ -1,4 +1,4 @@
-"""The rules document's versions, read back from the log (I693), as Nota derives them: every write is kept in the log,
+"""The rules document's versions, read back from the log (T693), as Nota derives them: every write is kept in the log,
 and the writes of one writer less than 10 minutes apart are one version (it keeps every why, newest first). A
 restore and an approved proposal stand alone; a write taken back (undo) and its undo are no
 version. Pure functions of the state.

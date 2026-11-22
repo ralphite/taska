@@ -1,7 +1,7 @@
-// The Rules tab with the page's data (I693): the project's rules document read (its paragraphs' comments as on any
+// The Rules tab with the page's data (T693): the project's rules document read (its paragraphs' comments as on any
 // document, an agent's proposals waiting above it), edited whole with why, its history by day, one version with its
 // changes marked, compared with now and restored, and a proposal opened, approved or declined. Its lines `{{name}}`
-// read as the shared rules they put in, opened in place; the editor inserts one (I779). A shared rule's own page is
+// read as the shared rules they put in, opened in place; the editor inserts one (T779). A shared rule's own page is
 // this too, with its name, the way back and the projects that use it. The screens are RulesScreens'; this gives them
 // the model and what their buttons do.
 
@@ -124,7 +124,7 @@ export function RulesContainer({ route, place, hidden, footRoom = 0 }: { route: 
 }
 
 /** The editor with the page's data: the text being edited (the rules' own until you change it), Speak, Discard, Save
- * with the why; a project's rules also Insert shared rules, and say a line whose name is not found (I779). */
+ * with the why; a project's rules also Insert shared rules, and say a line whose name is not found (T779). */
 function RulesEditor({ d, f, shared, insertable }: { d: Doc | undefined; f: RulesFrame; shared: readonly SharedRule[] | null; insertable: boolean }) {
   const app = useServices('dictation', 'fields', 'rules', 'sheets')
   const stores = useStores('dictation', 'docView')

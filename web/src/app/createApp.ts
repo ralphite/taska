@@ -88,7 +88,7 @@ export interface App {
   seen: Seen
   /** the list's tasks in the order it shows them, for Previous and Next */
   listOrder: ListOrder
-  /** the search: listening, writing out, searching every project (F479; Home's field, ⌘K, the phone's page) */
+  /** the search: listening, writing out, searching every project (T479; Home's field, ⌘K, the phone's page) */
   finder: Finder
   /** answering an agent's question by its choices */
   answers: Answers
@@ -121,9 +121,9 @@ export interface App {
   restores: Restores
   /** a document as you read it: open, close, what a comment goes to, its threads */
   docs: Docs
-  /** the project's rules (I693): edited with why, restored, proposals decided, its pages */
+  /** the project's rules (T693): edited with why, restored, proposals decided, its pages */
   rules: Rules
-  /** the shared rules (I779): listed, made, opened, a line put into the rules being edited */
+  /** the shared rules (T779): listed, made, opened, a line put into the rules being edited */
   sharedRules: SharedRules
   docComments: DocComments
   /** a document's choices, ticked and sent */

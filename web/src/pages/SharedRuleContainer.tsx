@@ -1,4 +1,4 @@
-// A shared rule's page (I779): its address is its own (/p/~<id>/rules) and it is the Rules tab of a project's rules,
+// A shared rule's page (T779): its address is its own (/p/~<id>/rules) and it is the Rules tab of a project's rules,
 // so it reads, comments, edits, keeps its versions and restores them the same way. On the desktop Settings' column of
 // sections stays beside it (Shared rules current); on the phone it is a page of Settings, Back to the list. The box
 // under it comments on it, as under a project's rules.

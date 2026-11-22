@@ -1,4 +1,4 @@
-// The search (F479). The phone: the magnifier opens its page and its box records at once; the up arrow stops, the
+// The search (T479). The phone: the magnifier opens its page and its box records at once; the up arrow stops, the
 // words are written out (the voice notes' own way: up, then their words, with the words two models heard
 // differently), and it searches every project (by meaning, then by the words: one step). Saying more puts the new
 // words at the end and searches all of them again; a misheard word set right, or words typed, search again. The

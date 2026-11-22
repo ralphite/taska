@@ -8,7 +8,7 @@ import { refusals, type Refused } from './storage'
 export interface KeptNote {
   id: string
   project: string
-  /** the draft it is in ("new", "B12", "doc 4", "edit r12"...) */
+  /** the draft it is in ("new", "T12", "doc 4", "edit r12"...) */
   key: string | null
   scope: string | null
   name: string

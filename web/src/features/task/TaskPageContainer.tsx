@@ -38,7 +38,7 @@ export function openTaskMenu(app: Pick<App, 'sheets'>, desk: boolean, n: number,
   else app.sheets.open({ kind: 'task-menu', n, arm }, { focus: false })
 }
 
-export function TaskPageContainer({ it, m, slug, tab, desk, left = null, bare = false, preview = false, onTalk }: { it: Task; m: ProjectModel; slug: string; tab: Tab; desk: boolean; /** in two columns, its document on the left */ left?: ReactNode; bare?: boolean; /** the search's preview of it: read only, not counted as seen or opened */ preview?: boolean; /** its talk's element, for the pane's button to its end (F716) */ onTalk?(el: HTMLElement | null): void }) {
+export function TaskPageContainer({ it, m, slug, tab, desk, left = null, bare = false, preview = false, onTalk }: { it: Task; m: ProjectModel; slug: string; tab: Tab; desk: boolean; /** in two columns, its document on the left */ left?: ReactNode; bare?: boolean; /** the search's preview of it: read only, not counted as seen or opened */ preview?: boolean; /** its talk's element, for the pane's button to its end (T716) */ onTalk?(el: HTMLElement | null): void }) {
   const app = useServices('answers', 'box', 'docs', 'fields', 'inputs', 'taskEdits', 'tasks', 'nav', 'runner', 'seen', 'sheets', 'toasts')
   const stores = useStores('data', 'docTicks', 'grips', 'taskView', 'keptEdits', 'outbox', 'recent', 'ui')
   const projects = useStoreValue(stores.data, (s) => s.projects)
@@ -51,7 +51,7 @@ export function TaskPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   const away = useAway(slug)
   const world = useTaskWorld(m, slug)
   const n = it.n
-  // the talk: for the keys (Space scrolls it) and for the pane round it (its button to the end, F716)
+  // the talk: for the keys (Space scrolls it) and for the pane round it (its button to the end, T716)
   const fieldRef = app.fields.ref('talk')
   const talkRef = useCallback(
     (el: HTMLElement | null) => {

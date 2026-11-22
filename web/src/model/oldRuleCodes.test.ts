@@ -1,4 +1,4 @@
-// I693 r1128: old texts keep their rule codes (R055) as plain words, no longer links; inputs are r12 / #12.
+// T693 r1128: old texts keep their rule codes (R055) as plain words, no longer links; inputs are r12 / #12.
 import { expect, test } from 'vitest'
 import { input, modelOf } from '../stories/fixtures'
 import { findRef } from './project'

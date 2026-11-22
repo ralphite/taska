@@ -1,4 +1,4 @@
-// Yadong's requirements on web page documents (F432; D29, "Documents"; T475, D45): each check is named by the codes of
+// Yadong's requirements on web page documents (T432; D29, "Documents"; T475, D45): each check is named by the codes of
 // his inputs, so a change that breaks one is stopped before it ships with his own words.
 // guards: src/features/docs/ src/app/docs/ src/app/voice/ src/model/docs.ts src/model/voiceComments.ts src/app/actions.ts src/app/keys.ts src/ui/PlaceVoice.tsx src/app/RecMeter.tsx
 import { expect, test, type Page } from '@playwright/test'
@@ -29,7 +29,7 @@ const PAGE = `${LOOP.then}T4 html Plan page
 `
 const A = 'h:body>p:nth-child(2)'
 
-test('r688: a comment shows the part it is on: under the pointer and open; a click anywhere else closes it (B503)', async ({
+test('r688: a comment shows the part it is on: under the pointer and open; a click anywhere else closes it (T503)', async ({
   page,
   request,
 }) => {
@@ -73,7 +73,7 @@ test('r688: a comment shows the part it is on: under the pointer and open; a cli
   await expect(thread).toHaveCount(0)
 })
 
-test('r562: in Comment mode a click picks the part even before the page has heard the mode is on (F432)', async ({
+test('r562: in Comment mode a click picks the part even before the page has heard the mode is on (T432)', async ({
   page,
   request,
 }) => {
@@ -95,7 +95,7 @@ const APP = `${LOOP.then}T4 html App page
   <!doctype html><html><body style="margin:0;padding:24px;font:14px sans-serif"><div id="board" style="display:flex;gap:12px;padding:12px;border:1px solid #ccc"><div id="todo" style="flex:1;padding:8px;border:1px solid #ddd"><h3>To do</h3><div id="card1" style="padding:8px;border:1px solid #eee">Sketch the onboarding <button>Move</button></div><div id="card2" style="padding:8px;border:1px solid #eee;margin-top:8px">Write the notes <button>Move</button></div></div><div id="done" style="flex:1;padding:8px;border:1px solid #ddd"><h3>Done</h3><div id="card3" style="padding:8px;border:1px solid #eee">Fix the search <button>Move</button></div></div></div></body></html>
 `
 
-test('r684 r739: a part picked in nested HTML keeps its two buttons, reached across other parts; Esc lets another be picked (B497)', async ({
+test('r684 r739: a part picked in nested HTML keeps its two buttons, reached across other parts; Esc lets another be picked (T497)', async ({
   page,
   request,
 }) => {
@@ -146,7 +146,7 @@ test('r684 r739: a part picked in nested HTML keeps its two buttons, reached acr
   await expect(cmt).toHaveCount(1)
 })
 
-test('r685: the mic of a part records right there: it turns into Stop, the part stays the one; Esc drops it (B498)', async ({
+test('r685: the mic of a part records right there: it turns into Stop, the part stays the one; Esc drops it (T498)', async ({
   page,
   request,
 }) => {
@@ -242,8 +242,8 @@ async function countsOn(page: Page, sel: string) {
   )
 }
 /** comment on a part as you do: the desktop points at it in Comment mode and presses its comment button; the phone
- * taps it and speaks through its floating voice button (it has no box over a document, B643 r955; a tap that only
- * closes open comments first, B503) */
+ * taps it and speaks through its floating voice button (it has no box over a document, T643 r955; a tap that only
+ * closes open comments first, T503) */
 async function commentOn(page: Page, sel: string, words: string) {
   if (isDesk(page)) {
     const r = await page1(page).locator(sel).boundingBox()
@@ -269,7 +269,7 @@ async function commentOn(page: Page, sel: string, words: string) {
   await partStop(page).click() // tap again: posted
 }
 /** close the comments open in the page: a click on the document's name over it (desktop), a tap in the page (phone:
- * it only closes them, B503) */
+ * it only closes them, T503) */
 async function closeComments(page: Page, title: string) {
   if (isDesk(page)) await page.getByText(title, { exact: true }).filter({ visible: true }).first().click()
   else
@@ -306,7 +306,7 @@ test('r799: a second comment on a part joins its count while it is saved: no sec
   page,
   request,
 }) => {
-  // typed while it is saved: the desktop's (the phone speaks its comments, B643; their count is the voice test's)
+  // typed while it is saved: the desktop's (the phone speaks its comments, T643; their count is the voice test's)
   test.skip(!isDesk(page), 'the phone has no box over a document')
   const p = await project(request, { ...LOOP, then: ROWS })
   await p.op({ op: 'dc', d: 1, key: "h:[id='r2']", quote: 'Apply filter 180 ms', text: 'Why 180?' })
@@ -401,7 +401,7 @@ test('r799 r685: a spoken comment is on its part at once; on the phone the stop 
   await expect
     .poll(() => countsOn(page, '#r3').then((c) => c.filter((x) => !x.draft).length), { timeout: 2500 })
     .toBe(1)
-  if (isDesk(page)) await expect(box(page)).toHaveValue('') // the phone has no box over a document (B643)
+  if (isDesk(page)) await expect(box(page)).toHaveValue('') // the phone has no box over a document (T643)
   await expect
     .poll(async () => (await p.read('D1')).includes('part of the page: Write CSV'), { timeout: 60000 })
     .toBe(true)
@@ -430,7 +430,7 @@ test('r672: a page as tall as its window (an app) fills what the pane shows, and
   if (!one || !two) throw new Error('not drawn')
   expect(two.height).toBe(one.height)
   // the app's footer is at the bottom of what the pane shows, in view: above the input box when the box is under it
-  // (the desktop's; the phone has no box over a document, B643)
+  // (the desktop's; the phone has no box over a document, T643)
   const under = foot(page).filter({ visible: true })
   const strip = (await under.count()) ? await under.boundingBox() : null
   let end = page.viewportSize()?.height || 0
@@ -440,7 +440,7 @@ test('r672: a page as tall as its window (an app) fills what the pane shows, and
   await expect(page1(page).getByText('Footer')).toBeInViewport()
 })
 
-test('B748: a short page has at least what the pane shows: its frame, with the page\'s own background, reaches down to the box', async ({
+test('T748: a short page has at least what the pane shows: its frame, with the page\'s own background, reaches down to the box', async ({
   page,
   request,
 }) => {
@@ -496,11 +496,11 @@ test("r672 r799: a comment stays with its part when the page's own script moves 
   await expect(page.locator(PAGE_COUNTS).filter({ visible: true })).toHaveCount(0)
   // and it can still be read: under the page (a desktop wide enough has it in the conversation beside instead)
   await expect(page.getByText('Not on the page now')).toBeVisible()
-  // the desktop typed its words; the phone spoke them (B643)
+  // the desktop typed its words; the phone spoke them (T643)
   if (isDesk(page)) await expect(page.getByText('Who draws it?').filter({ visible: true }).first()).toBeVisible()
 })
 
-test('r562: a resolved thread on a web page looks done, as beside a paragraph (B12)', async ({ page, request }) => {
+test('r562: a resolved thread on a web page looks done, as beside a paragraph (T12)', async ({ page, request }) => {
   const p = await project(request, { ...LOOP, then: ROWS })
   for (const [id, quote] of [
     ['r1', 'Read list 720 ms'],
@@ -516,7 +516,7 @@ test('r562: a resolved thread on a web page looks done, as beside a paragraph (B
   await expect.poll(async () => (await bg('r1')) !== (await bg('r3'))).toBe(true) // the open one stays amber
 })
 
-test('B715 r1169: on the phone no line under a web page tells how to comment (r687 B502 asked one; Yadong deleted it)', async ({
+test('T715 r1169: on the phone no line under a web page tells how to comment (r687 T502 asked one; Yadong deleted it)', async ({
   page,
   request,
 }) => {
@@ -605,7 +605,7 @@ test("T501: a part with no room right of it has its count on its top edge, clear
   expect(await covered(page, rc, '#r1')).toBe(false)
 })
 
-test('F751 r183 r1251: Full screen puts the page over all of the window (the phone\'s screen, the desktop\'s browser window); Exit fades when left alone and brings it back', async ({
+test('T751 r183 r1251: Full screen puts the page over all of the window (the phone\'s screen, the desktop\'s browser window); Exit fades when left alone and brings it back', async ({
   page,
   request,
 }) => {

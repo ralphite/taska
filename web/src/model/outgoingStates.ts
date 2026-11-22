@@ -59,7 +59,7 @@ export const OUT_PHASES = {
   notSent: { label: 'Not sent', say: 'Not sent', tone: 'failed', voice: 'notSent', needsYou: true, show: ALL(['retry', 'edit', 'cancel'] as const) },
   // sent before a reload, its files going up again: it shows once they are up (it goes all the same)
   reloaded: { label: 'Sent before a reload, its files going up', say: 'Uploading…', tone: 'busy', voice: 'sending', needsYou: false, show: ALL(null) },
-  // cancelled (or taken back to change) while going out: deleted as soon as Taska has it (B666)
+  // cancelled (or taken back to change) while going out: deleted as soon as Taska has it (T666)
   takenBack: { label: 'Taken back while going out', say: 'Sending…', tone: 'busy', voice: null, needsYou: false, show: ALL(null) },
 } as const satisfies Record<string, PhaseDef>
 
@@ -170,7 +170,7 @@ const CHANGES: Partial<Record<OutEvent, (o: Outgoing) => Partial<Outgoing> | 're
   refused: (o) => (o.unsent ? 'remove' : { state: 'failed', net: false, tries: o.tries + 1 }),
   again: () => ({ state: 'waiting', net: false }),
   retry: () => ({ state: 'waiting', net: false }),
-  // going out right now: Taska may have it already, so it is deleted there once it answers (B666)
+  // going out right now: Taska may have it already, so it is deleted there once it answers (T666)
   edit: (o) => (inFlight(o) ? { unsent: true } : 'remove'),
   cancel: (o) => (inFlight(o) ? { unsent: true } : 'remove'),
   taken: () => 'remove',

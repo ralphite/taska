@@ -1,4 +1,4 @@
-// Skills (I821, r1406): "/" at the start of the box lists the skills (shared documents named /name) with what each is
+// Skills (T821, r1406): "/" at the start of the box lists the skills (shared documents named /name) with what each is
 // for; the letters typed narrow it; ↵ puts the skill's name and a space in the box; what is sent with it comes to the
 // agents with the skill's text under it. Esc closes the list.
 // A row shows the name without its "/", as Codex does (r1424).
@@ -16,7 +16,7 @@ async function skill(request: APIRequestContext, md: string) {
   return name
 }
 
-test('I821: "/" lists the skills, ↵ takes one, and the agents read its text with the words sent', async ({ page, request }) => {
+test('T821: "/" lists the skills, ↵ takes one, and the agents read its text with the words sent', async ({ page, request }) => {
   const name = await skill(request, '回答问题，只答不做。\n\n- 只回答，不改代码、不改文档、不新建事项。')
   const p = await project(request)
   await open(page, p, '')
@@ -36,7 +36,7 @@ test('I821: "/" lists the skills, ↵ takes one, and the agents read its text wi
   expect(await p.read('inbox?by=claude-code')).toContain('只回答，不改代码')
 })
 
-test('I821: Esc closes the list; other words show none', async ({ page, request }) => {
+test('T821: Esc closes the list; other words show none', async ({ page, request }) => {
   const name = await skill(request, 'Answer only.')
   const p = await project(request)
   await open(page, p, '')
@@ -56,10 +56,10 @@ test('I821: Esc closes the list; other words show none', async ({ page, request 
   await expect(page.getByRole('option').filter({ visible: true })).toHaveCount(0)
 })
 
-// I834 (r1428 r1438): + opens a card of the ways to add files (the phone: Camera, Photos, Files, each its own row;
+// T834 (r1428 r1438): + opens a card of the ways to add files (the phone: Camera, Photos, Files, each its own row;
 // the desktop: Files) and, under them, the skills; picking one puts its name in the box, as "/" does; Files picks
 // files; a tap elsewhere closes the card.
-test('I834: + opens files and the skills; a skill picked goes in the box', async ({ page, request }) => {
+test('T834: + opens files and the skills; a skill picked goes in the box', async ({ page, request }) => {
   const name = await skill(request, 'Answer only.')
   const p = await project(request)
   await open(page, p, '')

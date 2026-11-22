@@ -29,7 +29,7 @@ from .access import Access
 from .messages import NOT_FOUND, Request, Response, TooLarge, as_json, redirect, text
 from .static import PageFiles
 
-PROJECT_PATH = re.compile(r"/p/(~?[a-z0-9][a-z0-9-]*)(/.*)?")  # ~<id>: one of the shared rules (I779)
+PROJECT_PATH = re.compile(r"/p/(~?[a-z0-9][a-z0-9-]*)(/.*)?")  # ~<id>: one of the shared rules (T779)
 # the page's views: a browser opening one gets the page there
 VIEW_PATH = re.compile(r"/(inputs|archive|rules(?:/[a-z0-9/]+)?|new|settings|phone|notifications|spellings|log|deleted|"
                        r"docs|about|projects|organizer|shared|[A-Za-z]\d+)")
@@ -192,7 +192,7 @@ class AppContext:
     # -- the request log ------------------------------------------------------------------
 
     def note_request(self, req: Request, status: int, ms: int) -> None:
-        """What is worth reading later: an agent's calls, every request that changes something (F846 r1451), and
+        """What is worth reading later: an agent's calls, every request that changes something (T846 r1451), and
         whatever failed or was slow."""
         path = re.sub(r"/k/[^/?]+", "/k/…", re.sub(r"([?&](?:key|cap)=)[^&]*", r"\1…", req.raw_path))
         bare = path.split("?")[0]
@@ -219,7 +219,7 @@ class AppContext:
 
 
 def turned_away(req: Request, status: int) -> Dict[str, str]:
-    """Where a request turned away (401, 403) came from and how it was asked (B830: six refused cross-site could not be
+    """Where a request turned away (401, 403) came from and how it was asked (T830: six refused cross-site could not be
     told apart): the asking page's origin only, as its address may hold the key."""
     if status not in (401, 403):
         return {}

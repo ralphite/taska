@@ -2,18 +2,18 @@
 
 What a task's status means, who moves it, and the rule that keeps exactly one side responsible at any moment.
 
-The diagram is drawn from the table in `server/taska/domain/task_states.py` (B816), the one place that says which
+The diagram is drawn from the table in `server/taska/domain/task_states.py` (T816), the one place that says which
 changes are allowed and by whom; a test fails when the two differ (r1398). The user may make any change; the
 organizer any but putting a task in review; an agent may not approve a proposal (only take its own back), may not
 reopen what the user dropped, and its done is review. An agent is told of a change of the user's only when the user
 closes or drops a task it is doing: its next `/next` says `stop` (once, before anything but new inputs). An
 approval needs no telling: the task joins the queue and wakes an agent waiting for work. An agent's done takes back
 its own open question, so a task never waits for an answer and an acceptance at once.
-Words the user writes on a task give the agent its turn: on a proposal they approve it (B818; the user presses
+Words the user writes on a task give the agent its turn: on a proposal they approve it (T818; the user presses
 Won't do when they do not want it), on a task in review or done they set it back to open. An agent's words change
 no status.
 A subtask an agent makes from the user's words (`new ... parent=B03 src=r12`, r12 an input of the user's) starts
-open: the user asked for it (B818).
+open: the user asked for it (T818).
 
 ```mermaid
 stateDiagram-v2
@@ -74,5 +74,5 @@ not spoken since (the card stays where it was, faded, its buttons disabled, r100
 ## One side responsible at a time
 
 - `doing` is only for work an agent session is doing now. An agent that hands back a result sets the task done (it goes to review) or asks; a result never sits in `doing` (T646). The agent guide says this in its LOOP part. Asking does not change the status by itself (D110, Yadong revoked that rule).
-- Words from the user move the turn to the agent: on a proposal they approve it (B818), on a task in review they set it back to open (as Not yet does, D110), and `/next` gives a task first only while an agent is working on it; other replies wait their turn by priority (B606).
+- Words from the user move the turn to the agent: on a proposal they approve it (T818), on a task in review they set it back to open (as Not yet does, D110), and `/next` gives a task first only while an agent is working on it; other replies wait their turn by priority (T606).
 - An agent that stops working on a task sets it back to open.

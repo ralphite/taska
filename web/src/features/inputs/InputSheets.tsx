@@ -1,5 +1,5 @@
 // Sheets about what you said: an input's menu (Send, for a recording kept as cancelled; Edit, Add more, its original words, Undo organizing, Move to…,
-// History, Put with a task…, Take off a file, Delete: red and last, it asks again in place, B666), its versions, a voice
+// History, Put with a task…, Take off a file, Delete: red and last, it asks again in place, T666), its versions, a voice
 // note's original words. Props only.
 
 import type { ReactNode } from 'react'
@@ -30,7 +30,7 @@ export interface InputMenuEvents {
 
 export interface InputMenuFacts {
   r: Input
-  /** a recording kept as cancelled: Send sends it after all, and it is put with no task until then (B627) */
+  /** a recording kept as cancelled: Send sends it after all, and it is put with no task until then (T627) */
   send: boolean
   /** Original words for each voice note (the phone: the desktop shows them under the pointer) */
   tidy: boolean
@@ -105,7 +105,7 @@ export function historySheet(r: Input, now: number, world: InlineWorld): SheetPa
   }
 }
 
-/** A voice note's words (F568, T697, B727): each step in the order its words came, the first in full and each later
+/** A voice note's words (T568, T697, T727): each step in the order its words came, the first in full and each later
  * one only as what it changed, ending with the tidied words agents get. */
 export function asSaidSheet(heard: string, tr: string, steps: VoiceStep[] = []): SheetParts {
   return {

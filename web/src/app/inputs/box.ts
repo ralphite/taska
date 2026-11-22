@@ -1,7 +1,7 @@
 // The box: what it writes to, its draft there (words and files), and sending. A draft belongs to what it is written
 // to: a task (a reply, "F12"), a new input ("new"), an edit of something you said ("edit r12", "append r12"), so
 // unsent words never go elsewhere. A file is sent to Taska as soon as you add it; what you send waits for its files.
-// What is still on its way can be cancelled (its ×); once Taska has it, its ⋯ deletes it (B666: no Undo for a while
+// What is still on its way can be cancelled (its ×); once Taska has it, its ⋯ deletes it (T666: no Undo for a while
 // after sending). An edit or details added show at once and are saved behind you.
 
 import { Delivery } from '../../api/delivery'
@@ -175,7 +175,7 @@ export class Box {
   }
 
   /** Send what the box has, to what it writes to. `answer`: the choices picked on the task's question, which go with
-   * it as one answer (B145: the choices and what you wrote go together, whichever you send with). -> whether anything
+   * it as one answer (T145: the choices and what you wrote go together, whichever you send with). -> whether anything
    * went */
   send(slug: string, m: ProjectModel | null, scope: string | null, draft?: DraftKey, answer?: { text: string; done(): void } | null): boolean {
     const st = this.d.store.getState()
@@ -198,13 +198,13 @@ export class Box {
     if (mode?.kind === 'correct') return this.correct(slug, m, mode, key)
     if (!text && !files.length) return false
     if (mode?.kind === 'amend') {
-      // a voice note or picture still going up: the save waits for it (B637), then goes by itself
+      // a voice note or picture still going up: the save waits for it (T637), then goes by itself
       if (files.some(goingUp)) return this.amendWhenUp(slug, mode, key)
       return this.amend(slug, m, mode, key, text)
     }
     this.write(slug, key, '')
     st.takeFiles(key)
-    // what was typed goes as the input's words; each voice note's words, as you left them, go to the note (B682)
+    // what was typed goes as the input's words; each voice note's words, as you left them, go to the note (T682)
     const said = splitVoices(text, draftNotes(files))
     this.d.inputs.push({ slug, text: said.text, words: said.words, scope, files: placedFiles(files, said.at) })
     this.markSent(slug, key)
@@ -212,7 +212,7 @@ export class Box {
     return true
   }
 
-  /** More to add to input `id` that is not in the box (a voice note said on its own line, F657): added as Add more
+  /** More to add to input `id` that is not in the box (a voice note said on its own line, T657): added as Add more
    * adds, the box left as it is; the line says it is on its way meanwhile. -> anything went */
   appendFrom(slug: string, m: ProjectModel | null, id: string): boolean {
     const r = m?.byId.get(id)
@@ -253,7 +253,7 @@ export class Box {
     this.d.toasts.show(mode.mode === 'edit' ? `${inputCode(mode.id)} updated` : `Added to ${inputCode(mode.id)}`)
     const up = drafts.filter(isUp)
     // an edit begins with what was said (typed, its voice notes' words where they were put): what was typed goes as
-    // its words, the notes' words as you left them go to the notes (B682), and where each is in the words (B838)
+    // its words, the notes' words as you left them go to the notes (T682), and where each is in the words (T838)
     const said = splitVoices(text, [...(mode.mode === 'edit' ? shownNotes(r?.files) : []), ...draftNotes(up)], mode.mode === 'edit' ? (r?.typed ?? r?.text) : undefined)
     const files = up.map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size, ...(said.at[f.key] != null ? { at: said.at[f.key] } : {}) }))
     const words = { ...wordsByFile(said.words, up), ...Object.fromEntries(Object.entries(said.words).filter(([k]) => !up.some((f) => f.key === k))) }
@@ -267,7 +267,7 @@ export class Box {
     return true
   }
 
-  /** Your edit or addition was refused: the page works it out itself instead of showing an error (B637, Yadong:
+  /** Your edit or addition was refused: the page works it out itself instead of showing an error (T637, Yadong:
    * show no error that can be avoided, mend what can be mended). Added words never clash: they go on after what it
    * says now. An edit made while it changed elsewhere is saved over the newest version; the other version stays in
    * the input's history (only words added after yours are merged in). Refused with nothing changed: tried once
@@ -313,7 +313,7 @@ export class Box {
     return true
   }
 
-  /** What you sent and Taska does not have yet, cancelled (its ×, B666): it does not go; one going out right now is
+  /** What you sent and Taska does not have yet, cancelled (its ×, T666): it does not go; one going out right now is
    * deleted as soon as Taska has it. Once Taska has an input, its ⋯ deletes it. */
   cancel(q: string): void {
     this.d.inputs.step(q, 'cancel')
@@ -358,12 +358,12 @@ export class Box {
     if (!right) return false
     const r = m?.byId.get(mode.id)
     const before = r?.text
-    // to put it back: what was typed, and each voice note's words, as they were (B682)
+    // to put it back: what was typed, and each voice note's words, as they were (T682)
     const was = r ? { text: r.typed ?? r.text, words: Object.fromEntries(shownNotes(r.files).map((n) => [n.f, n.words])) } : null
     this.write(slug, key, '')
     this.d.store.getState().setMode(null)
     if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
-    // the spelling there was before (for Undo) is asked for meanwhile: the correction goes out at once (B645)
+    // the spelling there was before (for Undo) is asked for meanwhile: the correction goes out at once (T645)
     const hadAsked = this.d.api.corrections().then((l) => l.find((x) => x.wrong === mode.wrong), () => undefined)
     void (async () => {
       const ok = await this.d.runner.change(slug, { op: 'correct', id: mode.id, wrong: mode.wrong, right, v: mode.v }, `correcting ${inputCode(mode.id)}`)
@@ -390,7 +390,7 @@ export class Box {
   }
 }
 
-/** A draft's files as they go, each voice note with its place in the words sent (B838; `base`: words put before). */
+/** A draft's files as they go, each voice note with its place in the words sent (T838; `base`: words put before). */
 function placedFiles<T extends { key: string }>(files: readonly T[], at: Readonly<Record<string, number>>, base = 0): (T & { at?: number })[] {
   return files.map((f) => (at[f.key] != null ? { ...f, at: base + (at[f.key] ?? 0) } : { ...f }))
 }

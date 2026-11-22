@@ -35,7 +35,7 @@ export interface RouteState {
   /** the list beside the pane on the desktop when it is Documents, Activity or Deleted: it stays while what you open
    * from it shows beside it */
   side: Side | null
-  /** the desktop's New input page opened from a task or a document: its name, for the way back ("B333", "D89") */
+  /** the desktop's New input page opened from a task or a document: its name, for the way back ("T333", "D89") */
   from: string | null
   /** this address came from the browser (the page loaded, Back or Forward), not from a step the page took */
   fromBrowser: boolean

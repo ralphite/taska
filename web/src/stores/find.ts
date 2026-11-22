@@ -1,4 +1,4 @@
-// The search (F479), as it goes: what it is doing, the words in its box (what you said or typed, what you just
+// The search (T479), as it goes: what it is doing, the words in its box (what you said or typed, what you just
 // added, words that may be misheard), what it found last (shown while it listens or searches again), the kind shown;
 // on the desktop also the project and status it is narrowed to and the highlighted row. On the phone it lives while
 // the search page is open, and whatever page a result opens: Back comes back to it as you left it; on the desktop its

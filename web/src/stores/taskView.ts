@@ -77,7 +77,7 @@ export function createTaskViewStore(kv: KeyValueStore): TaskViewStore {
         if (picked.has(i)) picked.delete(i)
         else picked.add(i)
       } else {
-        // the one picked, tapped again, is unpicked (B835): a slip can be taken back
+        // the one picked, tapped again, is unpicked (T835): a slip can be taken back
         const was = picked.has(i)
         picked.clear()
         if (!was) picked.add(i)

@@ -1,4 +1,4 @@
-"""F568: an agent reading a task gets, last, every input it came from in time order: the words once, with one line
+"""T568: an agent reading a task gets, last, every input it came from in time order: the words once, with one line
 for those already in the body or the thread above."""
 
 import os

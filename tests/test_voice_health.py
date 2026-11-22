@@ -113,7 +113,7 @@ class Alarm(ProjectCase):
         self.assertEqual(len([it for it in p.state.tasks.values() if it.title == said[0]]), 2)
 
     def test_counting_starts_again_after_a_bug_also_after_a_restart(self):
-        # B825: a restart read the notes counted for the bug before back in, and the next note made another bug
+        # T825: a restart read the notes counted for the bug before back in, and the next note made another bug
         root = tempfile.mkdtemp()
         os.makedirs(os.path.join(root, "home", "home-files"))
         for i in range(12):

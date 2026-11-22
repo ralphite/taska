@@ -1,4 +1,4 @@
-// What the Agents sheet shows, from the model (F768): whether one is around and what waits for one; every agent
+// What the Agents sheet shows, from the model (T768): whether one is around and what waits for one; every agent
 // session seen in the project, by its app, a manager's workers under it, each as it is now (working, idle, waiting
 // for you, gone); the one to show first; how to connect. Pure: the container and the stories both use it.
 
@@ -38,7 +38,7 @@ export interface SessionFacts {
   activity: { id: number; when: string; task: TaskRef; text: string }[]
   /** back to the session in its app: Claude Code's own link, Codex's resume command */
   link: { kind: 'open'; href: string } | { kind: 'resume'; cmd: string } | null
-  /** I833: gone, and another session of its app can bring it back (Claude Code, Antigravity): the id its app knows
+  /** T833: gone, and another session of its app can bring it back (Claude Code, Antigravity): the id its app knows
    * it by; '' none */
   reconnect: string
 }
@@ -55,7 +55,7 @@ export interface AgentsFacts {
 }
 
 const APPS = ['claude-code', 'codex', 'antigravity']
-/** the apps whose lost sessions another session brings back (I833; Codex is woken through its own queue) */
+/** the apps whose lost sessions another session brings back (T833; Codex is woken through its own queue) */
 const RECONNECT = ['claude-code', 'antigravity']
 /** the group of agents Taska has no app for */
 export const OTHERS = 'others'
@@ -102,14 +102,14 @@ export function sessionGroups(m: ProjectModel): Pick<AgentsFacts, 'groups' | 'st
       const since = state === 'gone' ? s.t : s.since || (state === 'working' && s.on ? s.on.since : s.t)
       const dur = short(since, at)
       const what = b?.waitingFor || s.waitingFor || ''
-      // idle and listening for work: Ready, as the project's pill says it (B784)
+      // idle and listening for work: Ready, as the project's pill says it (T784)
       const word = state === 'idle' && (s.waiting || a.waiting) ? 'Ready' : PILL[state]
       const f: SessionFacts = {
         key: keyOf(a.name, s.name),
         app: a.name,
         name,
         state,
-        // how long it has been as it is, the same time its pill says (B784: not when Taska last heard of it)
+        // how long it has been as it is, the same time its pill says (T784: not when Taska last heard of it)
         when: dur || 'now',
         worker: false,
         pill: dur ? `${word} · ${dur}` : word,
@@ -157,7 +157,7 @@ export function sessionGroups(m: ProjectModel): Pick<AgentsFacts, 'groups' | 'st
 export function agentsFacts(m: ProjectModel, guide: string | null): AgentsFacts {
   const base = m.facts.base
   // one text to paste to an agent: it connects its folder once (the project's address and Taska's skill), then works
-  // (F768 r1305: the command alone was not needed beside it)
+  // (T768 r1305: the command alone was not needed beside it)
   const say = (b: string) =>
     `This project tracks work in Taska. Once in this project's folder, run \`curl -s ${b}/connect | sh\`. Then run \`curl -s ${b}/agent\` to learn the interface, follow \`curl -s ${b}/next\` and write your progress back to the tasks.`
   const ask = say(base)

@@ -1,4 +1,4 @@
-// Leaving or reloading the page while a recording goes on asks first, in the browser's own words (r389, B317): what
+// Leaving or reloading the page while a recording goes on asks first, in the browser's own words (r389, T317): what
 // is being said would be lost. Never while nothing records: words and notes not sent are kept over a reload.
 
 export class LeaveGuard {

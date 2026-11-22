@@ -1,5 +1,5 @@
-// Guards for the B802 changes (requirements lost in the 10-24 rewrite, found by T795): a picked choice and the box's words go as one answer
-// (B145), the phone keeps the answered card in view, a web page's comment leaves its part when the words change (F432).
+// Guards for the T802 changes (requirements lost in the 10-24 rewrite, found by T795): a picked choice and the box's words go as one answer
+// (T145), the phone keeps the answered card in view, a web page's comment leaves its part when the words change (T432).
 // guards: src/features/task/ src/features/composer/ src/app/inputs/ src/app/tasks/ src/features/docs/
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
@@ -8,7 +8,7 @@ import { box, boxMain, pane, pageCount } from '../ui'
 const SHOTS = process.env.QA_SHOTS || '/private/tmp/claude-501/-Users-yadong--claude-spares-spare-eIHkOr/c91cd215-e414-46bd-8e2a-2b6592fb6b97/scratchpad/shots/'
 
 for (const via of ['card', 'box'] as const) {
-  test(`B145: picked choice and box words go as one answer, sent with the ${via}`, async ({ page, request }, info) => {
+  test(`T145: picked choice and box words go as one answer, sent with the ${via}`, async ({ page, request }, info) => {
     const p = await project(request, LOOP)
     await open(page, p, 'T1')
     const where = pane(page)
@@ -31,7 +31,7 @@ for (const via of ['card', 'box'] as const) {
   })
 }
 
-test('B802: on the phone, Send answer keeps the answered card in view (no jump to the bottom)', async ({ page, request }) => {
+test('T802: on the phone, Send answer keeps the answered card in view (no jump to the bottom)', async ({ page, request }) => {
   test.skip(isDesk(page), 'phone layout only')
   const notes = Array.from({ length: 12 }, (_, i) => `T1 progress Step ${i + 1}: ${'a long line of progress '.repeat(5)}`).join('\n')
   const p = await project(request, {
@@ -70,7 +70,7 @@ const PAGE = `${LOOP.then}T4 html Plan page
 const NEWER = `D1 html Plan page
   <!doctype html><html><body style="margin:0;padding:24px"><h1>Export plan</h1><p id="a" style="padding:8px">Wait for the review of option A first.</p><p id="b" style="padding:8px">Keep option B for later.</p></body></html>
 `
-test('F432: a comment leaves its part when the part now says something else: under "Its words changed"', async ({ page, request }, info) => {
+test('T432: a comment leaves its part when the part now says something else: under "Its words changed"', async ({ page, request }, info) => {
   const p = await project(request, { ...LOOP, then: PAGE })
   await p.op({ op: 'dc', d: 1, key: 'h:body>p:nth-child(2)', quote: 'Ship option A today.', text: 'Why today?' })
   await p.op({ op: 'dc', d: 1, key: 'h:body>p:nth-child(3)', quote: 'Keep option B for later.', text: 'Why later?' })

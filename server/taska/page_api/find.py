@@ -1,4 +1,4 @@
-"""The search (F479: Home's, ⌘K, the phone's) as the page draws it: what was found in every project, closest first,
+"""The search (T479: Home's, ⌘K, the phone's) as the page draws it: what was found in every project, closest first,
 each with its project. A task comes as the list has it (task_view, with its parent's code and its subtasks
 counted); an input with its words (a voice note's too), when it was said and the task it became; a document with its
 title and its task; a section of the rules with its title."""
@@ -31,7 +31,7 @@ def find_view(ws: Workspace, q: str, here: str) -> Dict[str, Any]:
             titles[name] = p.title
             for i, f in fs:
                 row: View = {"project": name, "kind": f.kind, "key": f.key, "n": f.n}
-                if f.kind == "rules":  # a section of the rules document (I693)
+                if f.kind == "rules":  # a section of the rules document (T693)
                     d = st.rules
                     k = int(f.key[1:])
                     got = [x for x in rule_sections(st) if x[0] == k]

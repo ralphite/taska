@@ -1,4 +1,4 @@
-// Shared rules in a project's rules (I779, D134): a line of its own `{{编程}}` puts the shared rules 编程 there,
+// Shared rules in a project's rules (T779, D134): a line of its own `{{编程}}` puts the shared rules 编程 there,
 // `{{编程 › 测试}}` only its section 测试. The server keeps the line and gives readers the text in its place
 // (server/taska/domain/includes.py); the page reads the lines the same way: which a paragraph has, what each puts in
 // (the shared rule's text, or one of the sections the server lists), which name nothing, and where Insert puts one.

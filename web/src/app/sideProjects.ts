@@ -1,5 +1,5 @@
 // The projects as the sidebar lists them, from what the page has: in your order, the one shown with this page's counts
-// (its model), the others as last listed, each with its colour and its card (F667). Pure: the page and the stories
+// (its model), the others as last listed, each with its colour and its card (T667). Pure: the page and the stories
 // both use it.
 
 import { closed } from '../model/tasks'
@@ -16,7 +16,7 @@ export interface ListedProject {
   slug: string
   title: string
   tone: string
-  /** its picture's address (F743); none: its letter */
+  /** its picture's address (T743); none: its letter */
   icon?: string
   needs: number
   open: number | string
@@ -31,7 +31,7 @@ type Shown = Omit<ProjectRow, 'open'> & { open: number | string }
 
 const order = (a: Shown, b: Shown) => (a.pos ?? 1e9) - (b.pos ?? 1e9) || (a.title || a.name).localeCompare(b.title || b.name)
 
-/** The projects' pictures' addresses (F743), by address: the one shown as this page has it, the others as listed. */
+/** The projects' pictures' addresses (T743), by address: the one shown as this page has it, the others as listed. */
 export function projectIcons(rows: readonly ProjectRow[] | null | undefined, m: ProjectModel | null | undefined, slug: string): Map<string, string> {
   const out = new Map<string, string>()
   for (const p of rows || []) {

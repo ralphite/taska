@@ -1,4 +1,4 @@
-// B754 (Yadong r1258): any task that can be dragged can be put in order among its group of the list (in review too):
+// T754 (Yadong r1258): any task that can be dragged can be put in order among its group of the list (in review too):
 // near another's top or bottom it goes before or after it, over the middle it goes under it.
 import { describe, expect, test } from 'vitest'
 import { task } from '../stories/fixtures'

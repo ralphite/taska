@@ -67,13 +67,13 @@ def work_for(p: Project, req: Request, who: Optional[str], session: str) -> Work
     w = next_work(p.reading(file_ref(req, p)), p.slug, p.gone, asker(p, who, session))
     if w.claim:
         p.state.claim(w.claim[0], w.claim[1], time.time())
-    if w.stop and who:  # told once (B816)
+    if w.stop and who:  # told once (T816)
         p.agents.tell_stop(who, session, w.stop[1])
     return w
 
 
 def see_sessions(p: Project) -> None:
-    """How this project's agent sessions are now (T711, F768: working, idle, waiting on the user): each looked up by
+    """How this project's agent sessions are now (T711, T768: working, idle, waiting on the user): each looked up by
     the id its agent gave, out of the lock (a few small reads)."""
     with p.lock:
         sids = p.agents.sids()
@@ -93,19 +93,19 @@ def presence(p: Project) -> dict:
 
 
 def local_root(p: Project, req: Request) -> str:
-    """Taska on this machine, for what the agents here run (I833); else the address the caller used."""
+    """Taska on this machine, for what the agents here run (T833); else the address the caller used."""
     return getattr(p.shared, "local", "") or f"{req.host()}{req.prefix}"
 
 
 def back(p: Project, sid: str) -> None:
-    """I833: a session the user asked to bring back called: it is back (no project lock held)."""
+    """T833: a session the user asked to bring back called: it is back (no project lock held)."""
     rc = getattr(p.shared, "reconnects", None)
     if rc and SID.fullmatch(sid or "") and rc.heard(sid):
         p.news.wake()  # the page shows it connected
 
 
 def relay_job(p: Project, req: Request, by: str) -> str:
-    """I833: for a connected Claude or Antigravity session, the narrow job of bringing back a lost one ('' none)."""
+    """T833: for a connected Claude or Antigravity session, the narrow job of bringing back a lost one ('' none)."""
     sid = req.arg("sid")
     ws = p.shared
     if "ui" in req.query or by not in ("claude-code", "antigravity") or not SID.fullmatch(sid or "") or not hasattr(ws, "relay_for"):
@@ -130,16 +130,16 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
         return text(200, render.guide(base, head))
     if sub == "/next":
         return _next(req, p, by)
-    if sub == "/waker":  # B762: the Antigravity session's waker, started in its own terminal
+    if sub == "/waker":  # T762: the Antigravity session's waker, started in its own terminal
         return text(200, SCRIPT.replace("{base}", base).replace("{slug}", p.slug), "text/x-shellscript; charset=utf-8")
     if sub == "/wake":
         return _wake(req, p)
     if sub == "/rules":
-        shared = p.shared_texts()  # the shared rules its lines put in (I779), read before its own lock
-        listed = skills.listing(p.skills(), base)  # I821: the skills, to apply one when it fits
+        shared = p.shared_texts()  # the shared rules its lines put in (T779), read before its own lock
+        listed = skills.listing(p.skills(), base)  # T821: the skills, to apply one when it fits
         with p.lock:
             return text(200, render.rules_text(p.state, shared) + ("\n\n" + listed if listed else ""))
-    if sub == "/skill":  # I821: a skill's text, by its name (/qa)
+    if sub == "/skill":  # T821: a skill's text, by its name (/qa)
         have = p.skills()
         name = next((n for n in have if includes.norm(n) == includes.norm(req.arg("name", ""))), None)
         if name is None:
@@ -168,7 +168,7 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
 
 
 def let_go(p: Project, w: Work) -> None:
-    """The task handed to a session that does not take it is no longer held for it (B832)."""
+    """The task handed to a session that does not take it is no longer held for it (T832)."""
     if w.claim:
         c = p.state.claims.get(w.claim[0])
         if c and c.who == w.claim[1]:
@@ -186,7 +186,7 @@ def _next(req: Request, p: Project, by: str) -> Response:
     given: Optional[int] = None
     session = session_of(p, req, by) if "ui" not in q else req.session()
     sid = req.arg("sid") if by == "antigravity" and "ui" not in q else ""
-    if sid:  # F755: one Antigravity session runs a project; a newer one takes over (lead=1), the one before stops
+    if sid:  # T755: one Antigravity session runs a project; a newer one takes over (lead=1), the one before stops
         with p.lock:
             if q.get("lead"):
                 p.agents.take_lead(sid, time.strftime("%m-%d %H:%M"))
@@ -200,7 +200,7 @@ def _next(req: Request, p: Project, by: str) -> Response:
         with p.lock:  # ?wait=N: while there is nothing to do, hold until work arrives
             who = req.arg("by") or None if "ui" not in q else None
             # what each session held before this ask: a wait is not woken by the task it already holds and works on
-            # (B741: a manager whose own doing task came back at once re-asked every 20 s); a plain /next still gets it
+            # (T741: a manager whose own doing task came back at once re-asked every 20 s); a plain /next still gets it
             held = {n: c.who for n, c in p.state.claims.items()}
 
             key = req.arg("sid") or session or (who or "")
@@ -213,7 +213,7 @@ def _next(req: Request, p: Project, by: str) -> Response:
                 if not w.has_work:
                     return True
                 if wait and w.given is not None and p.agents.offers.passed(key, w.given, mark(w.given)):
-                    let_go(p, w)  # B832: it does not take this one: not held for it, so others may
+                    let_go(p, w)  # T832: it does not take this one: not held for it, so others may
                     return True
                 if not wait or not w.claim:
                     return False
@@ -221,7 +221,7 @@ def _next(req: Request, p: Project, by: str) -> Response:
                 it = p.state.tasks.get(n)
                 return bool(it and it.status == "doing" and held.get(n) == me)
 
-            job = relay_job(p, req, by)  # I833: bringing back a lost session comes before any other work
+            job = relay_job(p, req, by)  # T833: bringing back a lost session comes before any other work
             if job:
                 return text(200, job)
             w = work_for(p, req, who, session)
@@ -239,7 +239,7 @@ def _next(req: Request, p: Project, by: str) -> Response:
                 p.run([(0, {"op": "say", "ref": p.state.code(given), "kind": "progress", "src": None, "files": [],
                             "text": f"会话「{key[:40]}」连着 {TIMES} 次拿到这件都没接，现在没人在做。"})], "taska")
                 p.agents.offers.changed(key, given, mark(given))
-            if sid:  # the waker wakes it only when it is idle (B762)
+            if sid:  # the waker wakes it only when it is idle (T762)
                 p.waker.next_read(sid, w.has_work)
             if given is not None and who:  # the card it was given holds what other sessions wrote there
                 p.agents.heard_task(p.state, given, who, session)
@@ -250,14 +250,14 @@ def _next(req: Request, p: Project, by: str) -> Response:
                 p.agents.stopped_listening(req.arg("sid"))
     out = w.text
     if "ui" not in q:
-        shared = p.shared_texts()  # before its own lock (I779)
+        shared = p.shared_texts()  # before its own lock (T779)
         with p.lock:
             p.agents.read_next(by)
             if given is not None:
                 p.agents.read_task(given, by, p.state)
             news = p.agents.rule_news(p.state, by, session)  # the rules changed since it last heard: said first
-            news += p.agents.shared_news(p.state, by, session, shared)  # and the shared rules they put in (I779)
-            news += p.agents.guide_news(by, session, render.guide_version())  # and so did the guide (F743)
+            news += p.agents.shared_news(p.state, by, session, shared)  # and the shared rules they put in (T779)
+            news += p.agents.guide_news(by, session, render.guide_version())  # and so did the guide (T743)
             news += p.agents.roster_news(p.state, by, session)  # who else works here, when that changed (T774)
         if news:
             lines = out.split("\n")
@@ -267,7 +267,7 @@ def _next(req: Request, p: Project, by: str) -> Response:
 
 
 def _wake(req: Request, p: Project) -> Response:
-    """GET /wake?sid=&wait=: the waker's wait (B762). "wake" when the session has work and may be woken (idle, or
+    """GET /wake?sid=&wait=: the waker's wait (T762). "wake" when the session has work and may be woken (idle, or
     silent since it was woken), "stop" when the project is gone, "replaced" when another session runs it, else
     "nothing to do now" when the time is up. It takes no task and marks nothing read: the session does, on /next."""
     sid = req.arg("sid")
@@ -284,7 +284,7 @@ def _wake(req: Request, p: Project) -> Response:
             def ready() -> bool:
                 return bool(p.gone or p.agents.replaced(sid) or (p.waker.due(sid) and (
                     next_work(p.reading(), p.slug, p.gone, asker(p, "antigravity", "")).has_work
-                    or (rc and rc.waiting_for("antigravity", sid)))))  # I833: a lost session to bring back
+                    or (rc and rc.waiting_for("antigravity", sid)))))  # T833: a lost session to bring back
 
             ok = p.news.wait_for(ready, timeout=max(0.0, end - time.time()))
             if p.gone:
@@ -345,7 +345,7 @@ def do(req: Request, p: Project) -> Response:
         with p.lock:
             commands, taken, moves = held_by_others(p, commands, by, session)
     lines, _ = p.run(commands, by, session=session)
-    if moves:  # doing on a task already doing, taken or handed on: the change is recorded, so the hold moves (I769)
+    if moves:  # doing on a task already doing, taken or handed on: the change is recorded, so the hold moves (T769)
         with p.lock:
             for n in moves:
                 code = p.state.code(n)
@@ -365,7 +365,7 @@ def do(req: Request, p: Project) -> Response:
     note = (f"\n{len(news)} new input{'s' if len(news) != 1 else ''} since your last /next: {' '.join(news)}."
             " Finish the step you are on, then GET /next.") if news else ""
     note += "".join("\n" + r for r in rule_lines + calls)
-    job = relay_job(p, req, by) if agent else ""  # I833: told at work too, to do once the step it is on is done
+    job = relay_job(p, req, by) if agent else ""  # T833: told at work too, to do once the step it is on is done
     if job:
         note += "\n" + job.rstrip("\n")
     return text(200, "\n".join(lines) + f"\nrev {rev}: GET /next to continue{note}\n")
@@ -409,7 +409,7 @@ def held_by_others(p: Project, commands: Parsed, by: str, session: str) -> Tuple
 
 def serve_file(p: Project, name: str, byte_range: str = "") -> Response:
     """A project's file. A file never changes under its name: the browser keeps it. `byte_range` (the Range header):
-    one part of it, as a video player asks for its parts (the iPhone's plays only a file served this way, F747)."""
+    one part of it, as a video player asks for its parts (the iPhone's plays only a file served this way, T747)."""
     import mimetypes
     name = os.path.basename(name)
     path = p.file_path(name)

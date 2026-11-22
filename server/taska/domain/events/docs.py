@@ -11,7 +11,7 @@ from .base import Event, Reader, common, files_of, need, opt
 
 @dataclass
 class DocWritten(Event):
-    """A document made, or its text replaced. The rules (kind "rules", I693) say why, the input it came from, and
+    """A document made, or its text replaced. The rules (kind "rules", T693) say why, the input it came from, and
     whether it approves a proposal (p), restores a version (restored) or takes back a write (undo: its number)."""
 
     KIND: ClassVar[str] = "doc"
@@ -138,7 +138,7 @@ class CommentRestored(Event):
 
 @dataclass
 class DocProposed(Event):
-    """An agent's change to the rules, by sections, waiting for the user (I693); base: the write it was made on."""
+    """An agent's change to the rules, by sections, waiting for the user (T693); base: the write it was made on."""
 
     KIND: ClassVar[str] = "dprop"
     d: int = 0
@@ -172,7 +172,7 @@ class DocDecided(Event):
 
 @dataclass
 class RulesMoved(Event):
-    """Once per project (I693): the rule tasks are gone, with their talk and documents; the rules in force are the
+    """Once per project (T693): the rule tasks are gone, with their talk and documents; the rules in force are the
     rules document's first version (written just before)."""
 
     KIND: ClassVar[str] = "rulesmoved"

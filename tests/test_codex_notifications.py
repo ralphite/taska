@@ -98,7 +98,7 @@ class Notifications(ProjectCase):
         self.assertEqual(self.transport.messages, [(TARGET, MESSAGE)])
 
     def test_a_voice_note_notifies_once_its_words_are_final(self):
-        # B761 (Yadong r1279): while its words are still being worked out (transcribing, confirming) the agent is
+        # T761 (Yadong r1279): while its words are still being worked out (transcribing, confirming) the agent is
         # not told; it is told once they are final
         self.n.bind(TARGET)
         rid = "r" + str(self.p.store.count + 1)

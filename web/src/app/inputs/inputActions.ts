@@ -76,7 +76,7 @@ export class InputActions {
     this.d.toasts.show(`${inputCode(id)} now goes with ${to}`, undo)
   }
 
-  /** A recording kept as cancelled goes to the organizer and the agents after all; it shows sent at once (B645). */
+  /** A recording kept as cancelled goes to the organizer and the agents after all; it shows sent at once (T645). */
   sendCancelled(slug: string, id: string): void {
     void this.send(slug, { op: 'send', id }, `sending ${inputCode(id)}`)
     this.d.toasts.show(`Sent ${inputCode(id)}`)
@@ -87,7 +87,7 @@ export class InputActions {
     this.d.toasts.show('File taken off')
   }
 
-  /** It shows moved at once (B645: nothing waits on Taska); its new number comes with Taska's answer. */
+  /** It shows moved at once (T645: nothing waits on Taska); its new number comes with Taska's answer. */
   async move(slug: string, id: string, to: string): Promise<boolean> {
     const shown = this.d.runner.show(slug, movedInput(id, to))
     try {

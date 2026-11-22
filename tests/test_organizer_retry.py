@@ -76,7 +76,7 @@ class OrganizerRetry(ProjectCase):
 
 
 class OrganizerTogether(unittest.TestCase):
-    """B684 (Yadong: one at a time is not needed): inputs are organized at the same time, not one after another."""
+    """T684 (Yadong: one at a time is not needed): inputs are organized at the same time, not one after another."""
 
     def test_two_inputs_are_organized_at_once(self):
         tmp = tempfile.TemporaryDirectory()
@@ -105,7 +105,7 @@ class OrganizerTogether(unittest.TestCase):
 
 
 class BothModels(unittest.TestCase):
-    """B684 (Yadong, #9933): the organizer asks both models at once and takes the first good answer."""
+    """T684 (Yadong, #9933): the organizer asks both models at once and takes the first good answer."""
 
     def ask(self, answers):
         def fake(who, system, parts, think=0, model=None, **k):

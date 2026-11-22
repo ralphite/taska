@@ -1,4 +1,4 @@
-// Shared rules (I779, D134, approved 11-15): a project's rules put a shared rule in by a line `{{编程}}`; the Rules tab
+// Shared rules (T779, D134, approved 11-15): a project's rules put a shared rule in by a line `{{编程}}`; the Rules tab
 // reads the line as a block that opens its text in place, its name going to that shared rule's page (who uses it
 // under it); a name not found is red, read and edited; Insert writes a line at the caret; Settings › Shared rules
 // lists them.
@@ -20,7 +20,7 @@ async function shared(request: APIRequestContext, md: string) {
 const CODING = '## 测试\n\n- 按风险测，重测试一天最多一次。'
 const shown = (page: Page) => page.locator('[data-part="rules"], [data-pane-head]').first()
 
-test('I779 r1378: a line reads as the shared rules it puts in, opened in place; its name goes to its page', async ({ page, request }) => {
+test('T779 r1378: a line reads as the shared rules it puts in, opened in place; its name goes to its page', async ({ page, request }) => {
   const s = await shared(request, CODING)
   const p = await project(request)
   expect((await p.op({ op: 'rules', md: `{{${s.name}}}\n\n## Own\n\n- Ours only.` })).ok).toBe(true)
@@ -49,7 +49,7 @@ test('I779 r1378: a line reads as the shared rules it puts in, opened in place; 
   await expect(page.getByRole('button', { name: new RegExp(s.name) }).filter({ visible: true })).toContainText('1 project')
 })
 
-test('I779 r1378: a name not found is red, read and edited', async ({ page, request }) => {
+test('T779 r1378: a name not found is red, read and edited', async ({ page, request }) => {
   const p = await project(request)
   expect((await p.op({ op: 'rules', md: '{{没有这个}}\n\n## Own\n\n- Ours.' })).ok).toBe(true)
   await open(page, p, 'rules')
@@ -62,7 +62,7 @@ test('I779 r1378: a name not found is red, read and edited', async ({ page, requ
   await expect(page.getByText('Not found: 没有这个').filter({ visible: true })).toHaveCount(0)
 })
 
-test('I779 r1378: Insert shared rules writes a line where the caret is, those in the text ticked', async ({ page, request }) => {
+test('T779 r1378: Insert shared rules writes a line where the caret is, those in the text ticked', async ({ page, request }) => {
   const s = await shared(request, CODING)
   const p = await project(request)
   expect((await p.op({ op: 'rules', md: '## Own\n\n- Ours.' })).ok).toBe(true)

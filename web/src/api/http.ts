@@ -50,7 +50,7 @@ export interface Request {
   keepalive?: boolean
 }
 
-/** A request as it ended, for the page's log (B791): its answer's status (none when it never came), and the reason a
+/** A request as it ended, for the page's log (T791): its answer's status (none when it never came), and the reason a
  * refused or failed one gave. */
 export interface Watched {
   method: string

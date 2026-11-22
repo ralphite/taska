@@ -43,7 +43,7 @@ _TITLE_LEAD = re.compile(
 
 
 def clean_title(title: str) -> tuple[str, str | None]:
-    """A title with the guide's options left in it ("[src=r246] Fix the export", B222) -> (the title without them,
+    """A title with the guide's options left in it ("[src=r246] Fix the export", T222) -> (the title without them,
     the input it named or None). Bare words stay: "Open the settings" keeps its Open."""
     if "src=" not in title and "parent=" not in title and "[" not in title:
         return title, None

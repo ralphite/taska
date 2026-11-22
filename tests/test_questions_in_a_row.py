@@ -1,4 +1,4 @@
-"""B749 (Yadong r1248, D132): an agent's questions in a row are answered in one card; an answer may answer some of them
+"""T749 (Yadong r1248, D132): an agent's questions in a row are answered in one card; an answer may answer some of them
 (r1253: the ones not answered keep waiting), and the agent picks up what was answered."""
 
 import os
@@ -30,14 +30,14 @@ class QuestionsInARow(unittest.TestCase):
         return lines[0]
 
     def ask(self, text):
-        self.run_one({"op": "say", "ref": "F1", "kind": "ask", "text": text}, "claude")
+        self.run_one({"op": "say", "ref": "T1", "kind": "ask", "text": text}, "claude")
         return self.p.state.tasks[1].thread[-1].id
 
     def open_ids(self):
         return [x.id for x in rules.open_asks(self.p.state, self.p.state.tasks[1])]
 
     def answer(self, text, of=None):
-        self.run_one({"op": "input", "text": text, "scope": "F1", "kind": "answer", **({"of": of} if of else {})})
+        self.run_one({"op": "input", "text": text, "scope": "T1", "kind": "answer", **({"of": of} if of else {})})
 
     def test_all_the_questions_in_a_row_wait(self):
         self.assertEqual(self.open_ids(), self.asks)
@@ -60,12 +60,12 @@ class QuestionsInARow(unittest.TestCase):
         self.assertEqual(self.open_ids(), [])
 
     def test_an_agent_word_between_ends_the_row(self):
-        self.run_one({"op": "say", "ref": "F1", "kind": "progress", "text": "On it."}, "claude")
+        self.run_one({"op": "say", "ref": "T1", "kind": "progress", "text": "On it."}, "claude")
         d = self.ask("One more?")
         self.assertEqual(self.open_ids(), [d])
 
     def test_only_its_questions_can_be_named(self):
-        lines, _ = self.p.run([(0, {"op": "input", "text": "x", "scope": "F1", "kind": "answer", "of": [999]})], "you")
+        lines, _ = self.p.run([(0, {"op": "input", "text": "x", "scope": "T1", "kind": "answer", "of": [999]})], "you")
         self.assertTrue(lines[0].startswith("refused") or "not a question" in lines[0], lines)
 
 

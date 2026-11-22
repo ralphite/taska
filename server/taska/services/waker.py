@@ -1,4 +1,4 @@
-"""Taska's waker for the Antigravity session that runs a project (B762, Yadong r1283 r1286).
+"""Taska's waker for the Antigravity session that runs a project (T762, Yadong r1283 r1286).
 
 Antigravity's own message command only works from its own terminal (its address and token), so Taska cannot wake a
 session from outside. Instead the session starts one small program in its terminal (the script below, at
@@ -10,7 +10,7 @@ within 10 minutes is woken once more; nothing is sent while it works.
 Nothing about it shows on the page while it works (r1286). Only when the user writes to the project and no waker has
 waited for the session for 15 minutes does Taska say so, once, as a task (proposed); when a waker waits again
 it is deleted, unless the user answered it. Callers hold the project lock unless a method says otherwise. Any other
-answer (the project deleted, an error) is waited 20 s after, and after 30 in a row the waker stops (B786: one asked
+answer (the project deleted, an error) is waited 20 s after, and after 30 in a row the waker stops (T786: one asked
 a deleted project again at once, 4.5 million times in 15 hours).
 """
 
@@ -30,7 +30,7 @@ REWAKE = 600  # seconds a woken session has to call /next before it is woken aga
 GONE = 900  # seconds without a waker before the user hears of it (only when they write to the project)
 
 SCRIPT = r"""#!/bin/sh
-# Taska's waker for one Antigravity session (B762). Run in the session's own terminal:
+# Taska's waker for one Antigravity session (T762). Run in the session's own terminal:
 #   curl -s "{base}/waker" | sh -s "$ANTIGRAVITY_CONVERSATION_ID"
 # It returns at once; a waker that already runs for this session is left as it is.
 sid="$1"

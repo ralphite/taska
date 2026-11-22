@@ -65,7 +65,7 @@ export class InputSender {
         if (!o || o.state === 'failed') break
         if (o.files.some(goingUp)) break // its files are on their way: it goes once they are up
         const files = o.files.filter(isUp)
-        const text = o.text // what was typed; a voice note's words are its own (B682), those you left in the box with it
+        const text = o.text // what was typed; a voice note's words are its own (T682), those you left in the box with it
         const words = wordsByFile(o.words, files)
         if (!text && !files.length) {
           this.store.getState().remove(o.q)

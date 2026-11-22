@@ -106,7 +106,7 @@ export interface ComposerProps {
   fieldRef?: (el: HTMLTextAreaElement | null) => void
   /** recording a voice note here: its time, its loudness lately (0 to 1), and which mic started it */
   rec?: { time: string; levels: readonly number[]; from: 'main' | 'aux' } | null
-  /** the skills (I821): "/" at the start of the words lists them, to pick one */
+  /** the skills (T821): "/" at the start of the words lists them, to pick one */
   skills?: readonly Skill[]
   on: {
     text(t: string): void
@@ -132,7 +132,7 @@ interface Btn {
 }
 const btn = (label: string, tip: string, icon: IconName, run: () => void, iconCls = 'size-6 lg:size-5', sw = '1.75'): Btn => ({ label, tip, icon, iconCls, sw, run })
 
-/** +'s card with none of its rows chosen (I834) */
+/** +'s card with none of its rows chosen (T834) */
 const NONE = -100
 
 /** Where words were put in, when that is all that changed (null: more than that changed). */
@@ -145,10 +145,10 @@ function insertedAt(was: string, now: string): number | null {
 
 export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, text, desk, composePage, micTip, files, doubts, words, hasFiles = false, attach = true, addOpen = false, boxRef, fieldRef, rec = null, skills = [], on }: ComposerProps) {
   const area = useRef<HTMLTextAreaElement | null>(null)
-  // I821: the skills that fit the "/" being typed, the one chosen, and the words Esc closed the list for
+  // T821: the skills that fit the "/" being typed, the one chosen, and the words Esc closed the list for
   const [skillSel, setSkillSel] = useState(addOpen ? NONE : 0)
   const [skillsOff, setSkillsOff] = useState(false) // Esc or leaving the box closed it, until the words change
-  // I834: + opens a card of files and the skills (the phone has no easy "/"); it closes on a pick, Esc or a tap elsewhere
+  // T834: + opens a card of files and the skills (the phone has no easy "/"); it closes on a pick, Esc or a tap elsewhere
   const [plus, setPlus] = useState(addOpen)
   const plusCard = useRef<HTMLDivElement | null>(null)
   const plusBtn = useRef<HTMLButtonElement | null>(null)
@@ -201,7 +201,7 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
   // the quote lines of comments on a document ("> “…”") are drawn quieter, as quotes, behind the words you edit
   const quoted = text.split('\n').some((l) => VC_MARK.test(l))
   const picker = useRef<HTMLInputElement>(null)
-  // I834 r1438: the phone's ways to add files, each opened at once where the phone lets it (the camera, the Files
+  // T834 r1438: the phone's ways to add files, each opened at once where the phone lets it (the camera, the Files
   // app); its photos come through the phone's own menu (a page cannot open them alone). The desktop has one.
   const camera = useRef<HTMLInputElement>(null)
   const photos = useRef<HTMLInputElement>(null)
@@ -448,7 +448,7 @@ export function Composer({ line, waiting = null, lineOn, placeholder, sendWord, 
   )
 }
 
-/** × at the end of the line: it goes (`cancel`: what it names, still on its way, is not sent, B666) */
+/** × at the end of the line: it goes (`cancel`: what it names, still on its way, is not sent, T666) */
 const Dismiss = ({ onClick, cancel = false }: { onClick(): void; cancel?: boolean }) => (
   <button onClick={onClick} aria-label={cancel ? 'Cancel' : 'Dismiss'} {...(cancel ? { title: 'Cancel: it is not sent' } : {})} className={`-my-2 grid size-11 shrink-0 place-items-center rounded-full hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 ${MUTED}`}>
     <Icon n="x" c="size-3.5" sw="2" />

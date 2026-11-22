@@ -18,7 +18,7 @@ Carried = Tuple[str, str, bytes, Optional[Voice]]  # a file going along: its nam
 
 
 def _carry(there: Project, fid: str, v: Optional[Voice], src: Optional[str] = None) -> None:
-    """A voice note's words go with its copy (B682): its record there says what it says here."""
+    """A voice note's words go with its copy (T682): its record there says what it says here."""
     if v is None:
         return
     with there.lock:
@@ -107,7 +107,7 @@ class Moves:
                 else:
                     _carry(there, copy.f, v)
             cmd: Dict[str, Any] = {"op": "input", "text": text, "files": [x.to_row() for x in files]}
-            if cancelled:  # a cancelled recording stays one there (B627)
+            if cancelled:  # a cancelled recording stays one there (T627)
                 cmd["kind"] = "cancelled"
             lines, _ = there.run([(0, cmd)], "you")
             if not lines[0].startswith("ok"):

@@ -24,14 +24,14 @@ def sent_files(r: Run, a: Args) -> List[FileRef]:
         fid = os.path.basename(str(f.get("f", "")))
         if not r.project.file_exists(fid):
             raise Refused(f"unknown file {fid}")
-        at = f.get("at")  # B838: a voice note's place in the words sent with it
+        at = f.get("at")  # T838: a voice note's place in the words sent with it
         files.append(FileRef(f=fid, name=str(f.get("name", "")) if "name" in f else "", mime=f.get("mime"),
                              size=f.get("size"), at=max(0, int(at)) if isinstance(at, int) and not isinstance(at, bool) else None))
     return files
 
 
 def placed(files: List[FileRef], text: str, base: int = 0, last: Optional[int] = None) -> List[FileRef]:
-    """B838: the voice notes' places in the words they were sent with, moved by `base` (added after words already
+    """T838: the voice notes' places in the words they were sent with, moved by `base` (added after words already
     there) and kept within them; `last`: where one sent without a place goes (None: after all the words, unplaced)."""
     out: List[FileRef] = []
     for f in files:
@@ -46,7 +46,7 @@ def placed(files: List[FileRef], text: str, base: int = 0, last: Optional[int] =
 
 def voice_words(r: Run, a: Args, notes: Iterable[str], src: Optional[str] = None) -> List[ev.VoiceFixed]:
     """The words of voice notes as you left them (in the box before sending, editing what you said: `words`, {file:
-    words}) -> the changes that make them a note's words, in its one record, wherever it shows (B682), for the
+    words}) -> the changes that make them a note's words, in its one record, wherever it shows (T682), for the
     notes whose words you changed. Words the page was given for a note (its first, its final ones) change nothing."""
     given = a.get("words") or {}
     if not isinstance(given, dict):
@@ -65,7 +65,7 @@ def voice_words(r: Run, a: Args, notes: Iterable[str], src: Optional[str] = None
 
 
 def answered_of(s: ProjectState, n: Optional[int], of: object) -> List[int]:
-    """An answer to some of the questions in a row (B749): the ids of the task's questions it answers, each one an
+    """An answer to some of the questions in a row (T749): the ids of the task's questions it answers, each one an
     agent's ask on that task; the others keep waiting. None given: it answers them all, as anything you say does."""
     if not of:
         return []
@@ -91,7 +91,7 @@ def new_input(r: Run, a: Args) -> Outcome:
     scope = task_at(s, a.get("scope")).n if a.get("scope") else None  # a merged task's replies go where it went
     rid = f"r{s.max_input + 1}"
     answer = a.get("kind") == "answer" and scope is not None  # a form you sent: it goes to its task as it is
-    cancelled = a.get("kind") == "cancelled"  # a recording you cancelled: kept, not sent to anyone (B627)
+    cancelled = a.get("kind") == "cancelled"  # a recording you cancelled: kept, not sent to anyone (T627)
     if cancelled and scope is not None:
         raise Refused("only a new input can be kept as cancelled")
     of = answered_of(s, scope, a.get("of")) if answer else []
@@ -101,7 +101,7 @@ def new_input(r: Run, a: Args) -> Outcome:
         r.emit(fix)
     if cancelled:
         return Outcome(f"ok {rid} kept as cancelled", "Kept in Inputs")
-    # your words on a task give the agent its turn: they approve a proposal (B818), take a task in review or done
+    # your words on a task give the agent its turn: they approve a proposal (T818), take a task in review or done
     # back to open (r961, r1082); see task_states.on_your_words
     it = s.tasks.get(scope) if scope is not None else None
     to = task_states.on_your_words(it.status) if it is not None and r.by == "you" else None
@@ -112,7 +112,7 @@ def new_input(r: Run, a: Args) -> Outcome:
 
 @handles("send")
 def send(r: Run, a: Args) -> Outcome:
-    """A cancelled recording sent after all (B627): the organizer and the agents get it as a new input."""
+    """A cancelled recording sent after all (T627): the organizer and the agents get it as a new input."""
     rid = a.text("id")
     inp = r.state.inputs.get(rid)
     if not inp:
@@ -177,7 +177,7 @@ def amend(r: Run, a: Args) -> Outcome:
     if mode == "append":
         added = text
         text = (inp.text + ("\n\n" + added if added else "")).strip()
-        # B838: added words and notes go after what is there, a note sent with no place after all of it
+        # T838: added words and notes go after what is there, a note sent with no place after all of it
         files = placed(files, added, base=len(text) - len(added), last=len(text))
     else:
         files = placed(files, text)

@@ -1,4 +1,4 @@
-"""Agent sessions to bring back to Taska after they lost their connection (I833, Yadong r1433 r1435).
+"""Agent sessions to bring back to Taska after they lost their connection (T833, Yadong r1433 r1435).
 
 A Claude Code session waits for work with a long /next of its own; when the machine restarts that wait is gone and
 nothing outside its app can make it speak (its links only fill the box; Taska cannot send into a session). Another

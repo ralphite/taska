@@ -3,8 +3,8 @@
 // voice notes, pictures and files as chips; and what became of it on a shelf of its own under them. A hairline
 // between rows; under the pointer a row is a shade darker, as the task list's are. Its buttons: the phone's ⋯ (where it does not swipe, D115 #42; Add
 // more, Edit and the rest are in it); the desktop's Voice, Comment and ⋯ as the page's other places have them
-// (PlaceVoice, B498), under the pointer only (or the keys); Voice turns them into the recording strip right there, its
-// ✓ where Voice was, which stops and adds the note to this input. Its ⋯ has Delete, last (B666: no Undo for a while
+// (PlaceVoice, T498), under the pointer only (or the keys); Voice turns them into the recording strip right there, its
+// ✓ where Voice was, which stops and adds the note to this input. Its ⋯ has Delete, last (T666: no Undo for a while
 // after sending). What is still on its way (its × cancels it), and a voice note being recorded, are lines of their own
 // over the list. Props only.
 
@@ -220,7 +220,7 @@ export function InputRow({ x, text, files, place = 'row', lit = false, rec = nul
           <span>
             {x.day} {x.time}
           </span>
-          {/* pointed at: the words before the last change (B801, B640 #8700); the whole history stays in ⋯ */}
+          {/* pointed at: the words before the last change (T801, T640 #8700); the whole history stays in ⋯ */}
           {edited ? (
             <span data-tip={r.history?.[r.history.length - 1]?.text.slice(0, 400)} className="italic">
               · edited
@@ -304,7 +304,7 @@ const OUT_TONE: Record<OutTone, { box: string; state: string; act: string }> = {
 }
 
 /** What is still on its way, as a line over the list: its words on one line, where it is (blue on its way, amber
- * waiting for Taska, red when Taska said no), what can be done there, and × at the end, which cancels it (B666). */
+ * waiting for Taska, red when Taska said no), what can be done there, and × at the end, which cancels it (T666). */
 export function OutgoingRow({ text, show, scope = null, previews = [], on }: {
   text: string
   /** where it is and what can be done, as model/outgoingStates says for this place */

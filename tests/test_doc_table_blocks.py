@@ -1,4 +1,4 @@
-"""F817 (r1384): a table right under a line of text in a document is a table of its own (it showed as raw | lines,
+"""T817 (r1384): a table right under a line of text in a document is a table of its own (it showed as raw | lines,
 part of the text's paragraph); after a list too."""
 
 import os

@@ -62,13 +62,13 @@ export function SelectionBarContainer({ route }: { route: ProjectRoute }) {
             if (!go && !stores.recording.getState().rec) words.forget()
           })
         },
-        // B584: selecting words changes nothing; Comment makes them what the box comments on
+        // T584: selecting words changes nothing; Comment makes them what the box comments on
         comment: () => {
           const pick = selected(doc, circle)
           if (pick?.key) stores.docView.getState().pick({ quote: { key: pick.key, text: pick.text }, sel: new Set(), reply: null })
           app.fields.get('box')?.focus({ preventScroll: true })
         },
-        // its recording strip: ✕, ✓ (the desktop's box, the phone sends) and ↑ (B498)
+        // its recording strip: ✕, ✓ (the desktop's box, the phone sends) and ↑ (T498)
         cancel: () => void app.voice.cancel(),
         check: () => void app.docVoice.check(),
         send: () => void app.docVoice.sendNow(),

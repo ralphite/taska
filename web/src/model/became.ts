@@ -1,4 +1,4 @@
-// What became of an input (B629), worked out once from what Taska sent of it and the organizer's facts: its state of
+// What became of an input (T629), worked out once from what Taska sent of it and the organizer's facts: its state of
 // model/inputStates (which says the words, the tone and what can be done in every place) with what that state names:
 // the tasks it made or was added to (with the organizer's note when it says more than they do), the task it answers,
 // why it failed, where it went. And one input as a line of the lists draws it: its number, its day and time, what
@@ -45,7 +45,7 @@ export const taskRef = (m: ProjectModel, n: number): TaskRef | null => {
   return it ? { n, code: codeOf(m, n), title: it.title, status: shownStatus(it) } : null
 }
 
-/** The tasks an input said in a task made (B714 #10594), as "→ Created B713" under your words there: those it is the
+/** The tasks an input said in a task made (T714 #10594), as "→ Created T713" under your words there: those it is the
  * first source of and that were made after it was said, not the task it was said in. */
 export const madeFrom = (r: Input, m: ProjectModel): TaskRef[] =>
   r.touched
@@ -68,7 +68,7 @@ function readNote(msg: string, codes: Map<string, number>): { did: Map<number, s
       continue
     }
     const verb = part.replace(/\b[A-Z]\d+\b/g, '').replace(/,|\band\b/g, ' ').replace(/\s+/g, ' ').trim()
-    // the organizer's own word for words added to a task, said as the list says it (the approved B629 line)
+    // the organizer's own word for words added to a task, said as the list says it (the approved T629 line)
     const said = /^noted on$/i.test(verb) ? 'Added to' : verb
     for (const n of named) if (!did.has(n)) did.set(n, said ? said[0].toUpperCase() + said.slice(1) : '')
   }
@@ -120,7 +120,7 @@ export function becameOf(r: Input, m: ProjectModel, title: (slug: string) => str
   const hearing = sentNotes(r.files)
   if (hearing) return { k: 'transcribing', state: hearing }
   // one word for every input the organizer has not finished: whether it is on it now, next in line or asking its
-  // service again after a busy answer (nothing is written for one), it is being organized; no "Queued" (B684) to fall
+  // service again after a busy answer (nothing is written for one), it is being organized; no "Queued" (T684) to fall
   // back to: it jumped back and forth
   const next = !r.acked && organizer.on && !r.org
   if (organizer.busy.includes(r.id) || next) return { k: 'organizing' }

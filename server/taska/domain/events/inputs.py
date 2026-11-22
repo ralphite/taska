@@ -20,8 +20,8 @@ class InputAdded(Event):
     scope: Optional[int] = None
     files: List[FileRef] = field(default_factory=list)
     q: str = ""  # the page's id for it, so one sent again goes in once
-    kind: Optional[str] = None  # "answer": a form you sent on its task; "cancelled": a recording you cancelled (B627)
-    of: List[int] = field(default_factory=list)  # an answer to some of the questions in a row: theirs (B749)
+    kind: Optional[str] = None  # "answer": a form you sent on its task; "cancelled": a recording you cancelled (T627)
+    of: List[int] = field(default_factory=list)  # an answer to some of the questions in a row: theirs (T749)
 
     def body(self) -> Row:
         row: Row = {"id": self.id, "by": self.by, "text": self.text, "scope": self.scope, "files": files_row(self.files)}
@@ -51,7 +51,7 @@ class InputAmended(Event):
     mode: str = "edit"
     text: str = ""
     files: List[FileRef] = field(default_factory=list)
-    places: Dict[str, int] = field(default_factory=dict)  # B838: its voice notes' places in the words, by file
+    places: Dict[str, int] = field(default_factory=dict)  # T838: its voice notes' places in the words, by file
 
     def body(self) -> Row:
         row: Row = {"src": self.src, "mode": self.mode, "text": self.text, "by": self.by}
@@ -144,7 +144,7 @@ class Organized(Event):
 
 @dataclass
 class InputSent(Event):
-    """A cancelled input sent after all (B627): from now on it is an ordinary new input."""
+    """A cancelled input sent after all (T627): from now on it is an ordinary new input."""
 
     KIND: ClassVar[str] = "send"
 

@@ -79,7 +79,7 @@ export class DocComments {
     const picked = { sel: v.sel, quote: v.quote, reply: v.reply }
     v.openThread(t.th ? `${t.key}#${t.th}` : t.key)
     v.unpick()
-    // the phone's box came only to write this comment (B498): it goes with it
+    // the phone's box came only to write this comment (T498): it goes with it
     const typing = v.typing
     if (!this.d.desk()) v.setTyping(false)
     if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
@@ -87,7 +87,7 @@ export class DocComments {
     for (let i = 0; live().some(stillComing) && i < 240; i++) await new Promise((ok) => setTimeout(ok, 500))
     const held = files.length ? this.d.boxStore.getState().takeFiles(hold) : []
     const sent = held.filter(isUp)
-    // what was typed is the comment's words; each voice note's words, as you left them, go to the note (B682)
+    // what was typed is the comment's words; each voice note's words, as you left them, go to the note (T682)
     const said = splitVoices(typed, draftNotes(held))
     const text = said.text
     const words = wordsByFile(said.words, sent)
@@ -122,7 +122,7 @@ export class DocComments {
     const { text: shown, files } = this.d.box.take(slug, key)
     const sent = files.filter(isUp)
     // the box began with what was said (typed, then its voice notes' words): what was typed goes as its words, each
-    // note's words as you left them go to the note (B682)
+    // note's words as you left them go to the note (T682)
     const said = splitVoices(shown, [...shownNotes(c?.files), ...draftNotes(sent)], c?.typed ?? c?.text)
     const text = said.text
     const words = { ...wordsByFile(said.words, sent), ...Object.fromEntries(Object.entries(said.words).filter(([k]) => !sent.some((f) => f.key === k))) }

@@ -8,7 +8,7 @@ test('what needs you comes first, each with its one action', async ({ page, requ
   const p = await project(request, LOOP)
   await open(page, p)
   const names = (await views(page).allInnerTexts()).map((t) => t.replace(/\d+/g, '').trim()).filter((t) => t !== 'Archive')
-  expect(names).toEqual(['Needs you', 'Active', 'All', 'Open', 'Later', 'Done', "Won't do"]) // F486: Needs you first (Archive, a tab, sits after All)
+  expect(names).toEqual(['Needs you', 'Active', 'All', 'Open', 'Later', 'Done', "Won't do"]) // T486: Needs you first (Archive, a tab, sits after All)
   const needs = needActs(page)
   await expect(needs).toHaveCount(3)
   const kinds = (await needKind(needs)).sort()
@@ -51,7 +51,7 @@ test('the task page shows its state, and its priority button changes the priorit
   await open(page, p)
   await row(page, 'Write the user docs').click()
   await expect(pane(page).locator('h1')).toHaveText('Write the user docs')
-  await priChip(page).click() // B358: the button opens its own short list
+  await priChip(page).click() // T358: the button opens its own short list
   await sheetBody(page).getByRole('button', { name: /^P0\b/ }).click()
   await expect.poll(async () => (await p.read('T4')).split('\n')[0]).toContain(' P0 ')
 })

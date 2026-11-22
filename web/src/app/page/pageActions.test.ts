@@ -17,7 +17,7 @@ const history = (): History => ({
   listen: () => () => {},
 })
 
-describe('PageActions (B791: what you do on the page is logged)', () => {
+describe('PageActions (T791: what you do on the page is logged)', () => {
   let stop = () => {}
   afterEach(() => {
     stop()
@@ -45,7 +45,7 @@ describe('PageActions (B791: what you do on the page is logged)', () => {
     words.textContent = 'just words'
     const row = document.createElement('article')
     row.setAttribute('data-n', '12')
-    row.innerHTML = '<div data-swipe-left>Done Later</div><div data-swipe="12">B12 <b>Fix the login</b></div>'
+    row.innerHTML = '<div data-swipe-left>Done Later</div><div data-swipe="12">T12 <b>Fix the login</b></div>'
     const settings = document.createElement('button')
     settings.innerHTML = 'Settings <kbd>G</kbd> <kbd>S</kbd>'
     document.body.append(send, box, words, row, settings)
@@ -56,7 +56,7 @@ describe('PageActions (B791: what you do on the page is logged)', () => {
     box.dispatchEvent(new KeyboardEvent('keydown', { key: 'h', bubbles: true }))
     box.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
     log.send(false)
-    expect(sent[0].map((e) => [e.kind, e.what ?? ''])).toEqual([['open', ''], ['tap', 'Send'], ['tap', 'B12 Fix the login'], ['tap', 'Settings'], ['key', 'Enter']])
+    expect(sent[0].map((e) => [e.kind, e.what ?? ''])).toEqual([['open', ''], ['tap', 'Send'], ['tap', 'T12 Fix the login'], ['tap', 'Settings'], ['key', 'Enter']])
   })
 
   test("a refused request is logged with the server's reason, a slow one too; a quick one and the wait for news are not", async () => {
@@ -77,16 +77,16 @@ describe('PageActions (B791: what you do on the page is logged)', () => {
 
   test('what you send is logged by where it went and how long it is, never its words; a send that failed too', () => {
     const { log, sent, outbox } = page(async () => new Response('{}'))
-    const o = { q: 'q1', slug: 'shop', text: 'my secret words', scope: 'B12', files: [{ f: 'f1-voice.webm', name: 'voice.webm', mime: 'audio/webm', size: 9 }], t: 1, state: 'waiting' as const, tries: 0 }
+    const o = { q: 'q1', slug: 'shop', text: 'my secret words', scope: 'T12', files: [{ f: 'f1-voice.webm', name: 'voice.webm', mime: 'audio/webm', size: 9 }], t: 1, state: 'waiting' as const, tries: 0 }
     outbox.getState().push(o)
     outbox.getState().update('q1', { state: 'failed', net: true, tries: 1 })
     log.send(false)
     const rows = sent[0].filter((e) => e.kind !== 'open')
-    expect(rows).toEqual([expect.objectContaining({ kind: 'send', to: 'B12', chars: 15, files: 1, voice: 1 }), expect.objectContaining({ kind: 'send-failed', to: 'B12', net: true, tries: 1 })])
+    expect(rows).toEqual([expect.objectContaining({ kind: 'send', to: 'T12', chars: 15, files: 1, voice: 1 }), expect.objectContaining({ kind: 'send-failed', to: 'T12', net: true, tries: 1 })])
     expect(JSON.stringify(sent)).not.toContain('secret')
   })
 
-  test('a sheet or menu that opens is logged, once, by its kind (B842: taps on Type could not be told from taps on nothing)', () => {
+  test('a sheet or menu that opens is logged, once, by its kind (T842: taps on Type could not be told from taps on nothing)', () => {
     const { log, sent, sheet } = page(async () => new Response('{}'))
     sheet.getState().open({ req: { kind: 'task-menu', n: 10, arm: 't' } } as never)
     sheet.getState().setArm('t')
@@ -95,7 +95,7 @@ describe('PageActions (B791: what you do on the page is logged)', () => {
     expect(sent[0].filter((e) => e.kind === 'sheet')).toEqual([expect.objectContaining({ kind: 'sheet', what: 'task-menu', arm: 't' })])
   })
 
-  test('a swipe on a row is logged with the way it went and what it did (F846: swipes were not in the log)', () => {
+  test('a swipe on a row is logged with the way it went and what it did (T846: swipes were not in the log)', () => {
     const { log, sent } = page(async () => new Response('{}'))
     document.body.innerHTML = `<article data-n="12"><div data-swipe-left hidden>Done</div><div data-swipe-right hidden><button>Later</button><button>Won't do</button></div><div data-swipe="12">Fix the export</div></article>`
     const row = document.body.getElementsByTagName('article')[0].lastElementChild as HTMLElement
@@ -115,7 +115,7 @@ describe('PageActions (B791: what you do on the page is logged)', () => {
     document.body.innerHTML = ''
   })
 
-  test('every other action is logged by what it was done to, never its words (F846 r1451)', () => {
+  test('every other action is logged by what it was done to, never its words (T846 r1451)', () => {
     const { log, sent } = page(async () => new Response('{}'))
     document.body.innerHTML = `<button>Priority</button><select aria-label="Sort"><option>Newest</option><option>Oldest</option></select><textarea aria-label="Say something">secret draft</textarea>`
     const [button] = document.body.getElementsByTagName('button')

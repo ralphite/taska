@@ -107,7 +107,7 @@ describe('the ways it can go', () => {
   test('Edit and × take it back: at once when it waits, once Taska has it when it is going out', () => {
     expect(outStep(out({ state: 'failed', net: true }), 'edit')).toBe('remove')
     expect(outStep(out({ state: 'failed' }), 'edit')).toBe('remove')
-    // going out while Taska seems out of reach: it may get there, so it is deleted there once Taska answers (B666)
+    // going out while Taska seems out of reach: it may get there, so it is deleted there once Taska answers (T666)
     expect(outStep(out({ state: 'sending' }), 'edit', AWAY)).toEqual({ unsent: true })
     expect(outStep(out({ state: 'sending' }), 'cancel')).toEqual({ unsent: true })
     expect(outStep(out(), 'cancel')).toBe('remove')

@@ -32,7 +32,7 @@ test('r506 r519: a task dragged onto another project in the sidebar leaves the l
   expect(await p.read('tasks?status=all')).not.toContain('Write the user docs')
 })
 
-test('r518 r527 (B408, B799): what you wrote in its box and did not send goes along to the task there', async ({ page, request }) => {
+test('r518 r527 (T408, T799): what you wrote in its box and did not send goes along to the task there', async ({ page, request }) => {
   test.skip(!isDesk(page), 'dragging to the sidebar is on the desktop')
   const p = await project(request, LOOP),
     to = await project(request)

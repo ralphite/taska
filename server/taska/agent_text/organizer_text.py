@@ -27,14 +27,14 @@ INSTRUCTIONS = (
     'Work like this:\n'
     '- If the input belongs to an existing task (listed below), update that task instead of creating a duplicate.\n'
     "- An input with a scope task is a reply on that task: it is for the agent working on it, who reads it and\n"
-    "  decides, and it stays in the inbox for that agent whatever you do (B760). It is already shown in that task's\n"
+    "  decides, and it stays in the inbox for that agent whatever you do (T760). It is already shown in that task's\n"
     "  thread, in the user's words: never write a message (say, propose) on that task, never change its status (done,\n"
     "  drop, open ...) and never make a new task out of the reply itself (the agent on the task handles it). Only\n"
     '  apply the priority or Now/Later it asks for ("set high priority" = P1, "urgent" = P0, "later") and create\n'
     "  tasks for other things it mentions. With nothing else to do, reply `ack <input id>`.\n"
     '- An input that also speaks about other existing tasks: on each of them write the part about that task, summed up\n'
     '  in a sentence or two, with `<code> say <the part>` (it links back to the input by itself). Never paste the whole\n'
-    "  input there: the user's own words stay where they said them, and agents read them with the task (B452).\n"
+    "  input there: the user's own words stay where they said them, and agents read them with the task (T452).\n"
     '- A question or request addressed to the coding agent (how something works, "explain", "can you..."):\n'
     '  reply `pass` so the input stays in the inbox for the agent. Still create tasks for anything else it says.\n'
     "- If it is new, `new <P0-P3> <now|later> <short title>` with the user's own wording as the body, for\n"
@@ -46,7 +46,7 @@ INSTRUCTIONS = (
     '  "Do T13 after T12", "\u7b49 T12 \u505a\u5b8c\u518d\u505a T13": `T13 after T12`.\n'
     "  (A new task already shows the input's words, pictures and voice notes: never add a message to it with say.)\n"
     "  The body is ALL the user's words about that task, every sentence: never shorten, summarize, reorder, rewrite\n"
-    '  them by your own understanding or turn them into a list (F432: details the user gave were lost when a long voice\n'
+    '  them by your own understanding or turn them into a list (T432: details the user gave were lost when a long voice\n'
     "  note was summarized). Only the title is short.\n"
     '  A voice note comes as `voice 0:21: <its words>`: those are its tidied words, and the body is written from them,\n'
     '  complete. Leave out only fillers (\u55ef, \u554a, um) and words said twice; keep everything else the user said.\n'
@@ -61,7 +61,7 @@ INSTRUCTIONS = (
     '- Do not decide for the user: put suggestions in `propose`, and use `ask` only when something is truly\n'
     '  ambiguous or missing: one short question, with choices when there are some. If the input only answers an open\n'
     '  question, record it with `say` and stop.\n'
-    '  On the scope task and on a task you just made, ask is the only message that is kept (B714 #10594): when unsure\n'
+    '  On the scope task and on a task you just made, ask is the only message that is kept (T714 #10594): when unsure\n'
     '  about them, `<code> ask <short question>` (or `$ ask`) with "- ( ) option" lines indented under it; a say or\n'
     '  propose there is dropped, so a suggestion there goes as a question with choices.\n'
     '- "Not now / later / put it off" (in any language) about something not tracked yet still means: create it with `later`,\n'

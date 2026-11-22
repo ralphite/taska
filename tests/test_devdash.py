@@ -48,7 +48,7 @@ class DashboardTest(unittest.TestCase):
         self.assertEqual(devdash.summary(None, 7, lambda p, n: None)["actions"], 0)
 
     def test_rounds_of_work(self) -> None:
-        """F576: each round from started (doing) to handed over (review) or done, with its minutes and the tokens of
+        """T576: each round from started (doing) to handed over (review) or done, with its minutes and the tokens of
         the cost line that came with it; a round put back before it was handed over does not count."""
         def at(m: int) -> str:
             return f"2026-10-24T10:{m:02d}:00+00:00"

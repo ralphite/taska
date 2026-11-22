@@ -188,7 +188,7 @@ class VoicePrefs:
 
 
 class SearchByMeaning:
-    """Whether search also finds by what the words mean (F479, with embeddings): on unless the file
+    """Whether search also finds by what the words mean (T479, with embeddings): on unless the file
     `search-by-meaning-off` is there."""
 
     def __init__(self, root: str):

@@ -12,7 +12,7 @@ import type { InputMenuFacts } from './InputSheets'
 /** What Delete in an input's menu asks by (its second click deletes). */
 export const inputDeleteAsk = (id: string) => `input-delete ${id}`
 
-/** `desk`: the desktop shows a voice note's original words under the pointer, so its menu has no Original words (B640);
+/** `desk`: the desktop shows a voice note's original words under the pointer, so its menu has no Original words (T640);
  * `tidy`: voice notes' words are tidied (Settings), so the phone's menu offers them. */
 export function inputMenuFacts(m: ProjectModel, r: Input, otherProjects: number, asked: Readonly<Record<string, number>>, desk: boolean, tidy: boolean): InputMenuFacts {
   const code = (n: number) => codeOf(m, n)

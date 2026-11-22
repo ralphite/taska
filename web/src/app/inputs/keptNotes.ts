@@ -31,7 +31,7 @@ export interface KeptNotesDeps {
   resume(slug: string, key: DraftKey, f: DraftFile, blob: Blob, scope: string | null): void
   /** its words go into its draft */
   place(slug: string, key: DraftKey, f: DraftFile): void
-  /** a draft's name, as the box says it ("New input", "B12") */
+  /** a draft's name, as the box says it ("New input", "T12") */
   draftName(key: DraftKey): string
   goDraft(key: DraftKey): void
   boxKey(): DraftKey
@@ -71,7 +71,7 @@ export class KeptNotes {
     return rid
   }
 
-  /** Files of a draft whose task went to another project (B799): kept for its draft there (`to`, `key`), not up
+  /** Files of a draft whose task went to another project (T799): kept for its draft there (`to`, `key`), not up
    * there yet; they come back into that draft, and go up to that project, when it opens. Taken out of here first, so
    * this project's drafts letting them go does not let the browser forget them. */
   carry(files: readonly DraftFile[], to: string, key: DraftKey): void {

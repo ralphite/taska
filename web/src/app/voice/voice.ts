@@ -2,8 +2,8 @@
 // automatic gain), the note put in the draft it was started in (wherever you are when it stops), uploaded at once and
 // its words worked out in the background; they go where it was recorded in the draft when they come. Stop and send
 // sends it at once (sending waits only for the upload; its words join the input when they come). Esc on a new
-// input's note keeps it in the inputs as cancelled, sent to no one, to listen to and send later (B627). An input's own
-// Voice records more to add to it, and stopped there it is added as Add more adds (F657).
+// input's note keeps it in the inputs as cancelled, sent to no one, to listen to and send later (T627). An input's own
+// Voice records more to add to it, and stopped there it is added as Add more adds (T657).
 
 import { Delivery } from '../../api/delivery'
 import { Abandoned } from '../../api/http'
@@ -113,7 +113,7 @@ export class Voice {
       const mic = await this.d.mic.open()
       this.stream = mic.stream
       // what the phone does to the sound (its gain, noise suppression), told to the developers' log: a note whose quiet
-      // parts went silent and loud parts too loud had them on (B745)
+      // parts went silent and loud parts too loud had them on (T745)
       const { echoCancellation, noiseSuppression, autoGainControl, sampleRate, channelCount } = mic.settings
       void this.d.api
         .pageLog(slug, [{ kind: 'mic', level: mic.refused ? 'warn' : 'info', where: 'opened', msg: mic.refused ? `opened its usual way: ${mic.refused}` : 'opened as it hears', settings: { echoCancellation, noiseSuppression, autoGainControl, sampleRate, channelCount }, ua: navigator.userAgent }])
@@ -133,7 +133,7 @@ export class Voice {
       if (e.data.size) this.chunks.push(e.data)
     }
     // it stopped by itself (the phone took the microphone away): what was said so far goes into its draft at once,
-    // as Stop puts it there, and the phone's muting is said (B745)
+    // as Stop puts it there, and the phone's muting is said (T745)
     rec.addEventListener('stop', () => {
       if (this.rec === rec) void this.finish(false)
     })
@@ -155,7 +155,7 @@ export class Voice {
     this.tick = window.setInterval(() => this.d.store.getState().tick(Date.now() - this.t0, meter()), 100)
   }
 
-  /** An input's own Voice (F657): more to add to input `id`, recorded at once; pressed again it stops and is added
+  /** An input's own Voice (T657): more to add to input `id`, recorded at once; pressed again it stops and is added
    * there as Add more adds. One recording at a time: one going on elsewhere stops first, as its own Stop would (one
    * for another input is added there; any other goes into its draft). */
   async addTo(slug: string, id: string, scope: string | null): Promise<void> {
@@ -226,7 +226,7 @@ export class Voice {
     else if (this.d.desk() && !kept) this.d.fields.get('box')?.focus({ preventScroll: true })
   }
 
-  /** Esc. A new input's note of a second or more is kept in the inputs as cancelled, sent to no one (B627); any other
+  /** Esc. A new input's note of a second or more is kept in the inputs as cancelled, sent to no one (T627); any other
    * is discarded, and Undo brings it back for a few seconds. */
   async cancel(): Promise<void> {
     const r = this.d.store.getState().rec
@@ -291,7 +291,7 @@ export class Voice {
 
   /** Up to Taska, then its words: tried again with growing pauses for as long as Taska can't be reached (it is kept
    * in this browser meanwhile, r512), at once when the network is back; refused, it says so (`cancelled`: a note
-   * kept as cancelled, B627). */
+   * kept as cancelled, T627). */
   private async hear(slug: string, key: DraftKey, f: DraftFile, blob: Blob, scope: string | null, cancelled = false): Promise<void> {
     const delivery = this.d.delivery
     let fid = f.f
@@ -359,7 +359,7 @@ export class Voice {
   }
 
   /** The final words take the place of the first ones in the draft (or go after it), with what may be misheard in
-   * them (B724): on the phone the words to check show in the box, as for first words. */
+   * them (T724): on the phone the words to check show in the box, as for first words. */
   private fuller(slug: string, key: DraftKey, f: DraftFile, words: string, doubts: Doubt[]): void {
     const was = f.trAdded || f.tr
     const v = this.d.box.text(slug, key)

@@ -131,7 +131,7 @@ export const listedCommentCount = (d: Doc) => d.blocks.reduce((k, b) => k + b.co
  * comments it has. */
 export function listedDocs(m: ProjectModel): { d: number; title: string; web: boolean; on: string; comments: number }[] {
   return m.docs
-    .filter((d) => d.kind !== 'rules') // the rules are the Rules tab, not one of the documents (I693)
+    .filter((d) => d.kind !== 'rules') // the rules are the Rules tab, not one of the documents (T693)
     .sort((a, b) => b.d - a.d)
     .map((d) => {
       const it = m.byN.get(liveN(m, d.n))

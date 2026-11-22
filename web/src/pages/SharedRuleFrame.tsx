@@ -1,4 +1,4 @@
-// A shared rule's page frame (I779): on the desktop Settings' column of sections beside the shared rule (read as the
+// A shared rule's page frame (T779): on the desktop Settings' column of sections beside the shared rule (read as the
 // Rules tab reads a project's rules, the box under it); on the phone the shared rule alone, a page of Settings. Props
 // only: the column, the rule and the box come in drawn.
 

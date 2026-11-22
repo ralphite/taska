@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Stop hook (B811): an agent session that works through Taska never ends a turn without listening for new work.
+# Stop hook (T811): an agent session that works through Taska never ends a turn without listening for new work.
 # At the end of each turn Claude Code runs this with the hook's JSON on stdin. It asks the local Taska whether this
 # session gave Taska its id and whether a background wait for work (/next?wait) is open for it now, or ended a minute
 # ago or less. If the session is known and not listening, the stop is blocked with a reason that tells it to start
@@ -21,7 +21,7 @@ except ValueError:
 if d.get("known") and not d.get("listening"):
     print(json.dumps({"decision": "block", "reason":
         "Taska: this session is not listening for new work, so work that comes in would wait with nobody taking it "
-        "(B811). Before ending the turn, start the background wait from Taska'"'"'s /agent guide with Bash "
+        "(T811). Before ending the turn, start the background wait from Taska'"'"'s /agent guide with Bash "
         "run_in_background (it costs no tokens), then end the turn."}))
 ' 2>/dev/null
 exit 0

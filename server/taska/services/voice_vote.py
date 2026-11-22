@@ -1,4 +1,4 @@
-"""Where the fast and the strong model heard a voice note differently, reviewers settle it (B724; Yadong: "cost
+"""Where the fast and the strong model heard a voice note differently, reviewers settle it (T724; Yadong: "cost
 doesn't matter, user experience does", "five models, the first three answers"). Each reviewer hears the note with
 both transcripts, the spots where they disagree numbered, and the project's words, and answers each spot: the strong
 model's words, the fast model's, or its own. The first three answers count; a reading two of them give is used,

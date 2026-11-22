@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { FOLD_FROM, shownLines } from './MsgText'
 
-// F692 (r1113): Show more only from 20 lines; change only on Yadong's explicit word
+// T692 (r1113): Show more only from 20 lines; change only on Yadong's explicit word
 describe('when a message folds', () => {
   test('from 20 lines as it reads', () => {
     expect(FOLD_FROM).toBe(20)

@@ -1,4 +1,4 @@
-"""Commands on the project's rules document (I693): the user writes it whole (the page's editor), restores a version
+"""Commands on the project's rules document (T693): the user writes it whole (the page's editor), restores a version
 or takes a restore back; the organizer changes sections from the user's own words, at once; agents only propose
 changes by sections, with why, and the user approves or declines. Every write is a version (domain.versions); a
 proposal whose sections changed since it was written goes back to its agent to write again.
@@ -58,7 +58,7 @@ def write(r: Run, md: str, why: str, src: Optional[str], **more: object) -> Opti
     md = md.strip("\n")
     if len(md) > MAX_TEXT:
         raise Refused("the rules are too long")
-    if r.project.holds_shared:  # one level (I779, D134)
+    if r.project.holds_shared:  # one level (T779, D134)
         check_shared_text(md)
     d = _doc(s)
     if (d.md if d else "") == md and not more.get("undo"):

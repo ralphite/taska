@@ -1,4 +1,4 @@
-// A project's card beside its row in the sidebar, and beside its icon on the folded rail (F667, as Nota's card beside
+// A project's card beside its row in the sidebar, and beside its icon on the folded rail (T667, as Nota's card beside
 // a note): its tile and name; how many things are open, finished, need you; its inputs and documents; the agent last
 // heard of; when it last changed. It shows at once while a mouse is over the project, with no delay and no motion,
 // right beside the row, its left edge over the sidebar's own (r1066). The pointer can move from the row into it: it
@@ -24,7 +24,7 @@ const AGENT: Record<AgentTone, string> = {
 }
 
 /** The card itself (props only): its stories draw it alone. `href`/`onOpen`: its name opens the project. */
-export function ProjectCard({ title, tone, icon, card, href, onOpen, onMenu }: { title: string; tone: string; icon?: string; card: ProjectCardFacts; href?: string; onOpen?(e: MouseEvent<HTMLAnchorElement>): void; /** ⋯ at its top right: the project's menu (F767) */ onMenu?(from: HTMLElement): void }) {
+export function ProjectCard({ title, tone, icon, card, href, onOpen, onMenu }: { title: string; tone: string; icon?: string; card: ProjectCardFacts; href?: string; onOpen?(e: MouseEvent<HTMLAnchorElement>): void; /** ⋯ at its top right: the project's menu (T767) */ onMenu?(from: HTMLElement): void }) {
   const open = typeof card.open === 'number' ? card.open : null
   const tasks = open != null && card.closed != null ? open + card.closed : null
   const any = tasks !== 0 || card.needs || card.inputs || card.docs || card.agent || card.changed
@@ -109,7 +109,7 @@ const GRACE = 200
 /** Which project's card shows, and the handlers its rows and the card take: a mouse over a row (no button held) shows
  * its card at once, right beside the row; leaving the row or the card puts it away after GRACE unless the pointer has
  * come onto the other. `menuFor`: the project whose menu is open: its card stays while the menu is open (the pointer
- * goes into the menu), and goes when it closes (F767 r1299). */
+ * goes into the menu), and goes when it closes (T767 r1299). */
 export function useProjectCard(off = false, menuFor: string | null = null) {
   const [hovered, setHovered] = useState<Hovered | null>(null)
   const timer = useRef(0)

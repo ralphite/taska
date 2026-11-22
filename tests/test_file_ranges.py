@@ -1,4 +1,4 @@
-"""F747: a project's file is served in parts when asked (the Range header), as a video player asks for them: the
+"""T747: a project's file is served in parts when asked (the Range header), as a video player asks for them: the
 iPhone's plays a video only from a file served this way."""
 
 from __future__ import annotations

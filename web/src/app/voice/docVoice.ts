@@ -1,5 +1,5 @@
 // Speaking about a document: a place's own Voice (a paragraph, a part of a web page, the bar on selected words)
-// records a voice comment about it and turns into a recording strip there (B498): ✓ stops it (on the desktop the
+// records a voice comment about it and turns into a recording strip there (T498): ✓ stops it (on the desktop the
 // quote and the voice note go into the box; on the phone it is posted), ↑ posts it at once, ✕ cancels.
 // Send with quote lines in the box posts each one's words as a comment on its passage: each shows where it goes at
 // once and the box empties; it is saved behind you once its voice notes' words are there; not saved, it all comes
@@ -54,7 +54,7 @@ export class DocVoice {
   }
 
   /** A place's Voice (a paragraph, a part of a web page): speak about it; it turns into the
-   * recording strip there, whose ✓, ↑ and ✕ stop it (B498). Pressed while it records, it is ✓. */
+   * recording strip there, whose ✓, ↑ and ✕ stop it (T498). Pressed while it records, it is ✓. */
   async say(slug: string, dn: number, key: string, quote: string): Promise<void> {
     if (this.d.recording.getState().rec) return this.check()
     await this.d.voice.start(slug, docDraft(dn), this.host(slug, dn), 'main', { d: dn, key, quote: quote.slice(0, 500), bar: false })
@@ -78,7 +78,7 @@ export class DocVoice {
   }
 
   /** ✓ on a place's recording strip: on the desktop the voice note and its words go into the box below, at this
-   * place, to add to and send; on the phone, which has no box over a document (B643), it is sent. */
+   * place, to add to and send; on the phone, which has no box over a document (T643), it is sent. */
   check(): Promise<void> {
     return this.d.voice.finish(!this.d.desk())
   }
@@ -148,7 +148,7 @@ export class DocVoice {
     for (let i = 0; live().some(stillComing) && i < 240; i++) await wait(500)
     const now = (fs: DraftFile[]) => fs.map((f) => live().find((x) => x.key === f.key) || f)
     const ups = (fs: DraftFile[]) => now(fs).filter(isUp)
-    // each comment's typed words; its voice notes' words, as you left them under the quote, go to the notes (B682)
+    // each comment's typed words; its voice notes' words, as you left them under the quote, go to the notes (T682)
     const ops = posts
       .map(({ s, fs }) => {
         const said = splitVoices(s.text, draftNotes(now(fs)))

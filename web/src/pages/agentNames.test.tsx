@@ -27,7 +27,7 @@ describe('agents by their icon, sessions where they belong (T711)', () => {
     expect(container.textContent).toBe('Fix export· 5m')
   })
 
-  test('B759 (Yadong r1277): the icon is the mark, no dot beside it; an agent without one keeps the dot', () => {
+  test('T759 (Yadong r1277): the icon is the mark, no dot beside it; an agent without one keeps the dot', () => {
     const dot = (by: string) => render(<AgentPill tone="ready" label="" who={{ by, session: '', state: 'ready' }} offline={false} />).container.querySelector('span.rounded-full span.rounded-full')
     expect(dot('claude-code')).toBeNull()
     expect(dot('antigravity')).toBeTruthy()

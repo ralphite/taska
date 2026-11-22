@@ -1,4 +1,4 @@
-"""B627 (Yadong's choice): a recording for a new input cancelled with Esc is kept in the inputs as cancelled, to listen
+"""T627 (Yadong's choice): a recording for a new input cancelled with Esc is kept in the inputs as cancelled, to listen
 to and send later. Until it is sent it is no one's work: not in /inbox, not in /next, not for the organizer. Sending it
 makes it an ordinary new input; only a cancelled input can be sent."""
 

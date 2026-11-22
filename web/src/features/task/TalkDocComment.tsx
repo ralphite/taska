@@ -35,7 +35,7 @@ export function DocComment({ n, env, on }: { n: DocNote; env: TalkEnv; on: TalkL
   ) : null
   // your voice notes inside your bubble, under its words (T668)
   const voices = you ? (c.files || []).filter(isAudio) : []
-  // what was said: its typed words and its voice notes' words (their records, B682); a note with none yet says why
+  // what was said: its typed words and its voice notes' words (their records, T682); a note with none yet says why
   const said = c.text.trim()
   const note = (c.files || []).find(isAudio)
   const notes = sentNotes(c.files)

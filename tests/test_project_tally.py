@@ -1,6 +1,6 @@
-"""F667: each project's counts in the projects' list (the sidebar's card), as its page counts them: open and finished
+"""T667: each project's counts in the projects' list (the sidebar's card), as its page counts them: open and finished
 on Tasks, what needs you, its inputs and documents; archived and deleted left out; the rules document is not one of
-the documents, and a proposed change to it waits on you (I693)."""
+the documents, and a proposed change to it waits on you (T693)."""
 
 from __future__ import annotations
 

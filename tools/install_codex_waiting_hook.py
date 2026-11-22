@@ -1,4 +1,4 @@
-"""Install Codex's PermissionRequest hook (tools/codex_waiting_hook.py, I810 r1373) and trust it as Codex's own
+"""Install Codex's PermissionRequest hook (tools/codex_waiting_hook.py, T810 r1373) and trust it as Codex's own
 /hooks review does: through `codex app-server` (hooks/list gives the hook's hash, config/batchWrite records it under
 hooks.state). Run again it changes nothing.
 

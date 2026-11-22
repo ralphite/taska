@@ -1,4 +1,4 @@
-// The recording's time and level, as a place picked to comment on shows them while it records (B498): read on its
+// The recording's time and level, as a place picked to comment on shows them while it records (T498): read on its
 // own, so what holds it is not drawn again at every moment of sound.
 
 import { clock } from '../model/time'

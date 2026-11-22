@@ -1,5 +1,5 @@
 // Beside a paragraph, on the desktop: speak a comment (Voice turns the two buttons into a recording strip there: ✕,
-// ✓ into the box below, ↑ sent at once; B498) or write one (in the box below); each thread's count, level with the words it quotes and never on another, which opens its comments over the
+// ✓ into the box below, ↑ sent at once; T498) or write one (in the box below); each thread's count, level with the words it quotes and never on another, which opens its comments over the
 // text; in a list each task is its own place to comment on (pointing at one puts the buttons beside it). Props only.
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
@@ -171,7 +171,7 @@ export function BlockActs({ counts, open, rec, picked = false, meter, pointing =
         </div>
       ) : null}
       {/* side by side, the voice first, beside the paragraph (its pointing area reaches over this column); speaking,
-          the strip ends where they end and grows to the left, over the paragraph's first line (B498) */}
+          the strip ends where they end and grows to the left, over the paragraph's first line (T498) */}
       <div ref={box} className={`absolute -right-16 z-10 justify-end ${rec || picked ? 'flex' : 'hidden group-hover/blk:flex'}`}>
         <PlaceVoice
           rec={rec}

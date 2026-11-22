@@ -28,7 +28,7 @@ export type InputPlace = keyof typeof INPUT_PLACES
 /** busy: blue, moving; failed: red; done: green; quiet: grey; plain: the tasks it went to, as links */
 export type InputTone = 'busy' | 'failed' | 'done' | 'quiet' | 'plain'
 
-/** Under your words in a task, what they made there (B714 #10594): → Created B713. */
+/** Under your words in a task, what they made there (T714 #10594): → Created T713. */
 export const MADE_WORD = 'Created'
 
 /** What can be done about it: ask the organizer again after it failed (Retry) or after its filing was undone
@@ -56,7 +56,7 @@ const LISTS = <T extends readonly InputAct[]>(acts: T) => ({ row: acts, inputs: 
 export const INPUT_STATES = {
   // its voice notes' words still to come (each place says it as model/voiceStates does), or more said into it
   transcribing: { label: 'Its words to come', say: 'Transcribing…', tone: 'busy', voice: 'sentTranscribing', settled: false, show: { ...LISTS([]), line: [], talk: [], sheet: [] } },
-  // the organizer on it now, next in line or asking its service again after a busy answer: one word (B684)
+  // the organizer on it now, next in line or asking its service again after a busy answer: one word (T684)
   organizing: { label: 'Organizing', say: 'Organizing…', tone: 'busy', voice: 'organizing', settled: false, show: { ...LISTS([]), line: [], talk: null, sheet: [] } },
   filed: { label: 'Made or changed tasks', say: '', tone: 'plain', voice: 'added', settled: true, show: { ...LISTS([]), line: ['open', 'undo', 'move'], talk: [], sheet: ['undo', 'move'] } },
   answer: { label: 'An answer on its task', say: 'Answer to', tone: 'plain', voice: 'added', settled: true, show: { ...LISTS([]), line: ['open', 'undo', 'move'], talk: null, sheet: ['undo', 'move'] } },
@@ -67,7 +67,7 @@ export const INPUT_STATES = {
   // by Taska itself (T424), so that one is organizing
   failed: { label: "Couldn't organize", say: "Couldn't organize", tone: 'failed', voice: 'organizeFailed', settled: false, show: { ...LISTS(['retry']), line: ['retry'], talk: null, sheet: ['move'] } },
   undone: { label: 'Its filing undone', say: 'Undone', tone: 'quiet', voice: null, settled: true, show: { ...LISTS(['organize']), line: ['organize'], talk: null, sheet: ['move'] } },
-  // a recording cancelled with Esc, kept: Send sends it after all (B627)
+  // a recording cancelled with Esc, kept: Send sends it after all (T627)
   cancelled: { label: 'Recording kept as cancelled', say: 'Cancelled', tone: 'quiet', voice: 'cancelled', settled: true, show: { ...LISTS(['send']), line: null, talk: null, sheet: ['send', 'move'] } },
   moved: { label: 'Moved to another project', say: 'Moved to', tone: 'plain', voice: null, settled: true, show: { ...LISTS(['open']), line: ['open'], talk: ['open'], sheet: null } },
 } as const satisfies Record<string, StateDef>
@@ -222,7 +222,7 @@ export function inputDiagram(): string {
 
 /** what the table says for the states whose words are what they name; the talk shows only the tasks it made there */
 const WORDS: Partial<Record<InputState, string>> = { filed: 'its tasks: Created B014 · Added to F012', answer: 'Answer to T007', note: "the organizer's words", failed: "Couldn't organize · why", transcribing: 'as model/voiceStates says it', moved: 'Moved to Shop' }
-const TALK_WORDS: Partial<Record<InputState, string>> = { filed: `→ ${MADE_WORD} B713 (the tasks it made there)` }
+const TALK_WORDS: Partial<Record<InputState, string>> = { filed: `→ ${MADE_WORD} T713 (the tasks it made there)` }
 
 /** What each place shows in each state, as a Markdown table; —: nothing. */
 export function inputPlacesTable(): string {

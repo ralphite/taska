@@ -1,5 +1,5 @@
 // When Taska has new code. New code waiting for a restart is not offered: Taska restarts by itself once nobody has
-// used it for a minute (tools/ship.sh), so there is nothing for you to press (B654). Taska restarted with new code
+// used it for a minute (tools/ship.sh), so there is nothing for you to press (T654). Taska restarted with new code
 // while this page was open: the page still runs the old code, so it reloads by itself at a good moment (the tab is
 // hidden, or nobody has touched it for a minute), never while a voice note is being recorded or something is still
 // going up or out; until then one Reload offers it.

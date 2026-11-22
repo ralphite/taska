@@ -1,4 +1,4 @@
-"""A task's states (B816): which changes of status are allowed, by whom, and which ones an agent must be told of.
+"""A task's states (T816): which changes of status are allowed, by whom, and which ones an agent must be told of.
 The commands (a task's status set), the agents' /next and the tests ask here; nothing else decides it.
 
 STEPS is the diagram in docs/task-states.md: `mermaid()` draws it, and a test keeps the document the same as this
@@ -8,13 +8,13 @@ code). `told` says when an agent is told of a change of yours (only STOP: you cl
 You may make any change; the organizer any but putting a task in review (it writes down your words, it finishes
 no work). An agent may not approve a proposal (only take its own back), may not reopen what you dropped, and its
 done is review: you accept it. An agent's done also takes back the questions it still has open on the task, so an
-task never waits for your answer and your acceptance at once (I779).
+task never waits for your answer and your acceptance at once (T779).
 
-Your words on a task are your turn given to the agent: on a proposal they approve it (B818 r1401: you would
+Your words on a task are your turn given to the agent: on a proposal they approve it (T818 r1401: you would
 press won't do if you did not want it; a question in them the agent answers before it starts), on a task in review
 or done they say it is not done yet (r961, r1082). An agent's words change no status: it never approves itself.
 
-A subtask the user asked for starts open (B818 r1404): an agent that splits a task into the parts the user asked
+A subtask the user asked for starts open (T818 r1404): an agent that splits a task into the parts the user asked
 for names the user's words it came from (`src=r12`, an input of theirs), and they show on it.
 
 An approval needs no telling: the task joins the queue, and an agent waiting for work is woken by it; one busy with
@@ -80,7 +80,7 @@ def refusal(code: str, frm: str, to: str, by: str, closed_by: Optional[str]) -> 
         return None
     if frm == PROPOSED and to != DROPPED:
         return (f"{code} is proposed: only the user can approve it. To move it on, answer them: `{code} say ...` "
-                f"or `{code} ask ...` puts it back in front of them to approve (B299)")
+                f"or `{code} ask ...` puts it back in front of them to approve (T299)")
     if frm == DROPPED and closed_by in PEOPLE:
         return (f"{code}: the user marked it won't do. Don't reopen or work on it; to ask, post "
                 f"`{code} ask <why it is worth doing>`")

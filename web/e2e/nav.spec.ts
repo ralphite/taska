@@ -1,4 +1,4 @@
-// Going to a project from the sidebar opens the project itself, never a place inside it (B324, B463).
+// Going to a project from the sidebar opens the project itself, never a place inside it (T324, T463).
 // guards: src/features/sidebar/ src/features/home/ src/features/composer/FootContainer.tsx src/features/composer/SaidLatelyContainer.tsx src/pages/ src/app/page/ src/app/project/ src/app/projectLists.ts src/model/route.ts src/sync/
 import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
@@ -12,7 +12,7 @@ const composeList = (page: Page) => page.locator('section[aria-label="Latest inp
 const DATA = /\/api\/view\b/
 
 for (const was of ['projects', 'T1', 'rules']) {
-  test(`r623 r309: a project opens as itself from the sidebar, even after its ${was} was open (B463)`, async ({
+  test(`r623 r309: a project opens as itself from the sidebar, even after its ${was} was open (T463)`, async ({
     page,
     request,
   }) => {
@@ -29,7 +29,7 @@ for (const was of ['projects', 'T1', 'rules']) {
   })
 }
 
-test('r309 B324: a project opens as itself from the home table, though it has something waiting on you', async ({
+test('r309 T324: a project opens as itself from the home table, though it has something waiting on you', async ({
   page,
   request,
 }) => {
@@ -205,7 +205,7 @@ test('D82 #9: switching to another project, its name shows at once (not its addr
   if (isDesk(page)) await expect(sideFoot(page)).toContainText('Documents', { timeout: 2000 })
 })
 
-test('r1057 r1066 F667: on the desktop a project in the sidebar shows its card at once, right beside it over the sidebar\'s edge; the pointer can move into the card, which stays until the pointer has left both', async ({
+test('r1057 r1066 T667: on the desktop a project in the sidebar shows its card at once, right beside it over the sidebar\'s edge; the pointer can move into the card, which stays until the pointer has left both', async ({
   page,
   request,
 }) => {

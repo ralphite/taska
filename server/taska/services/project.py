@@ -44,11 +44,11 @@ class Shared(Protocol):
     def changed(self, slug: str) -> None: ...
 
     def shared_texts(self) -> Dict[str, str]:
-        """Each shared rule's text, by its name (I779): what a project's rules put in by a line `{{name}}`."""
+        """Each shared rule's text, by its name (T779): what a project's rules put in by a line `{{name}}`."""
         ...
 
     def skills(self) -> Dict[str, str]:
-        """The skills (I821), by name: their text as it was last changed, read without any lock."""
+        """The skills (T821), by name: their text as it was last changed, read without any lock."""
         ...
 
 
@@ -58,7 +58,7 @@ def now_iso() -> str:
 
 @dataclass
 class Organizing:
-    """What the organizer is doing here: whether it runs, and the inputs it is working on now (several at once, B684)."""
+    """What the organizer is doing here: whether it runs, and the inputs it is working on now (several at once, T684)."""
 
     on: bool = False
     busy: Set[str] = field(default_factory=set)
@@ -75,12 +75,12 @@ class Project:
         self.files = FileStore(self.folder)
         self.news = News(self.lock, rev=self.store.count)
         self.gone = False  # deleted while this ran
-        self.holds_shared = False  # one of the shared rules (I779): it keeps only its rules document
+        self.holds_shared = False  # one of the shared rules (T779): it keeps only its rules document
         self.organizing = Organizing()
         self.agents = AgentActivity(self.store.db, self.state, changed=self.news.wake, gone=lambda: self.gone)
         self.voice = VoiceJobs(self)
         self.codex_notifications = CodexNotifications(self)
-        self.waker = Waker(self)  # B762: wakes the Antigravity session that runs it
+        self.waker = Waker(self)  # T762: wakes the Antigravity session that runs it
 
     def _warn(self, seq: int, what: str) -> None:
         """A change in the log that could not be read or applied when the project opened: skipped. Logged, and counted
@@ -102,11 +102,11 @@ class Project:
         return self.state.title or self.slug
 
     def shared_texts(self) -> Dict[str, str]:
-        """The shared rules a line of this project's rules can put in, by name (I779)."""
+        """The shared rules a line of this project's rules can put in, by name (T779)."""
         return self.shared.shared_texts() if self.shared and not self.holds_shared else {}
 
     def skills(self) -> Dict[str, str]:
-        """The skills the user may apply to what they say (I821), by name."""
+        """The skills the user may apply to what they say (T821), by name."""
         return self.shared.skills() if self.shared and not self.holds_shared else {}
 
     def held(self, inp: Input) -> bool:

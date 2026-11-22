@@ -46,8 +46,8 @@ export class Answers {
     return this.d.outbox.getState().list.filter((o) => o.slug === slug && o.scope === codeOf(m, n) && o.kind === 'answer').at(-1) ?? null
   }
 
-  /** The choices picked on the task's question, as the answer says them, to go with what is in the box (B145);
-   * null when none is picked (or its questions in a row answer on their card, B749). */
+  /** The choices picked on the task's question, as the answer says them, to go with what is in the box (T145);
+   * null when none is picked (or its questions in a row answer on their card, T749). */
   picks(m: ProjectModel, slug: string, it: Task): { text: string; done(): void } | null {
     if (askRowOf(it.thread, it.wait?.id)) return null
     const chosen = [...this.picked(it)].sort((a, b) => a - b)
@@ -60,7 +60,7 @@ export class Answers {
     return { text, done: () => this.d.view.getState().endAnswer() }
   }
 
-  /** Send the answer: the choices picked, and what is written in the task's box with them (B145). */
+  /** Send the answer: the choices picked, and what is written in the task's box with them (T145). */
   send(m: ProjectModel, slug: string, it: Task): boolean {
     const answer = this.picks(m, slug, it)
     if (!answer) return false
@@ -68,7 +68,7 @@ export class Answers {
     return this.d.box.send(slug, m, code, replyDraft(code), answer)
   }
 
-  /** Your answers to some of the questions in a row (`of`), as one reply; the others keep waiting (B749). */
+  /** Your answers to some of the questions in a row (`of`), as one reply; the others keep waiting (T749). */
   sendRow(m: ProjectModel, slug: string, it: Task, of: number[], text: string): void {
     this.d.inputs.push({ slug, text, files: [], scope: codeOf(m, it.n), quiet: true, kind: 'answer', of })
   }

@@ -1,4 +1,4 @@
-// When a task was made and when it last changed, as its page says them (F704 r1157): one quiet line under its chips
+// When a task was made and when it last changed, as its page says them (T704 r1157): one quiet line under its chips
 // ("Nov 3 by Organizer · Updated 2h ago"), and both times in full (the phone's sheet, the desktop's tip). `t0` is when
 // it was made, `by` who made it (you, the organizer or an agent; not always known); `t1` its last change of any kind
 // (a field, a message, a document, a merge). Told against `now` (ms), the model's time.

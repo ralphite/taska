@@ -5,11 +5,11 @@ import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
 import { blockPick, blockSay, box, boxAux, boxLine, boxMain, choice, commentRail, docBlock, docBlocks, docCard, draftFiles, duo, form, partSay, placeRec, sayCancel, sayCheck, saySend, sendChoices, talk, threadCounts } from '../ui'
 
-// a microphone that hears a tone, so a spoken comment records as it does for him (the phone's, B643)
+// a microphone that hears a tone, so a spoken comment records as it does for him (the phone's, T643)
 test.use({ launchOptions: { args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] } })
 
 /** How many choices wait, where it is said: the box's line on the desktop, the document's own line on the phone
- * (no box over a document, B643), which has Send choices too. */
+ * (no box over a document, T643), which has Send choices too. */
 const waitSays = async (page: Page, words: string) =>
   isDesk(page) ? expect(boxLine(page)).toContainText(words) : expect(page.getByText(words, { exact: true }).filter({ visible: true }).first()).toBeVisible()
 
@@ -92,7 +92,7 @@ test("r524: choices in a document are ticked on the page and wait; the box's lin
   for (const f of ['Apples', 'Plums']) await choice(page, f).click()
   await waitSays(page, '2 choices not sent')
   expect(await p.read('D1')).not.toMatch(/\[x\] Apples/i) // waiting on the page, not sent one by one
-  await sendChoices(page).click() // B524 (r736): the line's own button, not the box's
+  await sendChoices(page).click() // T524 (r736): the line's own button, not the box's
   await expect.poll(() => p.read('D1')).toMatch(/\[x\] Apples/i)
   expect(await p.read('D1')).toMatch(/\[x\] Plums/i)
   expect(await p.read('D1')).not.toMatch(/\[x\] Pears/i)
@@ -149,14 +149,14 @@ test("r736 r722: ticks wait, the box's mic stays the mic; Send choices is in the
     const at = async () => (await main.isVisible()) && (await main.boundingBox())
     const before = await at()
     await choice(page, 'Apples').click()
-    // the box's round button is still the mic, where it was (B524: reaching for it sent the choices)
+    // the box's round button is still the mic, where it was (T524: reaching for it sent the choices)
     await expect(line).toContainText('1 choice not sent')
     await expect(main).toBeVisible()
     await expect(main).toHaveAccessibleName('Record a voice note')
     await expect(boxAux(page)).toBeHidden() // the mic did not move aside
     if (before) expect(await main.boundingBox()).toEqual(before)
   } else {
-    // the phone: no box comes over the document (B643); its own line has Send choices
+    // the phone: no box comes over the document (T643); its own line has Send choices
     await choice(page, 'Apples').click()
     await expect(page.locator('#composer')).toBeHidden()
   }
@@ -189,12 +189,12 @@ test("r736 r722: ticks wait, the box's mic stays the mic; Send choices is in the
   await expect(docCard(page, 'Pick the fruit')).not.toContainText('not sent')
 })
 
-test('r736 #6754: what is written in the box goes with Send choices as their note, and the box is empty after (B524)', async ({
+test('r736 #6754: what is written in the box goes with Send choices as their note, and the box is empty after (T524)', async ({
   page,
   request,
 }) => {
-  // the note is what the box holds; the phone has no box over a document (B643), its choices go without one (r524)
-  test.skip(!isDesk(page), 'the phone has no box over a document to write a note in (B643)')
+  // the note is what the box holds; the phone has no box over a document (T643), its choices go without one (r524)
+  test.skip(!isDesk(page), 'the phone has no box over a document to write a note in (T643)')
   const p = await project(request, {
     ...LOOP,
     then: `${LOOP.then}T4 doc Pick the fruit
@@ -213,7 +213,7 @@ test('r736 #6754: what is written in the box goes with Send choices as their not
   await expect.poll(() => p.read('D1')).toMatch(/\[x\] Pears/i)
 })
 
-test('B643 B715 r1169: on the phone a document opens with no box, and nothing at its end to comment on the whole of it', async ({
+test('T643 T715 r1169: on the phone a document opens with no box, and nothing at its end to comment on the whole of it', async ({
   page,
   request,
 }) => {
@@ -228,13 +228,13 @@ test('B643 B715 r1169: on the phone a document opens with no box, and nothing at
   })
   await open(page, p, 'D1')
   await expect(docBlock(page, 'Second part')).toBeVisible()
-  // B643 (r955): no box over a document on the phone; B715 (r1169): no hint and no Comment on the whole document
+  // T643 (r955): no box over a document on the phone; T715 (r1169): no hint and no Comment on the whole document
   await expect(page.locator('#composer')).toBeHidden()
   await expect(page.getByRole('button', { name: 'Comment on the whole document' })).toHaveCount(0)
   await expect(page.getByText('Tap, select or circle to comment')).toHaveCount(0)
 })
 
-test('B715 r1169: a block picked, its comment buttons float over the page: no words below it move, on the phone and the desktop', async ({
+test('T715 r1169: a block picked, its comment buttons float over the page: no words below it move, on the phone and the desktop', async ({
   page,
   request,
 }) => {
@@ -274,7 +274,7 @@ test('B715 r1169: a block picked, its comment buttons float over the page: no wo
   expect(await below()).toEqual(before)
 })
 
-test('B715 r1175 r1176: on the phone a task of a list picked, its buttons sit right at its edge and stay there: over time, after an update, while speaking', async ({
+test('T715 r1175 r1176: on the phone a task of a list picked, its buttons sit right at its edge and stay there: over time, after an update, while speaking', async ({
   page,
   request,
 }) => {
@@ -320,7 +320,7 @@ test('B715 r1175 r1176: on the phone a task of a list picked, its buttons sit ri
     expect(await gap(), task).toBe(6)
     const at = await from()
     expect(await words()).toEqual(before)
-    // a while later and after an update arrives, still there (B715 r1176: "after a while they jump")
+    // a while later and after an update arrives, still there (T715 r1176: "after a while they jump")
     await page.waitForTimeout(1500)
     await p.doAs('D1 reply ¶1 An agent note')
     await expect(threadCounts(page).first()).toBeVisible()
@@ -382,7 +382,7 @@ D1 reply ¶3 An agent note to delete
   }
 })
 
-test("r691 #6505: a document open on the desktop is a column of its own beside its task's conversation, which holds its comments, once the pane is wide enough for two columns (B505, B557)", async ({
+test("r691 #6505: a document open on the desktop is a column of its own beside its task's conversation, which holds its comments, once the pane is wide enough for two columns (T505, T557)", async ({
   page,
   request,
 }) => {
@@ -412,7 +412,7 @@ test("r691 #6505: a document open on the desktop is a column of its own beside i
   await expect(commentRail(page)).toHaveCount(0) // no fifth column of comments
 })
 
-test('r783: at 1440 wide a document on the desktop is one column, the document alone: the four columns come only where a task would have two in its pane too (B557)', async ({
+test('r783: at 1440 wide a document on the desktop is one column, the document alone: the four columns come only where a task would have two in its pane too (T557)', async ({
   page,
   request,
 }) => {
@@ -436,7 +436,7 @@ test('r783: at 1440 wide a document on the desktop is one column, the document a
   await expect(duo(page)).toHaveCount(0)
 })
 
-test('r824 r837 r849 (B584): selecting words in a document changes nothing in the box; only its Comment makes them what the box comments on', async ({
+test('r824 r837 r849 (T584): selecting words in a document changes nothing in the box; only its Comment makes them what the box comments on', async ({
   page,
   request,
 }) => {
@@ -499,7 +499,7 @@ test('D83 #4 (r767 r774): choices ticked and then a paragraph picked: the box sa
     await expect(composer).toContainText('Comment on D1') // the paragraph is still what a comment goes to
     return
   }
-  // the phone (no box, B643): the paragraph's voice button floats, the document's line has Send choices
+  // the phone (no box, T643): the paragraph's voice button floats, the document's line has Send choices
   await expect(partSay(page)).toHaveCount(1)
   await waitSays(page, '1 choice not sent')
   await sendChoices(page).click()
@@ -507,7 +507,7 @@ test('D83 #4 (r767 r774): choices ticked and then a paragraph picked: the box sa
   await expect(partSay(page)).toHaveCount(1) // the paragraph is still what a comment goes to
 })
 
-// ---------------------------------------------------------------- B498: Voice on a place, its recording strip
+// ---------------------------------------------------------------- T498: Voice on a place, its recording strip
 
 const TWO = `${LOOP.then}T4 doc The plan
   First part of the plan.
@@ -515,7 +515,7 @@ const TWO = `${LOOP.then}T4 doc The plan
   Second part of the plan.
 `
 
-test('B498 r1047: on the desktop Voice beside a paragraph becomes its recording strip: ✕ cancels, ✓ puts the words in the box at this place, ↑ sends at once', async ({
+test('T498 r1047: on the desktop Voice beside a paragraph becomes its recording strip: ✕ cancels, ✓ puts the words in the box at this place, ↑ sends at once', async ({
   page,
   request,
 }) => {
@@ -556,7 +556,7 @@ test('B498 r1047: on the desktop Voice beside a paragraph becomes its recording 
   await expect(second.locator('[data-thread-count]')).toHaveCount(1)
 })
 
-test('B498 r1047 r1062: on the phone the row under a paragraph picked speaks (✕ and ✓, which sends: no box over a document) or opens the box to write', async ({
+test('T498 r1047 r1062: on the phone the row under a paragraph picked speaks (✕ and ✓, which sends: no box over a document) or opens the box to write', async ({
   page,
   request,
 }) => {
@@ -605,10 +605,10 @@ test("D115 #41: on the phone a document's Copy, Move, Mark an area, Edit and Del
   await expect(page.getByText('First part of the plan.')).toHaveCount(0)
 })
 
-// F839 (r1441 r1443): a document's diagram or table is seen on the whole window from its button (on the phone always
+// T839 (r1441 r1443): a document's diagram or table is seen on the whole window from its button (on the phone always
 // shown, on the desktop when pointed at); a table reads as a table there, on the phone too; Esc closes it and leaves
 // the document as it was.
-test('F839: a table opens on the whole window and Esc closes it, the document still open', async ({ page, request }) => {
+test('T839: a table opens on the whole window and Esc closes it, the document still open', async ({ page, request }) => {
   const p = await project(request, {
     ...LOOP,
     then: `${LOOP.then}T4 doc The plan

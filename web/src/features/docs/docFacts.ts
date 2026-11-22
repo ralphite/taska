@@ -51,7 +51,7 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
       picked: v.sel.has(b.key),
       quote: v.quote?.key === b.key ? v.quote.text : null,
       skipped: skip,
-      // the phone's row to speak or write about it (B498): under the paragraph its own Voice speaks about; else under
+      // the phone's row to speak or write about it (T498): under the paragraph its own Voice speaks about; else under
       // the one picked
       say: !web && !desk && (speaking ? !speaking.bar && speaking.key === b.key : v.sel.has(b.key) || v.quote?.key === b.key),
       // its own Voice records (the bar over selected words has its own strip)

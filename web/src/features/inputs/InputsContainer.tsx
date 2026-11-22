@@ -20,7 +20,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
   const app = useServices('box', 'docs', 'fields', 'inputActions', 'inputs', 'nav', 'sheets')
   const others = useOtherProjects(route.slug).length
   const stores = useStores('box', 'data', 'drafts', 'outbox', 'route', 'ui')
-  // a voice note being recorded into a new input here: its row comes first, with how long so far (B627)
+  // a voice note being recorded into a new input here: its row comes first, with how long so far (T627)
   const m = useProjectModel(route.slug)
   const away = useAway(route.slug)
   const outbox = useStoreValue(stores.outbox, (s) => s.list)
@@ -35,7 +35,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
   const lit = useStoreValue(stores.ui, (s) => s.lit)
   const litStill = useStoreValue(stores.ui, (s) => s.litStill)
   // a screenful and more at first, then more as the list scrolls to its end: opening the tab never waits on drawing
-  // every input (B645)
+  // every input (T645)
   const [upTo, setUpTo] = useState(PAGE)
   const { rows, total }: { rows: InputFacts[]; total: number } = useMemo(() => {
     if (!m || hidden) return { rows: [], total: 0 }

@@ -16,7 +16,7 @@ export type Row =
   | { kind: 'needs'; it: Task; depth: number; said?: string; struck?: boolean; act?: NeedAct }
   | { kind: 'hidden-kids'; parent: number; depth: number; open: boolean; later: number }
   | { kind: 'archive-all'; n: number }
-  /** an agent's proposed change to the rules, waiting on you (I693): first in Needs you */
+  /** an agent's proposed change to the rules, waiting on you (T693): first in Needs you */
   | { kind: 'proposal'; p: RuleProposal }
 
 export type EmptyWhy = 'no-tasks' | 'none' | 'nothing-archived' | 'no-match' | 'nothing'
@@ -84,16 +84,16 @@ function tree(group: Task[], st: ListState, opts: { needs?: boolean; hidden?: Ma
 
 /** While a row you acted on holds still, the list keeps the rows it had, each showing its task as it is now. A row you
  * acted on that no longer belongs in the list, or no longer waits on you, stays the row it was, its title struck and
- * its button saying what you did: same place, same height, nothing jumps (B699). A Needs-you row someone else
+ * its button saying what you did: same place, same height, nothing jumps (T699). A Needs-you row someone else
  * answered meanwhile is an ordinary row, where it was. */
-/** What you just did to a row: its words, and whether its title is struck (the change closed it; B766). */
+/** What you just did to a row: its words, and whether its title is struck (the change closed it; T766). */
 export interface HeldMark {
   said: string
   struck: boolean
 }
 
-/** A held change's mark: struck only when it closed the task (B766, Yadong r1293 r1294: struck says done, dropped
- * or not needed; approved or sent back it is work to do); a change of another field as before (B699). */
+/** A held change's mark: struck only when it closed the task (T766, Yadong r1293 r1294: struck says done, dropped
+ * or not needed; approved or sent back it is work to do); a change of another field as before (T699). */
 export const heldMark = (h: { said: string; f?: string; v?: unknown }): HeldMark => ({ said: h.said, struck: h.f !== 'status' || closed(String(h.v)) })
 
 export function heldRows(frozen: readonly Row[], m: ProjectModel, tab: Tab, list: ListQuery, held: ReadonlyMap<number, HeldMark>): Row[] {
@@ -106,7 +106,7 @@ export function heldRows(frozen: readonly Row[], m: ProjectModel, tab: Tab, list
     const mark = held.get(it.n)
     const said = mark?.said
     const struck = !!mark?.struck
-    // what you decided shows at once, also before Taska has it and the task still needs you (B766): its button as it was
+    // what you decided shows at once, also before Taska has it and the task still needs you (T766): its button as it was
     if (said != null && r.kind === 'needs') return { ...r, it, said, struck, act: r.act ?? needRow(r.it)?.act }
     if (said != null && !shownNow.has(it.n)) return { ...r, it, said, struck }
     if (r.kind === 'needs' && !needsYou(it)) return { kind: 'task', it, depth: r.depth, foldable: false, folded: false, band: '' }
@@ -173,7 +173,7 @@ export function viewChips(m: ProjectModel, tab: Tab, list: ListQuery): ViewChip[
       return { value, label, count: n, on: tab === 'archive', needs: false }
     }
     const asTasks = tab !== 'tasks' ? { tag: 'all', when: 'all', status: value, pri: 'all', sort: 'all' } : { ...list, status: value }
-    // a proposed change to the rules is in Needs you too (I693)
+    // a proposed change to the rules is in Needs you too (T693)
     const n = visible(m.tasks, 'tasks', asTasks).length + (value === 'wait' && asTasks.tag === 'all' && asTasks.pri === 'all' && asTasks.when === 'all' ? waitingProposals(rulesDoc(m)).length : 0)
     return { value, label, count: n, on: tab === 'tasks' && list.status === value, needs: value === 'wait' && n > 0 }
   })

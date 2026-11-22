@@ -8,7 +8,7 @@ import type { Task } from './types'
 import { OLD_LETTERS } from './vocab.gen'
 import { ARCHIVE_FILTER_WORD, SORT_WORDS, STATUS_FILTER_WORD, STATUS_WORD, WHEN_WORD, type Tab } from './words'
 
-/** A task's words, for picking one by them on the page: its code (and the older ones: B12 is T12), tags, title, text, next and talk (what the server finds
+/** A task's words, for picking one by them on the page: its code (and the older ones: T12 is T12), tags, title, text, next and talk (what the server finds
  * a task by is gathered in one place too: domain/finding.task_text). */
 const HAY = new WeakMap<Task, string>()
 export function hay(it: Task): string {
@@ -27,7 +27,7 @@ export const statusIsView = (tab: Tab, list: ListQuery) => tab === 'tasks' && li
 export const filtered = (tab: Tab, list: ListQuery) =>
   !!(list.tag !== 'all' || list.when !== 'all' || (list.status !== 'all' && !statusIsView(tab, list)) || list.pri !== 'all')
 
-/** Tasks shows the work; Archive what was put away (the Rules tab is the rules document, I693: no tasks). */
+/** Tasks shows the work; Archive what was put away (the Rules tab is the rules document, T693: no tasks). */
 export const inTab = (it: Task, t: Tab | string) => (t === 'rules' ? false : t === 'archive' ? it.archived : !it.archived)
 
 export const tabOf = (it: Task): Tab => (it.archived ? 'archive' : 'tasks')
@@ -92,7 +92,7 @@ export function filtersSet(tab: Tab, list: ListQuery): [ListKey, string][] {
 /** Whether the list shows exactly one of your views (its tag, when, status, priority and sort). */
 export const showsView = (list: Record<string, string>, v: Record<'tag' | 'when' | 'status' | 'pri' | 'sort', string>) => (['tag', 'when', 'status', 'pri', 'sort'] as const).every((k) => list[k] === v[k])
 
-/** The list shows the work order (so a row dragged near another's top or bottom is put before or after it, B754):
+/** The list shows the work order (so a row dragged near another's top or bottom is put before or after it, T754):
  * Tasks in its own order, not the finished nor what waits on you. */
 export const inWorkOrder = (tab: Tab, list: ListQuery) =>
   tab === 'tasks' && list.sort === 'all' && !['done', 'dropped', 'wait'].includes(list.status)

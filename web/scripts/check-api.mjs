@@ -16,13 +16,13 @@ const API = path.join(web, 'src/api/taska.ts')
 const SAMPLES = path.join(web, 'src/api/samples.gen.ts')
 
 /** Fields no answer of a fresh Taska shows, by their path (a path ending in `*` covers all under it). */
-const VOICE = "the page's model puts a voice note's words there (B682); never sent"
+const VOICE = "the page's model puts a voice note's words there (T682); never sent"
 const TYPED = "the page's model keeps the typed words there when it adds a voice note's words; never sent"
 const UNSEEN = {
   'activity[].undo': 'only a change that undid another (FieldsSet undo_of); the sample makes none',
   'activity[].into': 'only a merge or unmerge; the sample makes none',
   'activity[].ids': 'only inputs marked handled together (InputsAcked); the sample makes none',
-  'activity[].count': "only voice notes' records set at once (B682); the sample makes none",
+  'activity[].count': "only voice notes' records set at once (T682); the sample makes none",
   'activity[].was': 'only a change of an earlier format folded into others (Refactor 8A); the sample makes none',
   'activity[].retry': 'only an input sent again; the sample makes none',
   'view.tasks[].thread[].files[].voice': VOICE,
@@ -53,7 +53,7 @@ const UNSEEN = {
   'view.project.agents[].sessions[].since': "only a session its app tells of (Claude Code's or Codex's own files)",
   'view.project.agents[].sessions[].cwd': "only a session its app tells of (Claude Code's or Codex's own files)",
   'view.project.agents[].sessions[].waitingFor': 'only a session that waits on you (T711)',
-  'view.project.agents[].sessions[].waiting': 'only an Antigravity session whose waker waits for work (B762)',
+  'view.project.agents[].sessions[].waiting': 'only an Antigravity session whose waker waits for work (T762)',
   'view.project.deletedInputs[].kept*': 'only an input whose tasks were made from others too',
   'view.project.deleted[].d': 'only a deleted document',
   'view.project.deleted[].on': 'only a deleted document',

@@ -1,11 +1,11 @@
-// The skills to pick from in the input box (I821) and, when + opened it, the ways to add files above them (I834): a
+// The skills to pick from in the input box (T821) and, when + opened it, the ways to add files above them (T834): a
 // card over the box, a row each. Props only.
 
 import type { Ref } from 'react'
 import { fits, type Skill } from '../../model/skills'
 import { Icon, type IconName } from '../../ui/Icon'
 
-/** The skills that fit the "/" being typed (I821): each its name and what it is for; ↑↓ to choose, ↵ or ⇥ to take. */
+/** The skills that fit the "/" being typed (T821): each its name and what it is for; ↑↓ to choose, ↵ or ⇥ to take. */
 /** A skill's name as Codex lists it, without its "/", the letters typed standing out. */
 function SkillName({ name, typed }: { name: string; typed: string }) {
   const at = new Set(fits(name, typed) ?? [])
@@ -18,7 +18,7 @@ function SkillName({ name, typed }: { name: string; typed: string }) {
 
 /** The skills to pick from, as Codex shows its commands: a card over the box (under it on the desktop's New input
  * page, where the box is at the top), a row each: its name, what it is for. */
-/** I834: a way to add files, at the top of +'s card */
+/** T834: a way to add files, at the top of +'s card */
 export interface AddRow {
   label: string
   icon: IconName
@@ -34,7 +34,7 @@ export function SkillMenu({ menu, sel, typed, adds, cardRef, on }: { menu: reado
       className="absolute inset-x-0 bottom-full z-20 mb-2 flex max-h-[min(30rem,60dvh)] lg:max-h-80 lg:group-data-[compose]/app:top-full lg:group-data-[compose]/app:bottom-auto lg:group-data-[compose]/app:mt-2 lg:group-data-[compose]/app:mb-0 flex-col gap-px overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-800 dark:bg-zinc-900"
     >
       {adds ? (
-        // I834 r1436: + opens this card: the ways to add files first, each its own row (the phone: camera, photos,
+        // T834 r1436: + opens this card: the ways to add files first, each its own row (the phone: camera, photos,
         // files), the skills under them
         <>
           {adds.map((a, k) => (

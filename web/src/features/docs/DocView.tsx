@@ -48,7 +48,7 @@ export interface DocRow {
   /** words picked in it (the phone marks the task of a list) */
   quote: string | null
   skipped: boolean
-  /** the phone's row to speak or write a comment, floating by the paragraph picked (B715 r1169) */
+  /** the phone's row to speak or write a comment, floating by the paragraph picked (T715 r1169) */
   say: boolean
   /** its own Voice is recording a comment about it */
   speaking: boolean
@@ -85,7 +85,7 @@ export interface DocEvents extends ThreadEvents {
   away(tk: string): void
   /** a paragraph tapped, or its Comment pressed (`quote`: one task of its list) */
   pick(key: string, quote: string | null, by: 'button' | 'tap'): void
-  /** a place's Voice; its recording strip's ✕, ✓ and ↑ (B498) */
+  /** a place's Voice; its recording strip's ✕, ✓ and ↑ (T498) */
   say(key: string, quote: string | null): void
   sayCancel(): void
   sayCheck(): void
@@ -100,7 +100,7 @@ export interface DocEvents extends ThreadEvents {
   editDoc(): void
   tick(tk: string, i: number): void
   modifyTicks(tk: string): void
-  /** the phone's Send choices, in the document's own line (it has no box over a document, B643) */
+  /** the phone's Send choices, in the document's own line (it has no box over a document, T643) */
   sendTicks(): void
 }
 
@@ -168,13 +168,13 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
   lasso?: ReactNode
   /** a web page's own view (WebPage) */
   page?: ReactNode
-  /** the recording's time and level, for the strip of the place it is about (B498) */
+  /** the recording's time and level, for the strip of the place it is about (T498) */
   meter?: ReactNode
   /** its contents opened when it opens */
   contentsOpen?: boolean
   /** the pointer on a task of a list when it opens: the list's key and the task's place in it (the desktop) */
   pointing?: { key: string; li: number } | null
-  /** a paragraph drawn otherwise (the rules' lines that put shared rules in, I779); null: as the document draws it */
+  /** a paragraph drawn otherwise (the rules' lines that put shared rules in, T779); null: as the document draws it */
   lines?: (text: string) => ReactNode | null
 }) {
   const { d, rows, desk } = { ...facts, desk: env.desk }
@@ -196,7 +196,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
     for (const li of el.querySelectorAll('li[data-q]')) li.removeAttribute('data-q')
     const r = rows.find((x) => x.quote)
     if (!r) return
-    // found as its buttons find it, so they sit by the task lit (B715 r1176)
+    // found as its buttons find it, so they sit by the task lit (T715 r1176)
     const sec = el.querySelector(`section[data-key="${CSS.escape(r.b.key)}"]`)
     if (sec && r.quote) listTaskOf(sec, r.quote)?.setAttribute('data-q', '')
   })
@@ -239,7 +239,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
               desktop's are in the pane's bar */}
         </div>
         {facts.waiting ? (
-          // the phone sends them from here, having no box over a document (B643); the desktop's box line has Send choices
+          // the phone sends them from here, having no box over a document (T643); the desktop's box line has Send choices
           <div className="mt-3 flex items-center gap-2">
             <span className={NEEDS_PILL}>{facts.waiting}</span>
             {desk ? null : (
@@ -272,7 +272,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
                 }}
                 {...(r.picked || r.speaking ? { 'data-picked': '' } : {})}
                 // the pointing area beside it reaches to where its acts end, no further: wider, it made a narrow column
-                // scroll sideways (B739)
+                // scroll sideways (T739)
                 className="group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 has-[li[data-hov]]:bg-transparent data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 lg:cursor-text lg:after:absolute lg:after:inset-y-0 lg:after:left-full lg:after:w-16 dark:hover:bg-zinc-800/50 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600 lg:[&_li[data-hov]]:rounded-md lg:[&_li[data-hov]]:bg-zinc-100 dark:lg:[&_li[data-hov]]:bg-zinc-800/70 [&_li[data-q]]:-mx-1 [&_li[data-q]]:rounded-md [&_li[data-q]]:bg-amber-50 [&_li[data-q]]:px-1 [&_li[data-q]]:ring-2 [&_li[data-q]]:ring-amber-300 dark:[&_li[data-q]]:bg-amber-950/40 dark:[&_li[data-q]]:ring-amber-600"
               >
                 <div className="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2">
@@ -295,7 +295,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
                 </div>
                 {r.tk === sayAt ? (
                   // the phone's row on the place picked, floating under it over the text (over it when the screen
-                  // has no room under it): it never moves the words (B715 r1169); speaking, its recording strip (B498)
+                  // has no room under it): it never moves the words (T715 r1169); speaking, its recording strip (T498)
                   <PlaceVoiceFloat
                     rec={r.speaking}
                     task={r.quote}

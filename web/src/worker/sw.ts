@@ -103,7 +103,7 @@ self.addEventListener('fetch', (e) => {
     return
   }
   if (req.mode === 'navigate') {
-    // any other address: from the network; while the server is away, the kept page (B793: it was asked for as
+    // any other address: from the network; while the server is away, the kept page (T793: it was asked for as
     // /index.html, which the server has not), which waits and sends later
     e.respondWith(fetch(req).catch(async () => (await (await caches.open(PAGES)).match(PAGE_KEY)) || Response.error()))
   }

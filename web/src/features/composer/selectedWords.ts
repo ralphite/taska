@@ -1,5 +1,5 @@
 // The words selected on the page that a comment can be about, and where the bar over them goes: the page's
-// SelectionBarContainer and a document's stories follow the browser's selection through the same code (B708 r1149).
+// SelectionBarContainer and a document's stories follow the browser's selection through the same code (T708 r1149).
 
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 import type { Box } from './SelectionBar'

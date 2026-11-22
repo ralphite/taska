@@ -33,11 +33,11 @@ EMBED_DIMS = 768
 EMBED_BATCH = 100  # texts in one request
 DOCUMENT, QUERY = "RETRIEVAL_DOCUMENT", "RETRIEVAL_QUERY"  # what is searched, what searches it
 ATTEMPTS = 6
-SERVER = frozenset((500, 502, 503, 504))  # its servers busy or failing: often over in seconds (B684)
+SERVER = frozenset((500, 502, 503, 504))  # its servers busy or failing: often over in seconds (T684)
 TOO_MANY = 429  # over a rate (tokens or requests per minute): it says when to come back
 
 
-_key_file: List[str] = []  # where the key set in Settings is kept (F765): the data root's gemini-key, set at start
+_key_file: List[str] = []  # where the key set in Settings is kept (T765): the data root's gemini-key, set at start
 
 
 def use_key_file(path: str) -> None:
@@ -45,7 +45,7 @@ def use_key_file(path: str) -> None:
 
 
 def saved_key() -> Optional[str]:
-    """The key set in Settings (F765), else None."""
+    """The key set in Settings (T765), else None."""
     if not _key_file:
         return None
     try:
@@ -56,7 +56,7 @@ def saved_key() -> Optional[str]:
 
 
 def api_key() -> Optional[str]:
-    """The key set in Settings, else one from the environment (F765: no need to set a variable)."""
+    """The key set in Settings, else one from the environment (T765: no need to set a variable)."""
     return saved_key() or next((os.environ[v] for v in KEY_VARS if os.environ.get(v)), None)
 
 
@@ -176,7 +176,7 @@ def _sizes_only(x: Any) -> Any:
 def _logged(who: str, model: str, body: Json, ms: int, reply: Optional[Json] = None, status: Optional[int] = None,
             error: str = "") -> None:
     usage = (reply or {}).get("usageMetadata") or {}
-    said = status or (200 if reply is not None else "no answer")  # B830: a timeout was written as 200
+    said = status or (200 if reply is not None else "no answer")  # T830: a timeout was written as 200
     (log.error if error else log.info)(f"gemini {model} for {who}: {said} in {ms} ms", extra={"f": {
         "source": "server", "kind": "gemini", "who": "org" if who == "organizer" else who, "ms": ms,
         "status": status or (200 if reply is not None else None), "model": model, "sent": _sizes_only(body),
@@ -193,7 +193,7 @@ class Gemini:
     pause: Callable[[float], None] = time.sleep
     clock: Callable[[], float] = field(default=time.monotonic)
     jitter: Callable[[], float] = random.random
-    limited: List[Tuple[float, str]] = field(default_factory=list)  # (when, model): each answer over a rate (B724)
+    limited: List[Tuple[float, str]] = field(default_factory=list)  # (when, model): each answer over a rate (T724)
 
     def ask(self, who: str, q: Question, timeout: float = 120, model: Optional[str] = None) -> str:
         return q.answer(self.generate(who, model or self.model, q.body(), timeout))
@@ -204,7 +204,7 @@ class Gemini:
 
     def limits(self, within: float, models: Optional[List[str]] = None) -> int:
         """How many answers were over a rate or a quota (429) in the last `within` seconds, for these models (any
-        model when None) (B724)."""
+        model when None) (T724)."""
         since = self.clock() - within
         return sum(1 for t, m in list(self.limited) if t >= since and (models is None or m in models))
 
@@ -254,7 +254,7 @@ class Gemini:
         raise Refused("Gemini failed")
 
     def _again(self, fail: Failed, body: Json, attempt: int, attempts: int = ATTEMPTS) -> Optional[float]:
-        """How long to wait before the next attempt (0: at once); None: no more attempts (B684, aimed at what
+        """How long to wait before the next attempt (0: at once); None: no more attempts (T684, aimed at what
         happens most): a model without a thinking switch is asked again at once without it; over a rate (429), after
         the wait it names; its servers busy or failing (5xx), after 1, 2, 4, 8, 16 s, each spread at random so many
         waiting do not come back together; the connection dropped, after a short pause. A request that ran out of

@@ -108,7 +108,7 @@ test('D115 #20: an empty project shows its first steps, each ticked by itself on
   await expect(say).toBeDisabled()
 })
 
-test('r978 (B640 #8700, B801): M on the selected task opens Put under… beside its row, as its right-click menu does, not in the window\'s corner', async ({
+test('r978 (T640 #8700, T801): M on the selected task opens Put under… beside its row, as its right-click menu does, not in the window\'s corner', async ({
   page,
   request,
 }) => {

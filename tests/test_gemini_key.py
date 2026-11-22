@@ -1,4 +1,4 @@
-"""F765 (Yadong r1285, r1288, 11-13): the Gemini API key can be set in Settings: kept by the server (only its owner can
+"""T765 (Yadong r1285, r1288, 11-13): the Gemini API key can be set in Settings: kept by the server (only its owner can
 read it) and used from then on, without an environment variable; the page only ever hears where it comes from and its
 last 4 characters. A key Google refuses is not kept. Change only on Yadong's explicit word."""
 

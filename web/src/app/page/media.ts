@@ -16,7 +16,7 @@ export interface MediaDeps {
   sheets: Sheets
   toasts: Toasts
   desk(): boolean
-  /** a voice note's words: its record in the project (B682) */
+  /** a voice note's words: its record in the project (T682) */
   kept(slug: string, f: string): Voice | null
 }
 
@@ -83,8 +83,8 @@ export class Media {
     return this.d.route.getState().layers.includes('viewer')
   }
 
-  /** A voice note's words in their sheet on the phone, word for word and tidied (F568; the desktop shows them under
-   * the pointer, B640): the note's record, at once; then the steps that worked them out (T697), and its words from
+  /** A voice note's words in their sheet on the phone, word for word and tidied (T568; the desktop shows them under
+   * the pointer, T640): the note's record, at once; then the steps that worked them out (T697), and its words from
    * there when the record has none yet. Never worked out again. */
   words(slug: string, f: string): void {
     const kept = this.d.kept(slug, f)

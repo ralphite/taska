@@ -112,7 +112,7 @@ def processed_silence(path: Optional[str], mime: str) -> float:
 
 
 def louder(data: bytes, mime: str) -> Optional[bytes]:
-    """B494: a note spoken far from the microphone, so quiet the speech model hears nobody: brought up to the loudness
+    """T494: a note spoken far from the microphone, so quiet the speech model hears nobody: brought up to the loudness
     of normal speech (ffmpeg's loudnorm), as Opus in WebM. None when there is no sound in it at all, or no ffmpeg."""
     tool = shutil.which("ffmpeg")
     if not tool:
@@ -136,7 +136,7 @@ def louder(data: bytes, mime: str) -> Optional[bytes]:
 
 
 def pieces(path: Optional[str], most: int = 12) -> Tuple[List[bytes], float]:
-    """B277: a recording cut at its pauses into pieces of up to about 8 s, as 16 kHz mono WAV bytes -> (pieces, seconds).
+    """T277: a recording cut at its pauses into pieces of up to about 8 s, as 16 kHz mono WAV bytes -> (pieces, seconds).
     Needs ffmpeg; ([], 0) without it. On some iPhone notes the models keep only the first phrase of the whole note,
     yet hear each quiet later phrase when it comes alone."""
     tool = shutil.which("ffmpeg")

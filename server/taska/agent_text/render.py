@@ -34,7 +34,7 @@ class Reading:
     organizer_on: bool
     file_ref: FileRefText  # for this caller
     file_path: FileRefText  # always the path on this machine
-    skills: Mapping[str, str] = field(default_factory=dict)  # I821: the skills, by name, whose text comes with words that apply one
+    skills: Mapping[str, str] = field(default_factory=dict)  # T821: the skills, by name, whose text comes with words that apply one
     # the agent session on a task, and since when (T858): ("claude-code · worker", unix time), or None
     holder: Callable[[Task], Optional[Tuple[str, float]]] = field(default=lambda it: None)
 
@@ -183,7 +183,7 @@ def card(rd: Reading, it: Task) -> str:
         out.append("next: " + it.next)
     out.extend(_above(st, it))
     asks = rules.open_asks(st, it)
-    if asks and rules.replied(it):  # answered in part: the rest still waits (B749)
+    if asks and rules.replied(it):  # answered in part: the rest still waits (T749)
         out.append("< the user answered some of the questions (see thread); still waiting on: "
                    + " | ".join(first_line(x.text, 200) for x in asks))
     elif asks:
@@ -212,7 +212,7 @@ def card(rd: Reading, it: Task) -> str:
 
 
 def _reference(rd: Reading, it: Task) -> List[str]:
-    """F568: last, every input the task came from, in time order, so an agent has the user's words in one read: the
+    """T568: last, every input the task came from, in time order, so an agent has the user's words in one read: the
     words as everyone reads them (a voice note's tidied words); one line for those already in the body or the thread
     above."""
     st = rd.state
@@ -326,7 +326,7 @@ _version: List[str] = []  # the guide's words it was worked out from, then its v
 
 def guide_version() -> Tuple[str, str]:
     """The guide's version (a short hash) and its text as every project and address shares it, so it changes only
-    when the guide's words do (F743)."""
+    when the guide's words do (T743)."""
     if _version[:2] != [guide_text.AGENT, guide_text.GRAMMAR]:
         words = guide("BASE", "<the project rules' version>")
         _version[:] = [guide_text.AGENT, guide_text.GRAMMAR, hashlib.sha256(words.encode()).hexdigest()[:12], words]
@@ -334,7 +334,7 @@ def guide_version() -> Tuple[str, str]:
 
 
 def rules_head(st: ProjectState) -> str:
-    """The rules' version in one line, for /agent and /next (I693)."""
+    """The rules' version in one line, for /agent and /next (T693)."""
     d = st.rules
     v = versions.versions(st, d) if d else []
     return f"Project rules v{v[-1].v}: read GET /rules once per session" if v else "No project rules yet"
@@ -342,7 +342,7 @@ def rules_head(st: ProjectState) -> str:
 
 def rules_text(st: ProjectState, shared: Mapping[str, str] = {}) -> str:
     """GET /rules: the rules document as it is now, headed by its version, who and when; the proposals waiting. Its
-    lines `{{name}}` are read as the shared rules they name, in their place (I779)."""
+    lines `{{name}}` are read as the shared rules they name, in their place (T779)."""
     d = st.rules
     vs = versions.versions(st, d) if d else []
     how = ("To change them, propose: `rules propose <why>` with the sections it changes indented under it (replace, "
@@ -406,7 +406,7 @@ def doc_text(rd: Reading, d: Doc) -> str:
            f"D{d.d} reply ¶N <text>, ¶0 for the whole document, ¶N.K for thread K of ¶N"
            f"{', ¶xK for thread K of the comments whose paragraph was rewritten' if detached else ''})"]
     texts = [b.text for b in blocks]
-    if d.is_rules:  # the project's rules (I693): answered here; changed only by proposing
+    if d.is_rules:  # the project's rules (T693): answered here; changed only by proposing
         out[0] = (f"D{d.d}: the project's rules  (updated {hm(d.t1)} by {who_wrote(d.by)}; reply with: D{d.d} reply ¶N "
                   "<text>, ¶0 for the whole document; to change the rules: rules propose <why>)")
     if d.is_page:  # a web page: its HTML, then each part commented on
@@ -431,7 +431,7 @@ def doc_text(rd: Reading, d: Doc) -> str:
             part = "" if " ".join(c.quote.split()) == " ".join(text.split()) else f"on \"{first_line(c.quote, 120)}\": "
             out.append(f"   > {names.get(c.th, '')}{c.by} {hm(c.t)}: {part}{_comment(rd, c)}")
     if detached:
-        out.append("comments whose paragraph was rewritten or removed (reply with ¶xK, B837):")
+        out.append("comments whose paragraph was rewritten or removed (reply with ¶xK, T837):")
         k = 0
         for t in detached:
             out.append(f"   on \"{first_line(t.quote, 80)}\"")

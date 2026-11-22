@@ -98,11 +98,11 @@ New tasks are P1 and Now, unless you say urgent or later.
 
 | You say | Your inputs show | Where else |
 | --- | --- | --- |
-| Something new, under New input | Created B713 | B713: your words, pictures and voice notes |
+| Something new, under New input | Created T713 | T713: your words, pictures and voice notes |
 | More about T03, under New input | Added to T03 | T03's talk: the part about it |
 | More about T03, in T03 | Added to T03 | Only your message in T03 |
 | "Make it P0", in T03 | Added to T03 | T03's priority changes |
-| Something new, in T03 | Created B713 | Your message in T03, with **→ Created B713** under it |
+| Something new, in T03 | Created T713 | Your message in T03, with **→ Created T713** under it |
 | A rule | Changed the rules | A new version of the Rules |
 | A question for an agent | For an agent | The agent picks it up |
 
@@ -378,5 +378,5 @@ export function searchHelp(q: string): HelpFound[] {
   ]
 }
 
-/** The topic Help shows: the one its address names; with none named, the first, as docs sites open (B650). */
+/** The topic Help shows: the one its address names; with none named, the first, as docs sites open (T650). */
 export const shownTopic = (key: string | null): HelpTopic => HELP_TOPICS.find((t) => t.key === key) ?? HELP_TOPICS[0]

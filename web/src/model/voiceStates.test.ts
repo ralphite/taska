@@ -1,5 +1,5 @@
 // A voice message's states (T726): every state shows something defined in every place, nothing goes a way the table
-// does not have, a refused upload says so (B725), a message sent with its fast words goes on as its words come, and
+// does not have, a refused upload says so (T725), a message sent with its fast words goes on as its words come, and
 // docs/voice.md is made from the table.
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -104,7 +104,7 @@ describe('the states', () => {
   })
 })
 
-describe('B725: an upload Taska refused', () => {
+describe('T725: an upload Taska refused', () => {
   test('says Upload failed in the chip and the Draft card, never that no words were heard', () => {
     const { f, toasts } = walk(['uploadRefused'])
     expect(noteState(f)).toBe('uploadFailed')

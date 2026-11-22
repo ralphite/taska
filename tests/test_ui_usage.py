@@ -1,4 +1,4 @@
-"""F846: tools/ui_usage.py counts each control on the phone and the desktop and tells the taps that seemed to do
+"""T846: tools/ui_usage.py counts each control on the phone and the desktop and tells the taps that seemed to do
 nothing (the same control again within a moment), the swipes and the list filters."""
 
 from __future__ import annotations

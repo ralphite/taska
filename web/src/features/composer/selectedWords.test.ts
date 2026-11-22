@@ -1,4 +1,4 @@
-// Which selected words the bar over them is for (B708 r1149: the page's bar and a document's stories read the
+// Which selected words the bar over them is for (T708 r1149: the page's bar and a document's stories read the
 // selection through this one function).
 import { afterEach, describe, expect, it } from 'vitest'
 import { selected } from './selectedWords'
@@ -26,7 +26,7 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-describe('selected words (B708 r1149)', () => {
+describe('selected words (T708 r1149)', () => {
   it("are a document's passage: its paragraph and the words", () => {
     page(DOC)
     select('[data-block]', 'written from scratch')

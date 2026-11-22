@@ -186,7 +186,7 @@ export function Diagram({ src, draw, wide = false }: { src: string; draw: NonNul
         />
       ) : (
         <>
-          {/* in its place, the reason, as Mermaid says it (B714 r1181): on the phone too, where nothing hovers */}
+          {/* in its place, the reason, as Mermaid says it (T714 r1181): on the phone too, where nothing hovers */}
           {now?.error ? (
             <div data-mermaid-why="" className="mb-1.5 rounded-lg bg-red-50 px-3 py-2 text-red-700 dark:bg-red-400/10 dark:text-red-300">
               <p className="text-[13px] font-medium">This diagram could not be drawn</p>
@@ -215,7 +215,7 @@ export function Block({ b, world, choosing, done }: { b: MdBlock; world: InlineW
       )
     case 'code':
       return b.lang === 'mermaid' && b.text.trim() && world.diagram ? (
-        // F839: seen on the whole window, the width of it
+        // T839: seen on the whole window, the width of it
         <FullView label="Diagram" full={<Diagram src={b.text} draw={world.diagram} wide />}>
           <Diagram src={b.text} draw={world.diagram} />
         </FullView>
@@ -227,7 +227,7 @@ export function Block({ b, world, choosing, done }: { b: MdBlock; world: InlineW
       return <Tag className={LIST_CLS(b.list.ordered)} dangerouslySetInnerHTML={{ __html: clean(listHtml(b.list, world)) }} />
     }
     case 'table':
-      // F839: on the whole window a table reads as a table, on the phone too (not as cards), scrolling sideways
+      // T839: on the whole window a table reads as a table, on the phone too (not as cards), scrolling sideways
       return (
         <FullView label="Table" full={<Table b={b} world={world} flat />}>
           <Table b={b} world={world} />

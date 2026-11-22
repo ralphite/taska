@@ -1,7 +1,7 @@
-// B749 (D132): an agent's questions in a row, one card where the last of them is. A question a page, 1 · 2 · 3 above
+// T749 (D132): an agent's questions in a row, one card where the last of them is. A question a page, 1 · 2 · 3 above
 // it (a tick once answered, a tap goes back to it); a pick turns to the next question still to answer; Send sends what
 // is answered so far as one reply, a line a question ("- question → ✓ choice"), naming them, and the others keep
-// waiting. All answered: the card greys, Edit answers again. The prototype was Prototype/Several questions (B749).
+// waiting. All answered: the card greys, Edit answers again. The prototype was Prototype/Several questions (T749).
 
 import { useEffect, useState } from 'react'
 import { lastAgentMessage } from '../../model/tasks'
@@ -71,7 +71,7 @@ export function AskRowCard({ it, row, env, on, going = null }: {
     if (left >= 0) setPage(left)
   }
   const pick = (k: number, many: boolean) => {
-    // the one picked, tapped again, is unpicked, as a ticked one is (B835)
+    // the one picked, tapped again, is unpicked, as a ticked one is (T835)
     const again = mine[at].picked.has(k)
     const next = new Set(many ? mine[at].picked : [])
     if (again) next.delete(k)
@@ -151,7 +151,7 @@ export function AskRowCard({ it, row, env, on, going = null }: {
       ) : null}
     </>
   )
-  // beside Approve or Accept the phone has no room for ‹ ›: the pages above turn it (B749 QA)
+  // beside Approve or Accept the phone has no room for ‹ ›: the pages above turn it (T749 QA)
   const turn = (to: number, icon: 'left' | 'right', label: string) => (
     <button onClick={() => go(to)} disabled={to < 0 || to >= row.length} aria-label={label} className={`${SECOND} w-11 px-0 disabled:opacity-40 ${keep ? 'max-lg:hidden' : ''}`}>
       <Icon n={icon} c="size-4.5" sw="2.25" />

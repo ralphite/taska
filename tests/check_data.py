@@ -27,7 +27,7 @@ from taska.infra.project_db import FORMAT_VERSION  # noqa: E402
 
 
 def databases(root: Path) -> List[Path]:
-    """Active and deleted projects and the shared rules (I779), excluding links and unrelated databases."""
+    """Active and deleted projects and the shared rules (T779), excluding links and unrelated databases."""
     out = []
     for parent in (root, root / ".deleted", root / ".shared-rules"):
         if not parent.is_dir() or parent.is_symlink():
@@ -71,7 +71,7 @@ def inspect(path: Path) -> Tuple[Dict[str, int], List[str]]:
 
 
 def voices(state: ProjectState, warnings: List[str]) -> None:
-    """B682: every voice note has its one record of words."""
+    """T682: every voice note has its one record of words."""
     files = [f for i in state.inputs.values() for f in i.files] + \
         [f for d in state.docs.values() for c in d.comments + list(d.gone.values()) for f in c.files]
     lacking = sorted({f.f for f in voices_of(files) if f.f not in state.voices})

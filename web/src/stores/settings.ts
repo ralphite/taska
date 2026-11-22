@@ -16,7 +16,7 @@ export interface SettingsState {
   fixes: Spelling[] | null
   prefs: VoicePrefs | null
   deleted: DeletedProject[] | null
-  /** the shared rules (I779), once they came */
+  /** the shared rules (T779), once they came */
   shared: SharedRule[] | null
   /** a new project's row is open (its name so far, and why it was not made) */
   pErr: string
@@ -26,7 +26,7 @@ export interface SettingsState {
   pMenu: string | null
   /** notifications were turned on or off in this browser */
   noticeRev: number
-  /** the Gemini API key being checked and saved (F765) */
+  /** the Gemini API key being checked and saved (T765) */
   geminiSaving: boolean
   set(p: Partial<Omit<SettingsState, 'set'>>): void
 }

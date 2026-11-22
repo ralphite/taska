@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { fileUrl, withFilesPass } from './filesPass'
 
-describe('withFilesPass (B790)', () => {
+describe('withFilesPass (T790)', () => {
   it("puts the pass on each address of the project's files, however it is written", () => {
     const html = `<audio src="/p/system-design/f/f50-D5-zh-1.1.mp3"></audio><img src='https://host.example:7340/k/ab12-cd34/p/system-design/f/f9-a.png'>
 <script>new Audio("http://127.0.0.1:7340/p/system-design/f/f51-b.m4a")</script>`
@@ -19,7 +19,7 @@ describe('withFilesPass (B790)', () => {
   })
 })
 
-describe('a file of the project (B828)', () => {
+describe('a file of the project (T828)', () => {
   it('carries the files pass, so it opens in a window without the key (an iPhone Home Screen app opens a PDF in one)', () => {
     expect(fileUrl('home', 'f217-family conversations.pdf', 'c0ffee')).toBe('/p/home/f/f217-family%20conversations.pdf?cap=c0ffee')
   })

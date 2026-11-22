@@ -1,4 +1,4 @@
-// The project's rules as one document (I693, r1116/r1118/r1128), drawn as Gemini designed them and Yadong approved:
+// The project's rules as one document (T693, r1116/r1118/r1128), drawn as Gemini designed them and Yadong approved:
 // the bar's name and version, its buttons, an agent's proposal (waiting, opened, decided in place), the text with a
 // version's changes marked in place (added on green, removed struck in red; one column, phone and desktop alike), the
 // versions by day, the editor's "why" line, the question a restore asks once, and the rules when there are none yet.
@@ -21,7 +21,7 @@ import { DocBlock } from './DocBlock'
 /** the document's column, as DocView's */
 export const RULES_COLUMN = 'lg:mx-auto lg:w-full lg:max-w-[min(46rem,calc(100%-5rem))]'
 
-/** The bar's name: Rules (a shared rule's own name, I779), and what it shows (the version, who, when; Editing; a
+/** The bar's name: Rules (a shared rule's own name, T779), and what it shows (the version, who, when; Editing; a
  * proposal). */
 export function RulesHead({ sub, title = 'Rules' }: { sub: ReactNode; title?: string }) {
   return (
@@ -64,7 +64,7 @@ export interface ProposalEvents {
   approve(): void
 }
 
-/** An agent's proposed change, in the card a task's proposal is drawn in (ui/NeedFrame), with its buttons (B763: the
+/** An agent's proposed change, in the card a task's proposal is drawn in (ui/NeedFrame), with its buttons (T763: the
  * same component and buttons, r1282): who, why, when; waiting (View changes), opened (Comment, Not now, Approve), or
  * decided (in place, faded, its buttons disabled, the one chosen in the past tense; r1003). Sent back: what changed
  * since. */

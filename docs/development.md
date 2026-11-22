@@ -52,7 +52,7 @@ The destination must not already exist. The source data is only read and symboli
 | `node tools/smoke.mjs http://127.0.0.1:7341 taska --shots /tmp/task-shots` | Desktop and phone smoke check with screenshots |
 
 Each spec file runs once per layout (phone, desktop; a file with a `// layouts:` line also on `phone-webkit`, Safari's
-engine on the phone, as `talk.spec.ts` does for B786), each run on a Taska server of its own with an empty data folder;
+engine on the phone, as `talk.spec.ts` does for T786), each run on a Taska server of its own with an empty data folder;
 six runs go at once, the longest first, and inside a run the checks go one after another (some count every project
 their Taska has). The whole sweep takes under two minutes on the development Mac (nine minutes one file at a time). `tools/ship.sh` runs the
 journeys guarding what changed since the last ship (every one when a file every page uses changed; each spec file names
@@ -84,7 +84,7 @@ deployment to verify the service and existing records still work.
 
 `tools/nightly-checks.sh [data root]` checks the latest committed source in an isolated temporary checkout and a
 backup of the data (default `~/.taska`). It runs ordinary code, never a model. It reports test failures to Taska. Its launchd job runs at standard
-priority: as a background job macOS throttled it enough that the unit tests' workers timed out starting (B660).
+priority: as a background job macOS throttled it enough that the unit tests' workers timed out starting (T660).
 
 ### UI audit
 

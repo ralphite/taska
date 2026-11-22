@@ -1,4 +1,4 @@
-// Yadong's rule (B835, r1430): in a question of one choice, the one picked, tapped again, is unpicked, so a slip can
+// Yadong's rule (T835, r1430): in a question of one choice, the one picked, tapped again, is unpicked, so a slip can
 // be taken back. Changing it needs his word.
 import { describe, expect, it } from 'vitest'
 import { createTaskViewStore } from './taskView'

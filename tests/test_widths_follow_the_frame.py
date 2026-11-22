@@ -1,4 +1,4 @@
-"""B593: a story looks as the page does at the same width. Every width Tailwind knows answers to the frame a part is
+"""T593: a story looks as the page does at the same width. Every width Tailwind knows answers to the frame a part is
 drawn in (@container frame, or the layout's data-layout), never to the window: a story's 393 frame sits in a wide
 Storybook window, and a width that asks the window draws the desktop's look in the phone's frame."""
 

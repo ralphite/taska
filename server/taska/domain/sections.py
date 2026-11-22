@@ -1,4 +1,4 @@
-"""A project's rules document by its sections (I693): a section is a heading and what follows it up to the next
+"""A project's rules document by its sections (T693): a section is a heading and what follows it up to the next
 heading of its level or higher. Agents and the organizer change the rules by naming sections (replace, add, delete),
 so the server writes the new text exactly and a change can be checked and shown section by section. Pure.
 """

@@ -1,4 +1,4 @@
-"""F743: a project's icon. An agent uploads an image and writes `project icon f12-logo.png` (or `project icon none`);
+"""T743: a project's icon. An agent uploads an image and writes `project icon f12-logo.png` (or `project icon none`);
 the page then draws that picture in place of the project's letter. Only a small image the project has is taken; the
 change is in the log (it survives a restart, the activity shows it) and the page's project rows and facts carry it."""
 

@@ -1,4 +1,4 @@
-// B699 (r1126): a row you acted on stays the row it was while the list holds still: same kind, same place, its title
+// T699 (r1126): a row you acted on stays the row it was while the list holds still: same kind, same place, its title
 // struck and its button saying what you did; it is not swapped for another view of another height. Change only on
 // Yadong's explicit word.
 import { describe, expect, test } from 'vitest'
@@ -33,8 +33,8 @@ describe('a row you just acted on, while the list holds still', () => {
     expect(row && row.kind === 'needs' ? [row.said, row.act] : null).toEqual(['Approved', 'approve'])
   })
 
-  // B766 (Yadong r1293 r1294): struck says done, dropped or not needed; an approved task is work to do: never struck
-  test('B766: approved is not struck, also before Taska has it; accepted and declined are', () => {
+  // T766 (Yadong r1293 r1294): struck says done, dropped or not needed; an approved task is work to do: never struck
+  test('T766: approved is not struck, also before Taska has it; accepted and declined are', () => {
     const before = rowsOf([waiting, other])
     const mark = (said: string, v: string) => new Map([[4, heldMark({ said, f: 'status', v })]])
     const row = (held: ReturnType<typeof mark>) => heldRows(before, modelOf([waiting, other]), 'tasks', { ...NO_FILTERS, status: 'wait' }, held).find((r) => r.kind === 'needs' && r.it.n === 4)

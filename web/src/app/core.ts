@@ -49,7 +49,7 @@ export interface Stores {
   feedback: FeedbackStore
   ui: UiStore
   taskView: TaskViewStore
-  /** the search (F479): Home's field, the desktop's dialog, the phone's page */
+  /** the search (T479): Home's field, the desktop's dialog, the phone's page */
   find: FindStore
   recent: RecentStore
   drafts: DraftsStore
@@ -123,7 +123,7 @@ export interface Core {
   go(url: string): void
   /** a voice note is being recorded for the box */
   recording(): boolean
-  /** the page's microphone: each recording opens it and lets it go (B800) */
+  /** the page's microphone: each recording opens it and lets it go (T800) */
   mic: Mic
   /** the project open in the page */
   project(): ProjectSession

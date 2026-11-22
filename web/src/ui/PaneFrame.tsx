@@ -1,5 +1,5 @@
 // The pane's frame: its bar (Back on the phone, what it shows, its actions) and its body, which scrolls; over the
-// body's bottom, just above the box, the button to the talk's end (F716). Props only.
+// body's bottom, just above the box, the button to the talk's end (T716). Props only.
 
 import { pressedMark } from './bits'
 import type { ReactNode, Ref } from 'react'
@@ -51,7 +51,7 @@ export function PaneFrame({
   duo?: boolean
   /** the phone's line under the bar (Out of reach, retrying while Taska does not answer) */
   notice?: ReactNode
-  /** the talk it shows: the button to its end floats above the box while it is not at its end (F716 r1171) */
+  /** the talk it shows: the button to its end floats above the box while it is not at its end (T716 r1171) */
   toEnd?: HTMLElement | null
   /** its bar's Back and ⋯ pressed (a finger on them) */
   pressed?: boolean

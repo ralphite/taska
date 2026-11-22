@@ -52,7 +52,7 @@ export function Kbd({ k }: { k: string }) {
   )
 }
 
-/** A project's tile: its picture when it has one (F743), fitted on a light plate so a see-through favicon reads in
+/** A project's tile: its picture when it has one (T743), fitted on a light plate so a see-through favicon reads in
  * either theme; else, or when the picture does not load, its first letter on its colour. */
 export function ProjTile({ title, tone, icon, cls = 'size-5 rounded-md text-[11px]' }: { title: string; tone: string; icon?: string; cls?: string }) {
   const [failed, setFailed] = useState('')
@@ -154,7 +154,7 @@ export const Count = ({ icon, n, label }: { icon: IconName; n: ReactNode; label:
 )
 
 /** Tasks need you here: the Needs you status mark alone (the rows' own drawing, smaller); how many is in its tip
- * (B664: the mark says it, no number or words beside it). */
+ * (T664: the mark says it, no number or words beside it). */
 export const NeedsCount = ({ n }: { n: number }) => {
   const said = `${plural(n, 'task')} ${n === 1 ? 'needs' : 'need'} you`
   return (

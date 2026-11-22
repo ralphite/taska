@@ -25,7 +25,7 @@ export interface SearchPlace {
   /** the projects in the sidebar's order */
   order: readonly string[]
   tone(slug: string): string
-  /** a project's picture's address (F743) */
+  /** a project's picture's address (T743) */
   icon?(slug: string): string | undefined
   seen: SeenMap
   /** the codes of the tasks with a draft, in the project you are in */

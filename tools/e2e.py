@@ -7,7 +7,7 @@ Every spec file says what it guards on a line of its own:
 (paths under web; a path ending in / guards a whole folder; "server/..." is under server). A check that guards
 one of Yadong's requirements starts its title with the requirement's input codes ("r494 r308: ..."); when it fails,
 it says which requirement, in his words. A spec file runs on the phone and the desktop (Chromium); one that must
-also run in Safari's engine on the phone (B786) says the layouts it runs in on a line of its own:
+also run in Safari's engine on the phone (T786) says the layouts it runs in on a line of its own:
 
     // layouts: phone desktop phone-webkit
 

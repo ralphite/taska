@@ -1,4 +1,4 @@
-"""Skills (I821, Yadong r1402, r1406): named instructions the user applies to what they say, by starting it with the
+"""Skills (T821, Yadong r1402, r1406): named instructions the user applies to what they say, by starting it with the
 skill's name (`/qa what does D12 say about exports?`; by voice "斜杠 QA ..." or "slash QA ..."). A skill is a shared
 document whose name starts with "/" (services.shared_rules: kept once for every project, with versions, comments and
 the editor), its first line what it is for. Agents see the list with the rules and may apply one when it fits; words

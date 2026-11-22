@@ -39,7 +39,7 @@ describe('the phone search', () => {
     const now = new Date(2026, 10, 2, 18, 0).getTime()
     const said = f('shop', 'inputs', 'r12', { t: new Date(2026, 10, 2, 9, 12).toISOString(), became: 'B018', n: 18 })
     expect(foundMeta(said, now)).toMatch(/^\d\d:\d\d · became B018$/)
-    expect(foundMeta(f('shop', 'docs', 'd1', { on: 'F001' }), now)).toBe('On F001')
+    expect(foundMeta(f('shop', 'docs', 'd1', { on: 'T001' }), now)).toBe('On T001')
     expect(foundPath(said)).toBe('/p/shop/B018')
     expect(foundPath(f('shop', 'docs', 'd1', { d: 1 }))).toBe('/p/shop/D1')
   })

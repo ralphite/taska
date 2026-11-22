@@ -94,7 +94,7 @@ def comment(r: Run, a: Args) -> Outcome:
         elif a.get("key") != DOC_KEY and not a.text("key").startswith("h:"):
             raise Refused("a part of a web page is named h:<its place>")
         paras = [("html", a.text("quote"))] if a.get("key") != DOC_KEY else []
-    if a.get("detached") is not None and not d.is_page:  # ¶xK: a thread whose paragraph was rewritten (B837)
+    if a.get("detached") is not None and not d.is_page:  # ¶xK: a thread whose paragraph was rewritten (T837)
         k, gone = str(a.get("detached")), detached_threads(d)
         if not k.isdigit() or not 1 <= int(k) <= len(gone):
             raise Refused(f"D{d.d} has threads x1-x{len(gone)}" if gone else f"D{d.d} has no comments whose paragraph was rewritten")
@@ -110,7 +110,7 @@ def comment(r: Run, a: Args) -> Outcome:
         key = block_key(text)
     else:
         key = str(a.get("key", ""))
-        if d.is_rules and is_proposal_key(key):  # the thread on a proposed change (I693)
+        if d.is_rules and is_proposal_key(key):  # the thread on a proposed change (T693)
             p = next((x for x in d.proposals if f"p{x.id}" == key), None)
             if not p:
                 raise Refused("no such proposal")
@@ -257,7 +257,7 @@ def _writer(writes: List[ev.DocWritten], key: str) -> Optional[ev.DocWritten]:
 
 @handles("diagram-failed")
 def diagram_failed(r: Run, a: Args) -> Outcome:
-    """Taska's own (B714 r1181): a diagram the page could not draw goes to the agent that wrote it, so it fixes it,
+    """Taska's own (T714 r1181): a diagram the page could not draw goes to the agent that wrote it, so it fixes it,
     as a message on the document's task addressed to that agent's session; once per version of the document and
     paragraph. Nothing goes when the user wrote it, or the document changed since the page drew it."""
     if r.by != TASKA:

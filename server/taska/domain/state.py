@@ -51,14 +51,14 @@ class ProjectState:
     tasks: Dict[int, Task] = field(default_factory=dict)
     inputs: Dict[str, Input] = field(default_factory=dict)
     docs: Dict[int, Doc] = field(default_factory=dict)
-    voices: Dict[str, Voice] = field(default_factory=dict)  # every voice note's words, by its file (B682)
+    voices: Dict[str, Voice] = field(default_factory=dict)  # every voice note's words, by its file (T682)
     events: List[Event] = field(default_factory=list)  # the whole log, in order
     title: Optional[str] = None  # what people call the project (its address never changes)
-    icon: str = ""  # the project's picture (F743): one of its files, shown in place of its letter; "" for none
+    icon: str = ""  # the project's picture (T743): one of its files, shown in place of its letter; "" for none
     max_n: int = 0
     max_input: int = 0
     max_doc: int = 0
-    rules_d: int = 0  # the project's rules document (I693), once it has one
+    rules_d: int = 0  # the project's rules document (T693), once it has one
     page_ids: Dict[str, str] = field(default_factory=dict)  # the page's id for an input it sent -> the input
     undone_changes: Set[int] = field(default_factory=set)  # your changes that were put back
     filing_off: Set[int] = field(default_factory=set)  # organizer changes taken back by an undo
@@ -80,7 +80,7 @@ class ProjectState:
 
     @property
     def rules(self) -> Optional[Doc]:
-        """The project's rules document (I693), None until someone first writes or proposes."""
+        """The project's rules document (T693), None until someone first writes or proposes."""
         return self.docs.get(self.rules_d) if self.rules_d else None
 
     def docs_of(self, n: int) -> List[Doc]:

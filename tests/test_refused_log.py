@@ -1,4 +1,4 @@
-"""B802 C462 (B792 r1340): a change from the page that Taska refuses is logged with what it was and why, never the
+"""T802 C462 (T792 r1340): a change from the page that Taska refuses is logged with what it was and why, never the
 words in it, so a refused change can be told apart later."""
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ class RefusedLogged(ProjectCase):
         self.assertNotIn("my private words", json.dumps(f) + got[0].getMessage())
 
     def test_every_change_you_make_is_logged_without_its_words(self) -> None:
-        """F846 r1451: every action you take is in the log, for product analysis."""
+        """T846 r1451: every action you take is in the log, for product analysis."""
         got = []
         log = logging.getLogger("test-changes")
         log.addHandler(type("H", (logging.Handler,), {"emit": lambda self, r: got.append(r)})())

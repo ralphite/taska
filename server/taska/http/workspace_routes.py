@@ -38,21 +38,21 @@ def get(ctx: "AppContext", req: Request, path: str) -> Optional[Response]:
         return as_json({"idle": int(time.time() - ctx.status.last_user), "update": ctx.status.update_ready()})
     if path == "/skill":
         return text(200, SKILL, "text/markdown; charset=utf-8")
-    if path.startswith("/antigravity-agents/") and path[20:].removesuffix(".md") in ANTIGRAVITY_AGENTS:  # F755
+    if path.startswith("/antigravity-agents/") and path[20:].removesuffix(".md") in ANTIGRAVITY_AGENTS:  # T755
         return text(200, ANTIGRAVITY_AGENTS[path[20:].removesuffix(".md")], "text/markdown; charset=utf-8")
     if path == "/api/projects":
         return as_json(ws.summary(presence))
     if path == "/api/needs":
         return as_json(ws.needs())
-    if path == "/api/reconnects":  # I833: for a new session the user started to bring back the lost ones
+    if path == "/api/reconnects":  # T833: for a new session the user started to bring back the lost ones
         return text(200, ws.lost_list(req.arg("app"), ws.local or f"{req.host()}{req.prefix}"))
-    if path == "/api/listening":  # B811: the check at the end of an agent's turn
+    if path == "/api/listening":  # T811: the check at the end of an agent's turn
         return as_json(ws.listening(req.arg("sid")))
-    if path == "/api/find":  # the search (F479; Home's, ⌘K, the phone's): every project, by meaning and by the words
+    if path == "/api/find":  # the search (T479; Home's, ⌘K, the phone's): every project, by meaning and by the words
         return as_json(find_view(ws, req.arg("q"), req.arg("here")))
     if path == "/api/projects/deleted":
         return as_json(ws.deleted())
-    if path == "/api/shared-rules":  # I779: each shared rule, its text and sections, and the projects that put it in
+    if path == "/api/shared-rules":  # T779: each shared rule, its text and sections, and the projects that put it in
         return as_json(ws.shared_listing())
     if path == "/api/corrections":
         return as_json(ws.spellings.all())
@@ -88,7 +88,7 @@ def post(ctx: "AppContext", req: Request, path: str) -> Optional[Response]:
             ws.set_order(d.get("names"))
             return as_json({"ok": True})
         return text(404, NOT_FOUND)
-    if path == "/api/shared-rules":  # {name}: new shared rules, empty (I779)
+    if path == "/api/shared-rules":  # {name}: new shared rules, empty (T779)
         p = ws.shared_rules.add(req.json_body(10_000).get("name"))
         return as_json({"ok": True, "slug": p.slug, "name": p.title})
     if path == "/api/views":
@@ -118,7 +118,7 @@ def post(ctx: "AppContext", req: Request, path: str) -> Optional[Response]:
         d = req.json_body(20_000)
         ws.voice_prefs.set(d.get("text", ""))
         return as_json({"ok": True, **ws.voice_prefs.get(), "tidy": ws.voice_prefs.tidy()})
-    if path == "/api/gemini":  # F765: {key} sets the Gemini API key, {key: ""} forgets it; Taska restarts to use it
+    if path == "/api/gemini":  # T765: {key} sets the Gemini API key, {key: ""} forgets it; Taska restarts to use it
         key = str(req.json_body(2_000).get("key") or "").strip()
         if key and (len(key) > 200 or any(c.isspace() for c in key)):
             raise Refused("that does not look like an API key")

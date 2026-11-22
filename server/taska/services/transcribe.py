@@ -1,5 +1,5 @@
-"""Voice notes into words (B165, T101, B277, T256): two models listen at once, the project's own words are the hints,
-where the two heard differently in a way that changes the meaning reviewers settle it (B724, services.voice_vote),
+"""Voice notes into words (T165, T101, T277, T256): two models listen at once, the project's own words are the hints,
+where the two heard differently in a way that changes the meaning reviewers settle it (T724, services.voice_vote),
 and the words they could not agree on are pointed out. A phone's processed recording is
 heard by the strong model too; a quiet note again, made louder; a long note with few words again, piece by piece;
 the words tidied when the user wants them tidied, the words as said kept. Every step that ran is kept with the note
@@ -82,10 +82,10 @@ PRO_TRY = float(os.environ.get("TASKA_PRO_TRY", 30))  # T697 (11-06): one try wi
 
 def try_cap(secs: float) -> float:
     """How long one try of the strong model may take for a note `secs` long: PRO_TRY and 1 s more for each 10 s of it
-    (B788 r1339: gemini-4-hydrogen took 20 s on a 5-minute note; a longer one would be cut off at 30 s and asked of
+    (T788 r1339: gemini-4-hydrogen took 20 s on a 5-minute note; a longer one would be cut off at 30 s and asked of
     3.1 Pro after the wait)."""
     return PRO_TRY + max(0.0, secs) / 10
-# B724: where the two disagree on what was said, reviewers settle it (services.voice_vote): the strong model, or the
+# T724: where the two disagree on what was said, reviewers settle it (services.voice_vote): the strong model, or the
 # models named here in turn
 VOTE_MODELS = [m.strip() for m in os.environ.get("TASKA_VOTE_MODELS", PRO_MODEL).split(",") if m.strip()]
 
@@ -170,7 +170,7 @@ TIDY_CAP, TIDY_TRIES = float(os.environ.get("TASKA_TIDY_CAP", 8)), 3
 
 
 def tidy_cap(text: str) -> float:
-    """How long tidying `text` may take, in seconds: TIDY_CAP and 1 s more for each 100 characters (B788: the 8 s set
+    """How long tidying `text` may take, in seconds: TIDY_CAP and 1 s more for each 100 characters (T788: the 8 s set
     for 3.5 Flash cut gemini-4-hydrogen off on a 5-minute note, 1636 characters tidied in 10.5 to 11.6 s, and the
     note kept its "呃" and "嗯")."""
     return TIDY_CAP + len(text) / 100
@@ -254,7 +254,7 @@ def strong(steps: List[Step], name: str, audio: Dict[str, Any], prompt: str, tim
 
 
 def fell_back(steps: List[Step]) -> List[str]:
-    """What a note's words fell back from (B788, logged so the log review sees it, not left silent): the strong
+    """What a note's words fell back from (T788, logged so the log review sees it, not left silent): the strong
     model's first try failing (its next try or the speech model's words took its place), or tidying giving no words in
     time or none that kept all the words (the words as said stayed, fillers and all)."""
     out: List[str] = []
@@ -306,7 +306,7 @@ def tidy(text: str, step: Optional[Step] = None) -> str:
 
 
 def voice_by_pieces(path: Optional[str], prompt: str, vocab: List[str]) -> Tuple[str, List[Dict[str, Any]]]:
-    """B277: the note heard piece by piece (voice_pieces), both models on each at once. A piece counts only when the
+    """T277: the note heard piece by piece (voice_pieces), both models on each at once. A piece counts only when the
     speech model heard words in it (it never makes words up from noise); the main model's words win there.
     -> (the words, each piece's two answers: words or error); no pieces when the note is not cut."""
     pieces, _secs = tools.pieces(path)
@@ -367,7 +367,7 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
     fixes = h.fixes()
     terms = voice_terms(words, fixes)
     audio = {"inline_data": {"mime_type": mime.split(";")[0], "data": base64.b64encode(data).decode()}}
-    vocab = voice_vocab(terms, tasks, fixes)  # B724: the open tasks' codes and the product's words too
+    vocab = voice_vocab(terms, tasks, fixes)  # T724: the open tasks' codes and the product's words too
     prompt = voice_prompt(terms, tasks, fixes, h.prefs())
     t0, times = time.time(), {}
     steps: List[Step] = []
@@ -389,7 +389,7 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
         ran(steps, "asr", ASR_MODEL, lambda: told(capped(lambda: voice_asr(audio, vocab), VOICE_CAP, "the speech model", times, "asr"))))
     out = {"tr": "", "tr_by": "asr", "times": times, "steps": steps, **({"gated": True} if gated else {}),
            **({"hedge": hedge} if hedge is not None else {})}
-    if alt_err is None and not alt:  # B494: heard nobody: said too quietly? once more, made loud enough to hear
+    if alt_err is None and not alt:  # T494: heard nobody: said too quietly? once more, made loud enough to hear
         louder = tools.louder(data, mime)
         if louder:
             loud = {"inline_data": {"mime_type": "audio/webm", "data": base64.b64encode(louder).decode()}}
@@ -402,7 +402,7 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
         out["main_error"] = str(err)
     if alt_err:
         out["asr_error"] = str(alt_err)
-    if alt_err is None and not alt:  # the speech model heard nobody: what the other wrote was made up (B092)
+    if alt_err is None and not alt:  # the speech model heard nobody: what the other wrote was made up (T092)
         times["total"] = round(time.time() - t0, 1)
         return out
     if err is None and tr and not echoed(tr, titles) and alt_err is None and voice_short(tr, alt):
@@ -422,7 +422,7 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
         raise Refused(f"{err}; the speech model: {alt_err}")
     if not tr:
         return out
-    # B277: few words for a long note: heard again piece by piece, and those words win when clearly more
+    # T277: few words for a long note: heard again piece by piece, and those words win when clearly more
     if dur >= 6 and len(voice_tokens(tr)) < 2.0 * dur and len(tr) < 2.0 * dur:
         t1 = time.time()
         try:
@@ -438,10 +438,10 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
         times["total"] = round(time.time() - t0, 1)
     again = "_loud" if out.get("louder") else ""
     chose(steps, {"pro": "pro" + again, "asr": "asr" + again}.get(out["tr_by"], out["tr_by"]))
-    for c in fixes:  # what the user fixed once stays fixed (F144)
+    for c in fixes:  # what the user fixed once stays fixed (T144)
         if c.get("wrong"):
             tr, alt = tr.replace(c["wrong"], c["right"]), alt.replace(c["wrong"], c["right"])
-    if out["tr_by"] == "pro" and alt:  # B724: where the two heard differently, reviewers settle it
+    if out["tr_by"] == "pro" and alt:  # T724: where the two heard differently, reviewers settle it
         t1 = time.time()
         tr, doubts = voice_vote.settle(steps, audio, tr, alt, voice_glossary(tasks, fixes, terms), VOTE_MODELS)
         if steps[-1]["step"] == "vote":

@@ -1,4 +1,4 @@
-// B714 r1181 (Yadong's choice): a document's diagram that does not draw is told to the server, which tells the agent
+// T714 r1181 (Yadong's choice): a document's diagram that does not draw is told to the server, which tells the agent
 // that wrote it; once from a page for each version, paragraph and reason, and never when the page could not load the
 // drawing code itself (that is not the diagram's fault). Taska's note on the task is no agent's word for you to read.
 
@@ -15,7 +15,7 @@ const told = () => {
 const at = { d: 126, v: 2, key: 'a1b2c3d4e5' }
 const syntax = new Error("Parse error on line 2:\n...A[Start (now)] --> B\n-----------^\nExpecting 'SQE', got 'PS'")
 
-describe('a diagram that does not draw goes to its writer (B714 r1181)', () => {
+describe('a diagram that does not draw goes to its writer (T714 r1181)', () => {
   test("Mermaid's words, once per version, paragraph and reason", () => {
     const { sent, diagrams } = told()
     diagrams.failed('taska', at, syntax)
@@ -64,9 +64,9 @@ describe('a diagram that does not draw goes to its writer (B714 r1181)', () => {
   })
 })
 
-// B836: the phone back on the page before its connection: the drawing code that did not load is tried again by
+// T836: the phone back on the page before its connection: the drawing code that did not load is tried again by
 // itself while the block shows it drawing, instead of the block saying it could not load until the page reloads.
-describe('the drawing code not loading is tried again (B836)', () => {
+describe('the drawing code not loading is tried again (T836)', () => {
   const offline = () => new TypeError('Importing a module script failed.')
   const mermaid = (render: (src: string) => Promise<{ svg: string }>) => ({ default: { initialize: () => {}, render: (_: string, src: string) => render(src) } }) as never
 

@@ -26,7 +26,7 @@ def undo_filing(r: Run, a: Args) -> Outcome:
     if not f.can:  # only the organizer's own work, as it left it
         raise Refused(f"{f.why}: undo that by hand")
     r.emit(ev.FilingUndone(src=rid, by="you"))
-    undo_rules(r, rid)  # its change to the rules too (I693)
+    undo_rules(r, rid)  # its change to the rules too (T693)
     return Outcome(f"ok {rid} filing undone", "")
 
 

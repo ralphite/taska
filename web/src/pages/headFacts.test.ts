@@ -1,4 +1,4 @@
-// I693 (r1128 #9): the Rules tab is the rules document; it says a number only while a proposed change waits on you.
+// T693 (r1128 #9): the Rules tab is the rules document; it says a number only while a proposed change waits on you.
 import { expect, test } from 'vitest'
 import { NO_FILTERS } from '../model/route'
 import { HISTORY, PROPOSAL, rulesDocOf } from '../stories/rulesFixtures'

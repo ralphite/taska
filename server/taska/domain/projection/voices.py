@@ -1,5 +1,5 @@
-"""A voice note's words (B682): its one record, changed by each step of working them out and by a correction of
-yours; records set as they are, with the texts that held their words (what B682 did once per project)."""
+"""A voice note's words (T682): its one record, changed by each step of working them out and by a correction of
+yours; records set as they are, with the texts that held their words (what T682 did once per project)."""
 
 from __future__ import annotations
 
@@ -50,7 +50,7 @@ def inputs_with(state: ProjectState, f: str) -> List[Input]:
 
 def came_late(state: ProjectState, f: str, e: ev.Event, before: List[str]) -> None:
     """An agent or the organizer had the input without these words: it comes back to them updated (its words as
-    before kept in its history); the message is not marked edited, you changed nothing (B626)."""
+    before kept in its history); the message is not marked edited, you changed nothing (T626)."""
     for inp, was in zip(inputs_with(state, f), before):
         inp.history.append(InputVersion(text=was, t=e.t, mode="append"))
         changed_words(inp, e)

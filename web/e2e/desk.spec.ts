@@ -35,7 +35,7 @@ test('r45 r330: E archives the open task and Z puts it back', async ({ page, req
   await expect.poll(async () => p.read('tasks?archived=1')).not.toContain('Write the user docs')
 })
 
-test('r447 r503: a comment on a paragraph of a document is written in the one box, which stays at the bottom (B340)', async ({
+test('r447 r503: a comment on a paragraph of a document is written in the one box, which stays at the bottom (T340)', async ({
   page,
   request,
 }) => {
@@ -63,7 +63,7 @@ test('r447 r503: a comment on a paragraph of a document is written in the one bo
   await expect(para).toContainText('Say who reviews it')
 })
 
-test('two places picked in one paragraph keep two threads; an answer goes to the one still waiting (B469)', async ({
+test('two places picked in one paragraph keep two threads; an answer goes to the one still waiting (T469)', async ({
   page,
   request,
 }) => {
@@ -121,7 +121,7 @@ test("r641: a row's buttons sit side by side, with no empty room where one does 
   }
 })
 
-test('a web page document opens as its page; in Comment mode a click on a part makes it what you comment on (F432)', async ({
+test('a web page document opens as its page; in Comment mode a click on a part makes it what you comment on (T432)', async ({
   page,
   request,
 }) => {
@@ -139,11 +139,11 @@ test('a web page document opens as its page; in Comment mode a click on a part m
   await expect(boxLine(page)).toContainText('Ship option A today.')
 })
 
-test('a web page document is the page alone: no frame or line over it, its column wide, its comment counts in it (B492, B505)', async ({
+test('a web page document is the page alone: no frame or line over it, its column wide, its comment counts in it (T492, T505)', async ({
   page,
   request,
 }) => {
-  await page.setViewportSize({ width: 1920, height: 900 }) // B557 (r783): beside its conversation only this wide
+  await page.setViewportSize({ width: 1920, height: 900 }) // T557 (r783): beside its conversation only this wide
   const p = await project(request, {
     ...LOOP,
     then: `${LOOP.then}T4 html Plan page
@@ -158,7 +158,7 @@ test('a web page document is the page alone: no frame or line over it, its colum
   expect(await frame.getAttribute('title')).toBeNull() // no tooltip over the whole page
   expect(await frame.evaluate((e) => getComputedStyle(e).borderTopWidth)).toBe('0px')
   await expect(pane(page).getByText(/^on T4/)).toBeHidden()
-  // B505 (#6505): the page is the column beside its task's conversation
+  // T505 (#6505): the page is the column beside its task's conversation
   const top = await page.locator('[data-task-top]').filter({ visible: true }).first().boundingBox(),
     f = await frame.boundingBox(),
     count = await page.locator('button[data-count]').filter({ visible: true }).first().boundingBox()
@@ -176,7 +176,7 @@ test('a web page document is the page alone: no frame or line over it, its colum
   expect(whole.x + whole.width).toBeLessThanOrEqual(f.x + f.width)
 })
 
-test('the buttons of a part of a web page stay while the pointer goes to them; Esc drops the pick, then leaves Comment mode (D56, B484)', async ({
+test('the buttons of a part of a web page stay while the pointer goes to them; Esc drops the pick, then leaves Comment mode (D56, T484)', async ({
   page,
   request,
 }) => {
@@ -209,7 +209,7 @@ test('the buttons of a part of a web page stay while the pointer goes to them; E
   await expect(mode).toHaveAttribute('aria-pressed', 'false')
 })
 
-test('words selected in a web page are only selected, never a comment, in Comment mode or not (B502)', async ({
+test('words selected in a web page are only selected, never a comment, in Comment mode or not (T502)', async ({
   page,
   request,
 }) => {
@@ -253,7 +253,7 @@ T4 html Other page
   <!doctype html><html><body><h1>Other plan</h1><p>Nothing to see here.</p></body></html>
 `
 
-test('another document opens out of Comment mode (B500)', async ({ page, request }) => {
+test('another document opens out of Comment mode (T500)', async ({ page, request }) => {
   const p = await project(request, { ...LOOP, then: TWO_PAGES })
   await open(page, p, 'D1')
   const mode = commentMode(page)
@@ -266,7 +266,7 @@ test('another document opens out of Comment mode (B500)', async ({ page, request
   await expect(commentMode(page)).toHaveAttribute('aria-pressed', 'false')
 })
 
-test('with a part picked, no other part lights or can be picked until Esc lets it go (B497)', async ({
+test('with a part picked, no other part lights or can be picked until Esc lets it go (T497)', async ({
   page,
   request,
 }) => {
@@ -294,7 +294,7 @@ test('with a part picked, no other part lights or can be picked until Esc lets i
   await expect(pane(page).locator('.ring-blue-500')).toHaveCount(1)
 })
 
-test('a comment count outlines its part while pointed at and while open; a press anywhere else closes the comment (B503)', async ({
+test('a comment count outlines its part while pointed at and while open; a press anywhere else closes the comment (T503)', async ({
   page,
   request,
 }) => {
@@ -395,7 +395,7 @@ test('D77 #3: editing a task with a long description and a long talk, its next s
   expect(shown, 'Save is in sight, nothing over it').toBe(true)
 })
 
-test('B739: a long talk ends at the top of the box, so its scrollbar is never under it; around the box a press goes through', async ({
+test('T739: a long talk ends at the top of the box, so its scrollbar is never under it; around the box a press goes through', async ({
   page,
   request,
 }) => {

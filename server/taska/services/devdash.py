@@ -4,7 +4,7 @@ Only counts and times: never the words of a draft, a message or an input. Shown 
 only. Below the numbers, the analyses agents wrote: Markdown files in <data folder>/dev/analyses, newest first (a file
 is named by its date, 2026-10-22-what-it-is-about.md, and its first line is its title). Above them, the panels agents
 and scripts keep up to date (Markdown files in <data folder>/dev/panels, each rewritten in place), and what each task
-cost to make: the cost line agents end a done message with, and how long each round of work on a task took (F576).
+cost to make: the cost line agents end a done message with, and how long each round of work on a task took (T576).
 """
 
 from __future__ import annotations
@@ -248,7 +248,7 @@ def _round_tokens(it: TaskRow, a: datetime, b: datetime) -> Optional[int]:
 
 
 def rounds(slug: str, st: ProjectState) -> List[Dict[str, Any]]:
-    """Each round of work on a task (F576): from when it was started (doing) until it was handed to you (review) or
+    """Each round of work on a task (T576): from when it was started (doing) until it was handed to you (review) or
     done, its minutes, and the tokens its agent's cost line gives for it (None: no cost line). A round put back (open)
     before it was handed over does not count; a deleted or merged task's rounds neither."""
     out: List[Dict[str, Any]] = []

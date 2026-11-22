@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Watch a worker session for the manager session (I447), as a Monitor stream.
+"""Watch a worker session for the manager session (T447), as a Monitor stream.
 
   python3 tools/watch_worker.py <session.jsonl> <assigned-file> [stale_minutes=10] [quiet_minutes=20]
 
-Plain code polls every 30 seconds and prints a line only when the manager has to act (I447: checks cost no
+Plain code polls every 30 seconds and prints a line only when the manager has to act (T447: checks cost no
 tokens, only a real event wakes the manager):
   TASK     the task named in <assigned-file> (the last one handed out) is finished, or the worker asked on it
   STALE    silent stale_minutes in the middle of a turn: stuck on a prompt or a hung command
@@ -42,7 +42,7 @@ def busy(path):
 
 
 def task_row(assigned):
-    """The task's line in /tasks: 'F432 P1 now doing title ?' (status 4th, a trailing ? = asked)."""
+    """The task's line in /tasks: 'T432 P1 now doing title ?' (status 4th, a trailing ? = asked)."""
     try:
         code, base = open(assigned).read().split()[:2]
     except (OSError, ValueError):
@@ -94,7 +94,7 @@ def main():
                 print(f'WORKER {e}', flush=True)
                 if not e.startswith('TASK'):
                     tell_task(assigned, code, e, d)
-        time.sleep(30)  # checks are cheap code, every 30 s; never a tight loop on Taska (B464: 80 asks a second)
+        time.sleep(30)  # checks are cheap code, every 30 s; never a tight loop on Taska (T464: 80 asks a second)
 
 
 def tell_task(assigned, code, event, d):

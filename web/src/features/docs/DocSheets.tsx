@@ -37,7 +37,7 @@ export function commentMenuSheet(yours: boolean, on: { edit(): void; move(): voi
   }
 }
 
-/** The phone's ⋯ beside a document's close button (D115 #41), a web page's Full screen before it (F751); while an area
+/** The phone's ⋯ beside a document's close button (D115 #41), a web page's Full screen before it (T751); while an area
  * is being marked, Done in its place. */
 export function DocSheetMore({ code, circle, on }: { code: string; circle: boolean; on: { more(): void; done(): void; full?(): void } }) {
   const more = (

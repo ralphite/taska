@@ -1,4 +1,4 @@
-// What the agent pill opens (F768, Yadong chose Gemini's "compact" design): under the title, whether an agent is
+// What the agent pill opens (T768, Yadong chose Gemini's "compact" design): under the title, whether an agent is
 // around and what waits for one. On the left every agent session seen in the project, by its app, a manager's workers
 // under it, each by its state's dot, its name and when it was last heard of; under them how to connect another agent
 // and what agents read. On the right the session picked: its state and for how long, its app and folder, what it waits
@@ -20,12 +20,12 @@ export interface AgentsActs {
   help(): void
   /** a task, by its code */
   open(code: string): void
-  /** I833: bring back a session that lost its connection (by the id its app knows it by): relay, a connected session
+  /** T833: bring back a session that lost its connection (by the id its app knows it by): relay, a connected session
    * of its app is handed it; else `text` is what to give a new session */
   reconnect(sid: string): Promise<{ relay: boolean; text?: string }>
 }
 
-/** I833: a Reconnect pressed: asked, handed to a connected session, what to start a new one with, or why not */
+/** T833: a Reconnect pressed: asked, handed to a connected session, what to start a new one with, or why not */
 export type Reconnecting = 'asking' | 'sent' | { text: string } | { error: string }
 
 /** What shows when the sheet opens: the session picked (a key; 'guide': what agents read), whether the phone shows
@@ -34,7 +34,7 @@ export interface AgentsStart {
   pick?: string
   page?: boolean
   resume?: boolean
-  /** a Reconnect already pressed (I833) */
+  /** a Reconnect already pressed (T833) */
   reconnecting?: Reconnecting
 }
 
@@ -202,7 +202,7 @@ function SessionPage({ s, on, onPick, resume, reconnecting }: { s: SessionFacts;
           )}
           <span className="hidden flex-1 lg:block" />
           {s.reconnect ? (
-            // I833: another session of its app sends it a message to reconnect (or a new one does)
+            // T833: another session of its app sends it a message to reconnect (or a new one does)
             <button onClick={reconnect} disabled={busy} className={`${SECOND} ${WAY_BACK}`}>
               <Icon n={busy ? 'spinner' : 'reopen'} c={`size-4 ${busy ? 'animate-spin' : ''}`} />
               {busy ? 'Reconnecting' : 'Reconnect'}

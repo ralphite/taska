@@ -1,4 +1,4 @@
-"""The states of a voice note's one record of words (state.voices, B682) and the steps between them (T726). The
+"""The states of a voice note's one record of words (state.voices, T682) and the steps between them (T726). The
 page's model of a voice message (web/src/model/voiceStates.ts) reads these as the truth once Taska has the note.
 
     (new) --begun--------------------> wait     a record is made waiting (VoiceHeard wait)

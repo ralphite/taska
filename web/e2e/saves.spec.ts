@@ -1,4 +1,4 @@
-// A change goes to the project it was made in, however long it waits (B527): what you add to an input while its
+// A change goes to the project it was made in, however long it waits (T527): what you add to an input while its
 // screenshot is still going up lands there, though you went to another project meanwhile; and one Taska refused says
 // what it carried and where it belongs, as a link there.
 // guards: src/app/inputs/ src/app/docs/ src/stores/outbox.ts src/app/page/toasts.ts src/model/saidOf.ts src/features/composer/ src/features/project/NotSaved.tsx src/pages/Header.tsx src/app/actions.ts
@@ -21,7 +21,7 @@ async function addingTo(page: Page, words: string) {
   await sheetBody(page).getByRole('button', { name: /^Add more/ }).filter({ visible: true }).first().click()
 }
 
-test('what you add to an input goes to its own project, though you went to another while its screenshot went up (B527)', async ({
+test('what you add to an input goes to its own project, though you went to another while its screenshot went up (T527)', async ({
   page,
   request,
 }) => {
@@ -45,7 +45,7 @@ test('what you add to an input goes to its own project, though you went to anoth
   await expect(page.getByText(/not saved/)).toHaveCount(0)
 })
 
-test('B637: details that are only a file still going up are saved once it is up, with no false "changed elsewhere"', async ({
+test('T637: details that are only a file still going up are saved once it is up, with no false "changed elsewhere"', async ({
   page,
   request,
 }) => {
@@ -64,7 +64,7 @@ test('B637: details that are only a file still going up are saved once it is up,
   await expect(page.getByText(/changed elsewhere|not saved/)).toHaveCount(0)
 })
 
-test('a change Taska refused says the words it carried and links to where it belongs (B527)', async ({
+test('a change Taska refused says the words it carried and links to where it belongs (T527)', async ({
   page,
   request,
 }) => {
@@ -147,7 +147,7 @@ test('D83 #1 (T550): your comment says Sending… beside its paragraph until Tas
   await expect(mine).not.toContainText('Sending…')
 })
 
-test('B637: words added to an input while it changed in another window are saved after what it says now, with no error', async ({
+test('T637: words added to an input while it changed in another window are saved after what it says now, with no error', async ({
   page,
   request,
 }) => {

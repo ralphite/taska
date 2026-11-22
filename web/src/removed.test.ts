@@ -15,18 +15,18 @@ const REMOVED: { why: string; gone: RegExp }[] = [
   { why: 'r1080: no "Speak or write about it" beside a place\'s two buttons', gone: /Speak or write about it/ },
   { why: 'r1092, T689 #2: no text filter in the lists; search is the search page/dialog', gone: /SearchHints|searchHints|\bsearchWords\b|\binputMatch\b|inputs\?q=|list\.q\b|Clear search and filters|Searching other projects/ },
   { why: 'r437: no "New input instead" / "Add to … instead" on the New input page', gone: /New input instead|Add to \S+ instead/ },
-  { why: 'I693, r1118: no rule tasks: no rule type, no R code, no rule in force read from tasks (the rules are one document)', gone: /type: 'rule'|type [!=]== 'rule'|rule: 'R'|"rule": "R"|RULE_STATUS_WORD|rules_in_force|is_rule_in_force|type [!=]= "rule"/ },
-  { why: 'B712: one voice note chip everywhere (VoiceChip): no pill in your bubble, no line in a thread, no pill in the input lists', gone: /\bVoicePill\b|\bVoiceLine\b|Pause the voice note/ },
-  { why: 'I693, r1118: no rule list, rule rows or rule task page (Active, Retired, Retire, Reactivate)', gone: /['"]Retire['"]|['"]Reactivate['"]|No matching rules|['"]no-rules['"]|zone: 'rules'|TaskRowSwipeRules|TaskPageRules|label: 'Active'|label: 'Retired'/ },
-  { why: 'B715 r1169: no hint at the end of a document on the phone ("Tap, select or circle to comment", a web page\'s "Tap a part to comment")', gone: /Tap, select or circle to comment|Tap a part to comment/ },
-  { why: 'B715 r1169: no "Comment on the whole document" at the end of a document on the phone, nor its spoken comment on the whole document', gone: /Comment on the whole document|wholeButton|wholeRec/ },
-  { why: 'B730: no "Recording 0:12" row in the list under the box (New input, the Inputs tab) while recording: the box shows it', gone: /\bRecordingRow\b/ },
+  { why: 'T693, r1118: no rule tasks: no rule type, no R code, no rule in force read from tasks (the rules are one document)', gone: /type: 'rule'|type [!=]== 'rule'|rule: 'R'|"rule": "R"|RULE_STATUS_WORD|rules_in_force|is_rule_in_force|type [!=]= "rule"/ },
+  { why: 'T712: one voice note chip everywhere (VoiceChip): no pill in your bubble, no line in a thread, no pill in the input lists', gone: /\bVoicePill\b|\bVoiceLine\b|Pause the voice note/ },
+  { why: 'T693, r1118: no rule list, rule rows or rule task page (Active, Retired, Retire, Reactivate)', gone: /['"]Retire['"]|['"]Reactivate['"]|No matching rules|['"]no-rules['"]|zone: 'rules'|TaskRowSwipeRules|TaskPageRules|label: 'Active'|label: 'Retired'/ },
+  { why: 'T715 r1169: no hint at the end of a document on the phone ("Tap, select or circle to comment", a web page\'s "Tap a part to comment")', gone: /Tap, select or circle to comment|Tap a part to comment/ },
+  { why: 'T715 r1169: no "Comment on the whole document" at the end of a document on the phone, nor its spoken comment on the whole document', gone: /Comment on the whole document|wholeButton|wholeRec/ },
+  { why: 'T730: no "Recording 0:12" row in the list under the box (New input, the Inputs tab) while recording: the box shows it', gone: /\bRecordingRow\b/ },
   { why: 'Refactor 1 (T728): the change log reaches the page as facts; no log words parsed back, no log_entries/_said', gone: /\blog_entries\b|\b_said\(|\bsaid\(m, (e\.)?what\b/ },
   { why: 'Refactor 4 (T728): a task action is read by its id from one table (model/taskActs); no looks keyed by its words, no type R in a hint', gone: /\bACT_(TONE|ICON|BG|KEY)\b|\bCHOSEN_TONE\b|\bFORWARD_NEED\b|\bNEED_ACT_WORD\b|Type: F B I T R/ },
   { why: 'Refactor 6 (T728): one search across the projects, the Finder\'s (/api/find); no /api/search, CrossSearch, search store or search hits', gone: /\/api\/search\b|\bCrossSearch\b|\bcrossSearch\b|createSearchStore|\bSearchHit\b|\bSearchPhase\b|\bhitWhere\b|\bhitPath\b|def search\(self, q/ },
-  { why: 'I779 r1325: no shared rule groups a project switches on (composition was not in the text; a switch is not text an agent can edit)', gone: /Shared rule groups|New group|\bwithShared\b|includes two groups/ },
-  { why: 'B800 r1370 r1371: no microphone kept between recordings: kept, iPhone refused it after the background until Taska was reopened', gone: /\bfromHomeScreen\b|\bkept: MediaStream\b|\bmicRelease\b|MIC\.stream\b/ },
-  { why: 'B682: a voice note shows its words (or that they are coming, or that none were heard), never "Voice note" in their place', gone: /(isAudio|audio\/)[^\n]*['"]Voice note['"]/ },
+  { why: 'T779 r1325: no shared rule groups a project switches on (composition was not in the text; a switch is not text an agent can edit)', gone: /Shared rule groups|New group|\bwithShared\b|includes two groups/ },
+  { why: 'T800 r1370 r1371: no microphone kept between recordings: kept, iPhone refused it after the background until Taska was reopened', gone: /\bfromHomeScreen\b|\bkept: MediaStream\b|\bmicRelease\b|MIC\.stream\b/ },
+  { why: 'T682: a voice note shows its words (or that they are coming, or that none were heard), never "Voice note" in their place', gone: /(isAudio|audio\/)[^\n]*['"]Voice note['"]/ },
 ]
 
 const ROOT = join(__dirname, '..', '..')
@@ -48,7 +48,7 @@ test('what Yadong removed is not back', () => {
     readFileSync(f, 'utf8')
       .split('\n')
       .forEach((line, i) => {
-        if (/\b(r|[A-Z])\d{3,}\b/.test(line)) return // a comment saying it was removed, and why (rNNN, B684)
+        if (/\b(r|[A-Z])\d{3,}\b/.test(line)) return // a comment saying it was removed, and why (rNNN, T684)
         for (const r of REMOVED) if (r.gone.test(line)) back.push(`${f.slice(ROOT.length + 1)}:${i + 1} (${r.why}): ${line.trim().slice(0, 120)}`)
       })
   expect(back).toEqual([])

@@ -3,7 +3,7 @@
 An input is one thing the user says: typed words, a voice note, pictures and files, or several of them together. This
 is where it goes from the moment it is sent to the tasks it lands on. Each rule names where it was decided, so it can
 be checked one by one. How a voice note is written out: D121; every state of a voice message and what each place shows
-in it: [voice.md](voice.md). Taska's own copy of this page in Chinese: D126 (B714).
+in it: [voice.md](voice.md). Taska's own copy of this page in Chinese: D126 (T714).
 
 ```mermaid
 flowchart TD
@@ -23,10 +23,10 @@ flowchart TD
     D -->|"Hello, thanks, an answer to an agent"| Z["Nothing to do"]
     D -->|"Unsure"| Q["A question card for the user<br/>on the new task or the task spoken in"]
     N --> N2["The new task: body, pictures, voice notes, From 1 input<br/>its talk is empty"]
-    N --> C["Said in a task: under the user's message there<br/>a line: Created B713"]
+    N --> C["Said in a task: under the user's message there<br/>a line: Created T713"]
     E --> M["A new message of the user's words in that task's talk<br/>marked with the input it came from"]
     X --> M
-    F --> F2["The task's header shows the new fields"]
+    F --> T2["The task's header shows the new fields"]
     R --> R2["A new version of the rules document"]
     G --> G2["The Inputs line says For an agent"]
     Z --> Z2["The Inputs line says Handled<br/>said in a task: Added to that task"]
@@ -39,15 +39,15 @@ flowchart TD
 
 | # | Rule | Source |
 |---|---|---|
-| 1 | Every input stays in Inputs as it was said; its line says what it became (Created B713, Added to T03, For an agent, ...) | B629 |
-| 2 | Words said in a task show at once as the user's message in that task's talk (tidied words), without waiting for the organizer | B703 r1144, #10330 (replaced the choice in #10294) |
-| 3 | The organizer writes no message on the task the input was said in: no repeat and no rewording; what needs doing it does by changing things | B703 r1141, #10330 |
-| 4 | The organizer writes no message on a task it just made from the input: the task already shows the words, pictures and voice notes | B714 r1167 |
-| 5 | The one message the organizer may write on those two tasks is a question for the user (an ask, with choices when there are some), when it is unsure; its notes and proposals there are dropped | B714 #10594 |
-| 6 | An input said in a task that makes new tasks shows one line under the user's message there: → Created B713 (several: → Created B713, F714), each code opening its task; the same on the phone and the desktop | B714 #10594 |
-| 7 | A new task's body is all the user's words about it, tidied: only fillers and words said twice go; never shortened, reordered or rewritten | F432, T697 (D121, B696) |
+| 1 | Every input stays in Inputs as it was said; its line says what it became (Created T713, Added to T03, For an agent, ...) | T629 |
+| 2 | Words said in a task show at once as the user's message in that task's talk (tidied words), without waiting for the organizer | T703 r1144, #10330 (replaced the choice in #10294) |
+| 3 | The organizer writes no message on the task the input was said in: no repeat and no rewording; what needs doing it does by changing things | T703 r1141, #10330 |
+| 4 | The organizer writes no message on a task it just made from the input: the task already shows the words, pictures and voice notes | T714 r1167 |
+| 5 | The one message the organizer may write on those two tasks is a question for the user (an ask, with choices when there are some), when it is unsure; its notes and proposals there are dropped | T714 #10594 |
+| 6 | An input said in a task that makes new tasks shows one line under the user's message there: → Created T713 (several: → Created T713, F714), each code opening its task; the same on the phone and the desktop | T714 #10594 |
+| 7 | A new task's body is all the user's words about it, tidied: only fillers and words said twice go; never shortened, reordered or rewritten | T432, T697 (D121, T696) |
 | 8 | A voice note's words word for word are only for the organizer to judge whether a word was misheard; they never go into a body | T697 (D121) |
-| 9 | Another task mentioned in an input gets a sentence or two about it, marked with the input; the whole input is never pasted there | B452 |
+| 9 | Another task mentioned in an input gets a sentence or two about it, marked with the input; the whole input is never pasted there | T452 |
 | 10 | The rules change only when the user plainly says it is a rule ("rule", "from now on always ..."); anything the product or agents should do is a task | the organizer's instructions |
 | 11 | A question or request for an agent is left for the agent; whatever else the input says still becomes tasks | the organizer's instructions |
 | 12 | New tasks are P1 and Now; the user's own words ("urgent", "later") win | r10, r1072, R055 #9566 |
@@ -64,11 +64,11 @@ Where they are kept: rules 3 to 5 in `echo` (`server/taska/services/organizer.py
 
 | Case | Inputs | The new task | The task spoken in | Other tasks |
 |---|---|---|---|---|
-| Something new, on New input | Created B713 | body = the words; pictures, voice notes; From 1 input; empty talk | | |
+| Something new, on New input | Created T713 | body = the words; pictures, voice notes; From 1 input; empty talk | | |
 | An existing task, on New input | Added to T03 | | | T03's talk: a message with the part about it |
 | More detail, or an answer to an agent, in a task | Added to T03 | | only the user's message | |
 | "Make it P0", "done" in a task | Added to T03 | | the user's message and the changed fields; no organizer note | |
-| Something new, in a task | Created B713 | as in the first row | the user's message, with → Created B713 under it | |
+| Something new, in a task | Created T713 | as in the first row | the user's message, with → Created T713 under it | |
 | F12 mentioned in passing | also Added to F12 | | | F12's talk: a message with the part about it |
 | Unsure what was meant | as the rows above | a question card, when it is the new task | a question card | |
 | Plainly a rule | Changed the rules | | | a new version of the rules |
@@ -217,7 +217,7 @@ what the organizer filed (`filing.can`); Move only when there is another project
 |---|---|---|---|---|---|
 | Its words to come (`transcribing`) | as model/voiceStates says it (busy) | as model/voiceStates says it (busy) | as model/voiceStates says it (busy) | as model/voiceStates says it (busy) | (nothing to do) |
 | Organizing (`organizing`) | Organizing… (busy) | Organizing… (busy) | Organizing… (busy) | — | (nothing to do) |
-| Made or changed tasks (`filed`) | its tasks: Created B014 · Added to F012 (plain) | its tasks: Created B014 · Added to F012 (plain) | its tasks: Created B014 · Added to F012 (plain) · Open, Undo, Move to… | → Created B713 (the tasks it made there) (plain) | Undo, Move to… |
+| Made or changed tasks (`filed`) | its tasks: Created B014 · Added to F012 (plain) | its tasks: Created B014 · Added to F012 (plain) | its tasks: Created B014 · Added to F012 (plain) · Open, Undo, Move to… | → Created T713 (the tasks it made there) (plain) | Undo, Move to… |
 | An answer on its task (`answer`) | Answer to T007 (plain) | Answer to T007 (plain) | Answer to T007 (plain) · Open, Undo, Move to… | — | Undo, Move to… |
 | For an agent (`agent`) | For an agent (quiet) | For an agent (quiet) | For an agent (quiet) · Move to… | — | Move to… |
 | Nothing filed, the organizer said why (`note`) | the organizer's words (quiet) | the organizer's words (quiet) | the organizer's words (quiet) · Move to… | — | Move to… |

@@ -1,4 +1,4 @@
-"""Codex's PermissionRequest hook (I810 r1373): Codex asks you to approve something. Its rollout log does not say so
+"""Codex's PermissionRequest hook (T810 r1373): Codex asks you to approve something. Its rollout log does not say so
 (Codex 0.147 writes nothing while it waits), so this hook leaves a mark Taska reads: ~/.taska/agent-waits/<thread>.json
 with when and what. Anything Codex writes to the thread after it means it was answered. It decides nothing (no output),
 never fails Codex (every error is swallowed), and uses no model.

@@ -226,7 +226,7 @@ class ProjectRenamed(Event):
 
 @dataclass
 class ProjectIconSet(Event):
-    """The project's picture (F743): a file it has, shown in place of its letter; "" takes it off."""
+    """The project's picture (T743): a file it has, shown in place of its letter; "" takes it off."""
 
     KIND: ClassVar[str] = "icon"
     f: str = ""

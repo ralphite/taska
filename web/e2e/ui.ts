@@ -29,7 +29,7 @@ export const choice = (page: Page, words: string) => shown(docBlocks(page).locat
 /** A document's form (its choices), by one of them. */
 export const form = (page: Page, words: string) => shown(docBlocks(page).locator('[role="group"]').filter({ hasText: words })).first()
 /** The line over the box's Send choices. */
-/** Send choices: the box line's on the desktop, the document's own line on the phone (no box over it, B643). */
+/** Send choices: the box line's on the desktop, the document's own line on the phone (no box over it, T643). */
 export const sendChoices = (page: Page) => shown(page.getByRole('button', { name: 'Send choices', exact: true })).first()
 /** A document's card on its task's page. */
 export const docCard = (page: Page, title: string) =>
@@ -98,7 +98,7 @@ export const partPick = (page: Page) => shown(page.locator('[data-part-pick]'))
 export const partSayFor = (page: Page, quote: string) =>
   shown(page.locator(`[data-part-say][data-quote="${quote}"]`))
 /** A part's speak button while it records: ✓ on its recording strip (it stops it: the desktop's words into the box,
- * the phone's posted; B498). */
+ * the phone's posted; T498). */
 export const partStop = (page: Page) => shown(page.locator('[data-place-rec] [data-part-say]'))
 /** The outline round a part (its comments under the pointer or open, or it picked), by the part's key. */
 export const partRing = (page: Page, key?: string) => page.locator(key == null ? '[data-ring]' : `[data-ring="${key}"]`)
@@ -111,7 +111,7 @@ export const pageCount = (page: Page, key: string) =>
 /** Comment mode (the desktop): a click on the page picks a part instead of working it. */
 export const commentMode = (page: Page) =>
   page.locator('[data-part="pane"] > header').getByRole('button', { name: /^Comment/ })
-/** A place's recording strip (B498): ✕ cancels, ✓ stops (the desktop's words into the box, the phone's posted), the
+/** A place's recording strip (T498): ✕ cancels, ✓ stops (the desktop's words into the box, the phone's posted), the
  * desktop's ↑ sends at once (the phone has none, r1062). */
 export const placeRec = (page: Page) => shown(page.locator('[data-place-rec]'))
 export const sayCancel = (page: Page) => placeRec(page).getByRole('button', { name: 'Cancel', exact: true })
@@ -182,7 +182,7 @@ export const refuseComments = (page: Page, why: string) =>
     if (!o.commands.some((x) => x.op === 'dc')) return route.continue()
     return route.fulfill({ status: 400, json: { ok: false, results: [why] } })
   })
-/** The desktop search's rows (F479): what it found, Recent, Actions. */
+/** The desktop search's rows (T479): what it found, Recent, Actions. */
 export const searchRows = (page: Page) => page.locator('[data-part="search"] button[aria-selected]')
 /** A task's menu (the button that opens it), and one of its choices by its words. */
 export const taskMenu = (page: Page) => shown(page.getByRole('button', { name: 'Task actions', exact: true })).first()
@@ -190,7 +190,7 @@ export const menuChoice = (page: Page, words: RegExp) => sheetBody(page).getByRo
 /** The toast's Undo. */
 export const undo = (page: Page) => shown(page.getByRole('button', { name: /^Undo/ })).first()
 
-// ---------------------------------------------------------------- Safari's engine on the phone (B786)
+// ---------------------------------------------------------------- Safari's engine on the phone (T786)
 /** The microphone in WebKit, which has no fake device as Chromium has (`--use-fake-device-for-media-stream`): a
  * steady tone, played into what the page records for as long as it records. Before the page opens. */
 export const fakeMic = (page: Page) =>

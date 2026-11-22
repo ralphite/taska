@@ -1,8 +1,8 @@
 // Under New input on the desktop (T661, the approved "Anchored Stream"): a voice note being recorded, what is still on
 // its way and the draft to check, as lines of their own; then every input, the latest first (more comes as you
 // scroll), each as the row every list of inputs draws (its number and when, its words, its files, what became of it
-// on a shelf under them; its ⋯ deletes it); more being said into one of them, on its line (F657); one gone to (a
-// search found it, a source of a task) in view and lit. Search is the sidebar's (F479). Props only.
+// on a shelf under them; its ⋯ deletes it); more being said into one of them, on its line (T657); one gone to (a
+// search found it, a source of a task) in view and lit. Search is the sidebar's (T479). Props only.
 
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { SaidInput } from '../../model/saidLately'
@@ -80,7 +80,7 @@ export function SaidLately({ rows, outgoing, more, draft, files, words, adding =
   }, [more, rows.length, on])
   return (
     <div>
-      {/* empty (nothing on its way or to check): no room taken; a recording shows in the box only (B730) */}
+      {/* empty (nothing on its way or to check): no room taken; a recording shows in the box only (T730) */}
       {/* the draft, as the page had it over the list before T661 (r1051) */}
       <ol>{draft}</ol>
       {/* what is on its way; empty, no room taken */}

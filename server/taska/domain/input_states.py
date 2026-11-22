@@ -5,7 +5,7 @@ says these states in its own words, from the same fields.
 
     (sent) ------------------> queued       the organizer on: it takes it, the oldest first
     (sent) ------------------> agents       the organizer off: for the agents as it is
-    (kept with Esc) ---------> cancelled    a recording kept, not sent (B627)
+    (kept with Esc) ---------> cancelled    a recording kept, not sent (T627)
     cancelled --Send---------> queued, agents
     queued --taken-----------> organizing   (organizing.busy; while its voice notes' words come it waits: held)
     organizing --busy service> queued       asked again later, longer each time (T424); nothing is written

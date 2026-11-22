@@ -1,4 +1,4 @@
-"""Work a waiting session keeps being handed and does not take (B832, r1423): a session that waited for its own task
+"""Work a waiting session keeps being handed and does not take (T832, r1423): a session that waited for its own task
 only was handed a P0 task again and again, every minute for nine hours, and did nothing with it, while Taska counted
 the task as having a session on it. Handed the same task, unchanged, three times in a row, the session is taken to
 not take it: that task is no longer handed to it nor held for it (until the task changes), and the user is told once.

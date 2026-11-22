@@ -1,6 +1,6 @@
 // The row of views above the list: the preset views of Tasks (Needs you, Active, All, Archive, Open, Later,
 // Done, Won't do) and your own, each with what it would show. It scrolls sideways; a fading edge says more is there
-// (the phone swipes). The desktop's list (F670): Filters at the far left, and when the views do not fit, ⌄ at the far
+// (the phone swipes). The desktop's list (T670): Filters at the far left, and when the views do not fit, ⌄ at the far
 // right opens the row onto as many lines as it takes to show them all; ⌃ closes it to one line again. Elsewhere on
 // the desktop (the search's kinds) an arrow on the edge brings in what is past it.
 
@@ -177,7 +177,7 @@ export function ViewBar({
       </div>
     )
   return (
-    // the desktop list's: as high as the pane's bar beside it (B669), taller when opened onto more lines
+    // the desktop list's: as high as the pane's bar beside it (T669), taller when opened onto more lines
     <div data-views className={`flex border-b border-zinc-200 dark:border-zinc-800 ${open ? 'items-start' : 'h-full items-stretch'}`}>
       {lead ? <div className={`${side} pl-2`}>{lead}</div> : null}
       <div className="relative min-w-0 flex-1">

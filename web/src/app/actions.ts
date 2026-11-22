@@ -93,7 +93,7 @@ interface PageAction<K extends Uses = Uses> {
   label: string
   /** the keys, as the keyboard names them; a space between keys pressed one after the other */
   keys?: string
-  /** among the search's Actions when its words name it (F479), with these words when they differ */
+  /** among the search's Actions when its words name it (T479), with these words when they differ */
   listed?: string | true
   /** only of use on the desktop (the sidebar, the keys) */
   desk?: true
@@ -174,7 +174,7 @@ export const ACTIONS = {
   status: task(['keyArm', 'toasts'], { label: 'Status…', keys: 's', listed: true, run: arm('s') }),
   priority: task(['keyArm', 'toasts'], { label: 'Priority…', keys: 'p', listed: true, run: arm('p') }),
   tags: task(['sheets'], { label: 'Tags…', keys: 't', listed: true, run: (w, h) => w.sheets.open({ kind: 'task-menu', n: h.it.n, arm: 't' }, { pop: true, focus: false, narrow: true }) }),
-  // beside its row in the list, as its right-click menu is (B801, B640 #8700: it was in the window's corner)
+  // beside its row in the list, as its right-click menu is (T801, T640 #8700: it was in the window's corner)
   'put-under': task(['sheets', 'fields'], {
     label: 'Put under…',
     keys: 'm',
@@ -203,7 +203,7 @@ export const ACTIONS = {
     label: 'Search',
     keys: 'Meta+k',
     run: (w) => {
-      // the desktop's dialog (again: it closes); the phone's search is a page over the page, listening at once (F479)
+      // the desktop's dialog (again: it closes); the phone's search is a page over the page, listening at once (T479)
       if (w.desk()) return w.sheet.getState().spec?.req.kind === 'search' ? w.finder.closeDesk() : w.finder.openDesk()
       if (!w.route.getState().layers.includes('search')) w.finder.open()
     },
@@ -290,17 +290,17 @@ function stepBack(w: BackWorld, h: Here): void {
   if (view.subFor != null && typingIn(active)) return w.taskEdits.subLeave()
   if (view.editing != null) return w.taskEdits.leave()
   if (r.tab === 'rules' && (r.place.kind === 'tab' || r.place.kind === 'rules')) {
-    // the rules (I693): the editor (kept as a draft), what you picked, then a page of them back to the rules
+    // the rules (T693): the editor (kept as a draft), what you picked, then a page of them back to the rules
     const doc = w.docView.getState()
     if (doc.editing) return w.rules.keep()
     if (doc.quote || doc.sel.size || doc.reply) return w.docs.unpick()
     if (r.place.kind === 'rules' && !typingIn(active)) return w.rules.go({ kind: 'read' }, false)
-    if (isSharedSlug(r.slug) && !typingIn(active)) return w.sharedRules.back() // a shared rule's page: back to the list (I779)
+    if (isSharedSlug(r.slug) && !typingIn(active)) return w.sharedRules.back() // a shared rule's page: back to the list (T779)
   }
   if (r.place.kind === 'doc') {
     // a document: its editor (kept as a draft), the area being drawn, what you picked, then the document itself
     const doc = w.docView.getState()
-    if (doc.full) return doc.setFull(false) // a web page over the window: back to its pane (F751)
+    if (doc.full) return doc.setFull(false) // a web page over the window: back to its pane (T751)
     if (doc.editing) return w.docEditor.keep()
     if (doc.circle) return doc.setCircle(false)
     if (doc.quote || doc.sel.size || doc.reply) return w.docs.unpick()

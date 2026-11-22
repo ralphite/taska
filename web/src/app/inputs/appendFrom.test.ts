@@ -13,7 +13,7 @@ const r12 = { id: 'r12', text: 'Keep the filter.', v: 3, files: [] }
 const model = { byId: new Map([['r12', r12]]), byN: new Map(), docs: [], inputs: [r12], width: 2 } as unknown as ProjectModel
 const ADD = draftKey({ kind: 'amend', mode: 'append', id: 'r12' })
 
-/** A voice note said on an input's own line (F657) goes as Add more goes, whatever the box writes meanwhile. */
+/** A voice note said on an input's own line (T657) goes as Add more goes, whatever the box writes meanwhile. */
 function page() {
   const store = createBoxStore(memoryStore())
   const drafts = createDraftsStore(memoryStore())

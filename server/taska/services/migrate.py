@@ -14,7 +14,7 @@ from ..domain import code_migration
 from ..domain.projection import replay
 from ..infra.project_db import FORMAT_VERSION, ProjectDb
 
-PLACES = ("", ".deleted", ".shared-rules")  # the projects, the deleted ones, the shared rules (I779)
+PLACES = ("", ".deleted", ".shared-rules")  # the projects, the deleted ones, the shared rules (T779)
 
 
 def folders(root: str) -> Iterator[str]:

@@ -1,6 +1,6 @@
 // The keys, for the whole page: each key is looked up in the table of actions (actions.ts), which says whether it can
 // act here and does it. On the desktop a single key acts while you are not typing; G then a letter, and S, P or T then
-// a digit or letter, are two keys. Esc steps back one level, on the phone too; Cmd-K (or /) opens the search (F479).
+// a digit or letter, are two keys. Esc steps back one level, on the phone too; Cmd-K (or /) opens the search (T479).
 // The home page has one key: Cmd-K or / search (the phone: its search field).
 
 import { actionOfKeys, type ActionId } from './actions'

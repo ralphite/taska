@@ -1,5 +1,5 @@
-// One way to comment on a place picked in a page (a paragraph, words selected, a part of a web page; B498): two
-// buttons beside it, Voice and Comment, floating over the page (they never move its words, B715 r1169). Voice turns
+// One way to comment on a place picked in a page (a paragraph, words selected, a part of a web page; T498): two
+// buttons beside it, Voice and Comment, floating over the page (they never move its words, T715 r1169). Voice turns
 // them, where they are, into a small recording strip: ✕ at the far left cancels, the time and the level run, Voice
 // becomes ✓. On the desktop ✓ stops it and its words go into the box below, at this place, and Comment becomes ↑
 // (send at once). Where ✓ already adds (an input's row, T661) there is no ↑. On the phone, which has no box over a
@@ -123,18 +123,18 @@ const TASK_WORDS = 500
 /** A list task's words as a tap on it quotes them. */
 export const taskWords = (li: HTMLElement) => li.innerText.trim().slice(0, TASK_WORDS)
 
-/** The task of a list in `within` that these words name (the one picked and lit amber; B715 r1176). */
+/** The task of a list in `within` that these words name (the one picked and lit amber; T715 r1176). */
 export function listTaskOf(within: Element, words: string): HTMLElement | null {
   return [...within.querySelectorAll<HTMLElement>('li')].find((l) => taskWords(l) === words) ?? null
 }
 
 /** The phone's row on a place picked, floating over the page under it (over it when the screen shows no room under
- * it), never in the page's flow: opening and closing it move no words (B715 r1169). Its two buttons at the place's
+ * it), never in the page's flow: opening and closing it move no words (T715 r1169). Its two buttons at the place's
  * right; speaking, the strip across it. In its positioned parent: `place` is where the place is in it; `task`: the
- * words of the list's task picked in it (B715 r1175); neither: the parent is the place. It goes by that place
+ * words of the list's task picked in it (T715 r1175); neither: the parent is the place. It goes by that place
  * itself, found by itself (not by a mark another part sets after it is drawn), and moves only with it: when it or
  * its parent changes size (pictures, fonts, an update of the words), never to somewhere else; which side of the place
- * it takes is chosen once, when the place is picked, so it never flips (B715 r1176). */
+ * it takes is chosen once, when the place is picked, so it never flips (T715 r1176). */
 export function PlaceVoiceFloat({ place, task, x, ...row }: Parameters<typeof PlaceVoiceRow>[0] & { place?: { y: number; h: number }; task?: string | null; x?: string }) {
   const el = useRef<HTMLDivElement>(null)
   const py = place?.y
@@ -168,7 +168,7 @@ export function PlaceVoiceFloat({ place, task, x, ...row }: Parameters<typeof Pl
       {row.rec ? (
         <PlaceVoiceRow {...row} />
       ) : (
-        // the same small white buttons as beside a paragraph and over selected words (B708 r1153), made for a thumb
+        // the same small white buttons as beside a paragraph and over selected words (T708 r1153), made for a thumb
         <div className="flex gap-1">
           <B icon="mic" label="Voice comment" cls={PLACE_BUTTON.replace('size-7', 'size-10')} on={row.on.say} marks={row.say} big />
           <B icon="comment" label="Comment" cls={PLACE_BUTTON.replace('size-7', 'size-10')} on={row.on.comment} marks={row.comment} big />

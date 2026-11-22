@@ -29,7 +29,7 @@ export interface AgentLine {
  * sheet and the home page; the server's is the same 600 s). */
 export const AROUND_MS = 10 * 60e3
 
-/** How one agent session is now (B784: the one state the pill, the Agents sheet and the home page all show). */
+/** How one agent session is now (T784: the one state the pill, the Agents sheet and the home page all show). */
 export type SessionState = 'working' | 'idle' | 'waiting' | 'gone'
 
 /** How a session is now: as its app says (Claude Code, Codex), else by when it was last heard of and whether it is on
@@ -51,7 +51,7 @@ export function sessionsOf(a: AgentSeen): AgentSession[] {
   return all.length ? all : [{ name: '', t: a.t, waiting: a.waiting }]
 }
 
-/** Where a project's agents are (T728 #5, B784), worked out once from each session's own state: a session waiting
+/** Where a project's agents are (T728 #5, T784), worked out once from each session's own state: a session waiting
  * on the user comes first, then one working, then one idle and listening for work (ready), then one idle; else the
  * latest is gone (away), or there never was one (none). */
 export type Presence = { k: 'blocked' | 'working' | 'ready' | 'idle' | 'away'; a: AgentSeen; s: AgentSession } | { k: 'none' }
@@ -74,7 +74,7 @@ export function blockedAgent(agents: readonly AgentSeen[] | undefined, now: numb
   return p.k === 'blocked' ? p.a.name : null
 }
 
-/** [tone, the pill's words, a longer sentence], by presenceOf (B784: the pill never says one thing while the Agents
+/** [tone, the pill's words, a longer sentence], by presenceOf (T784: the pill never says one thing while the Agents
  * sheet says another, and a time never follows "No agent"). `queued`: tasks in the queue now. */
 export function agentState(agents: readonly AgentSeen[] | undefined, work: boolean | undefined, now: number, queued = 0): ['ok' | 'bad' | 'idle' | 'blocked', string, string] {
   const p = presenceOf(agents, now)
@@ -85,7 +85,7 @@ export function agentState(agents: readonly AgentSeen[] | undefined, work: boole
   if (p.k === 'ready') return ['ok', `${name} ready`, `${name} is ready for work.`]
   const waits = queued ? `${queued} ${queued === 1 ? 'task waits' : 'tasks wait'}.` : 'Nothing is waiting for an agent.'
   if (p.k === 'idle')
-    // B811 r1362: red is not an error: work waits and this session does not take it; it says so, not "idle"
+    // T811 r1362: red is not an error: work waits and this session does not take it; it says so, not "idle"
     return work ? ['bad', `${name} · not taking work`, `${queued ? waits : 'Work is waiting.'} ${name} is not taking work.`] : ['idle', `${name} · idle`, `${waits} ${name} is idle.`]
   const last = `The last agent (${name}) was here ${ago(p.s.t, now, 'long')}.`
   return work ? ['bad', 'No agent', `Work is waiting. ${last}`] : ['idle', 'No agent', `${waits} ${last}`]
@@ -120,7 +120,7 @@ export function agentLine(agents: readonly AgentSeen[] | undefined, work: boolea
   }
 }
 
-/** A session's state in the pill's tip, in the sheet's words (B784): working, idle, ready (listening for work), gone. */
+/** A session's state in the pill's tip, in the sheet's words (T784): working, idle, ready (listening for work), gone. */
 function sessionWord(a: AgentSeen, s: AgentSession, now: number): string {
   const st = sessionState(a.name, s, !!a.blocked?.some((b) => b.session === s.name), now)
   if (st === 'waiting') return ''
@@ -134,14 +134,14 @@ export function blockedOn(a: AgentSeen, session: string): string | undefined {
   return b ? (b.waitingFor ? `blocked: ${b.waitingFor}` : 'blocked') : undefined
 }
 
-/** The home page's agent cell, by the pill's own rule (presenceOf, B784): who and what it does, in the pill's words;
+/** The home page's agent cell, by the pill's own rule (presenceOf, T784): who and what it does, in the pill's words;
  * null when no agent is around (the pill says No agent then too). */
 export function lastAgent(agents: readonly AgentSeen[] | undefined, now: number): { by: string; state: 'blocked' | 'working' | 'ready' | 'idle' } | null {
   const p = presenceOf(agents, now)
   return p.k === 'none' || p.k === 'away' ? null : { by: p.a.name, state: p.k }
 }
 
-/** The sessions working on task `n` now (I810: a manager's worker, found by its title, among them), each with how it
+/** The sessions working on task `n` now (T810: a manager's worker, found by its title, among them), each with how it
  * is: what the task's page shows of who works on it. Gone ones are left out. */
 export function sessionsOn(agents: readonly AgentSeen[] | undefined, n: number, at: number): { by: string; name: string; state: Exclude<SessionState, 'gone'> }[] {
   const out: { by: string; name: string; state: Exclude<SessionState, 'gone'> }[] = []

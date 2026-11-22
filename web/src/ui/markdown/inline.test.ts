@@ -15,7 +15,7 @@ describe('links', () => {
   test('a link to a code that names nothing is just its words', () => {
     expect(inlineHtml('see [the plan](#D9)', world)).toBe('see the plan')
   })
-  test('a link to a file sent to Taska opens it at its address, on the phone too (F782)', () => {
+  test('a link to a file sent to Taska opens it at its address, on the phone too (T782)', () => {
     const at: InlineWorld = { ...world, url: (f) => `/p/demo/f/${f}` }
     const html = clean(inlineHtml('[进度报告](f121-deep-dive-1113-2021.html)', at))
     expect(html).toContain('href="/p/demo/f/f121-deep-dive-1113-2021.html"')
@@ -31,7 +31,7 @@ describe('pictures', () => {
   })
 })
 
-describe('videos (F747)', () => {
+describe('videos (T747)', () => {
   test('a video file plays where it stands, with its controls, in the page on the phone too', () => {
     const html = clean(inlineHtml('the walk-through: ![how it works](f12-demo.mp4)', world))
     expect(html).toContain('<video')

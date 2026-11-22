@@ -59,7 +59,7 @@ def blocks(md: str) -> list[Block]:
             j = i + 1
             while j < len(lines) and lines[j].strip() and not _is_fence(lines[j]) and not _HEADING.match(lines[j]):
                 if kind == "para" and _LIST_OR_QUOTE.match(lines[j]) or _table_starts(lines, j):
-                    break  # F817: a table right under a line of text is a table of its own, not more of that text
+                    break  # T817: a table right under a line of text is a table of its own, not more of that text
                 j += 1
             out.append(Block(kind, "\n".join(lines[i:j])))
             i = j
@@ -67,6 +67,6 @@ def blocks(md: str) -> list[Block]:
 
 
 def block_key(text: str) -> str:
-    """The key of a block. A choice ticked in a list is the same paragraph: [x] counts as [ ] (F393)."""
+    """The key of a block. A choice ticked in a list is the same paragraph: [x] counts as [ ] (T393)."""
     text = _TICKED.sub(lambda m: m.group(1) + ("[ ]" if m.group(2)[0] == "[" else "( )"), text)
     return hashlib.sha1(" ".join(text.split()).encode("utf-8")).hexdigest()[:10]

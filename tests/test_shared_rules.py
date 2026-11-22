@@ -1,4 +1,4 @@
-"""I779 (D134, approved 11-15 "照这个做"): shared rules are documents kept once for the whole Taska, each with a name; a
+"""T779 (D134, approved 11-15 "照这个做"): shared rules are documents kept once for the whole Taska, each with a name; a
 project's rules are a template where a line of its own `{{编程}}` puts the shared rules 编程 there (`{{编程 › 测试}}`
 only its section 测试). What is kept is the line; whoever reads the rules (GET /rules, the organizer) gets the text in
 its place, each part saying which shared rules it came from, first that the project's own words win; a name not found

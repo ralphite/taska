@@ -26,7 +26,7 @@ test('r113 r525: Send empties the box at once, and what was sent arrives even wi
   await expect.poll(async () => p.read('inbox'), { timeout: 20000 }).toContain('Pick up the parcel before six')
 })
 
-test('B666 r1055: what was just sent has no Undo; while it is on its way its × cancels it, and it never arrives', async ({
+test('T666 r1055: what was just sent has no Undo; while it is on its way its × cancels it, and it never arrives', async ({
   page,
   context,
   request,

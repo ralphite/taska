@@ -18,7 +18,7 @@ export const statusWord = (it: Task) => STATUS_WORD[it.status]
  * user_word). */
 export const userWord = (m: Pick<Message, 'by' | 'kind' | 'src'>) => m.by === 'you' || (m.by === 'org' && (USER_KINDS as readonly string[]).includes(m.kind) && !!m.src)
 
-/** Taska's own note to an agent (a diagram that does not draw, B714 r1181): no agent's word, nothing for you to read. */
+/** Taska's own note to an agent (a diagram that does not draw, T714 r1181): no agent's word, nothing for you to read. */
 export const taskaNote = (m: Message) => m.by === TASKA
 
 /** You wrote after an agent's last word on it: an agent should pick it up (domain/rules.py replied; the organizer's
@@ -141,7 +141,7 @@ export const workOrder = (all: Task[]) => [
 export type DropHow = 'before' | 'after' | 'into' | 'out'
 
 /** Two tasks the list puts in order among themselves: both unfinished and in one group of the work order (now or
- * later, in progress or not), whatever their status: in review too (B754, Yadong r1258). */
+ * later, in progress or not), whatever their status: in review too (T754, Yadong r1258). */
 export const inLine = (a: Task, b: Task) =>
   [a, b].every((it) => !it.mergedInto && !it.archived && !closed(it.status)) && bucket(a) === bucket(b)
 

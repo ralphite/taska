@@ -1,4 +1,4 @@
-"""B841: opening a Taska address from another app is a visit, whatever that app's browser says it is for (one said
+"""T841: opening a Taska address from another app is a visit, whatever that app's browser says it is for (one said
 "empty": four of its visits to a document were refused, 11-19); other cross-site requests and frames stay refused."""
 
 from __future__ import annotations

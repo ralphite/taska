@@ -10,7 +10,7 @@ import { outgoingIn, type OutPlace, type OutShow } from './outgoingStates'
 /** A file on its way: its upload state (`f`, `uploading`, `failed`) is model/fileStates `fileState`. */
 export interface OutFile extends FileRef, UpFields {
   f: string
-  /** B838: a voice note's place in the words it goes with */
+  /** T838: a voice note's place in the words it goes with */
   at?: number
   /** a picture's look before it is up (this page only) */
   preview?: string
@@ -29,12 +29,12 @@ export interface Outgoing {
   text: string
   /** the task it replies on (its code), or null for a new input */
   scope: string | null
-  /** cancelled: a recording cancelled with Esc, kept in the inputs without being sent (B627) */
+  /** cancelled: a recording cancelled with Esc, kept in the inputs without being sent (T627) */
   kind?: 'answer' | 'cancelled'
-  /** an answer to some of the questions in a row: theirs (B749); the others keep waiting */
+  /** an answer to some of the questions in a row: theirs (T749); the others keep waiting */
   of?: number[]
   files: OutFile[]
-  /** each voice note's words as they were in the box when you sent it, by file (B682): what was typed is `text` */
+  /** each voice note's words as they were in the box when you sent it, by file (T682): what was typed is `text` */
   words?: Record<string, string>
   t: number
   /** waiting: to go out (in order); sending: going out now; failed: not answered (`net`) or refused. Its phase, as
@@ -52,7 +52,7 @@ export interface Outgoing {
 }
 
 /** What you sent that a talk has already, by the page's own id for it: Taska's news of it can come before its answer
- * to the send, and then it shows there, not a second time on its way (B719 r1178: shown twice a moment, then one went
+ * to the send, and then it shows there, not a second time on its way (T719 r1178: shown twice a moment, then one went
  * and the talk jumped). */
 export const inTalk = (thread: readonly Pick<Message, 'by' | 'src'>[], inputs: ReadonlyMap<string, Pick<Input, 'q'>>): ReadonlySet<string> =>
   new Set(
