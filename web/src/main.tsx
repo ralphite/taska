@@ -11,14 +11,15 @@ import { browserHistory } from './stores/route'
 import { browserStore } from './stores/storage'
 import { browserVault } from './stores/noteVault'
 
+const pageScript = (/\/assets\/(index-[\w-]+\.js)/.exec(document.querySelector<HTMLScriptElement>('script[type=module][src*="/assets/index-"]')?.src || '') || [])[1] || ''
 const app = createApp({
   kv: browserStore(),
   session: browserStore('session'),
   history: browserHistory(),
   presence: windowPresence,
-  cache: new BrowserCopyCache(),
+  cache: new BrowserCopyCache(pageScript),
   vault: browserVault(),
-  pageScript: (/\/assets\/(index-[\w-]+\.js)/.exec(document.querySelector<HTMLScriptElement>('script[type=module][src*="/assets/index-"]')?.src || '') || [])[1] || '',
+  pageScript,
   desk: () => matchMedia('(min-width: 1024px)').matches,
 })
 installPressFeedback()

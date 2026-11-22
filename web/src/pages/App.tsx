@@ -1,8 +1,8 @@
 // The page: the home page (every project) at /, a project at /p/<name>/... Going from one to another happens in the
 // page; the addresses are the projects' own, so agents' and phone links keep working.
 
-import { useEffect, useLayoutEffect, useState } from 'react'
-import { useApp, LayoutProvider, useWindowLayout } from '../app/context'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { useApp, LayoutProvider, useStoreValue, useWindowLayout } from '../app/context'
 import { useRoute } from '../app/hooks'
 import { HomeContainer } from '../features/home/HomeContainer'
 import { ProjectPageContainer } from './ProjectPageContainer'
@@ -16,6 +16,7 @@ import { PanesProvider } from '../app/panes'
 import { refCard } from '../model/refCard'
 import type { App as TaskaApp } from '../app/createApp'
 import { PAGE_BODY } from '../ui/tones'
+import { RenderGuard } from './RenderGuard'
 
 // the home page and the dashboard on grey (PAGE_BODY); a project is a frame of panes (the body index.html gives, with
 // its pressed and focus looks)
@@ -32,6 +33,9 @@ export function App() {
   const layout = useWindowLayout()
   const [projectBody] = useState(() => document.body.className)
   const framed = route.page === 'project'
+  // drawn again after it threw (T859) once a project's copy comes or another page opens
+  const copies = useStoreValue(app.stores.data, (s) => s.copies)
+  const again = useMemo(() => [route, copies], [route, copies])
   useLayoutEffect(() => {
     document.documentElement.classList.toggle('overflow-hidden', framed)
     document.body.className = framed ? projectBody : PAGE_BODY
@@ -50,14 +54,16 @@ export function App() {
   return (
     <LayoutProvider layout={layout}>
       <PanesProvider>
-        <div data-layout={layout} className={`@container/frame w-full ${framed ? 'h-dvh' : 'min-h-dvh'}`}>
-          {route.page === 'project' ? <ProjectPageContainer route={route} /> : route.page === 'home' ? <HomeContainer route={route} /> : route.page === 'dev' && route.path === '/dev/dashboard' ? <DashboardContainer /> : <div className="p-8 text-sm text-zinc-500">Taska</div>}
-          {/* over the page, in its layout */}
-          <SheetContainer />
-          {route.page === 'project' ? <SelectionBarContainer route={route} /> : null}
-          <ViewerContainer />
-          <Tooltip card={(ref) => (route.page === 'project' ? cardOf(app, route.slug, ref) : null)} steps={(f) => (route.page === 'project' ? app.media.steps(route.slug, f) : Promise.resolve([]))} />
-        </div>
+        <RenderGuard again={again} reload={app.reloadFresh}>
+          <div data-layout={layout} className={`@container/frame w-full ${framed ? 'h-dvh' : 'min-h-dvh'}`}>
+            {route.page === 'project' ? <ProjectPageContainer route={route} /> : route.page === 'home' ? <HomeContainer route={route} /> : route.page === 'dev' && route.path === '/dev/dashboard' ? <DashboardContainer /> : <div className="p-8 text-sm text-zinc-500">Taska</div>}
+            {/* over the page, in its layout */}
+            <SheetContainer />
+            {route.page === 'project' ? <SelectionBarContainer route={route} /> : null}
+            <ViewerContainer />
+            <Tooltip card={(ref) => (route.page === 'project' ? cardOf(app, route.slug, ref) : null)} steps={(f) => (route.page === 'project' ? app.media.steps(route.slug, f) : Promise.resolve([]))} />
+          </div>
+        </RenderGuard>
       </PanesProvider>
     </LayoutProvider>
   )

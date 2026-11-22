@@ -112,6 +112,8 @@ export interface App {
   model(slug: string): ProjectModel | null
   /** show a project: its copy, then its changes as they come */
   showProject(slug: string): void
+  /** load the page again with none of the copies this browser kept (a page that could not be drawn, T859) */
+  reloadFresh(): void
   projects: Projects
   /** S, P or T pressed: the key after it sets that field */
   keyArm: KeyArm
@@ -215,6 +217,7 @@ export function createApp(env: AppEnv): App {
     runner,
     model,
     showProject: (sl) => project.projectSession.show(sl),
+    reloadFresh: () => void (env.cache?.forget() ?? Promise.resolve()).finally(() => location.reload()),
     projects: project.projects,
     keyArm: page.keyArm,
     activity: project.activity,
