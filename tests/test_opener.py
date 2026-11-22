@@ -80,6 +80,15 @@ class Opening(unittest.TestCase):
         self.assertIn("Privacy & Security › Accessibility", said)
         self.assertEqual(op.Opener(run=self.mac, platform="linux").open("r", "p", "T1"), "not opened: only on a Mac with the Claude app")
 
+    def test_while_macos_asks_to_allow_it_it_says_so_and_opens_nothing(self) -> None:
+        def asking(args):
+            if args[0] == "osascript":
+                return subprocess.CompletedProcess(args, 124, "", "timed out")
+            return self.mac(args)
+        said = op.Opener(run=asking, clock=lambda: self.now[0], sleep=lambda s: None, platform="darwin").open("r", "p", "T1")
+        self.assertIn("macOS is asking on this Mac", said)
+        self.assertFalse(any(c[0] == "open" for c in self.mac.calls))
+
 
 class OffUnlessLive(unittest.TestCase):
     def test_a_workspace_opens_no_session_unless_the_live_taska_turns_it_on(self) -> None:

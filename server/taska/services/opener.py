@@ -25,8 +25,18 @@ LOAD = 4.0  # seconds the app takes to show the new session's box
 Run = Callable[[Sequence[str]], "subprocess.CompletedProcess[str]"]
 
 
+ASKING = ("macOS is asking on this Mac whether the program that runs Taska (Python) may control the computer: allow "
+          "it there (once; System Settings › Privacy & Security › Accessibility and Automation), then ask again")
+
+
 def _run(args: Sequence[str]) -> "subprocess.CompletedProcess[str]":
-    return subprocess.run(list(args), capture_output=True, text=True, timeout=30)
+    """A command, given 15 s: macOS's automation waits while it asks the user to allow it (the first time)."""
+    try:
+        return subprocess.run(list(args), capture_output=True, text=True, timeout=15)
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(list(args), 124, "", "timed out: " + ASKING)
+    except OSError as ex:
+        return subprocess.CompletedProcess(list(args), 127, "", str(ex))
 
 
 def idle_seconds(run: Run = _run) -> float:
@@ -81,7 +91,10 @@ class Opener:
             why = self.can(key)
             if why:
                 return f"not opened: {why}"
-            front = self._front()
+            r = self.run(["osascript", "-e", 'tell application "System Events" to get name of first application process whose frontmost is true'])
+            if r.returncode == 124:
+                return f"not opened: {ASKING}"
+            front = (r.stdout or "").strip() if r.returncode == 0 else ""
             link = "claude://code/new?q=" + quote(prompt(root, slug, code, words), safe="")
             r = self.run(["open", link])
             if r.returncode != 0:
@@ -89,6 +102,8 @@ class Opener:
             self.sleep(LOAD)
             r = self.run(["osascript", "-e", 'tell application "Claude" to activate', "-e", "delay 0.5", "-e",
                           'tell application "System Events" to keystroke return'])
+            if r.returncode == 124:
+                return f"not opened: the new session's box is filled but {ASKING}"
             if r.returncode != 0:
                 err = (r.stderr or "").strip()
                 hint = (" Allow it once: System Settings › Privacy & Security › Accessibility, turn on the program that "
@@ -101,6 +116,3 @@ class Opener:
                 self.run(["osascript", "-e", f'tell application "{front}" to activate'])
             return "opened"
 
-    def _front(self) -> str:
-        r = self.run(["osascript", "-e", 'tell application "System Events" to get name of first application process whose frontmost is true'])
-        return (r.stdout or "").strip() if r.returncode == 0 else ""
