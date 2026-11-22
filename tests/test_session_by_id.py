@@ -39,6 +39,24 @@ class SessionsByTheirIds(ServerCase):
         self.assertIn("resume T2: claude-code · sysd wrote on it (you are on it)", self.call("/next", sid=B))
 
 
+C = "cccccccc-3333-4333-8333-000000000003"
+D = "dddddddd-4444-4444-8444-000000000004"
+
+
+class WordsToTheAgentAlone(ServerCase):
+    def call(self, path: str, sid: str = "", session: str = "", body: str = "") -> str:
+        return SessionsByTheirIds.call(self, path, sid, session, body)  # type: ignore[arg-type]
+
+    def test_a_session_that_comes_later_is_not_woken_by_words_to_the_agent_before_it_came(self) -> None:
+        self.do("new P1 Export loses the filter\n", "you")
+        self.call("/next", sid=C)  # C is here
+        self.call("/do", session="sysd", body="T1 say @claude-code the export test is flaky\n")
+        self.assertIn("resume T1: claude-code · sysd wrote to you", self.call("/next", sid=C))
+        self.assertNotIn("wrote to you", self.call("/next", sid=D))  # D came after it: one before it read it
+        self.call("/do", session="sysd", body="T1 say @claude-code and now for everyone\n")
+        self.assertIn("wrote to you", self.call("/next", sid=D))  # after it came: for it too
+
+
 if __name__ == "__main__":
     import unittest
     unittest.main()

@@ -87,6 +87,7 @@ class AgentActivity:
         heard = db.get("heard")
         self.heard: Dict[str, Dict[int, int]] = (
             {str(k): {int(n): int(m) for n, m in v.items()} for k, v in heard.items()} if isinstance(heard, dict) else {})
+        self.born: Dict[str, int] = {str(k): int(v) for k, v in (db.get("born") or {}).items()}  # T862: latest message then
         self.told: Dict[str, Set[int]] = {}  # per session: messages for it that a /do reply named already
         self.rule_marks: Dict[str, int] = {}  # per session: how much of the log it has been told rules from
         self.shared_marks: Dict[str, Dict[str, str]] = {}  # per session: the shared rules' texts it was last told (T779)
@@ -357,6 +358,10 @@ class AgentActivity:
             return []
         me = ident(by, ses)
         heard, acted = self.heard.get(me, {}), state.first_act(me)
+        if me not in self.born and not self._gone():  # words to the agent alone before it came are not for it (T862)
+            self.born[me] = max((int(x.id) for t in state.tasks.values() for x in t.thread[-1:]), default=0)
+            self._db.put("born", self.born)
+        born = self.born.get(me, 0)
         t_now = time.time()
         maybe = state.addressed_tasks | set(state.claims) | {
             n for n, i in state.tasks.items() if i.agent and i.status == "doing"}
@@ -378,6 +383,7 @@ class AgentActivity:
                 if ident(x.by, x.ses) == me:
                     break  # its own word: it had read what came before
                 to_me = self.addressed(x, by, ses)
+                to_me = to_me and (int(x.id) > born or bool(ses and name_key(ses) in {name_key(t) for t in x.to or []}))
                 if to_me or (mine and x.id > took):
                     out.append((it, x, to_me))
         return sorted(out, key=lambda r: int(r[1].id))
