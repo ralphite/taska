@@ -25,12 +25,17 @@ from ..domain.vocab import Refused
 from ..domain.voice_words import (TIDY_SYSTEM, VOICE_HINT, VOICE_SYSTEM, echoed, tidy_ok, voice_doubts, voice_glossary,
                                   voice_prompt, voice_short, voice_terms, voice_tokens, voice_vocab)
 from ..infra import audio as tools
-from ..infra.gemini import ask, client, words_of
+from ..infra.gemini import ATTEMPTS, ask, client, words_of
 from . import voice_vote
 
 
-def generate(model: str, body: Dict[str, Any], timeout: float = 120) -> Dict[str, Any]:
-    return client.generate("voice", model, body, timeout)
+def generate(model: str, body: Dict[str, Any], timeout: float = 120, attempts: int = ATTEMPTS) -> Dict[str, Any]:
+    return client.generate("voice", model, body, timeout, attempts=attempts)
+
+
+# T879: a strong model whose servers are busy (5xx) is asked once more at most, then that try has failed and the next
+# model is asked: retrying gemini-4-hydrogen's 503s for its whole 30 s try kept a note 77 s from its words.
+STRONG_ATTEMPTS = 2
 
 
 @dataclass
@@ -103,7 +108,8 @@ def voice_main(audio: Dict[str, Any], prompt: str, model: Optional[str] = None) 
         # The main one answers without thinking. A strong one thinks as THINK_LEVEL says, else a little (3.1 Pro: on
         # two phone notes it heard as much as with more thinking, in 7 s instead of 16).
         body["generationConfig"]["thinkingConfig"] = {"thinkingLevel": THINK_LEVEL.get(model, "low")} if model else {"thinkingBudget": 0}
-        text, why = words_of(generate(model or VOICE_MODEL, body, timeout=240 if model else 120))
+        text, why = words_of(generate(model or VOICE_MODEL, body, timeout=240 if model else 120,
+                                      attempts=STRONG_ATTEMPTS if model else ATTEMPTS))
         if why and attempt == 1:
             continue
         if why:
