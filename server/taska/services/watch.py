@@ -6,8 +6,8 @@ was cut off by a restart, and Taska thought the work was in hand. Now:
   as one that takes any work; a wait it wrote itself is noted, and its next call is told to use the script;
 - every minute each project an agent worked in lately (AGENTS) is looked at: a task /next would give (now, open or
   doing, not a group, not waiting on the user or another task, no subtasks open), made or changed lately (FRESH),
-  that no session is on (no hold, or held by one that neither waits with the script nor wrote on it lately) for GRACE
-  seconds is stuck;
+  that no session is on (no hold, or held by one that neither waits with the script nor wrote on it lately, nor is at
+  work in its app on it, T877) for GRACE seconds is stuck;
 - a stuck task's project has an idle Claude session (its app says idle, not archived): Taska asks for it to be woken
   (services.reconnects): a session connected now, or the dispatcher waiting at /api/dispatch, sends it a message to
   come and take the work, through its app (the only way into a Claude session); with none idle, Taska opens a new
@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Set, Tuple
 
 from ..agent_text.reconnect import dispatcher
 from ..domain import rules
+from ..domain.holds import kept
 from ..domain.model import Task
 from ..domain.state import ProjectState
 from ..domain.text import seconds
@@ -104,15 +105,17 @@ def work(st: ProjectState, now: Optional[float] = None) -> List[Task]:
     return out
 
 
-def on_it(st: ProjectState, it: Task, listening: Callable[[str], bool], now: float) -> bool:
-    """Whether a session is on the task: one holds it and waits with the script, or wrote on it in the hold's time."""
+def on_it(st: ProjectState, it: Task, listening: Callable[[str], bool], now: float,
+          kept: Callable[[Task], bool] = lambda it: False) -> bool:
+    """Whether a session is on the task: one holds it and waits with the script, or wrote on it in the hold's time, or
+    its hold is kept while its session is at work in its app (T877: its own agent works on it in the background)."""
     c = st.claims.get(it.n)
     if c and now - c.since < CLAIM_TTL and listening(c.who):
         return True
     a = it.agent
     if a and it.status == "doing" and now - seconds(a.t) < CLAIM_TTL:
         return True
-    return False
+    return kept(it)
 
 
 class Watch:
@@ -139,7 +142,9 @@ class Watch:
             st = p.state
             if not any(now - a.t <= AGENTS for name, a in p.agents.agents.items() if name != "agent"):
                 return []  # no agent works here lately: its open tasks are the user's own
-            stuck = [it for it in work(st, now) if not on_it(st, it, lambda who: self.listeners.listening(slug, who), now)]
+            status = lambda sid: str(getattr(self.lookup(sid), "status", "") or "")
+            stuck = [it for it in work(st, now) if not on_it(st, it, lambda who: self.listeners.listening(slug, who), now,
+                                                             lambda it: kept(st, it, lambda who: status(p.agents.sid_of(who))) is not None)]
             codes = {it.n: st.code(it.n) for it in stuck}
             sessions = self._sessions(p)
             alarm = p.store.db.get(KEY)

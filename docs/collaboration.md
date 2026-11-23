@@ -27,7 +27,7 @@ Several agents of different kinds work on the same project, on and off, for week
 | --- | --- | --- |
 | 1. Hearing about work | Claude Code holds `GET /next?wait=540` in the background and wakes when it returns. Codex gets a short message from Taska for each update from you. Antigravity keeps Taska's waker running in its own terminal, which wakes it with a message when it is idle and there is work. A voice note is sent once its words are final. | Other agents: none. They read `/next` when they run. |
 | 2. Knowing who is here | The page shows who is around; its Agents dialog lists every session by its app, each with its state (working, idle, waiting for you, gone), the task it is on, and a manager's workers under it (a worker says `&parent=<manager>`). `/next` lists the tasks others hold ("others are on (skip)"). | Done: a session's `/next` says which other sessions are here, what each is on and when each was last heard of (first, then when it changes). |
-| 3. No unknowing double work | `/next` gives each agent session its own task and holds it for that session; others skip it. A hold lapses after 30 minutes without a word from the holder. | Done: `B03 doing` on a task another session holds is refused with who holds it and how to go on. Making a task no longer holds it. |
+| 3. No unknowing double work | `/next` gives each agent session its own task and holds it for that session; others skip it. A hold lapses after 30 minutes without a word from the holder, unless its app says the holder is still at work on it (busy, also while its own background agent works, or waiting on the user; T877). | Done: `B03 doing` on a task another session holds is refused with who holds it and how to go on. Making a task no longer holds it. |
 | 4. Settling it | `B03 say @<session> ...` writes to another session; it gets it on its next `/next` or `/do` answer, and a waiting session wakes for it. Words another agent writes on a task you are on come to you the same way. | Done: the guide says: take the next one, write to the holder when you need it, never change it without your word. |
 | 5. Your hand-over | Antigravity only: a newer session that takes the project over replaces the one before, which is told to stop. | Done for any agent: `B03 take` at your word; the one that had it is told on the task to stop. |
 | 6. On the task | Every message says who wrote it and from which session. | Hand-overs and holds do not show on the task. |
@@ -41,7 +41,8 @@ checks them with real agent sessions on the real Taska.
 
 - **What holds a task.** A session holds a task when `/next` gives it to it or when it changes it (`doing`,
   a field). Making a task does not hold it: an agent's proposal, once approved, is anyone's. A message does not
-  move a hold. A hold lapses after 30 minutes without a word from its session.
+  move a hold. A hold lapses after 30 minutes without a word from its session, unless its app says that session
+  is still at work (busy or waiting on the user) and the task is the one it took last (T877).
 - **Doing another session's task.** `B03 doing` on a task another session holds is refused, with who holds it,
   when it was last heard of, and what to do: take the next one, write to it, or `B03 take` only when the user asked.
   A manager's worker (`&parent=<manager>`) is not refused its manager's task: the manager hands it on.

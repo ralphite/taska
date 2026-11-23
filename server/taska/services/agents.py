@@ -12,12 +12,12 @@ from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
 from ..agent_text import render
-from ..domain import events as ev, includes, rules, sections, versions
+from ..domain import events as ev, holds, includes, rules, sections, versions
 from ..domain.model import Input, Task, Message
 from ..domain.offers import Offers
 from ..domain.state import ProjectState, ident
 from ..domain.text import first_line, seconds
-from ..domain.vocab import CLAIM_TTL, PEOPLE
+from ..domain.vocab import PEOPLE
 from ..infra.agent_sessions import SID, Session
 from ..infra.project_db import ProjectDb
 from .reconnects import LostSessions
@@ -297,17 +297,17 @@ class AgentActivity:
 
     # -- holds ------------------------------------------------------------------
 
-    def holder(self, state: ProjectState, it: Task, now: Optional[float] = None) -> Optional[Tuple[str, float]]:
-        """The agent session working on a task: the last one /next gave it to or that wrote to it, while fresh."""
-        t_now = now or time.time()
-        c = state.claims.get(it.n)
-        best = (c.who, c.since) if c and t_now - c.since < CLAIM_TTL else None
-        a = it.agent
-        if a and it.status == "doing":
-            t = seconds(a.t)
-            if t_now - t < CLAIM_TTL and (not best or t >= best[1]):
-                best = (ident(a.by, a.ses), t)
-        return best
+    def holder(self, state: ProjectState, it: Task, now: Optional[float] = None,
+               status: Optional[Callable[[str], str]] = None) -> Optional[holds.Hold]:
+        """The agent session working on a task (domain.holds): fresh, or kept while its app says it is at work on it
+        (`status`: a session's status in its app by its id; default: as see_sessions last saw it)."""
+        look = status or (lambda sid: getattr(self.found.get(sid), "status", ""))
+        return holds.fresh(state, it, now or time.time()) or holds.kept(state, it, lambda who: look(self.sid_of(who)))
+
+    def sid_of(self, who: str) -> str:
+        """The id its app gave the agent session `who` ("claude-code · worker"), '' when it gave none."""
+        by, _, ses = who.partition(" · ")
+        return next((v for k, v in getattr(self.agents.get(by), "sids", {}).items() if session_name(k) == ses), "")
 
     # -- sessions talking to each other ------------------------------------------
 

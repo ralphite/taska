@@ -6,13 +6,16 @@ from __future__ import annotations
 
 import os
 import sys
+import time
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "server"))
 
 from support import ProjectCase
 from taska.http import agent_routes  # noqa: E402
+from taska.domain.vocab import CLAIM_TTL  # noqa: E402
 from taska.http.messages import Request  # noqa: E402
+from taska.infra.agent_sessions import Session  # noqa: E402
 
 
 class HeldTasks(ProjectCase):
@@ -88,3 +91,40 @@ class HoldMoves(HeldTasks):
         req = Request("POST", "/do?by=claude-code&session=worker-1&parent=manager", {}, "127.0.0.1", read_body=lambda limit: b"T1 doing\n")
         self.assertIn("ok T1 status=doing", agent_routes.do(req, self.p).body.decode())
         self.assertEqual(self.holder(), "claude-code · worker-1")
+
+
+class HoldKept(HeldTasks):
+    """T877: a session that handed the work to its own background agent writes nothing on Taska for a long while; its
+    hold stays while its app says it is at work (busy, or waiting on the user) and the task is the one it took last."""
+
+    SID = "aaaaaaaa-1111-4111-8111-000000000001"
+
+    def holder(self, at: float):
+        return self.p.agents.holder(self.p.state, self.p.state.tasks[1], time.time() + at)
+
+    def app(self, status: str) -> None:  # alpha took T1, then its app says this of it
+        if not self.p.state.claims:
+            req = Request("POST", f"/do?by=claude-code&session=alpha&sid={self.SID}", {}, "127.0.0.1",
+                          read_body=lambda limit: b"T1 doing\nT1 progress My own agent is on it\n")
+            agent_routes.do(req, self.p)
+        self.p.agents.see_sessions({self.SID: Session("claude-code", self.SID, "alpha", "/x", status)})
+
+    def test_kept_while_its_session_is_at_work(self) -> None:
+        self.app("busy")
+        self.assertEqual(self.holder(CLAIM_TTL + 3600)[0], "claude-code · alpha")
+        self.app("waiting")
+        self.assertEqual(self.holder(CLAIM_TTL + 3600)[0], "claude-code · alpha")
+
+    def test_lapses_once_its_session_is_idle_or_gone(self) -> None:
+        self.app("busy")
+        self.assertIsNotNone(self.holder(60))
+        for status in ("idle", "exited"):
+            self.app(status)
+            self.assertIsNone(self.holder(CLAIM_TTL + 60))
+
+    def test_not_kept_once_it_took_another_task(self) -> None:
+        self.app("busy")
+        self.p.run([(0, {"op": "new", "pri": "P1", "when": "now", "title": "Sort by date"})], "you")
+        time.sleep(1.1)  # the times are in seconds
+        self.do("alpha", "T2 doing\n")
+        self.assertIsNone(self.holder(CLAIM_TTL + 60))

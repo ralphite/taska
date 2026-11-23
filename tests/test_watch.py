@@ -119,6 +119,14 @@ class Watching(unittest.TestCase):
         self.assertEqual(self.later(1), [])  # the five minutes start again
         self.assertEqual(self.later(w.GRACE + 1), ["default T1: asked to wake idle one"])
 
+    def test_a_session_whose_own_agent_works_on_keeps_it_past_the_hold(self) -> None:
+        """T877: the session handed the work to its own background agent and went quiet on Taska; its app says busy."""
+        self.p.run(parse("T1 doing\nT1 progress My own agent is on it\n"), "claude-code", session="busy one")
+        self.assertEqual(self.later(w.CLAIM_TTL + w.GRACE + 60), [])  # quiet past the hold, but at work: on it
+        self.apps[BUSY] = S("idle")  # its turn ended: nobody is on it any more
+        self.assertEqual(self.later(1), [])
+        self.assertIn("asked to wake", self.later(w.GRACE + 1)[0])
+
     def test_only_work_to_hand_counts(self) -> None:
         self.do("T1 later\nnew group P1 Questions\nnew P1 parent=T2 One\nnew P1 Two\nT4 after T3\nnew P1 Three\n"
                 "new P1 Four\nnew P1 parent=T6 Five\nT6 open\n")
