@@ -28,7 +28,8 @@ def fresh(state: ProjectState, it: Task, now: float) -> Optional[Hold]:
 def kept(state: ProjectState, it: Task, status: Callable[[str], str]) -> Optional[Hold]:
     """T877: a hold past CLAIM_TTL on a task doing stays while its session is at work in its app (`status` of the
     session: busy, also while an agent of its own works on in the background, or waiting on the user) and this is the
-    task it took last. A session that hands the work to its own agent goes quiet on Taska, and another session was
+    task it took last (of the one holding it and the one that wrote on it last, the latest at work; a word another
+    session wrote on it does not take it from the holder still at work). A session that hands the work to its own agent goes quiet on Taska, and another session was
     sent to do the same work."""
     if it.status != "doing":
         return None
@@ -36,13 +37,15 @@ def kept(state: ProjectState, it: Task, status: Callable[[str], str]) -> Optiona
     found = ([(c.who, c.since)] if c else []) + ([(ident(a.by, a.ses), seconds(a.t))] if a else [])
     if not found:
         return None
-    who, since = max(found, key=lambda x: x[1])
-    if status(who) not in ("busy", "waiting"):
-        return None
-    later = any(n != it.n and x.who == who and x.since > since for n, x in state.claims.items()) or any(
-        n != it.n and t.agent and t.status == "doing" and ident(t.agent.by, t.agent.ses) == who
-        and seconds(t.agent.t) > since for n, t in state.tasks.items())
-    return None if later else (who, since)
+    for who, since in sorted(found, key=lambda x: -x[1]):  # the holder, or one that wrote on it later, at work still
+        if status(who) not in ("busy", "waiting"):
+            continue
+        later = any(n != it.n and x.who == who and x.since > since for n, x in state.claims.items()) or any(
+            n != it.n and t.agent and t.status == "doing" and ident(t.agent.by, t.agent.ses) == who
+            and seconds(t.agent.t) > since for n, t in state.tasks.items())
+        if not later:
+            return (who, since)
+    return None
 
 
 def sid_of(who: str, named: Dict[str, str], found: Mapping[str, object], called: Dict[str, float]) -> str:

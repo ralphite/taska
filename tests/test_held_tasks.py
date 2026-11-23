@@ -4,6 +4,7 @@ the task so the session that had it hears it. Change only on Yadong's explicit w
 
 from __future__ import annotations
 
+import dataclasses
 import os
 import sys
 import time
@@ -17,6 +18,7 @@ from taska.domain import holds  # noqa: E402
 from taska.domain.vocab import CLAIM_TTL  # noqa: E402
 from taska.http.messages import Request  # noqa: E402
 from taska.infra.agent_sessions import Session  # noqa: E402
+from taska.services.project import Project  # noqa: E402
 
 
 class HeldTasks(ProjectCase):
@@ -139,3 +141,29 @@ class HoldKept(HeldTasks):
         self.assertEqual(self.holder(CLAIM_TTL + 60)[0], "claude-code · bbbbbbbb")
         self.assertEqual(holds.sid_of("claude-code · Taska T9", {}, {other: Session("claude-code", other, "Taska T9", "/x", "busy")},
                                       {}), other)
+
+    def test_a_word_from_another_session_later_leaves_it_with_the_holder_at_work(self) -> None:
+        """T875: a second session opened for it wrote that it leaves it; the hold stays with the first, still at work."""
+        self.app("busy")
+        other = "bbbbbbbb-2222-4222-8222-000000000002"
+        long_ago = time.time() - CLAIM_TTL - 60  # alpha has been quiet on Taska past the hold
+        self.p.state.claims[1] = self.p.state.claims[1]._replace(since=long_ago)
+        self.p.state.tasks[1].agent = dataclasses.replace(
+            self.p.state.tasks[1].agent, t=time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(long_ago)))
+        req = Request("POST", f"/do?by=claude-code&session=beta&sid={other}", {}, "127.0.0.1",
+                      read_body=lambda limit: b"T1 progress Alpha's own agent is still on it: I leave it\n")
+        agent_routes.do(req, self.p)
+        self.p.agents.see_sessions({self.SID: Session("claude-code", self.SID, "alpha", "/x", "busy"),
+                                    other: Session("claude-code", other, "beta", "/x", "idle")})
+        self.assertEqual(self.holder(CLAIM_TTL + 60)[0], "claude-code · alpha")
+
+    def test_a_session_by_its_id_alone_is_known_over_a_restart(self) -> None:
+        """Its id was only in memory: after Taska restarted, a quiet session at work was not found and lost its hold."""
+        other = "bbbbbbbb-2222-4222-8222-000000000002"
+        req = Request("POST", f"/do?by=claude-code&sid={other}", {}, "127.0.0.1", read_body=lambda limit: b"T1 doing\n")
+        agent_routes.do(req, self.p)
+        self.p.close()
+        self.p = Project(self.tmp.name, "demo")
+        self.assertIn(other, self.p.agents.sids())
+        self.p.agents.see_sessions({other: Session("claude-code", other, "", "/x", "busy")})
+        self.assertEqual(self.holder(CLAIM_TTL + 60)[0], "claude-code · bbbbbbbb")

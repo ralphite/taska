@@ -101,7 +101,9 @@ class LostSessions:
         self._gone = gone
         self.started = time.time()
         self.heard: Set[str] = set()  # the sessions that called since this process started
-        self.called: Dict[str, float] = {}  # per session id: its last call to the project
+        called = db.get("called")  # per session id: its last call to the project, kept a day (T877: over a restart)
+        self.called: Dict[str, float] = ({str(k): float(v) for k, v in called.items() if SID.fullmatch(str(k))
+                                          and self.started - float(v) < 86400} if isinstance(called, dict) else {})
         self.was: Dict[str, float] = {}
         saved = db.get("listening")
         if isinstance(saved, dict) and isinstance(saved.get("sids"), dict):
@@ -112,7 +114,11 @@ class LostSessions:
 
     def heard_from(self, sid: str, now: float) -> None:
         self.heard.add(sid)
+        new = now - self.called.get(sid, 0) > 600  # saved when new, else at most every ten minutes
         self.called[sid] = now
+        if new and not self._gone():
+            self.called = {k: t for k, t in self.called.items() if now - t < 86400}
+            self._db.put("called", self.called)
 
     def save(self, listening: Dict[str, int], listened: Dict[str, float]) -> None:
         """Who waits for work now (and who did a moment ago), and the lost sessions not back yet (for three days)."""
