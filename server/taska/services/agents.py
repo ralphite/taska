@@ -305,9 +305,9 @@ class AgentActivity:
         return holds.fresh(state, it, now or time.time()) or holds.kept(state, it, lambda who: look(self.sid_of(who)))
 
     def sid_of(self, who: str) -> str:
-        """The id its app gave the agent session `who` ("claude-code · worker"), '' when it gave none."""
-        by, _, ses = who.partition(" · ")
-        return next((v for k, v in getattr(self.agents.get(by), "sids", {}).items() if session_name(k) == ses), "")
+        """The id its app gave the agent session `who` (domain.holds.sid_of), '' when none."""
+        a = self.agents.get(who.partition(" · ")[0])
+        return holds.sid_of(who, a.sids if a else {}, self.found, self.lostness.called)
 
     # -- sessions talking to each other ------------------------------------------
 
@@ -427,9 +427,9 @@ class AgentActivity:
     # -- sessions waiting on the user ----------------------------------------------
 
     def sids(self, own: bool = False) -> List[str]:
-        """The session ids agents gave here, and the workers found for them (T810; `own`: only those agents gave)."""
+        """The session ids agents gave here (`own`: only those), their workers (T810), any that called today (T877)."""
         mine = {sid for a in self.agents.values() for sid in a.sids.values()}
-        return sorted(mine if own else mine | set(self.workers))
+        return sorted(mine if own else mine | set(self.workers) | {s for s, t in self.lostness.called.items() if t > time.time() - 86400})
 
     def stopped_listening(self, sid: str) -> None:
         """T811: a long wait for work by session `sid` ended (answered, or its time ran out)."""

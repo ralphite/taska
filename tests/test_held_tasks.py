@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from support import ProjectCase
 from taska.http import agent_routes  # noqa: E402
+from taska.domain import holds  # noqa: E402
 from taska.domain.vocab import CLAIM_TTL  # noqa: E402
 from taska.http.messages import Request  # noqa: E402
 from taska.infra.agent_sessions import Session  # noqa: E402
@@ -128,3 +129,13 @@ class HoldKept(HeldTasks):
         time.sleep(1.1)  # the times are in seconds
         self.do("alpha", "T2 doing\n")
         self.assertIsNone(self.holder(CLAIM_TTL + 60))
+
+    def test_a_session_that_gives_its_id_alone_is_found_by_it(self) -> None:
+        """Claude Code sessions Taska opens call with sid= alone: named by their app's title (else the id's start)."""
+        other = "bbbbbbbb-2222-4222-8222-000000000002"
+        req = Request("POST", f"/do?by=claude-code&sid={other}", {}, "127.0.0.1", read_body=lambda limit: b"T1 doing\n")
+        agent_routes.do(req, self.p)
+        self.p.agents.see_sessions({other: Session("claude-code", other, "", "/x", "busy")})
+        self.assertEqual(self.holder(CLAIM_TTL + 60)[0], "claude-code · bbbbbbbb")
+        self.assertEqual(holds.sid_of("claude-code · Taska T9", {}, {other: Session("claude-code", other, "Taska T9", "/x", "busy")},
+                                      {}), other)

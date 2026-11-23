@@ -3,7 +3,7 @@ that wrote to it, while fresh (CLAIM_TTL); past that, while its app says it is s
 
 from __future__ import annotations
 
-from typing import Callable, Optional, Tuple
+from typing import Callable, Dict, Mapping, Optional, Tuple
 
 from .model import Task
 from .state import ProjectState, ident
@@ -43,3 +43,14 @@ def kept(state: ProjectState, it: Task, status: Callable[[str], str]) -> Optiona
         n != it.n and t.agent and t.status == "doing" and ident(t.agent.by, t.agent.ses) == who
         and seconds(t.agent.t) > since for n, t in state.tasks.items())
     return None if later else (who, since)
+
+
+def sid_of(who: str, named: Dict[str, str], found: Mapping[str, object], called: Dict[str, float]) -> str:
+    """The id its app gave the agent session `who` ("claude-code · worker"), '' when none: by the name it gave (`named`:
+    its agent's session names to ids), else (a call with sid= alone is named by its app's title or the id's start, T862)
+    by what its app says of each session now (`found`: by id), the one that called most lately (`called`) first."""
+    by, _, ses = who.partition(" · ")
+    short = lambda name: " ".join(str(name or "").split())[:60]
+    return next((v for k, v in named.items() if short(k) == ses), "") or next(
+        (sid for sid, s in sorted(found.items(), key=lambda x: -called.get(x[0], 0))
+         if getattr(s, "agent", "") == by and ses in (short(getattr(s, "name", "")), sid[:8])), "")
