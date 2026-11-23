@@ -1,6 +1,7 @@
 // What you are doing on the page that the address does not say: which parents are folded, which hidden subtasks are
 // shown, whether all of what needs you shows, the rows that hold still after you acted on them, the rows you picked,
-// whether the sidebar is folded.
+// whether the sidebar is folded. The folded parents are kept in this browser for each project (T876), so a page opened
+// again shows them as they were left.
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { KeyValueStore } from './storage'
@@ -14,6 +15,8 @@ export interface Held {
 
 export interface UiState {
   folded: ReadonlySet<number>
+  /** the project whose folded parents these are (kept under its name) */
+  foldSlug: string
   subMore: ReadonlySet<number>
   held: ReadonlyMap<number, Held>
   /** the list's settings and open task when the rows began holding: anything else lets them go */
@@ -53,8 +56,8 @@ export interface UiState {
   /** the row of Activity or Deleted shown in the pane beside it */
   sideSel: string | null
   setSideSel(key: string | null): void
-  /** a project is shown again as a fresh page shows it */
-  reset(): void
+  /** a project is shown again as a fresh page shows it: its parents folded as this browser kept them */
+  reset(slug?: string): void
 }
 
 export type UiStore = StoreApi<UiState>
@@ -66,9 +69,20 @@ const flip = <T,>(s: ReadonlySet<T>, x: T) => {
   return out
 }
 
+const foldKey = (slug: string) => `taska.folded.${slug}`
+
 export function createUiStore(kv: KeyValueStore): UiStore {
+  const keptFolds = (slug: string): ReadonlySet<number> => {
+    const v = slug ? kv.getJson<unknown>(foldKey(slug)) : null
+    return new Set(Array.isArray(v) ? v.filter((n): n is number => Number.isInteger(n)) : [])
+  }
+  const fold = (slug: string, folded: ReadonlySet<number>) => {
+    if (slug) kv.setJson(foldKey(slug), folded.size ? [...folded] : null)
+    return { folded }
+  }
   return createStore<UiState>()((set) => ({
     folded: new Set(),
+    foldSlug: '',
     subMore: new Set(),
     held: new Map(),
     heldFor: '',
@@ -90,8 +104,8 @@ export function createUiStore(kv: KeyValueStore): UiStore {
     toggleInput: (id) => set((s) => ({ openedInputs: flip(s.openedInputs, id) })),
     lastSent: null,
     setLastSent: (lastSent) => set({ lastSent }),
-    toggleFold: (n) => set((s) => ({ folded: flip(s.folded, n) })),
-    unfold: (n) => set((s) => (s.folded.has(n) ? { folded: flip(s.folded, n) } : s)),
+    toggleFold: (n) => set((s) => fold(s.foldSlug, flip(s.folded, n))),
+    unfold: (n) => set((s) => (s.folded.has(n) ? fold(s.foldSlug, flip(s.folded, n)) : s)),
     toggleSubMore: (n) => set((s) => ({ subMore: flip(s.subMore, n) })),
     hold: (n, h, forList) =>
       set((s) => {
@@ -114,6 +128,6 @@ export function createUiStore(kv: KeyValueStore): UiStore {
       kv.set('taska.sideHidden', on ? '1' : null)
       set({ sideHidden: on })
     },
-    reset: () => set({ folded: new Set(), subMore: new Set(), held: new Map(), heldFor: '', selected: new Set(), lastSent: null, sideSel: null }),
+    reset: (slug = '') => set({ folded: keptFolds(slug), foldSlug: slug, subMore: new Set(), held: new Map(), heldFor: '', selected: new Set(), lastSent: null, sideSel: null }),
   }))
 }

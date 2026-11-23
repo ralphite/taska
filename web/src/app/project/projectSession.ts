@@ -98,7 +98,7 @@ export class ProjectSession {
     if (this.sync?.slug === slug && !this.sync.closed) return
     this.sync?.close()
     const f = this.d.fresh
-    f.ui.getState().reset()
+    f.ui.getState().reset(slug)
     f.taskView.getState().show(slug)
     f.keptEdits.getState().show(slug)
     f.docTicks.getState().show(slug)
