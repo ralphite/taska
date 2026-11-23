@@ -28,6 +28,7 @@ from .meaning import Meaning
 from .moves import Moves
 from .project import Project, now_iso
 from .reconnects import APPS as RECONNECT_APPS, Reconnects, connected, session_of
+from .computer import Computer
 from .opener import Opener
 from .watch import Listeners
 from .shared_rules import SharedRules, is_shared_slug
@@ -82,6 +83,7 @@ class Workspace:
         # T870: a session the user sees in the Claude app, opened by Taska itself: only the Taska on the live data turns
         # it on (cli), never a test or a drill (a test once opened a real one)
         self.opener: Optional[Opener] = None
+        self.computer: Optional[Computer] = None  # T871: computer use, for what an agent cannot do itself (same rule)
         self.local = ""  # Taska on this machine ("http://127.0.0.1:7340"), for what the agents here run
         self.projects: Dict[str, Project] = {}
         for name in sorted(os.listdir(self.root)):

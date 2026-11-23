@@ -187,6 +187,8 @@ class AppContext:
                 return agent_routes.do(req, p)
             if sub == "/mcp" and not p.holds_shared:
                 return mcp_routes.post(self, req, p, base)
+            if sub == "/computer" and not p.holds_shared:  # T871: the goal as the body
+                return agent_routes.get(req, p, sub, base) or text(404, NOT_FOUND)
             if sub == "/api/file":
                 return agent_routes.upload(req, p)
             return page_routes.post(self, req, p, sub)

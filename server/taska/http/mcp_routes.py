@@ -82,6 +82,11 @@ TOOLS: List[Dict[str, Any]] = [
         "type": "object", "properties": {"inputs": {"type": "array", "items": S}}, "required": ["inputs"]}},
     {"name": "do", "description": "Any of Taska's commands as an agent writes them, one per line (the guide lists them).",
      "inputSchema": {"type": "object", "properties": {"commands": S}, "required": ["commands"]}},
+    {"name": "computer", "description": "When you cannot do something on this Mac yourself (open a new session in "
+     "the Claude or Codex app, get a stopped session going again, open an app or a page): Taska looks at the screen "
+     "and does it, only while the user leaves the Mac alone. Never for passwords, keys, payments, settings, deleting, "
+     "sending messages or approving a permission prompt. goal: what to do, in words; code: the task it is for.",
+     "inputSchema": {"type": "object", "properties": {"goal": {"type": "string"}, "code": CODE}, "required": ["goal"]}},
     {"name": "guide", "description": "The guide for agents: how to work in Taska, every command.",
      "inputSchema": {"type": "object", "properties": {}}},
 ]
@@ -160,6 +165,8 @@ def reads(name: str, a: Dict[str, Any]) -> Optional[str]:
         return "/inbox"
     if name == "guide":
         return "/agent"
+    if name == "computer":
+        return "/computer?" + urlencode({"goal": str(a.get("goal") or ""), **({"task": str(a["code"])} if a.get("code") else {})})
     if name == "doc" and a.get("d") and not a.get("markdown"):
         return f"/D{int(a['d'])}"
     return None

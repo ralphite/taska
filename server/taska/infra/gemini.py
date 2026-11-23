@@ -29,6 +29,7 @@ MODEL = os.environ.get("TASKA_MODEL", "gemini-flash-latest")
 ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 EMBED_MODEL = "gemini-embedding-001"
 EMBED_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:batchEmbedContents"
+INTERACT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/interactions"  # T871: computer use, turn by turn
 EMBED_DIMS = 768
 EMBED_BATCH = 100  # texts in one request
 DOCUMENT, QUERY = "RETRIEVAL_DOCUMENT", "RETRIEVAL_QUERY"  # what is searched, what searches it
@@ -202,6 +203,13 @@ class Gemini:
         """One question -> the reply, after as many attempts as it takes (at most `attempts`)."""
         return self._send(who, model, ENDPOINT.format(model=model), body, timeout, attempts=attempts)
 
+    def interact(self, who: str, body: Json, timeout: float = 120) -> Json:
+        """One turn of an interaction (T871: computer use) -> the reply; the log keeps what was said, not the
+        screenshots."""
+        seen = {"previous": body.get("previous_interaction_id"), "input": [
+            {k: v for k, v in part.items() if k not in ("data", "result")} for part in body.get("input") or []]}
+        return self._send(who, str(body.get("model") or self.model), INTERACT_ENDPOINT, body, timeout, seen)
+
     def limits(self, within: float, models: Optional[List[str]] = None) -> int:
         """How many answers were over a rate or a quota (429) in the last `within` seconds, for these models (any
         model when None) (T724)."""
@@ -249,7 +257,7 @@ class Gemini:
                     self.pause(wait)
                 continue
             _logged(who, model, seen or body, int((self.clock() - t0) * 1000),
-                    reply={"embeddings": len(reply.get("embeddings") or [])} if seen else reply)
+                    reply={"embeddings": len(reply.get("embeddings") or [])} if "embeddings" in reply else reply)
             return reply
         raise Refused("Gemini failed")
 

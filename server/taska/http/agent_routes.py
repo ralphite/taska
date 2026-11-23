@@ -146,6 +146,8 @@ def get(req: Request, p: Project, sub: str, base: str) -> Optional[Response]:
             return text(200, "not opened: Taska cannot open sessions here\n")
         said = opener.open(local_root(p, req), p.slug, code, req.arg("say"))
         return text(200, f"{said}\n" if said != "opened" else f"opened a session in the Claude app for {code}: it starts on it now\n")
+    if sub == "/computer":  # T871: computer use, for what an agent cannot do itself (a goal: ?goal= or the body)
+        return _computer(req, p, by)
     if sub == "/listen":  # T869: Taska's wait for work, run as it is
         ses = req.session()
         body = reconnect_text.LISTEN.format(base=base, by=quote(by), session=f"&session={quote(ses)}" if ses else "")
@@ -352,6 +354,31 @@ def _card(req: Request, p: Project, ref: str, by: str) -> Response:
         with p.lock:
             p.agents.read_task(task_n, by, p.state)
     return answer
+
+
+def _computer(req: Request, p: Project, by: str) -> Response:
+    """Taska acts on this Mac for an agent (T871): the goal done or why not, with each step; written on the task
+    (?task=) too, so the user sees what was done for whom."""
+    computer = getattr(p.shared, "computer", None)
+    goal = (req.arg("goal") or req.body(MAX_FILE).decode("utf-8", "replace")).strip()
+    if not goal:
+        return text(400, "say what to do: ?goal=<words> or the words as the body\n")
+    if computer is None:
+        return text(200, "not done: Taska cannot act on this computer here (only the Taska on the live data, on a Mac)\n")
+    code = ""
+    if req.arg("task"):
+        with p.lock:
+            code = p.state.code(rules.task_at(p.state, req.arg("task")).n)
+    out = computer.do(goal, by)
+    report = out.report()
+    if code and (out.steps or out.done):
+        files: List[str] = []
+        if out.shot:
+            files = [p.files.save("computer-use-end.png", "image/png", out.shot).f]
+        note = f"computer use for {by}: {goal}\n" + "\n".join("    " + line for line in report.splitlines())
+        p.run([(0, {"op": "say", "ref": code, "kind": "progress", "text": note, "src": None, "files": files})], by,
+              session=session_of(p, req, by))
+    return text(200, report + "\n")
 
 
 def do(req: Request, p: Project) -> Response:
