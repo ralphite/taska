@@ -8,6 +8,7 @@ urgent."""
 from __future__ import annotations
 
 import time
+from urllib.parse import quote
 from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Tuple
 
@@ -133,7 +134,8 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
     end = "nothing to do now. End your turn (Claude Code: with the background wait from /agent running; never wait, poll or set a timer in the foreground)."
     if asker.who and asker.who.startswith("claude"):
         # the command itself, so a session that read the guide long ago keeps listening without spending tokens (T633)
-        who = asker.who + (f"&session={asker.session}" if asker.session else "")
+        # quoted (T880: a session named "Taska project T875" gave a command curl refused, so the session never waited)
+        who = quote(asker.who) + (f"&session={quote(asker.session)}" if asker.session else "")
         end += ("\nClaude Code: before ending the turn, start Taska's wait with Bash run_in_background, as it is (it costs "
                 "no tokens; it ends on any work for you, and that wakes you; never write your own loop, T869):\n"
                 f"  curl -s \"BASE/listen?by={who}\" | sh")
