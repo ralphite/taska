@@ -8,6 +8,8 @@ Change only on Yadong's explicit word. No model is called: the models here are f
 
 import json
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -21,6 +23,7 @@ from support import ProjectCase
 from taska.agent_text import render  # noqa: E402
 from taska.agent_text.organizer_text import INSTRUCTIONS  # noqa: E402
 from taska.domain import events as ev  # noqa: E402
+from taska.infra import audio  # noqa: E402
 from taska.domain import voice_words  # noqa: E402
 from taska.domain.vocab import Refused  # noqa: E402
 from taska.services import organizer, transcribe as tr  # noqa: E402
@@ -40,7 +43,8 @@ class Steps(unittest.TestCase):
     def setUp(self):
         self.patches = [mock.patch.object(tr.tools, name, value) for name, value in
                         (("processed_silence", lambda path, mime: 0.0), ("duration", lambda path: 0.0),
-                         ("louder", lambda data, mime: b""), ("pieces", lambda path: ([], 0.0)))]
+                         ("louder", lambda data, mime: b""), ("pieces", lambda path: ([], 0.0)),
+                         ("derumbled", lambda data, mime: None))]
         self.patches.append(mock.patch.object(tr, "voice_asr", lambda audio, vocab: ASR))
         self.patches.append(mock.patch.object(tr, "ask", lambda *a, **k: TIDIED))
         self.patches.append(mock.patch.object(tr.time, "sleep", lambda s: None))
@@ -130,6 +134,17 @@ class Steps(unittest.TestCase):
         steps = {s["step"]: s for s in out["steps"]}
         self.assertEqual((steps["pro"]["text"], steps["pro"].get("chosen"), steps["asr"].get("chosen")), ("导出", None, True))
 
+    def test_a_rumble_louder_than_the_speech_is_taken_out_of_what_the_models_hear(self):  # T883
+        heard = []
+        def main(audio, prompt, model=None):
+            heard.append(audio["inline_data"])
+            return SAID
+        with mock.patch.object(tr.tools, "derumbled", lambda data, mime: b"clean"):
+            out = self.heard(main)
+        self.assertEqual(heard[0], {"mime_type": "audio/webm", "data": "Y2xlYW4="})
+        self.assertTrue(out["derumbled"])
+        self.assertNotIn("derumbled", self.heard(lambda audio, prompt, model=None: SAID))
+
     def test_kept_next_to_the_audio_and_given_to_the_page(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Project(tmp, "demo")
@@ -144,6 +159,23 @@ class Steps(unittest.TestCase):
                 self.assertEqual([s["step"] for s in got["steps"]], ["pro", "asr", "tidy"])
             finally:
                 p.close()
+
+
+@unittest.skipUnless(shutil.which("ffmpeg"), "needs ffmpeg")
+class Rumble(unittest.TestCase):  # T883
+    def note(self, af):
+        with tempfile.TemporaryDirectory() as d:
+            out = os.path.join(d, "n.m4a")
+            subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", af, "-t", "2", "-c:a", "aac", out], check=True)
+            with open(out, "rb") as f:
+                return f.read()
+
+    def test_a_note_with_a_rumble_louder_than_the_speech_is_cleaned(self):
+        noisy = self.note("aevalsrc=0.6*sin(2*PI*20*t)+0.05*sin(2*PI*800*t)*sin(2*PI*3*t):s=48000")
+        self.assertTrue(audio.derumbled(noisy, "audio/mp4"))
+
+    def test_a_clean_note_is_left_alone(self):
+        self.assertIsNone(audio.derumbled(self.note("aevalsrc=0.3*sin(2*PI*800*t)*sin(2*PI*3*t):s=48000"), "audio/mp4"))
 
 
 class Simplified(unittest.TestCase):

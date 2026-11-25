@@ -1,4 +1,5 @@
-"""Voice note audio: its type from its name, making a quiet note as loud as normal speech, telling a phone's processed
+"""Voice note audio: its type from its name, making a quiet note as loud as normal speech, taking a loud rumble out of
+the audio the models hear, telling a phone's processed
 recording (afconvert), cutting a note at its pauses, its length (ffmpeg and ffprobe, when the machine has them;
 without them these steps are skipped)."""
 
@@ -64,6 +65,39 @@ def leveled(data: bytes, mime: str) -> Optional[bytes]:
                 return None
             subprocess.run([tool, "-hide_banner", "-loglevel", "error", "-y", "-i", src, "-af", f"volume={gain:.1f}dB",
                             *enc[1], "-f", enc[0], out], capture_output=True, timeout=120, check=True)
+            with open(out, "rb") as f:
+                return f.read() or None
+        except (OSError, subprocess.SubprocessError, ValueError):
+            return None
+
+
+def _mean_db(tool: str, src: str, af: str) -> Optional[float]:
+    r = subprocess.run([tool, "-hide_banner", "-i", src, "-af", f"{af},volumedetect", "-f", "null", "-"], capture_output=True,
+                       text=True, timeout=60)
+    m = re.search(r"mean_volume: (-?[\d.]+) dB", r.stderr)
+    return float(m.group(1)) if m else None
+
+
+def derumbled(data: bytes, mime: str) -> Optional[bytes]:
+    """T883: a note whose low rumble (wind, a hand rubbing the microphone, a moving car: below 80 Hz) is louder than the
+    speech in it, with the rumble filtered out and the speech brought up to normal loudness, as Opus in WebM, for the
+    models to hear; the note itself is not changed. On 60 notes the speech was 4 dB or more above the rumble on all but
+    9, and those had the rumble 4 to 24 dB above it (a model wrote "这 几 件 是 最 新 的 件" for "检查一下最新的邮件").
+    None when the rumble is not louder than the speech, or there is no ffmpeg."""
+    tool = shutil.which("ffmpeg")
+    if not tool:
+        return None
+    with tempfile.TemporaryDirectory() as d:
+        src, out = os.path.join(d, "in" + AUDIO_EXT.get(mime.split(";")[0], ".webm")), os.path.join(d, "out.webm")
+        try:
+            with open(src, "wb") as f:
+                f.write(data)
+            rumble, speech = _mean_db(tool, src, "lowpass=f=80"), _mean_db(tool, src, "highpass=f=300,lowpass=f=3400")
+            if rumble is None or speech is None or rumble <= speech:
+                return None
+            subprocess.run([tool, "-hide_banner", "-loglevel", "error", "-y", "-i", src, "-af",
+                            "highpass=f=100:poles=2,highpass=f=100:poles=2,loudnorm=I=-18:TP=-2", "-c:a", "libopus", out],
+                           capture_output=True, timeout=120, check=True)
             with open(out, "rb") as f:
                 return f.read() or None
         except (OSError, subprocess.SubprocessError, ValueError):

@@ -372,13 +372,16 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
     words, tasks, titles = h.context(scope)
     fixes = h.fixes()
     terms = voice_terms(words, fixes)
+    gated = tools.processed_silence(path, mime) >= 0.5  # told from the note itself, before anything is changed for the models
+    clean = tools.derumbled(data, mime)  # T883: a rumble louder than the speech is taken out of what the models hear
+    if clean:
+        data, mime = clean, "audio/webm"
     audio = {"inline_data": {"mime_type": mime.split(";")[0], "data": base64.b64encode(data).decode()}}
     vocab = voice_vocab(terms, tasks, fixes)  # T724: the open tasks' codes and the product's words too
     prompt = voice_prompt(terms, tasks, fixes, h.prefs())
     t0, times = time.time(), {}
     steps: List[Step] = []
     hedge = h.hedge()
-    gated = tools.processed_silence(path, mime) >= 0.5
     dur = tools.duration(path)
     def told(words: str) -> str:  # the speech model's words go ahead while the main model still works (T687)
         if first and words.strip() and "main" not in times:
@@ -393,7 +396,7 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
     (tr, err), (alt, alt_err) = together(
         strong(steps, "pro", audio, prompt, times, "main", dur, hedge, h.heard),
         ran(steps, "asr", ASR_MODEL, lambda: told(capped(lambda: voice_asr(audio, vocab), VOICE_CAP, "the speech model", times, "asr"))))
-    out = {"tr": "", "tr_by": "asr", "times": times, "steps": steps, **({"gated": True} if gated else {}),
+    out = {"tr": "", "tr_by": "asr", "times": times, "steps": steps, **({"gated": True} if gated else {}), **({"derumbled": True} if clean else {}),
            **({"hedge": hedge} if hedge is not None else {})}
     if alt_err is None and not alt:  # T494: heard nobody: said too quietly? once more, made loud enough to hear
         louder = tools.louder(data, mime)
