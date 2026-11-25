@@ -103,6 +103,11 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         return Work(f"{head}\n" + proposal_text(st, mine[0]), True)
     live = [i for i in live if i.n not in talking]  # their latest words are not in yet: they come next
     replied = [i for i in live if rules.replied(i)]
+    me = ident(asker.who, asker.session) if asker.who else None
+    others: List[Tuple[Task, str]] = []  # what another session is on, shown once as "others are on (skip)"
+    if me:  # T885: the user's reply on a task another session is on is for that session, never "resume" for this one
+        others = [(i, c[0]) for i in replied for c in [asker.holder(i)] if c and c[0] != me]
+        replied = [i for i in replied if all(i is not x for x, _ in others)]
     back = sorted((i for i in replied if rules.in_progress(i)), key=lambda i: i.t1)
     if back:
         it = back[0]
@@ -114,7 +119,6 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         what = "wrote to you" if to_me else "wrote on it (you are on it)"
         return Work(f"{head}\nresume {st.code(it.n)}: {ident(x.by, x.ses)} {what} (#{x.id})\n" + card(rd, it), True,
                     given=it.n)
-    me = ident(asker.who, asker.session) if asker.who else None
     work = [i for i in live if i.when == "now" and not i.group and i.status in ("open", "doing")
             and not rules.waiting(st, i) and not rules.open_kids(st, i)]
     blocked = [(i, rules.waits_for(st, i)) for i in work]
@@ -124,11 +128,11 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         head = "\n".join(out)
     queue = rules.queue_order([i for i in work if all(i is not b for b, _ in blocked)])
     if me:  # what another session is on is theirs; each gets its own next task
-        theirs = [(i, c[0]) for i in queue for c in [asker.holder(i)] if c and c[0] != me]
-        if theirs:
-            out.append("others are on (skip): " + " ".join(f"{st.code(i.n)} ({(on_it(rd, i) or (a, a))[1]})" for i, a in theirs))
-            head = "\n".join(out)
-            queue = [i for i in queue if all(i is not x for x, _ in theirs)]
+        others += [(i, c[0]) for i in queue for c in [asker.holder(i)] if c and c[0] != me and all(i is not x for x, _ in others)]
+        queue = [i for i in queue if all(i is not x for x, _ in others)]
+    if others:
+        out.append("others are on (skip): " + " ".join(f"{st.code(i.n)} ({(on_it(rd, i) or (a, a))[1]})" for i, a in others))
+        head = "\n".join(out)
     if fresh and (not queue or (queue[0].status != "doing" and fresh.pri <= queue[0].pri)):
         return Work(f"{head}\nresume {st.code(fresh.n)}: the user replied\n" + card(rd, fresh), True, given=fresh.n)
     if queue:

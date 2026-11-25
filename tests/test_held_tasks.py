@@ -167,3 +167,18 @@ class HoldKept(HeldTasks):
         self.assertIn(other, self.p.agents.sids())
         self.p.agents.see_sessions({other: Session("claude-code", other, "", "/x", "busy")})
         self.assertEqual(self.holder(CLAIM_TTL + 60)[0], "claude-code · bbbbbbbb")
+
+
+class RepliedHeld(HeldTasks):
+    """T885 (Yadong approved 11-24): the user's reply on a task another session is on goes to that session; /next gave
+    it to a second session as "resume", which woke that one for nothing and could set two sessions on it."""
+
+    def test_the_reply_is_for_the_session_on_it(self) -> None:
+        self.get("/next?by=claude-code&session=alpha")
+        self.do("alpha", "T1 doing\nT1 ask Which filter?\n")
+        self.p.run([(0, {"op": "say", "ref": "T1", "text": "the date one"})], "you")
+        other = self.get("/next?by=claude-code&session=beta")
+        self.assertNotIn("resume T1", other)
+        self.assertIn("others are on (skip): T1", other)
+        self.assertEqual(other.count("others are on"), 1)
+        self.assertIn("resume T1: the user replied", self.get("/next?by=claude-code&session=alpha"))
