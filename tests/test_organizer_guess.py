@@ -48,3 +48,8 @@ class OrganizerGuess(ProjectCase):
     def test_the_organizer_is_told_when_to_write_it_and_of_no_types(self) -> None:
         self.assertIn("guess <why, one short line>", INSTRUCTIONS)
         self.assertNotIn("Types: feature", INSTRUCTIONS)
+
+    def test_a_title_adds_no_meaning_the_user_did_not_say(self) -> None:
+        # T884 (Yadong r1495): what is unclear is left in their words for the agent, or asked; never written as a guess
+        self.assertIn("never add a meaning they did not say", INSTRUCTIONS)
+        self.assertIn("keep their unclear words as they are and leave it to the agent, or ask", INSTRUCTIONS)

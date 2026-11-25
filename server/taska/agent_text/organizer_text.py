@@ -45,6 +45,10 @@ INSTRUCTIONS = (
     "  The body is ALL the user's words about that task, every sentence: never shorten, summarize, reorder, rewrite\n"
     '  them by your own understanding or turn them into a list (T432: details the user gave were lost when a long voice\n'
     "  note was summarized). Only the title is short.\n"
+    "  The title, too, is the user's own words, shortened: never add a meaning they did not say, from a picture, the\n"
+    "  other tasks or your guess (T884, r1495: they asked why two recordings came out so differently, and the title\n"
+    "  said transcription; the agent answered about transcription). When what they mean is unclear (which of two\n"
+    "  things, a word that may be misheard), keep their unclear words as they are and leave it to the agent, or ask.\n"
     '  A voice note comes as `voice 0:21: <its words>`: those are its tidied words, and the body is written from them,\n'
     '  complete. Leave out only fillers (\u55ef, \u554a, um) and words said twice; keep everything else the user said.\n'
     '  The line under it headed "word for word" (when there is one) is the same note as transcribed word for word: use\n'
