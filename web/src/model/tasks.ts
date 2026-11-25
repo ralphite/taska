@@ -112,13 +112,11 @@ export const heldTasks = (inputs: readonly Input[]): Set<number> =>
   new Set(inputs.filter((r) => r.files.some((f) => f.voice?.state === 'wait')).flatMap((r) => [r.scope, ...r.touched].filter((n): n is number => n != null)))
 
 /** The task an agent on nothing yet takes next (agent_text/work.py next_work; what is in progress is another
- * session's): work in progress you replied on, resumed; else the queue's head, unless a task you replied on is as
+ * session's, and your reply on it is for that session, T885): the queue's head, unless a task you replied on is as
  * urgent (by priority, then the oldest change); tasks your voice note is on wait (`held`). */
 export function queueHead(tasks: Task[], held: ReadonlySet<number> = new Set()): number | undefined {
   const live = tasks.filter((it) => !it.mergedInto && !it.archived && !closed(it.status) && !held.has(it.n))
   const yours = live.filter(replied)
-  const back = yours.filter((it) => it.status === 'doing').sort((a, b) => a.t1.localeCompare(b.t1))[0]
-  if (back) return back.n
   const now = (it: Task) => +(it.when !== 'now')
   const fresh = yours.filter((it) => it.status !== 'doing').sort((a, b) => a.pri.localeCompare(b.pri) || a.t1.localeCompare(b.t1) || now(a) - now(b) || a.n - b.n)[0]
   const kids = withOpenKids(tasks)
